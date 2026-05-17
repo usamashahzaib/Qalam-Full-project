@@ -27,8 +27,10 @@ export class TokenBucket {
   }
 }
 
-// In-memory store (works per-isolate on Edge/Serverless)
-// For a billion-dollar production app, this would wrap Upstash Redis.
+// WARNING: In-memory store — resets on every serverless cold start.
+// Provides best-effort per-isolate rate limiting only. A determined attacker
+// bypasses this trivially by hitting different isolates.
+// TODO: Replace with Upstash Redis or Vercel KV for production-grade rate limiting.
 const limiters = new Map<string, TokenBucket>();
 
 export const rateLimit = (identifier: string, limit = 5, windowSec = 60): boolean => {

@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Qalam",
     description:
       "Voice-aware LinkedIn publishing system with drafting, archive continuity, scheduling, and client workspaces.",
-    start_url: "/dashboard",
+    start_url: "/",
     display: "standalone",
     background_color: "#fafaf8",
     theme_color: "#0d4a45",

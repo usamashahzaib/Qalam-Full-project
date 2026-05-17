@@ -5,18 +5,15 @@ import Link from "next/link"
 import { AnimatePresence, motion, useInView } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
-import { TestimonialCard } from "@/components/TestimonialCard"
 import {
   AnalyticsIcon,
   BrainIcon,
   CalendarIcon,
   CheckIcon,
-  CommentIcon,
   ComposeIcon,
   GrowthIcon,
   HookIcon,
   LibraryIcon,
-  RepostIcon,
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
@@ -26,6 +23,7 @@ function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
+
   useEffect(() => {
     if (!inView) return
     let startTime: number
@@ -38,6 +36,7 @@ function useCountUp(end: number, duration = 1400) {
     }
     requestAnimationFrame(step)
   }, [inView, end, duration])
+
   return { count, ref }
 }
 
@@ -61,7 +60,7 @@ const FEATURES = [
   {
     icon: AnalyticsIcon,
     title: "Performance Intelligence",
-    desc: "Track published posts, compare formats, and keep the signals that deserve to shape the next draft.",
+    desc: "Review workspace activity, compare patterns, and keep the signals that should shape the next draft.",
   },
   {
     icon: HookIcon,
@@ -80,8 +79,8 @@ const FEATURES = [
   },
   {
     icon: TeamIcon,
-    title: "Client Workspaces",
-    desc: "Keep teams and agencies operational with separate voice memory, shared review, and cleaner client separation.",
+    title: "Agency Workflow Preview",
+    desc: "Current agency surfaces live in the product, while role controls, client isolation, and approvals are still being hardened.",
   },
 ]
 
@@ -106,53 +105,56 @@ const HOW_IT_WORKS = [
   },
 ]
 
-const TESTIMONIALS = [
+const LIVE_SURFACE = [
   {
-    quote: "I went from drafting for two hours to having something viable in ten minutes. The difference is that the voice still feels like mine.",
-    name: "Sarah Chen",
-    title: "Head of Marketing",
-    company: "",
-    initials: "SC",
-    color: "#0D4A45",
+    title: "Live now",
+    items: [
+      "LinkedIn-first auth",
+      "Writer, archive, calendar, analytics, voice settings",
+      "Free public tools",
+      "Custom session plus LinkedIn OAuth path",
+    ],
   },
   {
-    quote: "The value is not just generation. It is the memory. I stop losing good frameworks because the archive actually keeps them usable.",
-    name: "Marcus Williams",
-    title: "Founder",
-    company: "DevPulse",
-    initials: "MW",
-    color: "#C9871F",
+    title: "Guided rollout",
+    items: [
+      "Paid onboarding",
+      "Team pilots",
+      "Agency setup",
+      "Commercial migration support",
+    ],
   },
   {
-    quote: "Separate client voice profiles and approval flow changed the way I run delivery. It feels operational instead of improvised.",
-    name: "Priya Patel",
-    title: "Content Strategist",
-    company: "",
-    initials: "PP",
-    color: "#6366F1",
+    title: "Still hardening",
+    items: [
+      "Billing automation",
+      "Client isolation",
+      "Approval workflow",
+      "Broad self-serve collaboration",
+    ],
   },
 ]
 
 const FAQ_ITEMS = [
   {
     q: "How does the Voice Profile actually learn my writing?",
-    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. Every draft you approve and every edit you make then feeds future starting points — so the system gets more specific the longer you use it.",
+    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. Every draft you approve and every edit you keep then improves future starting points.",
   },
   {
-    q: "What happens to my archive if I pause or cancel?",
-    a: "Your archive and trained voice data stay attached to the account. Access changes by plan, but the memory layer is preserved.",
+    q: "What happens to my archive if I stop using the product?",
+    a: "The current product keeps drafts, saved items, and voice settings in your workspace. Commercial retention policy should be treated as an operational detail, not assumed from generic SaaS copy.",
   },
   {
     q: "How is this different from just using ChatGPT?",
-    a: "ChatGPT resets every session. Qalam keeps your approved examples, editing history, hook archive, and post outcomes in one system — so each session starts closer to your actual voice instead of from scratch.",
+    a: "ChatGPT resets every session. Qalam keeps approved examples, editing history, hook archive, and workspace continuity so each session starts closer to your actual voice instead of from scratch.",
   },
   {
-    q: "Who is Team for?",
-    a: "Team is for internal operators who need shared review, brand consistency, and a cleaner drafting system across multiple seats.",
+    q: "Who is Team for today?",
+    a: "Team is the guided path for internal operators who want shared workflow evaluation before broader collaboration hardening is complete.",
   },
   {
-    q: "Who is Agency for?",
-    a: "Agency is for client delivery. It adds workspace separation, per-client voice memory, and a clearer approval path before publishing.",
+    q: "Who is Agency for today?",
+    a: "Agency is the guided path for multi-client operators who want the current workspace preview while isolation and approval controls are still being hardened.",
   },
   {
     q: "Does Qalam work for any niche?",
@@ -176,7 +178,7 @@ function ProductMockup() {
             <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-gold/15">
               <div className="h-2 w-2 rounded-full bg-gold" />
             </div>
-            <span className="text-sm font-semibold text-white/90">Qalam · Post Preview</span>
+            <span className="text-sm font-semibold text-white/90">Qalam · Workspace Preview</span>
           </div>
           <div className="flex gap-1.5">
             <div className="h-3 w-3 rounded-full bg-white/15" />
@@ -200,10 +202,12 @@ function ProductMockup() {
 
         <div className="mx-5 mb-4 rounded-2xl bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">SC</div>
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
+              SC
+            </div>
             <div>
-              <p className="text-xs font-semibold text-zinc-900">Sarah Chen</p>
-              <p className="text-[10px] text-zinc-400">Head of Marketing · Just now</p>
+              <p className="text-xs font-semibold text-zinc-900">Sample workspace draft</p>
+              <p className="text-[10px] text-zinc-400">Live surface preview</p>
             </div>
           </div>
           <p className="text-xs leading-relaxed text-zinc-700">
@@ -213,18 +217,21 @@ function ProductMockup() {
             What changed was not another prompt.
             <br />
             <br />
-            <span className="font-semibold text-teal">It was the system that remembered what I kept, what I edited, and what actually performed.</span>
+            <span className="font-semibold text-teal">
+              It was the system that remembered what I kept, what I edited, and what I wanted the next draft to inherit.
+            </span>
           </p>
-          <div className="mt-3 flex gap-4 border-t border-zinc-100 pt-3 text-[10px] text-zinc-400">
-            <span className="inline-flex items-center gap-1"><GrowthIcon className="h-3 w-3" /> 1.2K reactions</span>
-            <span className="inline-flex items-center gap-1"><CommentIcon className="h-3 w-3" /> 148 comments</span>
-            <span className="inline-flex items-center gap-1"><RepostIcon className="h-3 w-3" /> 3.4K reposts</span>
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-[10px] text-zinc-500">
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Draft saved</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Voice settings attached</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Archive ready</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Schedule path available</span>
           </div>
         </div>
 
         <div className="mx-5 mb-3 flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3 py-2">
           <VoiceIcon className="h-4 w-4 text-gold" />
-          <span className="text-xs font-medium text-white/85">Voice Profile active · 47 posts trained</span>
+          <span className="text-xs font-medium text-white/85">Voice profile attached to current workspace</span>
         </div>
 
         <div className="flex gap-2 px-5 pb-4">
@@ -244,27 +251,48 @@ function ProductMockup() {
         }}
         className="absolute -right-4 top-8 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl"
       >
-        <p className="text-[10px] font-medium text-zinc-500">Impressions this month</p>
-        <p className="text-xl font-bold text-teal">+4,280</p>
-        <p className="text-[10px] font-medium text-green-600">Up 47% vs last month</p>
+        <p className="text-[10px] font-medium text-zinc-500">Current truth</p>
+        <p className="text-xl font-bold text-teal">Live app</p>
+        <p className="text-[10px] font-medium text-zinc-500">with guided commercial rollout</p>
       </motion.div>
     </div>
   )
 }
 
-function VoiceStatCard({ label, end, suffix, title, desc, index, showConnector }: {
-  label: string; end: number; suffix: string; title: string; desc: string; index: number; showConnector: boolean
+function VoiceStatCard({
+  label,
+  end,
+  suffix,
+  title,
+  desc,
+  index,
+  showConnector,
+}: {
+  label: string
+  end: number
+  suffix: string
+  title: string
+  desc: string
+  index: number
+  showConnector: boolean
 }) {
   const { count, ref } = useCountUp(end, 1200 + index * 200)
+
   return (
     <FadeUp delay={index * 0.12}>
-      <motion.div whileHover={{ y: -4, borderColor: "#C9871F40", transition: { duration: 0.2 } }} className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+      <motion.div
+        whileHover={{ y: -4, borderColor: "#C9871F40", transition: { duration: 0.2 } }}
+        className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm"
+      >
         <div className="mb-6 flex items-center gap-3">
-          <span className="rounded-full border border-teal/20 bg-teal/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-teal">{label}</span>
+          <span className="rounded-full border border-teal/20 bg-teal/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-teal">
+            {label}
+          </span>
           {showConnector && <div className="h-px flex-1 bg-gradient-to-r from-teal/20 to-transparent" />}
         </div>
         <p className="mb-2 text-3xl font-bold text-gold">
-          <span ref={ref}>{count}</span>{suffix}
+          <span ref={ref}>{count}</span>
+          {suffix}
         </p>
         <h3 className="mb-3 text-lg font-bold text-zinc-900">{title}</h3>
         <p className="text-sm leading-relaxed text-zinc-600">{desc}</p>
@@ -303,7 +331,7 @@ function VoiceMemorySection() {
       <div className="mx-auto max-w-[1200px]">
         <FadeUp className="mb-16 text-center">
           <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Voice Memory</span>
-          <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900 sm:text-5xl">
+          <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
             A voice that gets <span className="text-gold gold-underline">smarter every post</span>
           </h2>
           <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
@@ -313,16 +341,7 @@ function VoiceMemorySection() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {stages.map((stage, i) => (
-            <VoiceStatCard
-              key={stage.label}
-              label={stage.label}
-              end={stage.end}
-              suffix={stage.suffix}
-              title={stage.title}
-              desc={stage.desc}
-              index={i}
-              showConnector={i < 2}
-            />
+            <VoiceStatCard key={stage.label} {...stage} index={i} showConnector={i < 2} />
           ))}
         </div>
       </div>
@@ -338,7 +357,7 @@ function FAQSection() {
       <div className="mx-auto max-w-[760px]">
         <FadeUp className="mb-14 text-center">
           <span className="chip mb-4 border-teal/30 text-teal">FAQ</span>
-          <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900">
+          <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900">
             Questions we get <span className="text-gold">all the time</span>
           </h2>
           <p className="text-lg text-zinc-600">
@@ -355,13 +374,23 @@ function FAQSection() {
               <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-colors hover:border-teal/30">
                 <button className="flex w-full items-center justify-between px-6 py-4 text-left" onClick={() => setOpen(open === i ? null : i)}>
                   <span className="text-base font-semibold text-zinc-900">{item.q}</span>
-                  <motion.span animate={{ rotate: open === i ? 45 : 0 }} transition={{ duration: 0.2 }} className="ml-4 flex h-5 w-5 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500">
+                  <motion.span
+                    animate={{ rotate: open === i ? 45 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="ml-4 flex h-5 w-5 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
+                  >
                     +
                   </motion.span>
                 </button>
                 <AnimatePresence>
                   {open === i && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: "easeInOut" }} className="overflow-hidden">
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
                       <p className="px-6 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
                     </motion.div>
                   )}
@@ -408,55 +437,83 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageHowToSchema) }} />
 
       <section className="relative flex min-h-screen items-center overflow-hidden border-b border-zinc-200 bg-[radial-gradient(circle_at_12%_18%,rgba(13,74,69,0.08),transparent_20%),radial-gradient(circle_at_84%_16%,rgba(201,135,31,0.12),transparent_18%),radial-gradient(circle_at_78%_76%,rgba(13,74,69,0.06),transparent_20%),linear-gradient(to_bottom,#fcfcfa,#f6f5f1)] pb-16 pt-28">
-        <div className="absolute inset-0 opacity-70" style={{ backgroundImage: "linear-gradient(rgba(13,74,69,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(13,74,69,0.06) 1px, transparent 1px)", backgroundSize: "54px 54px" }} />
+        <div
+          className="absolute inset-0 opacity-70"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(13,74,69,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(13,74,69,0.06) 1px, transparent 1px)",
+            backgroundSize: "54px 54px",
+          }}
+        />
         <div className="relative z-10 mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2">
-            <div>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-                <span className="chip mb-6 inline-flex border-teal/20 bg-white/80 text-teal shadow-sm backdrop-blur">
-                  <span className="h-2 w-2 rounded-full bg-gold animate-pulse" />
-                  Voice Profile unlocks on Pro — trains with every post
+          <div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
+              <span className="chip mb-6 inline-flex border-teal/20 bg-white/80 text-teal shadow-sm backdrop-blur">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
+                Live product, strict product truth
+              </span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+              className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl"
+            >
+              Write in your voice.
+              <br />
+              Build real authority.
+              <br />
+              <span className="text-gold gold-underline">Compound every post.</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+              className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
+            >
+              Qalam learns your voice from real posts and retained edits. The public site now says exactly what is live, what is guided, and what is still hardening.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: "easeOut", delay: 0.3 }}
+              className="mb-10 flex flex-col gap-3 sm:flex-row"
+            >
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <Link
+                  href="/auth/sign-up"
+                  className="pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
+                >
+                  Start with LinkedIn
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/demo"
+                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
+                >
+                  Try the Demo
+                </Link>
+              </motion.div>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              {["No credit card required", "Drafts and edits stay in your archive", "LinkedIn-first auth is the active path"].map((item) => (
+                <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
+                  <CheckIcon className="h-4 w-4 text-gold" />
+                  {item}
                 </span>
-              </motion.div>
-
-              <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }} className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl">
-                Write in your voice.
-                <br />
-                Build real authority.
-                <br />
-                <span className="text-gold gold-underline">Compound every post.</span>
-              </motion.h1>
-
-              <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }} className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600">
-                Qalam learns your voice from day one. Every post you write, every edit you keep, and every result you review makes the system more specific to your workflow.
-              </motion.p>
-
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: "easeOut", delay: 0.3 }} className="mb-10 flex flex-col gap-3 sm:flex-row">
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link href={"/auth/sign-up"} className="pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600">
-                    Start Writing Free
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link href="/demo" className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white">
-                    Try the Demo
-                  </Link>
-                </motion.div>
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                {["No credit card required", "Drafts and edits stay in your archive", "Trained on your real posts, not generic prompts"].map((item) => (
-                  <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
-                    <CheckIcon className="h-4 w-4 text-gold" />
-                    {item}
-                  </span>
-                ))}
-              </motion.div>
-            </div>
-
-            <div className="flex justify-center lg:justify-end">
-              <ProductMockup />
-            </div>
+              ))}
+            </motion.div>
           </div>
+
+          <div className="flex justify-center lg:justify-end">
+            <ProductMockup />
+          </div>
+        </div>
       </section>
 
       <section className="overflow-hidden border-y border-zinc-200 bg-white py-8">
@@ -477,8 +534,40 @@ export default function HomePage() {
       <section className="bg-white px-6 py-10">
         <div className="mx-auto max-w-[760px] text-center">
           <p className="text-base leading-relaxed text-zinc-500">
-            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing system that learns your voice from real posts and edits. Unlike session-reset generators, it keeps approved drafts, outcomes, and hook archives in one place — so each session starts closer to your actual writing instead of from scratch. The platform includes voice profile training, a content archive, hook intelligence, post scheduling, and client workspaces for agencies and marketing teams.
+            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing system that learns your voice from real posts and edits. Unlike session-reset generators, it keeps approved drafts, outcomes, and hook archives in one place so each session starts closer to your actual writing instead of from scratch.
           </p>
+        </div>
+      </section>
+
+      <section className="bg-transparent px-6 py-20">
+        <div className="mx-auto max-w-[1200px]">
+          <FadeUp className="mb-12 text-center">
+            <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Current Product Surface</span>
+            <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
+              Serious product, <span className="text-gold gold-underline">strictly stated.</span>
+            </h2>
+            <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
+              This is the public truth layer: what is live, what is handled manually, and what is still in rollout.
+            </p>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {LIVE_SURFACE.map((group, i) => (
+              <FadeUp key={group.title} delay={i * 0.08}>
+                <div className="h-full rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm">
+                  <h3 className="mb-4 text-xl font-bold text-zinc-900">{group.title}</h3>
+                  <ul className="space-y-3 text-sm leading-relaxed text-zinc-600">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex gap-3">
+                        <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </FadeUp>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -486,7 +575,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-16 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Features</span>
-            <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900 sm:text-5xl">
+            <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
               You are not just using a tool. <span className="text-gold gold-underline">You are building an asset.</span>
             </h2>
             <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
@@ -519,7 +608,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-16 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">How It Works</span>
-            <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900 sm:text-5xl">
+            <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
               From first post to <span className="text-gold gold-underline">full intelligence</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">The system keeps context instead of starting over every time you need a draft.</p>
@@ -555,31 +644,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-transparent px-6 py-28">
-        <div className="mx-auto max-w-[1200px]">
-          <FadeUp className="mb-14 text-center">
-            <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Testimonials</span>
-            <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              Built for people who want <span className="text-gold gold-underline">a system, not a toy</span>
-            </h2>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {TESTIMONIALS.map((item, i) => (
-              <TestimonialCard key={item.name} {...item} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section id="pricing" className="grid-bg px-6 py-28">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-14 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Pricing</span>
-            <h2 className="mt-3 mb-4 text-4xl font-bold text-zinc-900 sm:text-5xl">
+            <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
-            <p className="mx-auto max-w-xl text-xl text-zinc-600">The free tier lets people test the workflow. Paid plans unlock the memory, archive, and operational layers.</p>
+            <p className="mx-auto max-w-xl text-xl text-zinc-600">
+              Free is live now. Paid plans are currently guided onboarding paths, not automated checkout products.
+            </p>
           </FadeUp>
 
           <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
@@ -596,12 +670,12 @@ export default function HomePage() {
                 <span className="chip mb-3 inline-flex border-gold/40 bg-gold/5 text-gold">Agency Plan</span>
                 <h3 className="mb-2 text-xl font-bold text-zinc-900">Running content for multiple clients?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-600">
-                  {agencyPlan.price}/mo gives you isolated client workspaces, separate voice profiles, and a cleaner approval pipeline. Annual plan available in full pricing.
+                  {agencyPlan.price}/mo is the public reference price. Agency onboarding is currently assisted while client isolation and approvals are still being hardened.
                 </p>
               </div>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
                 <Link href={agencyPlan.href} className="inline-flex items-center gap-2 rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600">
-                  Start Agency Trial
+                  Discuss Agency Setup
                 </Link>
               </motion.div>
             </div>
@@ -625,15 +699,15 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link href={"/auth/sign-up"} className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
-                Start Writing Free
+              <Link href="/auth/sign-up" className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+                Start with LinkedIn
               </Link>
             </motion.div>
             <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/35 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
               Compare Plans
             </Link>
           </div>
-          <p className="mt-5 text-sm text-white/62">No credit card required. Pro plan includes a 7-day free trial.</p>
+          <p className="mt-5 text-sm text-white/62">No credit card required to start. Paid onboarding is handled manually today.</p>
         </FadeUp>
       </section>
     </>

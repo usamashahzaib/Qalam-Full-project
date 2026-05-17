@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qalam-v1.1';
+const CACHE_NAME = 'qalam-v1.2';
 const OFFLINE_URL = '/';
 
 self.addEventListener('install', (event) => {
@@ -30,7 +30,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Background Sync Implementation (Elite Offline Capability)
+// Background Sync Implementation (Offline Capability)
 const SYNC_STORE_NAME = 'qalam-sync-queue';
 const DB_NAME = 'QalamOfflineDB';
 
@@ -62,14 +62,22 @@ async function queueRequest(request) {
 }
 
 self.addEventListener('fetch', (event) => {
-  if ((event.request.method === 'POST' || event.request.method === 'PUT') && !navigator.onLine) {
+  // For mutation requests (POST/PUT), attempt the fetch and queue on failure
+  // instead of relying on navigator.onLine which is unreliable in SW context.
+  if (event.request.method === 'POST' || event.request.method === 'PUT') {
     event.respondWith(
       (async () => {
-        await queueRequest(event.request);
-        return new Response(JSON.stringify({ queued: true, message: "Offline. Request queued." }), {
-          headers: { 'Content-Type': 'application/json' },
-          status: 202
-        });
+        try {
+          // Attempt the real network request first
+          return await fetch(event.request.clone());
+        } catch (networkError) {
+          // Network failed — queue for Background Sync replay
+          await queueRequest(event.request);
+          return new Response(JSON.stringify({ queued: true, message: "Offline. Request queued for sync." }), {
+            headers: { 'Content-Type': 'application/json' },
+            status: 202
+          });
+        }
       })()
     );
     return;
@@ -99,23 +107,27 @@ self.addEventListener('sync', (event) => {
         const db = await openDB();
         const tx = db.transaction(SYNC_STORE_NAME, 'readwrite');
         const store = tx.objectStore(SYNC_STORE_NAME);
-        const request = store.getAll();
+        const getAllRequest = store.getAll();
         
-        request.onsuccess = async () => {
-          const items = request.result;
-          for (const item of items) {
-            try {
-              await fetch(item.url, {
-                method: item.method,
-                headers: item.headers,
-                body: item.body
-              });
-            } catch (e) {
-              console.error("Failed to sync queued request", e);
+        await new Promise((resolve, reject) => {
+          getAllRequest.onsuccess = async () => {
+            const items = getAllRequest.result;
+            for (const item of items) {
+              try {
+                await fetch(item.url, {
+                  method: item.method,
+                  headers: item.headers,
+                  body: item.body
+                });
+              } catch (e) {
+                console.error("Failed to sync queued request", e);
+              }
             }
-          }
-          store.clear();
-        };
+            store.clear();
+            resolve();
+          };
+          getAllRequest.onerror = () => reject(getAllRequest.error);
+        });
       })()
     );
   }

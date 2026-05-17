@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { env } from "@/lib/server/env"
 import { createSignedToken, readSignedToken } from "@/lib/server/token"
+import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 type AppSessionPayload = {
   email: string
@@ -9,14 +10,13 @@ type AppSessionPayload = {
   role: "admin" | "user"
   imageUrl: string | null
   linkedinMemberId: string | null
-  linkedinAccessToken: string | null
   linkedinTokenExpiresAt: number | null
   createdAt: number
 }
 
 type PublicAuthUser = Omit<
   AppSessionPayload,
-  "createdAt" | "linkedinAccessToken" | "linkedinMemberId"
+  "createdAt" | "linkedinMemberId"
 >
 
 export const appSessionCookieName = "qalam_app_session"
@@ -34,21 +34,17 @@ const toNames = (name: string, email: string) => {
   }
 }
 
-import { supabaseSelect } from "@/lib/server/supabase-rest"
-
 export const createAppSession = async ({
   email,
   name,
   imageUrl = null,
   linkedinMemberId = null,
-  linkedinAccessToken = null,
   linkedinTokenExpiresAt = null,
 }: {
   email: string
   name: string
   imageUrl?: string | null
   linkedinMemberId?: string | null
-  linkedinAccessToken?: string | null
   linkedinTokenExpiresAt?: number | null
 }) => {
   const normalizedEmail = email.trim().toLowerCase()
@@ -71,7 +67,6 @@ export const createAppSession = async ({
     role,
     imageUrl,
     linkedinMemberId,
-    linkedinAccessToken,
     linkedinTokenExpiresAt,
     createdAt: Date.now(),
   }

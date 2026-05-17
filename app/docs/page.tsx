@@ -1,60 +1,84 @@
-"use client"
-
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
+import { buildPageMetadata } from "@/lib/seo"
+
+export const metadata = buildPageMetadata({
+  title: "Docs",
+  description: "Public Qalam docs for onboarding, voice setup, drafting, scheduling, and workspace operations.",
+  path: "/docs",
+})
 
 const SECTIONS = [
-  "Getting started",
-  "Voice Profile setup",
-  "Writing and revising posts",
-  "Scheduling and publishing",
-  "Analytics and post outcomes",
-  "Team and agency workflows",
+  {
+    title: "Getting started",
+    body: "LinkedIn-first sign-in, workspace creation, and where drafts, archive items, and profile settings live today.",
+  },
+  {
+    title: "Voice profile setup",
+    body: "How to add writing samples, tune profile fields, and treat the current voice layer as an evolving workspace setting, not a magic model.",
+  },
+  {
+    title: "Writing and revising posts",
+    body: "Draft generation, manual edits, save flow, archive behavior, and how revisions persist across the current workspace.",
+  },
+  {
+    title: "Scheduling and publishing",
+    body: "What the scheduler surface does today, where LinkedIn publish fits, and which steps still require operator review.",
+  },
+  {
+    title: "Analytics and post outcomes",
+    body: "Current analytics are event-backed app signals, not a full LinkedIn reporting pipeline. Use them as workspace telemetry, not channel truth.",
+  },
+  {
+    title: "Team and agency workflows",
+    body: "The current product is best treated as a guided single-workspace flow. Team approvals, seats, and client isolation are still being hardened.",
+  },
 ]
 
 export default function DocsPage() {
   return (
-    <div className="pt-24 min-h-screen bg-teal-900">
-      <section className="py-20 px-6">
-        <div className="max-w-[760px] mx-auto text-center">
+    <div className="min-h-screen bg-teal-900 pt-24">
+      <section className="px-6 py-20">
+        <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>
-            <span className="chip border-white/20 text-white/70 bg-white/5 mb-5 inline-flex">
+            <span className="chip mb-5 inline-flex border-white/20 bg-white/5 text-white/70">
               Help Center
             </span>
-            <h1 className="text-5xl font-extrabold text-white mb-4">Docs</h1>
-            <p className="text-white/55 text-lg leading-relaxed">
-              Public documentation is still being structured. The core sections are mapped below so the
-              surface exists without pretending the library is complete.
+            <h1 className="mb-4 text-5xl font-extrabold text-white">Docs</h1>
+            <p className="text-lg leading-relaxed text-white/55">
+              Public docs are concise on purpose: only live behavior, current constraints, and the
+              shortest path to operator clarity.
             </p>
           </FadeUp>
         </div>
       </section>
 
       <section className="px-6 pb-24">
-        <div className="max-w-[760px] mx-auto space-y-4">
+        <div className="mx-auto max-w-[760px] space-y-4">
           {SECTIONS.map((section, i) => (
-            <FadeUp key={section} delay={i * 0.06}>
-              <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-5">
-                <p className="text-white font-medium">{section}</p>
+            <FadeUp key={section.title} delay={i * 0.06}>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5">
+                <p className="font-medium text-white">{section.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/55">{section.body}</p>
               </div>
             </FadeUp>
           ))}
 
           <FadeUp className="pt-4">
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center">
-              <p className="text-white/60 mb-5">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+              <p className="mb-5 text-white/60">
                 Need something specific now? Use the free tools or contact support directly.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href="/free-tools"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-teal text-white font-semibold rounded-xl hover:bg-teal-600 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl bg-teal px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-600"
                 >
                   Browse Free Tools
                 </Link>
                 <a
                   href="mailto:support@byqalam.com"
-                  className="inline-flex items-center justify-center px-6 py-3 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   support@byqalam.com
                 </a>

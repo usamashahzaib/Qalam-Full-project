@@ -100,28 +100,43 @@ export default function DashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Drafts" value={String(state.drafts.length)} sub={`${summary.draftEvents.length} save events`} />
-        <Stat label="Scheduled" value={String(state.scheduled.length)} sub={`${summary.scheduledEvents.length} schedule events`} />
-        <Stat label="Published" value={String(state.published.length)} sub={`${summary.publishedEvents.length} publish events`} />
-        <Stat label="Impressions" value={String(summary.impressions)} sub={`${summary.avgEngagement}% avg engagement`} />
-      </div>
+            <Stat label="Drafts" value={String(state.drafts.length)} sub={`${summary.draftEvents.length} save events`} />
+            <Stat label="Scheduled" value={String(state.scheduled.length)} sub={`${summary.scheduledEvents.length} schedule events`} />
+            <Stat label="Published" value={String(state.published.length)} sub={`${summary.publishedEvents.length} publish events`} />
+            <Stat label="Impressions" value={String(summary.impressions)} sub={`${summary.avgEngagement}% avg engagement`} />
+          </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Stat label="Jobs" value={String(jobs.length)} sub={`${summary.carouselJobs} carousel jobs`} />
-        <Stat label="Events" value={String(events.length)} sub="latest 300 fetched" />
-        <Stat label="Remote sync" value={state.posts.length ? "Active" : "Empty"} sub="workspace state" />
-        <Stat label="Load" value={loading ? "Loading" : "Ready"} sub="events + jobs" />
-      </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Stat label="Jobs" value={String(jobs.length)} sub={`${summary.carouselJobs} carousel jobs`} />
+            <Stat label="Events" value={String(events.length)} sub="latest 300 fetched" />
+            <Stat label="Remote sync" value={state.posts.length ? "Active" : "Empty"} sub="workspace state" />
+            <Stat label="Load" value={loading ? "Loading" : "Ready"} sub="events + jobs" />
+          </div>
 
-      <div className="mt-8 rounded-2xl border border-zinc-200 bg-white">
-        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Recent posts</h2>
-          <span className="text-xs text-zinc-500">{recent.length} shown</span>
-        </div>
-        <div className="divide-y divide-zinc-100">
-          {recent.length === 0 ? <p className="px-5 py-8 text-sm text-zinc-500">No posts yet. Start from writer.</p> : recent.map((post) => <div key={post.id} className="flex items-center justify-between px-5 py-3"><div><p className="text-sm font-medium text-zinc-900">{post.title}</p><p className="text-xs text-zinc-500">{post.type} - {post.date}{post.scheduledTime ? ` - ${post.scheduledTime}` : ""}</p></div><span className="text-xs uppercase tracking-wide text-zinc-500">{post.status}</span></div>)}
-        </div>
-      </div>
+          <div className="mt-8 rounded-2xl border border-zinc-200 bg-white">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
+              <h2 className="text-sm font-semibold text-zinc-900">Recent posts</h2>
+              <span className="text-xs text-zinc-500">{recent.length} shown</span>
+            </div>
+            <div className="divide-y divide-zinc-100">
+              {recent.length === 0 ? (
+                <p className="px-5 py-8 text-sm text-zinc-500">No posts yet. Start from writer.</p>
+              ) : (
+                recent.map((post) => (
+                  <div key={post.id} className="flex items-center justify-between px-5 py-3">
+                    <div>
+                      <p className="text-sm font-medium text-zinc-900">{post.title}</p>
+                      <p className="text-xs text-zinc-500">
+                        {post.type} - {post.date}
+                        {post.scheduledTime ? ` - ${post.scheduledTime}` : ""}
+                      </p>
+                    </div>
+                    <span className="text-xs uppercase tracking-wide text-zinc-500">{post.status}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { PRODUCT_PAGES } from "@/lib/site-content"
-import { SITE_URL } from "@/lib/seo"
+import { buildPageMetadata, SITE_URL } from "@/lib/seo"
 
 type Params = { slug: keyof typeof PRODUCT_PAGES }
 
@@ -14,7 +14,11 @@ export function generateStaticParams() {
 export function generateMetadata({ params }: { params: Params }): Metadata {
   const page = PRODUCT_PAGES[params.slug]
   if (!page) return {}
-  return { title: `${page.title} | Qalam`, description: page.summary }
+  return buildPageMetadata({
+    title: page.title,
+    description: page.summary,
+    path: `/product/${params.slug}`,
+  })
 }
 
 export default function ProductDetailPage({ params }: { params: Params }) {

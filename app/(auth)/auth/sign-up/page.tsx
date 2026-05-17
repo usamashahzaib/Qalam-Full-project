@@ -7,7 +7,7 @@ import { useAuth } from "@/components/providers/AuthProvider"
 import { AnalyticsIcon, ArchiveIcon, LinkedInIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 
-const SOCIAL_PROOF = ["No credit card required", "Cancel anytime", "LinkedIn publishing included"]
+const SOCIAL_PROOF = ["No credit card required", "LinkedIn-first sign-in", "LinkedIn publishing path included"]
 
 export default function SignupPage() {
   const { beginLinkedInAuth } = useAuth()

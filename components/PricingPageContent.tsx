@@ -6,32 +6,32 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { PLANS, COMPARISON_ROWS } from "@/lib/pricing"
+import { COMPARISON_ROWS, PLANS } from "@/lib/pricing"
 
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. The Free plan gives you 5 AI post drafts per week. No credit card is required. You can use the core drafting workflow immediately after signing up.",
+    a: "Yes. The current free experience gives you workspace access plus the public tools. Commercial limits are still being finalized, so this tier should be treated as the live preview path.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Pro is $19/month (or $15/month billed annually) and includes unlimited posts, Voice Profile training, analytics, and scheduling. Team is $49/month for 5 seats with shared review. Agency is $99/month with 15 client workspaces and per-client voice profiles.",
+    a: "Public pricing is $19/month for Pro, $49/month for Team, and $99/month for Agency. Today those paid paths are handled through assisted onboarding rather than self-serve checkout.",
   },
   {
     q: "Is there a free trial for paid plans?",
-    a: "Yes. All paid plans — Pro, Team, and Agency — include a 7-day free trial. No credit card is required to start the free tier.",
+    a: "Not as an automated billing feature today. If you are evaluating a paid workspace, the onboarding path is handled manually so scope and expectations stay explicit.",
   },
   {
     q: "What is the difference between Team and Agency?",
-    a: "Team is for internal operators who need shared review, brand consistency, and multiple drafting seats (up to 5) under one account. Agency adds 15 separate client workspaces, per-client Voice Profiles, and a dedicated client approval pipeline before content is published.",
+    a: "Team is the guided path for internal operators. Agency is the guided path for multi-client workflows. Both are still being hardened before they should be treated as broad self-serve collaboration products.",
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Monthly plans cancel at the end of the billing period. Your voice data, archive, and post history remain on the account — access changes by plan, but the memory layer is preserved.",
+    a: "If your workspace is onboarded manually, cancellation terms are defined in that onboarding agreement. Public site copy should not imply a fully automated subscription lifecycle until it exists.",
   },
   {
     q: "Is annual billing available?",
-    a: "Yes. Annual billing is available for all paid plans at a 20% discount. Toggle to Annual on this page to see annual pricing.",
+    a: "Annual pricing can be quoted during assisted onboarding. The annual toggle on this page reflects quoted rates, not a live self-serve checkout flow.",
   },
 ]
 
@@ -43,15 +43,11 @@ export function PricingPageContent() {
     ...plan,
     price: billing === "annual" && plan.annualPrice ? plan.annualPrice : plan.price,
     href: billing === "annual" && plan.annualHref ? plan.annualHref : plan.href,
-    description:
-      billing === "annual" && plan.annualDescription
-        ? plan.annualDescription
-        : plan.description,
+    description: billing === "annual" && plan.annualDescription ? plan.annualDescription : plan.description,
   }))
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
-      {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
         <div
           className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full opacity-15"
@@ -59,28 +55,23 @@ export function PricingPageContent() {
         />
         <div className="relative z-10 mx-auto max-w-[1200px] text-center">
           <FadeUp>
-            <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">
-              Pricing
-            </span>
+            <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
               Build authority.
               <span className="text-gold gold-underline"> Pay for the layer you need.</span>
             </h1>
             <p className="mx-auto mb-3 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
-              Free tests the workflow. Paid plans unlock the memory, archive, and
-              operational stack.
+              Free lets you test the live workflow. Paid plans are currently guided onboarding paths.
             </p>
             <p className="mb-10 text-sm text-zinc-400">
-              No credit card required to start. Paid plans include a 7-day free trial.
+              No credit card required to start. Paid conversion is handled manually today.
             </p>
 
             <div className="inline-flex items-center gap-1 rounded-xl bg-zinc-100 p-1.5">
               <button
                 onClick={() => setBilling("monthly")}
                 className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                  billing === "monthly"
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-700"
+                  billing === "monthly" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
                 }`}
               >
                 Monthly
@@ -88,14 +79,12 @@ export function PricingPageContent() {
               <button
                 onClick={() => setBilling("annual")}
                 className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                  billing === "annual"
-                    ? "bg-white text-zinc-900 shadow-sm"
-                    : "text-zinc-500 hover:text-zinc-700"
+                  billing === "annual" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
                 }`}
               >
                 Annual
                 <span className="rounded-md bg-green-100 px-1.5 py-0.5 text-xs font-bold text-green-700">
-                  Save 20%
+                  Quoted
                 </span>
               </button>
             </div>
@@ -103,14 +92,13 @@ export function PricingPageContent() {
         </div>
       </section>
 
-      {/* Trust signals */}
       <section className="border-b border-zinc-100 bg-zinc-50 px-6 py-8">
         <div className="mx-auto max-w-[860px]">
           <div className="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-10">
             {[
               {
                 icon: VoiceIcon,
-                label: "Voice Profile from real writing",
+                label: "Voice profile from real writing",
                 sub: "A memory layer, not a cosmetic toggle",
               },
               {
@@ -131,9 +119,7 @@ export function PricingPageContent() {
                     <Icon className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold leading-snug text-zinc-800">
-                      {item.label}
-                    </p>
+                    <p className="text-sm font-semibold leading-snug text-zinc-800">{item.label}</p>
                     <p className="mt-0.5 text-xs text-zinc-400">{item.sub}</p>
                   </div>
                 </div>
@@ -143,7 +129,6 @@ export function PricingPageContent() {
         </div>
       </section>
 
-      {/* Plans */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
           <AnimatePresence mode="wait">
@@ -165,20 +150,18 @@ export function PricingPageContent() {
 
           <FadeUp className="mt-8 text-center">
             <p className="text-sm text-zinc-400">
-              All paid plans include a 7-day free trial. No credit card required to
-              start.
+              Paid plans are sold through assisted onboarding until checkout and entitlement automation are live.
             </p>
           </FadeUp>
         </div>
       </section>
 
-      {/* Comparison table */}
       <section className="bg-white px-6 py-16">
         <div className="mx-auto max-w-[1100px]">
           <FadeUp className="mb-10 text-center">
             <h2 className="text-3xl font-bold text-zinc-900">Compare all plans</h2>
             <p className="mt-2 text-sm text-zinc-500">
-              Compounding features first. Operational features after that.
+              Live surfaces first. Hardened operational layers after that.
             </p>
           </FadeUp>
 
@@ -187,21 +170,11 @@ export function PricingPageContent() {
               <table className="min-w-[640px] w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="w-[30%] px-5 py-4 text-left font-semibold text-zinc-700">
-                      Feature
-                    </th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-500">
-                      Free
-                    </th>
-                    <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">
-                      Pro
-                    </th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">
-                      Team
-                    </th>
-                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">
-                      Agency
-                    </th>
+                    <th className="w-[30%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
+                    <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Team</th>
+                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -214,38 +187,14 @@ export function PricingPageContent() {
                       transition={{ duration: 0.4, delay: i * 0.03 }}
                       className="transition-colors hover:bg-zinc-50/50"
                     >
-                      <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">
-                        {row.label}
-                      </td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-400">
-                        {row.free === "✗" ? (
-                          <span className="text-base text-zinc-200">✕</span>
-                        ) : (
-                          row.free
-                        )}
-                      </td>
+                      <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-400">{row.free}</td>
                       <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm">
-                        {row.pro === "✗" ? (
-                          <span className="text-base text-zinc-200">✕</span>
-                        ) : (
-                          <span className="font-semibold text-teal">{row.pro}</span>
-                        )}
+                        <span className="font-semibold text-teal">{row.pro}</span>
                       </td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">
-                        {row.team === "✗" ? (
-                          <span className="text-base text-zinc-200">✕</span>
-                        ) : row.team.startsWith("✓") ? (
-                          <span className="font-semibold text-teal">{row.team}</span>
-                        ) : (
-                          row.team
-                        )}
-                      </td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.team}</td>
                       <td className="bg-gold/5 px-4 py-3.5 text-center text-sm">
-                        {row.agency === "✗" ? (
-                          <span className="text-base text-zinc-200">✕</span>
-                        ) : (
-                          <span className="font-semibold text-gold">{row.agency}</span>
-                        )}
+                        <span className="font-semibold text-gold">{row.agency}</span>
                       </td>
                     </motion.tr>
                   ))}
@@ -256,21 +205,18 @@ export function PricingPageContent() {
         </div>
       </section>
 
-      {/* Enterprise CTA */}
       <section className="bg-zinc-50 px-6 py-16">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp>
             <div className="flex flex-col items-center justify-between gap-8 rounded-2xl bg-teal-800 p-10 md:flex-row">
               <div>
                 <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">
-                  Enterprise
+                  Guided rollout
                 </p>
-                <h3 className="mb-3 text-3xl font-bold text-white">
-                  Need more than 15 seats?
-                </h3>
+                <h3 className="mb-3 text-3xl font-bold text-white">Need a production setup?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
-                  Custom pricing for large teams and enterprise operators. Includes
-                  SSO, custom integrations, SLA, and a dedicated account path.
+                  Contact Qalam for onboarding, scope confirmation, and commercial terms that match the
+                  current product surface.
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
@@ -292,14 +238,11 @@ export function PricingPageContent() {
         </div>
       </section>
 
-      {/* FAQ — accordion matching homepage pattern */}
       <section id="faq" className="bg-white px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-teal/30 text-teal">Pricing FAQ</span>
-            <h2 className="mt-3 text-4xl font-bold text-zinc-900">
-              Common questions about plans
-            </h2>
+            <h2 className="mt-3 text-4xl font-bold text-zinc-900">Common questions about plans</h2>
           </FadeUp>
 
           <div className="flex flex-col gap-3">
@@ -311,9 +254,7 @@ export function PricingPageContent() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     aria-expanded={openFaq === i}
                   >
-                    <span className="text-base font-semibold text-zinc-900">
-                      {item.q}
-                    </span>
+                    <span className="text-base font-semibold text-zinc-900">{item.q}</span>
                     <motion.span
                       animate={{ rotate: openFaq === i ? 45 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -331,9 +272,7 @@ export function PricingPageContent() {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <p className="px-6 pb-5 text-sm leading-relaxed text-zinc-600">
-                          {item.a}
-                        </p>
+                        <p className="px-6 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>

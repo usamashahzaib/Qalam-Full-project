@@ -1,7 +1,12 @@
-"use client"
-
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
+import { buildPageMetadata } from "@/lib/seo"
+
+export const metadata = buildPageMetadata({
+  title: "About",
+  description: "Qalam's product principles: voice fidelity, retained memory, and strict product truth.",
+  path: "/about",
+})
 
 const PRINCIPLES = [
   {
@@ -20,31 +25,31 @@ const PRINCIPLES = [
 
 export default function AboutPage() {
   return (
-    <div className="pt-24 min-h-screen bg-teal-900">
-      <section className="py-24 px-6">
-        <div className="max-w-[860px] mx-auto text-center">
+    <div className="min-h-screen bg-teal-900 pt-24">
+      <section className="px-6 py-24">
+        <div className="mx-auto max-w-[860px] text-center">
           <FadeUp>
-            <span className="chip border-white/20 text-white/70 bg-white/5 mb-6 inline-flex">
+            <span className="chip mb-6 inline-flex border-white/20 bg-white/5 text-white/70">
               About Qalam
             </span>
-            <h1 className="text-5xl sm:text-6xl font-extrabold text-white leading-tight mb-6">
+            <h1 className="mb-6 text-5xl font-extrabold leading-tight text-white sm:text-6xl">
               A publishing system for people who need
               <span className="text-gold gold-underline"> authority, not filler.</span>
             </h1>
-            <p className="text-lg text-white/60 leading-relaxed max-w-2xl mx-auto">
-              Qalam is being built as a serious LinkedIn publishing desk: voice memory, post history,
-              content assets, scheduling, and performance feedback in one system.
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/60">
+              Qalam is being built as a serious LinkedIn publishing desk: voice memory, post
+              history, content assets, scheduling, and performance feedback in one system.
             </p>
           </FadeUp>
         </div>
       </section>
 
       <section className="px-6 pb-16">
-        <div className="max-w-[860px] mx-auto">
+        <div className="mx-auto max-w-[860px]">
           <FadeUp>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 md:p-10">
-              <h2 className="text-2xl font-bold text-white mb-4">What this product is trying to solve</h2>
-              <div className="space-y-4 text-white/60 leading-relaxed">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-8 md:p-10">
+              <h2 className="mb-4 text-2xl font-bold text-white">What this product is trying to solve</h2>
+              <div className="space-y-4 leading-relaxed text-white/60">
                 <p>
                   Most AI writing tools reset every session. They generate a draft, but they do not
                   accumulate knowledge about the writer behind it.
@@ -64,12 +69,12 @@ export default function AboutPage() {
       </section>
 
       <section className="px-6 pb-16">
-        <div className="max-w-[1100px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mx-auto grid max-w-[1100px] grid-cols-1 gap-6 md:grid-cols-3">
           {PRINCIPLES.map((item, i) => (
             <FadeUp key={item.title} delay={i * 0.08}>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-7 h-full">
-                <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                <p className="text-white/55 leading-relaxed text-sm">{item.desc}</p>
+              <div className="h-full rounded-2xl border border-white/10 bg-white/5 p-7">
+                <h3 className="mb-3 text-xl font-bold text-white">{item.title}</h3>
+                <p className="text-sm leading-relaxed text-white/55">{item.desc}</p>
               </div>
             </FadeUp>
           ))}
@@ -77,24 +82,24 @@ export default function AboutPage() {
       </section>
 
       <section className="px-6 pb-24">
-        <div className="max-w-[860px] mx-auto">
+        <div className="mx-auto max-w-[860px]">
           <FadeUp>
-            <div className="bg-gradient-to-br from-teal/30 to-transparent border border-teal/20 rounded-3xl p-10 text-center">
-              <h2 className="text-3xl font-bold text-white mb-3">Want the product updates?</h2>
-              <p className="text-white/55 mb-7 max-w-xl mx-auto">
-                The changelog, pricing, and free tools pages show the current public state more honestly
-                than a polished brand story ever could.
+            <div className="rounded-3xl border border-teal/20 bg-gradient-to-br from-teal/30 to-transparent p-10 text-center">
+              <h2 className="mb-3 text-3xl font-bold text-white">Want the product updates?</h2>
+              <p className="mx-auto mb-7 max-w-xl text-white/55">
+                The changelog, pricing, and free tools pages show the current public state more
+                honestly than a polished brand story ever could.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center justify-center px-7 py-3.5 bg-gold text-white font-bold rounded-xl hover:bg-gold-600 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
                 >
                   Compare Plans
                 </Link>
                 <Link
                   href="/free-tools"
-                  className="inline-flex items-center justify-center px-7 py-3.5 border border-white/20 text-white font-semibold rounded-xl hover:bg-white/10 transition-colors"
+                  className="inline-flex items-center justify-center rounded-xl border border-white/20 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10"
                 >
                   Explore Free Tools
                 </Link>
