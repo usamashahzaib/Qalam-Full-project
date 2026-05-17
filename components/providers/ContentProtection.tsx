@@ -79,14 +79,13 @@ export function ContentProtection() {
         )
       }
     }
-    const devToolsTimer = setInterval(checkDevTools, 3000)
+    // Note: the periodic setInterval for checking dev tools was removed to prevent false positives and performance issues.
 
     document.addEventListener("copy", onCopy)
     document.addEventListener("contextmenu", onContextMenu)
     document.addEventListener("keydown", onKeyDown)
 
     return () => {
-      clearInterval(devToolsTimer)
       document.removeEventListener("copy", onCopy)
       document.removeEventListener("contextmenu", onContextMenu)
       document.removeEventListener("keydown", onKeyDown)

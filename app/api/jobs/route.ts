@@ -16,7 +16,7 @@ type WorkspaceJob = {
 
 export async function GET(request: NextRequest) {
   try {
-    const workspaceKey = resolveWorkspaceKey(request, request.nextUrl.searchParams.get("workspaceKey"))
+    const workspaceKey = resolveWorkspaceKey(request)
     const type = request.nextUrl.searchParams.get("type")
     const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") || 100), 500)
     const filters = [
@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
     const rows = await supabaseSelect<WorkspaceJob>("workspace_jobs", filters)
     return NextResponse.json({ jobs: rows || [] })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "server_error" }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
   }
 }
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       payload?: Record<string, unknown>
       createdAt?: string
     }
-    const workspaceKey = resolveWorkspaceKey(request, body.workspaceKey)
+    const workspaceKey = resolveWorkspaceKey(request)
     const rows = await supabaseInsert<WorkspaceJob>("workspace_jobs", {
       id: body.id || randomUUID(),
       workspace_key: workspaceKey,
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
     })
     return NextResponse.json({ saved: true, job: rows?.[0] || null })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "server_error" }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
   }
 }

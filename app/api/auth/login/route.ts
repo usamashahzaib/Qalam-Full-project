@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "auth_email_required" }, { status: 400 })
     }
 
-    const session = createAppSession({ email, name })
+    const session = await createAppSession({ email, name })
     const response = NextResponse.json({ user: toPublicAuthUser(session.payload) })
     response.cookies.set({
       name: appSessionCookieName,
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       maxAge: session.maxAge,
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: false, // dev-only endpoint — returns 404 in production
       path: "/",
     })
     return response

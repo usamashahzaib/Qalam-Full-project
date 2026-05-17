@@ -28,6 +28,15 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: '/write',
+        destination: '/writer',
+        permanent: true,
+      },
+    ]
+  },
   async headers() {
     return [
       {

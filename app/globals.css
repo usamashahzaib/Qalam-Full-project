@@ -69,7 +69,7 @@ html {
 }
 
 :root {
-  --font-jakarta: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-jakarta: var(--font-jakarta, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
   --font-cormorant: Georgia, "Times New Roman", serif;
 }
 

@@ -1,7 +1,48 @@
+import type { Metadata } from "next"
+
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com").replace(/\/$/, "")
 export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://app.byqalam.com").replace(/\/$/, "")
 export const SITE_NAME = "Qalam"
 export const SITE_DOMAIN_LABEL = "byqalam.com"
+
+export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
+
+export const buildPageMetadata = ({
+  title,
+  description,
+  path,
+  index = true,
+}: {
+  title: string
+  description: string
+  path: string
+  index?: boolean
+}): Metadata => ({
+  title,
+  description,
+  alternates: { canonical: absoluteUrl(path) },
+  openGraph: {
+    title: `${title} | ${SITE_NAME}`,
+    description,
+    url: absoluteUrl(path),
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${title} | ${SITE_NAME}`,
+    description,
+  },
+  robots: index
+    ? undefined
+    : {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      },
+})
 
 export const PUBLIC_ROUTES = [
   { path: "", priority: 1, changeFrequency: "weekly" as const },
@@ -16,6 +57,7 @@ export const PUBLIC_ROUTES = [
   { path: "/about", priority: 0.7, changeFrequency: "monthly" as const },
   { path: "/blog", priority: 0.7, changeFrequency: "weekly" as const },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/agency-setup", priority: 0.76, changeFrequency: "monthly" as const },
   { path: "/docs", priority: 0.55, changeFrequency: "monthly" as const },
   { path: "/changelog", priority: 0.55, changeFrequency: "monthly" as const },
   { path: "/status", priority: 0.55, changeFrequency: "monthly" as const },
@@ -40,6 +82,7 @@ export const LLM_ROUTES = [
   "/free-tools",
   "/about",
   "/contact",
+  "/agency-setup",
   "/product/post-writer",
   "/product/voice-profile",
   "/product/agency-workspaces",

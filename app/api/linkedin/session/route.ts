@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = consumeLinkedInSession(token)
     const profile = session.profile || {}
-    const appSession = createAppSession({
+    const appSession = await createAppSession({
       email: String(profile.email || "").trim().toLowerCase() || `linkedin-${profile.sub || Date.now()}@local.qalam`,
       name:
         String(profile.name || "").trim() ||

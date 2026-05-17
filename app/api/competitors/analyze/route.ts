@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceKey } from "@/lib/server/app-session"
+import { resolveWorkspaceKey, requireAppSession } from "@/lib/server/app-session"
 import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
+import { rateLimit } from "@/lib/server/rate-limit"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -25,13 +26,20 @@ type WorkspaceJob = {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = requireAppSession(request)
+    
+    // Rate Limit: 5 analysis requests per minute per user
+    if (!rateLimit(`analyze_${session.email}`, 5, 60)) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please slow down." }, { status: 429 })
+    }
+
     const body = (await request.json()) as AnalyzeRequest
-    const workspaceKey = resolveWorkspaceKey(request, body.workspaceKey)
+    const workspaceKey = session.email
     if (!body.sourceText?.trim()) {
       return NextResponse.json({ error: "competitor_source_missing" }, { status: 400 })
     }
 
-    const analysis = analyzeCompetitorPaste({
+    const analysis = await analyzeCompetitorPaste({
       sourceText: body.sourceText,
       profileName: body.profileName || "",
     })
@@ -61,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ analysis, job })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "server_error" }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
   }
 }

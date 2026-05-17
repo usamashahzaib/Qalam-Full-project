@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { ProtectedAppProviders } from "@/components/providers/ProtectedAppProviders"
+import { AppMobileNav } from "@/components/AppMobileNav"
 
 export const metadata: Metadata = {
   robots: {
@@ -13,5 +14,12 @@ export const metadata: Metadata = {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <ProtectedAppProviders>{children}</ProtectedAppProviders>
+  return (
+    <ProtectedAppProviders>
+      <div className="min-h-screen bg-zinc-50 pb-20 md:pb-0">
+        {children}
+        <AppMobileNav />
+      </div>
+    </ProtectedAppProviders>
+  )
 }

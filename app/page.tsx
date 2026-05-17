@@ -437,8 +437,8 @@ export default function HomePage() {
                   </Link>
                 </motion.div>
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link href="#how-it-works" className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white">
-                    See How It Works
+                  <Link href="/demo" className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white">
+                    Try the Demo
                   </Link>
                 </motion.div>
               </motion.div>
@@ -477,7 +477,7 @@ export default function HomePage() {
       <section className="bg-white px-6 py-10">
         <div className="mx-auto max-w-[760px] text-center">
           <p className="text-base leading-relaxed text-zinc-500">
-            <strong className="font-semibold text-zinc-800">ByQalam</strong> is an AI LinkedIn writing system that learns your voice from real posts and edits. Unlike session-reset generators, it keeps approved drafts, outcomes, and hook archives in one place — so each session starts closer to your actual writing instead of from scratch. The platform includes voice profile training, a content archive, hook intelligence, post scheduling, and client workspaces for agencies and marketing teams.
+            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing system that learns your voice from real posts and edits. Unlike session-reset generators, it keeps approved drafts, outcomes, and hook archives in one place — so each session starts closer to your actual writing instead of from scratch. The platform includes voice profile training, a content archive, hook intelligence, post scheduling, and client workspaces for agencies and marketing teams.
           </p>
         </div>
       </section>

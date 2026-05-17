@@ -3,6 +3,9 @@
 import { usePathname } from "next/navigation"
 import { Navbar } from "./Navbar"
 import { Footer } from "./Footer"
+import { AuthProvider } from "@/components/providers/AuthProvider"
+import { AuthPanelProvider } from "@/components/providers/AuthPanelContext"
+import { AuthSlidePanel } from "@/components/AuthSlidePanel"
 
 const APP_ROUTES = [
   "/dashboard",
@@ -27,10 +30,13 @@ export function NavWrapper({ children }: { children: React.ReactNode }) {
   if (isApp) return <>{children}</>
 
   return (
-    <>
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </>
+    <AuthProvider>
+      <AuthPanelProvider>
+        <Navbar />
+        <AuthSlidePanel />
+        <main className="flex-1">{children}</main>
+        <Footer />
+      </AuthPanelProvider>
+    </AuthProvider>
   )
 }

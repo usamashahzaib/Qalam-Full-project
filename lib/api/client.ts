@@ -129,12 +129,6 @@ export const getLinkedInAuthUrl = (redirectTo = `${window.location.origin}/auth/
     `/api/linkedin/auth-url?redirectTo=${encodeURIComponent(redirectTo)}`
   )
 
-export const loginWithLocalSession = (input: { email: string; name: string }) =>
-  requestJson<{ user: AuthUser }>("/api/auth/login", {
-    method: "POST",
-    body: JSON.stringify(input),
-  })
-
 export const loadAuthSession = () => requestJson<{ user: AuthUser | null }>("/api/auth/session")
 
 export const logoutAuthSession = () =>

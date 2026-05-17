@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 
 const WHATSAPP_NUMBER = "923714156567"
@@ -8,7 +9,24 @@ const PREFILL_MESSAGE = encodeURIComponent(
 )
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${PREFILL_MESSAGE}`
 
+const APP_PREFIXES = [
+  "/dashboard",
+  "/write",
+  "/writer",
+  "/calendar",
+  "/library",
+  "/analytics",
+  "/voice",
+  "/agency",
+  "/competitors",
+  "/settings",
+]
+
 export function WhatsAppButton() {
+  const pathname = usePathname()
+  const isAppRoute = APP_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (isAppRoute) return null
+
   return (
     <motion.a
       href={WHATSAPP_URL}

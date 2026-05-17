@@ -23,7 +23,7 @@ export function PhasePlaceholder({ title, summary, route, apiStatus }: PhasePlac
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
             <p className="font-semibold text-zinc-900">Backend</p>
-            <p className="mt-1">{apiStatus || "Auth/session base is live. UI migration is still pending."}</p>
+            <p className="mt-1">{apiStatus || "Auth and session infrastructure are live. This screen is waiting for its full product surface."}</p>
           </div>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">

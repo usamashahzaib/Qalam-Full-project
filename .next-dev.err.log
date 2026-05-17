@@ -1,0 +1,76 @@
+[browser] eval() is not supported in this environment. If this page was served with a `Content-Security-Policy` header, make sure that `unsafe-eval` is included. React requires eval() in development mode for various debugging features like reconstructing callstacks from a different environment.
+React will never use eval() in production mode 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <SegmentViewNode type="layout" pagePath="layout.tsx">
+      <SegmentTrieNode>
+      <link>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <script>
+      <RootLayout>
+        <ClerkProvider>
+          <ClientClerkProvider publishableKey="pk_test_Y2..." proxyUrl="" domain="" isSatellite={false} signInUrl="" ...>
+            ...
+              <ClerkProvider publishableKey="pk_test_Y2..." proxyUrl="" domain="" isSatellite={false} signInUrl="" ...>
+                <ClerkProviderBase publishableKey="pk_test_Y2..." proxyUrl="" domain="" isSatellite={false} signInUrl="" ...>
+                  <ClerkContextProvider initialState={undefined} clerk={{clerkjs:null, ...}} clerkStatus="loading">
+                    <InitialStateProvider initialState={undefined}>
+                      <__experimental_CheckoutProvider value={undefined}>
+                        <RouterTelemetry>
+                        <ClerkScripts>
+                        <html lang="en">
+                          <head>
+                          <body
+                            className="flex min-h-screen flex-col antialiased"
+-                           data-new-gr-c-s-check-loaded="14.1292.0"
+-                           data-gr-ext-installed=""
+                          >
+ 
+[browser] ⨯ unhandledRejection: ClerkRuntimeError: Clerk: Failed to load Clerk JS, failed to load script: https://content-filly-15.clerk.accounts.dev/npm/@clerk/clerk-js@6/dist/clerk.browser.js
+
+(code="failed_to_load_clerk_js")
+
+
+[browser] ClerkRuntimeError: Clerk: Failed to load Clerk JS
+
+(code="failed_to_load_clerk_js")
+
+
+    at rejectWith (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_shared_dist_runtime_0seug_1._.js:7183:33)
+    at loadClerkJSScript (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_shared_dist_runtime_0seug_1._.js:7201:85)
+    at _IsomorphicClerk.getClerkJsEntryChunk (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3607:218)
+    at _IsomorphicClerk.getEntryChunks (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3582:38)
+    at new _IsomorphicClerk (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3462:23)
+    at _IsomorphicClerk.getOrCreateInstance (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3487:213)
+    at useLoadedIsomorphicClerk (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3765:224)
+    at ClerkProviderBase (http://localhost:3000/_next/static/chunks/node_modules_%40clerk_react_dist_09tc-b2._.js:3746:46)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:15037:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4620:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6081:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6691:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9551:58)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9534:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9061:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64) 

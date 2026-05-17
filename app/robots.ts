@@ -1,6 +1,22 @@
 import type { MetadataRoute } from "next"
 
-const PRIVATE_ROUTES = ["/api/", "/dashboard", "/write", "/auth", "/auth/sign-up", "/login", "/signup"]
+const PRIVATE_ROUTES = [
+  "/api/",
+  "/dashboard",
+  "/write",
+  "/writer",
+  "/calendar",
+  "/library",
+  "/analytics",
+  "/voice",
+  "/agency",
+  "/competitors",
+  "/settings",
+  "/auth",
+  "/auth/sign-up",
+  "/login",
+  "/signup",
+]
 
 // Scrapers and data-harvesting bots — explicitly disallowed
 const DISALLOWED_SCRAPERS = [

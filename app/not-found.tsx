@@ -1,15 +1,10 @@
 import Link from "next/link"
-import { BrandMarkIcon } from "@/components/ui/qalam-icons"
+import { QalamLogo } from "@/components/QalamLogo"
 
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 text-center">
-      <Link href="/" className="mb-10 flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal">
-          <BrandMarkIcon className="h-4 w-4 text-gold" />
-        </div>
-        <span className="text-xl font-bold tracking-tight text-teal">Qalam</span>
-      </Link>
+      <QalamLogo href="/" size={36} containerClassName="mb-10 flex items-center gap-2" />
 
       <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-zinc-400">
         404

@@ -1,9 +1,10 @@
 import Link from "next/link"
-import { BrandMarkIcon, InstagramIcon, LinkedInIcon } from "@/components/ui/qalam-icons"
+import { InstagramIcon, LinkedInIcon } from "@/components/ui/qalam-icons"
+import { QalamLogo } from "@/components/QalamLogo"
 
 const FOOTER_LINKS = {
   Product: [
-    { label: "AI Post Writer", href: "/product/post-writer" },
+    { label: "Post Writer", href: "/product/post-writer" },
     { label: "Voice Profile", href: "/product/voice-profile" },
     { label: "Hook Generator", href: "/product/hook-generator" },
     { label: "Post Scheduler", href: "/product/post-scheduler" },
@@ -17,15 +18,21 @@ const FOOTER_LINKS = {
     { label: "Agencies", href: "/use-cases/agencies" },
   ],
   Resources: [
+    { label: "Documentation", href: "/docs" },
     { label: "Blog", href: "/blog" },
     { label: "Free Tools", href: "/free-tools" },
+    { label: "Changelog", href: "/changelog" },
+    { label: "System Status", href: "/status" },
+  ],
+  Company: [
     { label: "About", href: "/about" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Careers", href: "/careers" },
+    { label: "Contact", href: "/contact" },
   ],
   Legal: [
-    { label: "Pricing", href: "/pricing" },
     { label: "Privacy Policy", href: "/privacy" },
     { label: "Terms of Service", href: "/terms" },
-    { label: "Contact", href: "/contact" },
   ],
 }
 
@@ -47,14 +54,14 @@ export function Footer() {
   return (
     <footer className="border-t border-[#153a37] bg-[#041514]">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
-        <div className="mb-12 grid grid-cols-1 gap-10 md:grid-cols-5">
-          <div className="md:col-span-1">
-            <Link href="/" className="mb-4 flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-teal">
-                <BrandMarkIcon className="h-4 w-4 text-gold" />
-              </div>
-              <span className="text-lg font-bold text-white">Qalam</span>
-            </Link>
+        <div className="mb-12 grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <QalamLogo
+              href="/"
+              size={36}
+              containerClassName="mb-4 flex items-center gap-2"
+              textClassName="text-lg font-bold text-white"
+            />
             <p className="mb-5 text-sm leading-relaxed text-white/55">
               The publishing system that learns your voice, stores your archive, and turns ideas into authority over time.
             </p>
@@ -87,9 +94,15 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
           <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/privacy" className="transition-colors hover:text-white/60">Privacy</Link>
-            <Link href="/terms" className="transition-colors hover:text-white/60">Terms</Link>
-            <a href="mailto:hello@byqalam.com" className="transition-colors hover:text-white/60">hello@byqalam.com</a>
+            <Link href="/privacy" className="transition-colors hover:text-white/60">
+              Privacy
+            </Link>
+            <Link href="/terms" className="transition-colors hover:text-white/60">
+              Terms
+            </Link>
+            <a href="mailto:hello@byqalam.com" className="transition-colors hover:text-white/60">
+              hello@byqalam.com
+            </a>
           </div>
         </div>
       </div>

@@ -1,16 +1,24 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
+import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
-import { ClerkProvider } from "@clerk/nextjs"
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+})
 import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { WhatsAppButton } from "@/components/WhatsAppButton"
+import { PwaRegistration } from "@/components/PwaRegistration"
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 
 const siteUrl = SITE_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  manifest: "/manifest.webmanifest",
   title: {
     default: "Qalam | AI LinkedIn Writing System for Professionals",
     template: `%s | ${SITE_NAME}`,
@@ -45,10 +53,10 @@ export const metadata: Metadata = {
       "Voice-aware LinkedIn drafting, post memory, archive continuity, scheduling, and content operations in one system.",
     images: [
       {
-        url: `${siteUrl}/og-image.png`,
-        width: 1200,
-        height: 630,
-        alt: "Qalam AI LinkedIn writing system",
+        url: `${siteUrl}/qalam-mark.png`,
+        width: 512,
+        height: 512,
+        alt: "Qalam logo",
       },
     ],
     locale: "en_US",
@@ -58,9 +66,13 @@ export const metadata: Metadata = {
     title: "Qalam | AI LinkedIn Writing System",
     description:
       "Voice-aware LinkedIn drafting, archive continuity, scheduling, and publishing workflow for professionals.",
-    images: [`${siteUrl}/og-image.png`],
+    images: [`${siteUrl}/qalam-mark.png`],
     creator: "@byqalam",
     site: "@byqalam",
+  },
+  icons: {
+    icon: [{ url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
   robots: {
     index: true,
@@ -74,6 +86,18 @@ export const metadata: Metadata = {
     },
   },
   category: "technology",
+  appleWebApp: {
+    capable: true,
+    title: "Qalam",
+    statusBarStyle: "black-translucent",
+  },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#0d4a45",
 }
 
 const appSchema = {
@@ -84,7 +108,7 @@ const appSchema = {
       "@id": `${siteUrl}/#organization`,
       name: SITE_NAME,
       url: siteUrl,
-      logo: `${siteUrl}/og-image.png`,
+      logo: `${siteUrl}/qalam-mark.png`,
       sameAs: [
         "https://www.linkedin.com/company/byqalam",
         "https://www.instagram.com/byyqalam",
@@ -147,24 +171,23 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <head>
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
-        </head>
-        <body className="flex min-h-screen flex-col antialiased">
-          <ContentProtection />
-          <WhatsAppButton />
-          <GridGlowBackground
-            glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-            backgroundColor="#fafaf8"
-            gridColor="rgba(13,74,69,0.07)"
-            glowCount={12}
-          >
-            <NavWrapper>{children}</NavWrapper>
-          </GridGlowBackground>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${jakarta.variable}`}>
+      <head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
+      </head>
+      <body className="flex min-h-screen flex-col antialiased">
+        <ContentProtection />
+        <WhatsAppButton />
+        <GridGlowBackground
+          glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
+          backgroundColor="#fafaf8"
+          gridColor="rgba(13,74,69,0.07)"
+          glowCount={12}
+        >
+          <NavWrapper>{children}</NavWrapper>
+        </GridGlowBackground>
+        <PwaRegistration />
+      </body>
+    </html>
   )
 }

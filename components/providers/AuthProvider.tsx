@@ -5,7 +5,6 @@ import {
   consumeLinkedInSession,
   getLinkedInAuthUrl,
   loadAuthSession,
-  loginWithLocalSession,
   logoutAuthSession,
 } from "@/lib/api/client"
 
@@ -24,10 +23,8 @@ type AuthContextValue = {
   isAuthenticated: boolean
   isLoadingAuth: boolean
   authChecked: boolean
-  login: (input: { name: string; email: string }) => Promise<AuthUser>
   loginWithLinkedIn: (user: AuthUser) => AuthUser
   beginLinkedInAuth: (nextPath?: string) => Promise<void>
-
   completeLinkedInAuth: () => Promise<AuthUser>
   disconnectLinkedIn: () => void
   logout: () => void
@@ -78,15 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [persistUser])
 
-  const login = useCallback(
-    async ({ name, email }: { name: string; email: string }) => {
-      const { user } = await loginWithLocalSession({ name, email })
-      persistUser(user)
-      return user
-    },
-    [persistUser]
-  )
-
   const loginWithLinkedIn = useCallback((nextUser: AuthUser) => {
     persistUser(nextUser)
     return nextUser
@@ -129,14 +117,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoadingAuth: !authChecked,
       authChecked,
-      login,
       loginWithLinkedIn,
       beginLinkedInAuth,
       completeLinkedInAuth,
       disconnectLinkedIn,
       logout,
     }),
-    [authChecked, beginLinkedInAuth, completeLinkedInAuth, disconnectLinkedIn, login, loginWithLinkedIn, logout, user]
+    [authChecked, beginLinkedInAuth, completeLinkedInAuth, disconnectLinkedIn, loginWithLinkedIn, logout, user]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

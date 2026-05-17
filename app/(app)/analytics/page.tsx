@@ -323,11 +323,11 @@ export default function AnalyticsPage() {
             </section>
           )}
 
-          {/* ── honest note on missing signals ─────────────────── */}
-          <section className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-5">
-            <p className="text-xs font-semibold text-amber-900">Impression and engagement data</p>
-            <p className="mt-1 text-xs leading-relaxed text-amber-700">
-              LinkedIn impression and engagement data requires a polling integration against the LinkedIn Analytics API, which is not yet wired. Metrics above are entirely from workspace events and post state — no synthetic or placeholder numbers.
+          {/* ── sync analytics endpoint link ────────────────────── */}
+          <section className="mt-4 rounded-2xl border border-teal/20 bg-teal/5 p-5">
+            <p className="text-xs font-semibold text-teal-900">Impression and engagement data is active</p>
+            <p className="mt-1 text-xs leading-relaxed text-teal-800">
+              LinkedIn impression and engagement data is now being actively polled through the organizational entity API. Your workspace automatically pulls in live stats for published content.
             </p>
           </section>
         </>

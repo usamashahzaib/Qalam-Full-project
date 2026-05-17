@@ -34,7 +34,9 @@ const toNames = (name: string, email: string) => {
   }
 }
 
-export const createAppSession = ({
+import { supabaseSelect } from "@/lib/server/supabase-rest"
+
+export const createAppSession = async ({
   email,
   name,
   imageUrl = null,
@@ -51,11 +53,22 @@ export const createAppSession = ({
 }) => {
   const normalizedEmail = email.trim().toLowerCase()
   const names = toNames(name, normalizedEmail)
+  
+  // Elite security: Database-backed admin role check
+  let role: "admin" | "user" = "user"
+  try {
+    const adminRows = await supabaseSelect<{ email: string }>("admins", `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
+    if (adminRows && adminRows.length > 0) role = "admin"
+  } catch {
+    // Fallback to legacy env if DB query fails during migration
+    if (ADMIN_EMAILS.includes(normalizedEmail)) role = "admin"
+  }
+
   const payload: AppSessionPayload = {
     email: normalizedEmail || "local-default@qalam.local",
     fullName: names.fullName,
     firstName: names.firstName,
-    role: ADMIN_EMAILS.includes(normalizedEmail) ? "admin" : "user",
+    role,
     imageUrl,
     linkedinMemberId,
     linkedinAccessToken,
@@ -92,11 +105,13 @@ export const toPublicAuthUser = (session: AppSessionPayload): PublicAuthUser => 
   linkedinTokenExpiresAt: session.linkedinTokenExpiresAt,
 })
 
-export const resolveWorkspaceKey = (request: NextRequest, fallback?: string | null) => {
+export const requireAppSession = (request: NextRequest) => {
   const session = getAppSession(request)
-  if (session?.email) return session.email
-  const key = fallback?.trim() ?? ""
-  // Reject email-format keys for unauthenticated callers to prevent cross-workspace enumeration
-  if (key && !key.includes("@")) return key
-  return "local-default"
+  if (!session?.email) throw new Error("auth_required")
+  return session
+}
+
+export const resolveWorkspaceKey = (request: NextRequest) => {
+  const session = requireAppSession(request)
+  return session.email
 }

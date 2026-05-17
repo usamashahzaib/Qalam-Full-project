@@ -43,7 +43,22 @@
       "Bash(where py *)",
       "Bash(py --version)",
       "Skill(engineering-skills:senior-fullstack)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npm install *)",
+      "Bash(Start-Sleep -Seconds 8)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Tier-3\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\U--Usama-Qalam-Code-Website-byqalam-website\\\\c609ce9b-a946-46f7-9ce0-d80206e8125b\\\\tasks\\\\bfwa5bkax.output\" -Tail 30)",
+      "Bash(Get-ChildItem \"U:\\\\Usama\\\\Qalam\\\\Code\\\\Website\\\\byqalam-website\\\\node_modules\\\\next\\\\dist\\\\docs\\\\\" | Select-Object Name *)",
+      "Bash(start *)",
+      "Bash(git rm *)",
+      "Bash(git push *)",
+      "Bash(Get-ChildItem -Path \"U:\\\\Usama\\\\Qalam\\\\Code\\\\Website\\\\byqalam-website\" -Recurse -Directory -Include \"app\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(npx eslint *)",
+      "Bash(Remove-Item *)",
+      "Bash(grep -v \"//\")",
+      "Skill(engineering-skills:senior-qa)",
+      "Bash(npm uninstall *)"
     ]
   }
 }

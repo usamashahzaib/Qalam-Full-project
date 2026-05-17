@@ -60,3 +60,21 @@ export const supabaseInsert = async <T>(table: string, payload: unknown, prefer 
   })
   return data
 }
+
+export const supabaseUpsert = async <T>(
+  table: string,
+  payload: unknown,
+  onConflict: string
+) => {
+  requireSupabaseEnv()
+  const body = JSON.stringify(Array.isArray(payload) ? payload : [payload])
+  const prefer = "return=representation,resolution=merge-duplicates"
+  const url = `${env.supabaseUrl}/rest/v1/${table}?on_conflict=${encodeURIComponent(onConflict)}`
+  const { data } = await fetchJson<T[]>(url, {
+    method: "POST",
+    headers: headers(prefer),
+    body,
+    cache: "no-store",
+  })
+  return data
+}

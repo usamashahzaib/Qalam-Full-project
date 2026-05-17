@@ -1,53 +1,78 @@
-const extractLines = (text = "") =>
-  text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
+import { groqApiKey } from "@/lib/server/env"
 
-const detectPlatformThemes = (text = "") => {
-  const lower = text.toLowerCase()
-  const patterns: Array<{ topic: string; pattern: RegExp }> = [
-    { topic: "Hiring", pattern: /(hire|hiring|recruit|candidate|talent)/g },
-    { topic: "Growth", pattern: /(growth|pipeline|revenue|mrr|saas|scale)/g },
-    { topic: "Leadership", pattern: /(leadership|team|manager|culture|board)/g },
-    { topic: "Product", pattern: /(product|roadmap|build|feature|launch)/g },
-    { topic: "Brand", pattern: /(brand|audience|content|post|writing|voice)/g },
-  ]
-
-  return patterns
-    .map(({ topic, pattern }) => ({
-      topic,
-      count: (lower.match(pattern) || []).length,
-    }))
-    .filter((item) => item.count > 0)
-    .sort((a, b) => b.count - a.count)
-}
-
-export const analyzeCompetitorPaste = ({
+export const analyzeCompetitorPaste = async ({
   sourceText = "",
   profileName = "",
 }: {
   sourceText?: string
   profileName?: string
 }) => {
-  const lines = extractLines(sourceText)
-  const themes = detectPlatformThemes(sourceText)
-  const hooks = lines.filter((line) => line.length > 40).slice(0, 3)
-  const shortLines = lines.filter((line) => line.length <= 90)
-  const cadence = shortLines.length > lines.length * 0.6 ? "Short-form, high break-rate" : "Longer-form, lower break-rate"
-  const ctas = lines.filter((line) => /\?$|comment|dm|follow|share|save/i.test(line)).slice(0, 3)
-  const summary = `${profileName || "This profile"} leans on ${
-    themes[0]?.topic?.toLowerCase() || "general"
-  } themes, uses ${cadence.toLowerCase()}, and repeats a direct teachable-post structure.`
+  if (!groqApiKey) {
+    return {
+      summary: `${profileName || "This profile"} analysis unavailable.`,
+      themes: [],
+      hooks: [],
+      ctas: [],
+      cadence: "Unknown",
+      recommendation: "AI generation is not configured on this server.",
+    }
+  }
 
-  return {
-    summary,
-    themes: themes.slice(0, 4),
-    hooks,
-    ctas,
-    cadence,
-    recommendation: hooks[0]
-      ? `Counter with a sharper angle on "${themes[0]?.topic || "their strongest theme"}" and avoid mirroring the opener: "${hooks[0]}".`
-      : "Paste more profile/post text to extract a stronger pattern read.",
+  const prompt = `You are a world-class LinkedIn ghostwriter and analyst. Analyze the following LinkedIn posts/profile text from a competitor named "${profileName || "Competitor"}".
+
+Return a JSON object with the following schema exactly (NO markdown wrapping, just the raw JSON):
+{
+  "summary": "A 2-sentence elite analysis of their strategy.",
+  "themes": [{"topic": "Topic Name", "count": 1}], // Up to 4 core themes
+  "hooks": ["Hook 1", "Hook 2"], // Extract their best 2-3 hooks (first lines)
+  "ctas": ["CTA 1", "CTA 2"], // Extract their best 2-3 Calls to Action
+  "cadence": "Short description of their formatting and cadence",
+  "recommendation": "A sharp, contrarian angle I can use to out-position them on their strongest theme."
+}
+
+Text to analyze:
+"""
+${sourceText.slice(0, 4000)}
+"""`
+
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${groqApiKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+      }),
+    })
+
+    if (!response.ok) throw new Error("AI analysis failed")
+    
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content || "{}"
+    
+    // Attempt to parse JSON safely
+    const parsed = JSON.parse(content.replace(/```json/g, '').replace(/```/g, '').trim())
+    
+    return {
+      summary: parsed.summary || "Analysis complete.",
+      themes: parsed.themes || [],
+      hooks: parsed.hooks || [],
+      ctas: parsed.ctas || [],
+      cadence: parsed.cadence || "Mixed",
+      recommendation: parsed.recommendation || "Maintain your unique voice.",
+    }
+  } catch (error) {
+    return {
+      summary: "AI Analysis failed to process the text.",
+      themes: [],
+      hooks: [],
+      ctas: [],
+      cadence: "Unknown",
+      recommendation: "Please try again later.",
+    }
   }
 }

@@ -1,27 +1,58 @@
-import { createHmac, timingSafeEqual } from "node:crypto"
+import { createHmac, createHash, createCipheriv, createDecipheriv, randomBytes, timingSafeEqual } from "node:crypto"
 import { env } from "@/lib/server/env"
 
-const encodeBase64Url = (value: string) => Buffer.from(value).toString("base64url")
-const decodeBase64Url = (value: string) => Buffer.from(value, "base64url").toString()
-
-const sign = (encoded: string) =>
-  createHmac("sha256", env.appSessionSecret).update(encoded).digest("base64url")
-
-const safeEqual = (a: string, b: string) => {
-  const left = Buffer.from(a)
-  const right = Buffer.from(b)
-  if (left.length !== right.length) return false
-  return timingSafeEqual(left, right)
-}
+const getEncryptionKey = () => createHash("sha256").update(env.appSessionSecret).digest()
 
 export const createSignedToken = (payload: object): string => {
-  const encoded = encodeBase64Url(JSON.stringify(payload))
-  return `${encoded}.${sign(encoded)}`
+  const plaintext = JSON.stringify(payload)
+  
+  const iv = randomBytes(12)
+  const key = getEncryptionKey()
+  const cipher = createCipheriv("aes-256-gcm", key, iv)
+  
+  let encrypted = cipher.update(plaintext, "utf8", "base64url")
+  encrypted += cipher.final("base64url")
+  
+  const authTag = cipher.getAuthTag().toString("base64url")
+  const ivStr = iv.toString("base64url")
+  
+  const encoded = `${ivStr}.${authTag}.${encrypted}`
+  const signature = createHmac("sha256", env.appSessionSecret).update(encoded).digest("base64url")
+  
+  return `${encoded}.${signature}`
 }
 
 export const readSignedToken = <T>(token: string, invalidErrorCode: string): T => {
-  const [encoded, signature] = token.split(".")
-  if (!encoded || !signature) throw new Error(invalidErrorCode)
-  if (!safeEqual(signature, sign(encoded))) throw new Error(invalidErrorCode)
-  return JSON.parse(decodeBase64Url(encoded)) as T
+  const dot = token.lastIndexOf(".")
+  if (dot < 0) throw new Error(invalidErrorCode)
+  
+  const encoded = token.slice(0, dot)
+  const signature = token.slice(dot + 1)
+  
+  const expectedSig = createHmac("sha256", env.appSessionSecret).update(encoded).digest("base64url")
+  const left = Buffer.from(signature)
+  const right = Buffer.from(expectedSig)
+  if (left.length !== right.length || !timingSafeEqual(left, right)) {
+    throw new Error(invalidErrorCode)
+  }
+  
+  const parts = encoded.split(".")
+  if (parts.length !== 3) throw new Error(invalidErrorCode)
+  
+  const [ivStr, authTagStr, encrypted] = parts
+  try {
+    const iv = Buffer.from(ivStr, "base64url")
+    const authTag = Buffer.from(authTagStr, "base64url")
+    const key = getEncryptionKey()
+    
+    const decipher = createDecipheriv("aes-256-gcm", key, iv)
+    decipher.setAuthTag(authTag)
+    
+    let decrypted = decipher.update(encrypted, "base64url", "utf8")
+    decrypted += decipher.final("utf8")
+    
+    return JSON.parse(decrypted) as T
+  } catch {
+    throw new Error(invalidErrorCode)
+  }
 }

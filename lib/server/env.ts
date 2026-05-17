@@ -29,6 +29,8 @@ export const env = {
     read("NEXT_PUBLIC_APP_URL") ||
     read("NEXT_PUBLIC_SITE_URL") ||
     "http://localhost:3000",
+  // Set in Clerk Dashboard → Webhooks → signing secret
+  clerkWebhookSecret: read("CLERK_WEBHOOK_SECRET"),
 }
 
 export const requireLinkedInEnv = () => {

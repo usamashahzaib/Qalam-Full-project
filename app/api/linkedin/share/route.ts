@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
     if (!session?.linkedinAccessToken || !session.linkedinMemberId) {
       return NextResponse.json({ error: "linkedin_auth_required" }, { status: 401 })
     }
+    if (session.linkedinTokenExpiresAt && session.linkedinTokenExpiresAt < Date.now()) {
+      return NextResponse.json({ error: "linkedin_token_expired" }, { status: 401 })
+    }
     if (!body.content?.trim()) {
       return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
     }
