@@ -26,7 +26,8 @@ export async function GET(request: NextRequest) {
       path: "/",
     })
     return response
-  } catch {
+  } catch (error) {
+    console.error("linkedin_callback_failed", error)
     return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
   }
 }

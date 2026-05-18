@@ -15,13 +15,16 @@ export async function GET(request: NextRequest) {
     const ownerEmail = String(profile.email || "").trim().toLowerCase() || `linkedin-${profile.sub || Date.now()}@local.qalam`
     const memberId = String(profile.sub || "") || null
 
-    // Store the LinkedIn token server-side in Supabase (not just in the cookie)
-    await storeLinkedInToken({
-      ownerEmail,
-      accessToken: session.accessToken,
-      memberId,
-      tokenExpiresAt: session.expiresAt,
-    })
+    try {
+      await storeLinkedInToken({
+        ownerEmail,
+        accessToken: session.accessToken,
+        memberId,
+        tokenExpiresAt: session.expiresAt,
+      })
+    } catch (error) {
+      console.error("linkedin_token_store_failed", error)
+    }
 
     const appSession = await createAppSession({
       email: ownerEmail,
@@ -54,6 +57,7 @@ export async function GET(request: NextRequest) {
     })
     return success
   } catch (error) {
+    console.error("linkedin_session_exchange_failed", error)
     return NextResponse.json({ error: (error as Error).message || "linkedin_session_missing" }, { status: 404 })
   }
 }

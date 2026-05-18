@@ -9,11 +9,19 @@ type StatePayload = {
   createdAt: number
 }
 
+type LinkedInProfile = {
+  sub: string | null
+  email: string | null
+  name: string | null
+  given_name: string | null
+  family_name: string | null
+  picture: string | null
+}
+
 type LinkedInSession = {
   accessToken: string
   expiresAt: number
-  idToken: string | null
-  profile: Record<string, unknown>
+  profile: LinkedInProfile
 }
 
 type SessionPayload = LinkedInSession & {
@@ -54,6 +62,15 @@ const createSharePayload = ({ authorId, content, media }: LinkedInPostPayload) =
   ...(media?.id ? { content: { media: { id: media.id, title: media.title || "Attachment" } } } : {}),
   lifecycleState: "PUBLISHED",
   isReshareDisabledByAuthor: false,
+})
+
+const normalizeProfile = (profile: Record<string, unknown>): LinkedInProfile => ({
+  sub: String(profile.sub || "").trim() || null,
+  email: String(profile.email || "").trim().toLowerCase() || null,
+  name: String(profile.name || "").trim() || null,
+  given_name: String(profile.given_name || "").trim() || null,
+  family_name: String(profile.family_name || "").trim() || null,
+  picture: String(profile.picture || "").trim() || null,
 })
 
 const normalizeRedirectTo = (redirectTo?: string) => {
@@ -106,7 +123,7 @@ export const handleLinkedInCallback = async (state: string, code: string) => {
     redirect_uri: env.linkedInRedirectUri,
   })
 
-  const token = await fetchJson<{ access_token: string; expires_in: number; id_token?: string }>(
+  const token = await fetchJson<{ access_token: string; expires_in: number }>(
     "https://www.linkedin.com/oauth/v2/accessToken",
     {
       method: "POST",
@@ -124,8 +141,7 @@ export const handleLinkedInCallback = async (state: string, code: string) => {
   const sessionPayload: SessionPayload = {
     accessToken: token.data.access_token,
     expiresAt: Date.now() + Number(token.data.expires_in || 0) * 1000,
-    idToken: token.data.id_token || null,
-    profile: profile.data,
+    profile: normalizeProfile(profile.data),
     createdAt: Date.now(),
   }
 
@@ -144,7 +160,6 @@ export const consumeLinkedInSession = (sessionToken: string): LinkedInSession =>
   return {
     accessToken: sessionPayload.accessToken,
     expiresAt: sessionPayload.expiresAt,
-    idToken: sessionPayload.idToken,
     profile: sessionPayload.profile,
   }
 }
@@ -169,9 +184,8 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
 }
 
 export const pollLinkedInAnalytics = async (accessToken: string, postUrn: string) => {
-  // LinkedIn Organizational Entity Analytics API
-  const url = `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(postUrn)}`;
-  
+  const url = `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(postUrn)}`
+
   try {
     const response = await fetchJson<{ elements: Array<{ totalShareStatistics: { impressionCount: number; engagementRate: number } }> }>(url, {
       method: "GET",
@@ -181,8 +195,8 @@ export const pollLinkedInAnalytics = async (accessToken: string, postUrn: string
         "Linkedin-Version": env.linkedInVersion,
       },
       cache: "no-store",
-    });
-    
+    })
+
     return {
       impressions: response.data?.elements?.[0]?.totalShareStatistics?.impressionCount || 0,
       engagementRate: response.data?.elements?.[0]?.totalShareStatistics?.engagementRate || 0,
