@@ -71,7 +71,11 @@ export const metadata: Metadata = {
     site: "@byqalam",
   },
   icons: {
-    icon: [{ url: "/icon.png", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "3200x3200" },
+    ],
+    shortcut: ["/favicon.ico"],
     apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
   robots: {
