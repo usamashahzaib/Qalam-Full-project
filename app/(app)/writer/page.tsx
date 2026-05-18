@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
@@ -10,6 +9,8 @@ const POST_TYPES = ["LinkedIn - Text post", "LinkedIn - Carousel", "LinkedIn - V
 type PublishState = { status: "idle" | "loading" | "success" | "error"; message: string; postUrn: string | null }
 type WriterBootstrapPost = { id?: string; title?: string; content?: string; type?: string; externalPostUrn?: string | null }
 type WriterBootstrap = { post: WriterBootstrapPost | null; scheduleDate: string; parseFailed: boolean; hasWriterLoad: boolean; hasWriterScheduleDate: boolean }
+
+type GenerateResponse = { text?: string; error?: string }
 
 const normalizeLinkedInUrn = (value: string) => {
   const urn = value.trim()
@@ -156,21 +157,34 @@ export default function WriterPage() {
   }
 
   const onGenerate = async () => {
-    if (!aiPrompt.trim()) return
+    const prompt = aiPrompt.trim()
+    if (!prompt) {
+      setStatus("Add a prompt first")
+      return
+    }
+
     setIsGenerating(true)
     setStatus("Generating post via AI...")
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: aiPrompt })
+        body: JSON.stringify({
+          prompt,
+          postType,
+          title: title.trim(),
+          profile: state.profile,
+        }),
       })
-      if (!res.ok) throw new Error("Generation failed")
-      const data = await res.json()
-      setContent(data.text)
-      setStatus("AI generation complete")
-    } catch (err) {
-      setStatus("Failed to generate content")
+      const data = (await res.json().catch(() => ({}))) as GenerateResponse
+      if (!res.ok) throw new Error(data.error || "Generation failed")
+      const nextContent = String(data.text || "").trim()
+      if (!nextContent) throw new Error("AI returned an empty draft")
+      setContent(nextContent)
+      setStatus("AI draft ready")
+    } catch (error) {
+      setStatus((error as Error).message || "Failed to generate content")
     } finally {
       setIsGenerating(false)
     }
@@ -298,4 +312,5 @@ export default function WriterPage() {
     </div>
   )
 }
+
 
