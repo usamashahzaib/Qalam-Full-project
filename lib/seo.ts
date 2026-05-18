@@ -15,43 +15,56 @@ export const SITE_DOMAIN_LABEL = "byqalam.com"
 
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
 
+export const buildOgImageUrl = (title: string, description: string, tag?: string) => {
+  const params = new URLSearchParams({ title, description })
+  if (tag) params.set("tag", tag)
+  return `${SITE_URL}/og?${params.toString()}`
+}
+
 export const buildPageMetadata = ({
   title,
   description,
   path,
   index = true,
+  tag,
 }: {
   title: string
   description: string
   path: string
   index?: boolean
-}): Metadata => ({
-  title,
-  description,
-  alternates: { canonical: absoluteUrl(path) },
-  openGraph: {
-    title: `${title} | ${SITE_NAME}`,
+  tag?: string
+}): Metadata => {
+  const ogImage = buildOgImageUrl(title, description, tag)
+  return {
+    title,
     description,
-    url: absoluteUrl(path),
-    type: "website",
-    siteName: SITE_NAME,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${title} | ${SITE_NAME}`,
-    description,
-  },
-  robots: index
-    ? undefined
-    : {
-        index: false,
-        follow: false,
-        googleBot: {
+    alternates: { canonical: absoluteUrl(path) },
+    openGraph: {
+      title: `${title} | ${SITE_NAME}`,
+      description,
+      url: absoluteUrl(path),
+      type: "website",
+      siteName: SITE_NAME,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${SITE_NAME}`,
+      description,
+      images: [ogImage],
+    },
+    robots: index
+      ? undefined
+      : {
           index: false,
           follow: false,
+          googleBot: {
+            index: false,
+            follow: false,
+          },
         },
-      },
-})
+  }
+}
 
 export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },

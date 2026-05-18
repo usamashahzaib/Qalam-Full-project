@@ -48,7 +48,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Qalam", item: absoluteUrl("/") },
-      { "@type": "ListItem", position: 2, name: "Use Cases", item: absoluteUrl("/blog") },
+      { "@type": "ListItem", position: 2, name: "Use Cases", item: absoluteUrl("/use-cases") },
       { "@type": "ListItem", position: 3, name: page.title, item: pageUrl },
     ],
   }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
+import { buildOgImageUrl } from "@/lib/seo"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -16,11 +17,15 @@ import { SITE_NAME, SITE_URL } from "@/lib/seo"
 
 const siteUrl = SITE_URL
 
+const rootOgTitle = "Qalam | AI LinkedIn Writing System for Professionals"
+const rootOgDescription =
+  "Voice-aware LinkedIn drafting, post memory, archive continuity, scheduling, and content operations in one system."
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   manifest: "/manifest.webmanifest",
   title: {
-    default: "Qalam | AI LinkedIn Writing System for Professionals",
+    default: rootOgTitle,
     template: `%s | ${SITE_NAME}`,
   },
   description:
@@ -36,6 +41,10 @@ export const metadata: Metadata = {
     "agency content workflow",
     "brand voice AI",
     "content archive software",
+    "AI LinkedIn content creator",
+    "LinkedIn AI assistant",
+    "LinkedIn publishing tool",
+    "best AI tool for LinkedIn",
   ],
   authors: [{ name: SITE_NAME, url: siteUrl }],
   creator: SITE_NAME,
@@ -44,19 +53,24 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: {
+      "msvalidate.01": process.env.BING_SITE_VERIFICATION || "",
+    },
+  },
   openGraph: {
     type: "website",
     url: siteUrl,
     siteName: SITE_NAME,
     title: "Qalam | AI LinkedIn Writing System",
-    description:
-      "Voice-aware LinkedIn drafting, post memory, archive continuity, scheduling, and content operations in one system.",
+    description: rootOgDescription,
     images: [
       {
-        url: `${siteUrl}/qalam-mark.png`,
-        width: 512,
-        height: 512,
-        alt: "Qalam logo",
+        url: buildOgImageUrl(rootOgTitle, rootOgDescription),
+        width: 1200,
+        height: 630,
+        alt: "Qalam — AI LinkedIn Writing System",
       },
     ],
     locale: "en_US",
@@ -64,9 +78,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Qalam | AI LinkedIn Writing System",
-    description:
-      "Voice-aware LinkedIn drafting, archive continuity, scheduling, and publishing workflow for professionals.",
-    images: [`${siteUrl}/qalam-mark.png`],
+    description: rootOgDescription,
+    images: [buildOgImageUrl(rootOgTitle, rootOgDescription)],
     creator: "@byqalam",
     site: "@byqalam",
   },

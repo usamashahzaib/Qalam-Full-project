@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { BLOG_POSTS, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
-import { SITE_NAME, SITE_URL, absoluteUrl } from "@/lib/seo"
+import { SITE_NAME, SITE_URL, absoluteUrl, buildOgImageUrl } from "@/lib/seo"
 
 type Params = { slug: string }
 
@@ -15,6 +15,8 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug } = await params
   const post = PUBLISHED_BLOG_POSTS.find((entry) => entry.slug === slug)
   if (!post) return {}
+
+  const ogImage = buildOgImageUrl(post.title, post.description, post.tag)
 
   return {
     title: `${post.title} | ${SITE_NAME}`,
@@ -28,11 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       publishedTime: post.datePublished,
       modifiedTime: post.dateModified,
       siteName: SITE_NAME,
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${post.title} | ${SITE_NAME}`,
       description: post.description,
+      images: [ogImage],
     },
   }
 }
@@ -44,6 +48,9 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
 
   const relatedPosts = BLOG_POSTS.filter((entry) => entry.slug !== slug && entry.status === "published").slice(0, 2)
 
+  const postUrl = absoluteUrl(`/blog/${post.slug}`)
+  const ogImage = buildOgImageUrl(post.title, post.description, post.tag)
+
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -51,9 +58,35 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
     description: post.description,
     datePublished: post.datePublished,
     dateModified: post.dateModified,
-    author: { "@type": "Organization", name: SITE_NAME },
-    publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
-    mainEntityOfPage: { "@type": "WebPage", "@id": absoluteUrl(`/blog/${post.slug}`) },
+    image: ogImage,
+    wordCount: post.sections.reduce(
+      (acc, s) => acc + s.paragraphs.join(" ").split(" ").length,
+      0
+    ),
+    author: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: `${SITE_URL}/qalam-mark.png`,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/qalam-mark.png` },
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
+    url: postUrl,
+  }
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Qalam", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
+      { "@type": "ListItem", position: 3, name: post.title, item: postUrl },
+    ],
   }
 
   const faqSchema = post.faqs.length
@@ -71,6 +104,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       {faqSchema ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} /> : null}
       <article className="min-h-screen bg-zinc-50 pt-24">
         <section className="border-b border-zinc-100 bg-white px-6 py-20">
