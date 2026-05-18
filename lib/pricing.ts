@@ -1,6 +1,6 @@
 export interface PricingPlan {
   plan: string
-  price: string
+  monthlyUsd: number
   period: string
   description: string
   features: string[]
@@ -8,7 +8,7 @@ export interface PricingPlan {
   href: string
   highlighted?: boolean
   badge?: string
-  annualPrice?: string
+  annualUsd?: number
   annualHref?: string
   annualDescription?: string
 }
@@ -16,7 +16,7 @@ export interface PricingPlan {
 export const PLANS: PricingPlan[] = [
   {
     plan: "Free",
-    price: "$0",
+    monthlyUsd: 0,
     period: "forever",
     description: "Current workspace access while commercial plan enforcement is being finalized.",
     features: [
@@ -32,7 +32,7 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Pro",
-    price: "$19",
+    monthlyUsd: 19,
     period: "mo",
     description: "Personal paid onboarding for users who want a production workspace beyond the free preview.",
     features: [
@@ -46,13 +46,13 @@ export const PLANS: PricingPlan[] = [
     href: "/contact",
     highlighted: true,
     badge: "Assisted rollout",
-    annualPrice: "$15",
+    annualUsd: 15,
     annualHref: "/contact",
     annualDescription: "Quoted annual rate during assisted rollout.",
   },
   {
     plan: "Team",
-    price: "$49",
+    monthlyUsd: 49,
     period: "mo",
     description: "Shared internal workflow rollout for small teams. Collaboration hardening is still in progress.",
     features: [
@@ -65,13 +65,13 @@ export const PLANS: PricingPlan[] = [
     cta: "Discuss Team Setup ->",
     href: "/contact",
     badge: "Pilot",
-    annualPrice: "$39",
+    annualUsd: 39,
     annualHref: "/contact",
     annualDescription: "Quoted annual rate for guided team pilots.",
   },
   {
     plan: "Agency",
-    price: "$99",
+    monthlyUsd: 99,
     period: "mo",
     description: "Agency workflow preview with assisted onboarding. Client isolation and approvals are still being hardened.",
     features: [
@@ -84,7 +84,7 @@ export const PLANS: PricingPlan[] = [
     cta: "Discuss Agency Setup ->",
     href: "/contact",
     badge: "Preview",
-    annualPrice: "$79",
+    annualUsd: 79,
     annualHref: "/contact",
     annualDescription: "Quoted annual rate for assisted agency rollout.",
   },

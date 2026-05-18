@@ -17,6 +17,7 @@ import {
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
+import { formatLocalizedPrice, formatUsdPrice, type PricingCurrency, USD_PRICING_CURRENCY } from "@/lib/geo-pricing"
 import { PLANS } from "@/lib/pricing"
 
 function useCountUp(end: number, duration = 1400) {
@@ -428,8 +429,33 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
-  const homepagePlans = PLANS.slice(0, 3)
-  const agencyPlan = PLANS[3]
+  const [pricingCurrency, setPricingCurrency] = useState<PricingCurrency>(USD_PRICING_CURRENCY)
+
+  useEffect(() => {
+    let active = true
+
+    fetch("/api/geo/pricing-currency", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((currency) => {
+        if (active && currency?.currencyCode && currency?.locale) setPricingCurrency(currency as PricingCurrency)
+      })
+      .catch(() => null)
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const homepagePlans = PLANS.slice(0, 3).map((plan) => ({
+    ...plan,
+    price: formatLocalizedPrice(plan.monthlyUsd, pricingCurrency),
+    usdReference: formatUsdPrice(plan.monthlyUsd),
+  }))
+  const agencyPlan = {
+    ...PLANS[3],
+    price: formatLocalizedPrice(PLANS[3].monthlyUsd, pricingCurrency),
+    usdReference: formatUsdPrice(PLANS[3].monthlyUsd),
+  }
 
   return (
     <>
@@ -670,7 +696,7 @@ export default function HomePage() {
                 <span className="chip mb-3 inline-flex border-gold/40 bg-gold/5 text-gold">Agency Plan</span>
                 <h3 className="mb-2 text-xl font-bold text-zinc-900">Running content for multiple clients?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-600">
-                  {agencyPlan.price}/mo is the public reference price. Agency onboarding is currently assisted while client isolation and approvals are still being hardened.
+                  {agencyPlan.price}/mo is the local display estimate. Billing source of truth stays {agencyPlan.usdReference} while agency onboarding is still assisted and client isolation/approvals keep hardening.
                 </p>
               </div>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">

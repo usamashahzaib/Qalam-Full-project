@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
+import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -39,7 +41,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Public pricing is $19/month for Pro, $49/month for Team, and $99/month for Agency. Today those paid paths are handled through assisted onboarding rather than self-serve checkout.",
+        text: "Public pricing is anchored in USD: $19/month for Pro, $49/month for Team, and $99/month for Agency. Visitors can see localized display estimates, but billing source of truth remains USD during assisted onboarding.",
       },
     },
     {
@@ -61,11 +63,14 @@ const pricingFaqSchema = {
   ],
 }
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const headerStore = await headers()
+  const pricingCurrency = resolvePricingCurrency(headerStore)
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema) }} />
-      <PricingPageContent />
+      <PricingPageContent pricingCurrency={pricingCurrency} />
     </>
   )
 }

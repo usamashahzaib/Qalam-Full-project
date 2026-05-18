@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
+import { formatLocalizedPrice, formatUsdPrice, type PricingCurrency } from "@/lib/geo-pricing"
 import { COMPARISON_ROWS, PLANS } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -15,7 +16,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Public pricing is $19/month for Pro, $49/month for Team, and $99/month for Agency. Today those paid paths are handled through assisted onboarding rather than self-serve checkout.",
+    a: "Public pricing is anchored in USD: $19/month for Pro, $49/month for Team, and $99/month for Agency. This page can show a local-currency estimate based on your region, but billing source of truth remains USD during assisted onboarding.",
   },
   {
     q: "Is there a free trial for paid plans?",
@@ -35,16 +36,26 @@ const PRICING_FAQ = [
   },
 ]
 
-export function PricingPageContent() {
+type PricingPageContentProps = {
+  pricingCurrency: PricingCurrency
+}
+
+export function PricingPageContent({ pricingCurrency }: PricingPageContentProps) {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  const displayPlans = PLANS.map((plan) => ({
-    ...plan,
-    price: billing === "annual" && plan.annualPrice ? plan.annualPrice : plan.price,
-    href: billing === "annual" && plan.annualHref ? plan.annualHref : plan.href,
-    description: billing === "annual" && plan.annualDescription ? plan.annualDescription : plan.description,
-  }))
+  const displayPlans = PLANS.map((plan) => {
+    const usdAmount = billing === "annual" && typeof plan.annualUsd === "number" ? plan.annualUsd : plan.monthlyUsd
+    return {
+      ...plan,
+      price: formatLocalizedPrice(usdAmount, pricingCurrency),
+      usdReference: formatUsdPrice(usdAmount),
+      href: billing === "annual" && plan.annualHref ? plan.annualHref : plan.href,
+      description: billing === "annual" && plan.annualDescription ? plan.annualDescription : plan.description,
+    }
+  })
+
+  const isUsdDisplay = pricingCurrency.currencyCode === "USD"
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
@@ -63,8 +74,13 @@ export function PricingPageContent() {
             <p className="mx-auto mb-3 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
               Free lets you test the live workflow. Paid plans are currently guided onboarding paths.
             </p>
-            <p className="mb-10 text-sm text-zinc-400">
+            <p className="mb-3 text-sm text-zinc-400">
               No credit card required to start. Paid conversion is handled manually today.
+            </p>
+            <p className="mx-auto mb-10 max-w-2xl rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+              {isUsdDisplay
+                ? "You are viewing the USD source-of-truth prices used during assisted onboarding."
+                : `You are viewing estimated prices in ${pricingCurrency.label} based on your location. Billing source of truth remains USD during assisted onboarding.`}
             </p>
 
             <div className="inline-flex items-center gap-1 rounded-xl bg-zinc-100 p-1.5">
@@ -109,7 +125,7 @@ export function PricingPageContent() {
               {
                 icon: ShieldIcon,
                 label: "Clear pricing and real scope",
-                sub: "No fake enterprise language or bait logic",
+                sub: "Local currency display, USD billing source of truth",
               },
             ].map((item) => {
               const Icon = item.icon
@@ -215,8 +231,7 @@ export function PricingPageContent() {
                 </p>
                 <h3 className="mb-3 text-3xl font-bold text-white">Need a production setup?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
-                  Contact Qalam for onboarding, scope confirmation, and commercial terms that match the
-                  current product surface.
+                  Contact Qalam for onboarding, scope confirmation, and commercial terms that match the current product surface.
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
