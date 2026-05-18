@@ -57,13 +57,21 @@ const createSharePayload = ({ authorId, content, media }: LinkedInPostPayload) =
 })
 
 const normalizeRedirectTo = (redirectTo?: string) => {
-  const fallback = `${env.frontendOrigin}/auth/linkedin/callback`
+  const fallback = "/auth/linkedin/callback"
   if (!redirectTo) return fallback
+
   try {
-    const frontendOrigin = new URL(env.frontendOrigin)
-    const nextUrl = new URL(redirectTo, frontendOrigin)
-    if (nextUrl.origin !== frontendOrigin.origin) return fallback
-    return `${nextUrl.origin}${nextUrl.pathname}${nextUrl.search}`
+    if (redirectTo.startsWith("/")) return redirectTo
+  } catch {}
+
+  try {
+    const allowedOrigins = [env.frontendOrigin, process.env.NEXT_PUBLIC_SITE_URL || "", "https://byqalam.com", "https://www.byqalam.com"]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => new URL(value).origin)
+    const nextUrl = new URL(redirectTo)
+    if (!allowedOrigins.includes(nextUrl.origin)) return fallback
+    return `${nextUrl.pathname}${nextUrl.search}`
   } catch {
     return fallback
   }

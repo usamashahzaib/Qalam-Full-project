@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { env } from "@/lib/server/env"
 import {
   handleLinkedInCallback,
   linkedInSessionCookieMaxAgeSeconds,
@@ -11,12 +10,12 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state")
 
   if (!code || !state) {
-    return NextResponse.redirect(`${env.frontendOrigin}/auth?linkedin=failed`)
+    return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
   }
 
   try {
     const result = await handleLinkedInCallback(state, code)
-    const response = NextResponse.redirect(result.redirectTo)
+    const response = NextResponse.redirect(new URL(result.redirectTo, request.url))
     response.cookies.set({
       name: linkedInSessionCookieName,
       value: result.sessionToken,
@@ -28,6 +27,6 @@ export async function GET(request: NextRequest) {
     })
     return response
   } catch {
-    return NextResponse.redirect(`${env.frontendOrigin}/auth?linkedin=failed`)
+    return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
   }
 }
