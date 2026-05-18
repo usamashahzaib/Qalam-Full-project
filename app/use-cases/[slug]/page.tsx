@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { USE_CASE_PAGES } from "@/lib/site-content"
-import { buildPageMetadata, SITE_URL } from "@/lib/seo"
+import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
 
 type Params = { slug: keyof typeof USE_CASE_PAGES }
 
@@ -27,21 +27,50 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
   const page = USE_CASE_PAGES[slug]
   if (!page) notFound()
 
-  const articleSchema = {
+  const pageUrl = absoluteUrl(`/use-cases/${slug}`)
+  const pageSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: page.title,
+    "@type": "WebPage",
+    name: page.title,
     description: page.summary,
-    publisher: { "@type": "Organization", name: "Qalam", url: SITE_URL },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/use-cases/${slug}` },
+    url: pageUrl,
+    audience: { "@type": "Audience", audienceType: page.audience },
+    about: {
+      "@type": "SoftwareApplication",
+      name: SITE_NAME,
+      applicationCategory: "BusinessApplication",
+    },
+    dateModified: page.updatedAt,
   }
 
-  const OTHER_CASES = Object.entries(USE_CASE_PAGES).filter(([k]) => k !== slug)
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Qalam", item: absoluteUrl("/") },
+      { "@type": "ListItem", position: 2, name: "Use Cases", item: absoluteUrl("/blog") },
+      { "@type": "ListItem", position: 3, name: page.title, item: pageUrl },
+    ],
+  }
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: page.faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.q,
+      acceptedAnswer: { "@type": "Answer", text: faq.a },
+    })),
+  }
+
+  const otherCases = Object.entries(USE_CASE_PAGES).filter(([key]) => key !== slug)
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <div className="pt-24 min-h-screen bg-zinc-50">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <div className="min-h-screen bg-zinc-50 pt-24">
         <section className="border-b border-zinc-100 bg-white px-6 py-20">
           <div className="mx-auto max-w-[900px]">
             <FadeUp>
@@ -76,19 +105,33 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
           </div>
         </section>
 
-        {OTHER_CASES.length > 0 && (
+        <section className="px-6 pb-12">
+          <div className="mx-auto max-w-[900px] rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+            <h2 className="mb-6 text-2xl font-bold text-zinc-900">Frequently asked questions</h2>
+            <div className="grid gap-6 md:grid-cols-2">
+              {page.faqs.map((faq) => (
+                <div key={faq.q}>
+                  <h3 className="text-lg font-semibold text-zinc-900">{faq.q}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-600">{faq.a}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {otherCases.length > 0 && (
           <section className="px-6 pb-12">
             <div className="mx-auto max-w-[900px]">
               <h2 className="mb-5 text-sm font-semibold uppercase tracking-widest text-zinc-500">Other use cases</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {OTHER_CASES.map(([k, p]) => (
+                {otherCases.map(([key, useCase]) => (
                   <Link
-                    key={k}
-                    href={`/use-cases/${k}`}
+                    key={key}
+                    href={`/use-cases/${key}`}
                     className="group rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:border-gold/40 hover:shadow"
                   >
-                    <p className="text-sm font-bold text-zinc-900 group-hover:text-gold">{p.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">{p.summary}</p>
+                    <p className="text-sm font-bold text-zinc-900 group-hover:text-gold">{useCase.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-zinc-500">{useCase.summary}</p>
                   </Link>
                 ))}
               </div>
