@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 
 export default function LinkedInCallbackPage() {
-  const router = useRouter()
   const { completeLinkedInAuth } = useAuth()
 
   useEffect(() => {
@@ -13,12 +11,12 @@ export default function LinkedInCallbackPage() {
       typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next")
     completeLinkedInAuth()
       .then(() => {
-        router.replace(next && next.startsWith("/") ? next : "/dashboard")
+        window.location.replace(next && next.startsWith("/") ? next : "/dashboard")
       })
       .catch(() => {
-        router.replace("/auth?linkedin=failed")
+        window.location.replace("/auth?linkedin=failed")
       })
-  }, [completeLinkedInAuth, router])
+  }, [completeLinkedInAuth])
 
   return null
 }

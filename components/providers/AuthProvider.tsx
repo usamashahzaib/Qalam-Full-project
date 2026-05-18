@@ -81,12 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistUser])
 
   const beginLinkedInAuth = useCallback(async (nextPath = "/dashboard") => {
-    const callbackUrl = new URL("/auth/linkedin/callback", window.location.origin)
-    if (nextPath.startsWith("/")) callbackUrl.searchParams.set("next", nextPath)
-    const { url } = await getLinkedInAuthUrl(callbackUrl.toString())
+    const safeNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard"
+    const callbackPath = `/auth/linkedin/callback?next=${encodeURIComponent(safeNextPath)}`
+    const { url } = await getLinkedInAuthUrl(callbackPath)
     window.location.assign(url)
   }, [])
-
 
   const completeLinkedInAuth = useCallback(async () => {
     const { user } = await consumeLinkedInSession()

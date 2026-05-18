@@ -14,10 +14,7 @@ type AppSessionPayload = {
   createdAt: number
 }
 
-type PublicAuthUser = Omit<
-  AppSessionPayload,
-  "createdAt" | "linkedinMemberId"
->
+type PublicAuthUser = Omit<AppSessionPayload, "createdAt">
 
 export const appSessionCookieName = "qalam_app_session"
 const APP_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
@@ -97,6 +94,7 @@ export const toPublicAuthUser = (session: AppSessionPayload): PublicAuthUser => 
   firstName: session.firstName,
   role: session.role,
   imageUrl: session.imageUrl,
+  linkedinMemberId: session.linkedinMemberId,
   linkedinTokenExpiresAt: session.linkedinTokenExpiresAt,
 })
 
