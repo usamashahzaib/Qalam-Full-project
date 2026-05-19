@@ -80,6 +80,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/agency-setup", priority: 0.76, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/demo", priority: 0.85, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/docs", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/changelog", priority: 0.6, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/status", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
@@ -91,6 +92,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
 export const LLM_ROUTES = [
   "/",
   "/pricing",
+  "/demo",
   "/free-tools",
   "/about",
   "/contact",

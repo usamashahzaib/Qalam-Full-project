@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server"
 import { env } from "@/lib/server/env"
 import { createSignedToken, readSignedToken } from "@/lib/server/token"
-import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 type AppSessionPayload = {
   email: string
@@ -46,15 +46,28 @@ export const createAppSession = async ({
 }) => {
   const normalizedEmail = email.trim().toLowerCase()
   const names = toNames(name, normalizedEmail)
-  
-  // Elite security: Database-backed admin role check
+
   let role: "admin" | "user" = "user"
+  if (ADMIN_EMAILS.includes(normalizedEmail)) role = "admin"
+
   try {
-    const adminRows = await supabaseSelect<{ email: string }>("admins", `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`)
-    if (adminRows && adminRows.length > 0) role = "admin"
-  } catch {
-    // Fallback to legacy env if DB query fails during migration
-    if (ADMIN_EMAILS.includes(normalizedEmail)) role = "admin"
+    const existingUser = await supabaseSelect<{ id: string; email: string }>(
+      "users",
+      `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`
+    )
+    if (!existingUser || existingUser.length === 0) {
+      await supabaseInsert(
+        "users",
+        {
+          email: normalizedEmail,
+          full_name: names.fullName,
+          image_url: imageUrl,
+        },
+        "resolution=ignore-duplicates"
+      )
+    }
+  } catch (err) {
+    console.error("failed_to_provision_user", err)
   }
 
   const payload: AppSessionPayload = {
@@ -102,6 +115,94 @@ export const requireAppSession = (request: NextRequest) => {
   const session = getAppSession(request)
   if (!session?.email) throw new Error("auth_required")
   return session
+}
+
+export const ensureWorkspaceForEmail = async ({
+  email,
+  firstName,
+}: {
+  email: string
+  firstName: string
+}) => {
+  const normalizedEmail = email.trim().toLowerCase()
+  const users = await supabaseSelect<{ id: string }>(
+    "users",
+    `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`
+  )
+  const userId = users?.[0]?.id
+  if (!userId) throw new Error("auth_required")
+
+  const memberships = await supabaseSelect<{ workspace_id: string }>(
+    "memberships",
+    `user_id=eq.${userId}&limit=1`
+  )
+  if (memberships?.[0]?.workspace_id) return memberships[0].workspace_id
+
+  const orgs = await supabaseInsert<{ id: string }>(
+    "organizations",
+    { name: `${firstName}'s Org` },
+    "return=representation"
+  )
+  const orgId = orgs?.[0]?.id
+
+  const workspaces = await supabaseInsert<{ id: string }>(
+    "workspaces",
+    { organization_id: orgId, name: "Personal Workspace" },
+    "return=representation"
+  )
+  const workspaceId = workspaces?.[0]?.id
+
+  await supabaseInsert(
+    "memberships",
+    {
+      user_id: userId,
+      organization_id: orgId,
+      workspace_id: workspaceId,
+      role: "super_admin",
+    },
+    "return=minimal"
+  )
+
+  if (!workspaceId) throw new Error("failed_to_provision_workspace")
+  return workspaceId
+}
+
+export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
+  const session = requireAppSession(request)
+  const url = new URL(request.url)
+  let requestedWorkspaceId = url.searchParams.get("workspaceKey")
+
+  if (!requestedWorkspaceId && request.method !== "GET") {
+    try {
+      const body = await request.clone().json()
+      requestedWorkspaceId = body.workspaceKey
+    } catch {
+      // ignore
+    }
+  }
+
+  const users = await supabaseSelect<{ id: string }>(
+    "users",
+    `email=eq.${encodeURIComponent(session.email)}&limit=1`
+  )
+  const userId = users?.[0]?.id
+  if (!userId) throw new Error("auth_required")
+
+  if (
+    requestedWorkspaceId &&
+    requestedWorkspaceId !== "null" &&
+    requestedWorkspaceId !== "undefined" &&
+    !requestedWorkspaceId.startsWith("client:")
+  ) {
+    const memberships = await supabaseSelect<{ workspace_id: string }>(
+      "memberships",
+      `user_id=eq.${userId}&workspace_id=eq.${requestedWorkspaceId}&limit=1`
+    )
+    if (memberships?.length) return requestedWorkspaceId
+    throw new Error("unauthorized_workspace")
+  }
+
+  return ensureWorkspaceForEmail({ email: session.email, firstName: session.firstName })
 }
 
 export const resolveWorkspaceKey = (request: NextRequest) => {

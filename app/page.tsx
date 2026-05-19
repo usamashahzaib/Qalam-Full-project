@@ -17,8 +17,7 @@ import {
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
-import { formatLocalizedPrice, formatUsdPrice, type PricingCurrency, USD_PRICING_CURRENCY } from "@/lib/geo-pricing"
-import { PLANS } from "@/lib/pricing"
+import { PLANS, formatPkr } from "@/lib/pricing"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -119,19 +118,19 @@ const LIVE_SURFACE = [
   {
     title: "Guided rollout",
     items: [
-      "Paid onboarding",
-      "Team pilots",
+      "Paid plan activation",
+      "Team rollout",
       "Agency setup",
-      "Commercial migration support",
+      "Manual billing and scope review",
     ],
   },
   {
     title: "Still hardening",
     items: [
-      "Billing automation",
-      "Client isolation",
-      "Approval workflow",
-      "Broad self-serve collaboration",
+      "Self-serve checkout",
+      "Agency analytics rollups",
+      "Notification center",
+      "Broader collaboration automation",
     ],
   },
 ]
@@ -155,7 +154,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Who is Agency for today?",
-    a: "Agency is the guided path for multi-client operators who want the current workspace preview while isolation and approval controls are still being hardened.",
+    a: "Agency is the guided path for multi-client operators using the current client-scoped workspace layer and assisted rollout.",
   },
   {
     q: "Does Qalam work for any niche?",
@@ -429,32 +428,16 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
-  const [pricingCurrency, setPricingCurrency] = useState<PricingCurrency>(USD_PRICING_CURRENCY)
-
-  useEffect(() => {
-    let active = true
-
-    fetch("/api/geo/pricing-currency", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((currency) => {
-        if (active && currency?.currencyCode && currency?.locale) setPricingCurrency(currency as PricingCurrency)
-      })
-      .catch(() => null)
-
-    return () => {
-      active = false
-    }
-  }, [])
-
   const homepagePlans = PLANS.slice(0, 3).map((plan) => ({
     ...plan,
-    price: formatLocalizedPrice(plan.monthlyUsd, pricingCurrency),
-    usdReference: formatUsdPrice(plan.monthlyUsd),
+    price: formatPkr(plan.monthlyPkr),
+    usdReference: plan.annualPkrPerMonth ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo` : "PKR early pricing",
   }))
+  const agencySource = PLANS[PLANS.length - 1]
   const agencyPlan = {
-    ...PLANS[3],
-    price: formatLocalizedPrice(PLANS[3].monthlyUsd, pricingCurrency),
-    usdReference: formatUsdPrice(PLANS[3].monthlyUsd),
+    ...agencySource,
+    price: formatPkr(agencySource.monthlyPkr),
+    usdReference: agencySource.annualPkrPerMonth ? `Annual ${formatPkr(agencySource.annualPkrPerMonth)}/mo` : "PKR early pricing",
   }
 
   return (
@@ -678,7 +661,7 @@ export default function HomePage() {
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">
-              Free is live now. Paid plans are currently guided onboarding paths, not automated checkout products.
+              Free is live now. Paid plans use PKR-first early pricing and guided onboarding while checkout is still being finalized.
             </p>
           </FadeUp>
 
@@ -696,7 +679,7 @@ export default function HomePage() {
                 <span className="chip mb-3 inline-flex border-gold/40 bg-gold/5 text-gold">Agency Plan</span>
                 <h3 className="mb-2 text-xl font-bold text-zinc-900">Running content for multiple clients?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-600">
-                  {agencyPlan.price}/mo is the local display estimate. Billing source of truth stays {agencyPlan.usdReference} while agency onboarding is still assisted and client isolation/approvals keep hardening.
+                  {agencyPlan.price}/mo is the current market-facing agency price. {agencyPlan.usdReference} remains available as the annual equivalent while agency onboarding stays assisted.
                 </p>
               </div>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
@@ -739,3 +722,6 @@ export default function HomePage() {
     </>
   )
 }
+
+
+

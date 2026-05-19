@@ -13,6 +13,9 @@ const PROTECTED_PREFIXES = [
   "/agency",
   "/competitors",
   "/settings",
+  "/approvals",
+  "/carousels",
+  "/chat",
 ]
 
 const SESSION_COOKIE = "qalam_app_session"
@@ -92,5 +95,8 @@ export const config = {
     "/agency/:path*",
     "/competitors/:path*",
     "/settings/:path*",
+    "/approvals/:path*",
+    "/carousels/:path*",
+    "/chat/:path*",
   ],
 }

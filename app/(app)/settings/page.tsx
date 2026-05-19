@@ -1,145 +1,109 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
 
 const PLANS: WorkspaceBilling["plan"][] = ["Free", "Pro", "Team", "Agency"]
 
 export default function SettingsPage() {
-  const { user, beginLinkedInAuth } = useAuth()
-  const workspace = useWorkspace()
-  const formKey = useMemo(
-    () => JSON.stringify({ profile: workspace.state.profile, billing: workspace.state.billing, name: user?.fullName || "" }),
-    [user?.fullName, workspace.state.billing, workspace.state.profile]
-  )
+  const { user, beginLinkedInAuth, disconnectLinkedIn } = useAuth()
+  const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
 
-  return (
-    <SettingsForm
-      key={formKey}
-      user={user}
-      beginLinkedInAuth={beginLinkedInAuth}
-      state={workspace.state}
-      remoteHydrated={workspace.remoteHydrated}
-      remoteError={workspace.remoteError}
-      saveProfile={workspace.saveProfile}
-      saveBilling={workspace.saveBilling}
-    />
-  )
-}
-
-function SettingsForm({
-  user,
-  beginLinkedInAuth,
-  state,
-  remoteHydrated,
-  remoteError,
-  saveProfile,
-  saveBilling,
-}: {
-  user: ReturnType<typeof useAuth>["user"]
-  beginLinkedInAuth: (nextPath?: string) => Promise<void>
-  state: ReturnType<typeof useWorkspace>["state"]
-  remoteHydrated: boolean
-  remoteError: string | null
-  saveProfile: ReturnType<typeof useWorkspace>["saveProfile"]
-  saveBilling: ReturnType<typeof useWorkspace>["saveBilling"]
-}) {
-  const [profile, setProfile] = useState({
-    name: state.profile.name || user?.fullName || "",
-    title: state.profile.title,
-    linkedinUrl: state.profile.linkedinUrl,
-    industry: state.profile.industry,
-    tone: state.profile.tone,
-    goals: state.profile.goals.join(", "),
+  const [profileDraft, setProfileDraft] = useState({
+    name: profile.name || user?.fullName || "",
+    title: profile.title,
+    linkedinUrl: profile.linkedinUrl,
+    industry: profile.industry,
+    tone: profile.tone,
+    goals: profile.goals.join(", "),
   })
-  const [billing, setBilling] = useState<WorkspaceBilling>(state.billing)
-  const [status, setStatus] = useState<string | null>(null)
+  const [billingDraft, setBillingDraft] = useState<WorkspaceBilling>(billing)
+  const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [profileError, setProfileError] = useState<string | null>(null)
+  const [disconnecting, setDisconnecting] = useState(false)
 
-  const onSaveProfile = () => {
-    saveProfile({
-      name: profile.name.trim(),
-      title: profile.title.trim(),
-      linkedinUrl: profile.linkedinUrl.trim(),
-      industry: profile.industry.trim(),
-      tone: profile.tone.trim(),
-      goals: profile.goals.split(",").map((item) => item.trim()).filter(Boolean),
+  useEffect(() => {
+    if (profileStatus === "saving") return
+    setProfileDraft({
+      name: profile.name || user?.fullName || "",
+      title: profile.title,
+      linkedinUrl: profile.linkedinUrl,
+      industry: profile.industry,
+      tone: profile.tone,
+      goals: profile.goals.join(", "),
     })
-    setStatus("Profile saved")
+  }, [profile, profileStatus, user?.fullName])
+
+  useEffect(() => {
+    setBillingDraft(billing)
+  }, [billing])
+
+  const onSaveProfile = async () => {
+    setProfileStatus("saving")
+    setProfileError(null)
+    try {
+      await saveProfile({
+        name: profileDraft.name.trim(),
+        title: profileDraft.title.trim(),
+        linkedinUrl: profileDraft.linkedinUrl.trim(),
+        industry: profileDraft.industry.trim(),
+        tone: profileDraft.tone.trim(),
+        goals: profileDraft.goals.split(",").map((item) => item.trim()).filter(Boolean),
+      })
+      setProfileStatus("saved")
+      setTimeout(() => setProfileStatus("idle"), 3000)
+    } catch (e) {
+      setProfileStatus("error")
+      setProfileError((e as Error).message || "Save failed")
+    }
   }
 
-  const onSaveBilling = () => {
-    saveBilling(billing)
-    setStatus("Plan state saved")
+  const onSaveBilling = () => saveBilling(billingDraft)
+
+  const onDisconnectLinkedIn = async () => {
+    if (!confirm("Disconnect LinkedIn? This will delete your stored access token and you'll need to reconnect to publish.")) return
+    setDisconnecting(true)
+    try {
+      await disconnectLinkedIn()
+    } finally {
+      setDisconnecting(false)
+    }
   }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-zinc-900">Settings</h1>
-        <p className="mt-1 text-sm text-zinc-500">Profile, workspace plan state, and live integration status.</p>
+        <p className="mt-1 text-sm text-zinc-500">Profile, integrations, and workspace configuration.</p>
       </div>
-
-      {status ? <p className="mb-4 text-sm text-zinc-600">{status}</p> : null}
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-zinc-900">Profile</h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Field label="Name">
-              <input value={profile.name} onChange={(e) => setProfile((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
-            <Field label="Title">
-              <input value={profile.title} onChange={(e) => setProfile((prev) => ({ ...prev, title: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
-            <Field label="LinkedIn URL">
-              <input value={profile.linkedinUrl} onChange={(e) => setProfile((prev) => ({ ...prev, linkedinUrl: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
-            <Field label="Industry">
-              <input value={profile.industry} onChange={(e) => setProfile((prev) => ({ ...prev, industry: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
-            <Field label="Brand tone">
-              <input value={profile.tone} onChange={(e) => setProfile((prev) => ({ ...prev, tone: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
-            <Field label="Goals (comma separated)">
-              <input value={profile.goals} onChange={(e) => setProfile((prev) => ({ ...prev, goals: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900" />
-            </Field>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-zinc-900">Voice Profile</h2>
+            {isLoadingProfile && <span className="text-xs text-zinc-400 animate-pulse">Loading from database...</span>}
+            {profileStatus === "saved" && <span className="text-xs font-semibold text-emerald-600">Saved to database ?</span>}
+            {profileStatus === "error" && <span className="text-xs text-red-600">{profileError}</span>}
           </div>
-          <button onClick={onSaveProfile} className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800">Save profile</button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Name"><input value={profileDraft.name} onChange={(e) => setProfileDraft((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+            <Field label="Title"><input value={profileDraft.title} onChange={(e) => setProfileDraft((prev) => ({ ...prev, title: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+            <Field label="LinkedIn URL"><input value={profileDraft.linkedinUrl} onChange={(e) => setProfileDraft((prev) => ({ ...prev, linkedinUrl: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+            <Field label="Industry"><input value={profileDraft.industry} onChange={(e) => setProfileDraft((prev) => ({ ...prev, industry: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+            <Field label="Brand tone"><input value={profileDraft.tone} onChange={(e) => setProfileDraft((prev) => ({ ...prev, tone: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+            <Field label="Goals (comma-separated)"><input value={profileDraft.goals} onChange={(e) => setProfileDraft((prev) => ({ ...prev, goals: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-teal" /></Field>
+          </div>
+          <button onClick={onSaveProfile} disabled={profileStatus === "saving"} className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60 transition-colors">{profileStatus === "saving" ? "Saving..." : "Save profile"}</button>
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-zinc-900">Billing and plan</h2>
-          <p className="mt-1 text-sm text-zinc-500">Plan state persists in workspace. Checkout and billing portal are not migrated yet.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {PLANS.map((plan) => (
-              <button
-                key={plan}
-                onClick={() => setBilling((prev) => ({ ...prev, plan }))}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold ${billing.plan === plan ? "bg-zinc-900 text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}
-              >
-                {plan}
-              </button>
-            ))}
-          </div>
-          <div className="mt-4 flex gap-2">
-            {(["monthly", "annual"] as const).map((cycle) => (
-              <button
-                key={cycle}
-                onClick={() => setBilling((prev) => ({ ...prev, billingCycle: cycle }))}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold ${billing.billingCycle === cycle ? "bg-teal text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}
-              >
-                {cycle}
-              </button>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <MiniStat label="Current plan" value={billing.plan} />
-            <MiniStat label="Billing cycle" value={billing.billingCycle} />
-            <MiniStat label="Posts" value={String(state.posts.length)} />
-            <MiniStat label="Checkout" value={billing.checkoutReady ? "Ready" : "Not migrated"} />
-          </div>
-          <button onClick={onSaveBilling} className="mt-4 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">Save plan state</button>
+          <h2 className="text-base font-semibold text-zinc-900">Plan</h2>
+          <p className="mt-1 text-sm text-zinc-500">Plan is tracked locally. Automated billing is not yet live.</p>
+          <div className="mt-4 flex flex-wrap gap-2">{PLANS.map((plan) => <button key={plan} onClick={() => setBillingDraft((prev) => ({ ...prev, plan }))} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${billingDraft.plan === plan ? "bg-zinc-900 text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}>{plan}</button>)}</div>
+          <div className="mt-4 flex gap-2">{(["monthly", "annual"] as const).map((cycle) => <button key={cycle} onClick={() => setBillingDraft((prev) => ({ ...prev, billingCycle: cycle }))} className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${billingDraft.billingCycle === cycle ? "bg-teal text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}>{cycle}</button>)}</div>
+          <div className="mt-4 grid grid-cols-2 gap-3"><MiniStat label="Current plan" value={billing.plan} /><MiniStat label="Billing cycle" value={billing.billingCycle} /><MiniStat label="Posts in DB" value={String(posts.length)} /><MiniStat label="Billing" value="Manual" /></div>
+          <button onClick={onSaveBilling} className="mt-4 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 transition-colors">Save plan state</button>
         </section>
       </div>
 
@@ -150,28 +114,23 @@ function SettingsForm({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm font-semibold text-zinc-900">LinkedIn</h3>
-                <p className="mt-1 text-sm text-zinc-500">{user?.linkedinMemberId ? `Connected as ${user.linkedinMemberId}` : "Not connected"}</p>
-                {user?.linkedinTokenExpiresAt ? <p className="mt-1 text-xs text-zinc-500">Token expiry: {new Date(user.linkedinTokenExpiresAt).toLocaleString()}</p> : null}
+                <p className="mt-1 text-sm text-zinc-500">{user?.linkedinMemberId ? `Connected · Member ID: ${user.linkedinMemberId}` : "Not connected"}</p>
+                {user?.linkedinTokenExpiresAt && <p className="mt-1 text-xs text-zinc-500">Token expires: {new Date(user.linkedinTokenExpiresAt).toLocaleString()}</p>}
               </div>
               {user?.linkedinMemberId ? (
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Connected</span>
+                <div className="flex items-center gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Connected</span><button onClick={onDisconnectLinkedIn} disabled={disconnecting} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-colors">{disconnecting ? "Disconnecting..." : "Disconnect"}</button></div>
               ) : (
-                <button onClick={() => beginLinkedInAuth("/settings")} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#085fa8]">Connect</button>
+                <button onClick={() => beginLinkedInAuth("/settings")} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#085fa8] transition-colors">Connect LinkedIn</button>
               )}
             </div>
-            <p className="mt-3 text-xs text-zinc-500">Publishing uses the live app session. OAuth revoke/disconnect UI is not migrated yet.</p>
+            <p className="mt-3 text-xs text-zinc-500">Disconnecting removes your stored access token from the server. You can reconnect at any time.</p>
           </div>
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
-          <h2 className="text-base font-semibold text-zinc-900">Workspace state</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <MiniStat label="Remote hydrate" value={remoteHydrated ? "Ready" : "Loading"} />
-            <MiniStat label="Remote error" value={remoteError || "None"} />
-            <MiniStat label="Drafts" value={String(state.drafts.length)} />
-            <MiniStat label="Scheduled" value={String(state.scheduled.length)} />
-          </div>
-          <p className="mt-4 text-xs text-zinc-500">Workspace profile and plan state save here. External billing and broader integrations stay out of scope for this phase.</p>
+          <h2 className="text-base font-semibold text-zinc-900">Workspace status</h2>
+          <div className="mt-4 grid grid-cols-2 gap-3"><MiniStat label="Posts" value={String(posts.length)} /><MiniStat label="Drafts" value={String(drafts.length)} /><MiniStat label="Scheduled" value={String(scheduled.length)} /><MiniStat label="DB error" value={postsError || "None"} /></div>
+          <p className="mt-4 text-xs text-zinc-500">Posts, voice profile, and events are stored in Supabase. Billing plan remains local until payment integration ships.</p>
         </section>
       </div>
     </div>
@@ -183,5 +142,5 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-sm font-semibold text-zinc-900">{value}</p></div>
+  return <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-sm font-semibold text-zinc-900 truncate">{value}</p></div>
 }

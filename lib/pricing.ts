@@ -1,6 +1,7 @@
-export interface PricingPlan {
+﻿export interface PricingPlan {
   plan: string
-  monthlyUsd: number
+  monthlyPkr: number
+  annualPkrPerMonth?: number
   period: string
   description: string
   features: string[]
@@ -8,103 +9,131 @@ export interface PricingPlan {
   href: string
   highlighted?: boolean
   badge?: string
-  annualUsd?: number
-  annualHref?: string
-  annualDescription?: string
+  featureStatus: "live" | "beta" | "coming_soon"
 }
 
+/** PKR pricing - early-adopter / Pakistan market */
 export const PLANS: PricingPlan[] = [
   {
     plan: "Free",
-    monthlyUsd: 0,
+    monthlyPkr: 0,
     period: "forever",
-    description: "Current workspace access while commercial plan enforcement is being finalized.",
+    description: "Try Qalam with no commitment. Build your first drafts and see the AI in action.",
     features: [
-      "LinkedIn-first sign-in",
-      "Writer, archive, calendar, and analytics surfaces",
-      "Voice profile settings and saved drafts",
-      "Free public tools with no sign-in",
-      "No credit card required",
+      "LinkedIn sign-in",
+      "AI writer - 10 drafts/month",
+      "Voice profile (1 workspace)",
+      "Basic analytics (event log)",
+      "Community support",
     ],
-    cta: "Start with LinkedIn ->",
-    href: "/auth/sign-up",
-    badge: "Live now",
+    cta: "Start free",
+    href: "/auth",
+    badge: "No card required",
+    featureStatus: "live",
+  },
+  {
+    plan: "Solo",
+    monthlyPkr: 1490,
+    annualPkrPerMonth: 1190,
+    period: "mo",
+    description: "For individual professionals growing their LinkedIn presence. All core features, no limits.",
+    features: [
+      "Everything in Free",
+      "Unlimited AI drafts",
+      "LinkedIn publish - direct from app",
+      "Carousel generation (AI slides)",
+      "Post scheduling",
+      "Full analytics dashboard",
+      "Priority email support",
+    ],
+    cta: "Start Solo",
+    href: "/auth",
+    highlighted: true,
+    badge: "Most popular",
+    featureStatus: "live",
   },
   {
     plan: "Pro",
-    monthlyUsd: 19,
+    monthlyPkr: 2990,
+    annualPkrPerMonth: 2490,
     period: "mo",
-    description: "Personal paid onboarding for users who want a production workspace beyond the free preview.",
+    description: "For serious creators and consultants who need more AI power and workspace history.",
     features: [
-      "Assisted onboarding while checkout rollout completes",
-      "LinkedIn publish flow and saved workspace history",
-      "Voice profile, scheduling, and archive continuity",
-      "Workspace analytics from real app events",
-      "Priority support and migration help",
+      "Everything in Solo",
+      "Post variants (A/B drafts)",
+      "Competitor research tools",
+      "Extended post history",
+      "Approval workflow (send for review)",
+      "Export to PDF / text",
     ],
-    cta: "Talk to Qalam ->",
-    href: "/contact",
-    highlighted: true,
-    badge: "Assisted rollout",
-    annualUsd: 15,
-    annualHref: "/contact",
-    annualDescription: "Quoted annual rate during assisted rollout.",
+    cta: "Start Pro",
+    href: "/auth",
+    badge: "Best value",
+    featureStatus: "live",
   },
   {
     plan: "Team",
-    monthlyUsd: 49,
+    monthlyPkr: 5990,
+    annualPkrPerMonth: 4990,
     period: "mo",
-    description: "Shared internal workflow rollout for small teams. Collaboration hardening is still in progress.",
+    description: "For internal teams that need a shared workspace, approvals, and guided rollout before self-serve billing lands.",
     features: [
       "Everything in Pro",
-      "Manual team onboarding",
-      "Shared workflow evaluation for internal operators",
-      "Collaboration features rolling out in stages",
-      "Best fit for guided pilots, not self-serve scale yet",
+      "Shared team workspace",
+      "Role-based write and review permissions",
+      "Approval queue",
+      "Shared voice profile",
+      "Guided onboarding",
     ],
-    cta: "Discuss Team Setup ->",
+    cta: "Talk to us",
     href: "/contact",
-    badge: "Pilot",
-    annualUsd: 39,
-    annualHref: "/contact",
-    annualDescription: "Quoted annual rate for guided team pilots.",
+    badge: "Beta",
+    featureStatus: "beta",
   },
   {
     plan: "Agency",
-    monthlyUsd: 99,
+    monthlyPkr: 9990,
+    annualPkrPerMonth: 7990,
     period: "mo",
-    description: "Agency workflow preview with assisted onboarding. Client isolation and approvals are still being hardened.",
+    description: "For agencies operating multiple client workspaces through the current guided rollout.",
     features: [
       "Everything in Team",
-      "Client and team management in the current workspace preview",
-      "Markdown export for agency handoff",
-      "Per-client isolation and role controls still in rollout",
-      "Best fit for design-partner style onboarding today",
+      "Multiple client workspaces",
+      "Client-scoped drafts, chat, and scheduling",
+      "Workspace-aware approvals and publish logs",
+      "Per-workspace analytics views",
+      "Dedicated onboarding",
+      "Commercial rollout support",
     ],
-    cta: "Discuss Agency Setup ->",
+    cta: "Talk to us",
     href: "/contact",
-    badge: "Preview",
-    annualUsd: 79,
-    annualHref: "/contact",
-    annualDescription: "Quoted annual rate for assisted agency rollout.",
+    badge: "Early access",
+    featureStatus: "beta",
   },
 ]
 
 export const COMPARISON_ROWS: {
   label: string
   free: string
+  solo: string
   pro: string
   team: string
   agency: string
 }[] = [
-  { label: "LinkedIn-first auth", free: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Writer + archive", free: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Voice profile settings", free: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Scheduling surface", free: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Workspace analytics", free: "Event-based", pro: "Event-based", team: "Event-based", agency: "Event-based" },
-  { label: "Billing automation", free: "N/A", pro: "Manual", team: "Manual", agency: "Manual" },
-  { label: "Team collaboration", free: "Single-user", pro: "Single-user", team: "Pilot", agency: "Pilot" },
-  { label: "Client isolation", free: "N/A", pro: "N/A", team: "N/A", agency: "In rollout" },
-  { label: "Approval workflow", free: "N/A", pro: "N/A", team: "In rollout", agency: "In rollout" },
-  { label: "Support path", free: "Email", pro: "Priority email", team: "Guided onboarding", agency: "Guided onboarding" },
+  { label: "AI drafts", free: "10/month", solo: "Unlimited", pro: "Unlimited", team: "Unlimited", agency: "Unlimited" },
+  { label: "LinkedIn publish", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
+  { label: "Carousel generation", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
+  { label: "Post scheduling", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
+  { label: "Approvals workflow", free: "-", solo: "-", pro: "Live", team: "Live", agency: "Live" },
+  { label: "Competitor research", free: "-", solo: "-", pro: "Live", team: "Live", agency: "Live" },
+  { label: "Team operations", free: "1 workspace", solo: "1 workspace", pro: "1 workspace", team: "Shared workspace", agency: "Multi-workspace" },
+  { label: "Client workspaces", free: "-", solo: "-", pro: "-", team: "-", agency: "Live" },
+  { label: "Analytics", free: "Basic", solo: "Full", pro: "Full", team: "Full", agency: "Workspace-level" },
+  { label: "Support", free: "Community", solo: "Email", pro: "Priority email", team: "Guided", agency: "Dedicated" },
+  { label: "Billing", free: "Free", solo: "PKR 1,490/mo", pro: "PKR 2,990/mo", team: "PKR 5,990/mo", agency: "PKR 9,990/mo" },
 ]
+
+export const formatPkr = (amount: number): string => {
+  if (amount === 0) return "Free"
+  return `PKR ${amount.toLocaleString("en-PK")}`
+}

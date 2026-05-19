@@ -141,11 +141,15 @@ export const consumeLinkedInSession = () => requestJson<{ user: AuthUser }>("/ap
 export const shareToLinkedIn = ({
   content,
   media,
+  postId,
+  workspaceKey,
 }: {
   content: string
   media?: { id?: string; title?: string }
+  postId?: string | null
+  workspaceKey?: string
 }) =>
   requestJson<{ shared: boolean; postUrn: string | null }>("/api/linkedin/share", {
     method: "POST",
-    body: JSON.stringify({ content, media }),
+    body: JSON.stringify({ content, media, postId, workspaceKey }),
   })

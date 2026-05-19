@@ -54,7 +54,7 @@ export function PricingCard({
           <span className={`text-5xl font-bold ${highlighted ? "text-white" : "text-zinc-900"}`}>{price}</span>
           {period && <span className={`mb-2 text-sm ${highlighted ? "text-teal-100" : "text-zinc-500"}`}>/{period}</span>}
         </div>
-        <p className={`text-xs ${highlighted ? "text-teal-100/80" : "text-zinc-400"}`}>USD source of truth: {usdReference}</p>
+        <p className={`text-xs ${highlighted ? "text-teal-100/80" : "text-zinc-400"}`}>{usdReference}</p>
         <p className={`mt-2 text-sm leading-relaxed ${highlighted ? "text-teal-100" : "text-zinc-600"}`}>{description}</p>
       </div>
 

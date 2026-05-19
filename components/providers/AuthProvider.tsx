@@ -26,7 +26,7 @@ type AuthContextValue = {
   loginWithLinkedIn: (user: AuthUser) => AuthUser
   beginLinkedInAuth: (nextPath?: string) => Promise<void>
   completeLinkedInAuth: () => Promise<AuthUser>
-  disconnectLinkedIn: () => void
+  disconnectLinkedIn: () => Promise<void>
   logout: () => void
 }
 
@@ -92,8 +92,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return loginWithLinkedIn(user)
   }, [loginWithLinkedIn])
 
-  const disconnectLinkedIn = useCallback(() => {
+  const disconnectLinkedIn = useCallback(async () => {
     if (!user) return
+    try {
+      await fetch("/api/linkedin/token", { method: "DELETE" })
+    } catch {
+      // Token delete failed — proceed with local clear anyway
+    }
     persistUser({
       ...user,
       linkedinMemberId: null,
@@ -133,3 +138,4 @@ export const useAuth = () => {
   if (!context) throw new Error("useAuth must be used within AuthProvider")
   return context
 }
+

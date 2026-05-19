@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { analyzeCompetitorPaste } from "@/lib/api/client"
+import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 
 const PLATFORMS = ["LinkedIn", "Twitter / X", "Instagram", "YouTube", "Other"] as const
 
@@ -42,10 +43,7 @@ const toJobEntry = (job: unknown): CompetitorEntry | null => {
   const payload = (j.payload || {}) as Record<string, unknown>
   if (!payload.profileName) return null
   return {
-    profileId: String(
-      payload.profileId ||
-        (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `job-${Date.now()}`)
-    ),
+    profileId: String(j.id || payload.profileId || (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `job-${Date.now()}`)),
     profileName: String(payload.profileName),
     platform: String(payload.platform || "LinkedIn"),
     analyzedAt: String(j.created_at || ""),
@@ -101,20 +99,18 @@ const buildCounterAngleDraft = (entry: CompetitorEntry) => {
 
 export default function CompetitorsPage() {
   const router = useRouter()
-  const { state, setWorkspaceState, loadJobs } = useWorkspace()
+  const { loadJobs, createJob, deleteJob, workspaceId, state } = useWorkspace()
+  const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
 
   const [form, setForm] = useState({ profileName: "", platform: "LinkedIn" as string, sourceText: "" })
   const [analyzing, setAnalyzing] = useState(false)
   const [pendingAnalysis, setPendingAnalysis] = useState<CompetitorEntry | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  
+  const [watchlistJobs, setWatchlistJobs] = useState<CompetitorEntry[]>([])
   const [jobs, setJobs] = useState<CompetitorEntry[]>([])
   const [jobsLoaded, setJobsLoaded] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-
-  const watchlist = useMemo(
-    () => state.competitors.map(toEntry).filter(Boolean) as CompetitorEntry[],
-    [state.competitors]
-  )
 
   useEffect(() => {
     loadJobs("competitor_analysis", 50)
@@ -123,6 +119,11 @@ export default function CompetitorsPage() {
         setJobsLoaded(true)
       })
       .catch(() => setJobsLoaded(true))
+      
+    loadJobs("competitor_watchlist", 50)
+      .then((rawJobs) => {
+        setWatchlistJobs(rawJobs.map(toJobEntry).filter(Boolean) as CompetitorEntry[])
+      })
   }, [loadJobs])
 
   const onAnalyze = useCallback(async () => {
@@ -138,6 +139,7 @@ export default function CompetitorsPage() {
         profileName: form.profileName.trim() || "Unnamed",
         platform: form.platform,
         sourceText: form.sourceText,
+        workspaceKey: workspaceId,
       })
       const entry: CompetitorEntry = {
         profileId:
@@ -158,33 +160,34 @@ export default function CompetitorsPage() {
     }
   }, [form])
 
-  const onSaveToWatchlist = useCallback(() => {
+  const onSaveToWatchlist = useCallback(async () => {
     if (!pendingAnalysis) return
-    setWorkspaceState((prev) => ({
-      ...prev,
-      competitors: [
-        pendingAnalysis as unknown as Record<string, unknown>,
-        ...prev.competitors.filter(
-          (c) => (c as { profileName?: string }).profileName !== pendingAnalysis.profileName
-        ),
-      ],
-    }))
-    setForm({ profileName: "", platform: "LinkedIn", sourceText: "" })
-    setPendingAnalysis(null)
-    setStatus(`Saved ${pendingAnalysis.profileName} to watchlist`)
-  }, [pendingAnalysis, setWorkspaceState])
+    setStatus("Saving to watchlist...")
+    try {
+      const job = await createJob({
+        type: "competitor_watchlist",
+        title: `Watchlist: ${pendingAnalysis.profileName}`,
+        payload: {
+          profileName: pendingAnalysis.profileName,
+          platform: pendingAnalysis.platform,
+          analysis: pendingAnalysis.analysis
+        }
+      })
+      const entry = toJobEntry(job)
+      if (entry) setWatchlistJobs(prev => [entry, ...prev])
+      
+      setForm({ profileName: "", platform: "LinkedIn", sourceText: "" })
+      setPendingAnalysis(null)
+      setStatus(`Saved ${pendingAnalysis.profileName} to watchlist`)
+    } catch {
+      setStatus("Failed to save to watchlist")
+    }
+  }, [pendingAnalysis, createJob])
 
-  const onRemove = useCallback(
-    (profileId: string) => {
-      setWorkspaceState((prev) => ({
-        ...prev,
-        competitors: prev.competitors.filter(
-          (c) => (c as { profileId?: string }).profileId !== profileId
-        ),
-      }))
-    },
-    [setWorkspaceState]
-  )
+  const onRemove = useCallback(async (jobId: string) => {
+    setWatchlistJobs((prev) => prev.filter((c) => c.profileId !== jobId))
+    await deleteJob(jobId)
+  }, [deleteJob])
 
   const openInWriter = useCallback(
     (entry: CompetitorEntry) => {
@@ -284,16 +287,16 @@ export default function CompetitorsPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-zinc-900">Watchlist</h2>
-            <span className="text-xs text-zinc-500">{watchlist.length} saved</span>
+            <span className="text-xs text-zinc-500">{watchlistJobs.length} saved</span>
           </div>
 
-          {watchlist.length === 0 ? (
+          {watchlistJobs.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-400">
               No profiles yet. Analyze one and save it.
             </p>
           ) : (
             <div className="space-y-3">
-              {watchlist.map((entry) => (
+              {watchlistJobs.map((entry) => (
                 <div
                   key={entry.profileId}
                   className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"
@@ -481,7 +484,7 @@ function AnalysisCard({
                 key={i}
                 className="rounded-lg bg-zinc-50 px-3 py-2 text-xs italic text-zinc-700"
               >
-                &ldquo;{hook.length > 120 ? `${hook.slice(0, 120)}…` : hook}&rdquo;
+                &ldquo;{hook.length > 120 ? `${hook.slice(0, 120)}â€¦` : hook}&rdquo;
               </li>
             ))}
           </ul>
@@ -524,3 +527,4 @@ function AnalysisCard({
     </div>
   )
 }
+

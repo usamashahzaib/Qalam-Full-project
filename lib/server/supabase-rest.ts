@@ -78,3 +78,37 @@ export const supabaseUpsert = async <T>(
   })
   return data
 }
+
+/**
+ * PATCH one or more rows matching the given query filter.
+ * Returns the updated rows.
+ */
+export const supabasePatch = async <T>(
+  table: string,
+  query: string,
+  payload: unknown
+) => {
+  requireSupabaseEnv()
+  const body = JSON.stringify(payload)
+  const url = `${env.supabaseUrl}/rest/v1/${table}?${query}`
+  const { data } = await fetchJson<T[]>(url, {
+    method: "PATCH",
+    headers: headers("return=representation"),
+    body,
+    cache: "no-store",
+  })
+  return data
+}
+
+/**
+ * DELETE rows matching the given query filter.
+ */
+export const supabaseDelete = async (table: string, query: string) => {
+  requireSupabaseEnv()
+  const url = `${env.supabaseUrl}/rest/v1/${table}?${query}`
+  await fetch(url, {
+    method: "DELETE",
+    headers: headers("return=minimal"),
+    cache: "no-store",
+  })
+}

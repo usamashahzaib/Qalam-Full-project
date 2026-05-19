@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import {
   AnalyticsIcon,
   CalendarIcon,
@@ -14,6 +14,7 @@ import {
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
+import { withClientParam } from "@/lib/workspace-navigation"
 
 const PRIMARY_LINKS = [
   { href: "/dashboard", label: "Home", icon: GrowthIcon },
@@ -23,8 +24,10 @@ const PRIMARY_LINKS = [
 ]
 
 const MORE_LINKS = [
+  { href: "/chat", label: "AI Chat", icon: VoiceIcon },
   { href: "/voice", label: "Voice", icon: VoiceIcon },
   { href: "/library", label: "Library", icon: LibraryIcon },
+  { href: "/carousels", label: "Carousels", icon: LibraryIcon },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon },
   { href: "/agency", label: "Team", icon: TeamIcon },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
@@ -42,6 +45,8 @@ function MoreIcon({ className }: { className?: string }) {
 
 export function AppMobileNav() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
 
   const isMoreActive = MORE_LINKS.some(
@@ -50,14 +55,7 @@ export function AppMobileNav() {
 
   return (
     <>
-      {/* More panel overlay */}
-      {moreOpen && (
-        <div
-          className="fixed inset-0 z-30"
-          onClick={() => setMoreOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      {moreOpen && <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden="true" />}
 
       {moreOpen && (
         <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 rounded-2xl border border-zinc-200 bg-white/98 p-3 shadow-xl backdrop-blur-md">
@@ -67,7 +65,7 @@ export function AppMobileNav() {
               return (
                 <Link
                   key={href}
-                  href={href}
+                  href={withClientParam(href, activeClientId)}
                   onClick={() => setMoreOpen(false)}
                   className={`flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[11px] font-medium transition-colors ${
                     active ? "bg-teal/8 text-teal" : "text-zinc-500"
@@ -82,17 +80,14 @@ export function AppMobileNav() {
         </div>
       )}
 
-      <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 backdrop-blur md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
-      >
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="mx-auto grid max-w-screen-sm grid-cols-5 px-2 py-2">
           {PRIMARY_LINKS.map(({ href, label, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(`${href}/`)
             return (
               <Link
                 key={href}
-                href={href}
+                href={withClientParam(href, activeClientId)}
                 onClick={() => setMoreOpen(false)}
                 className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
                   active ? "bg-teal/8 text-teal" : "text-zinc-500"
@@ -104,7 +99,6 @@ export function AppMobileNav() {
             )
           })}
 
-          {/* More button */}
           <button
             type="button"
             onClick={() => setMoreOpen((v) => !v)}

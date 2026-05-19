@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+﻿import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
@@ -7,12 +7,12 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Pricing | Qalam",
   description:
-    "Qalam pricing for the live free workspace plus guided Pro, Team, and Agency onboarding paths.",
+    "PKR-first Qalam pricing for the live free workspace plus guided paid rollout while checkout is still manual.",
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Pricing - Qalam",
     description:
-      "Live free workspace access plus guided Pro, Team, and Agency onboarding paths.",
+      "Live free workspace access plus PKR-first paid plans activated through guided onboarding.",
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pricing - Qalam",
     description:
-      "Live free workspace access plus guided Pro, Team, and Agency onboarding paths.",
+      "Live free workspace access plus PKR-first paid plans activated through guided onboarding.",
   },
 }
 
@@ -33,7 +33,7 @@ const pricingFaqSchema = {
       name: "Is there a free plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. The current free experience gives you workspace access plus the public tools while commercial limits are being finalized.",
+        text: "Yes. Free is live and gives you access to the core workspace before you move into a guided paid rollout.",
       },
     },
     {
@@ -41,7 +41,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Public pricing is anchored in USD: $19/month for Pro, $49/month for Team, and $99/month for Agency. Visitors can see localized display estimates, but billing source of truth remains USD during assisted onboarding.",
+        text: "Qalam uses PKR-first market pricing: Solo starts at PKR 1,490/month, Pro at PKR 2,990/month, Team at PKR 5,990/month, and Agency at PKR 9,990/month.",
       },
     },
     {
@@ -49,7 +49,7 @@ const pricingFaqSchema = {
       name: "Is there a free trial for paid plans?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Not as an automated billing feature today. Paid workspace evaluation is handled manually so scope and expectations stay explicit.",
+        text: "Free acts as the trial today. Paid access is still activated through guided onboarding rather than self-serve checkout.",
       },
     },
     {

@@ -1,19 +1,20 @@
-import type { Metadata, Viewport } from "next"
+﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  variable: "--font-jakarta",
-  display: "swap",
-})
 import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { WhatsAppButton } from "@/components/WhatsAppButton"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
+import { PLANS } from "@/lib/pricing"
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-jakarta",
+  display: "swap",
+})
 
 const siteUrl = SITE_URL
 
@@ -70,7 +71,7 @@ export const metadata: Metadata = {
         url: buildOgImageUrl(rootOgTitle, rootOgDescription),
         width: 1200,
         height: 630,
-        alt: "Qalam — AI LinkedIn Writing System",
+        alt: "Qalam - AI LinkedIn Writing System",
       },
     ],
     locale: "en_US",
@@ -147,42 +148,22 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Qalam is a voice-aware LinkedIn writing system with post memory, archive continuity, scheduling, and team workflow support.",
+        "Qalam is a workspace-scoped LinkedIn writing system with drafting, approvals, archive continuity, scheduling, and direct publishing paths.",
       publisher: { "@id": `${siteUrl}/#organization` },
-      offers: [
-        {
-          "@type": "Offer",
-          name: "Free",
-          price: "0",
-          priceCurrency: "USD",
-          description: "Current workspace access while commercial plan enforcement is being finalized.",
-        },
-        {
-          "@type": "Offer",
-          name: "Pro",
-          price: "19",
-          priceCurrency: "USD",
-          description: "Assisted paid onboarding for production workspaces while checkout rollout completes.",
-        },
-        {
-          "@type": "Offer",
-          name: "Team",
-          price: "49",
-          priceCurrency: "USD",
-          description: "Guided internal team pilots while collaboration hardening is still in progress.",
-        },
-        {
-          "@type": "Offer",
-          name: "Agency",
-          price: "99",
-          priceCurrency: "USD",
-          description: "Agency workflow preview with assisted onboarding while client isolation and approvals are being hardened.",
-        },
-      ],
+      offers: PLANS.map((plan) => ({
+        "@type": "Offer",
+        name: plan.plan,
+        price: String(plan.monthlyPkr),
+        priceCurrency: "PKR",
+        description: plan.description,
+        availability:
+          plan.featureStatus === "coming_soon"
+            ? "https://schema.org/PreOrder"
+            : "https://schema.org/InStock",
+      })),
     },
   ],
 }
-
 
 export default function RootLayout({
   children,

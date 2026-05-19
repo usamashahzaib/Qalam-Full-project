@@ -1,44 +1,86 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAppSession } from "@/lib/server/app-session"
+import { getAppSession, resolveWorkspaceId } from "@/lib/server/app-session"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
-import { getLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { supabaseInsert } from "@/lib/server/supabase-rest"
 
 type ShareRequestBody = {
   content?: string
+  postId?: string | null
   media?: { id?: string; title?: string } | null
 }
 
 export async function POST(request: NextRequest) {
+  const session = getAppSession(request)
+  if (!session?.email) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 })
+  }
+
+  const body = (await request.json()) as ShareRequestBody
+  if (!body.content?.trim()) {
+    return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
+  }
+
+  let workspaceId: string
   try {
-    const session = getAppSession(request)
-    const body = (await request.json()) as ShareRequestBody
+    workspaceId = await resolveWorkspaceId(request)
+  } catch (error) {
+    const message = (error as Error).message || "auth_required"
+    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+  }
 
-    if (!session?.email) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+  const account = await getLinkedInPublishingAccount(workspaceId)
+  const legacyCred = account ? null : await getLinkedInToken(session.email)
+  const accessToken = account?.access_token || legacyCred?.access_token || null
+  const authorId = account?.provider_account_id || legacyCred?.member_id || null
+  const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacyCred?.token_expires_at || null
 
-    const cred = await getLinkedInToken(session.email)
-    if (!cred?.access_token || !cred?.member_id) {
-      return NextResponse.json({ error: "linkedin_auth_required" }, { status: 401 })
-    }
-    if (cred.token_expires_at && cred.token_expires_at < Date.now()) {
-      return NextResponse.json({ error: "linkedin_token_expired" }, { status: 401 })
-    }
+  if (!accessToken || !authorId) {
+    return NextResponse.json({ error: "linkedin_auth_required" }, { status: 401 })
+  }
+  if (expiresAt && expiresAt < Date.now()) {
+    return NextResponse.json({ error: "linkedin_token_expired" }, { status: 401 })
+  }
 
-    const { access_token: accessToken, member_id: memberId } = cred
-    if (!body.content?.trim()) {
-      return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
-    }
-
-    const shared = await shareToLinkedIn({
+  let shared: { shared: boolean; postUrn: string | null }
+  try {
+    shared = await shareToLinkedIn({
       accessToken,
-      authorId: memberId,
+      authorId,
       content: body.content,
       media: body.media || undefined,
     })
-
-    return NextResponse.json(shared)
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "server_error" }, { status: 500 })
+    const publishError = (error as Error).message || "linkedin_publish_failed"
+    if (body.postId) {
+      await supabaseInsert(
+        "publish_logs",
+        {
+          post_id: body.postId,
+          account_id: account?.id || null,
+          status: "failed",
+          error_message: publishError,
+          provider_response: null,
+        },
+        "return=minimal"
+      ).catch(() => undefined)
+    }
+    return NextResponse.json({ error: publishError }, { status: 502 })
   }
+
+  if (body.postId && shared.postUrn) {
+    await supabaseInsert(
+      "publish_logs",
+      {
+        post_id: body.postId,
+        account_id: account?.id || null,
+        status: "success",
+        error_message: null,
+        provider_response: { postUrn: shared.postUrn },
+      },
+      "return=minimal"
+    ).catch(() => undefined)
+  }
+
+  return NextResponse.json(shared)
 }
