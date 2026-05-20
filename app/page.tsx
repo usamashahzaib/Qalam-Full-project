@@ -543,7 +543,7 @@ export default function HomePage() {
       <section className="bg-white px-6 py-10">
         <div className="mx-auto max-w-[760px] text-center">
           <p className="text-base leading-relaxed text-zinc-500">
-            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing system that learns your voice from real posts and edits. Unlike session-reset generators, it keeps approved drafts, outcomes, and hook archives in one place so each session starts closer to your actual writing instead of from scratch.
+            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing workspace for professionals. It learns your voice from real posts, stores drafts and approvals, helps with hashtags and replies, and moves content from idea to LinkedIn publishing.
           </p>
         </div>
       </section>

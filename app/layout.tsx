@@ -18,9 +18,9 @@ const jakarta = Plus_Jakarta_Sans({
 
 const siteUrl = SITE_URL
 
-const rootOgTitle = "Qalam | AI LinkedIn Writing System for Professionals"
+const rootOgTitle = "Qalam | AI LinkedIn Writer with Voice Memory, Scheduling and Publishing"
 const rootOgDescription =
-  "Voice-aware LinkedIn drafting, post memory, archive continuity, scheduling, and content operations in one system."
+  "Write LinkedIn posts in your real voice. Qalam stores your drafts, edits, voice profile, scheduling flow, approvals, and LinkedIn publishing in one workspace."
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Qalam is a voice-aware LinkedIn writing system for founders, teams, consultants, and agencies. Build drafts, archive winning posts, schedule publishing, and keep reusable content memory.",
+    "AI LinkedIn writing workspace with voice memory, drafts, scheduling, approvals, hashtags, reply assistance, carousels, and publishing in one system.",
   keywords: [
     "Qalam",
     "LinkedIn writing tool",
@@ -64,21 +64,21 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName: SITE_NAME,
-    title: "Qalam | AI LinkedIn Writing System",
+    title: "Qalam | AI LinkedIn Writer with Voice Memory",
     description: rootOgDescription,
     images: [
       {
         url: buildOgImageUrl(rootOgTitle, rootOgDescription),
         width: 1200,
         height: 630,
-        alt: "Qalam - AI LinkedIn Writing System",
+        alt: "Qalam - AI LinkedIn writer with voice memory",
       },
     ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Qalam | AI LinkedIn Writing System",
+    title: "Qalam | AI LinkedIn Writer with Voice Memory",
     description: rootOgDescription,
     images: [buildOgImageUrl(rootOgTitle, rootOgDescription)],
     creator: "@byqalam",
@@ -89,7 +89,7 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", sizes: "any" },
       { url: "/icon.png", type: "image/png", sizes: "3200x3200" },
     ],
-    shortcut: ["/favicon.ico"],
+    shortcut: ["/favicon.ico", "/qalam-mark.png"],
     apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
   robots: {
@@ -148,7 +148,7 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Qalam is a workspace-scoped LinkedIn writing system with drafting, approvals, archive continuity, scheduling, and direct publishing paths.",
+        "Qalam is an AI LinkedIn writing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing.",
       publisher: { "@id": `${siteUrl}/#organization` },
       offers: PLANS.map((plan) => ({
         "@type": "Offer",

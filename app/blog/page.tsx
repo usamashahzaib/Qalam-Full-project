@@ -2,23 +2,28 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { PUBLISHED_BLOG_POSTS, UPCOMING_BLOG_POSTS } from "@/lib/marketing-content"
-import { SITE_URL } from "@/lib/seo"
+import { buildOgImageUrl, SITE_URL } from "@/lib/seo"
+
+const blogTitle = "Qalam Blog | LinkedIn Writing, Voice Memory and Publishing Workflows"
+const blogDescription =
+  "Practical articles on LinkedIn writing, voice memory, approvals, publishing workflows, agency operations, and content systems that actually compound."
 
 export const metadata: Metadata = {
-  title: "Blog | Qalam",
-  description:
-    "Published playbooks, workflow analysis, and product thinking behind Qalam, the AI LinkedIn writing system for professionals.",
+  title: blogTitle,
+  description: blogDescription,
   alternates: { canonical: `${SITE_URL}/blog` },
   openGraph: {
-    title: "Blog | Qalam",
-    description: "Published playbooks and workflow notes behind Qalam.",
+    title: blogTitle,
+    description: blogDescription,
     url: `${SITE_URL}/blog`,
     type: "website",
+    images: [{ url: buildOgImageUrl(blogTitle, blogDescription, "Blog"), width: 1200, height: 630, alt: blogTitle }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Blog | Qalam",
-    description: "Published playbooks and workflow notes behind Qalam.",
+    title: blogTitle,
+    description: blogDescription,
+    images: [buildOgImageUrl(blogTitle, blogDescription, "Blog")],
   },
 }
 
@@ -26,8 +31,7 @@ const blogIndexSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
   name: "Qalam Blog",
-  description:
-    "Published playbooks, workflow analysis, and product thinking behind Qalam, the AI LinkedIn writing system for professionals.",
+  description: blogDescription,
   url: `${SITE_URL}/blog`,
   mainEntity: {
     "@type": "ItemList",
