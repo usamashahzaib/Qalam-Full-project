@@ -21,7 +21,9 @@ type PublishState = { status: "idle" | "loading" | "success" | "error"; message:
 type WriterBootstrapPost = { id?: string; title?: string; content?: string; type?: string; externalPostUrn?: string | null }
 type WriterBootstrap = { post: WriterBootstrapPost | null; scheduleDate: string; parseFailed: boolean; hasWriterLoad: boolean; hasWriterScheduleDate: boolean }
 type GenerateResponse = { text?: string; error?: string }
-type IntelligenceResponse = { analysis?: ContentAnalysis; commentReplies?: { comment: string; reply: string }[]; error?: string }
+type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: HookOption[]; error?: string }
+type HookOption = { style: string; text: string }
+type RichReply = { comment: string; style: string; reply: string }
 
 const normalizeLinkedInUrn = (value: string) => {
   const urn = value.trim()
@@ -70,8 +72,14 @@ export default function WriterPage() {
   const [publish, setPublish] = useState<PublishState>(bootstrap.post?.externalPostUrn ? { status: "success", message: "Already published", postUrn: String(bootstrap.post.externalPostUrn) } : { status: "idle", message: "", postUrn: null })
   const [postFilter, setPostFilter] = useState<(typeof POST_FILTERS)[number]["key"]>("all")
   const [commentsText, setCommentsText] = useState("")
+  const [originalPostText, setOriginalPostText] = useState("")
   const [analysis, setAnalysis] = useState<ContentAnalysis | null>(null)
-  const [commentReplies, setCommentReplies] = useState<{ comment: string; reply: string }[]>([])
+  const [hookSuggestions, setHookSuggestions] = useState<HookOption[]>([])
+  const [hookPanelOpen, setHookPanelOpen] = useState(false)
+  const [isImprovingHook, setIsImprovingHook] = useState(false)
+  const [richReplies, setRichReplies] = useState<RichReply[]>([])
+  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false)
+  const [replyPanelOpen, setReplyPanelOpen] = useState(false)
   const [insightNote, setInsightNote] = useState<string | null>(null)
 
   const wordCount = useMemo(() => (content.trim() ? content.trim().split(/\s+/).length : 0), [content])
@@ -95,8 +103,11 @@ export default function WriterPage() {
     setScheduleTime("09:00")
     setPublish({ status: "idle", message: "", postUrn: null })
     setCommentsText("")
+    setOriginalPostText("")
     setAnalysis(null)
-    setCommentReplies([])
+    setRichReplies([])
+    setHookSuggestions([])
+    setHookPanelOpen(false)
     setStatus("Fresh draft ready")
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("writerLoad")
@@ -108,7 +119,7 @@ export default function WriterPage() {
   useEffect(() => {
     if (!content.trim()) {
       setAnalysis(null)
-      setCommentReplies([])
+      setHookSuggestions([])
       setInsightNote(null)
       return
     }
@@ -122,7 +133,6 @@ export default function WriterPage() {
             mode: "intelligence",
             title: resolveTitle(),
             content,
-            comments: commentsText,
             postType,
             profile,
           }),
@@ -130,7 +140,7 @@ export default function WriterPage() {
         const data = (await res.json().catch(() => ({}))) as IntelligenceResponse
         if (!res.ok) throw new Error(data.error || "Insights unavailable")
         setAnalysis(data.analysis || null)
-        setCommentReplies(data.commentReplies || [])
+        if (data.hookSuggestions?.length) setHookSuggestions(data.hookSuggestions)
         setInsightNote("Insights refreshed")
       } catch (error) {
         setInsightNote((error as Error).message || "Insights unavailable")
@@ -139,7 +149,7 @@ export default function WriterPage() {
       }
     }, 550)
     return () => window.clearTimeout(timeout)
-  }, [commentsText, content, postType, profile, title])
+  }, [content, postType, profile, title])
 
   const createCarousel = async (postId: string) => {
     const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId), {
@@ -256,6 +266,66 @@ export default function WriterPage() {
     setStatus(`Loaded ${post.status} post`)
   }
 
+  const applyHook = (hookText: string) => {
+    const lines = content.split("\n")
+    const firstNonEmpty = lines.findIndex((l) => l.trim())
+    if (firstNonEmpty >= 0) {
+      lines[firstNonEmpty] = hookText
+    } else {
+      lines.unshift(hookText)
+    }
+    setContent(lines.join("\n"))
+    setHookPanelOpen(false)
+    setStatus("Hook applied")
+  }
+
+  const onImproveHook = async () => {
+    if (!content.trim()) { setStatus("Write a draft first"); return }
+    setIsImprovingHook(true)
+    setHookPanelOpen(true)
+    setHookSuggestions([])
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "hooks", content, title: resolveTitle(), profile }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { hooks?: HookOption[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Could not generate hooks")
+      setHookSuggestions(data.hooks || [])
+    } catch (e) {
+      setStatus((e as Error).message)
+      setHookPanelOpen(false)
+    } finally {
+      setIsImprovingHook(false)
+    }
+  }
+
+  const onGenerateReplies = async () => {
+    const comments = commentsText.trim()
+    if (!comments) { setStatus("Add comments first"); return }
+    setIsGeneratingReplies(true)
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "comment-replies",
+          originalPost: originalPostText || content,
+          comments,
+          profile,
+        }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { replies?: RichReply[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Reply generation failed")
+      setRichReplies(data.replies || [])
+    } catch (e) {
+      setStatus((e as Error).message)
+    } finally {
+      setIsGeneratingReplies(false)
+    }
+  }
+
   const onSendForApproval = async () => {
     if (!content.trim()) { setStatus("Write content first"); return }
     if (!isClientWorkspace) {
@@ -314,7 +384,13 @@ export default function WriterPage() {
           {/* Score cards */}
           <div className="mb-5 grid gap-3 sm:grid-cols-3">
             <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis?.overallLabel || "Waiting for draft"} accent="teal" />
-            <MetricCard label="Hook type" value={analysis?.hookType || "--"} note={analysis ? (analysis.scores[0]?.note || "First line") : "First line analysis"} accent="amber" />
+            <MetricCard
+              label="Hook type"
+              value={analysis?.hookType || "--"}
+              note={analysis ? (analysis.scores[0]?.note || "First line") : "First line analysis"}
+              accent="amber"
+              action={analysis && (analysis.scores.find((s) => s.label === "Hook")?.score ?? 100) < 70 ? { label: "Improve hook", onClick: onImproveHook, loading: isImprovingHook } : undefined}
+            />
             <MetricCard label="Voice fit" value={analysis ? `${analysis.scores.find((item) => item.label === "Voice fit")?.score ?? 0}/100` : "--"} note={profile.name || profile.title ? "Using saved profile" : "Add voice profile for better fit"} accent="zinc" />
           </div>
 
@@ -327,6 +403,44 @@ export default function WriterPage() {
               <span className="ml-auto">{publishLabel}</span>
             </div>
           </div>
+
+          {/* Hook suggestions panel */}
+          {hookPanelOpen && (
+            <div className="mt-5 overflow-hidden rounded-2xl border border-teal/20 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-zinc-100 bg-teal/5 px-5 py-3.5">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-900">Hook alternatives</h2>
+                  <p className="mt-0.5 text-xs text-zinc-500">Click any to replace your current opening line</p>
+                </div>
+                <button onClick={() => setHookPanelOpen(false)} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-50">Close</button>
+              </div>
+              <div className="divide-y divide-zinc-100">
+                {isImprovingHook ? (
+                  <div className="flex items-center gap-3 px-5 py-8 text-sm text-zinc-500">
+                    <span className="flex gap-1.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: "0.15s" }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: "0.3s" }} />
+                    </span>
+                    Generating hook alternatives from your post...
+                  </div>
+                ) : hookSuggestions.length ? (
+                  hookSuggestions.map((hook) => {
+                    const styleColor = hook.style === "Sharp" ? "bg-red-50 text-red-700 border-red-100" : hook.style === "Authority" ? "bg-amber-50 text-amber-700 border-amber-100" : hook.style === "Story" ? "bg-blue-50 text-blue-700 border-blue-100" : hook.style === "Curiosity" ? "bg-purple-50 text-purple-700 border-purple-100" : "bg-zinc-100 text-zinc-600 border-zinc-200"
+                    return (
+                      <div key={hook.style} className="flex items-start gap-4 px-5 py-4 transition-colors hover:bg-zinc-50">
+                        <span className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styleColor}`}>{hook.style}</span>
+                        <p className="flex-1 text-sm leading-relaxed text-zinc-900">{hook.text}</p>
+                        <button onClick={() => applyHook(hook.text)} className="cursor-pointer shrink-0 rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">Use</button>
+                      </div>
+                    )
+                  })
+                ) : (
+                  <p className="px-5 py-6 text-sm text-zinc-400">No hooks generated. Try again or add more content.</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Score analysis + hashtags + replies */}
           <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
@@ -341,16 +455,28 @@ export default function WriterPage() {
                 <div className="space-y-2.5">
                   {(analysis?.scores || []).map((item) => {
                     const barColor = item.score >= 82 ? "bg-teal" : item.score >= 68 ? "bg-teal/60" : item.score >= 52 ? "bg-amber-400" : "bg-red-400"
+                    const scoreColor = item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"
+                    const isHook = item.label === "Hook"
                     return (
                       <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
-                        <div className="mb-1.5 flex items-center justify-between">
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
                           <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{item.label}</span>
-                          <span className={`text-sm font-bold ${item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"}`}>{item.score}</span>
+                          <div className="flex items-center gap-2">
+                            {isHook && item.score < 70 && (
+                              <button onClick={onImproveHook} disabled={isImprovingHook} className="cursor-pointer rounded-full border border-teal/25 bg-teal/8 px-2.5 py-0.5 text-[10px] font-bold text-teal transition-colors hover:bg-teal/15 disabled:opacity-50">
+                                {isImprovingHook ? "..." : "Suggest hooks"}
+                              </button>
+                            )}
+                            <span className={`text-sm font-bold ${scoreColor}`}>{item.score}</span>
+                          </div>
                         </div>
                         <div className="h-1.5 rounded-full bg-zinc-100">
                           <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${item.score}%` }} />
                         </div>
                         <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">{item.note}</p>
+                        {item.actionHint && item.label !== "Hook" && (
+                          <p className="mt-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-[10px] font-medium text-zinc-500">{item.actionHint}</p>
+                        )}
                       </div>
                     )
                   })}
@@ -369,38 +495,103 @@ export default function WriterPage() {
             </div>
 
             <div className="space-y-4">
+              {/* Hashtags */}
               <div className="rounded-2xl border border-zinc-200 bg-white p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-zinc-900">Hashtags</h2>
-                  <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy all</button>
+                  {(analysis?.hashtags || []).length > 0 && (
+                    <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy all</button>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(analysis?.hashtags || []).length ? analysis!.hashtags.map((tag) => (
-                    <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
-                      {tag}
-                    </button>
-                  )) : <p className="text-xs text-zinc-400">Write more to unlock hashtags.</p>}
-                </div>
+                {(analysis?.hashtags || []).length ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {analysis!.hashtags.map((tag) => (
+                      <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-400">Write more to generate real hashtags.</p>
+                )}
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-zinc-900">Comment replies</h2>
-                  <button onClick={() => setCommentsText("")} className="cursor-pointer text-xs font-semibold text-zinc-400 transition-colors hover:text-zinc-700">Clear</button>
-                </div>
-                <textarea value={commentsText} onChange={(e) => setCommentsText(e.target.value)} rows={4} placeholder="Paste comments here. Qalam drafts short replies." className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
-                <div className="mt-3 space-y-2">
-                  {commentReplies.length ? commentReplies.map((item, index) => (
-                    <div key={`${item.comment}-${index}`} className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Comment</p>
-                      <p className="mt-1 text-xs text-zinc-600">{item.comment}</p>
-                      <div className="mt-2 flex items-start justify-between gap-2 border-t border-zinc-100 pt-2">
-                        <p className="flex-1 text-sm font-medium leading-snug text-zinc-900">{item.reply}</p>
-                        <button onClick={() => copyText(item.reply)} className="cursor-pointer shrink-0 text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy</button>
+              {/* Comment replies */}
+              <div className="rounded-2xl border border-zinc-200 bg-white">
+                <button onClick={() => setReplyPanelOpen((v) => !v)} className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left">
+                  <div>
+                    <h2 className="text-sm font-semibold text-zinc-900">Comment replies</h2>
+                    {richReplies.length > 0 && <p className="mt-0.5 text-[10px] text-zinc-400">{Math.ceil(richReplies.length / 3)} comment{Math.ceil(richReplies.length / 3) !== 1 ? "s" : ""} covered</p>}
+                  </div>
+                  <span className="text-xs text-zinc-400">{replyPanelOpen ? "Hide" : "Show"}</span>
+                </button>
+
+                {replyPanelOpen && (
+                  <div className="border-t border-zinc-100 p-4">
+                    <div className="mb-3 space-y-3">
+                      <div>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Your post (optional, adds context)</label>
+                        <textarea
+                          value={originalPostText}
+                          onChange={(e) => setOriginalPostText(e.target.value)}
+                          rows={3}
+                          placeholder="Paste the post you published (optional, helps replies feel more grounded)..."
+                          className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Comments to reply to</label>
+                        <textarea
+                          value={commentsText}
+                          onChange={(e) => setCommentsText(e.target.value)}
+                          rows={4}
+                          placeholder={"Paste comments here, one per line.\nExample:\nThis is exactly what I needed to hear.\nHow do you handle pushback from senior leadership?"}
+                          className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={onGenerateReplies} disabled={isGeneratingReplies || !commentsText.trim()} className="cursor-pointer flex-1 rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">
+                          {isGeneratingReplies ? "Generating replies..." : "Generate replies"}
+                        </button>
+                        {richReplies.length > 0 && (
+                          <button onClick={() => { setRichReplies([]); setCommentsText(""); setOriginalPostText("") }} className="cursor-pointer rounded-xl border border-zinc-200 px-3 py-2.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-50">Clear</button>
+                        )}
                       </div>
                     </div>
-                  )) : <p className="text-xs text-zinc-400">Paste comments to get context-aware replies.</p>}
-                </div>
+
+                    {richReplies.length > 0 && (
+                      <div className="mt-4 space-y-4">
+                        {Array.from(new Set(richReplies.map((r) => r.comment))).map((comment) => {
+                          const replies = richReplies.filter((r) => r.comment === comment)
+                          return (
+                            <div key={comment} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                              <div className="border-b border-zinc-100 bg-white px-3 py-2.5">
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Comment</p>
+                                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{comment}</p>
+                              </div>
+                              <div className="divide-y divide-zinc-100">
+                                {replies.map((r) => {
+                                  const styleColor = r.style === "Thoughtful" ? "text-blue-700 bg-blue-50 border-blue-100" : r.style === "Warm" ? "text-emerald-700 bg-emerald-50 border-emerald-100" : r.style === "Sharp" ? "text-red-600 bg-red-50 border-red-100" : "text-zinc-600 bg-zinc-100 border-zinc-200"
+                                  return (
+                                    <div key={r.style} className="flex items-start gap-3 px-3 py-2.5">
+                                      <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${styleColor}`}>{r.style}</span>
+                                      <p className="flex-1 text-xs leading-relaxed text-zinc-900">{r.reply}</p>
+                                      <button onClick={() => copyText(r.reply)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal transition-colors hover:text-teal-700">Copy</button>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {!richReplies.length && !isGeneratingReplies && (
+                      <p className="mt-2 text-xs text-zinc-400">Paste one or more comments above and tap Generate replies. Each comment gets 3 styles: Thoughtful, Warm, and Sharp.</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -501,7 +692,13 @@ export default function WriterPage() {
   )
 }
 
-function MetricCard({ label, value, note, accent }: { label: string; value: string; note: string; accent: "teal" | "amber" | "zinc" }) {
+function MetricCard({ label, value, note, accent, action }: {
+  label: string
+  value: string
+  note: string
+  accent: "teal" | "amber" | "zinc"
+  action?: { label: string; onClick: () => void; loading?: boolean }
+}) {
   const leftBorder = accent === "amber" ? "border-l-amber-400" : accent === "zinc" ? "border-l-zinc-300" : "border-l-teal"
   const valueColor = accent === "amber" ? "text-amber-700" : accent === "zinc" ? "text-zinc-700" : "text-teal"
   return (
@@ -509,6 +706,11 @@ function MetricCard({ label, value, note, accent }: { label: string; value: stri
       <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{label}</p>
       <p className={`mt-2 text-xl font-bold ${valueColor}`}>{value}</p>
       <p className="mt-1 text-[11px] leading-snug text-zinc-500">{note}</p>
+      {action && (
+        <button onClick={action.onClick} disabled={action.loading} className="mt-2 cursor-pointer rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50">
+          {action.loading ? "..." : action.label}
+        </button>
+      )}
     </div>
   )
 }
