@@ -206,8 +206,8 @@ export default function ChatWorkspace() {
                     )}
                   </button>
                   <div className="flex shrink-0 items-center gap-2 pt-0.5">
-                    <button onClick={() => startRename(conv)} className="text-[10px] font-semibold text-zinc-400 hover:text-zinc-700">Edit</button>
-                    <button onClick={() => deleteConversation(conv.id)} className="text-[10px] font-semibold text-zinc-400 hover:text-red-500">Delete</button>
+                    <button onClick={() => startRename(conv)} className="cursor-pointer text-[10px] font-semibold text-zinc-400 hover:text-zinc-700">Edit</button>
+                    <button onClick={() => deleteConversation(conv.id)} className="cursor-pointer text-[10px] font-semibold text-zinc-400 hover:text-red-500">Delete</button>
                   </div>
                 </div>
               </div>
@@ -239,7 +239,7 @@ export default function ChatWorkspace() {
                       <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-200/80 pt-2">
-                          <button onClick={() => convertToDraft(msg.content)} className="text-[10px] font-bold uppercase tracking-wider text-teal hover:text-teal-700 transition-colors">
+                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-teal hover:text-teal-700 transition-colors">
                             Convert to Draft {"->"}
                           </button>
                         </div>
@@ -266,7 +266,17 @@ export default function ChatWorkspace() {
               <div className="relative flex items-end gap-3 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm focus-within:border-teal/50 focus-within:ring-4 focus-within:ring-teal/10">
                 <textarea
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={e => {
+                    setInput(e.target.value)
+                    e.target.style.height = "auto"
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
+                  }}
+                  onKeyDown={(e) => {
+                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !isLoading) {
+                      e.preventDefault()
+                      sendMessage()
+                    }
+                  }}
                   placeholder="Ask the AI for a post idea..."
                   className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 pl-3 text-sm text-zinc-900 outline-none"
                   rows={1}
@@ -279,7 +289,7 @@ export default function ChatWorkspace() {
                   <svg className="h-4 w-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 </button>
               </div>
-              <p className="mt-2 text-center text-[10px] text-zinc-400">Enter = new line. Use the arrow button to send.</p>
+              <p className="mt-2 text-center text-[10px] text-zinc-400">Enter = new line. Ctrl+Enter (or ⌘+Enter) to send.</p>
               {draftStatus && (
                 <p className={`mt-1 text-center text-[10px] font-semibold ${
                   draftStatus.includes("Failed") ? "text-red-500" :

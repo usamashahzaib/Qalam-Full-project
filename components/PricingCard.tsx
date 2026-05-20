@@ -15,6 +15,7 @@ interface PricingCardProps {
   href: string
   highlighted?: boolean
   badge?: string
+  featureStatus?: "live" | "beta" | "coming_soon"
 }
 
 export function PricingCard({
@@ -28,6 +29,7 @@ export function PricingCard({
   href,
   highlighted = false,
   badge,
+  featureStatus,
 }: PricingCardProps) {
   return (
     <motion.div
@@ -75,6 +77,12 @@ export function PricingCard({
       >
         {cta}
       </Link>
+
+      {featureStatus === "beta" && (
+        <p className={`mt-3 text-center text-xs ${highlighted ? "text-teal-200" : "text-zinc-400"}`}>
+          Guided rollout — contact us to start
+        </p>
+      )}
     </motion.div>
   )
 }

@@ -362,7 +362,7 @@ function FAQSection() {
           </h2>
           <p className="text-lg text-zinc-600">
             Need something specific?{" "}
-            <a href="mailto:hello@byqalam.com" className="text-teal underline underline-offset-2">
+            <a href="mailto:info@byqalam.com" className="text-teal underline underline-offset-2">
               Email us
             </a>
           </p>

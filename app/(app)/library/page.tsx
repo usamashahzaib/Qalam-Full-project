@@ -46,12 +46,18 @@ export default function LibraryPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Library</h1>
-          <p className="mt-1 text-sm text-zinc-500">Archive, recycle, and reload workspace content with actual internal quality scoring.</p>
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }}
+        />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-900">Library</h1>
+            <p className="mt-1 text-sm text-zinc-500">Archive, recycle, and reload workspace content with actual internal quality scoring.</p>
+          </div>
+          <Link href={withClientParam("/writer?compose=new", activeClientId)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">New draft</Link>
         </div>
-        <Link href={withClientParam("/writer?compose=new", activeClientId)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">New draft</Link>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -74,7 +80,7 @@ export default function LibraryPage() {
           {topPerformers.length ? topPerformers.map(({ post, intelligence }) => (
             <button key={post.id} onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-left transition-colors hover:bg-zinc-100">
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">{intelligence.overallScore}%</span>
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">{intelligence.overallScore}/100</span>
                 <span className="max-w-[240px] truncate text-sm font-semibold text-zinc-900">{post.title}</span>
               </div>
             </button>

@@ -89,23 +89,51 @@ export const analyzeContent = ({
   const voiceFit = clamp((profile?.tone ? 25 : 10) + (profile?.industry ? 20 : 10) + (profile?.title ? 20 : 10) + (buildHashtags(text, profile).length >= 4 ? 10 : 4) + (storyRegex.test(content) ? 15 : 8) + (/linkedin/i.test(type || "") ? 10 : 6))
   const overall = clamp(hook * 0.24 + readability * 0.22 + authority * 0.2 + cta * 0.14 + voiceFit * 0.2)
   const improvements = [
-    hook < 65 ? "Hook ko sharper karo: first line me data, question, ya bold claim lao." : "",
-    readability < 65 ? "Readability improve karo: short lines aur 3-5 scan breaks rakho." : "",
-    authority < 65 ? "Specific proof add karo: metric, team signal, ya real example." : "",
-    cta < 60 ? "End me clear next step do: comment, save, ya opinion ask." : "",
-    voiceFit < 70 ? "Voice profile fields fill karo ta ke output tumhari positioning se align ho." : "",
+    hook < 65 ? "Sharpen the hook: open with data, a question, or a bold claim." : "",
+    readability < 65 ? "Improve readability: use short lines and at least 3 paragraph breaks." : "",
+    authority < 65 ? "Add specific proof: a metric, team result, or concrete example." : "",
+    cta < 60 ? "Add a clear next step: ask for a comment, a save, or share an opinion." : "",
+    voiceFit < 70 ? "Complete your voice profile to align AI output with your positioning." : "",
   ].filter(Boolean).slice(0, 3)
+
+  const hookNote = hookRegex.test(firstLine)
+    ? (firstLine.length <= 90 ? "Strong opening — hook found in first line" : "Hook present but first line is too long (aim under 90 chars)")
+    : "Weak opening — add a question, data point, or bold claim to the first line"
+
+  const readabilityNote = words.length < 80
+    ? "Too short — add more context or specifics"
+    : words.length > 260
+      ? "Too long — trim or split for better scroll-through"
+      : paragraphs.length < 3
+        ? "Add 3+ paragraph breaks — dense text loses mobile readers"
+        : "Good length and structure for LinkedIn"
+
+  const authorityNote = authorityRegex.test(text)
+    ? "Concrete proof signals found — specific data or results present"
+    : "No specific data detected — add a metric, result, or real example"
+
+  const ctaNote = ctaRegex.test(content)
+    ? "Clear engagement ask found"
+    : /[?]$/.test(content.trim())
+      ? "Ends with a question — good CTA signal"
+      : "No call-to-action — end with a direct ask or question"
+
+  const voiceFitNote = !profile?.tone && !profile?.industry && !profile?.title
+    ? "Complete voice profile to improve alignment"
+    : voiceFit >= 70
+      ? "Well aligned with your saved profile"
+      : "Partial profile — add tone, industry, or title for better alignment"
 
   return {
     overallScore: overall,
     overallLabel: overall >= 82 ? "Strong" : overall >= 68 ? "Solid" : overall >= 52 ? "Needs polish" : "Weak",
     hookType: hookRegex.test(firstLine) ? (/^\d/.test(firstLine) ? "Data-led" : /\?/.test(firstLine) ? "Question" : storyRegex.test(firstLine) ? "Story-led" : "Opinion-led") : "Plain",
     scores: [
-      { label: "Hook", score: hook, note: "First line stopping power" },
-      { label: "Readability", score: readability, note: "Scan-friendly mobile structure" },
-      { label: "Authority", score: authority, note: "Specificity and proof" },
-      { label: "CTA", score: cta, note: "Clear engagement ask" },
-      { label: "Voice fit", score: voiceFit, note: "Alignment with saved profile" },
+      { label: "Hook", score: hook, note: hookNote },
+      { label: "Readability", score: readability, note: readabilityNote },
+      { label: "Authority", score: authority, note: authorityNote },
+      { label: "CTA", score: cta, note: ctaNote },
+      { label: "Voice fit", score: voiceFit, note: voiceFitNote },
     ],
     improvements,
     hashtags: buildHashtags(text, profile),

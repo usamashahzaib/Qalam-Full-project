@@ -100,8 +100,8 @@ export function Footer() {
             <Link href="/terms" className="transition-colors hover:text-white/60">
               Terms
             </Link>
-            <a href="mailto:hello@byqalam.com" className="transition-colors hover:text-white/60">
-              hello@byqalam.com
+            <a href="mailto:info@byqalam.com" className="transition-colors hover:text-white/60">
+              info@byqalam.com
             </a>
           </div>
         </div>

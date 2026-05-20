@@ -45,8 +45,12 @@ export default function AgencyDashboard() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10">
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(201,135,31,0.1) 0%, transparent 70%)" }}
+        />
+        <div className="relative">
           <h1 className="text-3xl font-bold text-zinc-900">Agency Hub</h1>
           <p className="mt-1 text-sm text-zinc-500">Add client workspaces, switch into them, and control who can draft, review, or publish.</p>
         </div>

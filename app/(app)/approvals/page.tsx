@@ -71,12 +71,18 @@ export default function ApprovalsPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10 font-jakarta">
-      <div className="mb-8 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Approvals</h1>
-          <p className="mt-1 text-sm text-zinc-500">Client review lives here. Personal workspaces do not need an approval queue.</p>
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }}
+        />
+        <div className="relative flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-900">Approvals</h1>
+            <p className="mt-1 text-sm text-zinc-500">Client review lives here. Personal workspaces do not need an approval queue.</p>
+          </div>
+          {isClientWorkspace ? <button onClick={fetchItems} className="shrink-0 text-sm font-semibold text-teal hover:text-teal-700">Refresh</button> : null}
         </div>
-        {isClientWorkspace ? <button onClick={fetchItems} className="text-sm font-semibold text-teal hover:text-teal-700">Refresh</button> : null}
       </div>
 
       {error && <div className="mb-6 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>}

@@ -77,21 +77,42 @@ export default function VoiceProfilePage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-zinc-900">Voice Profile</h1>
-        <p className="mt-1 text-sm text-zinc-500">Your brand brief for Qalam. It keeps drafts, AI replies, and post angles aligned with your tone.</p>
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(201,135,31,0.1) 0%, transparent 70%)" }}
+        />
+        <div className="relative">
+          <h1 className="text-3xl font-bold text-zinc-900">Voice Profile</h1>
+          <p className="mt-1 text-sm text-zinc-500">Your brand brief for Qalam. It keeps drafts, AI replies, and post angles aligned with your tone.</p>
+        </div>
       </div>
 
       <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-base font-semibold text-zinc-900">Profile readiness</h2>
-            <p className="mt-1 text-sm text-zinc-500">{readyCount}/6 fields are ready for writing and publishing.</p>
+            <p className="mt-1 text-sm text-zinc-500">{readyCount}/6 fields complete — AI drafts use these to match your voice and positioning.</p>
           </div>
           <span className="text-3xl font-bold text-gold">{readyCount}/6</span>
         </div>
         <div className="mt-4 h-2 rounded-full bg-zinc-100">
           <div className="h-full rounded-full bg-teal" style={{ width: `${(readyCount / 6) * 100}%` }} />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {[
+            { label: "Name", filled: Boolean(profile.name) },
+            { label: "Title / Role", filled: Boolean(profile.title) },
+            { label: "LinkedIn URL", filled: Boolean(profile.linkedinUrl) },
+            { label: "Industry", filled: Boolean(profile.industry) },
+            { label: "Brand tone", filled: Boolean(profile.tone) },
+            { label: "Content goals", filled: profile.goals.length > 0 },
+          ].map((field) => (
+            <div key={field.label} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${field.filled ? "bg-teal/5 text-teal" : "bg-zinc-50 text-zinc-400"}`}>
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${field.filled ? "bg-teal text-white" : "bg-zinc-200 text-zinc-400"}`}>{field.filled ? "✓" : "–"}</span>
+              {field.label}
+            </div>
+          ))}
         </div>
       </div>
 

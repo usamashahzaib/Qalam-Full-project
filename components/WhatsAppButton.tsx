@@ -2,8 +2,9 @@
 
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
+import { SUPPORT_WHATSAPP } from "@/lib/contact"
 
-const WHATSAPP_NUMBER = "923714156567"
+const WHATSAPP_NUMBER = SUPPORT_WHATSAPP.replace(/[^0-9]/g, "")
 const PREFILL_MESSAGE = encodeURIComponent(
   "Hi! I'd like to learn more about Qalam and how it can help with my LinkedIn content."
 )

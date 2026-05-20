@@ -77,10 +77,10 @@ export default function DocsPage() {
                   Browse Free Tools
                 </Link>
                 <a
-                  href="mailto:support@byqalam.com"
+                  href="mailto:info@byqalam.com"
                   className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
                 >
-                  support@byqalam.com
+                  info@byqalam.com
                 </a>
               </div>
             </div>

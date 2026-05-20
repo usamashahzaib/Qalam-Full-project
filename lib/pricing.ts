@@ -1,4 +1,4 @@
-﻿export interface PricingPlan {
+export interface PricingPlan {
   plan: string
   monthlyPkr: number
   annualPkrPerMonth?: number
@@ -12,18 +12,19 @@
   featureStatus: "live" | "beta" | "coming_soon"
 }
 
-/** PKR pricing - early-adopter / Pakistan market */
+/** PKR pricing — Pakistan market. All caps are real, not marketing. */
 export const PLANS: PricingPlan[] = [
   {
     plan: "Free",
     monthlyPkr: 0,
     period: "forever",
-    description: "Try Qalam with no commitment. Build your first drafts and see the AI in action.",
+    description: "Try the real workflow. No card, no time limit — just a capped starter workspace.",
     features: [
-      "LinkedIn sign-in",
-      "AI writer - 10 drafts/month",
-      "Voice profile (1 workspace)",
-      "Basic analytics (event log)",
+      "5 AI drafts per month",
+      "1 personal workspace",
+      "Content scoring and hashtag hints",
+      "Activity log (basic analytics)",
+      "No LinkedIn publish or scheduling",
       "Community support",
     ],
     cta: "Start free",
@@ -33,20 +34,20 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Solo",
-    monthlyPkr: 1490,
-    annualPkrPerMonth: 1190,
+    monthlyPkr: 1290,
+    annualPkrPerMonth: 990,
     period: "mo",
-    description: "For individual professionals growing their LinkedIn presence. All core features, no limits.",
+    description: "For individual professionals building a consistent LinkedIn presence.",
     features: [
-      "Everything in Free",
-      "Unlimited AI drafts",
-      "LinkedIn publish - direct from app",
-      "Carousel generation (AI slides)",
-      "Post scheduling",
+      "50 AI drafts per month",
+      "LinkedIn publish directly from app",
+      "Post scheduling and planner",
+      "3 carousel projects per month",
       "Full analytics dashboard",
+      "Content scoring and voice profile",
       "Priority email support",
     ],
-    cta: "Start Solo",
+    cta: "Get Solo",
     href: "/auth",
     highlighted: true,
     badge: "Most popular",
@@ -54,60 +55,62 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Pro",
-    monthlyPkr: 2990,
-    annualPkrPerMonth: 2490,
+    monthlyPkr: 2490,
+    annualPkrPerMonth: 1990,
     period: "mo",
-    description: "For serious creators and consultants who need more AI power and workspace history.",
+    description: "For serious creators and consultants who need full AI power and research.",
     features: [
-      "Everything in Solo",
-      "Post variants (A/B drafts)",
-      "Competitor research tools",
-      "Extended post history",
-      "Approval workflow (send for review)",
-      "Export to PDF / text",
+      "Unlimited AI drafts",
+      "10 carousel projects per month",
+      "5 competitor research runs per month",
+      "Approval workflow (send for client review)",
+      "Export to PDF and text",
+      "Voice intelligence and post scoring",
+      "Priority support",
     ],
-    cta: "Start Pro",
+    cta: "Get Pro",
     href: "/auth",
     badge: "Best value",
     featureStatus: "live",
   },
   {
-    plan: "Team",
+    plan: "Agency Starter",
     monthlyPkr: 5990,
     annualPkrPerMonth: 4990,
     period: "mo",
-    description: "For internal teams that need a shared workspace, approvals, and guided rollout before self-serve billing lands.",
+    description: "For small agencies operating multiple client workspaces with review and publish control.",
     features: [
       "Everything in Pro",
-      "Shared team workspace",
-      "Role-based write and review permissions",
-      "Approval queue",
-      "Shared voice profile",
-      "Guided onboarding",
+      "3 client workspaces",
+      "Up to 5 team seats",
+      "Per-workspace approvals and publish logs",
+      "Shared voice profiles",
+      "Guided agency onboarding",
+      "WhatsApp support",
     ],
     cta: "Talk to us",
     href: "/contact",
-    badge: "Beta",
+    badge: "Agency",
     featureStatus: "beta",
   },
   {
-    plan: "Agency",
+    plan: "Agency Growth",
     monthlyPkr: 9990,
     annualPkrPerMonth: 7990,
     period: "mo",
-    description: "For agencies operating multiple client workspaces through the current guided rollout.",
+    description: "For agencies managing many clients with full workspace isolation and team scale.",
     features: [
-      "Everything in Team",
-      "Multiple client workspaces",
-      "Client-scoped drafts, chat, and scheduling",
-      "Workspace-aware approvals and publish logs",
-      "Per-workspace analytics views",
-      "Dedicated onboarding",
+      "Everything in Agency Starter",
+      "Unlimited client workspaces",
+      "Unlimited team seats",
+      "Workspace-level analytics",
+      "Per-client billing scope",
       "Commercial rollout support",
+      "Priority WhatsApp support",
     ],
     cta: "Talk to us",
     href: "/contact",
-    badge: "Early access",
+    badge: "Scale",
     featureStatus: "beta",
   },
 ]
@@ -117,21 +120,30 @@ export const COMPARISON_ROWS: {
   free: string
   solo: string
   pro: string
-  team: string
-  agency: string
+  agencyStarter: string
+  agencyGrowth: string
 }[] = [
-  { label: "AI drafts", free: "10/month", solo: "Unlimited", pro: "Unlimited", team: "Unlimited", agency: "Unlimited" },
-  { label: "LinkedIn publish", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Carousel generation", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Post scheduling", free: "-", solo: "Live", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Approvals workflow", free: "-", solo: "-", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Competitor research", free: "-", solo: "-", pro: "Live", team: "Live", agency: "Live" },
-  { label: "Team operations", free: "1 workspace", solo: "1 workspace", pro: "1 workspace", team: "Shared workspace", agency: "Multi-workspace" },
-  { label: "Client workspaces", free: "-", solo: "-", pro: "-", team: "-", agency: "Live" },
-  { label: "Analytics", free: "Basic", solo: "Full", pro: "Full", team: "Full", agency: "Workspace-level" },
-  { label: "Support", free: "Community", solo: "Email", pro: "Priority email", team: "Guided", agency: "Dedicated" },
-  { label: "Billing", free: "Free", solo: "PKR 1,490/mo", pro: "PKR 2,990/mo", team: "PKR 5,990/mo", agency: "PKR 9,990/mo" },
+  { label: "AI drafts", free: "5/month", solo: "50/month", pro: "Unlimited", agencyStarter: "Unlimited", agencyGrowth: "Unlimited" },
+  { label: "LinkedIn publish", free: "—", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Post scheduling", free: "—", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Carousel generation", free: "—", solo: "3/month", pro: "10/month", agencyStarter: "20/month", agencyGrowth: "Unlimited" },
+  { label: "Competitor research", free: "—", solo: "—", pro: "5 runs/month", agencyStarter: "15 runs/month", agencyGrowth: "Unlimited" },
+  { label: "Approvals workflow", free: "—", solo: "—", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Client workspaces", free: "—", solo: "—", pro: "—", agencyStarter: "3", agencyGrowth: "Unlimited" },
+  { label: "Team seats", free: "1", solo: "1", pro: "1", agencyStarter: "5", agencyGrowth: "Unlimited" },
+  { label: "Analytics", free: "Basic", solo: "Full", pro: "Full", agencyStarter: "Full", agencyGrowth: "Workspace-level" },
+  { label: "Support", free: "Community", solo: "Email", pro: "Priority email", agencyStarter: "WhatsApp", agencyGrowth: "Priority WhatsApp" },
+  { label: "Monthly price", free: "Free", solo: "PKR 1,290", pro: "PKR 2,490", agencyStarter: "PKR 5,990", agencyGrowth: "PKR 9,990" },
 ]
+
+/** Map plan names to their monthly/annual prices for use in upgrade flows */
+export const PLAN_PRICES: Record<string, { monthly: number; annual: number }> = {
+  Free: { monthly: 0, annual: 0 },
+  Solo: { monthly: 1290, annual: 990 },
+  Pro: { monthly: 2490, annual: 1990 },
+  "Agency Starter": { monthly: 5990, annual: 4990 },
+  "Agency Growth": { monthly: 9990, annual: 7990 },
+}
 
 export const formatPkr = (amount: number): string => {
   if (amount === 0) return "Free"

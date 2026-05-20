@@ -29,7 +29,7 @@ export type WorkspaceProfile = {
 }
 
 export type WorkspaceBilling = {
-  plan: "Free" | "Pro" | "Team" | "Agency"
+  plan: "Free" | "Solo" | "Pro" | "Agency Starter" | "Agency Growth"
   billingCycle: "monthly" | "annual"
   checkoutReady: boolean
 }
@@ -113,7 +113,12 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
     if (typeof window === "undefined") return defaultBilling
     try {
       const raw = localStorage.getItem(BILLING_STORAGE_KEY)
-      return raw ? { ...defaultBilling, ...JSON.parse(raw) } : defaultBilling
+      if (!raw) return defaultBilling
+      const stored = JSON.parse(raw) as Partial<WorkspaceBilling>
+      // Migrate old plan names from previous schema
+      if (stored.plan === ("Team" as string)) stored.plan = "Agency Starter"
+      if (stored.plan === ("Agency" as string)) stored.plan = "Agency Growth"
+      return { ...defaultBilling, ...stored }
     } catch {
       return defaultBilling
     }

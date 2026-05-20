@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { analyzeContent } from "@/lib/content-intelligence"
 import { withClientParam } from "@/lib/workspace-navigation"
 
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
@@ -65,8 +66,23 @@ export default function AnalyticsPage() {
       const slot = timeline.find((item) => item.key === isoDay(createdAt))
       if (slot) slot.count++
     }
+    const pendingApproval = state.posts.filter((post) => post.status === "pending_approval").length
+    const rejected = state.posts.filter((post) => post.status === "rejected").length
+
+    const scoreBuckets = { weak: 0, needsPolish: 0, solid: 0, strong: 0 }
+    for (const post of state.posts) {
+      const score = analyzeContent({ title: post.title, content: post.content, type: post.type, profile: state.profile }).overallScore
+      if (score >= 82) scoreBuckets.strong++
+      else if (score >= 68) scoreBuckets.solid++
+      else if (score >= 52) scoreBuckets.needsPolish++
+      else scoreBuckets.weak++
+    }
+
     return {
       byStatus,
+      pendingApproval,
+      rejected,
+      scoreBuckets,
       typeRows,
       grid,
       gridMax,
@@ -83,12 +99,18 @@ export default function AnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 font-jakarta sm:px-10">
-      <div className="mb-8 flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Analytics</h1>
-          <p className="mt-1 text-sm text-zinc-500">Graph view of your actual drafts, schedules, publishing activity, and job history.</p>
+      <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
+        <div
+          className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full"
+          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }}
+        />
+        <div className="relative flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-zinc-900">Analytics</h1>
+            <p className="mt-1 text-sm text-zinc-500">Graph view of your actual drafts, schedules, publishing activity, and job history.</p>
+          </div>
+          <Link href={withClientParam("/writer", activeClientId)} className="shrink-0 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Write post</Link>
         </div>
-        <Link href={withClientParam("/writer", activeClientId)} className="shrink-0 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Write post</Link>
       </div>
 
       {loading ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center text-sm text-zinc-500">Loading workspace data...</div> : null}
@@ -103,10 +125,10 @@ export default function AnalyticsPage() {
             <Stat label="Total posts" value={data.byStatus.total} note="all statuses" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Publish events" value={data.publishEvents} note="event log" />
-            <Stat label="Schedule events" value={data.scheduleEvents} note="event log" />
-            <Stat label="Draft events" value={data.draftEvents} note="event log" />
+            <Stat label="In review" value={data.pendingApproval} note="pending approval" />
+            <Stat label="Rejected" value={data.rejected} note="workspace state" />
             <Stat label="Carousel jobs" value={data.carouselCount} note="job history" />
+            <Stat label="Publish events" value={data.publishEvents} note="event log" />
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
@@ -115,7 +137,7 @@ export default function AnalyticsPage() {
                 <h2 className="text-base font-semibold text-zinc-900">Activity timeline</h2>
                 <p className="text-xs text-zinc-500">Last 14 days of real event activity.</p>
               </div>
-              <div className="grid h-56 grid-cols-14 items-end gap-2">
+              <div className="grid h-56 items-end gap-2" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                 {data.timeline.map((item) => (
                   <div key={item.key} className="flex h-full flex-col justify-end">
                     <div className="rounded-t-xl bg-teal/80" style={{ height: `${Math.max(8, (item.count / data.timelineMax) * 100)}%` }} />
@@ -141,6 +163,36 @@ export default function AnalyticsPage() {
               </div>
             </section>
           </div>
+
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-zinc-900">Content score distribution</h2>
+              <p className="text-xs text-zinc-500">Internal quality scores across all workspace posts.</p>
+            </div>
+            {data.byStatus.total === 0 ? (
+              <p className="text-sm text-zinc-500">No posts to score yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {[
+                  { label: "Strong", count: data.scoreBuckets.strong, color: "bg-teal", range: "82–100" },
+                  { label: "Solid", count: data.scoreBuckets.solid, color: "bg-teal/50", range: "68–81" },
+                  { label: "Needs polish", count: data.scoreBuckets.needsPolish, color: "bg-amber-400", range: "52–67" },
+                  { label: "Weak", count: data.scoreBuckets.weak, color: "bg-zinc-300", range: "0–51" },
+                ].map((bucket) => (
+                  <div key={bucket.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-zinc-600">{bucket.label}</span>
+                      <span className="text-[10px] text-zinc-400">{bucket.range}</span>
+                    </div>
+                    <p className="text-2xl font-bold text-zinc-900">{bucket.count}</p>
+                    <div className="mt-2 h-1.5 rounded-full bg-zinc-200">
+                      <div className={`h-full rounded-full ${bucket.color}`} style={{ width: `${data.byStatus.total ? (bucket.count / data.byStatus.total) * 100 : 0}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
             <div className="mb-4">

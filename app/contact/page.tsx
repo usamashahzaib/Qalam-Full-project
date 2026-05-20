@@ -9,22 +9,16 @@ export const metadata: Metadata = {
 
 const CONTACTS = [
   {
-    title: "Sales",
-    desc: "Plan questions, agency fit, and team expansion.",
-    value: "enterprise@byqalam.com",
-    href: "mailto:enterprise@byqalam.com",
+    title: "Sales & upgrades",
+    desc: "Plan questions, agency fit, and upgrade requests.",
+    value: "business@byqalam.com",
+    href: "mailto:business@byqalam.com",
   },
   {
-    title: "Support",
-    desc: "Product questions and public-site issues.",
-    value: "support@byqalam.com",
-    href: "mailto:support@byqalam.com",
-  },
-  {
-    title: "General",
-    desc: "Everything else, including partnerships.",
-    value: "hello@byqalam.com",
-    href: "mailto:hello@byqalam.com",
+    title: "General & support",
+    desc: "Product questions, partnerships, and everything else.",
+    value: "info@byqalam.com",
+    href: "mailto:info@byqalam.com",
   },
 ]
 

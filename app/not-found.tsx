@@ -36,7 +36,7 @@ export default function NotFound() {
         <Link href="/pricing" className="hover:text-teal">Pricing</Link>
         <Link href="/blog" className="hover:text-teal">Blog</Link>
         <Link href="/contact" className="hover:text-teal">Contact</Link>
-        <a href="mailto:hello@byqalam.com" className="hover:text-teal">hello@byqalam.com</a>
+        <a href="mailto:info@byqalam.com" className="hover:text-teal">info@byqalam.com</a>
       </div>
     </div>
   )

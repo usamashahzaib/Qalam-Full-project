@@ -259,7 +259,7 @@ export default function WriterPage() {
   const onSendForApproval = async () => {
     if (!content.trim()) { setStatus("Write content first"); return }
     if (!isClientWorkspace) {
-      setStatus("Personal workspace me self-approval nahin. Save, schedule, ya publish directly use karo.")
+      setStatus("Approvals are for client workspaces. In your personal workspace, save, schedule, or publish directly.")
       return
     }
     try {
@@ -398,10 +398,10 @@ export default function WriterPage() {
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <h2 className="mb-3 text-sm font-semibold text-zinc-900">Quick publish guide</h2>
           <div className="space-y-2 text-sm text-zinc-600">
-            <p>- Save = draft in workspace.</p>
-            <p>- Schedule = planner me month/day slot.</p>
-            <p>- Publish now = direct LinkedIn ya manual handoff.</p>
-            <p>- Personal workspace me approvals skip hoti hain.</p>
+            <p>- Save = stores as draft in workspace.</p>
+            <p>- Schedule = adds to planner with date and time.</p>
+            <p>- Publish now = publishes directly to LinkedIn or opens manual handoff.</p>
+            <p>- Approvals apply in client workspaces only.</p>
           </div>
         </div>
       </aside>

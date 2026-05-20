@@ -15,15 +15,15 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Qalam now uses PKR-first early pricing for the Pakistan market. Solo starts at PKR 1,490/month, Pro at PKR 2,990/month, Team at PKR 5,990/month, and Agency at PKR 9,990/month.",
+    a: "Qalam uses PKR-first early pricing for the Pakistan market. Solo starts at PKR 1,290/month, Pro at PKR 2,490/month, Agency Starter at PKR 5,990/month, and Agency Growth at PKR 9,990/month.",
   },
   {
     q: "Is there a free trial for paid plans?",
     a: "Free acts as the product trial. Paid plans are currently unlocked through guided onboarding instead of self-serve checkout.",
   },
   {
-    q: "What is the difference between Team and Agency?",
-    a: "Team is for one brand with multiple operators. Agency is for multiple client workspaces with review flow and publishing separation.",
+    q: "What is the difference between Agency Starter and Agency Growth?",
+    a: "Agency Starter supports up to 3 client workspaces and 5 team seats. Agency Growth removes all workspace and seat caps for agencies managing many clients at scale.",
   },
   {
     q: "Can I cancel anytime?",
@@ -185,8 +185,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Team</th>
-                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency Starter</th>
+                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency Growth</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -203,8 +203,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-400">{row.free}</td>
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo}</td>
                       <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro}</span></td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.team}</td>
-                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agency}</span></td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter}</td>
+                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth}</span></td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -226,7 +226,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href="mailto:enterprise@byqalam.com" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                <Link href="mailto:business@byqalam.com" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
                   Contact Sales
                 </Link>
                 <Link href="/contact" className="rounded-xl border-2 border-white/20 px-8 py-4 text-center font-semibold text-white transition-colors hover:bg-white/10">

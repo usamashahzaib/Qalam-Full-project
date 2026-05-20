@@ -49,7 +49,7 @@ const SECTIONS = [
     id: "dmca",
     title: "DMCA and Copyright Infringement Claims",
     content: [
-      "If you believe content on byqalam.com infringes your copyright, send a notice to legal@byqalam.com with identification of the work, the allegedly infringing material, your contact information, and a good-faith statement that the use is unauthorized.",
+      "If you believe content on byqalam.com infringes your copyright, send a notice to business@byqalam.com with identification of the work, the allegedly infringing material, your contact information, and a good-faith statement that the use is unauthorized.",
     ],
   },
   {
@@ -77,7 +77,7 @@ const SECTIONS = [
     id: "contact",
     title: "Questions",
     content: [
-      "For intellectual property matters: legal@byqalam.com. For billing: billing@byqalam.com. For general support: hello@byqalam.com.",
+      "For billing and business matters: business@byqalam.com. For general support and everything else: info@byqalam.com.",
     ],
   },
 ]
@@ -94,8 +94,8 @@ export default function TermsPage() {
             <h1 className="mb-4 text-5xl font-extrabold text-zinc-900">Terms of Service</h1>
             <p className="text-lg leading-relaxed text-zinc-500">
               Last updated: May 2026 · Questions?{" "}
-              <a href="mailto:legal@byqalam.com" className="text-teal underline underline-offset-2">
-                legal@byqalam.com
+              <a href="mailto:business@byqalam.com" className="text-teal underline underline-offset-2">
+                business@byqalam.com
               </a>
             </p>
           </FadeUp>
@@ -152,7 +152,7 @@ export default function TermsPage() {
                 Enterprise agreements, DPA, and custom licensing can be discussed case by case.
               </h2>
               <Link
-                href="mailto:legal@byqalam.com"
+                href="mailto:business@byqalam.com"
                 className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
               >
                 {"Contact Legal ->"}
