@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId, requireAppSession } from "@/lib/server/app-session"
+import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 
@@ -61,11 +61,14 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          { role: "system", content: "You are a professional LinkedIn growth consultant and content strategist. Help the user brainstorm, write, or refine their posts." },
+          {
+            role: "system",
+            content:
+              "You are Qalam AI Strategist. Reply short, precise, and useful. Follow the user's wording closely. Prefer direct next steps, sharp bullets, and done-for-you drafts over generic coaching. If the user says they do not know, take the lead.",
+          },
           ...formattedHistory,
-          { role: "user", content }
         ],
-        temperature: 0.7,
+        temperature: 0.4,
       }),
     })
 

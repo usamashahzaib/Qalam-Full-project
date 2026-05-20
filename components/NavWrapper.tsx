@@ -8,19 +8,22 @@ import { AuthPanelProvider } from "@/components/providers/AuthPanelContext"
 import { AuthSlidePanel } from "@/components/AuthSlidePanel"
 
 const APP_ROUTES = [
+  "/agency",
+  "/analytics",
+  "/approvals",
+  "/auth",
+  "/calendar",
+  "/carousels",
+  "/chat",
+  "/competitors",
   "/dashboard",
+  "/library",
+  "/login",
+  "/settings",
+  "/signup",
+  "/voice",
   "/write",
   "/writer",
-  "/calendar",
-  "/library",
-  "/analytics",
-  "/voice",
-  "/agency",
-  "/competitors",
-  "/settings",
-  "/auth",
-  "/login",
-  "/signup",
 ]
 
 export function NavWrapper({ children }: { children: React.ReactNode }) {

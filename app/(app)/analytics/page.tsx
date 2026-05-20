@@ -9,7 +9,7 @@ type RawEvent = { event_type?: string; payload?: Record<string, unknown>; create
 type RawJob = { job_type?: string; status?: string; title?: string; created_at?: string }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
-const TIME_LABELS = ["Morning\n5-12", "Midday\n12-14", "Afternoon\n14-18", "Evening\n18+"] as const
+const TIME_LABELS = ["Morning", "Midday", "Afternoon", "Evening"] as const
 const dayIndex = (d: Date) => { const n = d.getDay(); return n === 0 ? 6 : n - 1 }
 const timeBucket = (time: string | null | undefined): number => !time ? -1 : (() => { const h = parseInt(time.slice(0, 2), 10); if (h >= 5 && h < 12) return 0; if (h >= 12 && h < 14) return 1; if (h >= 14 && h < 18) return 2; return 3 })()
 const isoDay = (iso: string) => { try { return new Date(iso).toISOString().slice(0, 10) } catch { return "" } }
@@ -39,28 +39,135 @@ export default function AnalyticsPage() {
   const data = useMemo(() => {
     const byStatus = { draft: state.drafts.length, scheduled: state.scheduled.length, published: state.published.length, total: state.posts.length }
     const typeMap: Record<string, number> = {}
-    for (const post of state.posts) { const key = post.type || "Unknown"; typeMap[key] = (typeMap[key] || 0) + 1 }
+    for (const post of state.posts) {
+      const key = post.type || "Unknown"
+      typeMap[key] = (typeMap[key] || 0) + 1
+    }
     const typeRows = Object.entries(typeMap).sort((a, b) => b[1] - a[1])
     const grid = Array.from({ length: 7 }, () => new Array<number>(4).fill(0))
-    for (const post of [...state.scheduled, ...state.published]) { const date = parsePostDate(post.date); if (!date) continue; const di = dayIndex(date); const ti = timeBucket(post.scheduledTime); if (ti >= 0) grid[di][ti]++ }
+    for (const post of [...state.scheduled, ...state.published]) {
+      const date = parsePostDate(post.date)
+      if (!date) continue
+      const di = dayIndex(date)
+      const ti = timeBucket(post.scheduledTime)
+      if (ti >= 0) grid[di][ti]++
+    }
     const gridMax = Math.max(1, ...grid.flat())
     const today = new Date(); today.setHours(0, 0, 0, 0)
-    const timeline = Array.from({ length: 14 }, (_, i) => { const d = new Date(today); d.setDate(today.getDate() - (13 - i)); return { key: d.toISOString().slice(0, 10), label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), count: 0 } })
-    for (const event of events) { const createdAt = event.created_at; if (!createdAt) continue; const slot = timeline.find((item) => item.key === isoDay(createdAt)); if (slot) slot.count++ }
-    const timelineMax = Math.max(1, ...timeline.map((item) => item.count))
-    return { byStatus, typeRows, grid, gridMax, timeline, timelineMax, publishEvents: events.filter((event) => event.event_type === "post_published").length, scheduleEvents: events.filter((event) => event.event_type === "post_scheduled").length, draftEvents: events.filter((event) => event.event_type === "draft_saved").length, jobByStatus: jobs.reduce<Record<string, number>>((acc, job) => { const key = job.status || "unknown"; acc[key] = (acc[key] || 0) + 1; return acc }, {}), carouselCount: jobs.filter((job) => job.job_type === "carousel_generation").length }
+    const timeline = Array.from({ length: 14 }, (_, i) => {
+      const d = new Date(today)
+      d.setDate(today.getDate() - (13 - i))
+      return { key: d.toISOString().slice(0, 10), label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), count: 0 }
+    })
+    for (const event of events) {
+      const createdAt = event.created_at
+      if (!createdAt) continue
+      const slot = timeline.find((item) => item.key === isoDay(createdAt))
+      if (slot) slot.count++
+    }
+    return {
+      byStatus,
+      typeRows,
+      grid,
+      gridMax,
+      timeline,
+      timelineMax: Math.max(1, ...timeline.map((item) => item.count)),
+      publishEvents: events.filter((event) => event.event_type === "post_published").length,
+      scheduleEvents: events.filter((event) => event.event_type === "post_scheduled").length,
+      draftEvents: events.filter((event) => event.event_type === "draft_saved").length,
+      carouselCount: jobs.filter((job) => job.job_type === "carousel_generation").length,
+    }
   }, [events, jobs, state])
 
   const hasData = state.posts.length > 0 || events.length > 0
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-10 font-jakarta sm:px-10">
-      <div className="mb-8 flex items-end justify-between gap-4"><div><h1 className="text-3xl font-bold text-zinc-900">Analytics</h1><p className="mt-1 text-sm text-zinc-500">All metrics derived from your workspace events and post state only.</p></div><Link href={withClientParam("/writer", activeClientId)} className="shrink-0 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Write post</Link></div>
-      {loading && <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center text-sm text-zinc-500">Loading workspace data...</div>}
-      {!loading && !hasData && <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-14 text-center"><p className="text-sm font-semibold text-zinc-900">No data yet</p><p className="mt-2 text-sm text-zinc-500">Analytics populate as you draft, schedule, and publish posts from the writer.</p><Link href={withClientParam("/writer", activeClientId)} className="mt-5 inline-block rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Go to writer</Link></div>}
-      {!loading && <><div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Stat label="Drafts" value={data.byStatus.draft} note="workspace state" /><Stat label="Scheduled" value={data.byStatus.scheduled} note="workspace state" /><Stat label="Published" value={data.byStatus.published} note="workspace state" /><Stat label="Total posts" value={data.byStatus.total} note="all statuses" /></div><div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4"><Stat label="Publish events" value={data.publishEvents} note="event log" /><Stat label="Schedule events" value={data.scheduleEvents} note="event log" /><Stat label="Draft events" value={data.draftEvents} note="event log" /><Stat label="Jobs" value={jobs.length} note={`${data.carouselCount} carousel`} /></div></>}
+    <div className="mx-auto max-w-6xl px-6 py-10 font-jakarta sm:px-10">
+      <div className="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-zinc-900">Analytics</h1>
+          <p className="mt-1 text-sm text-zinc-500">Graph view of your actual drafts, schedules, publishing activity, and job history.</p>
+        </div>
+        <Link href={withClientParam("/writer", activeClientId)} className="shrink-0 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Write post</Link>
+      </div>
+
+      {loading ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center text-sm text-zinc-500">Loading workspace data...</div> : null}
+      {!loading && !hasData ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-14 text-center"><p className="text-sm font-semibold text-zinc-900">No data yet</p><p className="mt-2 text-sm text-zinc-500">Analytics fill in as you draft, schedule, and publish posts.</p><Link href={withClientParam("/writer", activeClientId)} className="mt-5 inline-block rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Go to writer</Link></div> : null}
+
+      {!loading && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Drafts" value={data.byStatus.draft} note="workspace state" />
+            <Stat label="Scheduled" value={data.byStatus.scheduled} note="workspace state" />
+            <Stat label="Published" value={data.byStatus.published} note="workspace state" />
+            <Stat label="Total posts" value={data.byStatus.total} note="all statuses" />
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Stat label="Publish events" value={data.publishEvents} note="event log" />
+            <Stat label="Schedule events" value={data.scheduleEvents} note="event log" />
+            <Stat label="Draft events" value={data.draftEvents} note="event log" />
+            <Stat label="Carousel jobs" value={data.carouselCount} note="job history" />
+          </div>
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold text-zinc-900">Activity timeline</h2>
+                <p className="text-xs text-zinc-500">Last 14 days of real event activity.</p>
+              </div>
+              <div className="grid h-56 grid-cols-14 items-end gap-2">
+                {data.timeline.map((item) => (
+                  <div key={item.key} className="flex h-full flex-col justify-end">
+                    <div className="rounded-t-xl bg-teal/80" style={{ height: `${Math.max(8, (item.count / data.timelineMax) * 100)}%` }} />
+                    <p className="mt-2 text-[10px] text-zinc-500">{item.label}</p>
+                    <p className="text-[10px] font-semibold text-zinc-900">{item.count}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <div className="mb-4">
+                <h2 className="text-base font-semibold text-zinc-900">Post mix</h2>
+                <p className="text-xs text-zinc-500">What you are creating most often.</p>
+              </div>
+              <div className="space-y-3">
+                {!data.typeRows.length ? <p className="text-sm text-zinc-500">No post types yet.</p> : data.typeRows.map(([type, count]) => (
+                  <div key={type}>
+                    <div className="mb-1 flex items-center justify-between text-sm"><span className="truncate text-zinc-700">{type}</span><span className="font-semibold text-zinc-900">{count}</span></div>
+                    <div className="h-2 rounded-full bg-zinc-100"><div className="h-full rounded-full bg-gold" style={{ width: `${(count / Math.max(1, data.byStatus.total)) * 100}%` }} /></div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-zinc-900">Best time heatmap</h2>
+              <p className="text-xs text-zinc-500">Scheduled and published posts, grouped by weekday and time window.</p>
+            </div>
+            <div className="grid grid-cols-[100px_repeat(4,minmax(0,1fr))] gap-2">
+              <div />
+              {TIME_LABELS.map((label) => <div key={label} className="text-center text-[11px] font-semibold text-zinc-500">{label}</div>)}
+              {DAYS.map((day, row) => (
+                <div key={day} className="contents">
+                  <div className="flex items-center text-[11px] font-semibold text-zinc-500">{day}</div>
+                  {data.grid[row].map((value, col) => (
+                    <div key={`${day}-${col}`} className="rounded-xl border border-zinc-100 p-3 text-center" style={{ backgroundColor: value ? `rgba(13,74,69,${0.12 + value / data.gridMax / 1.3})` : "rgba(244,244,245,0.9)" }}>
+                      <span className={`text-sm font-bold ${value ? "text-zinc-900" : "text-zinc-400"}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
     </div>
   )
 }
 
-function Stat({ label, value, note }: { label: string; value: number; note: string }) { return <div className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{note}</p></div> }
+function Stat({ label, value, note }: { label: string; value: number; note: string }) {
+  return <div className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{note}</p></div>
+}

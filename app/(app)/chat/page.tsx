@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import Link from "next/link"
 
 type Conversation = {
   id: string
@@ -31,6 +30,8 @@ export default function ChatWorkspace() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [draftStatus, setDraftStatus] = useState<string | null>(null)
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameValue, setRenameValue] = useState("")
 
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -87,9 +88,45 @@ export default function ChatWorkspace() {
       if (data.conversation) {
         setConversations(prev => [data.conversation, ...prev])
         setActiveConvId(data.conversation.id)
+        setMessages([])
       }
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const startRename = (conversation: Conversation) => {
+    setRenamingId(conversation.id)
+    setRenameValue(conversation.title)
+  }
+
+  const saveRename = async () => {
+    const title = renameValue.trim()
+    if (!renamingId || !title) {
+      setRenamingId(null)
+      return
+    }
+    const res = await fetch("/api/chat/conversations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId: renamingId, title }),
+    })
+    const data = await res.json()
+    if (data.conversation) {
+      setConversations((prev) => prev.map((item) => item.id === renamingId ? data.conversation : item))
+    }
+    setRenamingId(null)
+    setRenameValue("")
+  }
+
+  const deleteConversation = async (conversationId: string) => {
+    if (!window.confirm("Delete this conversation?")) return
+    await fetch(`/api/chat/conversations?conversationId=${encodeURIComponent(conversationId)}`, { method: "DELETE" })
+    const nextConversations = conversations.filter((item) => item.id !== conversationId)
+    setConversations(nextConversations)
+    if (activeConvId === conversationId) {
+      setActiveConvId(nextConversations[0]?.id || null)
+      setMessages([])
     }
   }
 
@@ -118,10 +155,10 @@ export default function ChatWorkspace() {
   }
 
   const convertToDraft = useCallback(async (content: string) => {
-    setDraftStatus("saving...")
+    setDraftStatus("Saving...")
     try {
       const id = await saveDraft({ title: "From AI Chat", content, type: "LinkedIn - Text post" })
-      setDraftStatus(id ? `Saved to drafts ?` : "Saved")
+      setDraftStatus(id ? "Saved to drafts" : "Saved")
     } catch {
       setDraftStatus("Failed to save draft")
     } finally {
@@ -146,14 +183,34 @@ export default function ChatWorkspace() {
             <p className="text-center text-xs text-zinc-500 mt-10">No conversations yet.</p>
           ) : (
             conversations.map(conv => (
-              <button
-                key={conv.id}
-                onClick={() => setActiveConvId(conv.id)}
-                className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${activeConvId === conv.id ? 'bg-white font-semibold text-zinc-900 shadow-sm ring-1 ring-zinc-200' : 'text-zinc-600 hover:bg-zinc-200/50'}`}
-              >
-                <div className="truncate">{conv.title}</div>
-                <div className="text-[10px] text-zinc-400 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
-              </button>
+              <div key={conv.id} className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${activeConvId === conv.id ? "border-zinc-200 bg-white shadow-sm" : "border-transparent text-zinc-600 hover:border-zinc-200 hover:bg-zinc-200/30"}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <button onClick={() => setActiveConvId(conv.id)} className="min-w-0 flex-1 text-left">
+                    {renamingId === conv.id ? (
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onBlur={saveRename}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveRename()
+                          if (e.key === "Escape") setRenamingId(null)
+                        }}
+                        className="w-full rounded border border-zinc-200 px-2 py-1 text-sm text-zinc-900 outline-none focus:border-teal"
+                      />
+                    ) : (
+                      <>
+                        <div className="truncate font-medium text-zinc-900">{conv.title}</div>
+                        <div className="text-[10px] text-zinc-400 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                      </>
+                    )}
+                  </button>
+                  <div className="flex shrink-0 items-center gap-2 pt-0.5">
+                    <button onClick={() => startRename(conv)} className="text-[10px] font-semibold text-zinc-400 hover:text-zinc-700">Edit</button>
+                    <button onClick={() => deleteConversation(conv.id)} className="text-[10px] font-semibold text-zinc-400 hover:text-red-500">Delete</button>
+                  </div>
+                </div>
+              </div>
             ))
           )}
         </div>
@@ -173,7 +230,7 @@ export default function ChatWorkspace() {
                     <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
                   </div>
                   <h3 className="font-semibold text-zinc-900">AI Strategist</h3>
-                  <p className="mt-1 text-sm text-zinc-500 max-w-sm">Brainstorm ideas, review your copy, or strategize your LinkedIn growth.</p>
+                  <p className="mt-1 text-sm text-zinc-500 max-w-sm">Ask for a post, a sharper angle, or the next action. Replies stay short.</p>
                 </div>
               ) : (
                 messages.map(msg => (
@@ -183,7 +240,7 @@ export default function ChatWorkspace() {
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-200/80 pt-2">
                           <button onClick={() => convertToDraft(msg.content)} className="text-[10px] font-bold uppercase tracking-wider text-teal hover:text-teal-700 transition-colors">
-                            Convert to Draft &rarr;
+                            Convert to Draft {"->"}
                           </button>
                         </div>
                       )}
@@ -210,12 +267,6 @@ export default function ChatWorkspace() {
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
                   placeholder="Ask the AI for a post idea..."
                   className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 pl-3 text-sm text-zinc-900 outline-none"
                   rows={1}
@@ -228,11 +279,11 @@ export default function ChatWorkspace() {
                   <svg className="h-4 w-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 </button>
               </div>
-              <p className="mt-2 text-center text-[10px] text-zinc-400">AI responses are saved securely to your workspace.</p>
+              <p className="mt-2 text-center text-[10px] text-zinc-400">Enter = new line. Use the arrow button to send.</p>
               {draftStatus && (
                 <p className={`mt-1 text-center text-[10px] font-semibold ${
                   draftStatus.includes("Failed") ? "text-red-500" :
-                  draftStatus.includes("?") ? "text-emerald-600" : "text-zinc-400"
+                  draftStatus.includes("Saved") ? "text-emerald-600" : "text-zinc-400"
                 }`}>{draftStatus}</p>
               )}
             </div>

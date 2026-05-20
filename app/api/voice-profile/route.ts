@@ -29,6 +29,9 @@ const toClientProfile = (profile?: DbVoiceProfile | null, workspace?: DbWorkspac
   linkedinUrl: workspace?.linkedin_url ?? "",
 })
 
+const isValidLinkedInUrl = (value: string) =>
+  /^https:\/\/(www\.)?linkedin\.com\/(in|company)\/[A-Za-z0-9-_%]+\/?$/.test(value)
+
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
@@ -53,6 +56,11 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { name, title, industry, tone, goals, samplePosts, linkedinUrl } = body
     const updatedAt = new Date().toISOString()
+    const trimmedLinkedinUrl = typeof linkedinUrl === "string" ? linkedinUrl.trim() : ""
+
+    if (trimmedLinkedinUrl && !isValidLinkedInUrl(trimmedLinkedinUrl)) {
+      return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
+    }
 
     const [profileRows, workspaceRows] = await Promise.all([
       supabaseUpsert<DbVoiceProfile>(
@@ -73,7 +81,7 @@ export async function PUT(request: NextRequest) {
         "workspaces",
         `id=eq.${workspaceId}`,
         {
-          linkedin_url: typeof linkedinUrl === "string" ? linkedinUrl.trim() || null : null,
+          linkedin_url: trimmedLinkedinUrl || null,
           updated_at: updatedAt,
         }
       ),

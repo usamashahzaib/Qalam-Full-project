@@ -13,6 +13,7 @@ import {
   AnalyticsIcon,
   VoiceIcon,
   LibraryIcon,
+  CarouselIcon,
   MicroscopeIcon,
   TeamIcon,
   ProfileIcon,
@@ -25,11 +26,11 @@ const NAV_LINKS = [
   { href: "/chat", label: "AI Strategist", icon: VoiceIcon },
   { href: "/writer", label: "AI Writer", icon: ComposeIcon },
   { href: "/calendar", label: "Planner", icon: CalendarIcon },
-  { href: "/approvals", label: "Approvals", icon: AnalyticsIcon },
+  { href: "/approvals", label: "Approvals", icon: CalendarIcon },
   { href: "/analytics", label: "Analytics", icon: AnalyticsIcon },
   { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
   { href: "/library", label: "Library", icon: LibraryIcon },
-  { href: "/carousels", label: "Carousels", icon: LibraryIcon },
+  { href: "/carousels", label: "Carousels", icon: CarouselIcon },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon },
   { href: "/agency", label: "Agency Hub", icon: TeamIcon },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
@@ -112,6 +113,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.push(url.pathname + url.search)
   }
 
+  const handleCreatePost = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("writerLoad")
+      sessionStorage.removeItem("writerScheduleDate")
+    }
+    router.push(withClientParam("/writer?compose=new", activeClientId))
+  }
+
   return (
     <div className="min-h-screen bg-zinc-50 font-jakarta">
       <aside className="hidden md:flex flex-col w-64 bg-zinc-900 text-zinc-300 border-r border-zinc-800 fixed inset-y-0 left-0 z-30 justify-between">
@@ -121,19 +130,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="px-4 py-4" ref={switcherRef}>
-            <button onClick={() => setSwitcherOpen((value) => !value)} className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700/50 transition-all text-left group">
+            <button onClick={() => setSwitcherOpen((value) => !value)} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase font-bold tracking-wider text-teal">Active Workspace</p>
-                <p className="text-sm font-semibold text-white truncate mt-0.5">{activeClientName}</p>
+                <p className="text-[10px] uppercase font-bold tracking-wider text-teal-100/70">Active Workspace</p>
+                <p className="text-sm font-semibold text-white truncate mt-1">{activeClientName}</p>
               </div>
-              <svg className={`h-4 w-4 text-zinc-400 group-hover:text-white transition-transform ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              <svg className={`h-4 w-4 shrink-0 text-zinc-400 group-hover:text-white transition-transform duration-200 ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
             </button>
 
             {switcherOpen && (
-              <div className="absolute left-4 right-4 mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-700 max-h-60 overflow-y-auto">
-                <button onClick={() => handleSwitchWorkspace(null)} className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-zinc-700 ${!activeClientId ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>Personal Workspace</button>
-                {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-zinc-700 ${activeClientId === client.id ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>{client.client_name}</button>)}
-                <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-xs text-gold font-semibold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list {">"}</Link>
+              <div className="absolute left-4 right-4 mt-2 bg-zinc-850 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700 max-h-72 overflow-y-auto">
+                <button onClick={() => handleSwitchWorkspace(null)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${!activeClientId ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>Personal Workspace</button>
+                {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${activeClientId === client.id ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>{client.client_name}</button>)}
+                <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs text-gold font-semibold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list {">"}</Link>
               </div>
             )}
           </div>
@@ -143,7 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               const Icon = link.icon
               const active = pathname === link.href
               return (
-                <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${active ? "bg-teal text-white shadow-md shadow-teal/10" : "hover:bg-zinc-800 hover:text-white"}`}>
+                <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${active ? "bg-teal text-white shadow-md shadow-teal/10" : "hover:bg-zinc-800 hover:text-white"}`}>
                   <Icon className={`h-4 w-4 transition-colors ${active ? "text-gold" : "text-zinc-500 group-hover:text-zinc-300"}`} />
                   <span>{link.label}</span>
                 </Link>
@@ -164,7 +173,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <button onClick={logout} className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Sign out</button>
+          <button onClick={logout} className="w-full cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Sign out</button>
         </div>
       </aside>
 
@@ -177,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {searchFocused && searchQuery.trim() && (
             <div className="absolute left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100">
               <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Search Results ({searchResults.length})</div>
-              {searchResults.length === 0 ? <div className="px-4 py-6 text-center text-xs text-zinc-500 font-medium">No matching posts found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-zinc-50 transition-colors group"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-600"}`}>{post.status}</span><span className="text-[10px] text-zinc-400 font-medium truncate">{post.type}</span></div><p className="text-xs font-semibold text-zinc-900 group-hover:text-teal truncate mt-1">{post.title}</p></div><svg className="h-4 w-4 text-zinc-400 group-hover:text-teal opacity-0 group-hover:opacity-100 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>)}
+              {searchResults.length === 0 ? <div className="px-4 py-6 text-center text-xs text-zinc-500 font-medium">No matching posts found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-zinc-50 transition-colors group"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-600"}`}>{post.status}</span><span className="text-[10px] text-zinc-400 font-medium truncate">{post.type}</span></div><p className="text-xs font-semibold text-zinc-900 group-hover:text-teal truncate mt-1">{post.title}</p></div><svg className="h-4 w-4 text-zinc-400 group-hover:text-teal opacity-0 group-hover:opacity-100 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>)}
             </div>
           )}
         </div>
@@ -188,7 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <Link href={withClientParam("/settings", activeClientId)} className="flex items-center gap-2 rounded-full border border-dashed border-zinc-300 hover:border-zinc-400 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors"><LinkedInIcon className="h-3 w-3 text-zinc-400" />Connect LinkedIn</Link>
           )}
-          <Link href={withClientParam("/writer", activeClientId)} className="rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors shadow-sm shadow-teal/10">Create Post</Link>
+          <button onClick={handleCreatePost} className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors shadow-sm shadow-teal/10">Create Post</button>
         </div>
       </header>
 
@@ -196,8 +205,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-teal/5 border border-teal/10 px-2.5 py-0.5 text-[10px] font-bold text-teal max-w-[120px] truncate">{activeClientId ? clients.find((client) => client.id === activeClientId)?.client_name || "Client" : "Personal"}</span>
-          <button onClick={() => setSearchFocused((value) => !value)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
-          <button onClick={() => setSwitcherOpen((value) => !value)} className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+          <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+          <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
         </div>
 
         {searchFocused && (
@@ -206,15 +215,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <input type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
               <button onClick={() => { setSearchFocused(false); setSearchQuery("") }} className="absolute right-3 text-xs text-zinc-400 font-bold hover:text-zinc-600">Close</button>
             </div>
-            {searchQuery.trim() && <div className="mt-2 bg-white rounded-xl border border-zinc-100 overflow-hidden divide-y divide-zinc-50 max-h-60 overflow-y-auto">{searchResults.length === 0 ? <div className="px-4 py-4 text-center text-xs text-zinc-500">No results found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full flex items-center justify-between gap-4 px-3 py-2.5 text-left hover:bg-zinc-50 transition-colors"><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-zinc-900 truncate">{post.title}</p><p className="text-[10px] text-zinc-400 font-medium truncate">{post.status} - {post.type}</p></div></button>)}</div>}
+            {searchQuery.trim() && <div className="mt-2 bg-white rounded-xl border border-zinc-100 overflow-hidden divide-y divide-zinc-50 max-h-60 overflow-y-auto">{searchResults.length === 0 ? <div className="px-4 py-4 text-center text-xs text-zinc-500">No results found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-3 py-2.5 text-left hover:bg-zinc-50 transition-colors"><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-zinc-900 truncate">{post.title}</p><p className="text-[10px] text-zinc-400 font-medium truncate">{post.status} - {post.type}</p></div></button>)}</div>}
           </div>
         )}
 
         {switcherOpen && (
           <div className="absolute top-14 right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" ref={switcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
-            <button onClick={() => handleSwitchWorkspace(null)} className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${!activeClientId ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>Personal Workspace</button>
-            {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${activeClientId === client.id ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>{client.client_name}</button>)}
+            <button onClick={() => handleSwitchWorkspace(null)} className={`w-full cursor-pointer text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${!activeClientId ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>Personal Workspace</button>
+            {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full cursor-pointer text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${activeClientId === client.id ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>{client.client_name}</button>)}
           </div>
         )}
       </header>
