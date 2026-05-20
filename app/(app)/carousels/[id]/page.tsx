@@ -80,16 +80,38 @@ export default function CarouselEditorPage() {
 
   const exportAsPdf = () => {
     if (!slides.length) return
+    const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
     const html = slides.map((slide, index) => `
-      <section style="page-break-after:always;padding:40px;font-family:Arial,sans-serif;">
-        <div style="font-size:12px;color:#666;margin-bottom:16px;">Slide ${index + 1} / ${slides.length}</div>
-        <h1 style="font-size:28px;margin:0 0 18px;">${slide.title || `Slide ${index + 1}`}</h1>
-        <p style="font-size:16px;line-height:1.7;white-space:pre-wrap;">${(slide.content || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
+      <section class="page">
+        <div class="deck-meta">
+          <div><strong>Qalam Carousel</strong></div>
+          <div>Slide ${index + 1} / ${slides.length}</div>
+        </div>
+        <div class="slide-shell">
+          <div class="slide-kicker">Slide ${index + 1}</div>
+          <h1>${esc(slide.title || `Slide ${index + 1}`)}</h1>
+          <p>${esc(slide.content || "").replace(/\n/g, "<br/>")}</p>
+          <div class="slide-footer">
+            <span>${project?.theme || "LinkedIn carousel"}</span>
+            <span>${new Date(project?.created_at || Date.now()).toLocaleDateString("en-US")}</span>
+          </div>
+        </div>
       </section>
     `).join("")
     const popup = window.open("", "_blank", "width=900,height=700")
     if (!popup) return
-    popup.document.write(`<!doctype html><html><head><title>Carousel ${id.slice(0, 8)}</title></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`)
+    popup.document.write(`<!doctype html><html><head><title>Carousel ${id.slice(0, 8)}</title><style>
+      @page{size:A4 landscape;margin:12mm;}
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f5f6;color:#101828}
+      .page{page-break-after:always;min-height:100vh;padding:18px 0}
+      .deck-meta{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px;color:#475467;font-size:12px}
+      .slide-shell{min-height:175mm;border-radius:28px;padding:34px 36px;background:linear-gradient(135deg,#0f172a,#111827 55%,#134e4a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 70px rgba(15,23,42,.18)}
+      .slide-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#99f6e4}
+      h1{margin:18px 0 18px;font-size:32px;line-height:1.12;max-width:80%}
+      p{margin:0;font-size:18px;line-height:1.7;max-width:78%;color:#d1fae5}
+      .slide-footer{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:12px;color:#a7f3d0}
+    </style></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`)
     popup.document.close()
   }
 
