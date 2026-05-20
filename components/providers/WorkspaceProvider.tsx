@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { QalamMark } from "@/components/QalamLogo"
 
@@ -355,7 +355,9 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth()
+  const { user, authChecked, isLoadingAuth } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const clientParam = searchParams.get("client")
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
@@ -363,7 +365,16 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isResolving, setIsResolving] = useState(true)
 
   useEffect(() => {
-    if (!user?.email) return
+    if (!authChecked || isLoadingAuth) return
+    if (!user?.email) {
+      const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+      router.replace(`/auth?next=${encodeURIComponent(next)}`)
+      setWorkspaceId(null)
+      setResolveError("auth_required")
+      setIsResolving(false)
+      return
+    }
+
     setIsResolving(true)
     setResolveError(null)
     const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
@@ -380,7 +391,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setResolveError((error as Error).message || "Failed to resolve workspace")
       })
       .finally(() => setIsResolving(false))
-  }, [clientParam, user?.email])
+  }, [authChecked, clientParam, isLoadingAuth, pathname, router, searchParams, user?.email])
 
   if (isResolving) {
     return (
@@ -424,7 +435,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     </WorkspaceProviderInner>
   )
 }
-
 export const useWorkspace = () => {
   const context = useContext(WorkspaceContext)
   if (!context) throw new Error("useWorkspace must be used within WorkspaceProvider")
