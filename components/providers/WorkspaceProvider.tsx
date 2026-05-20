@@ -359,20 +359,26 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams()
   const clientParam = searchParams.get("client")
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
 
   useEffect(() => {
     if (!user?.email) return
     setIsResolving(true)
+    setResolveError(null)
     const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
 
     fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
         setWorkspaceId(data.workspaceId)
+        setResolveError(null)
       })
-      .catch(() => setWorkspaceId(null))
+      .catch((error) => {
+        setWorkspaceId(null)
+        setResolveError((error as Error).message || "Failed to resolve workspace")
+      })
       .finally(() => setIsResolving(false))
   }, [clientParam, user?.email])
 
@@ -389,7 +395,28 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!workspaceId) return null
+  if (!workspaceId) {
+    const isSchemaError = resolveError === "schema_not_applied"
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-16">
+        <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+          <div className="mb-4 flex items-center gap-3">
+            <QalamMark size={36} />
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-zinc-500">Workspace boot failed</p>
+              <h1 className="text-2xl font-semibold text-zinc-950">{isSchemaError ? "Database setup incomplete" : "Workspace unavailable"}</h1>
+            </div>
+          </div>
+          <p className="text-sm leading-6 text-zinc-600">
+            {isSchemaError
+              ? "Supabase is connected, but the app tables are missing in production. Apply supabase/schema.sql to the live project, then reload this page."
+              : "The app could not resolve your workspace. Reload once. If it still fails, check the Vercel function logs for /api/workspace."}
+          </p>
+          {resolveError ? <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 px-4 py-3 text-xs text-zinc-100">{resolveError}</pre> : null}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} key={workspaceId}>

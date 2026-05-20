@@ -181,10 +181,17 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
     }
   }
 
-  const users = await supabaseSelect<{ id: string }>(
-    "users",
-    `email=eq.${encodeURIComponent(session.email)}&limit=1`
-  )
+  let users: { id: string }[]
+  try {
+    users = await supabaseSelect<{ id: string }>(
+      "users",
+      `email=eq.${encodeURIComponent(session.email)}&limit=1`
+    )
+  } catch (error) {
+    const message = (error as Error).message || "server_error"
+    if (message === "schema_not_applied") throw error
+    throw new Error(message)
+  }
   const userId = users?.[0]?.id
   if (!userId) throw new Error("auth_required")
 

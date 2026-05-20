@@ -1,5 +1,18 @@
-﻿import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { resolveWorkspaceId } from "@/lib/server/app-session"
+
+const toStatus = (message: string) => {
+  switch (message) {
+    case "auth_required":
+      return 401
+    case "unauthorized_workspace":
+      return 403
+    case "schema_not_applied":
+      return 503
+    default:
+      return 500
+  }
+}
 
 /**
  * GET /api/workspace - resolves and returns the active workspace ID.
@@ -11,7 +24,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ workspaceId })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: toStatus(message) })
   }
 }
 
@@ -28,6 +41,6 @@ export async function PUT(request: NextRequest) {
     )
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: toStatus(message) })
   }
 }

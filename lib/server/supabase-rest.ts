@@ -32,6 +32,10 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<Res
       typeof payload === "object" && payload && "error" in payload
         ? String((payload as { error?: string }).error || "")
         : ""
+    const detail = `${message} ${error}`.trim()
+    if (/Could not find the table 'public\.[^']+' in the schema cache/i.test(detail)) {
+      throw new Error("schema_not_applied")
+    }
     throw new Error(message || error || response.statusText || "request_failed")
   }
   return {
