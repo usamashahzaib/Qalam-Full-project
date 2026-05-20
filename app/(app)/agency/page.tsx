@@ -111,10 +111,10 @@ export default function AgencyDashboard() {
         </div>
 
         <div className="col-span-1 space-y-6">
-          <div className="rounded-2xl border border-gold-200 bg-gradient-to-br from-gold-50 to-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50/40 to-white p-6 shadow-sm">
             <h3 className="font-bold text-zinc-900">Agency Billing</h3>
             <p className="mt-2 text-sm text-zinc-600">Billing is still guided manually. Use pricing to request plan changes.</p>
-            <div className="mt-4 border-t border-gold-200/50 pt-4">
+            <div className="mt-4 border-t border-amber-100 pt-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Total Clients</p>
               <p className="mt-1 text-3xl font-bold text-zinc-900">{clients.length}</p>
             </div>

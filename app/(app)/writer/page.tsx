@@ -275,133 +275,225 @@ export default function WriterPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-6">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-zinc-900">AI Writer</h1>
-            <p className="mt-1 text-sm text-zinc-500">Draft, score, hashtag, reply, then publish.</p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select value={postType} onChange={(e) => setPostType(e.target.value)} className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-700 shadow-sm outline-none focus:border-teal sm:w-auto">{POST_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}</select>
+    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <section className="flex flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+        {/* Writer header bar */}
+        <div className="border-b border-zinc-100 bg-zinc-50/60 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-base font-bold text-zinc-900">AI Writer</h1>
+                <p className="text-xs text-zinc-500">{currentDraftLabel}</p>
+              </div>
+              <select value={postType} onChange={(e) => setPostType(e.target.value)} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none focus:border-teal">
+                {POST_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </div>
             <div className="flex items-center gap-2">
-              <button onClick={onSaveDraft} className="cursor-pointer rounded-xl border border-zinc-300 px-4 py-2 text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50">Save draft</button>
-              <button onClick={onSendForApproval} className={`cursor-pointer rounded-xl px-4 py-2 text-sm font-bold transition-colors ${isClientWorkspace ? "border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100" : "border border-zinc-300 bg-zinc-50 text-zinc-500 hover:bg-zinc-100"}`}>{isClientWorkspace ? "Send for approval" : "Client review only"}</button>
-              <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : postType.includes("Carousel") ? "Publish / LinkedIn" : "Publish now"}</button>
+              <button onClick={onSaveDraft} className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-400">Save draft</button>
+              {isClientWorkspace && (
+                <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
+              )}
+              <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">
+                {publish.status === "loading" ? "Publishing..." : "Publish"}
+              </button>
             </div>
           </div>
         </div>
 
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Working title" className="mb-4 w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 shadow-sm outline-none focus:border-teal" />
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction" className="w-full rounded-xl border border-teal/20 bg-teal/5 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/5" onKeyDown={(e) => e.key === "Enter" && !isGenerating && aiPrompt.trim() && onGenerate()} />
-          <button onClick={onGenerate} disabled={isGenerating || !aiPrompt.trim()} className="cursor-pointer rounded-xl bg-teal/10 px-4 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">{isGenerating ? "Writing..." : "Generate AI Draft"}</button>
-        </div>
+        <div className="p-6">
+          {/* Title + AI prompt */}
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Working title (optional)" className="mb-3 w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
+          <div className="mb-5 flex flex-col gap-2 sm:flex-row">
+            <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction for AI Draft" className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" onKeyDown={(e) => e.key === "Enter" && !isGenerating && aiPrompt.trim() && onGenerate()} />
+            <button onClick={onGenerate} disabled={isGenerating || !aiPrompt.trim()} className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">
+              {isGenerating ? "Writing..." : "Generate Draft"}
+            </button>
+          </div>
 
-        <div className="mb-4 grid gap-3 sm:grid-cols-3">
-          <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis?.overallLabel || "Waiting for draft"} accent="teal" />
-          <MetricCard label="Hook type" value={analysis?.hookType || "--"} note={analysis ? analysis.scores[0]?.note : "First line analysis"} accent="amber" />
-          <MetricCard label="Voice fit" value={analysis ? `${analysis.scores.find((item) => item.label === "Voice fit")?.score || 0}/100` : "--"} note={profile.name || profile.title ? "Using saved profile" : "Fill voice profile for better matching"} accent="zinc" />
-        </div>
+          {/* Score cards */}
+          <div className="mb-5 grid gap-3 sm:grid-cols-3">
+            <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis?.overallLabel || "Waiting for draft"} accent="teal" />
+            <MetricCard label="Hook type" value={analysis?.hookType || "--"} note={analysis ? (analysis.scores[0]?.note || "First line") : "First line analysis"} accent="amber" />
+            <MetricCard label="Voice fit" value={analysis ? `${analysis.scores.find((item) => item.label === "Voice fit")?.score ?? 0}/100` : "--"} note={profile.name || profile.title ? "Using saved profile" : "Add voice profile for better fit"} accent="zinc" />
+          </div>
 
-        <div className="relative mt-2 w-full rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm transition-all focus-within:border-teal/50 focus-within:ring-4 focus-within:ring-teal/10">
-          <textarea value={content} onChange={(e) => { setContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px` }} placeholder="Write your post..." className="min-h-[420px] w-full resize-none bg-transparent px-4 py-5 text-base leading-relaxed text-zinc-900 outline-none" style={{ overflow: "hidden" }} />
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-          <span>{wordCount} words</span>
-          <span>{characterCount} characters</span>
-          <span>{currentDraftLabel}</span>
-          <span>{publishLabel}</span>
-        </div>
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-2xl border border-zinc-200 bg-zinc-50/60 p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-zinc-900">Improve this draft</h2>
-              <span className="text-xs text-zinc-500">{isThinking ? "Refreshing..." : insightNote || "Live insights"}</span>
+          {/* Post textarea */}
+          <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-teal/40 focus-within:ring-4 focus-within:ring-teal/10">
+            <textarea value={content} onChange={(e) => { setContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px` }} placeholder="Write your post here, or generate one above..." className="min-h-[400px] w-full resize-none bg-transparent px-5 py-5 text-base leading-[1.8] text-zinc-900 outline-none" style={{ overflow: "hidden" }} />
+            <div className="flex items-center gap-4 border-t border-zinc-100 bg-zinc-50/60 px-5 py-2.5 text-xs text-zinc-400">
+              <span>{wordCount} words</span>
+              <span>{characterCount} chars</span>
+              <span className="ml-auto">{publishLabel}</span>
             </div>
-            <div className="space-y-2">
-              {(analysis?.scores || []).map((item) => (
-                <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.label}</span>
-                    <span className="text-sm font-bold text-zinc-900">{item.score}/100</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-zinc-100"><div className="h-2 rounded-full bg-teal transition-all" style={{ width: `${item.score}%` }} /></div>
-                  <p className="mt-2 text-xs text-zinc-500">{item.note}</p>
+          </div>
+
+          {/* Score analysis + hashtags + replies */}
+          <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-zinc-900">Improve this draft</h2>
+                <span className={`text-xs ${isThinking ? "animate-pulse text-teal" : "text-zinc-400"}`}>{isThinking ? "Analyzing..." : insightNote || "Live insights"}</span>
+              </div>
+              {(analysis?.scores || []).length === 0 ? (
+                <p className="py-4 text-center text-xs text-zinc-400">Write a post to see dimension scores.</p>
+              ) : (
+                <div className="space-y-2.5">
+                  {(analysis?.scores || []).map((item) => {
+                    const barColor = item.score >= 82 ? "bg-teal" : item.score >= 68 ? "bg-teal/60" : item.score >= 52 ? "bg-amber-400" : "bg-red-400"
+                    return (
+                      <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{item.label}</span>
+                          <span className={`text-sm font-bold ${item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"}`}>{item.score}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-zinc-100">
+                          <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${item.score}%` }} />
+                        </div>
+                        <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">{item.note}</p>
+                      </div>
+                    )
+                  })}
                 </div>
-              ))}
-            </div>
-            {analysis?.improvements?.length ? <ul className="mt-4 space-y-2 text-sm text-zinc-600">{analysis.improvements.map((item) => <li key={item} className="rounded-xl bg-white px-3 py-2">- {item}</li>)}</ul> : null}
-          </div>
-
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-900">Hashtags</h2>
-                <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700">Copy all</button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(analysis?.hashtags || []).length ? analysis?.hashtags.map((tag) => <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">{tag}</button>) : <p className="text-xs text-zinc-500">Write more detail to unlock relevant hashtags.</p>}
-              </div>
+              )}
+              {analysis?.improvements?.length ? (
+                <ul className="mt-3 space-y-1.5">
+                  {analysis.improvements.map((item) => (
+                    <li key={item} className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-xs text-zinc-600">
+                      <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-900">Comments to replies</h2>
-                <button onClick={() => setCommentsText("")} className="cursor-pointer text-xs font-semibold text-zinc-500 hover:text-zinc-700">Clear</button>
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-zinc-900">Hashtags</h2>
+                  <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy all</button>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(analysis?.hashtags || []).length ? analysis!.hashtags.map((tag) => (
+                    <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
+                      {tag}
+                    </button>
+                  )) : <p className="text-xs text-zinc-400">Write more to unlock hashtags.</p>}
+                </div>
               </div>
-              <textarea value={commentsText} onChange={(e) => setCommentsText(e.target.value)} rows={5} placeholder="Paste post comments here. Qalam will draft concise replies." className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" />
-              <div className="mt-3 space-y-2">
-                {commentReplies.length ? commentReplies.map((item, index) => (
-                  <div key={`${item.comment}-${index}`} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Comment</p>
-                    <p className="mt-1 text-sm text-zinc-700">{item.comment}</p>
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="text-sm font-medium text-zinc-900">{item.reply}</p>
-                      <button onClick={() => copyText(item.reply)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700">Copy</button>
+
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-zinc-900">Comment replies</h2>
+                  <button onClick={() => setCommentsText("")} className="cursor-pointer text-xs font-semibold text-zinc-400 transition-colors hover:text-zinc-700">Clear</button>
+                </div>
+                <textarea value={commentsText} onChange={(e) => setCommentsText(e.target.value)} rows={4} placeholder="Paste comments here. Qalam drafts short replies." className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
+                <div className="mt-3 space-y-2">
+                  {commentReplies.length ? commentReplies.map((item, index) => (
+                    <div key={`${item.comment}-${index}`} className="rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Comment</p>
+                      <p className="mt-1 text-xs text-zinc-600">{item.comment}</p>
+                      <div className="mt-2 flex items-start justify-between gap-2 border-t border-zinc-100 pt-2">
+                        <p className="flex-1 text-sm font-medium leading-snug text-zinc-900">{item.reply}</p>
+                        <button onClick={() => copyText(item.reply)} className="cursor-pointer shrink-0 text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy</button>
+                      </div>
                     </div>
-                  </div>
-                )) : <p className="text-xs text-zinc-500">Paste comments to get short, context-aware replies.</p>}
+                  )) : <p className="text-xs text-zinc-400">Paste comments to get context-aware replies.</p>}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-zinc-200/60 bg-gradient-to-r from-zinc-50/50 to-white p-4 shadow-sm sm:flex-row">
-          <div className="relative w-full sm:flex-1">
-            <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[10px] font-bold uppercase tracking-wider text-teal">Publish Date</label>
-            <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+          {/* Schedule bar */}
+          <div className="mt-5 flex flex-col items-stretch gap-3 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-r from-zinc-50/80 to-white p-4 shadow-sm sm:flex-row sm:items-center">
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative flex-1">
+                <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Publish Date</label>
+                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+              </div>
+              <div className="relative sm:w-36">
+                <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Time</label>
+                <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+              </div>
+            </div>
+            <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
           </div>
-          <div className="relative w-full sm:w-[140px]">
-            <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[10px] font-bold uppercase tracking-wider text-teal">Time</label>
-            <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200/80 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
-          </div>
-          <button onClick={onSchedule} className="w-full cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-zinc-800 sm:w-auto">Schedule Post</button>
-        </div>
 
-        {status && <p className={`mt-3 text-sm ${status.includes("failed") || status.includes("Failed") ? "text-red-600" : "text-zinc-600"}`}>{status}</p>}
-        {publish.status !== "idle" && <div className={`mt-2 rounded-xl px-4 py-3 text-sm ${publish.status === "error" ? "bg-red-50 text-red-700" : publish.status === "success" ? "bg-emerald-50 text-emerald-700" : "bg-zinc-50 text-zinc-600"}`}>{publish.message}{publish.postUrn && <span className="ml-2 font-mono text-xs">{publish.postUrn}</span>}</div>}
+          {status && <p className={`mt-3 text-sm ${status.toLowerCase().includes("fail") ? "text-red-600" : "text-zinc-500"}`}>{status}</p>}
+          {publish.status !== "idle" && (
+            <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${publish.status === "error" ? "border border-red-200 bg-red-50 text-red-700" : publish.status === "success" ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "bg-zinc-50 text-zinc-600"}`}>
+              {publish.message}{publish.postUrn && <span className="ml-2 font-mono text-xs opacity-70">{publish.postUrn}</span>}
+            </div>
+          )}
+        </div>
       </section>
 
       <aside className="space-y-4">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-          <div className="mb-3 flex items-center justify-between gap-3">
+        {/* Workspace posts */}
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-4 py-3">
             <h2 className="text-sm font-semibold text-zinc-900">Workspace posts</h2>
-            <button onClick={() => router.push(withClientParam("/library", activeClientId))} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700">Open library</button>
+            <button onClick={() => router.push(withClientParam("/library", activeClientId))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Library &rarr;</button>
           </div>
-          <div className="mb-3 flex flex-wrap gap-2">{POST_FILTERS.map((filter) => <button key={filter.key} onClick={() => setPostFilter(filter.key)} className={`cursor-pointer rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${postFilter === filter.key ? "bg-teal text-white" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"}`}>{filter.label}</button>)}</div>
-          {isLoadingPosts ? <div className="space-y-2">{[1, 2, 3].map((i) => <div key={i} className="h-12 animate-pulse rounded-lg bg-zinc-100" />)}</div> : filteredPosts.length === 0 ? <div className="flex flex-col items-center py-8 text-center"><p className="text-sm font-medium text-zinc-700">No {postFilter === "all" ? "posts" : filterLabel(postFilter)} yet</p><p className="mt-1 text-xs text-zinc-400">Use the writer to create one.</p></div> : <div className="space-y-2">{filteredPosts.slice(0, 24).map((post) => <button key={post.id} onClick={() => onLoadPost(post.id)} className={`w-full cursor-pointer rounded-lg border px-3 py-2 text-left transition-colors hover:bg-zinc-50 ${editingId === post.id ? "border-teal/40 bg-teal/5" : "border-zinc-200"}`}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-sm font-medium text-zinc-900">{post.title}</p><div className="mt-0.5 flex items-center gap-2"><span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : post.status === "pending_approval" ? "bg-blue-50 text-blue-700" : "bg-zinc-100 text-zinc-600"}`}>{post.status.replaceAll("_", " ")}</span><span className="truncate text-[10px] text-zinc-400">{post.type}</span></div></div></div></button>)}</div>}
+          <div className="border-b border-zinc-100 px-4 py-2.5">
+            <div className="flex flex-wrap gap-1.5">
+              {POST_FILTERS.map((filter) => (
+                <button key={filter.key} onClick={() => setPostFilter(filter.key)} className={`cursor-pointer rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${postFilter === filter.key ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"}`}>
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="p-3">
+            {isLoadingPosts ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => <div key={i} className="h-14 animate-pulse rounded-xl bg-zinc-100" />)}
+              </div>
+            ) : filteredPosts.length === 0 ? (
+              <div className="flex flex-col items-center py-8 text-center">
+                <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
+                  <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                </div>
+                <p className="text-sm font-medium text-zinc-700">No {postFilter === "all" ? "posts" : filterLabel(postFilter)} yet</p>
+                <p className="mt-0.5 text-xs text-zinc-400">Create one using the writer.</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {filteredPosts.slice(0, 20).map((post) => (
+                  <button key={post.id} onClick={() => onLoadPost(post.id)} className={`w-full cursor-pointer rounded-xl border px-3 py-2.5 text-left transition-all hover:shadow-sm ${editingId === post.id ? "border-teal/30 bg-teal/5 shadow-sm" : "border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50"}`}>
+                    <p className="truncate text-sm font-medium text-zinc-900">{post.title}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className={`inline-block rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : post.status === "pending_approval" ? "bg-blue-50 text-blue-700" : post.status === "rejected" ? "bg-red-50 text-red-600" : "bg-zinc-100 text-zinc-500"}`}>
+                        {post.status.replaceAll("_", " ")}
+                      </span>
+                      <span className="truncate text-[10px] text-zinc-400">{post.type?.replace("LinkedIn - ", "")}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Quick guide */}
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">Quick publish guide</h2>
-          <div className="space-y-2 text-sm text-zinc-600">
-            <p>- Save = stores as draft in workspace.</p>
-            <p>- Schedule = adds to planner with date and time.</p>
-            <p>- Publish now = publishes directly to LinkedIn or opens manual handoff.</p>
-            <p>- Approvals apply in client workspaces only.</p>
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-500">Publish flow</h2>
+          <div className="space-y-2">
+            {[
+              { label: "Save draft", desc: "Stores to workspace without publishing" },
+              { label: "Schedule", desc: "Adds to planner with date and time" },
+              { label: "Publish now", desc: "Sends to LinkedIn or opens manual handoff" },
+              { label: "Approvals", desc: "Client workspaces only" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-start gap-2">
+                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />
+                <div>
+                  <span className="text-xs font-semibold text-zinc-800">{item.label}</span>
+                  <span className="ml-1 text-xs text-zinc-500">{item.desc}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </aside>
@@ -410,14 +502,13 @@ export default function WriterPage() {
 }
 
 function MetricCard({ label, value, note, accent }: { label: string; value: string; note: string; accent: "teal" | "amber" | "zinc" }) {
-  const palette = accent === "amber" ? "bg-amber-50 text-amber-700" : accent === "zinc" ? "bg-zinc-100 text-zinc-700" : "bg-teal/10 text-teal"
+  const leftBorder = accent === "amber" ? "border-l-amber-400" : accent === "zinc" ? "border-l-zinc-300" : "border-l-teal"
+  const valueColor = accent === "amber" ? "text-amber-700" : accent === "zinc" ? "text-zinc-700" : "text-teal"
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{label}</p>
-      <div className="mt-2 flex items-center gap-2">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${palette}`}>{value}</span>
-      </div>
-      <p className="mt-2 text-xs text-zinc-500">{note}</p>
+    <div className={`rounded-2xl border border-zinc-200 border-l-[3px] bg-white p-4 ${leftBorder}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{label}</p>
+      <p className={`mt-2 text-xl font-bold ${valueColor}`}>{value}</p>
+      <p className="mt-1 text-[11px] leading-snug text-zinc-500">{note}</p>
     </div>
   )
 }

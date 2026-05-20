@@ -109,42 +109,42 @@ export default function ApprovalsPage() {
         <div className="space-y-8">
           {pending.length > 0 && (
             <section>
-              <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-zinc-700 uppercase tracking-wider">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700">{pending.length}</span>
+              <h2 className="mb-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-[9px] font-bold text-blue-700">{pending.length}</span>
                 Awaiting Review
               </h2>
               <div className="space-y-4">
                 {pending.map(({ post }) => (
-                  <div key={post.id} className="rounded-2xl border border-blue-200 bg-white shadow-sm overflow-hidden">
-                    <div className="flex items-start justify-between gap-4 p-5 border-b border-zinc-100">
+                  <div key={post.id} className="overflow-hidden rounded-2xl border border-blue-200/70 bg-white shadow-sm">
+                    <div className="flex items-start justify-between gap-4 border-b border-zinc-100 bg-blue-50/30 p-5">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="mb-1.5 flex items-center gap-2">
                           <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLES[post.status] || "bg-zinc-50 text-zinc-600"}`}>{post.status.replaceAll("_", " ")}</span>
-                          <span className="text-xs text-zinc-400">{post.type}</span>
+                          <span className="rounded border border-zinc-100 bg-white px-2 py-0.5 text-[10px] text-zinc-500">{post.type}</span>
                         </div>
-                        <h3 className="font-semibold text-zinc-900 truncate">{post.title}</h3>
-                        <p className="mt-1 text-xs text-zinc-500">Updated {new Date(post.updated_at).toLocaleString()}</p>
+                        <h3 className="font-bold text-zinc-900 truncate">{post.title}</h3>
+                        <p className="mt-1 text-xs text-zinc-400">Updated {new Date(post.updated_at).toLocaleString()}</p>
                       </div>
                       <Link href={withClientParam("/writer", workspaceId)} onClick={() => {
                         if (typeof window !== "undefined") {
                           sessionStorage.setItem("writerLoad", JSON.stringify({ id: post.id, title: post.title, content: post.content || "", type: post.type }))
                         }
-                      }} className="shrink-0 text-xs font-semibold text-teal hover:underline">View in writer -&gt;</Link>
+                      }} className="shrink-0 text-xs font-semibold text-teal transition-colors hover:text-teal-700">View in writer →</Link>
                     </div>
 
-                    {post.content && <div className="px-5 py-3 bg-zinc-50 text-sm text-zinc-700 line-clamp-4 whitespace-pre-wrap border-b border-zinc-100">{post.content}</div>}
+                    {post.content && <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5 text-sm leading-relaxed text-zinc-700 line-clamp-4 whitespace-pre-wrap">{post.content}</div>}
 
-                    <div className="p-4 flex flex-col sm:flex-row gap-3 items-start">
+                    <div className="flex flex-col items-start gap-3 p-4 sm:flex-row">
                       <input
                         type="text"
                         placeholder="Add a comment (optional)..."
                         value={comments[post.id] || ""}
                         onChange={(e) => setComments((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                        className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 outline-none focus:border-teal"
+                        className="flex-1 rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal/40 focus:ring-4 focus:ring-teal/8"
                       />
                       <div className="flex gap-2">
-                        <button onClick={() => handleDecision(post.id, "rejected")} disabled={actioning === post.id} className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50 transition-colors">{actioning === post.id ? "..." : "Reject"}</button>
-                        <button onClick={() => handleDecision(post.id, "approved")} disabled={actioning === post.id} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors">{actioning === post.id ? "..." : "Approve"}</button>
+                        <button onClick={() => handleDecision(post.id, "rejected")} disabled={actioning === post.id} className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 transition-all hover:bg-red-100 disabled:opacity-50">{actioning === post.id ? "..." : "Reject"}</button>
+                        <button onClick={() => handleDecision(post.id, "approved")} disabled={actioning === post.id} className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50">{actioning === post.id ? "..." : "Approve"}</button>
                       </div>
                     </div>
                   </div>
@@ -155,16 +155,16 @@ export default function ApprovalsPage() {
 
           {resolved.length > 0 && (
             <section>
-              <h2 className="mb-4 text-sm font-bold text-zinc-500 uppercase tracking-wider">Recently resolved ({resolved.length})</h2>
-              <div className="space-y-3">
+              <h2 className="mb-4 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Recently resolved ({resolved.length})</h2>
+              <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100">
                 {resolved.slice(0, 10).map(({ post, approval }) => (
-                  <div key={post.id} className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-5 py-3.5">
+                  <div key={post.id} className="flex items-center justify-between px-5 py-3.5 transition-colors hover:bg-zinc-50">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLES[post.status] || "bg-zinc-50 text-zinc-600"}`}>{post.status.replaceAll("_", " ")}</span>
-                        <p className="text-sm font-medium text-zinc-900 truncate">{post.title}</p>
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase ${STATUS_STYLES[post.status] || "bg-zinc-50 text-zinc-600"}`}>{post.status.replaceAll("_", " ")}</span>
+                        <p className="truncate text-sm font-medium text-zinc-900">{post.title}</p>
                       </div>
-                      {approval?.comments && <p className="mt-1 text-xs text-zinc-500 italic">"{approval.comments}"</p>}
+                      {approval?.comments && <p className="mt-1 text-xs italic text-zinc-500">"{approval.comments}"</p>}
                     </div>
                     <span className="ml-4 shrink-0 text-xs text-zinc-400">{approval?.created_at ? new Date(approval.created_at).toLocaleDateString() : ""}</span>
                   </div>

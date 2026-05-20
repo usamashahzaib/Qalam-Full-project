@@ -61,79 +61,100 @@ export default function LibraryPage() {
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <Stat label="All posts" value={String(state.posts.length)} />
-        <Stat label="Drafts" value={String(state.drafts.length)} />
-        <Stat label="Scheduled" value={String(state.scheduled.length)} />
-        <Stat label="Published" value={String(state.published.length)} />
-        <Stat label="Avg score" value={`${avgScore}/100`} />
+        <Stat label="All posts" value={String(state.posts.length)} accent="zinc" />
+        <Stat label="Drafts" value={String(state.drafts.length)} accent="zinc" />
+        <Stat label="Scheduled" value={String(state.scheduled.length)} accent="amber" />
+        <Stat label="Published" value={String(state.published.length)} accent="teal" />
+        <Stat label="Avg score" value={`${avgScore}`} suffix="/100" accent={avgScore >= 68 ? "teal" : avgScore >= 52 ? "amber" : "red"} />
       </div>
 
       <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-zinc-900">Top performers - click to recycle</h2>
+            <h2 className="text-sm font-bold text-zinc-900">Top performers — click to recycle</h2>
             <p className="text-xs text-zinc-500">Best internal scores from published posts.</p>
           </div>
-          <span className="text-xs text-zinc-500">{topPerformers.length} ready</span>
+          {topPerformers.length > 0 && <span className="rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">{topPerformers.length} ready</span>}
         </div>
         <div className="flex flex-wrap gap-2">
           {topPerformers.length ? topPerformers.map(({ post, intelligence }) => (
-            <button key={post.id} onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-left transition-colors hover:bg-zinc-100">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">{intelligence.overallScore}/100</span>
-                <span className="max-w-[240px] truncate text-sm font-semibold text-zinc-900">{post.title}</span>
+            <button key={post.id} onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-xl border border-zinc-200 bg-zinc-50/80 px-3.5 py-2.5 text-left shadow-sm transition-all hover:border-teal/30 hover:bg-teal/5">
+              <div className="flex items-center gap-2.5">
+                <span className={`rounded-lg px-2 py-0.5 text-[11px] font-bold ${intelligence.overallScore >= 82 ? "bg-teal/10 text-teal" : intelligence.overallScore >= 68 ? "bg-teal/5 text-teal/80" : "bg-amber-50 text-amber-700"}`}>{intelligence.overallScore}</span>
+                <span className="max-w-[200px] truncate text-sm font-semibold text-zinc-900">{post.title}</span>
               </div>
             </button>
-          )) : <p className="text-sm text-zinc-500">Publish a few posts to surface top recycle candidates.</p>}
+          )) : <p className="text-sm text-zinc-400">Publish a few posts to surface top recycle candidates.</p>}
         </div>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search title, content, or type" className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900" />
-        <div className="flex flex-wrap gap-2">{STATUSES.map((item) => <button key={item} onClick={() => setStatusFilter(item)} className={`cursor-pointer rounded-lg px-3 py-2 text-sm font-semibold ${statusFilter === item ? "bg-zinc-900 text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}>{item.replaceAll("_", " ")}</button>)}</div>
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search title, content, or type…" className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition-all focus:border-teal/40 focus:ring-4 focus:ring-teal/8" />
+        <div className="flex flex-wrap gap-1.5">
+          {STATUSES.map((item) => (
+            <button key={item} onClick={() => setStatusFilter(item)} className={`cursor-pointer rounded-lg px-3 py-2 text-xs font-semibold transition-all ${statusFilter === item ? "bg-zinc-900 text-white shadow-sm" : "border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"}`}>
+              {item === "all" ? "All" : item.replaceAll("_", " ")}
+            </button>
+          ))}
+        </div>
       </div>
 
       {status ? <p className="mb-4 text-sm text-zinc-600">{status}</p> : null}
 
       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
-          <h2 className="text-sm font-semibold text-zinc-900">Workspace content</h2>
-          <span className="text-xs text-zinc-500">{posts.length} shown</span>
+        <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/50 px-5 py-4">
+          <h2 className="text-sm font-bold text-zinc-900">Workspace content</h2>
+          <span className="rounded-lg border border-zinc-100 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">{posts.length} shown</span>
         </div>
-        {posts.length === 0 ? <div className="px-5 py-10 text-center text-sm text-zinc-500">No matching posts yet.</div> : (
+        {posts.length === 0 ? (
+          <div className="px-5 py-14 text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
+              <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+            </div>
+            <p className="text-sm font-semibold text-zinc-900">No matching posts</p>
+            <p className="mt-1 text-xs text-zinc-500">Try a different filter or search term.</p>
+          </div>
+        ) : (
           <div className="divide-y divide-zinc-100">
-            {posts.map(({ post, intelligence }) => (
-              <article key={post.id} className="px-5 py-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold text-zinc-900">{post.title}</h3>
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] uppercase tracking-wide text-zinc-600">{post.status.replaceAll("_", " ")}</span>
-                      <span className="rounded-full bg-zinc-100 px-2 py-1 text-[11px] uppercase tracking-wide text-zinc-600">{post.type}</span>
-                      <span className="rounded-full bg-teal/10 px-2 py-1 text-[11px] font-bold text-teal">{intelligence.overallScore}/100</span>
+            {posts.map(({ post, intelligence }) => {
+              const score = intelligence.overallScore
+              const scoreColor = score >= 82 ? "bg-teal/10 text-teal" : score >= 68 ? "bg-teal/5 text-teal/80" : score >= 52 ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-500"
+              const statusStyle = post.status === "published" ? "bg-teal/10 text-teal" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : post.status === "pending_approval" ? "bg-blue-50 text-blue-700" : post.status === "rejected" ? "bg-red-50 text-red-600" : "bg-zinc-100 text-zinc-600"
+              return (
+                <article key={post.id} className="px-5 py-5 transition-colors hover:bg-zinc-50/50">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusStyle}`}>{post.status.replaceAll("_", " ")}</span>
+                        <span className="rounded-full border border-zinc-100 bg-zinc-50 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">{post.type}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${scoreColor}`}>{score}/100</span>
+                      </div>
+                      <h3 className="text-sm font-bold text-zinc-900 leading-snug">{post.title}</h3>
+                      <p className="mt-1 text-xs text-zinc-400">{post.date}{post.scheduledTime ? ` · ${post.scheduledTime}` : ""}</p>
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">{post.content}</p>
+                      {intelligence.hashtags.length > 0 && (
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                          {intelligence.hashtags.slice(0, 4).map((tag) => <span key={tag} className="rounded-full border border-teal/20 bg-teal/5 px-2 py-0.5 text-[10px] font-medium text-teal">{tag}</span>)}
+                        </div>
+                      )}
                     </div>
-                    <p className="mt-1 text-xs text-zinc-500">{post.date}{post.scheduledTime ? ` at ${post.scheduledTime}` : ""}</p>
-                    <p className="mt-2 line-clamp-3 text-sm text-zinc-600">{post.content}</p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {intelligence.hashtags.slice(0, 4).map((tag) => <span key={tag} className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] text-zinc-600">{tag}</span>)}
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 transition-all hover:border-teal/30 hover:bg-teal/5 hover:text-teal">Load in writer</button>
+                      <button onClick={() => navigator.clipboard.writeText(post.content)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50">Copy</button>
+                      <button onClick={() => onDelete(post)} className="cursor-pointer rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-500 transition-all hover:bg-red-50">Delete</button>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">Load in writer</button>
-                    <button onClick={() => navigator.clipboard.writeText(post.content)} className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">Copy</button>
-                    <button onClick={() => onDelete(post)} className="cursor-pointer rounded-lg border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50">Delete</button>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {intelligence.scores.slice(0, 3).map((item) => (
+                      <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50/80 px-3 py-2">
+                        <p className="text-[9px] font-bold uppercase tracking-widest text-zinc-400">{item.label}</p>
+                        <p className="mt-1 text-sm font-bold text-zinc-900">{item.score}<span className="text-xs font-normal text-zinc-400">/100</span></p>
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                  {intelligence.scores.slice(0, 3).map((item) => (
-                    <div key={item.label} className="rounded-xl bg-zinc-50 px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">{item.label}</p>
-                      <p className="mt-1 text-sm font-bold text-zinc-900">{item.score}/100</p>
-                    </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+                </article>
+              )
+            })}
           </div>
         )}
       </div>
@@ -141,6 +162,13 @@ export default function LibraryPage() {
   )
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-lg font-bold text-zinc-900">{value}</p></div>
+function Stat({ label, value, suffix = "", accent }: { label: string; value: string; suffix?: string; accent: "teal" | "amber" | "zinc" | "red" }) {
+  const borderColor = accent === "teal" ? "border-l-teal" : accent === "amber" ? "border-l-amber-400" : accent === "red" ? "border-l-red-400" : "border-l-zinc-300"
+  const valueColor = accent === "teal" ? "text-teal" : accent === "amber" ? "text-amber-700" : accent === "red" ? "text-red-500" : "text-zinc-900"
+  return (
+    <div className={`rounded-xl border border-zinc-200 border-l-[3px] bg-white p-4 ${borderColor}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className={`mt-1.5 text-2xl font-bold ${valueColor}`}>{value}{suffix && <span className="text-sm font-normal text-zinc-400">{suffix}</span>}</p>
+    </div>
+  )
 }

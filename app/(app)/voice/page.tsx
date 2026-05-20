@@ -88,18 +88,21 @@ export default function VoiceProfilePage() {
         </div>
       </div>
 
-      <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5">
-        <div className="flex items-start justify-between gap-4">
+      <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-6">
+        <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Profile readiness</h2>
-            <p className="mt-1 text-sm text-zinc-500">{readyCount}/6 fields complete — AI drafts use these to match your voice and positioning.</p>
+            <h2 className="text-base font-bold text-zinc-900">Profile readiness</h2>
+            <p className="mt-1 text-sm text-zinc-500">AI drafts use these fields to match your voice and positioning.</p>
           </div>
-          <span className="text-3xl font-bold text-gold">{readyCount}/6</span>
+          <div className="text-right">
+            <span className={`text-3xl font-bold ${readyCount >= 5 ? "text-teal" : readyCount >= 3 ? "text-amber-600" : "text-zinc-400"}`}>{readyCount}</span>
+            <span className="text-lg text-zinc-300">/6</span>
+          </div>
         </div>
-        <div className="mt-4 h-2 rounded-full bg-zinc-100">
-          <div className="h-full rounded-full bg-teal" style={{ width: `${(readyCount / 6) * 100}%` }} />
+        <div className="mb-4 h-2 overflow-hidden rounded-full bg-zinc-100">
+          <div className={`h-full rounded-full transition-all ${readyCount >= 5 ? "bg-teal" : readyCount >= 3 ? "bg-amber-400" : "bg-zinc-300"}`} style={{ width: `${(readyCount / 6) * 100}%` }} />
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {[
             { label: "Name", filled: Boolean(profile.name) },
             { label: "Title / Role", filled: Boolean(profile.title) },
@@ -108,8 +111,8 @@ export default function VoiceProfilePage() {
             { label: "Brand tone", filled: Boolean(profile.tone) },
             { label: "Content goals", filled: profile.goals.length > 0 },
           ].map((field) => (
-            <div key={field.label} className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${field.filled ? "bg-teal/5 text-teal" : "bg-zinc-50 text-zinc-400"}`}>
-              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${field.filled ? "bg-teal text-white" : "bg-zinc-200 text-zinc-400"}`}>{field.filled ? "✓" : "–"}</span>
+            <div key={field.label} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all ${field.filled ? "border-teal/20 bg-teal/5 text-teal" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${field.filled ? "bg-teal text-white" : "border border-zinc-200 bg-white text-zinc-400"}`}>{field.filled ? "✓" : ""}</span>
               {field.label}
             </div>
           ))}
@@ -212,13 +215,29 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-  return <div><p className="mb-1 text-xs font-medium text-zinc-500">{label}</p><div className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-900">{value}</div></div>
+  const isEmpty = value === "Not set" || value === "No goals set"
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400">{label}</p>
+      <div className={`rounded-xl border px-4 py-3 text-sm ${isEmpty ? "border-zinc-100 bg-zinc-50 text-zinc-400 italic" : "border-zinc-200 bg-white text-zinc-900 shadow-sm"}`}>{value}</div>
+    </div>
+  )
 }
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return <section className="rounded-2xl border border-zinc-200 bg-white p-5"><h2 className="mb-4 text-base font-semibold text-zinc-900">{title}</h2><div className="space-y-3">{children}</div></section>
+  return (
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5">
+      <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-400">{title}</h2>
+      <div className="space-y-3">{children}</div>
+    </section>
+  )
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
-  return <div className="flex items-center justify-between text-sm"><span className="text-zinc-500">{label}</span><span className="font-semibold text-zinc-900">{value}</span></div>
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-zinc-500">{label}</span>
+      <span className="text-sm font-bold text-zinc-900">{value}</span>
+    </div>
+  )
 }

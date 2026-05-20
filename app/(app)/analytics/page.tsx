@@ -119,74 +119,91 @@ export default function AnalyticsPage() {
       {!loading && (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Drafts" value={data.byStatus.draft} note="workspace state" />
-            <Stat label="Scheduled" value={data.byStatus.scheduled} note="workspace state" />
-            <Stat label="Published" value={data.byStatus.published} note="workspace state" />
-            <Stat label="Total posts" value={data.byStatus.total} note="all statuses" />
+            <Stat label="Drafts" value={data.byStatus.draft} note="workspace" accent="zinc" />
+            <Stat label="Scheduled" value={data.byStatus.scheduled} note="workspace" accent="amber" />
+            <Stat label="Published" value={data.byStatus.published} note="workspace" accent="teal" />
+            <Stat label="Total posts" value={data.byStatus.total} note="all statuses" accent="zinc" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="In review" value={data.pendingApproval} note="pending approval" />
-            <Stat label="Rejected" value={data.rejected} note="workspace state" />
-            <Stat label="Carousel jobs" value={data.carouselCount} note="job history" />
-            <Stat label="Publish events" value={data.publishEvents} note="event log" />
+            <Stat label="In review" value={data.pendingApproval} note="pending approval" accent="blue" />
+            <Stat label="Rejected" value={data.rejected} note="workspace" accent="red" />
+            <Stat label="Carousel jobs" value={data.carouselCount} note="job history" accent="zinc" />
+            <Stat label="Publish events" value={data.publishEvents} note="event log" accent="teal" />
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold text-zinc-900">Activity timeline</h2>
-                <p className="text-xs text-zinc-500">Last 14 days of real event activity.</p>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <div className="mb-5 flex items-end justify-between">
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900">Activity timeline</h2>
+                  <p className="mt-0.5 text-xs text-zinc-500">Last 14 days of real event activity.</p>
+                </div>
+                <span className="rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">14d</span>
               </div>
-              <div className="grid h-56 items-end gap-2" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+              <div className="grid h-52 items-end gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
                 {data.timeline.map((item) => (
-                  <div key={item.key} className="flex h-full flex-col justify-end">
-                    <div className="rounded-t-xl bg-teal/80" style={{ height: `${Math.max(8, (item.count / data.timelineMax) * 100)}%` }} />
-                    <p className="mt-2 text-[10px] text-zinc-500">{item.label}</p>
-                    <p className="text-[10px] font-semibold text-zinc-900">{item.count}</p>
+                  <div key={item.key} className="group flex h-full flex-col justify-end">
+                    <div className="relative">
+                      {item.count > 0 && (
+                        <div className="absolute -top-6 left-1/2 -translate-x-1/2 rounded bg-zinc-900 px-1.5 py-0.5 text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                          {item.count}
+                        </div>
+                      )}
+                      <div className="rounded-t-md transition-all group-hover:brightness-110" style={{ height: `${Math.max(6, (item.count / data.timelineMax) * 180)}px`, background: item.count > 0 ? "rgb(13,74,69)" : "rgb(228,228,231)" }} />
+                    </div>
+                    <p className="mt-1.5 text-center text-[9px] text-zinc-400 leading-tight">{item.label.split(" ")[0]}</p>
+                    <p className="text-center text-[9px] text-zinc-400 leading-tight">{item.label.split(" ")[1]}</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-              <div className="mb-4">
-                <h2 className="text-base font-semibold text-zinc-900">Post mix</h2>
-                <p className="text-xs text-zinc-500">What you are creating most often.</p>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6">
+              <div className="mb-5">
+                <h2 className="text-base font-bold text-zinc-900">Post mix</h2>
+                <p className="mt-0.5 text-xs text-zinc-500">What you are creating most often.</p>
               </div>
-              <div className="space-y-3">
-                {!data.typeRows.length ? <p className="text-sm text-zinc-500">No post types yet.</p> : data.typeRows.map(([type, count]) => (
+              <div className="space-y-4">
+                {!data.typeRows.length ? (
+                  <p className="text-sm text-zinc-400">No post types yet.</p>
+                ) : data.typeRows.map(([type, count]) => (
                   <div key={type}>
-                    <div className="mb-1 flex items-center justify-between text-sm"><span className="truncate text-zinc-700">{type}</span><span className="font-semibold text-zinc-900">{count}</span></div>
-                    <div className="h-2 rounded-full bg-zinc-100"><div className="h-full rounded-full bg-gold" style={{ width: `${(count / Math.max(1, data.byStatus.total)) * 100}%` }} /></div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="truncate text-sm text-zinc-700">{type}</span>
+                      <span className="ml-3 shrink-0 font-bold text-zinc-900">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-zinc-100">
+                      <div className="h-full rounded-full bg-gold transition-all" style={{ width: `${(count / Math.max(1, data.byStatus.total)) * 100}%` }} />
+                    </div>
                   </div>
                 ))}
               </div>
             </section>
           </div>
 
-          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4">
-              <h2 className="text-base font-semibold text-zinc-900">Content score distribution</h2>
-              <p className="text-xs text-zinc-500">Internal quality scores across all workspace posts.</p>
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="mb-5">
+              <h2 className="text-base font-bold text-zinc-900">Content score distribution</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Internal quality scores across all workspace posts.</p>
             </div>
             {data.byStatus.total === 0 ? (
-              <p className="text-sm text-zinc-500">No posts to score yet.</p>
+              <p className="text-sm text-zinc-400">No posts to score yet. Write and save your first draft to see scores here.</p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: "Strong", count: data.scoreBuckets.strong, color: "bg-teal", range: "82–100" },
-                  { label: "Solid", count: data.scoreBuckets.solid, color: "bg-teal/50", range: "68–81" },
-                  { label: "Needs polish", count: data.scoreBuckets.needsPolish, color: "bg-amber-400", range: "52–67" },
-                  { label: "Weak", count: data.scoreBuckets.weak, color: "bg-zinc-300", range: "0–51" },
+                  { label: "Strong", count: data.scoreBuckets.strong, bar: "bg-teal", border: "border-l-teal", range: "82–100", valueColor: "text-teal" },
+                  { label: "Solid", count: data.scoreBuckets.solid, bar: "bg-teal/50", border: "border-l-teal/50", range: "68–81", valueColor: "text-teal/80" },
+                  { label: "Needs polish", count: data.scoreBuckets.needsPolish, bar: "bg-amber-400", border: "border-l-amber-400", range: "52–67", valueColor: "text-amber-700" },
+                  { label: "Weak", count: data.scoreBuckets.weak, bar: "bg-zinc-300", border: "border-l-zinc-300", range: "0–51", valueColor: "text-zinc-500" },
                 ].map((bucket) => (
-                  <div key={bucket.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-4">
+                  <div key={bucket.label} className={`rounded-xl border border-zinc-100 border-l-[3px] bg-zinc-50/60 p-4 ${bucket.border}`}>
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-semibold text-zinc-600">{bucket.label}</span>
-                      <span className="text-[10px] text-zinc-400">{bucket.range}</span>
+                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold text-zinc-500">{bucket.range}</span>
                     </div>
-                    <p className="text-2xl font-bold text-zinc-900">{bucket.count}</p>
-                    <div className="mt-2 h-1.5 rounded-full bg-zinc-200">
-                      <div className={`h-full rounded-full ${bucket.color}`} style={{ width: `${data.byStatus.total ? (bucket.count / data.byStatus.total) * 100 : 0}%` }} />
+                    <p className={`text-3xl font-bold ${bucket.valueColor}`}>{bucket.count}</p>
+                    <div className="mt-2 h-1 rounded-full bg-zinc-200">
+                      <div className={`h-full rounded-full transition-all ${bucket.bar}`} style={{ width: `${data.byStatus.total ? (bucket.count / data.byStatus.total) * 100 : 0}%` }} />
                     </div>
                   </div>
                 ))}
@@ -194,20 +211,20 @@ export default function AnalyticsPage() {
             )}
           </section>
 
-          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4">
-              <h2 className="text-base font-semibold text-zinc-900">Best time heatmap</h2>
-              <p className="text-xs text-zinc-500">Scheduled and published posts, grouped by weekday and time window.</p>
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="mb-5">
+              <h2 className="text-base font-bold text-zinc-900">Best time heatmap</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Scheduled and published posts, grouped by weekday and time window.</p>
             </div>
-            <div className="grid grid-cols-[100px_repeat(4,minmax(0,1fr))] gap-2">
+            <div className="grid grid-cols-[80px_repeat(4,minmax(0,1fr))] gap-1.5">
               <div />
-              {TIME_LABELS.map((label) => <div key={label} className="text-center text-[11px] font-semibold text-zinc-500">{label}</div>)}
+              {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">{label}</div>)}
               {DAYS.map((day, row) => (
                 <div key={day} className="contents">
-                  <div className="flex items-center text-[11px] font-semibold text-zinc-500">{day}</div>
+                  <div className="flex items-center text-xs font-semibold text-zinc-500">{day}</div>
                   {data.grid[row].map((value, col) => (
-                    <div key={`${day}-${col}`} className="rounded-xl border border-zinc-100 p-3 text-center" style={{ backgroundColor: value ? `rgba(13,74,69,${0.12 + value / data.gridMax / 1.3})` : "rgba(244,244,245,0.9)" }}>
-                      <span className={`text-sm font-bold ${value ? "text-zinc-900" : "text-zinc-400"}`}>{value}</span>
+                    <div key={`${day}-${col}`} className="group relative rounded-xl border border-zinc-100 py-3 text-center transition-all hover:scale-[1.02]" style={{ backgroundColor: value ? `rgba(13,74,69,${0.1 + (value / data.gridMax) * 0.65})` : "rgba(250,250,250,0.8)" }}>
+                      <span className={`text-sm font-bold ${value ? "text-zinc-900" : "text-zinc-300"}`}>{value || "·"}</span>
                     </div>
                   ))}
                 </div>
@@ -220,6 +237,14 @@ export default function AnalyticsPage() {
   )
 }
 
-function Stat({ label, value, note }: { label: string; value: number; note: string }) {
-  return <div className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-2xl font-bold text-zinc-900">{value}</p><p className="mt-0.5 text-[10px] uppercase tracking-wide text-zinc-400">{note}</p></div>
+function Stat({ label, value, note, accent }: { label: string; value: number; note: string; accent: "teal" | "amber" | "zinc" | "blue" | "red" }) {
+  const borderColor = accent === "teal" ? "border-l-teal" : accent === "amber" ? "border-l-amber-400" : accent === "blue" ? "border-l-blue-400" : accent === "red" ? "border-l-red-400" : "border-l-zinc-300"
+  const valueColor = accent === "teal" ? "text-teal" : accent === "amber" ? "text-amber-700" : accent === "blue" ? "text-blue-700" : accent === "red" ? "text-red-600" : "text-zinc-900"
+  return (
+    <div className={`rounded-xl border border-zinc-200 border-l-[3px] bg-white p-4 ${borderColor}`}>
+      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className={`mt-1.5 text-3xl font-bold ${valueColor}`}>{value}</p>
+      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-zinc-400">{note}</p>
+    </div>
+  )
 }

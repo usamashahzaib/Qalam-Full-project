@@ -166,24 +166,41 @@ export default function ChatWorkspace() {
     }
   }, [saveDraft])
 
+  const STARTER_PROMPTS = [
+    "Write a thought leadership post for LinkedIn",
+    "Give me 3 hook ideas for my next post",
+    "Help me reframe this idea with more authority",
+    "What should I post about this week?",
+  ]
+
+  const handleStarterPrompt = (prompt: string) => {
+    setInput(prompt)
+  }
+
   return (
     <div className="mx-auto flex h-[calc(100vh-80px)] max-w-7xl overflow-hidden px-4 py-6 sm:px-6">
-      <div className="flex w-72 flex-col rounded-l-2xl border-y border-l border-zinc-200 bg-zinc-50">
-        <div className="border-b border-zinc-200 p-4">
+      {/* Dark sidebar — matches app shell */}
+      <div className="flex w-72 flex-col rounded-l-2xl bg-zinc-900">
+        <div className="border-b border-zinc-800 px-4 py-4">
+          <p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">AI Strategist</p>
           <button
             onClick={createConversation}
             disabled={isCreating}
-            className="w-full rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal/90 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-teal disabled:opacity-50"
           >
-            {isCreating ? "Creating..." : "+ New Chat"}
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
+            {isCreating ? "Creating..." : "New Chat"}
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
           {conversations.length === 0 ? (
-            <p className="text-center text-xs text-zinc-500 mt-10">No conversations yet.</p>
+            <div className="mt-6 px-2 text-center">
+              <p className="text-xs text-zinc-600">No conversations yet.</p>
+              <p className="mt-1 text-[10px] text-zinc-700">Start a new chat above.</p>
+            </div>
           ) : (
             conversations.map(conv => (
-              <div key={conv.id} className={`rounded-lg border px-3 py-2 text-left text-sm transition-colors ${activeConvId === conv.id ? "border-zinc-200 bg-white shadow-sm" : "border-transparent text-zinc-600 hover:border-zinc-200 hover:bg-zinc-200/30"}`}>
+              <div key={conv.id} className={`group rounded-xl px-3 py-2.5 text-left text-sm transition-all ${activeConvId === conv.id ? "bg-teal/20 ring-1 ring-teal/30" : "hover:bg-zinc-800"}`}>
                 <div className="flex items-start justify-between gap-2">
                   <button onClick={() => setActiveConvId(conv.id)} className="min-w-0 flex-1 text-left">
                     {renamingId === conv.id ? (
@@ -196,18 +213,18 @@ export default function ChatWorkspace() {
                           if (e.key === "Enter") saveRename()
                           if (e.key === "Escape") setRenamingId(null)
                         }}
-                        className="w-full rounded border border-zinc-200 px-2 py-1 text-sm text-zinc-900 outline-none focus:border-teal"
+                        className="w-full rounded border border-zinc-600 bg-zinc-800 px-2 py-1 text-sm text-white outline-none focus:border-teal"
                       />
                     ) : (
                       <>
-                        <div className="truncate font-medium text-zinc-900">{conv.title}</div>
-                        <div className="text-[10px] text-zinc-400 mt-1">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                        <div className={`truncate text-sm font-medium ${activeConvId === conv.id ? "text-white" : "text-zinc-300"}`}>{conv.title}</div>
+                        <div className="text-[10px] text-zinc-600 mt-0.5">{new Date(conv.updated_at).toLocaleDateString()}</div>
                       </>
                     )}
                   </button>
-                  <div className="flex shrink-0 items-center gap-2 pt-0.5">
-                    <button onClick={() => startRename(conv)} className="cursor-pointer text-[10px] font-semibold text-zinc-400 hover:text-zinc-700">Edit</button>
-                    <button onClick={() => deleteConversation(conv.id)} className="cursor-pointer text-[10px] font-semibold text-zinc-400 hover:text-red-500">Delete</button>
+                  <div className="flex shrink-0 items-center gap-1.5 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button onClick={() => startRename(conv)} className="cursor-pointer text-[10px] font-semibold text-zinc-500 hover:text-zinc-300">Edit</button>
+                    <button onClick={() => deleteConversation(conv.id)} className="cursor-pointer text-[10px] font-semibold text-zinc-500 hover:text-red-400">Del</button>
                   </div>
                 </div>
               </div>
@@ -216,31 +233,51 @@ export default function ChatWorkspace() {
         </div>
       </div>
 
+      {/* Main chat area */}
       <div className="flex flex-1 flex-col rounded-r-2xl border border-zinc-200 bg-white">
         {!activeConvId ? (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-zinc-500">Select or create a conversation to start chatting.</p>
+          <div className="flex h-full flex-col items-center justify-center px-8 text-center">
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal/10">
+              <svg className="h-7 w-7 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+            </div>
+            <h3 className="text-lg font-bold text-zinc-900">AI Strategist</h3>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">Your content strategist for LinkedIn. Get post ideas, sharper angles, and campaign direction — fast.</p>
+            <button onClick={createConversation} disabled={isCreating} className="mt-5 rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-600 disabled:opacity-50">
+              {isCreating ? "Starting..." : "Start a conversation"}
+            </button>
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
               {messages.length === 0 ? (
-                <div className="flex h-full flex-col items-center justify-center text-center">
-                  <div className="mb-4 rounded-full bg-teal/10 p-4 text-teal">
-                    <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+                <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal/10">
+                    <svg className="h-6 w-6 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
                   </div>
-                  <h3 className="font-semibold text-zinc-900">AI Strategist</h3>
-                  <p className="mt-1 text-sm text-zinc-500 max-w-sm">Ask for a post, a sharper angle, or the next action. Replies stay short.</p>
+                  <h3 className="font-bold text-zinc-900">What would you like to work on?</h3>
+                  <p className="mt-1.5 text-sm text-zinc-500 max-w-sm">Try one of these or ask anything.</p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {STARTER_PROMPTS.map((prompt) => (
+                      <button key={prompt} onClick={() => handleStarterPrompt(prompt)} className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-sm text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-teal/5 hover:text-teal">
+                        {prompt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 messages.map(msg => (
                   <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-2xl px-5 py-3.5 shadow-sm ${msg.role === 'user' ? 'bg-zinc-900 text-white' : 'border border-zinc-200 bg-zinc-50 text-zinc-900'}`}>
+                    {msg.role === 'assistant' && (
+                      <div className="mr-3 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal/10">
+                        <svg className="h-3.5 w-3.5 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      </div>
+                    )}
+                    <div className={`max-w-[78%] rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-zinc-900 text-white shadow-sm' : 'border border-zinc-200 bg-white text-zinc-900 shadow-sm'}`}>
                       <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
                       {msg.role === 'assistant' && (
-                        <div className="mt-3 flex items-center justify-end border-t border-zinc-200/80 pt-2">
-                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-teal hover:text-teal-700 transition-colors">
-                            Convert to Draft {"->"}
+                        <div className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-2">
+                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700">
+                            Save to drafts →
                           </button>
                         </div>
                       )}
@@ -249,12 +286,15 @@ export default function ChatWorkspace() {
                 ))
               )}
               {isLoading && (
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-2xl border border-zinc-200 bg-zinc-50 px-5 py-4 text-zinc-500 shadow-sm">
-                    <span className="flex gap-1.5">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '0.15s' }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-400" style={{ animationDelay: '0.3s' }} />
+                <div className="flex items-start justify-start gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-teal/10">
+                    <svg className="h-3.5 w-3.5 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  </div>
+                  <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: '0.15s' }} />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: '0.3s' }} />
                     </span>
                   </div>
                 </div>
@@ -262,8 +302,8 @@ export default function ChatWorkspace() {
               <div ref={bottomRef} />
             </div>
 
-            <div className="border-t border-zinc-200 p-4">
-              <div className="relative flex items-end gap-3 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm focus-within:border-teal/50 focus-within:ring-4 focus-within:ring-teal/10">
+            <div className="border-t border-zinc-100 p-4">
+              <div className="flex items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-2 shadow-sm transition-all focus-within:border-teal/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal/8">
                 <textarea
                   value={input}
                   onChange={e => {
@@ -277,25 +317,27 @@ export default function ChatWorkspace() {
                       sendMessage()
                     }
                   }}
-                  placeholder="Ask the AI for a post idea..."
-                  className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 pl-3 text-sm text-zinc-900 outline-none"
+                  placeholder="Ask for a post idea, sharper hook, or strategic angle..."
+                  className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 pl-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
                   rows={1}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal text-white transition-all hover:bg-teal-600 disabled:opacity-50"
+                  className="mb-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal text-white shadow-sm transition-all hover:bg-teal-600 disabled:opacity-40 disabled:shadow-none"
                 >
                   <svg className="h-4 w-4 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                 </button>
               </div>
-              <p className="mt-2 text-center text-[10px] text-zinc-400">Enter = new line. Ctrl+Enter (or ⌘+Enter) to send.</p>
-              {draftStatus && (
-                <p className={`mt-1 text-center text-[10px] font-semibold ${
-                  draftStatus.includes("Failed") ? "text-red-500" :
-                  draftStatus.includes("Saved") ? "text-emerald-600" : "text-zinc-400"
-                }`}>{draftStatus}</p>
-              )}
+              <div className="mt-2 flex items-center justify-between px-1">
+                <p className="text-[10px] text-zinc-400">Ctrl+Enter to send</p>
+                {draftStatus && (
+                  <p className={`text-[10px] font-semibold ${
+                    draftStatus.includes("Failed") ? "text-red-500" :
+                    draftStatus.includes("Saved") ? "text-emerald-600" : "text-zinc-400"
+                  }`}>{draftStatus}</p>
+                )}
+              </div>
             </div>
           </>
         )}

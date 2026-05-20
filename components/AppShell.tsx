@@ -21,19 +21,39 @@ import {
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 
-const NAV_LINKS = [
-  { href: "/dashboard", label: "Dashboard", icon: GrowthIcon },
-  { href: "/chat", label: "AI Strategist", icon: VoiceIcon },
-  { href: "/writer", label: "AI Writer", icon: ComposeIcon },
-  { href: "/calendar", label: "Planner", icon: CalendarIcon },
-  { href: "/approvals", label: "Approvals", icon: CalendarIcon },
-  { href: "/analytics", label: "Analytics", icon: AnalyticsIcon },
-  { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
-  { href: "/library", label: "Library", icon: LibraryIcon },
-  { href: "/carousels", label: "Carousels", icon: CarouselIcon },
-  { href: "/competitors", label: "Research", icon: MicroscopeIcon },
-  { href: "/agency", label: "Agency Hub", icon: TeamIcon },
-  { href: "/settings", label: "Settings", icon: ProfileIcon },
+const NAV_GROUPS = [
+  {
+    label: "Workspace",
+    links: [
+      { href: "/dashboard", label: "Dashboard", icon: GrowthIcon },
+      { href: "/chat", label: "AI Strategist", icon: VoiceIcon },
+      { href: "/writer", label: "AI Writer", icon: ComposeIcon },
+    ],
+  },
+  {
+    label: "Publishing",
+    links: [
+      { href: "/calendar", label: "Planner", icon: CalendarIcon },
+      { href: "/approvals", label: "Approvals", icon: AnalyticsIcon },
+      { href: "/analytics", label: "Analytics", icon: GrowthIcon },
+    ],
+  },
+  {
+    label: "Intelligence",
+    links: [
+      { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
+      { href: "/library", label: "Library", icon: LibraryIcon },
+      { href: "/carousels", label: "Carousels", icon: CarouselIcon },
+      { href: "/competitors", label: "Research", icon: MicroscopeIcon },
+    ],
+  },
+  {
+    label: "Account",
+    links: [
+      { href: "/agency", label: "Agency Hub", icon: TeamIcon },
+      { href: "/settings", label: "Settings", icon: ProfileIcon },
+    ],
+  },
 ]
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -139,7 +159,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </button>
 
             {switcherOpen && (
-              <div className="absolute left-4 right-4 mt-2 bg-zinc-850 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700 max-h-72 overflow-y-auto">
+              <div className="absolute left-4 right-4 mt-2 bg-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700 max-h-72 overflow-y-auto">
                 <button onClick={() => handleSwitchWorkspace(null)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${!activeClientId ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>Personal Workspace</button>
                 {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${activeClientId === client.id ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>{client.client_name}</button>)}
                 <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs text-gold font-semibold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list {">"}</Link>
@@ -147,17 +167,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <nav className="px-3 space-y-1">
-            {NAV_LINKS.map((link) => {
-              const Icon = link.icon
-              const active = pathname === link.href
-              return (
-                <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all group ${active ? "bg-teal text-white shadow-md shadow-teal/10" : "hover:bg-zinc-800 hover:text-white"}`}>
-                  <Icon className={`h-4 w-4 transition-colors ${active ? "text-gold" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                  <span>{link.label}</span>
-                </Link>
-              )
-            })}
+          <nav className="px-3 space-y-4">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.label}>
+                <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-widest text-zinc-600">{group.label}</p>
+                <div className="space-y-0.5">
+                  {group.links.map((link) => {
+                    const Icon = link.icon
+                    const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
+                    return (
+                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all group ${active ? "bg-teal/90 text-white shadow-sm shadow-teal/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                        <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-gold" : "text-zinc-600 group-hover:text-zinc-300"}`} />
+                        <span className={active ? "font-semibold" : ""}>{link.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
         </div>
 
@@ -177,11 +204,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="hidden md:flex h-16 border-b border-zinc-200 bg-white/80 backdrop-blur fixed top-0 right-0 left-64 z-20 items-center justify-between px-8">
-        <div className="relative w-96" ref={searchRef}>
+      <header className="hidden md:flex h-16 border-b border-zinc-100 bg-white/90 backdrop-blur-sm fixed top-0 right-0 left-64 z-20 items-center justify-between px-8 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
+        <div className="relative w-80" ref={searchRef}>
           <div className="relative flex items-center">
             <svg className="absolute left-3.5 h-4 w-4 text-zinc-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setSearchFocused(true)} className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 py-2.5 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 focus:ring-4 focus:ring-teal/10 transition-all font-medium" />
+            <input type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setSearchFocused(true)} className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 pl-10 pr-4 py-2 text-sm text-zinc-900 outline-none focus:bg-white focus:border-teal/50 focus:ring-4 focus:ring-teal/10 transition-all" />
           </div>
           {searchFocused && searchQuery.trim() && (
             <div className="absolute left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100">
