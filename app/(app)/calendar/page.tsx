@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
@@ -72,11 +72,11 @@ export default function CalendarPage() {
     return map
   }, [state.published])
 
-  useEffect(() => {
+  const effectiveSelectedDay = useMemo(() => {
     const inCurrentMonth = selectedDay && isIsoDate(selectedDay) && toDate(selectedDay).getMonth() === monthCursor.getMonth() && toDate(selectedDay).getFullYear() === monthCursor.getFullYear()
-    if (inCurrentMonth) return
-    const firstScheduled = state.scheduled.find((post) => isIsoDate(post.date) && toDate(post.date).getMonth() === monthCursor.getMonth() && toDate(post.date).getFullYear() === monthCursor.getFullYear())?.date
-    setSelectedDay(firstScheduled || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10))
+    if (inCurrentMonth) return selectedDay
+    return state.scheduled.find((post) => isIsoDate(post.date) && toDate(post.date).getMonth() === monthCursor.getMonth() && toDate(post.date).getFullYear() === monthCursor.getFullYear())?.date
+      || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10)
   }, [monthCursor, selectedDay, state.scheduled])
 
   const monthGrid = useMemo(() => {
@@ -101,11 +101,11 @@ export default function CalendarPage() {
 
   const dayItems = useMemo(() => {
     return {
-      scheduled: scheduledByDay.get(selectedDay) || [],
-      drafts: draftByDay.get(selectedDay) || [],
-      published: publishedByDay.get(selectedDay) || [],
+      scheduled: scheduledByDay.get(effectiveSelectedDay) || [],
+      drafts: draftByDay.get(effectiveSelectedDay) || [],
+      published: publishedByDay.get(effectiveSelectedDay) || [],
     }
-  }, [draftByDay, publishedByDay, scheduledByDay, selectedDay])
+  }, [draftByDay, effectiveSelectedDay, publishedByDay, scheduledByDay])
 
   const selectedMonthScheduled = useMemo(
     () => state.scheduled.filter((post) => isIsoDate(post.date) && toDate(post.date).getMonth() === monthCursor.getMonth() && toDate(post.date).getFullYear() === monthCursor.getFullYear()),
@@ -137,7 +137,7 @@ export default function CalendarPage() {
     setMonthCursor(next)
   }
 
-  const selectedDateLabel = isIsoDate(selectedDay) ? toDate(selectedDay).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Selected day"
+  const selectedDateLabel = isIsoDate(effectiveSelectedDay) ? toDate(effectiveSelectedDay).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Selected day"
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
@@ -146,7 +146,7 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold text-zinc-900">Planner</h1>
           <p className="mt-1 text-sm text-zinc-500">Month view with draft, scheduled, and published activity by day.</p>
         </div>
-        <button onClick={() => !isPastDay(selectedDay) && goToWriter(router, activeClientId, undefined, selectedDay)} disabled={isPastDay(selectedDay)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-300">New post for selected day</button>
+        <button onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)} disabled={isPastDay(effectiveSelectedDay)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-300">New post for selected day</button>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -170,7 +170,7 @@ export default function CalendarPage() {
           </div>
           <div className="mt-2 grid grid-cols-7 gap-2">
             {monthGrid.map((day) => {
-              const isActive = day.iso === selectedDay
+              const isActive = day.iso === effectiveSelectedDay
               return (
                 <button key={day.iso} onClick={() => setSelectedDay(day.iso)} className={`min-h-28 cursor-pointer rounded-2xl border p-2 text-left transition-colors ${isPastDay(day.iso) ? "border-zinc-100 bg-zinc-50 text-zinc-400 opacity-70" : isActive ? "border-teal bg-teal/5" : day.inMonth ? "border-zinc-200 bg-white hover:bg-zinc-50" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
                   <div className="flex items-center justify-between">
@@ -195,7 +195,7 @@ export default function CalendarPage() {
                 <h2 className="text-base font-semibold text-zinc-900">{selectedDateLabel}</h2>
                 <p className="text-xs text-zinc-500">Everything tied to this day.</p>
               </div>
-              <button onClick={() => !isPastDay(selectedDay) && goToWriter(router, activeClientId, undefined, selectedDay)} disabled={isPastDay(selectedDay)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700 disabled:cursor-not-allowed disabled:text-zinc-400">Write here</button>
+              <button onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)} disabled={isPastDay(effectiveSelectedDay)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700 disabled:cursor-not-allowed disabled:text-zinc-400">Write here</button>
             </div>
             <PlannerBlock title="Scheduled" items={dayItems.scheduled} empty="No scheduled posts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} onPublish={onPublishNow} publishingId={publishingId} canPublish={Boolean(user?.linkedinMemberId)} />
             <PlannerBlock title="Drafts" items={dayItems.drafts} empty="No dated drafts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} />

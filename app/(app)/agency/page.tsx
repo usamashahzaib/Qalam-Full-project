@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { PlanGate } from "@/components/PlanGate"
 
 type Client = {
   id: string
@@ -54,6 +55,7 @@ export default function AgencyDashboard() {
   }
 
   return (
+    <PlanGate requiredPlan="Agency Starter" feature="Agency Hub" description="Manage multiple client workspaces and team seats with the ">
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div
@@ -145,5 +147,6 @@ export default function AgencyDashboard() {
         </div>
       </div>
     </div>
+    </PlanGate>
   )
 }

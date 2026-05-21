@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
+import { PlanGate } from "@/components/PlanGate"
 
 type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string; updated_at: string }
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
@@ -32,6 +33,7 @@ export default function CarouselsPage() {
     }
   }, [workspaceId])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchCarousels() }, [fetchCarousels])
 
   const generateCarousel = async () => {
@@ -58,6 +60,7 @@ export default function CarouselsPage() {
   }
 
   return (
+    <PlanGate requiredPlan="Solo" feature="Carousel Builder" description="Generate and edit AI-powered LinkedIn carousel decks with the ">
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10 font-jakarta">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div
@@ -86,5 +89,6 @@ export default function CarouselsPage() {
       {isLoading ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{[1,2,3,4,5,6].map((i) => <div key={i} className="h-36 rounded-2xl bg-zinc-100 animate-pulse" />)}</div> : carousels.length === 0 ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-20 text-center"><p className="font-semibold text-zinc-900">No carousels yet</p><p className="mt-1 text-sm text-zinc-500">Paste an idea above and generate the first deck.</p></div> : <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{carousels.map((carousel) => <Link key={carousel.id} href={withClientParam(`/carousels/${carousel.id}`, activeClientId)} className="group relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:border-teal/40 hover:shadow-md hover:-translate-y-0.5"><div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-br from-zinc-950 via-teal-950 to-teal p-4 text-white"><p className="text-[10px] font-bold uppercase tracking-widest text-teal-100">Qalam carousel</p><p className="mt-5 line-clamp-2 min-h-10 text-base font-bold">{carousel.theme || `Created ${formatDate(carousel.created_at)}`}</p><div className="mt-5 h-px bg-white/15" /><p className="mt-2 text-[10px] text-teal-100">byqalam.com</p></div><div className="flex items-start justify-between gap-2"><div className="min-w-0 flex-1"><p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">Carousel</p><p className="text-sm font-semibold text-zinc-900 truncate group-hover:text-teal transition-colors">{carousel.theme || `Created ${formatDate(carousel.created_at)}`}</p><p className="mt-1 text-[11px] text-zinc-400">Created {formatDate(carousel.created_at)}</p></div><span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-semibold text-zinc-500 group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-teal transition-colors">Edit &gt;</span></div>{carousel.post_id && <div className="mt-3 border-t border-zinc-100 pt-2.5"><p className="text-[10px] text-zinc-400">Linked post {carousel.post_id.slice(0, 8)}</p></div>}</Link>)}</div>}
       {!isLoading && carousels.length > 0 && <p className="mt-6 text-center text-xs text-zinc-400">{carousels.length} carousel{carousels.length !== 1 ? "s" : ""} in this workspace</p>}
     </div>
+    </PlanGate>
   )
 }

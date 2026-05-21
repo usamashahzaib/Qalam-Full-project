@@ -1,5 +1,23 @@
 export type PlanTier = "Free" | "Solo" | "Pro" | "Agency Starter" | "Agency Growth"
 
+export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"]
+
+export const PLAN_HIERARCHY: Record<PlanTier, number> = {
+  Free: 0,
+  Solo: 1,
+  Pro: 2,
+  "Agency Starter": 3,
+  "Agency Growth": 4,
+}
+
+export const canAccessPlan = (userPlan: string, requiredPlan: PlanTier): boolean => {
+  const userIdx = PLAN_ORDER.indexOf(userPlan as PlanTier)
+  const reqIdx = PLAN_ORDER.indexOf(requiredPlan)
+  return userIdx !== -1 && userIdx >= reqIdx
+}
+
+export const VALID_PLAN_NAMES: readonly string[] = PLAN_ORDER
+
 export type PlanLimits = {
   aiDraftsPerMonth: number | "unlimited"
   carouselGenerationsPerMonth: number | "unlimited"
@@ -9,6 +27,7 @@ export type PlanLimits = {
   linkedinPublish: boolean
   scheduling: boolean
   approvals: boolean
+  canExport: boolean
   analyticsDepth: "basic" | "full"
 }
 
@@ -22,6 +41,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     linkedinPublish: false,
     scheduling: false,
     approvals: false,
+    canExport: false,
     analyticsDepth: "basic",
   },
   Solo: {
@@ -33,6 +53,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     linkedinPublish: true,
     scheduling: true,
     approvals: false,
+    canExport: false,
     analyticsDepth: "full",
   },
   Pro: {
@@ -44,6 +65,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
+    canExport: true,
     analyticsDepth: "full",
   },
   "Agency Starter": {
@@ -55,6 +77,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
+    canExport: true,
     analyticsDepth: "full",
   },
   "Agency Growth": {
@@ -66,6 +89,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
+    canExport: true,
     analyticsDepth: "full",
   },
 }

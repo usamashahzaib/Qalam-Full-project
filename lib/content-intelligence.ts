@@ -17,19 +17,6 @@ export type ContentAnalysis = {
   excerpt: string
 }
 
-const STOPWORDS = new Set([
-  "the", "and", "for", "that", "with", "this", "from", "your", "have", "will", "into", "their", "they", "them",
-  "what", "when", "where", "which", "about", "because", "there", "these", "those", "then", "than", "been", "being",
-  "were", "while", "would", "could", "should", "after", "before", "under", "over", "between", "within", "again",
-  "just", "like", "more", "most", "some", "many", "much", "very", "such", "also", "only", "each", "make", "made",
-  "onto", "yourself", "ourselves", "does", "doing", "done", "dont", "its", "you",
-  "our", "we", "i", "me", "my", "mine", "us", "are", "was", "is", "be", "to", "of", "in", "on", "at", "a", "an",
-  "get", "got", "let", "put", "set", "new", "one", "two", "way", "day", "here", "said", "want", "need",
-  "even", "back", "first", "last", "good", "know", "think", "look", "right", "long", "come", "time",
-  "see", "can", "how", "but", "not", "all", "any", "so", "up", "out", "do", "if", "by", "as", "it",
-  "he", "she", "his", "her", "him", "had", "has", "have", "now", "no", "yes", "well", "too", "yet",
-])
-
 const clamp = (value: number, min = 0, max = 100) => Math.min(max, Math.max(min, Math.round(value)))
 
 // LinkedIn hashtag signal map: pattern -> real discovery tags

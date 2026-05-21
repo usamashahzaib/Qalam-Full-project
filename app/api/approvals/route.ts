@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId, requireAppSession } from "@/lib/server/app-session"
+import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -48,7 +48,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
-    const session = requireAppSession(request)
 
     // ── Role check: must be client_reviewer or above ──────────────────────
     const { userId: reviewerUserId } = await requireRole(request, workspaceId, "client_reviewer")

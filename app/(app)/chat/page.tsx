@@ -37,6 +37,7 @@ export default function ChatWorkspace() {
 
   useEffect(() => {
     let active = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveConvId(null)
     setMessages([])
 
@@ -60,6 +61,7 @@ export default function ChatWorkspace() {
 
   useEffect(() => {
     if (!activeConvId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMessages([])
       return
     }

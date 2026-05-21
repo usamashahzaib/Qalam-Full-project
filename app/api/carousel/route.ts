@@ -3,6 +3,8 @@ import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { getPlanLimits } from "@/lib/entitlements"
 
 type CarouselProjectRow = {
   id: string
@@ -64,7 +66,18 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    const { workspaceId, plan } = planCheck
+
+    // Monthly carousel generation limit
+    const limits = getPlanLimits(plan)
+    if (limits.carouselGenerationsPerMonth !== "unlimited") {
+      const used = await getMonthlyCount("carousel_projects", workspaceId)
+      const limitErr = enforceMonthlyLimit(used, limits.carouselGenerationsPerMonth, "Carousel generation")
+      if (limitErr) return limitErr
+    }
+
     const body = await request.json()
     const { postId, content, title } = body as { postId?: string | null; content?: string; title?: string }
 

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { QalamMark } from "@/components/QalamLogo"
 import { cleanErrorMessage } from "@/lib/content-guard"
+import { VALID_PLAN_NAMES } from "@/lib/entitlements"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -112,7 +113,7 @@ const friendlyPostError = (message?: string) => {
   return cleanErrorMessage(message)
 }
 
-function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null }) {
+function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverPlan }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null; serverPlan: WorkspaceBilling["plan"] | null }) {
   const [posts, setPosts] = useState<WorkspacePost[]>([])
   const [isLoadingPosts, setIsLoadingPosts] = useState(true)
   const [postsError, setPostsError] = useState<string | null>(null)
@@ -171,9 +172,16 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
   }, [workspaceId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchPosts()
     fetchProfile()
   }, [fetchPosts, fetchProfile])
+
+  useEffect(() => {
+    if (!serverPlan) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBilling((prev) => ({ ...prev, plan: serverPlan }))
+  }, [serverPlan])
 
   useEffect(() => {
     try {
@@ -289,8 +297,8 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
     setBilling((prev) => ({ ...prev, ...input }))
   }, [])
 
-  const saveAgency = useCallback((_: Partial<LegacyWorkspaceState["agency"]>) => {}, [])
-  const setWorkspaceState = useCallback((_: LegacyWorkspaceState | ((prev: LegacyWorkspaceState) => LegacyWorkspaceState)) => {}, [])
+  const saveAgency = useCallback(() => {}, [])
+  const setWorkspaceState = useCallback(() => {}, [])
 
   const loadEvents = useCallback(async (limit = 100) => {
     const res = await fetch(`/api/events?limit=${limit}&workspaceKey=${encodeURIComponent(workspaceId)}`)
@@ -378,6 +386,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return null
     return sessionStorage.getItem(workspaceCacheKey(clientParam))
   })
+  const [serverPlan, setServerPlan] = useState<WorkspaceBilling["plan"] | null>(null)
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
 
@@ -386,6 +395,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (!user?.email) {
       const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
       router.replace(`/auth?next=${encodeURIComponent(next)}`)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkspaceId(null)
       setResolveError("auth_required")
       setIsResolving(false)
@@ -403,6 +413,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
         setWorkspaceId(data.workspaceId)
+        if (data.plan && VALID_PLAN_NAMES.includes(data.plan as string)) {
+          setServerPlan(data.plan as WorkspaceBilling["plan"])
+        }
         try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
         setResolveError(null)
       })
@@ -451,7 +464,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} key={workspaceId}>
+    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} serverPlan={serverPlan} key={workspaceId}>
       {children}
     </WorkspaceProviderInner>
   )

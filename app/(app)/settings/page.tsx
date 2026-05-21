@@ -46,6 +46,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (profileStatus === "saving") return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProfileDraft({
       name: profile.name || user?.fullName || "",
       title: profile.title,
@@ -57,6 +58,7 @@ export default function SettingsPage() {
   }, [profile, profileStatus, user?.fullName])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBillingDraft(billing)
   }, [billing])
 

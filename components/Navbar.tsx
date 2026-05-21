@@ -33,6 +33,7 @@ const STATIC_LINKS = [
 
 function UserAvatar({ name, imageUrl }: { name: string; imageUrl: string | null }) {
   if (imageUrl) {
+    // eslint-disable-next-line @next/next/no-img-element
     return <img src={imageUrl} alt={name} className="h-8 w-8 rounded-full object-cover ring-2 ring-teal/20" />
   }
   const initials = name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()
@@ -152,7 +153,7 @@ export function Navbar() {
                 className="absolute right-4 text-lg leading-none text-white/60 transition-colors hover:text-white"
                 aria-label="Dismiss"
               >
-                <span aria-hidden="true">×</span>
+                <span aria-hidden="true">&times;</span>
               </button>
             </div>
           </motion.div>
@@ -310,3 +311,4 @@ export function Navbar() {
     </div>
   )
 }
+

@@ -93,7 +93,7 @@ export function HookGeneratorTool() {
                   </motion.button>
                 </div>
                 <p className="mt-2 text-xs text-zinc-400">
-                  Tip: Be specific - "feedback culture in remote startups" beats "remote work"
+                  Tip: Be specific - &quot;feedback culture in remote startups&quot; beats &quot;remote work&quot;
                 </p>
               </div>
 
@@ -101,7 +101,7 @@ export function HookGeneratorTool() {
                 {generated && hooks.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
                     <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
-                      <p className="text-sm font-semibold text-zinc-700">10 hook options for "{topic}"</p>
+                      <p className="text-sm font-semibold text-zinc-700">10 hook options for &quot;{topic}&quot;</p>
                       <span className="text-xs text-zinc-400">Click any hook to copy</span>
                     </div>
                     <div className="divide-y divide-zinc-50">

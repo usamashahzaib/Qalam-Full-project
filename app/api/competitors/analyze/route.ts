@@ -1,9 +1,9 @@
-import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId, requireAppSession } from "@/lib/server/app-session"
 import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { rateLimit } from "@/lib/server/rate-limit"
+import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { getPlanLimits } from "@/lib/entitlements"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -25,15 +25,24 @@ type Job = {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = requireAppSession(request)
-    
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const { session, workspaceId, plan } = planCheck
+
     // Rate Limit: 5 analysis requests per minute per user
     if (!rateLimit(`analyze_${session.email}`, 5, 60)) {
       return NextResponse.json({ error: "Rate limit exceeded. Please slow down." }, { status: 429 })
     }
 
+    // Monthly research run limit
+    const limits = getPlanLimits(plan)
+    if (limits.researchRunsPerMonth !== "unlimited") {
+      const used = await getMonthlyCount("jobs", workspaceId)
+      const limitErr = enforceMonthlyLimit(used, limits.researchRunsPerMonth, "Competitor research")
+      if (limitErr) return limitErr
+    }
+
     const body = (await request.json()) as AnalyzeRequest
-    const workspaceId = await resolveWorkspaceId(request)
     if (!body.sourceText?.trim()) {
       return NextResponse.json({ error: "competitor_source_missing" }, { status: 400 })
     }

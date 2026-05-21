@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAppSession, resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
+type ConversationRow = {
+  id: string
+  workspace_id: string
+  user_id: string
+  title: string
+  updated_at: string
+}
+
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
-    const conversations = await supabaseSelect<any>("conversations", `workspace_id=eq.${workspaceId}&order=updated_at.desc`)
+    const conversations = await supabaseSelect<ConversationRow>("conversations", `workspace_id=eq.${workspaceId}&order=updated_at.desc`)
     return NextResponse.json({ conversations: conversations || [] })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -49,7 +57,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Missing conversationId or title" }, { status: 400 })
     }
 
-    const existing = await supabaseSelect<any>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
+    const existing = await supabaseSelect<ConversationRow>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
     if (!existing?.length) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
     }
@@ -73,7 +81,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
     }
 
-    const existing = await supabaseSelect<any>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
+    const existing = await supabaseSelect<ConversationRow>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
     if (!existing?.length) {
       return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
     }

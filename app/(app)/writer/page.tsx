@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
@@ -8,6 +8,8 @@ import type { ContentAnalysis } from "@/lib/content-intelligence"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { cleanErrorMessage, sanitizeGeneratedText } from "@/lib/content-guard"
+import { canAccessPlan } from "@/lib/entitlements"
+import { LockIcon } from "@/components/PlanGate"
 
 const POST_TYPES = ["LinkedIn - Text post", "LinkedIn - Carousel", "LinkedIn - Visual"]
 const POST_FILTERS = [
@@ -71,7 +73,10 @@ export default function WriterPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
-  const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state } = useWorkspace()
+  const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state, billing } = useWorkspace()
+  const canPublish = canAccessPlan(billing.plan, "Solo")
+  const canSchedule = canAccessPlan(billing.plan, "Solo")
+  const canApprove = canAccessPlan(billing.plan, "Pro")
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const bootstrap = useMemo(() => readWriterBootstrap(), [])
   const isClientWorkspace = Boolean(activeClientId)
@@ -101,7 +106,7 @@ export default function WriterPage() {
 
   const wordCount = useMemo(() => (content.trim() ? content.trim().split(/\s+/).length : 0), [content])
   const characterCount = content.length
-  const resolveTitle = () => title.trim() || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
+  const resolveTitle = useCallback(() => title.trim() || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post", [content, title])
   const currentDraftLabel = editingId ? `Editing ${editingId.slice(0, 8)}` : "New draft"
   const publishLabel = user?.linkedinMemberId ? "LinkedIn connected" : "LinkedIn needs connection"
   const generateLabel = postType.includes("Carousel") ? "Generate Carousel Draft" : postType.includes("Visual") ? "Generate Visual Caption" : content.trim() ? "Regenerate Draft" : "Generate Draft"
@@ -112,6 +117,7 @@ export default function WriterPage() {
 
   useEffect(() => {
     if (searchParams.get("compose") !== "new") return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditingId(null)
     setTitle("")
     setAiPrompt("")
@@ -136,6 +142,7 @@ export default function WriterPage() {
 
   useEffect(() => {
     if (!content.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnalysis(null)
       setHookSuggestions([])
       setInsightNote(null)
@@ -167,7 +174,7 @@ export default function WriterPage() {
       }
     }, 550)
     return () => window.clearTimeout(timeout)
-  }, [content, postType, profile, title])
+  }, [content, postType, profile, resolveTitle])
 
   const createCarousel = async (postId: string) => {
     const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId), {
@@ -377,11 +384,14 @@ export default function WriterPage() {
             <div className="flex items-center gap-2">
               <button onClick={onSaveDraft} className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-400">Save draft</button>
               {isClientWorkspace && (
-                <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
+                canApprove
+                  ? <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
+                  : <button onClick={() => setStatus("Approval workflow requires Pro plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-400"><LockIcon className="h-3 w-3" />Approval</button>
               )}
-              <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">
-                {publish.status === "loading" ? "Publishing..." : "Publish"}
-              </button>
+              {canPublish
+                ? <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : "Publish"}</button>
+                : <button onClick={() => setStatus("LinkedIn publish requires Solo plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 px-4 py-1.5 text-xs font-bold text-zinc-400"><LockIcon className="h-3 w-3" />Publish</button>
+              }
             </div>
           </div>
         </div>
@@ -623,7 +633,10 @@ export default function WriterPage() {
                 <input type="time" min={scheduleDate === todayInput() ? nowTimeInput() : undefined} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
               </div>
             </div>
-            <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
+            {canSchedule
+              ? <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
+              : <button onClick={() => setStatus("Post scheduling requires Solo plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-100 px-6 py-2.5 text-sm font-semibold text-zinc-400"><LockIcon className="h-4 w-4" />Schedule Post</button>
+            }
           </div>
 
           {status && <p className={`mt-3 text-sm ${status.toLowerCase().includes("fail") ? "text-red-600" : "text-zinc-500"}`}>{status}</p>}

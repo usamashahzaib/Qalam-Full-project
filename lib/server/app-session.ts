@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server"
-import { env } from "@/lib/server/env"
 import { createSignedToken, readSignedToken } from "@/lib/server/token"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { supabaseInsert, supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 
 type AppSessionPayload = {
   email: string
@@ -11,6 +10,7 @@ type AppSessionPayload = {
   imageUrl: string | null
   linkedinMemberId: string | null
   linkedinTokenExpiresAt: number | null
+  sessionVersion: number
   createdAt: number
 }
 
@@ -50,21 +50,25 @@ export const createAppSession = async ({
   let role: "admin" | "user" = "user"
   if (ADMIN_EMAILS.includes(normalizedEmail)) role = "admin"
 
+  let sessionVersion = 1
   try {
-    const existingUser = await supabaseSelect<{ id: string; email: string }>(
+    const existingUser = await supabaseSelect<{ id: string; email: string; session_version: number }>(
       "users",
-      `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`
+      `email=eq.${encodeURIComponent(normalizedEmail)}&select=id,email,session_version&limit=1`
     )
     if (!existingUser || existingUser.length === 0) {
-      await supabaseInsert(
+      const created = await supabaseInsert<{ id: string; session_version: number }>(
         "users",
         {
           email: normalizedEmail,
           full_name: names.fullName,
           image_url: imageUrl,
         },
-        "resolution=ignore-duplicates"
+        "return=representation&resolution=ignore-duplicates"
       )
+      sessionVersion = created?.[0]?.session_version ?? 1
+    } else {
+      sessionVersion = existingUser[0].session_version ?? 1
     }
   } catch (err) {
     console.error("failed_to_provision_user", err)
@@ -78,6 +82,7 @@ export const createAppSession = async ({
     imageUrl,
     linkedinMemberId,
     linkedinTokenExpiresAt,
+    sessionVersion,
     createdAt: Date.now(),
   }
 
@@ -109,12 +114,43 @@ export const toPublicAuthUser = (session: AppSessionPayload): PublicAuthUser => 
   imageUrl: session.imageUrl,
   linkedinMemberId: session.linkedinMemberId,
   linkedinTokenExpiresAt: session.linkedinTokenExpiresAt,
+  sessionVersion: session.sessionVersion,
 })
 
 export const requireAppSession = (request: NextRequest) => {
   const session = getAppSession(request)
   if (!session?.email) throw new Error("auth_required")
   return session
+}
+
+export const validateSessionVersion = async (session: AppSessionPayload): Promise<void> => {
+  try {
+    const users = await supabaseSelect<{ session_version: number }>(
+      "users",
+      `email=eq.${encodeURIComponent(session.email)}&select=session_version&limit=1`
+    )
+    const dbVersion = users?.[0]?.session_version ?? 1
+    const tokenVersion = session.sessionVersion ?? 1
+    if (tokenVersion < dbVersion) throw new Error("session_invalidated")
+  } catch (err) {
+    if ((err as Error).message === "session_invalidated") throw err
+    // DB unreachable — allow through rather than locking users out on infra issues
+  }
+}
+
+export const incrementSessionVersion = async (email: string): Promise<void> => {
+  const normalizedEmail = email.trim().toLowerCase()
+  const users = await supabaseSelect<{ id: string; session_version: number }>(
+    "users",
+    `email=eq.${encodeURIComponent(normalizedEmail)}&select=id,session_version&limit=1`
+  )
+  const user = users?.[0]
+  if (!user) return
+  await supabasePatch(
+    "users",
+    `id=eq.${user.id}`,
+    { session_version: (user.session_version ?? 1) + 1 }
+  )
 }
 
 export const ensureWorkspaceForEmail = async ({
@@ -215,4 +251,34 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
 export const resolveWorkspaceKey = (request: NextRequest) => {
   const session = requireAppSession(request)
   return session.email
+}
+
+export type WorkspacePlanInfo = {
+  plan: string
+  status: string
+  expiresAt: string | null
+}
+
+export const fetchWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
+  try {
+    const workspaces = await supabaseSelect<{ organization_id: string }>(
+      "workspaces",
+      `id=eq.${encodeURIComponent(workspaceId)}&select=organization_id&limit=1`
+    )
+    const orgId = workspaces?.[0]?.organization_id
+    if (!orgId) return { plan: "Free", status: "active", expiresAt: null }
+    const orgs = await supabaseSelect<{ plan: string; subscription_status: string; plan_expires_at: string | null }>(
+      "organizations",
+      `id=eq.${encodeURIComponent(orgId)}&select=plan,subscription_status,plan_expires_at&limit=1`
+    )
+    const org = orgs?.[0]
+    if (!org) return { plan: "Free", status: "active", expiresAt: null }
+    return {
+      plan: org.plan || "Free",
+      status: org.subscription_status || "active",
+      expiresAt: org.plan_expires_at ?? null,
+    }
+  } catch {
+    return { plan: "Free", status: "active", expiresAt: null }
+  }
 }

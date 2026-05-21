@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { analyzeCompetitorPaste } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
+import { PlanGate } from "@/components/PlanGate"
 
 const PLATFORMS = ["LinkedIn", "Twitter / X", "Instagram", "YouTube", "Other"] as const
 
@@ -151,6 +152,7 @@ export default function CompetitorsPage() {
   }, [activeClientId, router])
 
   return (
+    <PlanGate requiredPlan="Pro" feature="Competitor Research" description="Analyze competitor content and extract winning strategies with the ">
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div
@@ -266,6 +268,7 @@ export default function CompetitorsPage() {
         )}
       </section>
     </div>
+    </PlanGate>
   )
 }
 
@@ -292,7 +295,7 @@ function AnalysisCard({ entry, compact = false, onOpenInWriter }: { entry: Compe
         <div>
           <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Hooks detected</p>
           <ul className="space-y-1">
-            {analysis.hooks.map((hook, i) => <li key={i} className="rounded-lg bg-zinc-50 px-3 py-2 text-xs italic text-zinc-700">"{hook.length > 120 ? `${hook.slice(0, 120)}...` : hook}"</li>)}
+            {analysis.hooks.map((hook, i) => <li key={i} className="rounded-lg bg-zinc-50 px-3 py-2 text-xs italic text-zinc-700">&quot;{hook.length > 120 ? `${hook.slice(0, 120)}...` : hook}&quot;</li>)}
           </ul>
         </div>
       ) : null}

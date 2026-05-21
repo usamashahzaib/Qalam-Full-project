@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { analyzeContent } from "@/lib/content-intelligence"
 import { groqApiKey } from "@/lib/server/env"
-import { requireAppSession } from "@/lib/server/app-session"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
+import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { getPlanLimits } from "@/lib/entitlements"
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies"
@@ -195,13 +196,27 @@ What would you add from your own experience?`)
 
 export async function POST(request: NextRequest) {
   try {
-    const session = requireAppSession(request)
+    // Free plan is allowed — every tier can generate, just with different caps
+    const planCheck = await requirePlan(request, "Free")
+    if (!planCheck.ok) return planCheck.response
+    const { session, workspaceId, plan } = planCheck
+
     if (!rateLimit(`gen_${session.email}`, 12, 60)) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
     }
 
     const body = (await request.json()) as GenerateBody
     const mode = body.mode || "draft"
+
+    // Enforce monthly draft limit on draft mode only
+    if (mode === "draft") {
+      const limits = getPlanLimits(plan)
+      if (limits.aiDraftsPerMonth !== "unlimited") {
+        const used = await getMonthlyCount("posts", workspaceId)
+        const limitErr = enforceMonthlyLimit(used, limits.aiDraftsPerMonth, "AI drafts")
+        if (limitErr) return limitErr
+      }
+    }
 
     // --- intelligence mode ---
     if (mode === "intelligence") {

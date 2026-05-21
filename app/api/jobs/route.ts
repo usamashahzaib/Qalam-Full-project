@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
 import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"

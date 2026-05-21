@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { pollLinkedInAnalytics } from "@/lib/server/linkedin"
-import { getAllLinkedInTokens, getLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { getAllLinkedInTokens } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 /**
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ synced: true, usersPolled: credentials.length, results: allResults })
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

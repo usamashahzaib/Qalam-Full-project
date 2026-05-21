@@ -20,6 +20,7 @@ import {
   LinkedInIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
+import { canAccessPlan, type PlanTier } from "@/lib/entitlements"
 
 const NAV_GROUPS = [
   {
@@ -33,8 +34,8 @@ const NAV_GROUPS = [
   {
     label: "Publishing",
     links: [
-      { href: "/calendar", label: "Planner", icon: CalendarIcon },
-      { href: "/approvals", label: "Approvals", icon: AnalyticsIcon },
+      { href: "/calendar", label: "Planner", icon: CalendarIcon, requiredPlan: "Solo" as PlanTier },
+      { href: "/approvals", label: "Approvals", icon: AnalyticsIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/analytics", label: "Analytics", icon: GrowthIcon },
     ],
   },
@@ -43,18 +44,26 @@ const NAV_GROUPS = [
     links: [
       { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
       { href: "/library", label: "Library", icon: LibraryIcon },
-      { href: "/carousels", label: "Carousels", icon: CarouselIcon },
-      { href: "/competitors", label: "Research", icon: MicroscopeIcon },
+      { href: "/carousels", label: "Carousels", icon: CarouselIcon, requiredPlan: "Solo" as PlanTier },
+      { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
     ],
   },
   {
     label: "Account",
     links: [
-      { href: "/agency", label: "Agency Hub", icon: TeamIcon },
+      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency Starter" as PlanTier },
       { href: "/settings", label: "Settings", icon: ProfileIcon },
     ],
   },
 ]
+
+function NavLockIcon() {
+  return (
+    <svg className="h-3 w-3 shrink-0 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  )
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -65,7 +74,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activeClientId = searchParams.get("client")
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [searchResults, setSearchResults] = useState<WorkspacePost[]>([])
   const [searchFocused, setSearchFocused] = useState(false)
   const [clients, setClients] = useState<Array<{ id: string; client_name: string }>>([])
   const [switcherOpen, setSwitcherOpen] = useState(false)
@@ -105,17 +113,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleOutsideClick)
   }, [])
 
-  useEffect(() => {
+  const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) {
-      setSearchResults([])
-      return
-    }
-    setSearchResults(
-      workspace.state.posts
-        .filter((post) => [post.title, post.content, post.type].some((value) => String(value).toLowerCase().includes(query)))
-        .slice(0, 5)
-    )
+    if (!query) return []
+    return workspace.state.posts
+      .filter((post) => [post.title, post.content, post.type].some((value) => String(value).toLowerCase().includes(query)))
+      .slice(0, 5)
   }, [searchQuery, workspace.state.posts])
 
   const handleOpenPost = (post: WorkspacePost) => {
@@ -162,7 +165,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="absolute left-4 right-4 mt-2 bg-zinc-800 border border-zinc-700 rounded-2xl shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700 max-h-72 overflow-y-auto">
                 <button onClick={() => handleSwitchWorkspace(null)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${!activeClientId ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>Personal Workspace</button>
                 {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full cursor-pointer text-left px-4 py-3 text-sm transition-colors hover:bg-zinc-700 ${activeClientId === client.id ? "bg-teal/10 text-white font-semibold" : "text-zinc-300"}`}>{client.client_name}</button>)}
-                <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs text-gold font-semibold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list {">"}</Link>
+                <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs text-gold font-semibold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link>
               </div>
             )}
           </div>
@@ -175,10 +178,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
+                    const isLocked = link.requiredPlan && !canAccessPlan(workspace.state.billing.plan, link.requiredPlan)
                     return (
-                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all group ${active ? "bg-teal/90 text-white shadow-sm shadow-teal/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all group ${active ? "bg-teal/90 text-white shadow-sm shadow-teal/20" : isLocked ? "text-zinc-600 hover:bg-zinc-800/60 hover:text-zinc-400" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
                         <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-gold" : "text-zinc-600 group-hover:text-zinc-300"}`} />
-                        <span className={active ? "font-semibold" : ""}>{link.label}</span>
+                        <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
+                        {isLocked && !active && <NavLockIcon />}
                       </Link>
                     )
                   })}
@@ -191,7 +196,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="shrink-0 space-y-3 border-t border-zinc-800 p-4">
           <div className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-700 text-white font-bold overflow-hidden">
-              {user?.imageUrl ? <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" /> : user?.fullName.charAt(0)}
+              {user?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" />
+              ) : user?.fullName.charAt(0)}
               {user?.linkedinMemberId && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#0A66C2] border-2 border-zinc-900 flex items-center justify-center"><LinkedInIcon className="h-1.5 w-1.5 text-white" /></span>}
             </div>
             <div className="min-w-0 flex-1">

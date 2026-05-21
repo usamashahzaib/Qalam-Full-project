@@ -70,7 +70,7 @@ self.addEventListener('fetch', (event) => {
         try {
           // Attempt the real network request first
           return await fetch(event.request.clone());
-        } catch (networkError) {
+        } catch {
           // Network failed — queue for Background Sync replay
           await queueRequest(event.request);
           return new Response(JSON.stringify({ queued: true, message: "Offline. Request queued for sync." }), {
@@ -90,7 +90,7 @@ self.addEventListener('fetch', (event) => {
           const preloadResponse = await event.preloadResponse;
           if (preloadResponse) return preloadResponse;
           return await fetch(event.request);
-        } catch (error) {
+        } catch {
           const cache = await caches.open(CACHE_NAME);
           return await cache.match(OFFLINE_URL);
         }
