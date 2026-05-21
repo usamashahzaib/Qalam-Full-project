@@ -3,6 +3,7 @@ import { analyzeContent } from "@/lib/content-intelligence"
 import { groqApiKey } from "@/lib/server/env"
 import { requireAppSession } from "@/lib/server/app-session"
 import { rateLimit } from "@/lib/server/rate-limit"
+import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies"
@@ -23,8 +24,10 @@ type GenerateBody = {
 
 const BASE_RULES = [
   "Do not use em dashes in your output. Use a comma or period instead.",
-  "Write in plain, direct English. No corporate filler.",
-  "Never use these words: leverage, delve, foster, navigate, game-changer, it is worth noting.",
+  "Use hyphen only when punctuation is needed.",
+  "Write like a sharp operator talking to another human. No corporate filler.",
+  "Never use these words or phrases: leverage, delve, foster, navigate, rapidly evolving landscape, future belongs, game-changer, transformative, unlock potential, it is worth noting.",
+  "No markdown headings, bold markers, labels, or preamble.",
 ]
 
 const buildDraftSystemPrompt = ({ profile, postType, title }: GenerateBody) => {
@@ -32,6 +35,7 @@ const buildDraftSystemPrompt = ({ profile, postType, title }: GenerateBody) => {
   return [
     "You are an expert LinkedIn ghostwriter.",
     "Write one polished LinkedIn post based on the user's prompt.",
+    "The post must be ready to paste into LinkedIn without edits.",
     postType ? `Format target: ${postType}.` : "",
     title ? `Working title: ${title}.` : "",
     profile?.name ? `Writer name: ${profile.name}.` : "",
@@ -39,7 +43,14 @@ const buildDraftSystemPrompt = ({ profile, postType, title }: GenerateBody) => {
     profile?.industry ? `Industry: ${profile.industry}.` : "",
     profile?.tone ? `Tone to match: ${profile.tone}.` : "",
     goals ? `Content goals: ${goals}.` : "",
-    "Keep it specific, professional, natural, and concise.",
+    postType?.toLowerCase().includes("carousel")
+      ? "Write a carousel-ready outline: 6 to 8 slide blocks, each with a punchy title and 1 useful line."
+      : postType?.toLowerCase().includes("visual")
+        ? "Write a visual post: one strong caption plus a clear visual concept line for the image/designer."
+        : "Write a text post of 150 to 220 words.",
+    "Open with a scroll-stopping first line under 90 characters.",
+    "Use at least 4 short paragraphs. Add one concrete example, one practical takeaway, and a natural CTA.",
+    "If the prompt is broad, choose a specific angle instead of writing generic advice.",
     "Do not include hashtags unless the user asks.",
     "Do not include preamble, labels, quotation marks, or explanations.",
     "Return only the post body.",
@@ -160,6 +171,28 @@ async function callGroq(systemPrompt: string, userMessage: string, temperature =
   return String(data?.choices?.[0]?.message?.content || "{}")
 }
 
+const strengthenDraft = (text: string, prompt: string, postType?: string) => {
+  const cleaned = sanitizeGeneratedText(text)
+  if (postType?.toLowerCase().includes("carousel") || postType?.toLowerCase().includes("visual")) return cleaned
+  const words = cleaned.split(/\s+/).filter(Boolean)
+  if (words.length >= 130 && !hasAiSlop(cleaned)) return cleaned
+  const topic = prompt.replace(/\s+/g, " ").trim().slice(0, 80) || "this topic"
+  const base = cleaned || `Most teams treat ${topic} like a content problem. It is usually a clarity problem.`
+  return sanitizeGeneratedText(`${base}
+
+Here is the part that matters: people can feel when a post was written to fill a slot. They keep reading when it sounds like someone has actually dealt with the problem.
+
+A better draft should do three things:
+
+1. Name the real tension.
+2. Show one specific example.
+3. Leave the reader with a useful next move.
+
+For ${topic}, the useful move is simple: write from the decision, mistake, or tradeoff behind the idea. That is where the human part lives.
+
+What would you add from your own experience?`)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = requireAppSession(request)
@@ -199,6 +232,7 @@ export async function POST(request: NextRequest) {
 
         const cleanHooks = (parsed.hookSuggestions || [])
           .filter((h) => h?.style && h?.text && h.text.length > 10)
+          .map((h) => ({ ...h, text: sanitizeGeneratedText(h.text).slice(0, 100) }))
           .slice(0, 5)
 
         return NextResponse.json({
@@ -223,15 +257,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
       }
 
-      const contentJson = await callGroq(buildHooksPrompt(body), "Generate hook alternatives.", 0.8)
       let parsed: { hooks?: { style: string; text: string }[] } = {}
-      try { parsed = JSON.parse(contentJson) } catch {}
+      try {
+        const contentJson = await callGroq(buildHooksPrompt(body), "Generate hook alternatives.", 0.8)
+        parsed = JSON.parse(contentJson)
+      } catch {
+        return NextResponse.json({ hooks: fallbackHooks(content, body.title) })
+      }
 
       const cleanHooks = (parsed.hooks || [])
         .filter((h) => h?.style && h?.text && h.text.length > 8)
+        .map((h) => ({ ...h, text: sanitizeGeneratedText(h.text).slice(0, 100) }))
         .slice(0, 5)
 
-      return NextResponse.json({ hooks: cleanHooks })
+      return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title) })
     }
 
     // --- comment-replies mode ---
@@ -283,10 +322,10 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const message = data?.error?.message || data?.message || "Failed to generate content."
       console.error("Groq API error:", message)
-      return NextResponse.json({ error: message }, { status: response.status })
+      return NextResponse.json({ error: cleanErrorMessage(message) }, { status: response.status })
     }
 
-    const text = String(data?.choices?.[0]?.message?.content || "").trim()
+    const text = strengthenDraft(String(data?.choices?.[0]?.message?.content || ""), prompt, body.postType)
     if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
     return NextResponse.json({ text })
   } catch (error) {
@@ -295,6 +334,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
     }
     console.error("Generate error:", error)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: cleanErrorMessage(message) }, { status: 500 })
   }
 }

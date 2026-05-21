@@ -7,6 +7,7 @@ import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import type { ContentAnalysis } from "@/lib/content-intelligence"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
+import { cleanErrorMessage, sanitizeGeneratedText } from "@/lib/content-guard"
 
 const POST_TYPES = ["LinkedIn - Text post", "LinkedIn - Carousel", "LinkedIn - Visual"]
 const POST_FILTERS = [
@@ -49,6 +50,22 @@ const copyText = async (value: string) => {
 }
 
 const filterLabel = (value: (typeof POST_FILTERS)[number]["key"]) => POST_FILTERS.find((item) => item.key === value)?.label.toLowerCase() || "items"
+const todayInput = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 10)
+}
+const nowTimeInput = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset() + 1)
+  return d.toISOString().slice(11, 16)
+}
+const scheduleError = (date: string, time: string) => {
+  if (!date || !time) return "Select date and time"
+  const selected = new Date(`${date}T${time}:00`)
+  if (Number.isNaN(selected.getTime())) return "Select a valid date and time"
+  return selected.getTime() <= Date.now() ? "Choose a future time. Past dates and current minutes are locked." : null
+}
 
 export default function WriterPage() {
   const router = useRouter()
@@ -87,6 +104,7 @@ export default function WriterPage() {
   const resolveTitle = () => title.trim() || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
   const currentDraftLabel = editingId ? `Editing ${editingId.slice(0, 8)}` : "New draft"
   const publishLabel = user?.linkedinMemberId ? "LinkedIn connected" : "LinkedIn needs connection"
+  const generateLabel = postType.includes("Carousel") ? "Generate Carousel Draft" : postType.includes("Visual") ? "Generate Visual Caption" : content.trim() ? "Regenerate Draft" : "Generate Draft"
   const filteredPosts = useMemo(() => {
     const ordered = [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
     return postFilter === "all" ? ordered : ordered.filter((post) => post.status === postFilter)
@@ -173,7 +191,8 @@ export default function WriterPage() {
 
   const onSchedule = async () => {
     if (!content.trim()) { setStatus("Write content first"); return }
-    if (!scheduleDate || !scheduleTime) { setStatus("Select date and time"); return }
+    const invalidSchedule = scheduleError(scheduleDate, scheduleTime)
+    if (invalidSchedule) { setStatus(invalidSchedule); return }
     try {
       if (postType.toLowerCase().includes("carousel")) {
         setStatus("Scheduling and generating carousel...")
@@ -244,10 +263,10 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Generation failed")
       const nextContent = String(data.text || "").trim()
       if (!nextContent) throw new Error("AI returned an empty draft")
-      setContent(nextContent)
-      setStatus(postType.includes("Carousel") ? "Draft ready. Save or schedule to build slides." : "AI draft ready")
+      setContent(sanitizeGeneratedText(nextContent))
+      setStatus(postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : "Draft ready")
     } catch (error) {
-      setStatus((error as Error).message || "Failed to generate content")
+      setStatus(cleanErrorMessage((error as Error).message))
     } finally {
       setIsGenerating(false)
     }
@@ -294,7 +313,7 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Could not generate hooks")
       setHookSuggestions(data.hooks || [])
     } catch (e) {
-      setStatus((e as Error).message)
+      setStatus(cleanErrorMessage((e as Error).message))
       setHookPanelOpen(false)
     } finally {
       setIsImprovingHook(false)
@@ -320,7 +339,7 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Reply generation failed")
       setRichReplies(data.replies || [])
     } catch (e) {
-      setStatus((e as Error).message)
+      setStatus(cleanErrorMessage((e as Error).message))
     } finally {
       setIsGeneratingReplies(false)
     }
@@ -373,7 +392,7 @@ export default function WriterPage() {
           <div className="mb-5 flex flex-col gap-2 sm:flex-row">
             <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction for AI Draft" className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" onKeyDown={(e) => e.key === "Enter" && !isGenerating && aiPrompt.trim() && onGenerate()} />
             <button onClick={onGenerate} disabled={isGenerating || !aiPrompt.trim()} className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">
-              {isGenerating ? "Writing..." : "Generate Draft"}
+              {isGenerating ? "Writing..." : generateLabel}
             </button>
           </div>
 
@@ -597,11 +616,11 @@ export default function WriterPage() {
             <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
               <div className="relative flex-1">
                 <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Publish Date</label>
-                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+                <input type="date" min={todayInput()} value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
               </div>
               <div className="relative sm:w-36">
                 <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Time</label>
-                <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+                <input type="time" min={scheduleDate === todayInput() ? nowTimeInput() : undefined} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
               </div>
             </div>
             <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
@@ -621,7 +640,7 @@ export default function WriterPage() {
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-4 py-3">
             <h2 className="text-sm font-semibold text-zinc-900">Workspace posts</h2>
-            <button onClick={() => router.push(withClientParam("/library", activeClientId))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Library &rarr;</button>
+            <button onClick={() => router.push(withClientParam("/library", activeClientId))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Library</button>
           </div>
           <div className="border-b border-zinc-100 px-4 py-2.5">
             <div className="flex flex-wrap gap-1.5">

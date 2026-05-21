@@ -12,13 +12,13 @@
   featureStatus: "live" | "beta" | "coming_soon"
 }
 
-/** PKR pricing — Pakistan market. All caps are real, not marketing. */
+/** PKR pricing - Pakistan market. All caps are real, not marketing. */
 export const PLANS: PricingPlan[] = [
   {
     plan: "Free",
     monthlyPkr: 0,
     period: "forever",
-    description: "Try the real workflow. No card, no time limit — just a capped starter workspace.",
+    description: "Try the real workflow. No card, no time limit - just a capped starter workspace.",
     features: [
       "5 AI drafts per month",
       "1 personal workspace",
@@ -124,12 +124,12 @@ export const COMPARISON_ROWS: {
   agencyGrowth: string
 }[] = [
   { label: "AI drafts", free: "5/month", solo: "50/month", pro: "Unlimited", agencyStarter: "Unlimited", agencyGrowth: "Unlimited" },
-  { label: "LinkedIn publish", free: "—", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
-  { label: "Post scheduling", free: "—", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
-  { label: "Carousel generation", free: "—", solo: "3/month", pro: "10/month", agencyStarter: "20/month", agencyGrowth: "Unlimited" },
-  { label: "Competitor research", free: "—", solo: "—", pro: "5 runs/month", agencyStarter: "15 runs/month", agencyGrowth: "Unlimited" },
-  { label: "Approvals workflow", free: "—", solo: "—", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
-  { label: "Client workspaces", free: "—", solo: "—", pro: "—", agencyStarter: "3", agencyGrowth: "Unlimited" },
+  { label: "LinkedIn publish", free: "-", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Post scheduling", free: "-", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Carousel generation", free: "-", solo: "3/month", pro: "10/month", agencyStarter: "20/month", agencyGrowth: "Unlimited" },
+  { label: "Competitor research", free: "-", solo: "-", pro: "5 runs/month", agencyStarter: "15 runs/month", agencyGrowth: "Unlimited" },
+  { label: "Approvals workflow", free: "-", solo: "-", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
+  { label: "Client workspaces", free: "-", solo: "-", pro: "-", agencyStarter: "3", agencyGrowth: "Unlimited" },
   { label: "Team seats", free: "1", solo: "1", pro: "1", agencyStarter: "5", agencyGrowth: "Unlimited" },
   { label: "Analytics", free: "Basic", solo: "Full", pro: "Full", agencyStarter: "Full", agencyGrowth: "Workspace-level" },
   { label: "Support", free: "Community", solo: "Email", pro: "Priority email", agencyStarter: "WhatsApp", agencyGrowth: "Priority WhatsApp" },

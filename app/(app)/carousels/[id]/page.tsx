@@ -84,7 +84,7 @@ export default function CarouselEditorPage() {
     const html = slides.map((slide, index) => `
       <section class="page">
         <div class="deck-meta">
-          <div><strong>Qalam Carousel</strong></div>
+          <div><strong>Qalam Carousel</strong> - byqalam.com</div>
           <div>Slide ${index + 1} / ${slides.length}</div>
         </div>
         <div class="slide-shell">
@@ -93,6 +93,7 @@ export default function CarouselEditorPage() {
           <p>${esc(slide.content || "").replace(/\n/g, "<br/>")}</p>
           <div class="slide-footer">
             <span>${project?.theme || "LinkedIn carousel"}</span>
+            <span>Qalam - byqalam.com</span>
             <span>${new Date(project?.created_at || Date.now()).toLocaleDateString("en-US")}</span>
           </div>
         </div>
@@ -110,7 +111,7 @@ export default function CarouselEditorPage() {
       .slide-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#99f6e4}
       h1{margin:18px 0 18px;font-size:32px;line-height:1.12;max-width:80%}
       p{margin:0;font-size:18px;line-height:1.7;max-width:78%;color:#d1fae5}
-      .slide-footer{display:flex;justify-content:space-between;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:12px;color:#a7f3d0}
+      .slide-footer{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:12px;color:#a7f3d0}
     </style></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`)
     popup.document.close()
   }
@@ -130,7 +131,7 @@ export default function CarouselEditorPage() {
             <span className="text-xs text-zinc-500">Carousel Editor</span>
           </div>
           <h1 className="text-2xl font-bold text-zinc-900">Carousel Editor</h1>
-          <p className="mt-0.5 text-sm text-zinc-500">{slides.length} slides - ID: {id?.slice(0, 8)}...</p>
+          <p className="mt-0.5 text-sm text-zinc-500">{slides.length} slides - {project?.theme || "LinkedIn carousel"}</p>
         </div>
         <div className="flex items-center gap-3">
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as text</button>
@@ -172,7 +173,7 @@ export default function CarouselEditorPage() {
                   {currentSlide.title ? <h3 className="mb-3 text-xl font-bold leading-snug">{currentSlide.title}</h3> : null}
                   <p className="text-sm leading-relaxed text-zinc-300">{currentSlide.content}</p>
                 </div>
-                <div className="mt-4 text-[10px] text-zinc-500">{activeSlide + 1} / {slides.length}</div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-zinc-400"><span>{activeSlide + 1} / {slides.length}</span><span>Qalam - byqalam.com</span></div>
               </div>
 
               <div className="space-y-4">
@@ -188,7 +189,7 @@ export default function CarouselEditorPage() {
 
               <div className="mt-6 flex justify-between">
                 <button onClick={() => setActiveSlide((value) => Math.max(0, value - 1))} disabled={activeSlide === 0} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40">Previous</button>
-                <button onClick={() => setActiveSlide((value) => Math.min(slides.length - 1, value + 1))} disabled={activeSlide === slides.length - 1} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40">Next &gt;</button>
+                <button onClick={() => setActiveSlide((value) => Math.min(slides.length - 1, value + 1))} disabled={activeSlide === slides.length - 1} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40">Next</button>
               </div>
             </div>
           ) : null}

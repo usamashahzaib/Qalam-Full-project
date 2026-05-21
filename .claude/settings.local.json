@@ -58,7 +58,15 @@
       "Bash(Remove-Item *)",
       "Bash(grep -v \"//\")",
       "Skill(engineering-skills:senior-qa)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(vercel *)",
+      "PowerShell(vercel *)",
+      "Bash(Test-Path *)",
+      "Bash(npx plugins *)",
+      "Bash(dir *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Command *)",
+      "Bash(Get-ChildItem -Path . -Directory)"
     ]
   }
 }

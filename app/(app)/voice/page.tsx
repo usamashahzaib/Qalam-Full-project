@@ -45,7 +45,7 @@ export default function VoiceProfilePage() {
   const save = async () => {
     const trimmedUrl = draft.linkedinUrl.trim()
     if (trimmedUrl && !LINKEDIN_RE.test(trimmedUrl)) {
-      setStatus("Use a valid public LinkedIn profile URL.")
+      setStatus("Use a valid LinkedIn /in/ or /company/ URL.")
       return
     }
     try {

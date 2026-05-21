@@ -31,6 +31,14 @@ const toClientPost = (post: DbPost) => ({
   createdAt: post.created_at,
 })
 
+const validateSchedule = (status: string, scheduledTime?: string | null) => {
+  if (status !== "scheduled") return null
+  if (!scheduledTime) return "scheduled_time_required"
+  const selected = new Date(scheduledTime)
+  if (Number.isNaN(selected.getTime())) return "invalid_scheduled_time"
+  return selected.getTime() <= Date.now() ? "scheduled_time_must_be_future" : null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
@@ -65,6 +73,8 @@ export async function POST(request: NextRequest) {
 
     const validStatuses = ["draft", "pending_approval", "approved", "rejected", "scheduled", "published", "failed"]
     const safeStatus = validStatuses.includes(status) ? status : "draft"
+    const scheduleError = validateSchedule(safeStatus, scheduledTime)
+    if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
 
     const rows = await supabaseInsert<DbPost>(
       "posts",
@@ -106,6 +116,10 @@ export async function PATCH(request: NextRequest) {
     const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body
     const validStatuses = ["draft", "pending_approval", "approved", "rejected", "scheduled", "published", "failed"]
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
+    const nextStatus = status !== undefined && validStatuses.includes(status) ? status : existing[0].status
+    const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing[0].scheduled_time
+    const scheduleError = validateSchedule(nextStatus, nextScheduledTime)
+    if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
     if (title !== undefined) patch.title = title
     if (content !== undefined) patch.content = content
     if (type !== undefined) patch.type = type

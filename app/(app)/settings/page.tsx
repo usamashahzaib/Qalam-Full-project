@@ -9,6 +9,16 @@ import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, whatsappUpgradeUrl, upgradesMailUrl } from "@/lib/contact"
 
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"]
+const isValidLinkedInUrl = (value: string) => {
+  if (!value.trim()) return true
+  try {
+    const url = new URL(value.trim())
+    const host = url.hostname.replace(/^www\./, "")
+    return host === "linkedin.com" && /^\/(in|company)\/[A-Za-z0-9-_%]+\/?$/.test(url.pathname)
+  } catch {
+    return false
+  }
+}
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "Starter workspace, 5 drafts/month",
@@ -54,6 +64,7 @@ export default function SettingsPage() {
     setProfileStatus("saving")
     setProfileError(null)
     try {
+      if (!isValidLinkedInUrl(profileDraft.linkedinUrl)) throw new Error("Enter a valid LinkedIn profile or company URL.")
       await saveProfile({
         name: profileDraft.name.trim(),
         title: profileDraft.title.trim(),
@@ -119,7 +130,7 @@ export default function SettingsPage() {
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Name"><input value={profileDraft.name} onChange={(e) => setProfileDraft((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
             <Field label="Title"><input value={profileDraft.title} onChange={(e) => setProfileDraft((prev) => ({ ...prev, title: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
-            <Field label="LinkedIn URL"><input value={profileDraft.linkedinUrl} onChange={(e) => setProfileDraft((prev) => ({ ...prev, linkedinUrl: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
+            <Field label="LinkedIn URL"><input value={profileDraft.linkedinUrl} onChange={(e) => setProfileDraft((prev) => ({ ...prev, linkedinUrl: e.target.value }))} placeholder="https://www.linkedin.com/in/username" className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-900 focus:outline-none ${isValidLinkedInUrl(profileDraft.linkedinUrl) ? "border-zinc-200 focus:border-teal" : "border-red-300 focus:border-red-500"}`} />{!isValidLinkedInUrl(profileDraft.linkedinUrl) && <p className="mt-1 text-xs text-red-600">Use a real LinkedIn /in/ or /company/ URL.</p>}</Field>
             <Field label="Industry"><input value={profileDraft.industry} onChange={(e) => setProfileDraft((prev) => ({ ...prev, industry: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
             <Field label="Brand tone"><input value={profileDraft.tone} onChange={(e) => setProfileDraft((prev) => ({ ...prev, tone: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
             <Field label="Goals (comma-separated)"><input value={profileDraft.goals} onChange={(e) => setProfileDraft((prev) => ({ ...prev, goals: e.target.value }))} className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none" /></Field>
@@ -187,7 +198,7 @@ export default function SettingsPage() {
               <p className="mt-0.5 text-xs text-zinc-500">
                 {billingDraft.billingCycle === "annual" ? "Billed as annual subscription" : "Billed monthly"}
                 {billingDraft.billingCycle === "monthly" && selectedPlanPrices.annual > 0 && (
-                  <> — or <span className="font-semibold text-teal">{formatPkr(selectedPlanPrices.annual)}/mo</span> on annual</>
+                  <> - or <span className="font-semibold text-teal">{formatPkr(selectedPlanPrices.annual)}/mo</span> on annual</>
                 )}
               </p>
             </div>
@@ -200,12 +211,12 @@ export default function SettingsPage() {
                 <p className="text-sm font-bold text-amber-900">Upgrade to {billingDraft.plan}</p>
                 <p className="mt-0.5 text-xs text-amber-700">
                   {formatPkr(upgradePrice)}/month
-                  {billingDraft.billingCycle === "annual" ? " — billed annually" : " — billed monthly"}
+                  {billingDraft.billingCycle === "annual" ? " - billed annually" : " - billed monthly"}
                 </p>
               </div>
               <div className="p-4">
                 <ol className="space-y-2 text-sm text-amber-800">
-                  <li className="flex gap-2"><span className="font-bold">1.</span>Message us on WhatsApp or email — we confirm the amount and send payment details.</li>
+                  <li className="flex gap-2"><span className="font-bold">1.</span>Message us on WhatsApp or email - we confirm the amount and send payment details.</li>
                   <li className="flex gap-2"><span className="font-bold">2.</span>Pay via Easypaisa, JazzCash, or bank transfer.</li>
                   <li className="flex gap-2"><span className="font-bold">3.</span>Send your payment screenshot in the same thread.</li>
                   <li className="flex gap-2"><span className="font-bold">4.</span>Your workspace plan is updated within 24 hours.</li>
@@ -226,7 +237,7 @@ export default function SettingsPage() {
                     Email {UPGRADES_EMAIL}
                   </a>
                 </div>
-                <p className="mt-3 text-xs text-amber-600">Automated checkout is being built. Manual onboarding is the current path — your plan access is confirmed by our team after payment.</p>
+                <p className="mt-3 text-xs text-amber-600">Automated checkout is being built. Manual onboarding is the current path - your plan access is confirmed by our team after payment.</p>
               </div>
             </div>
           )}

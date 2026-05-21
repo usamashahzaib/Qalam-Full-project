@@ -16,6 +16,12 @@ const normalizeLinkedInUrn = (value: string) => {
 const monthLabel = (date: Date) => date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
 const toDate = (value: string) => new Date(`${value}T00:00:00`)
 const isIsoDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
+const todayIso = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 10)
+}
+const isPastDay = (value: string) => isIsoDate(value) && value < todayIso()
 
 const goToWriter = (router: ReturnType<typeof useRouter>, clientId?: string | null, post?: WorkspacePost, date?: string) => {
   if (post) persistWriterIntent(post, date || null)
@@ -140,7 +146,7 @@ export default function CalendarPage() {
           <h1 className="text-3xl font-bold text-zinc-900">Planner</h1>
           <p className="mt-1 text-sm text-zinc-500">Month view with draft, scheduled, and published activity by day.</p>
         </div>
-        <button onClick={() => goToWriter(router, activeClientId, undefined, selectedDay)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">New post for selected day</button>
+        <button onClick={() => !isPastDay(selectedDay) && goToWriter(router, activeClientId, undefined, selectedDay)} disabled={isPastDay(selectedDay)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-300">New post for selected day</button>
       </div>
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -166,7 +172,7 @@ export default function CalendarPage() {
             {monthGrid.map((day) => {
               const isActive = day.iso === selectedDay
               return (
-                <button key={day.iso} onClick={() => setSelectedDay(day.iso)} className={`min-h-28 cursor-pointer rounded-2xl border p-2 text-left transition-colors ${isActive ? "border-teal bg-teal/5" : day.inMonth ? "border-zinc-200 bg-white hover:bg-zinc-50" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
+                <button key={day.iso} onClick={() => setSelectedDay(day.iso)} className={`min-h-28 cursor-pointer rounded-2xl border p-2 text-left transition-colors ${isPastDay(day.iso) ? "border-zinc-100 bg-zinc-50 text-zinc-400 opacity-70" : isActive ? "border-teal bg-teal/5" : day.inMonth ? "border-zinc-200 bg-white hover:bg-zinc-50" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold">{day.day}</span>
                     {day.scheduled.length > 0 ? <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">{day.scheduled.length}</span> : null}
@@ -189,7 +195,7 @@ export default function CalendarPage() {
                 <h2 className="text-base font-semibold text-zinc-900">{selectedDateLabel}</h2>
                 <p className="text-xs text-zinc-500">Everything tied to this day.</p>
               </div>
-              <button onClick={() => goToWriter(router, activeClientId, undefined, selectedDay)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700">Write here</button>
+              <button onClick={() => !isPastDay(selectedDay) && goToWriter(router, activeClientId, undefined, selectedDay)} disabled={isPastDay(selectedDay)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700 disabled:cursor-not-allowed disabled:text-zinc-400">Write here</button>
             </div>
             <PlannerBlock title="Scheduled" items={dayItems.scheduled} empty="No scheduled posts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} onPublish={onPublishNow} publishingId={publishingId} canPublish={Boolean(user?.linkedinMemberId)} />
             <PlannerBlock title="Drafts" items={dayItems.drafts} empty="No dated drafts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} />

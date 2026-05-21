@@ -17,6 +17,7 @@ export default function AgencyDashboard() {
   const [fetchError, setFetchError] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [newClientName, setNewClientName] = useState("")
+  const [addError, setAddError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/agency/clients")
@@ -32,6 +33,7 @@ export default function AgencyDashboard() {
   const handleAddClient = async () => {
     if (!newClientName.trim()) return
     setIsAdding(true)
+    setAddError(null)
     try {
       const res = await fetch("/api/agency/clients", {
         method: "POST",
@@ -39,10 +41,13 @@ export default function AgencyDashboard() {
         body: JSON.stringify({ clientName: newClientName, plan: "Pro" }),
       })
       const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Client could not be added")
       if (data.client) {
         setClients([data.client, ...clients])
         setNewClientName("")
       }
+    } catch (e) {
+      setAddError((e as Error).message === "forbidden" ? "Your role cannot add client workspaces." : (e as Error).message)
     } finally {
       setIsAdding(false)
     }
@@ -76,10 +81,11 @@ export default function AgencyDashboard() {
               <p className="text-sm font-medium text-zinc-900">How this works</p>
               <div className="mt-2 grid gap-2 text-xs text-zinc-600 sm:grid-cols-3">
                 <p>1. Add a client workspace here.</p>
-                <p>2. Open Manage to switch into that client's posts, approvals, and chat.</p>
+                <p>2. Open Manage to switch into that client workspace posts, approvals, and chat.</p>
                 <p>3. Give teammates only the access they need: admin, editor, reviewer, or viewer.</p>
               </div>
             </div>
+            {addError ? <div className="border-b border-red-100 bg-red-50 px-6 py-3 text-sm text-red-700">{addError}</div> : null}
 
             <div className="min-h-[300px] divide-y divide-zinc-100">
               {isLoading ? (

@@ -179,7 +179,7 @@ export default function ChatWorkspace() {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-80px)] max-w-7xl overflow-hidden px-4 py-6 sm:px-6">
-      {/* Dark sidebar — matches app shell */}
+      {/* Dark sidebar matches app shell */}
       <div className="flex w-72 flex-col rounded-l-2xl bg-zinc-900">
         <div className="border-b border-zinc-800 px-4 py-4">
           <p className="mb-3 px-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500">AI Strategist</p>
@@ -241,7 +241,7 @@ export default function ChatWorkspace() {
               <svg className="h-7 w-7 text-teal" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
             </div>
             <h3 className="text-lg font-bold text-zinc-900">AI Strategist</h3>
-            <p className="mt-2 max-w-sm text-sm text-zinc-500">Your content strategist for LinkedIn. Get post ideas, sharper angles, and campaign direction — fast.</p>
+            <p className="mt-2 max-w-sm text-sm text-zinc-500">Your content strategist for LinkedIn. Get post ideas, sharper angles, and campaign direction fast.</p>
             <button onClick={createConversation} disabled={isCreating} className="mt-5 rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-600 disabled:opacity-50">
               {isCreating ? "Starting..." : "Start a conversation"}
             </button>
@@ -277,7 +277,7 @@ export default function ChatWorkspace() {
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-2">
                           <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700">
-                            Save to drafts →
+                            Save to drafts
                           </button>
                         </div>
                       )}

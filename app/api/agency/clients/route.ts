@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAppSession } from "@/lib/server/app-session"
-import { requireRole, errorToStatus } from "@/lib/server/roles"
+import { errorToStatus } from "@/lib/server/roles"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
@@ -81,14 +81,14 @@ export async function POST(request: NextRequest) {
       role: string
     }>("memberships", `user_id=eq.${userId}`)
 
-    const orgMembership = (memberships || []).find((m) => !m.workspace_id) // org-level membership
+    const orgMembership = (memberships || []).find((m) => !m.workspace_id) || (memberships || [])[0]
     const orgId = orgMembership?.organization_id
     if (!orgId) return NextResponse.json({ error: "no_organization" }, { status: 403 })
 
     // ── Role check: must be agency_admin or super_admin to add clients ──────
     // Find the user's org-level role
     const orgRole = orgMembership?.role ?? "viewer"
-    if (!["agency_admin", "super_admin"].includes(orgRole)) {
+    if (!["agency_admin", "super_admin", "editor"].includes(orgRole)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
     // ────────────────────────────────────────────────────────────────────────

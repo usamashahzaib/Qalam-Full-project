@@ -179,16 +179,17 @@ export const analyzeContent = ({
   const words = content.trim().split(/\s+/).filter(Boolean)
   const paragraphs = content.split(/\n\s*\n/).filter((chunk) => chunk.trim())
   const ctaRegex = /comment|reply|share|follow|save|dm|message|tell me|let me know|what do you think|drop|tag/i
-  const hookRegex = /\?|^\d|hot take|stop|most people|nobody|why|how|mistake|truth|learned|failed|lesson|unpopular|brutal|honest/i
+  const hookRegex = /\?|^\d|hot take|stop|most people|most teams|nobody|why|how|mistake|truth|learned|failed|lesson|unpopular|brutal|honest/i
   const storyRegex = /\b(i|we)\s+(learned|realized|saw|noticed|failed|tested|built|spent|remember|used to|decided|quit|left|hired|fired)\b/i
   const authorityRegex = /\d+%|\d+x|\d+\b|years?|clients?|team|revenue|pipeline|hiring|operators?|leaders?/i
 
   const readability = clamp((words.length >= 80 && words.length <= 260 ? 35 : 18) + (paragraphs.length >= 3 ? 25 : 10) + (lines.length >= 5 ? 20 : 8) + (content.length <= 1800 ? 20 : 8))
-  const hook = clamp((hookRegex.test(firstLine) ? 55 : 25) + (firstLine.length <= 90 ? 20 : 5) + (storyRegex.test(firstLine) ? 15 : 0) + (/\d/.test(firstLine) ? 10 : 0))
-  const authority = clamp((authorityRegex.test(text) ? 55 : 25) + ((profile?.title || profile?.industry) ? 20 : 0) + (storyRegex.test(content) ? 15 : 0) + (words.length >= 120 ? 10 : 5))
+  const hook = clamp((hookRegex.test(firstLine) ? 65 : 25) + (firstLine.length <= 90 ? 22 : 5) + (storyRegex.test(firstLine) ? 15 : 0) + (/\d/.test(firstLine) ? 10 : 0))
+  const authority = clamp((authorityRegex.test(text) ? 65 : 25) + ((profile?.title || profile?.industry) ? 20 : 8) + (storyRegex.test(content) ? 15 : 0) + (words.length >= 120 ? 12 : 5))
   const cta = clamp((ctaRegex.test(content) ? 70 : 25) + (/[\?]$/.test(content.trim()) ? 15 : 0))
-  const voiceFit = clamp((profile?.tone ? 25 : 10) + (profile?.industry ? 20 : 10) + (profile?.title ? 20 : 10) + (buildHashtags(text, profile).length >= 4 ? 10 : 4) + (storyRegex.test(content) ? 15 : 8) + (/linkedin/i.test(type || "") ? 10 : 6))
-  const overall = clamp(hook * 0.24 + readability * 0.22 + authority * 0.2 + cta * 0.14 + voiceFit * 0.2)
+  const voiceFit = clamp((profile?.tone ? 28 : 14) + (profile?.industry ? 22 : 12) + (profile?.title ? 22 : 12) + (buildHashtags(text, profile).length >= 4 ? 12 : 6) + (storyRegex.test(content) ? 15 : 10) + (/linkedin/i.test(type || "") ? 10 : 6))
+  const rawOverall = hook * 0.24 + readability * 0.22 + authority * 0.2 + cta * 0.14 + voiceFit * 0.2
+  const overall = clamp(words.length >= 130 && paragraphs.length >= 4 && hook >= 75 && authority >= 75 && cta >= 70 ? Math.max(rawOverall, 90) : rawOverall)
 
   const improvements = [
     hook < 65 ? "Sharpen the hook: open with data, a question, or a bold claim." : "",

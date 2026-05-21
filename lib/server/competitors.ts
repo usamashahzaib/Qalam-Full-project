@@ -1,4 +1,23 @@
 import { groqApiKey } from "@/lib/server/env"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
+
+const cleanSource = (value: string) =>
+  sanitizeGeneratedText(value)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => line && !/^(compose message|you are on|press enter|page inboxes|notifications|search|home|jobs|messaging|click to see|my network|for business|premium)$/i.test(line))
+    .join("\n")
+
+const keywordThemes = (text: string) => {
+  const signals = [
+    ["AI", /\bAI\b|automation|machine learning/i],
+    ["Leadership", /leader|manager|team|culture/i],
+    ["Hiring", /hire|recruit|talent|candidate/i],
+    ["Strategy", /strategy|positioning|growth|business/i],
+    ["Content", /post|voice|brand|linkedin/i],
+  ] as const
+  return signals.filter(([, re]) => re.test(text)).map(([topic]) => ({ topic, count: 1 })).slice(0, 4)
+}
 
 export const analyzeCompetitorPaste = async ({
   sourceText = "",
@@ -7,8 +26,9 @@ export const analyzeCompetitorPaste = async ({
   sourceText?: string
   profileName?: string
 }) => {
-  const heuristicSummary = sourceText.trim().split(/\s+/).slice(0, 28).join(" ")
-  const heuristicHooks = sourceText
+  const cleanedSource = cleanSource(sourceText)
+  const heuristicSummary = cleanedSource.trim().split(/\s+/).slice(0, 42).join(" ")
+  const heuristicHooks = cleanedSource
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
@@ -16,12 +36,12 @@ export const analyzeCompetitorPaste = async ({
     .map((line) => line.slice(0, 120))
 
   const fallbackResult = {
-    summary: heuristicSummary ? `Profile signal captured from pasted text. ${heuristicSummary}${heuristicSummary.endsWith(".") ? "" : "."}` : "Profile signal captured from pasted text.",
-    themes: [],
+    summary: heuristicSummary ? `${profileName || "This profile"} is positioning around ${heuristicSummary}${heuristicSummary.endsWith(".") ? "" : "."}` : "Profile signal captured from pasted text.",
+    themes: keywordThemes(cleanedSource),
     hooks: heuristicHooks,
     ctas: [],
     cadence: "Manual review fallback",
-    recommendation: "Use one specific counter-claim, one real example, and a shorter CTA than the source profile.",
+    recommendation: "Pick their strongest theme, make one sharper counter-claim, then prove it with a real example from your work.",
   }
 
   if (!groqApiKey) {
@@ -46,7 +66,7 @@ Return a JSON object with the following schema exactly (NO markdown wrapping, ju
 
 Text to analyze:
 """
-${sourceText.slice(0, 4000)}
+${cleanedSource.slice(0, 4000)}
 """`
 
   try {
@@ -72,12 +92,12 @@ ${sourceText.slice(0, 4000)}
     const parsed = JSON.parse((jsonMatch?.[0] || cleaned || "{}").trim())
 
     return {
-      summary: parsed.summary || fallbackResult.summary,
-      themes: parsed.themes || [],
-      hooks: parsed.hooks || fallbackResult.hooks,
-      ctas: parsed.ctas || [],
-      cadence: parsed.cadence || "Mixed",
-      recommendation: parsed.recommendation || fallbackResult.recommendation,
+      summary: sanitizeGeneratedText(parsed.summary || fallbackResult.summary),
+      themes: Array.isArray(parsed.themes) ? parsed.themes.slice(0, 6) : fallbackResult.themes,
+      hooks: Array.isArray(parsed.hooks) ? parsed.hooks.map(String).map(sanitizeGeneratedText).slice(0, 6) : fallbackResult.hooks,
+      ctas: Array.isArray(parsed.ctas) ? parsed.ctas.map(String).map(sanitizeGeneratedText).slice(0, 4) : [],
+      cadence: sanitizeGeneratedText(parsed.cadence || "Mixed"),
+      recommendation: sanitizeGeneratedText(parsed.recommendation || fallbackResult.recommendation),
     }
   } catch {
     return fallbackResult

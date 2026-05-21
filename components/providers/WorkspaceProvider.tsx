@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { QalamMark } from "@/components/QalamLogo"
+import { cleanErrorMessage } from "@/lib/content-guard"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -81,6 +82,7 @@ type WorkspaceContextValue = {
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
 const BILLING_STORAGE_KEY = "qalam-billing"
+const workspaceCacheKey = (clientId: string | null) => `qalam-workspace:${clientId || "personal"}`
 
 const defaultProfile: WorkspaceProfile = {
   name: "",
@@ -102,6 +104,13 @@ const deriveBuckets = (posts: WorkspacePost[]) => ({
   scheduled: posts.filter((post) => post.status === "scheduled"),
   published: posts.filter((post) => post.status === "published"),
 })
+
+const friendlyPostError = (message?: string) => {
+  if (message === "scheduled_time_must_be_future") return "Choose a future time. Past dates and current minutes are locked."
+  if (message === "scheduled_time_required") return "Select date and time"
+  if (message === "invalid_scheduled_time") return "Select a valid date and time"
+  return cleanErrorMessage(message)
+}
 
 function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null }) {
   const [posts, setPosts] = useState<WorkspacePost[]>([])
@@ -211,7 +220,7 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
         body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to schedule post")
+      if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
       if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
       await trackEvent("post_scheduled", { postId: id, scheduledTime })
       return id
@@ -223,7 +232,7 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId }: { chi
       body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
     })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || "Failed to schedule post")
+    if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
     if (data.post) setPosts((prev) => [data.post, ...prev])
     await trackEvent("post_scheduled", { postId: data.post?.id ?? null, scheduledTime })
     return data.post?.id ?? ""
@@ -365,7 +374,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const clientParam = searchParams.get("client")
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
+  const [workspaceId, setWorkspaceId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null
+    return sessionStorage.getItem(workspaceCacheKey(clientParam))
+  })
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
 
@@ -380,6 +392,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    const cached = sessionStorage.getItem(workspaceCacheKey(clientParam))
+    setWorkspaceId(cached)
     setIsResolving(true)
     setResolveError(null)
     const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
@@ -389,6 +403,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
         setWorkspaceId(data.workspaceId)
+        try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
         setResolveError(null)
       })
       .catch((error) => {
@@ -398,14 +413,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsResolving(false))
   }, [authChecked, clientParam, isLoadingAuth, pathname, router, searchParams, user?.email])
 
-  if (isResolving) {
+  if (isResolving && !workspaceId) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50">
-        <QalamMark size={40} />
-        <div className="flex gap-1.5" aria-label="Loading workspace">
-          {[0, 1, 2].map((i) => (
-            <span key={i} className="h-1.5 w-1.5 rounded-full bg-teal/60 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-          ))}
+      <div className="min-h-screen bg-zinc-50">
+        <div className="h-16 border-b border-zinc-100 bg-white" />
+        <div className="mx-auto max-w-6xl px-6 py-10">
+          <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
+          <div className="mt-6 grid gap-4 sm:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-100" />)}
+          </div>
         </div>
       </div>
     )

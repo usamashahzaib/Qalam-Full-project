@@ -22,6 +22,7 @@ export default function AnalyticsPage() {
   const [events, setEvents] = useState<RawEvent[]>([])
   const [jobs, setJobs] = useState<RawJob[]>([])
   const [loading, setLoading] = useState(true)
+  const [rangeDays, setRangeDays] = useState(30)
 
   useEffect(() => {
     let active = true
@@ -55,9 +56,9 @@ export default function AnalyticsPage() {
     }
     const gridMax = Math.max(1, ...grid.flat())
     const today = new Date(); today.setHours(0, 0, 0, 0)
-    const timeline = Array.from({ length: 14 }, (_, i) => {
+    const timeline = Array.from({ length: rangeDays }, (_, i) => {
       const d = new Date(today)
-      d.setDate(today.getDate() - (13 - i))
+      d.setDate(today.getDate() - (rangeDays - 1 - i))
       return { key: d.toISOString().slice(0, 10), label: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), count: 0 }
     })
     for (const event of events) {
@@ -93,7 +94,7 @@ export default function AnalyticsPage() {
       draftEvents: events.filter((event) => event.event_type === "draft_saved").length,
       carouselCount: jobs.filter((job) => job.job_type === "carousel_generation").length,
     }
-  }, [events, jobs, state])
+  }, [events, jobs, rangeDays, state])
 
   const hasData = state.posts.length > 0 || events.length > 0
 
@@ -136,11 +137,13 @@ export default function AnalyticsPage() {
               <div className="mb-5 flex items-end justify-between">
                 <div>
                   <h2 className="text-base font-bold text-zinc-900">Activity timeline</h2>
-                  <p className="mt-0.5 text-xs text-zinc-500">Last 14 days of real event activity.</p>
-                </div>
-                <span className="rounded-lg border border-zinc-100 bg-zinc-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">14d</span>
+              <p className="mt-0.5 text-xs text-zinc-500">Real event activity for the selected range.</p>
+            </div>
+                <select value={rangeDays} onChange={(e) => setRangeDays(Number(e.target.value))} className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 outline-none focus:border-teal">
+                  {[14, 30, 90, 180, 365].map((days) => <option key={days} value={days}>{days}d</option>)}
+                </select>
               </div>
-              <div className="grid h-52 items-end gap-1.5" style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}>
+              <div className="grid h-52 items-end gap-1 overflow-x-auto" style={{ gridTemplateColumns: `repeat(${rangeDays}, minmax(${rangeDays > 90 ? 4 : 18}px, 1fr))` }}>
                 {data.timeline.map((item) => (
                   <div key={item.key} className="group flex h-full flex-col justify-end">
                     <div className="relative">

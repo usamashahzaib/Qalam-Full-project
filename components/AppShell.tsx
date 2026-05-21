@@ -143,9 +143,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-zinc-50 font-jakarta">
-      <aside className="hidden md:flex flex-col w-64 bg-zinc-900 text-zinc-300 border-r border-zinc-800 fixed inset-y-0 left-0 z-30 justify-between">
-        <div>
-          <div className="h-16 flex items-center px-6 border-b border-zinc-800">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 w-64 flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 text-zinc-300">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex h-16 shrink-0 items-center border-b border-zinc-800 px-6">
             <QalamLogo href={withClientParam("/dashboard", activeClientId)} size={28} textClassName="text-lg font-extrabold text-white" containerClassName="flex items-center gap-2" />
           </div>
 
@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          <nav className="px-3 space-y-4">
+          <nav className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
             {NAV_GROUPS.map((group) => (
               <div key={group.label}>
                 <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-widest text-zinc-600">{group.label}</p>
@@ -188,7 +188,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
 
-        <div className="p-4 border-t border-zinc-800 space-y-3">
+        <div className="shrink-0 space-y-3 border-t border-zinc-800 p-4">
           <div className="flex items-center gap-3">
             <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 border border-zinc-700 text-white font-bold overflow-hidden">
               {user?.imageUrl ? <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" /> : user?.fullName.charAt(0)}
@@ -255,7 +255,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="pl-0 md:pl-64 pt-14 md:pt-16 pb-20 md:pb-8"><div className="animate-fade-in">{children}</div></main>
+      <main className="qalam-app-canvas pl-0 md:pl-64 pt-14 md:pt-16 pb-20 md:pb-8"><div className="relative z-10 animate-fade-in">{children}</div></main>
     </div>
   )
 }

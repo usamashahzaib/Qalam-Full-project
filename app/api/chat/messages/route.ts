@@ -3,13 +3,16 @@ import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 
+type DbMessage = { id: string; conversation_id: string; role: "user" | "assistant" | "system"; content: string; created_at: string }
+type DbConversation = { id: string; workspace_id: string }
+
 export async function GET(request: NextRequest) {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    await resolveWorkspaceId(request)
     const conversationId = request.nextUrl.searchParams.get("conversationId")
     if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 
-    const messages = await supabaseSelect<any>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
+    const messages = await supabaseSelect<DbMessage>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
     
     return NextResponse.json({ messages: messages || [] })
   } catch (error) {
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify conversation belongs to workspace
-    const convCheck = await supabaseSelect<any>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
+    const convCheck = await supabaseSelect<DbConversation>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
     if (!convCheck || convCheck.length === 0) {
       return NextResponse.json({ error: "Unauthorized conversation" }, { status: 403 })
     }
@@ -41,8 +44,8 @@ export async function POST(request: NextRequest) {
     })
 
     // 2. Fetch Chat History
-    const history = await supabaseSelect<any>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
-    const formattedHistory = (history || []).map((m: any) => ({
+    const history = await supabaseSelect<DbMessage>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
+    const formattedHistory = (history || []).map((m) => ({
       role: m.role,
       content: m.content
     }))
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
           {
             role: "system",
             content:
-              "You are Qalam AI Strategist. Reply short, precise, and useful. Follow the user's wording closely. Prefer direct next steps, sharp bullets, and done-for-you drafts over generic coaching. If the user says they do not know, take the lead.",
+              "You are Qalam AI Strategist, a human LinkedIn ghostwriter and content operator. Never sound like ChatGPT. No markdown headings, no bold markers, no generic frameworks, no corporate filler, no em dashes. Use plain spoken English, specific tradeoffs, lived examples, and ready-to-paste posts. If asked for a post, output only the post body unless the user asks for strategy. Avoid: navigate, leverage, foster, transformative, unlock potential, rapidly evolving landscape, future belongs, in conclusion.",
           },
           ...formattedHistory,
         ],
@@ -77,7 +80,11 @@ export async function POST(request: NextRequest) {
       throw new Error(data?.error?.message || "AI failed to respond")
     }
 
-    const aiText = data.choices?.[0]?.message?.content || ""
+    const aiText = String(data.choices?.[0]?.message?.content || "")
+      .replace(/[—–]/g, "-")
+      .replace(/\*\*/g, "")
+      .replace(/^#+\s*/gm, "")
+      .trim()
 
     // 4. Insert AI Message
     const aiMsg = await supabaseInsert("messages", {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
 
 type CarouselProjectRow = {
   id: string
@@ -25,6 +26,27 @@ type GroqResponse = {
   }>
 }
 
+const themeFrom = (title = "", content = "") => {
+  const source = `${title} ${content}`.toLowerCase()
+  if (/salary|compensation|pay|benefit/.test(source)) return "Compensation Strategy"
+  if (/hire|recruit|talent|candidate/.test(source)) return "Talent Acquisition"
+  if (/manager|leadership|team/.test(source)) return "Manager Effectiveness"
+  if (/remote|hybrid/.test(source)) return "Remote Work"
+  if (/culture|safety|toxic/.test(source)) return "People Culture"
+  return title.trim().slice(0, 48) || "LinkedIn Carousel"
+}
+
+const fallbackSlides = (content: string): CarouselSlideDraft[] => {
+  const clean = sanitizeGeneratedText(content)
+  return [
+    { title: "The real problem", content: clean.slice(0, 150) || "Start with the tension your audience already feels." },
+    { title: "What most teams miss", content: "The issue is rarely effort. It is usually unclear ownership, weak examples, or a rushed decision." },
+    { title: "A better lens", content: "Name the tradeoff, show the consequence, then give people a concrete next step." },
+    { title: "Use this test", content: "If the reader cannot repeat the point in one sentence, the slide is doing too much." },
+    { title: "Takeaway", content: "Make it useful enough to save, not just polished enough to skim." },
+  ]
+}
+
 /** GET /api/carousel — list all carousel projects in the workspace */
 export async function GET(request: NextRequest) {
   try {
@@ -44,7 +66,7 @@ export async function POST(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
     const body = await request.json()
-    const { postId, content } = body as { postId?: string | null; content?: string }
+    const { postId, content, title } = body as { postId?: string | null; content?: string; title?: string }
 
     if (!content) {
       return NextResponse.json({ error: "Missing content" }, { status: 400 })
@@ -65,7 +87,7 @@ export async function POST(request: NextRequest) {
           {
             role: "system",
             content:
-              "You are an expert LinkedIn carousel designer. Convert the user's text into a 5-10 slide carousel structure. Output MUST be a strict JSON array of objects with 'title' (short headline) and 'content' (1-2 sentences max). No markdown wrappers, no other text.",
+              "You are a premium LinkedIn carousel strategist. Convert the user's text into a 6-8 slide carousel with specific, useful slides. No generic motivational copy. No em dashes. Each slide needs a sharp title and 1-2 concise sentences. Output strict JSON array only: [{\"title\":\"...\",\"content\":\"...\"}].",
           },
           { role: "user", content: `Convert this post into carousel slides:\n\n${content}` },
         ],
@@ -81,15 +103,16 @@ export async function POST(request: NextRequest) {
       const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text) as unknown
       slidesData = Array.isArray(parsed) ? (parsed as CarouselSlideDraft[]) : []
     } catch {
-      slidesData = [{ title: "Slide 1", content: content.slice(0, 100) }]
+      slidesData = fallbackSlides(content)
     }
+    if (slidesData.length < 4) slidesData = fallbackSlides(content)
 
     const projectRows = await supabaseInsert<CarouselProjectRow>(
       "carousel_projects",
       {
         workspace_id: workspaceId,
         post_id: postId || null,
-        theme: "default",
+        theme: themeFrom(title, content),
       },
       "return=representation"
     )
@@ -99,8 +122,8 @@ export async function POST(request: NextRequest) {
     const slidesToInsert = slidesData.map((slide, index) => ({
       carousel_id: projectId,
       order_index: index,
-      title: slide.title || `Slide ${index + 1}`,
-      content: slide.content || "",
+      title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`),
+      content: sanitizeGeneratedText(slide.content || ""),
     }))
 
     const slides = await supabaseInsert(

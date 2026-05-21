@@ -33,11 +33,9 @@ export default function DashboardPage() {
   const { posts, isLoadingPosts, state } = useWorkspace()
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const [stats, setStats] = useState<DashboardStats | null>(null)
-  const [statsLoading, setStatsLoading] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
 
   const fetchStats = useCallback(async () => {
-    setStatsLoading(true)
     setStatsError(null)
     try {
       const res = await fetch(withWorkspaceKey("/api/dashboard/stats", activeClientId))
@@ -47,13 +45,22 @@ export default function DashboardPage() {
     } catch (e) {
       setStatsError((e as Error).message)
     } finally {
-      setStatsLoading(false)
+      // Dashboard renders workspace counts immediately; DB stats hydrate in place.
     }
   }, [activeClientId])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchStats() }, [fetchStats])
 
-  const isLoading = statsLoading || isLoadingPosts
+  const isLoading = isLoadingPosts && !posts.length
+  const liveCounts = {
+    draft: posts.filter((post) => post.status === "draft").length,
+    scheduled: posts.filter((post) => post.status === "scheduled").length,
+    published: posts.filter((post) => post.status === "published").length,
+    pending_approval: posts.filter((post) => post.status === "pending_approval").length,
+    failed: posts.filter((post) => post.status === "failed").length,
+    total: posts.length,
+  }
   const recentPosts = [...posts].sort((a, b) => a.updatedAt > b.updatedAt ? -1 : 1).slice(0, 6)
 
   return (
@@ -85,15 +92,15 @@ export default function DashboardPage() {
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <StatCard icon={ComposeIcon} label="Drafts" value={String(stats?.posts.draft ?? 0)} sub="in database" href={withClientParam("/writer", activeClientId)} />
-            <StatCard icon={CalendarIcon} label="Scheduled" value={String(stats?.posts.scheduled ?? 0)} sub="queued for publish" href={withClientParam("/calendar", activeClientId)} />
-            <StatCard icon={LibraryIcon} label="Published" value={String(stats?.posts.published ?? 0)} sub="on LinkedIn" href={withClientParam("/library", activeClientId)} />
-            <StatCard icon={AnalyticsIcon} label="Pending Review" value={String(stats?.pendingApprovals ?? 0)} sub="awaiting approval" href={withClientParam("/approvals", activeClientId)} highlight={(stats?.pendingApprovals ?? 0) > 0} />
+            <StatCard icon={ComposeIcon} label="Drafts" value={String(stats?.posts.draft ?? liveCounts.draft)} sub="in database" href={withClientParam("/writer", activeClientId)} />
+            <StatCard icon={CalendarIcon} label="Scheduled" value={String(stats?.posts.scheduled ?? liveCounts.scheduled)} sub="queued for publish" href={withClientParam("/calendar", activeClientId)} />
+            <StatCard icon={LibraryIcon} label="Published" value={String(stats?.posts.published ?? liveCounts.published)} sub="on LinkedIn" href={withClientParam("/library", activeClientId)} />
+            <StatCard icon={AnalyticsIcon} label="Pending Review" value={String(stats?.pendingApprovals ?? liveCounts.pending_approval)} sub="awaiting approval" href={withClientParam("/approvals", activeClientId)} highlight={(stats?.pendingApprovals ?? liveCounts.pending_approval) > 0} />
           </div>
 
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <StatCard icon={GrowthIcon} label="Total Posts" value={String(stats?.posts.total ?? 0)} sub="all statuses" href={withClientParam("/library", activeClientId)} />
-            <StatCard icon={AnalyticsIcon} label="Failed" value={String(stats?.posts.failed ?? 0)} sub="publish errors" href={withClientParam("/analytics", activeClientId)} />
+            <StatCard icon={GrowthIcon} label="Total Posts" value={String(stats?.posts.total ?? liveCounts.total)} sub="all statuses" href={withClientParam("/library", activeClientId)} />
+            <StatCard icon={AnalyticsIcon} label="Failed" value={String(stats?.posts.failed ?? liveCounts.failed)} sub="publish errors" href={withClientParam("/analytics", activeClientId)} />
             <StatCard icon={GrowthIcon} label="Jobs Run" value={String(stats?.recentJobs.length ?? 0)} sub="recent background tasks" href={withClientParam("/analytics", activeClientId)} />
             <StatCard icon={ComposeIcon} label="Events" value={String(stats?.recentEvents.length ?? 0)} sub="recent activity" href={withClientParam("/analytics", activeClientId)} />
           </div>
