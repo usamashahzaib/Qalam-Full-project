@@ -1,4 +1,4 @@
-export interface PricingPlan {
+﻿export interface PricingPlan {
   plan: string
   monthlyPkr: number
   annualPkrPerMonth?: number

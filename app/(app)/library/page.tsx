@@ -21,6 +21,7 @@ export default function LibraryPage() {
   const [query, setQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<(typeof STATUSES)[number]>("all")
   const [status, setStatus] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const rankedPosts = useMemo(() => {
     return state.posts
@@ -140,7 +141,7 @@ export default function LibraryPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button onClick={() => openInWriter(router, post, activeClientId)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 transition-all hover:border-teal/30 hover:bg-teal/5 hover:text-teal">Load in writer</button>
-                      <button onClick={() => navigator.clipboard.writeText(post.content)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50">Copy</button>
+                      <button onClick={() => { navigator.clipboard.writeText(post.content); setCopiedId(post.id); setTimeout(() => setCopiedId(null), 1800) }} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 transition-all hover:bg-zinc-50">{copiedId === post.id ? "Copied" : "Copy"}</button>
                       <button onClick={() => onDelete(post)} className="cursor-pointer rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-500 transition-all hover:bg-red-50">Delete</button>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -18,6 +18,7 @@ import {
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
 import { PLANS, formatPkr } from "@/lib/pricing"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -362,7 +363,7 @@ function FAQSection() {
           </h2>
           <p className="text-lg text-zinc-600">
             Need something specific?{" "}
-            <a href="mailto:info@byqalam.com" className="text-teal underline underline-offset-2">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline underline-offset-2">
               Email us
             </a>
           </p>

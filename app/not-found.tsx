@@ -1,5 +1,6 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export default function NotFound() {
   return (
@@ -36,7 +37,7 @@ export default function NotFound() {
         <Link href="/pricing" className="hover:text-teal">Pricing</Link>
         <Link href="/blog" className="hover:text-teal">Blog</Link>
         <Link href="/contact" className="hover:text-teal">Contact</Link>
-        <a href="mailto:info@byqalam.com" className="hover:text-teal">info@byqalam.com</a>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-teal">{SUPPORT_EMAIL}</a>
       </div>
     </div>
   )

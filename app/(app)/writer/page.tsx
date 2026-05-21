@@ -328,10 +328,6 @@ export default function WriterPage() {
 
   const onSendForApproval = async () => {
     if (!content.trim()) { setStatus("Write content first"); return }
-    if (!isClientWorkspace) {
-      setStatus("Approvals are for client workspaces. In your personal workspace, save, schedule, or publish directly.")
-      return
-    }
     try {
       setStatus("Sending for approval...")
       const id = await saveDraft({ id: editingId, title: resolveTitle(), content, type: postType })

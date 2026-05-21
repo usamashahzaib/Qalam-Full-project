@@ -175,7 +175,14 @@ export default function VoiceProfilePage() {
                   <button onClick={addGoal} className="rounded-xl border border-zinc-300 px-4 py-3 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">Add</button>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {draft.goals.map((goal) => <button key={goal} onClick={() => removeGoal(goal)} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-200">{goal} - remove</button>)}
+                  {draft.goals.map((goal) => (
+                    <span key={goal} className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 pl-3 pr-1.5 py-1 text-xs font-medium text-zinc-700">
+                      {goal}
+                      <button onClick={() => removeGoal(goal)} aria-label={`Remove ${goal}`} className="flex h-4 w-4 cursor-pointer items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-300 hover:text-zinc-700">
+                        <svg viewBox="0 0 12 12" fill="none" className="h-2.5 w-2.5"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                      </button>
+                    </span>
+                  ))}
                   {!draft.goals.length ? <p className="text-sm text-zinc-400">No goals set</p> : null}
                 </div>
               </div>

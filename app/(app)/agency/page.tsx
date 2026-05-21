@@ -14,13 +14,18 @@ type Client = {
 export default function AgencyDashboard() {
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [isAdding, setIsAdding] = useState(false)
   const [newClientName, setNewClientName] = useState("")
 
   useEffect(() => {
     fetch("/api/agency/clients")
       .then((res) => res.json())
-      .then((data) => { if (data.clients) setClients(data.clients) })
+      .then((data) => {
+        if (data.clients) setClients(data.clients)
+        else if (data.error) setFetchError(data.error)
+      })
+      .catch(() => setFetchError("Could not load client workspaces. Please refresh."))
       .finally(() => setIsLoading(false))
   }, [])
 
@@ -79,6 +84,8 @@ export default function AgencyDashboard() {
             <div className="min-h-[300px] divide-y divide-zinc-100">
               {isLoading ? (
                 <div className="p-8 text-center text-sm text-zinc-500">Loading clients...</div>
+              ) : fetchError ? (
+                <div className="p-8 text-center text-sm text-red-600">{fetchError}</div>
               ) : !clients.length ? (
                 <div className="p-8 text-center">
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">

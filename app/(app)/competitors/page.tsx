@@ -64,7 +64,7 @@ const buildCounterAngleDraft = (entry: CompetitorEntry) => {
       "",
       "[Write your post here]",
     ].filter((line, i) => i === 0 || line !== "").join("\n"),
-    type: "thought leadership",
+    type: "LinkedIn - Text post",
     status: "draft",
     date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
     scheduledTime: null as string | null,

@@ -1,6 +1,7 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata } from "@/lib/seo"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
   title: "Docs",
@@ -77,10 +78,10 @@ export default function DocsPage() {
                   Browse Free Tools
                 </Link>
                 <a
-                  href="mailto:info@byqalam.com"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="inline-flex items-center justify-center rounded-xl border border-white/20 px-6 py-3 font-semibold text-white transition-colors hover:bg-white/10"
                 >
-                  info@byqalam.com
+                  {SUPPORT_EMAIL}
                 </a>
               </div>
             </div>

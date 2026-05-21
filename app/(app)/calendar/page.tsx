@@ -78,7 +78,7 @@ export default function CalendarPage() {
     const firstWeekday = (start.getDay() + 6) % 7
     const cursor = new Date(start)
     cursor.setDate(cursor.getDate() - firstWeekday)
-    return Array.from({ length: 35 }, (_, index) => {
+    return Array.from({ length: 42 }, (_, index) => {
       const date = new Date(cursor)
       date.setDate(cursor.getDate() + index)
       const iso = date.toISOString().slice(0, 10)

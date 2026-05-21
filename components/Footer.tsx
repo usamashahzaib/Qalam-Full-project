@@ -1,4 +1,5 @@
-import Link from "next/link"
+﻿import Link from "next/link"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 
@@ -100,8 +101,8 @@ export function Footer() {
             <Link href="/terms" className="transition-colors hover:text-white/60">
               Terms
             </Link>
-            <a href="mailto:info@byqalam.com" className="transition-colors hover:text-white/60">
-              info@byqalam.com
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="transition-colors hover:text-white/60">
+              {SUPPORT_EMAIL}
             </a>
           </div>
         </div>

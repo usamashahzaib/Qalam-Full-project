@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -7,6 +7,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { COMPARISON_ROWS, PLANS, formatPkr } from "@/lib/pricing"
+import { UPGRADES_EMAIL } from "@/lib/contact"
 
 const PRICING_FAQ = [
   {
@@ -226,7 +227,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href="mailto:business@byqalam.com" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                <Link href={`mailto:${UPGRADES_EMAIL}`} className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
                   Contact Sales
                 </Link>
                 <Link href="/contact" className="rounded-xl border-2 border-white/20 px-8 py-4 text-center font-semibold text-white transition-colors hover:bg-white/10">
