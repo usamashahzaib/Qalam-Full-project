@@ -79,6 +79,7 @@ body {
   font-family: var(--font-jakarta);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scrollbar-gutter: stable;
 }
 
 button,
@@ -184,6 +185,60 @@ summary {
     linear-gradient(90deg, rgba(201, 135, 31, 0.03) 0 1px, transparent 1px 180px),
     #fafaf8;
   overflow: hidden;
+}
+
+.qalam-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(151, 163, 184, 0.75) rgba(255, 255, 255, 0.06);
+}
+
+.qalam-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.qalam-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.qalam-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.9), rgba(113, 128, 150, 0.82));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+.qalam-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(201, 135, 31, 0.92), rgba(148, 102, 26, 0.86));
+  background-clip: padding-box;
+}
+
+.qalam-scrollbar-dark {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.88) rgba(12, 16, 22, 0.92);
+}
+
+.qalam-scrollbar-dark::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.qalam-scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(10, 14, 20, 0.9);
+  border-radius: 999px;
+}
+
+.qalam-scrollbar-dark::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(122, 136, 158, 0.96), rgba(78, 91, 110, 0.96));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+
+.qalam-scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(201, 135, 31, 0.95), rgba(154, 100, 16, 0.95));
+  background-clip: padding-box;
 }
 
 .qalam-app-canvas::before {

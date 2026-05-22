@@ -169,20 +169,26 @@ export const analyzeContent = ({
   const hookRegex = /\?|^\d|hot take|stop|most people|most teams|nobody|why|how|mistake|truth|learned|failed|lesson|unpopular|brutal|honest/i
   const storyRegex = /\b(i|we)\s+(learned|realized|saw|noticed|failed|tested|built|spent|remember|used to|decided|quit|left|hired|fired)\b/i
   const authorityRegex = /\d+%|\d+x|\d+\b|years?|clients?|team|revenue|pipeline|hiring|operators?|leaders?/i
+  const specificityRegex = /\bfor example\b|\bone example\b|\bwhen\b|\bbecause\b|\bafter\b|\bbefore\b|\bthis meant\b|\bthat changed\b/i
+  const aiSlopRegex = /\bleverage\b|\bdelve\b|\bfoster\b|\bnavigate\b|rapidly evolving landscape|future belongs|game changer|transformative|unlock potential|it is worth noting/i
 
   const readability = clamp((words.length >= 80 && words.length <= 260 ? 35 : 18) + (paragraphs.length >= 3 ? 25 : 10) + (lines.length >= 5 ? 20 : 8) + (content.length <= 1800 ? 20 : 8))
   const hook = clamp((hookRegex.test(firstLine) ? 65 : 25) + (firstLine.length <= 90 ? 22 : 5) + (storyRegex.test(firstLine) ? 15 : 0) + (/\d/.test(firstLine) ? 10 : 0))
   const authority = clamp((authorityRegex.test(text) ? 65 : 25) + ((profile?.title || profile?.industry) ? 20 : 8) + (storyRegex.test(content) ? 15 : 0) + (words.length >= 120 ? 12 : 5))
   const cta = clamp((ctaRegex.test(content) ? 70 : 25) + (/[\?]$/.test(content.trim()) ? 15 : 0))
   const voiceFit = clamp((profile?.tone ? 28 : 14) + (profile?.industry ? 22 : 12) + (profile?.title ? 22 : 12) + (buildHashtags(text, profile).length >= 4 ? 12 : 6) + (storyRegex.test(content) ? 15 : 10) + (/linkedin/i.test(type || "") ? 10 : 6))
-  const rawOverall = hook * 0.24 + readability * 0.22 + authority * 0.2 + cta * 0.14 + voiceFit * 0.2
-  const overall = clamp(words.length >= 130 && paragraphs.length >= 4 && hook >= 75 && authority >= 75 && cta >= 70 ? Math.max(rawOverall, 90) : rawOverall)
+  const specificity = clamp((specificityRegex.test(content) ? 42 : 20) + (authorityRegex.test(text) ? 18 : 6) + (storyRegex.test(content) ? 20 : 8) + (words.length >= 140 ? 10 : 4) + (/because|so|instead|but/i.test(content) ? 10 : 4))
+  const humanLikeness = clamp((storyRegex.test(content) ? 30 : 14) + (!aiSlopRegex.test(text) ? 24 : 6) + (/\bI\b|\bwe\b/.test(content) ? 18 : 8) + (paragraphs.length >= 4 ? 14 : 6) + (firstLine.length <= 85 ? 12 : 6))
+  const rawOverall = hook * 0.18 + readability * 0.16 + authority * 0.15 + specificity * 0.17 + cta * 0.12 + voiceFit * 0.1 + humanLikeness * 0.12
+  const overall = clamp(words.length >= 140 && paragraphs.length >= 4 && hook >= 72 && authority >= 72 && specificity >= 70 && cta >= 64 && humanLikeness >= 72 ? Math.max(rawOverall, 90) : rawOverall)
 
   const improvements = [
     hook < 65 ? "Sharpen the hook: open with data, a question, or a bold claim." : "",
     readability < 65 ? "Improve readability: use short lines and at least 3 paragraph breaks." : "",
     authority < 65 ? "Add specific proof: a metric, team result, or concrete example." : "",
+    specificity < 70 ? "Get more concrete: name the decision, example, or consequence behind the point." : "",
     cta < 60 ? "Add a clear next step: ask for a comment, a save, or share an opinion." : "",
+    humanLikeness < 70 ? "Remove AI phrasing and write more like lived experience." : "",
     voiceFit < 70 ? "Complete your voice profile to align AI output with your positioning." : "",
   ].filter(Boolean).slice(0, 3)
 
@@ -207,6 +213,16 @@ export const analyzeContent = ({
     : /[?]$/.test(content.trim())
       ? "Ends with a question, good CTA signal"
       : "No call-to-action: end with a direct ask or question"
+
+  const specificityNote = specificityRegex.test(content)
+    ? "Specific example or consequence framing detected"
+    : "Still abstract: add one real scenario, decision, or tradeoff"
+
+  const humanNote = aiSlopRegex.test(text)
+    ? "AI-sounding wording detected: simplify and make it more lived-in"
+    : storyRegex.test(content)
+      ? "Sounds grounded in real experience"
+      : "Needs more human texture: show what you saw, changed, or learned"
 
   const voiceFitNote = !profile?.tone && !profile?.industry && !profile?.title
     ? "Complete voice profile to improve alignment"
@@ -238,10 +254,22 @@ export const analyzeContent = ({
         actionHint: authority < 65 ? "Add a specific number, result, or real example from your experience" : undefined,
       },
       {
+        label: "Specificity",
+        score: specificity,
+        note: specificityNote,
+        actionHint: specificity < 70 ? "Add one concrete example, decision, or consequence" : undefined,
+      },
+      {
         label: "CTA",
         score: cta,
         note: ctaNote,
         actionHint: cta < 60 ? "End with: 'What do you think?' or 'Save this if it helped'" : undefined,
+      },
+      {
+        label: "Human-likeness",
+        score: humanLikeness,
+        note: humanNote,
+        actionHint: humanLikeness < 70 ? "Replace polished AI phrasing with lived language" : undefined,
       },
       {
         label: "Voice fit",

@@ -23,7 +23,7 @@ const POST_FILTERS = [
 type PublishState = { status: "idle" | "loading" | "success" | "error"; message: string; postUrn: string | null }
 type WriterBootstrapPost = { id?: string; title?: string; content?: string; type?: string; externalPostUrn?: string | null }
 type WriterBootstrap = { post: WriterBootstrapPost | null; scheduleDate: string; parseFailed: boolean; hasWriterLoad: boolean; hasWriterScheduleDate: boolean }
-type GenerateResponse = { text?: string; error?: string }
+type GenerateResponse = { text?: string; error?: string; analysis?: ContentAnalysis; metTarget?: boolean }
 type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: HookOption[]; error?: string }
 type HookOption = { style: string; text: string }
 type RichReply = { comment: string; style: string; reply: string }
@@ -86,6 +86,7 @@ export default function WriterPage() {
   const [aiPrompt, setAiPrompt] = useState("")
   const [isGenerating, setIsGenerating] = useState(false)
   const [isThinking, setIsThinking] = useState(false)
+  const [isRepairingDraft, setIsRepairingDraft] = useState(false)
   const [content, setContent] = useState(bootstrap.post?.content || "")
   const [postType, setPostType] = useState(bootstrap.post?.type || POST_TYPES[0])
   const [scheduleDate, setScheduleDate] = useState(bootstrap.scheduleDate)
@@ -110,6 +111,7 @@ export default function WriterPage() {
   const currentDraftLabel = editingId ? `Editing ${editingId.slice(0, 8)}` : "New draft"
   const publishLabel = user?.linkedinMemberId ? "LinkedIn connected" : "LinkedIn needs connection"
   const generateLabel = postType.includes("Carousel") ? "Generate Carousel Draft" : postType.includes("Visual") ? "Generate Visual Caption" : content.trim() ? "Regenerate Draft" : "Generate Draft"
+  const scoreGap = analysis ? Math.max(0, 90 - analysis.overallScore) : null
   const filteredPosts = useMemo(() => {
     const ordered = [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
     return postFilter === "all" ? ordered : ordered.filter((post) => post.status === postFilter)
@@ -271,11 +273,42 @@ export default function WriterPage() {
       const nextContent = String(data.text || "").trim()
       if (!nextContent) throw new Error("AI returned an empty draft")
       setContent(sanitizeGeneratedText(nextContent))
-      setStatus(postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : "Draft ready")
+      if (data.analysis) setAnalysis(data.analysis)
+      setStatus(postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
     } catch (error) {
       setStatus(cleanErrorMessage((error as Error).message))
     } finally {
       setIsGenerating(false)
+    }
+  }
+
+  const onPushToNinety = async () => {
+    if (!content.trim()) { setStatus("Write a draft first"); return }
+    setIsRepairingDraft(true)
+    setStatus("Improving draft toward 90+...")
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "repair",
+          prompt: aiPrompt.trim() || title.trim() || resolveTitle(),
+          title: title.trim(),
+          content,
+          postType,
+          profile,
+        }),
+      })
+      const data = (await res.json().catch(() => ({}))) as GenerateResponse
+      if (!res.ok) throw new Error(data.error || "Could not improve draft")
+      if (!data.text?.trim()) throw new Error("Repair returned an empty draft")
+      setContent(sanitizeGeneratedText(data.text))
+      if (data.analysis) setAnalysis(data.analysis)
+      setStatus(data.metTarget ? "Draft improved to 90+ quality." : "Draft improved. Review the remaining weak dimensions.")
+    } catch (error) {
+      setStatus(cleanErrorMessage((error as Error).message))
+    } finally {
+      setIsRepairingDraft(false)
     }
   }
 
@@ -383,6 +416,11 @@ export default function WriterPage() {
             </div>
             <div className="flex items-center gap-2">
               <button onClick={onSaveDraft} className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-400">Save draft</button>
+              {!postType.includes("Carousel") && !postType.includes("Visual") ? (
+                <button onClick={onPushToNinety} disabled={isRepairingDraft || !content.trim() || Boolean(analysis && analysis.overallScore >= 90)} className="cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/12 disabled:opacity-45">
+                  {isRepairingDraft ? "Improving..." : analysis?.overallScore && analysis.overallScore >= 90 ? "90+ ready" : "Push to 90+"}
+                </button>
+              ) : null}
               {isClientWorkspace && (
                 canApprove
                   ? <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
@@ -408,7 +446,7 @@ export default function WriterPage() {
 
           {/* Score cards */}
           <div className="mb-5 grid gap-3 sm:grid-cols-3">
-            <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis?.overallLabel || "Waiting for draft"} accent="teal" />
+            <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis ? (analysis.overallScore >= 90 ? "Copy-paste ready" : `${scoreGap} points short of 90`) : "Waiting for draft"} accent="teal" action={analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? { label: "Push to 90+", onClick: onPushToNinety, loading: isRepairingDraft } : undefined} />
             <MetricCard
               label="Hook type"
               value={analysis?.hookType || "--"}
@@ -507,6 +545,12 @@ export default function WriterPage() {
                   })}
                 </div>
               )}
+              {analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
+                  <p className="font-bold">Quality gate not met yet</p>
+                  <p className="mt-1 leading-relaxed">This draft is {scoreGap} points short of the 90+ copy-ready target. Run another quality pass or regenerate from the same prompt.</p>
+                </div>
+              ) : null}
               {analysis?.improvements?.length ? (
                 <ul className="mt-3 space-y-1.5">
                   {analysis.improvements.map((item) => (

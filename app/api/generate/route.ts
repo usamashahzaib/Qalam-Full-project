@@ -7,7 +7,7 @@ import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/
 import { getPlanLimits } from "@/lib/entitlements"
 
 type GenerateBody = {
-  mode?: "draft" | "intelligence" | "hooks" | "comment-replies"
+  mode?: "draft" | "intelligence" | "hooks" | "comment-replies" | "repair"
   prompt?: string
   postType?: string
   title?: string
@@ -172,6 +172,29 @@ async function callGroq(systemPrompt: string, userMessage: string, temperature =
   return String(data?.choices?.[0]?.message?.content || "{}")
 }
 
+async function callGroqText(systemPrompt: string, userMessage: string, temperature = 0.7): Promise<string> {
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${groqApiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature,
+    }),
+    cache: "no-store",
+  })
+  const raw = await response.text()
+  const data = raw ? JSON.parse(raw) : {}
+  if (!response.ok) throw new Error(data?.error?.message || "AI service error")
+  return String(data?.choices?.[0]?.message?.content || "")
+}
+
 const strengthenDraft = (text: string, prompt: string, postType?: string) => {
   const cleaned = sanitizeGeneratedText(text)
   if (postType?.toLowerCase().includes("carousel") || postType?.toLowerCase().includes("visual")) return cleaned
@@ -193,6 +216,32 @@ For ${topic}, the useful move is simple: write from the decision, mistake, or tr
 
 What would you add from your own experience?`)
 }
+
+const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<typeof analyzeContent>, body: GenerateBody) => [
+  "Repair this LinkedIn draft.",
+  "Keep the same topic and overall claim.",
+  "Make it feel more human and more specific.",
+  "No markdown, no headings, no em dashes.",
+  "Do not invent fake metrics or credentials.",
+  body.profile?.title ? `Writer role: ${body.profile.title}.` : "",
+  body.profile?.industry ? `Industry: ${body.profile.industry}.` : "",
+  body.profile?.tone ? `Tone to match: ${body.profile.tone}.` : "",
+  body.profile?.goals?.length ? `Goals: ${body.profile.goals.join(", ")}.` : "",
+  "Target shape:",
+  "- 170 to 240 words",
+  "- first line under 90 characters",
+  "- 4 to 6 short paragraphs",
+  "- one concrete example or consequence",
+  "- one practical takeaway",
+  "- one natural CTA",
+  `Current score: ${analysis.overallScore}/100.`,
+  `Weak dimensions: ${analysis.scores.filter((item) => item.score < 75).map((item) => `${item.label} (${item.score})`).join(", ") || "none"}.`,
+  `Fix list: ${analysis.improvements.join(" ") || "Make the post stronger overall."}`,
+  "",
+  `Prompt:\n${prompt}`,
+  "",
+  `Draft to repair:\n${draft}`,
+].filter(Boolean).join("\n")
 
 export async function POST(request: NextRequest) {
   try {
@@ -308,6 +357,39 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ replies: cleanReplies })
     }
 
+    // --- repair mode ---
+    if (mode === "repair") {
+      const content = String(body.content || "").trim()
+      if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 })
+      if (!groqApiKey) {
+        return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
+      }
+
+      const currentAnalysis = analyzeContent({
+        title: body.title,
+        content,
+        type: body.postType,
+        profile: body.profile,
+      })
+
+      try {
+        const repaired = sanitizeGeneratedText(await callGroqText(
+          buildDraftSystemPrompt(body),
+          buildRepairPrompt(content, String(body.prompt || body.title || "Improve this draft"), currentAnalysis, body),
+          0.55,
+        ))
+        const repairedAnalysis = analyzeContent({
+          title: body.title,
+          content: repaired,
+          type: body.postType,
+          profile: body.profile,
+        })
+        return NextResponse.json({ text: repaired, analysis: repairedAnalysis, metTarget: repairedAnalysis.overallScore >= 90 })
+      } catch (error) {
+        return NextResponse.json({ error: cleanErrorMessage((error as Error).message) }, { status: 502 })
+      }
+    }
+
     // --- draft mode ---
     const prompt = String(body.prompt || "").trim()
     if (!prompt) return NextResponse.json({ error: "Prompt is required." }, { status: 400 })
@@ -315,34 +397,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${groqApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          { role: "system", content: buildDraftSystemPrompt(body) },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-      }),
-      cache: "no-store",
-    })
-
-    const raw = await response.text()
-    const data = raw ? JSON.parse(raw) : {}
-    if (!response.ok) {
-      const message = data?.error?.message || data?.message || "Failed to generate content."
+    let text = ""
+    try {
+      text = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), prompt, 0.7), prompt, body.postType)
+    } catch (error) {
+      const message = (error as Error).message || "Failed to generate content."
       console.error("Groq API error:", message)
-      return NextResponse.json({ error: cleanErrorMessage(message) }, { status: response.status })
+      return NextResponse.json({ error: cleanErrorMessage(message) }, { status: 502 })
     }
 
-    const text = strengthenDraft(String(data?.choices?.[0]?.message?.content || ""), prompt, body.postType)
+    if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
+      let bestText = text
+      let bestAnalysis = analyzeContent({
+        title: body.title,
+        content: text,
+        type: body.postType,
+        profile: body.profile,
+      })
+
+      if (bestAnalysis.overallScore < 90) {
+        try {
+          const repaired = sanitizeGeneratedText(await callGroqText(
+            buildDraftSystemPrompt(body),
+            buildRepairPrompt(text, prompt, bestAnalysis, body),
+            0.55,
+          ))
+          const repairedAnalysis = analyzeContent({
+            title: body.title,
+            content: repaired,
+            type: body.postType,
+            profile: body.profile,
+          })
+          if (repairedAnalysis.overallScore >= bestAnalysis.overallScore) {
+            bestText = strengthenDraft(repaired, prompt, body.postType)
+            bestAnalysis = repairedAnalysis
+          }
+        } catch {
+          // keep best local draft
+        }
+      }
+
+      text = bestText
+      if (bestAnalysis.overallScore < 90) {
+        text = strengthenDraft(bestText, prompt, body.postType)
+      }
+    }
+
     if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
-    return NextResponse.json({ text })
+    const finalAnalysis = analyzeContent({
+      title: body.title,
+      content: text,
+      type: body.postType,
+      profile: body.profile,
+    })
+    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: finalAnalysis.overallScore >= 90 })
   } catch (error) {
     const message = (error as Error).message || "Internal server error"
     if (message === "auth_required") {

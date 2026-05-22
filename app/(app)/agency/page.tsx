@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { PlanGate } from "@/components/PlanGate"
+import { useSearchParams } from "next/navigation"
 
 type Client = {
   id: string
@@ -10,9 +11,13 @@ type Client = {
   client_email?: string
   status: string
   plan: string
+  role?: string
+  created_at?: string
 }
 
 export default function AgencyDashboard() {
+  const searchParams = useSearchParams()
+  const activeClientId = searchParams.get("client")
   const [clients, setClients] = useState<Client[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -44,7 +49,7 @@ export default function AgencyDashboard() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Client could not be added")
       if (data.client) {
-        setClients([data.client, ...clients])
+        setClients((prev) => [data.client, ...prev])
         setNewClientName("")
       }
     } catch (e) {
@@ -105,21 +110,34 @@ export default function AgencyDashboard() {
                   <p className="mt-1 text-xs text-zinc-500">Add your first client to start managing them.</p>
                 </div>
               ) : (
-                clients.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between p-6 transition-colors hover:bg-zinc-50">
-                    <div className="flex items-center gap-4">
+                clients.map((client) => {
+                  const active = activeClientId === client.id
+                  return (
+                  <div key={client.id} className={`p-6 transition-colors hover:bg-zinc-50 ${active ? "bg-teal/[0.04]" : ""}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal/10 font-bold uppercase text-teal-800">{client.client_name.charAt(0)}</div>
                       <div>
-                        <h3 className="font-medium text-zinc-900">{client.client_name}</h3>
-                        <p className="text-xs text-zinc-500">{client.plan} Plan</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium text-zinc-900">{client.client_name}</h3>
+                          {active ? <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Active</span> : null}
+                        </div>
+                        <p className="text-xs text-zinc-500">{client.plan} Plan{client.role ? ` - ${client.role.replaceAll("_", " ")}` : ""}</p>
+                      </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${client.status === "active" ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" : "bg-zinc-50 text-zinc-600 ring-1 ring-inset ring-zinc-500/20"}`}>{client.status}</span>
+                        <Link href={`/dashboard?client=${client.id}`} className="text-sm font-medium text-teal hover:text-teal-700">{active ? "Open" : "Switch"}</Link>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${client.status === "active" ? "bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20" : "bg-zinc-50 text-zinc-600 ring-1 ring-inset ring-zinc-500/20"}`}>{client.status}</span>
-                      <Link href={`/dashboard?client=${client.id}`} className="text-sm font-medium text-teal hover:text-teal-700">Manage -&gt;</Link>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <Link href={`/dashboard?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Dashboard</Link>
+                      <Link href={`/writer?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Writer</Link>
+                      <Link href={`/library?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Library</Link>
+                      <Link href={`/approvals?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Approvals</Link>
                     </div>
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>
@@ -132,6 +150,14 @@ export default function AgencyDashboard() {
             <div className="mt-4 border-t border-amber-100 pt-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Total Clients</p>
               <p className="mt-1 text-3xl font-bold text-zinc-900">{clients.length}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h3 className="font-bold text-zinc-900">Workspace separation</h3>
+            <div className="mt-3 space-y-2 text-sm text-zinc-600">
+              <p><span className="font-semibold text-zinc-900">Voice memory</span> - each client keeps its own tone, goals, and LinkedIn profile.</p>
+              <p><span className="font-semibold text-zinc-900">Post library</span> - templates and archive stay scoped to the active client.</p>
+              <p><span className="font-semibold text-zinc-900">Approvals and analytics</span> - queues and data stay inside that workspace.</p>
             </div>
           </div>
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">

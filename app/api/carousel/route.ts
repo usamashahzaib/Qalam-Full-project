@@ -28,7 +28,18 @@ type GroqResponse = {
   }>
 }
 
-const themeFrom = (title = "", content = "") => {
+type JobRow = {
+  id: string
+  workspace_id: string
+  type: string
+  status: string
+  payload: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+const themeFrom = (title = "", content = "", theme = "") => {
+  if (theme.trim()) return theme.trim()
   const source = `${title} ${content}`.toLowerCase()
   if (/salary|compensation|pay|benefit/.test(source)) return "Compensation Strategy"
   if (/hire|recruit|talent|candidate/.test(source)) return "Talent Acquisition"
@@ -79,7 +90,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { postId, content, title } = body as { postId?: string | null; content?: string; title?: string }
+    const { postId, content, title, theme } = body as { postId?: string | null; content?: string; title?: string; theme?: string }
 
     if (!content) {
       return NextResponse.json({ error: "Missing content" }, { status: 400 })
@@ -100,7 +111,7 @@ export async function POST(request: NextRequest) {
           {
             role: "system",
             content:
-              "You are a premium LinkedIn carousel strategist. Convert the user's text into a 6-8 slide carousel with specific, useful slides. No generic motivational copy. No em dashes. Each slide needs a sharp title and 1-2 concise sentences. Output strict JSON array only: [{\"title\":\"...\",\"content\":\"...\"}].",
+              `You are a premium LinkedIn carousel strategist. Convert the user's text into a 6-8 slide carousel with specific, useful slides. Theme: ${themeFrom(title, content, theme)}. No generic motivational copy. No em dashes. Slide 1 must frame the tension. Middle slides must teach or prove. Final slide must close with a useful takeaway or CTA. Each slide needs a sharp title and 1-2 concise sentences. Output strict JSON array only: [{"title":"...","content":"..."}].`,
           },
           { role: "user", content: `Convert this post into carousel slides:\n\n${content}` },
         ],
@@ -125,7 +136,7 @@ export async function POST(request: NextRequest) {
       {
         workspace_id: workspaceId,
         post_id: postId || null,
-        theme: themeFrom(title, content),
+        theme: themeFrom(title, content, theme),
       },
       "return=representation"
     )
@@ -145,7 +156,20 @@ export async function POST(request: NextRequest) {
       "return=representation"
     )
 
-    return NextResponse.json({ projectId, slides })
+    await supabaseInsert<JobRow>(
+      "jobs",
+      {
+        workspace_id: workspaceId,
+        type: "carousel_generation",
+        status: "completed",
+        payload: { projectId, postId: postId || null, theme: themeFrom(title, content, theme) },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+      "return=minimal"
+    ).catch(() => undefined)
+
+    return NextResponse.json({ projectId, slides, theme: themeFrom(title, content, theme) })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
