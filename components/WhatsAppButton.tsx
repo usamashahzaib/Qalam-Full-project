@@ -21,6 +21,9 @@ const APP_PREFIXES = [
   "/agency",
   "/competitors",
   "/settings",
+  "/chat",
+  "/approvals",
+  "/carousels",
 ]
 
 export function WhatsAppButton() {

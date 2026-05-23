@@ -177,7 +177,10 @@ summary {
 
 .qalam-app-canvas {
   position: relative;
-  min-height: 100vh;
+  min-height: 100dvh;
+  /* Mobile: header height + status bar safe area at top; bottom nav + home indicator at bottom */
+  padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   background:
     radial-gradient(circle at 14% 18%, rgba(13, 74, 69, 0.055) 0, transparent 18%),
     radial-gradient(circle at 86% 14%, rgba(201, 135, 31, 0.08) 0, transparent 16%),
@@ -185,6 +188,14 @@ summary {
     linear-gradient(90deg, rgba(201, 135, 31, 0.03) 0 1px, transparent 1px 180px),
     #fafaf8;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .qalam-app-canvas {
+    padding-top: 4rem;
+    padding-bottom: 2rem;
+    min-height: 100vh;
+  }
 }
 
 .qalam-scrollbar {
@@ -269,8 +280,8 @@ summary {
 }
 
 @media (max-width: 767px) {
-  .qalam-app-canvas::before { inset: 56px 0 0 0; }
-  .qalam-app-canvas::after { inset: 56px 0 0 0; }
+  .qalam-app-canvas::before { inset: calc(3.5rem + env(safe-area-inset-top, 0px)) 0 0 0; }
+  .qalam-app-canvas::after { inset: calc(3.5rem + env(safe-area-inset-top, 0px)) 0 0 0; }
 }
 
 /* ─── Content protection ──────────────────────────────────────── */

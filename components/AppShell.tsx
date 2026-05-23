@@ -236,16 +236,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <header className="flex md:hidden h-14 border-b border-zinc-200 bg-white/90 backdrop-blur fixed top-0 inset-x-0 z-30 items-center justify-between px-4">
-        <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-teal/5 border border-teal/10 px-2.5 py-0.5 text-[10px] font-bold text-teal max-w-[120px] truncate">{activeClientId ? clients.find((client) => client.id === activeClientId)?.client_name || "Client" : "Personal"}</span>
-          <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
-          <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+      <header className="flex md:hidden flex-col border-b border-zinc-200 bg-white/90 backdrop-blur fixed top-0 inset-x-0 z-30" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="flex h-14 w-full items-center justify-between px-4">
+          <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-teal/5 border border-teal/10 px-2.5 py-0.5 text-[10px] font-bold text-teal max-w-[120px] truncate">{activeClientId ? clients.find((client) => client.id === activeClientId)?.client_name || "Client" : "Personal"}</span>
+            <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+            <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+          </div>
         </div>
 
         {searchFocused && (
-          <div className="absolute top-14 left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" ref={searchRef}>
+          <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
             <div className="relative flex items-center">
               <input type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
               <button onClick={() => { setSearchFocused(false); setSearchQuery("") }} className="absolute right-3 text-xs text-zinc-400 font-bold hover:text-zinc-600">Close</button>
@@ -255,7 +257,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         {switcherOpen && (
-          <div className="absolute top-14 right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" ref={switcherRef}>
+          <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={switcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
             <button onClick={() => handleSwitchWorkspace(null)} className={`w-full cursor-pointer text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${!activeClientId ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>Personal Workspace</button>
             {clients.map((client) => <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`w-full cursor-pointer text-left px-4 py-2.5 text-xs transition-colors hover:bg-zinc-50 ${activeClientId === client.id ? "bg-teal/5 text-teal font-bold" : "text-zinc-700"}`}>{client.client_name}</button>)}
@@ -263,7 +265,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="qalam-app-canvas pl-0 md:pl-64 pt-14 md:pt-16 pb-20 md:pb-8"><div className="relative z-10 animate-fade-in">{children}</div></main>
+      <main className="qalam-app-canvas pl-0 md:pl-64"><div className="relative z-10 animate-fade-in">{children}</div></main>
     </div>
   )
 }
