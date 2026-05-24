@@ -41,7 +41,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Qalam uses PKR-first market pricing: Solo starts at PKR 1,290/month, Pro at PKR 2,490/month, Agency Starter at PKR 5,990/month, and Agency Growth at PKR 9,990/month.",
+        text: "Qalam uses PKR-first pricing for the Pakistan market: Solo starts at PKR 499/month, Pro at PKR 990/month, Agency Starter at PKR 2,490/month, and Agency Growth at PKR 4,990/month. Annual billing saves 20%.",
       },
     },
     {

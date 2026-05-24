@@ -7,6 +7,8 @@ import { CheckIcon } from "@/components/ui/qalam-icons"
 interface PricingCardProps {
   plan: string
   price: string
+  perDay?: string
+  annualSavings?: string
   usdReference: string
   period: string
   description: string
@@ -21,6 +23,8 @@ interface PricingCardProps {
 export function PricingCard({
   plan,
   price,
+  perDay,
+  annualSavings,
   usdReference,
   period,
   description,
@@ -37,7 +41,7 @@ export function PricingCard({
       whileTap={{ scale: 0.995 }}
       className={`relative flex flex-col rounded-2xl border p-8 ${
         highlighted
-          ? "border-teal bg-teal shadow-[0_8px_40px_rgba(13,74,69,0.25)]"
+          ? "border-teal bg-teal shadow-[0_8px_40px_rgba(13,74,69,0.28)]"
           : "border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
       }`}
     >
@@ -52,11 +56,21 @@ export function PricingCard({
 
       <div className="mb-6">
         <p className={`mb-2 text-sm font-semibold uppercase tracking-widest ${highlighted ? "text-teal-100" : "text-teal"}`}>{plan}</p>
-        <div className="mb-2 flex items-end gap-1">
+        <div className="mb-1 flex items-end gap-1">
           <span className={`text-5xl font-bold ${highlighted ? "text-white" : "text-zinc-900"}`}>{price}</span>
           {period && <span className={`mb-2 text-sm ${highlighted ? "text-teal-100" : "text-zinc-500"}`}>/{period}</span>}
         </div>
-        <p className={`text-xs ${highlighted ? "text-teal-100/80" : "text-zinc-400"}`}>{usdReference}</p>
+        {perDay && (
+          <p className={`text-xs font-medium ${highlighted ? "text-gold-200" : "text-gold"}`}>
+            {perDay}
+          </p>
+        )}
+        {annualSavings && (
+          <p className={`mt-1 text-xs font-semibold ${highlighted ? "text-emerald-300" : "text-emerald-600"}`}>
+            {annualSavings}
+          </p>
+        )}
+        <p className={`mt-2 text-xs ${highlighted ? "text-teal-100/80" : "text-zinc-400"}`}>{usdReference}</p>
         <p className={`mt-2 text-sm leading-relaxed ${highlighted ? "text-teal-100" : "text-zinc-600"}`}>{description}</p>
       </div>
 

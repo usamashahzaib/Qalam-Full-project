@@ -34,8 +34,8 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Solo",
-    monthlyPkr: 890,
-    annualPkrPerMonth: 690,
+    monthlyPkr: 499,
+    annualPkrPerMonth: 399,
     period: "mo",
     description: "For individual professionals building a consistent LinkedIn presence.",
     features: [
@@ -55,8 +55,8 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Pro",
-    monthlyPkr: 1790,
-    annualPkrPerMonth: 1390,
+    monthlyPkr: 990,
+    annualPkrPerMonth: 790,
     period: "mo",
     description: "For serious creators and consultants who need full AI power and research.",
     features: [
@@ -75,8 +75,8 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Agency Starter",
-    monthlyPkr: 4490,
-    annualPkrPerMonth: 3490,
+    monthlyPkr: 2490,
+    annualPkrPerMonth: 1990,
     period: "mo",
     description: "For small agencies operating multiple client workspaces with review and publish control.",
     features: [
@@ -95,8 +95,8 @@ export const PLANS: PricingPlan[] = [
   },
   {
     plan: "Agency Growth",
-    monthlyPkr: 7490,
-    annualPkrPerMonth: 5990,
+    monthlyPkr: 4990,
+    annualPkrPerMonth: 3990,
     period: "mo",
     description: "For agencies managing many clients with full workspace isolation and team scale.",
     features: [
@@ -133,16 +133,16 @@ export const COMPARISON_ROWS: {
   { label: "Team seats", free: "1", solo: "1", pro: "1", agencyStarter: "5", agencyGrowth: "Unlimited" },
   { label: "Analytics", free: "Basic", solo: "Full", pro: "Full", agencyStarter: "Full", agencyGrowth: "Workspace-level" },
   { label: "Support", free: "Community", solo: "Email", pro: "Priority email", agencyStarter: "WhatsApp", agencyGrowth: "Priority WhatsApp" },
-  { label: "Monthly price", free: "Free", solo: "PKR 890", pro: "PKR 1,790", agencyStarter: "PKR 4,490", agencyGrowth: "PKR 7,490" },
+  { label: "Monthly price", free: "Free", solo: "PKR 499", pro: "PKR 990", agencyStarter: "PKR 2,490", agencyGrowth: "PKR 4,990" },
 ]
 
 /** Map plan names to their monthly/annual prices for use in upgrade flows */
 export const PLAN_PRICES: Record<string, { monthly: number; annual: number }> = {
   Free: { monthly: 0, annual: 0 },
-  Solo: { monthly: 890, annual: 690 },
-  Pro: { monthly: 1790, annual: 1390 },
-  "Agency Starter": { monthly: 4490, annual: 3490 },
-  "Agency Growth": { monthly: 7490, annual: 5990 },
+  Solo: { monthly: 499, annual: 399 },
+  Pro: { monthly: 990, annual: 790 },
+  "Agency Starter": { monthly: 2490, annual: 1990 },
+  "Agency Growth": { monthly: 4990, annual: 3990 },
 }
 
 export const formatPkr = (amount: number): string => {

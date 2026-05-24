@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -12,27 +12,27 @@ import { UPGRADES_EMAIL } from "@/lib/contact"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live and lets you test the real workflow before upgrading.",
+    a: "Yes. Free is live with no time limit — 5 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Qalam uses PKR-first early pricing for the Pakistan market. Solo starts at PKR 1,290/month, Pro at PKR 2,490/month, Agency Starter at PKR 5,990/month, and Agency Growth at PKR 9,990/month.",
+    a: "Solo starts at PKR 499/month — less than a single coffee per week. Pro is PKR 990/month with unlimited AI drafts. Agency plans start at PKR 2,490/month for team workflows. Annual billing saves you 20%.",
   },
   {
-    q: "Is there a free trial for paid plans?",
-    a: "Free acts as the product trial. Paid plans are currently unlocked through guided onboarding instead of self-serve checkout.",
+    q: "What's the difference between monthly and annual billing?",
+    a: "Annual billing saves PKR 1,200/year on Solo, PKR 2,400/year on Pro, and PKR 6,000/year on Agency Starter. You pay once and don't think about it again. Most serious creators choose annual.",
   },
   {
     q: "What is the difference between Agency Starter and Agency Growth?",
-    a: "Agency Starter supports up to 3 client workspaces and 5 team seats. Agency Growth removes all workspace and seat caps for agencies managing many clients at scale.",
+    a: "Agency Starter supports up to 3 client workspaces and 5 team seats — enough for a focused agency. Agency Growth removes all caps: unlimited clients, unlimited seats, workspace-level analytics, and priority support.",
   },
   {
     q: "Can I cancel anytime?",
-    a: "Because paid onboarding is still manual, cancellation terms are confirmed during onboarding rather than through an automated billing portal.",
+    a: "Yes. Paid plans can be cancelled — your workspace and drafts stay accessible on the Free tier. You never lose your content history.",
   },
   {
-    q: "Is annual billing available?",
-    a: "Yes. Annual pricing is shown as the discounted monthly equivalent when available.",
+    q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
+    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000–80,000/month. Qalam gives you AI that learns your voice, a scheduling system, and analytics for PKR 499/month. It's not a ghostwriter replacement — it's the infrastructure that makes your writing sharper, faster, and consistent every single week.",
   },
 ]
 
@@ -40,27 +40,48 @@ type PricingPageContentProps = {
   pricingCurrency?: { currencyCode?: string; label?: string }
 }
 
+const ANNUAL_SAVINGS: Record<string, number> = {
+  Solo: 1200,
+  Pro: 2400,
+  "Agency Starter": 6000,
+  "Agency Growth": 12000,
+}
+
+function perDayLabel(monthly: number): string {
+  const pkrPerDay = Math.ceil(monthly / 30)
+  return `PKR ${pkrPerDay}/day`
+}
+
 export function PricingPageContent({}: PricingPageContentProps) {
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+  const [billing, setBilling] = useState<"monthly" | "annual">("annual")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const displayPlans = PLANS.map((plan) => {
-    const amount = billing === "annual" && typeof plan.annualPkrPerMonth === "number"
-      ? plan.annualPkrPerMonth
-      : plan.monthlyPkr
+    const isAnnual = billing === "annual" && typeof plan.annualPkrPerMonth === "number"
+    const amount = isAnnual ? plan.annualPkrPerMonth! : plan.monthlyPkr
+    const savings = isAnnual && ANNUAL_SAVINGS[plan.plan] ? `Saving ${formatPkr(ANNUAL_SAVINGS[plan.plan])}/year` : undefined
 
     return {
       ...plan,
       price: formatPkr(amount),
-      usdReference:
-        billing === "annual" && typeof plan.annualPkrPerMonth === "number"
-          ? `Annual equivalent: ${formatPkr(plan.annualPkrPerMonth)}/mo`
-          : "Early-access PKR pricing",
+      perDay: plan.monthlyPkr > 0 ? perDayLabel(amount) : undefined,
+      annualSavings: savings,
+      usdReference: isAnnual ? "Billed annually — cancel anytime" : "Billed monthly — upgrade to annual anytime",
     }
   })
 
+  const maxAnnualSave = formatPkr(Math.max(...Object.values(ANNUAL_SAVINGS)))
+
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
+
+      {/* Urgency / early-access banner */}
+      <div className="bg-teal text-white text-center py-2.5 px-4 text-xs font-semibold tracking-wide">
+        Early-access pricing — rates increase when self-serve checkout launches.{" "}
+        <span className="text-gold font-bold">Lock your rate now.</span>
+      </div>
+
+      {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
         <div
           className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full opacity-15"
@@ -70,17 +91,30 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp>
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
-              Build authority.
-              <span className="text-gold gold-underline"> Pay for the layer you need.</span>
+              Every week without a system,
+              <span className="text-gold gold-underline"> someone else builds what you should.</span>
             </h1>
-            <p className="mx-auto mb-3 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
-              PKR-first pricing for early adoption. Manual onboarding stays in place until checkout is automated.
-            </p>
-            <p className="mb-3 text-sm text-zinc-400">No credit card required to start.</p>
-            <p className="mx-auto mb-10 max-w-2xl rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-              Prices below are the current PKR source of truth for market-facing plans. Some higher tiers are still guided onboarding paths.
+            <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
+              Qalam is what serious LinkedIn professionals use to stay consistent, get better over time, and never start from blank again.
             </p>
 
+            {/* Social proof strip */}
+            <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-500">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <strong className="text-zinc-700">PKR 0</strong> to start
+              </span>
+              <span className="text-zinc-200">|</span>
+              <span>
+                <strong className="text-zinc-700">PKR 499/mo</strong> Solo — less than a weekly chai run
+              </span>
+              <span className="text-zinc-200">|</span>
+              <span>
+                Annual saves up to <strong className="text-zinc-700">{maxAnnualSave}/year</strong>
+              </span>
+            </div>
+
+            {/* Billing toggle */}
             <div className="inline-flex items-center gap-1 rounded-xl bg-zinc-100 p-1.5">
               <button
                 onClick={() => setBilling("monthly")}
@@ -97,33 +131,35 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 }`}
               >
                 Annual
-                <span className="rounded-md bg-green-100 px-1.5 py-0.5 text-xs font-bold text-green-700">
-                  Save
+                <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">
+                  Save 20%
                 </span>
               </button>
             </div>
+            <p className="mt-3 text-xs text-zinc-400">No credit card required for Free. Paid plans start instantly.</p>
           </FadeUp>
         </div>
       </section>
 
+      {/* Value props strip */}
       <section className="border-b border-zinc-100 bg-zinc-50 px-6 py-8">
         <div className="mx-auto max-w-[860px]">
           <div className="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-10">
             {[
               {
                 icon: VoiceIcon,
-                label: "Voice profile from real writing",
-                sub: "A memory layer, not a cosmetic toggle",
+                label: "AI that learns your voice",
+                sub: "Not a template machine — a memory layer that gets sharper with every post",
               },
               {
                 icon: ArchiveIcon,
-                label: "Archive continuity across plans",
-                sub: "Drafts, versions, and wins stay attached",
+                label: "Your entire content history, intact",
+                sub: "Drafts, versions, and wins live in your workspace permanently",
               },
               {
                 icon: ShieldIcon,
-                label: "Clear pricing and real scope",
-                sub: "PKR-first plans with honest feature status",
+                label: "PKR-first, honest pricing",
+                sub: "No USD conversion guesswork. Real features, real status.",
               },
             ].map((item) => {
               const Icon = item.icon
@@ -143,6 +179,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </section>
 
+      {/* Plan cards */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
           <AnimatePresence mode="wait">
@@ -164,17 +201,56 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <FadeUp className="mt-8 text-center">
             <p className="text-sm text-zinc-400">
-              Paid plans above Free are still sold through guided onboarding until checkout and entitlement automation are live.
+              Agency plans are activated through guided onboarding. Contact us to start.
             </p>
           </FadeUp>
         </div>
       </section>
 
+      {/* What this replaces — value anchor */}
+      <section className="border-y border-zinc-100 bg-white px-6 py-16">
+        <div className="mx-auto max-w-[860px]">
+          <FadeUp className="mb-10 text-center">
+            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 499 replaces</h2>
+            <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
+          </FadeUp>
+
+          <FadeUp>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                { label: "LinkedIn Ghostwriter", cost: "PKR 20,000–80,000/month", note: "For one person, one voice, inconsistent availability" },
+                { label: "Content Scheduling Tool", cost: "PKR 4,000–8,000/month", note: "No AI, no voice memory, no analytics depth" },
+                { label: "AI Writing Assistant (generic)", cost: "PKR 2,500–5,000/month", note: "No LinkedIn-specific training, no archive, no workflow" },
+                { label: "Analytics + Competitor Research", cost: "PKR 5,000–15,000/month", note: "Separate tool, separate login, separate bill" },
+              ].map((item) => (
+                <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-800">{item.label}</p>
+                      <p className="mt-0.5 text-xs text-zinc-400 leading-relaxed">{item.note}</p>
+                    </div>
+                    <span className="shrink-0 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-600 whitespace-nowrap">{item.cost}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
+              <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 499/month.</p>
+              <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
+            </div>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* Comparison table */}
       <section className="bg-white px-6 py-16">
         <div className="mx-auto max-w-[1100px]">
           <FadeUp className="mb-10 text-center">
             <h2 className="text-3xl font-bold text-zinc-900">Compare all plans</h2>
-            <p className="mt-2 text-sm text-zinc-500">Live surfaces first. Hardened operational layers after that.</p>
+            <p className="mt-2 text-sm text-zinc-500">Live surfaces first. Everything else follows.</p>
           </FadeUp>
 
           <FadeUp>
@@ -201,11 +277,11 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       className="transition-colors hover:bg-zinc-50/50"
                     >
                       <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-400">{row.free}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo}</td>
-                      <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro}</span></td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter}</td>
-                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth}</span></td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "—" : row.free}</td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "—" : row.solo}</td>
+                      <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "—" : row.pro}</span></td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter === "-" ? "—" : row.agencyStarter}</td>
+                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth === "-" ? "—" : row.agencyGrowth}</span></td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -215,15 +291,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </section>
 
+      {/* CTA: Agency / Contact */}
       <section className="bg-zinc-50 px-6 py-16">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp>
             <div className="flex flex-col items-center justify-between gap-8 rounded-2xl bg-teal-800 p-10 md:flex-row">
               <div>
-                <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">Guided rollout</p>
-                <h3 className="mb-3 text-3xl font-bold text-white">Need a production setup?</h3>
+                <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">For agencies and teams</p>
+                <h3 className="mb-3 text-3xl font-bold text-white">Running multiple client accounts?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
-                  Contact Qalam for onboarding, scope confirmation, and commercial terms that match the current product surface.
+                  Agency plans give you isolated client workspaces, shared voice profiles, per-client analytics, and team publishing controls. Contact us for a walkthrough.
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
@@ -239,11 +316,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </section>
 
+      {/* FAQ */}
       <section id="faq" className="bg-white px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-teal/30 text-teal">Pricing FAQ</span>
-            <h2 className="mt-3 text-4xl font-bold text-zinc-900">Common questions about plans</h2>
+            <h2 className="mt-3 text-4xl font-bold text-zinc-900">Common questions</h2>
           </FadeUp>
 
           <div className="flex flex-col gap-3">
