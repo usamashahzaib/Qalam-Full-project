@@ -7,12 +7,12 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Pricing | Qalam",
   description:
-    "PKR-first Qalam pricing for the live free workspace plus guided paid rollout while checkout is still manual.",
+    "Qalam pricing for the Pakistani market. Free plan with 10 AI drafts — no card, no expiry. Solo at PKR 499/month. Pay via JazzCash, Easypaisa, or bank transfer.",
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Pricing - Qalam",
     description:
-      "Live free workspace access plus PKR-first paid plans activated through guided onboarding.",
+      "Free plan with 10 AI drafts. Solo at PKR 499/month. Start free, upgrade anytime via JazzCash, Easypaisa, or bank transfer.",
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Pricing - Qalam",
     description:
-      "Live free workspace access plus PKR-first paid plans activated through guided onboarding.",
+      "Free plan with 10 AI drafts. Solo at PKR 499/month. Start free, upgrade anytime via JazzCash, Easypaisa, or bank transfer.",
   },
 }
 
@@ -49,7 +49,7 @@ const pricingFaqSchema = {
       name: "Is there a free trial for paid plans?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Free acts as the trial today. Paid access is still activated through guided onboarding rather than self-serve checkout.",
+        text: "Yes. Free gives you 10 AI drafts per month with no card and no expiry. Upgrade to paid when you're ready — activate via JazzCash, Easypaisa, or bank transfer.",
       },
     },
     {

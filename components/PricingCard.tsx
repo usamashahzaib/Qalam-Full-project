@@ -18,6 +18,7 @@ interface PricingCardProps {
   highlighted?: boolean
   badge?: string
   featureStatus?: "live" | "beta" | "coming_soon"
+  note?: string
 }
 
 export function PricingCard({
@@ -34,6 +35,7 @@ export function PricingCard({
   highlighted = false,
   badge,
   featureStatus,
+  note,
 }: PricingCardProps) {
   return (
     <motion.div
@@ -94,7 +96,12 @@ export function PricingCard({
 
       {featureStatus === "beta" && (
         <p className={`mt-3 text-center text-xs ${highlighted ? "text-teal-200" : "text-zinc-400"}`}>
-          Guided rollout — contact us to start
+          Contact us to get started.
+        </p>
+      )}
+      {note && (
+        <p className={`mt-3 text-center text-xs font-medium ${highlighted ? "text-teal-200" : "text-zinc-500"}`}>
+          {note}
         </p>
       )}
     </motion.div>

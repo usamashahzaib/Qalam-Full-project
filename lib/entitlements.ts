@@ -33,7 +33,7 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   Free: {
-    aiDraftsPerMonth: 5,
+    aiDraftsPerMonth: 10,
     carouselGenerationsPerMonth: 0,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,

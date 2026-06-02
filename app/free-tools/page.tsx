@@ -76,8 +76,8 @@ const TOOLS = [
     icon: AnalyticsIcon,
     title: "Engagement Predictor",
     desc: "Get a directional pre-publish score based on structure, specificity, and clarity.",
-    badge: "Beta",
-    badgeColor: "border border-purple-200 bg-purple-50 text-purple-700",
+    badge: null,
+    badgeColor: "",
     href: "/free-tools/engagement-predictor",
   },
 ]

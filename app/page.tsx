@@ -81,7 +81,7 @@ const FEATURES = [
   {
     icon: TeamIcon,
     title: "Agency Workflow Preview",
-    desc: "Current agency surfaces live in the product, while role controls, client isolation, and approvals are still being hardened.",
+    desc: "Client isolation, approval workflows, and per-client publishing controls are live. Contact us directly to set up your agency workspace.",
   },
 ]
 
@@ -117,16 +117,16 @@ const LIVE_SURFACE = [
     ],
   },
   {
-    title: "Guided rollout",
+    title: "Active workflows",
     items: [
-      "Paid plan activation",
-      "Team rollout",
-      "Agency setup",
-      "Manual billing and scope review",
+      "Paid plan activation via WhatsApp",
+      "Team and agency onboarding",
+      "Agency workspace setup",
+      "JazzCash, Easypaisa, bank billing",
     ],
   },
   {
-    title: "Still hardening",
+    title: "Building next",
     items: [
       "Self-serve checkout",
       "Agency analytics rollups",
@@ -151,11 +151,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Who is Team for today?",
-    a: "Team is the guided path for internal operators who want shared workflow evaluation before broader collaboration hardening is complete.",
+    a: "Team is the path for internal operators who want shared workflow, publishing controls, and approval access in one workspace.",
   },
   {
     q: "Who is Agency for today?",
-    a: "Agency is the guided path for multi-client operators using the current client-scoped workspace layer and assisted rollout.",
+    a: "Agency is the path for multi-client operators who need isolated client workspaces, approval flows, and per-client publishing. Contact us to start.",
   },
   {
     q: "Does Qalam work for any niche?",
@@ -252,9 +252,9 @@ function ProductMockup() {
         }}
         className="absolute -right-4 top-8 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl"
       >
-        <p className="text-[10px] font-medium text-zinc-500">Current truth</p>
-        <p className="text-xl font-bold text-teal">Live app</p>
-        <p className="text-[10px] font-medium text-zinc-500">with guided commercial rollout</p>
+        <p className="text-[10px] font-medium text-zinc-500">Live product</p>
+        <p className="text-xl font-bold text-teal">Free to start</p>
+        <p className="text-[10px] font-medium text-zinc-500">PKR 499/month to unlock all</p>
       </motion.div>
     </div>
   )
@@ -470,11 +470,11 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
               className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl"
             >
-              Write in your voice.
+              You know exactly
               <br />
-              Build real authority.
+              what you want to say.
               <br />
-              <span className="text-gold gold-underline">Compound every post.</span>
+              <span className="text-gold gold-underline">You just never end up posting it.</span>
             </motion.h1>
 
             <motion.p
@@ -483,7 +483,7 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
               className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
             >
-              Qalam learns your voice from real posts and retained edits. The public site now says exactly what is live, what is guided, and what is still hardening.
+              Qalam learns how you write and turns the thought you&apos;ve been sitting on into a post that sounds exactly like you — in minutes, not hours.
             </motion.p>
 
             <motion.div
@@ -497,21 +497,21 @@ export default function HomePage() {
                   href="/auth/sign-up"
                   className="pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
                 >
-                  Start with LinkedIn
+                  Start free — no card needed
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
-                  href="/demo"
+                  href="#before-after"
                   className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
                 >
-                  Try the Demo
+                  See it write in your voice →
                 </Link>
               </motion.div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["No credit card required", "Drafts and edits stay in your archive", "LinkedIn-first auth is the active path"].map((item) => (
+              {["Your drafts are private — no one reads your content.", "Pay how you want — JazzCash, Easypaisa, or card.", "Free plan is real — 10 drafts. No card. No expiry."].map((item) => (
                 <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
                   <CheckIcon className="h-4 w-4 text-gold" />
                   {item}
@@ -523,6 +523,70 @@ export default function HomePage() {
           <div className="flex justify-center lg:justify-end">
             <ProductMockup />
           </div>
+        </div>
+      </section>
+
+      {/* Trust band */}
+      <section className="border-b border-zinc-100 bg-white px-6 py-8">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              "Your drafts are private — No one at Qalam reads your content. Ever.",
+              "Pay how you want — JazzCash, Easypaisa, or card. All work.",
+              "Free plan is real — 10 drafts a month. No card. No expiry. No trick.",
+            ].map((block) => (
+              <div key={block} className="rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-5 text-center text-sm font-medium text-zinc-700 shadow-sm">
+                {block}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Before / After */}
+      <section id="before-after" className="border-b border-zinc-100 bg-zinc-50 px-6 py-24">
+        <div className="mx-auto max-w-[1200px]">
+          <FadeUp className="mb-12 text-center">
+            <h2 className="mb-3 text-4xl font-bold text-zinc-900 sm:text-5xl">This is what the difference looks like.</h2>
+            <p className="mx-auto max-w-2xl text-xl text-zinc-600">Same idea. One written without Qalam. One written with it.</p>
+          </FadeUp>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <FadeUp delay={0.05}>
+              <div className="flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+                <span className="mb-4 inline-flex self-start rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-zinc-400">Without Qalam</span>
+                <p className="flex-1 text-sm italic leading-relaxed text-zinc-500">
+                  &ldquo;Excited to share that I&apos;ve recently been reflecting on the importance of communication in the workplace. In today&apos;s fast-paced environment, it&apos;s more crucial than ever to foster open dialogue and ensure all stakeholders feel heard. Proud to be part of an organization that values this. #Leadership #Growth #Communication&rdquo;
+                </p>
+                <span className="mt-6 inline-flex self-start rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">Sounds like everyone. Remembered by no one.</span>
+              </div>
+            </FadeUp>
+            <FadeUp delay={0.1}>
+              <div className="flex h-full flex-col rounded-2xl border border-teal/30 bg-teal-50/40 p-8 shadow-sm">
+                <span className="mb-4 inline-flex self-start rounded-full bg-teal px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white">With Qalam</span>
+                <p className="flex-1 text-sm leading-relaxed text-zinc-700">
+                  &ldquo;I once sent a salary offer without checking the currency. Told a candidate PKR when I meant USD. She accepted before I caught it. That mistake cost the company 3x what the role was budgeted for — and cost me 3 months of trust with the CEO. The most expensive HR errors aren&apos;t policy failures. They&apos;re one unconsidered line in an email. I learned to slow down that day.&rdquo;
+                </p>
+                <span className="mt-6 inline-flex self-start rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">Sounds like you. Gets saved, shared, and remembered.</span>
+              </div>
+            </FadeUp>
+          </div>
+          <FadeUp className="mt-10 text-center">
+            <p className="text-lg font-semibold text-zinc-700">Qalam doesn&apos;t replace your voice. It finally lets it out.</p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ChatGPT contrast */}
+      <section className="border-b border-zinc-100 bg-white px-6 py-20">
+        <div className="mx-auto max-w-[760px] text-center">
+          <FadeUp>
+            <h2 className="mb-6 text-4xl font-bold text-zinc-900 sm:text-5xl">
+              ChatGPT is a typewriter. <span className="text-gold gold-underline">Qalam is a system.</span>
+            </h2>
+            <p className="text-xl leading-relaxed text-zinc-600">
+              ChatGPT gives you a post and forgets you the moment you close the tab. Qalam remembers your voice, stores every hook that worked, builds your archive over time — so the longer you use it, the better it knows you. Month six is easier than month one. That&apos;s not how any other tool works.
+            </p>
+          </FadeUp>
         </div>
       </section>
 
@@ -654,6 +718,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Personal onboarding offer */}
+      <section className="border-y border-gold/20 bg-gold/5 px-6 py-20">
+        <div className="mx-auto max-w-[760px] text-center">
+          <FadeUp>
+            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">While This Offer Lasts</span>
+            <h2 className="mb-5 mt-2 text-4xl font-bold text-zinc-900 sm:text-5xl">
+              The first 30 users get something no paid plan includes.
+            </h2>
+            <p className="mb-8 text-xl leading-relaxed text-zinc-600">
+              I&apos;m personally onboarding the first 30 people who sign up. 20 minutes. I set up your voice profile with you, and we draft your first three posts together. Once those 30 spots are gone, this doesn&apos;t come back — I physically can&apos;t do it at scale. Right now, I can.
+            </p>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
+              <Link
+                href="/auth/sign-up"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal px-8 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
+              >
+                Claim a spot — it&apos;s free to start
+              </Link>
+            </motion.div>
+            <p className="mt-4 text-sm text-zinc-400">Spots are tracked manually. When they&apos;re gone, they&apos;re gone.</p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* Founder section */}
+      <section className="border-b border-zinc-100 bg-white px-6 py-20">
+        <div className="mx-auto max-w-[760px]">
+          <FadeUp>
+            <h2 className="mb-5 text-3xl font-bold text-zinc-900">I built Qalam. I answer every message myself.</h2>
+            <p className="mb-6 text-lg leading-relaxed text-zinc-600">
+              I&apos;m Usama — 5 years building HR at startups, 30,000 people on LinkedIn, and a recurring problem: I had things worth saying and no consistent way to say them. I built Qalam to fix that. Not for HR professionals specifically. For anyone who has ever typed a post, stared at it, and deleted it. If you sign up and something breaks or doesn&apos;t feel right — WhatsApp me directly: +923714156567. I mean that.
+            </p>
+            <p className="text-base font-semibold text-zinc-700">— Usama Shahzaib, Founder, Qalam</p>
+          </FadeUp>
+        </div>
+      </section>
+
       <section id="pricing" className="grid-bg px-6 py-28">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-14 text-center">
@@ -662,7 +763,7 @@ export default function HomePage() {
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">
-              Free is live now. Paid plans use PKR-first early pricing and guided onboarding while checkout is still being finalized.
+              Free is live now. Paid plans use PKR-first pricing — activate within 2 hours via JazzCash, Easypaisa, or bank transfer.
             </p>
           </FadeUp>
 
@@ -702,22 +803,22 @@ export default function HomePage() {
         <FadeUp className="relative z-10 mx-auto max-w-[720px] text-center">
           <span className="chip mb-6 inline-flex border-white/20 bg-white/8 text-gold-200">Start building your content advantage</span>
           <h2 className="mb-6 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Your voice gets smarter <span className="text-gold">every time you write.</span>
+            The thought you&apos;ve been sitting on <span className="text-gold">is already a post.</span>
           </h2>
           <p className="mb-10 font-cormorant text-2xl italic leading-relaxed text-white/78">
-            Used by founders, consultants, and teams that want a publishing workflow with memory instead of another disposable generator.
+            Qalam just finishes it.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link href="/auth/sign-up" className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
-                Start with LinkedIn
+                Start free — 10 drafts, no card
               </Link>
             </motion.div>
             <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/35 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
               Compare Plans
             </Link>
           </div>
-          <p className="mt-5 text-sm text-white/62">No credit card required to start. Paid onboarding is handled manually today.</p>
+          <p className="mt-5 text-sm text-white/62">No credit card required. No expiry. Your content stays in your workspace.</p>
         </FadeUp>
       </section>
     </>

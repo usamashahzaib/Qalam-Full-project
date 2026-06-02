@@ -32,7 +32,7 @@ const SECTIONS = [
   },
   {
     title: "Team and agency workflows",
-    body: "The current product is best treated as a guided single-workspace flow. Team approvals, seats, and client isolation are still being hardened.",
+    body: "Team approvals, multi-seat publishing, and client isolation are live. Contact us to walk through the agency or team workspace setup.",
   },
 ]
 

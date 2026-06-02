@@ -21,7 +21,7 @@ const isValidLinkedInUrl = (value: string) => {
 }
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
-  Free: "Starter workspace, 5 drafts/month",
+  Free: "Starter workspace, 10 drafts/month",
   Solo: "50 drafts, publish, scheduling",
   Pro: "Unlimited drafts, carousels, research",
   "Agency Starter": "3 client workspaces, 5 seats",

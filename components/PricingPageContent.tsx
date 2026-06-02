@@ -12,7 +12,7 @@ import { UPGRADES_EMAIL } from "@/lib/contact"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit — 5 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
+    a: "Yes. Free is live with no time limit — 10 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
   },
   {
     q: "How much does Qalam cost?",
@@ -61,8 +61,24 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const amount = isAnnual ? plan.annualPkrPerMonth! : plan.monthlyPkr
     const savings = isAnnual && ANNUAL_SAVINGS[plan.plan] ? `Saving ${formatPkr(ANNUAL_SAVINGS[plan.plan])}/year` : undefined
 
+    const descriptionOverride =
+      plan.plan === "Free"
+        ? "10 drafts/month · No card · No expiry"
+        : plan.plan === "Solo"
+          ? "Everything in Free, plus direct LinkedIn publishing, unlimited drafts, and an archive that gets smarter the more you use it."
+          : plan.description
+
+    const noteOverride =
+      plan.plan === "Free"
+        ? "Real free. Not a 7-day trial disguised as a free plan."
+        : plan.plan === "Solo"
+          ? "This is the plan most people upgrade to after their first week."
+          : undefined
+
     return {
       ...plan,
+      description: descriptionOverride,
+      note: noteOverride,
       price: formatPkr(amount),
       perDay: plan.monthlyPkr > 0 ? perDayLabel(amount) : undefined,
       annualSavings: savings,
@@ -182,6 +198,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
       {/* Plan cards */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
+          <FadeUp className="mb-8 text-center">
+            <p className="text-lg font-medium text-zinc-600">
+              Start free. Stay free if you want. Upgrade when posting becomes the habit you don&apos;t want to lose.
+            </p>
+          </FadeUp>
+
           <AnimatePresence mode="wait">
             <motion.div
               key={billing}
@@ -201,11 +223,43 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <FadeUp className="mt-8 text-center">
             <p className="text-sm text-zinc-400">
-              Agency plans are activated through guided onboarding. Contact us to start.
+              Agency plans include guided setup. Contact us to start.
             </p>
           </FadeUp>
         </div>
       </section>
+
+      {/* Manual payment block */}
+      <section className="border-y border-zinc-100 bg-zinc-50 px-6 py-14">
+        <div className="mx-auto max-w-[600px] text-center">
+          <FadeUp>
+            <h2 className="mb-3 text-2xl font-bold text-zinc-900">Card not working? Pay manually.</h2>
+            <p className="mb-7 text-base leading-relaxed text-zinc-600">
+              Send payment via JazzCash, Easypaisa, or bank transfer. Screenshot to WhatsApp — plan activated within 2 hours.
+            </p>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="inline-block">
+              <a
+                href="https://wa.me/923714156567"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+              >
+                WhatsApp to Pay → +923714156567
+              </a>
+            </motion.div>
+            <p className="mt-4 text-xs text-zinc-400">Available Mon–Sat, 9am–9pm PKT</p>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* Privacy line */}
+      <div className="border-b border-zinc-100 bg-white px-6 py-5">
+        <div className="mx-auto max-w-[860px] text-center">
+          <p className="text-xs leading-relaxed text-zinc-400">
+            Your drafts are private. No one at Qalam reads your content. LinkedIn data is used only for publishing — nothing stored beyond what you authorize.
+          </p>
+        </div>
+      </div>
 
       {/* What this replaces — value anchor */}
       <section className="border-y border-zinc-100 bg-white px-6 py-16">

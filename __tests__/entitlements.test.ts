@@ -115,7 +115,7 @@ describe("formatLimit", () => {
 describe("getPlanSummary", () => {
   it("Free: shows draft cap and no carousel", () => {
     const summary = getPlanSummary("Free")
-    expect(summary).toContain("5 AI drafts/month")
+    expect(summary).toContain("10 AI drafts/month")
     expect(summary).toContain("No carousel generation")
     expect(summary).not.toContain("LinkedIn publish")
   })

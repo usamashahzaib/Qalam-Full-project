@@ -20,7 +20,7 @@ export const PLANS: PricingPlan[] = [
     period: "forever",
     description: "Try the real workflow. No card, no time limit - just a capped starter workspace.",
     features: [
-      "5 AI drafts per month",
+      "10 AI drafts per month",
       "1 personal workspace",
       "Content scoring and hashtag hints",
       "Activity log (basic analytics)",
@@ -123,7 +123,7 @@ export const COMPARISON_ROWS: {
   agencyStarter: string
   agencyGrowth: string
 }[] = [
-  { label: "AI drafts", free: "5/month", solo: "50/month", pro: "Unlimited", agencyStarter: "Unlimited", agencyGrowth: "Unlimited" },
+  { label: "AI drafts", free: "10/month", solo: "50/month", pro: "Unlimited", agencyStarter: "Unlimited", agencyGrowth: "Unlimited" },
   { label: "LinkedIn publish", free: "-", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
   { label: "Post scheduling", free: "-", solo: "Live", pro: "Live", agencyStarter: "Live", agencyGrowth: "Live" },
   { label: "Carousel generation", free: "-", solo: "3/month", pro: "10/month", agencyStarter: "20/month", agencyGrowth: "Unlimited" },
