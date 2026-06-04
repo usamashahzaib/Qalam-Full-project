@@ -3,12 +3,12 @@ import { HookGeneratorTool } from "@/components/tools/HookGeneratorTool"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "LinkedIn Hook Generator — Free Tool | Qalam",
+  title: "LinkedIn Hook Generator - Free Tool | Qalam",
   description:
     "Generate 10 proven LinkedIn hook opening lines for any topic in seconds. No account required. Built on the highest-performing hook structures for the LinkedIn algorithm.",
   alternates: { canonical: `${SITE_URL}/free-tools/hook-generator` },
   openGraph: {
-    title: "LinkedIn Hook Generator — Free | Qalam",
+    title: "LinkedIn Hook Generator - Free | Qalam",
     description:
       "Generate 10 proven LinkedIn opening lines for any topic in seconds. No sign-in required.",
     url: `${SITE_URL}/free-tools/hook-generator`,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Hook Generator — Free | Qalam",
+    title: "LinkedIn Hook Generator - Free | Qalam",
     description:
       "10 proven hook patterns for any LinkedIn topic. No account required.",
   },
@@ -27,7 +27,7 @@ const hookGeneratorSchema = {
   "@type": "HowTo",
   name: "How to write a LinkedIn hook",
   description:
-    "Generate ten attention-grabbing opening lines for any LinkedIn post topic in seconds — no account required.",
+    "Generate ten attention-grabbing opening lines for any LinkedIn post topic in seconds - no account required.",
   tool: { "@type": "HowToTool", name: "Qalam LinkedIn Hook Generator" },
   step: [
     {

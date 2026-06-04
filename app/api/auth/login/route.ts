@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       maxAge: session.maxAge,
       httpOnly: true,
       sameSite: "lax",
-      secure: false, // dev-only endpoint — returns 404 in production
+      secure: false, // dev-only endpoint - returns 404 in production
       path: "/",
     })
     return response

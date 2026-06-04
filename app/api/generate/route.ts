@@ -12,6 +12,9 @@ type GenerateBody = {
   postType?: string
   title?: string
   content?: string
+  hook?: string
+  previousDraft?: string
+  variation?: boolean
   originalPost?: string
   comments?: string
   profile?: {
@@ -31,7 +34,7 @@ const BASE_RULES = [
   "No markdown headings, bold markers, labels, or preamble.",
 ]
 
-const buildDraftSystemPrompt = ({ profile, postType, title }: GenerateBody) => {
+const buildDraftSystemPrompt = ({ profile, postType, title, variation }: GenerateBody) => {
   const goals = Array.isArray(profile?.goals) ? profile.goals.filter(Boolean).join(", ") : ""
   return [
     "You are an expert LinkedIn ghostwriter.",
@@ -52,11 +55,24 @@ const buildDraftSystemPrompt = ({ profile, postType, title }: GenerateBody) => {
     "Open with a scroll-stopping first line under 90 characters.",
     "Use at least 4 short paragraphs. Add one concrete example, one practical takeaway, and a natural CTA.",
     "If the prompt is broad, choose a specific angle instead of writing generic advice.",
+    variation ? "This is a regeneration request. Write a materially different version with a different angle and hook while preserving the core topic." : "",
+    variation ? "Do not paraphrase the previous draft. Change the opening, structure, examples, and CTA." : "",
     "Do not include hashtags unless the user asks.",
     "Do not include preamble, labels, quotation marks, or explanations.",
     "Return only the post body.",
     ...BASE_RULES,
   ].filter(Boolean).join(" ")
+}
+
+const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
+  if (!body.variation) return prompt
+  return [
+    "Regenerate this LinkedIn post as a different variation.",
+    "Use a different angle and a different hook.",
+    body.hook ? `Current hook to avoid repeating:\n${body.hook}` : "",
+    body.previousDraft ? `Previous draft to avoid copying:\n${body.previousDraft}` : "",
+    `Original instruction:\n${prompt}`,
+  ].filter(Boolean).join("\n\n")
 }
 
 const buildIntelligencePrompt = ({ title, content, profile, postType }: GenerateBody) =>
@@ -245,7 +261,7 @@ const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<t
 
 export async function POST(request: NextRequest) {
   try {
-    // Free plan is allowed — every tier can generate, just with different caps
+    // Free plan is allowed - every tier can generate, just with different caps
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
     const { session, workspaceId, plan } = planCheck
@@ -399,7 +415,8 @@ export async function POST(request: NextRequest) {
 
     let text = ""
     try {
-      text = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), prompt, 0.7), prompt, body.postType)
+      const userMessage = buildDraftUserMessage(body, prompt)
+      text = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), userMessage, body.variation ? 0.9 : 0.7), prompt, body.postType)
     } catch (error) {
       const message = (error as Error).message || "Failed to generate content."
       console.error("Groq API error:", message)

@@ -5,7 +5,6 @@ import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
-import { WhatsAppButton } from "@/components/WhatsAppButton"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
@@ -175,7 +174,6 @@ export default function RootLayout({
       </head>
       <body className="flex min-h-screen flex-col antialiased">
         <ContentProtection />
-        <WhatsAppButton />
         <GridGlowBackground
           glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
           backgroundColor="#fafaf8"

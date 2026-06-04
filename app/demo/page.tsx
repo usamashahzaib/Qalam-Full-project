@@ -34,9 +34,9 @@ const DEMO_ARCHIVE = [
     id: 1,
     title: "The hiring mistake I made twice",
     preview: "We moved too fast on a role we had not defined properly. The second time I saw it earlier.",
-    impressions: "—",
-    reactions: "—",
-    comments: "—",
+    impressions: "-",
+    reactions: "-",
+    comments: "-",
     date: "May 9",
     tag: "Leadership",
   },
@@ -44,9 +44,9 @@ const DEMO_ARCHIVE = [
     id: 2,
     title: "Why your onboarding loses talent by day three",
     preview: "The resignation note I remember most came five days after start. The process failed before the person did.",
-    impressions: "—",
-    reactions: "—",
-    comments: "—",
+    impressions: "-",
+    reactions: "-",
+    comments: "-",
     date: "Apr 28",
     tag: "HR",
   },
@@ -54,9 +54,9 @@ const DEMO_ARCHIVE = [
     id: 3,
     title: "I reviewed 200 LinkedIn profiles last month",
     preview: "Most people still use the summary section like a biography instead of a positioning asset.",
-    impressions: "—",
-    reactions: "—",
-    comments: "—",
+    impressions: "-",
+    reactions: "-",
+    comments: "-",
     date: "Apr 14",
     tag: "Career",
   },
@@ -294,7 +294,7 @@ function ArchiveTab({ onStart }: { onStart: () => void }) {
       </div>
 
       <p className="text-xs text-zinc-400">
-        Sample posts with illustrative metrics — your real archive appears once you connect LinkedIn.
+        Sample posts with illustrative metrics - your real archive appears once you connect LinkedIn.
       </p>
 
       <div className="space-y-3">

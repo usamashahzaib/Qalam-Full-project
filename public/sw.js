@@ -71,7 +71,7 @@ self.addEventListener('fetch', (event) => {
           // Attempt the real network request first
           return await fetch(event.request.clone());
         } catch {
-          // Network failed — queue for Background Sync replay
+          // Network failed - queue for Background Sync replay
           await queueRequest(event.request);
           return new Response(JSON.stringify({ queued: true, message: "Offline. Request queued for sync." }), {
             headers: { 'Content-Type': 'application/json' },

@@ -6,25 +6,25 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, formatPkr } from "@/lib/pricing"
+import { COMPARISON_ROWS, PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
 
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 10 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
+    a: "Yes. Free is live with no time limit - 10 AI drafts per month, no scheduling, no voice memory, no analytics, and no export.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month - less than a single coffee per week. Pro is PKR 990/month with unlimited AI drafts. Agency plans start at PKR 2,490/month for team workflows. Annual billing saves you 20%.",
+    a: "Solo starts at PKR 899/month. Pro is PKR 1,899/month with 60 AI drafts per month. Agency is PKR 7,490/month for multi-client workflows. Annual billing gives 4 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
-    a: "Annual billing saves PKR 1,200/year on Solo, PKR 2,400/year on Pro, and PKR 6,000/year on Agency Starter. You pay once and don't think about it again. Most serious creators choose annual.",
+    a: "Annual Solo is PKR 599/mo, Pro is PKR 1,266/mo, and Agency is PKR 4,993/mo. Each annual plan includes 4 months free.",
   },
   {
-    q: "What is the difference between Agency Starter and Agency Growth?",
-    a: "Agency Starter supports up to 3 client workspaces and 5 team seats - enough for a focused agency. Agency Growth removes all caps: unlimited clients, unlimited seats, workspace-level analytics, and priority support.",
+    q: "What does Agency include?",
+    a: "Agency includes 60 AI drafts per workspace, 5 client workspaces, white-label, 10 team seats, and a shared asset library.",
   },
   {
     q: "Can I cancel anytime?",
@@ -32,7 +32,7 @@ const PRICING_FAQ = [
   },
   {
     q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI that learns your voice, a scheduling system, and analytics for PKR 499/month. It's not a ghostwriter replacement - it's the infrastructure that makes your writing sharper, faster, and consistent every single week.",
+    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 899/month.",
   },
 ]
 
@@ -40,34 +40,10 @@ type PricingPageContentProps = {
   pricingCurrency?: { currencyCode?: string; label?: string }
 }
 
-const ANNUAL_SAVINGS: Record<string, number> = {
-  Solo: 1200,
-  Pro: 2400,
-  "Agency Starter": 6000,
-  "Agency Growth": 12000,
-}
-
-function perDayLabel(monthly: number): string {
-  const pkrPerDay = Math.ceil(monthly / 30)
-  return `PKR ${pkrPerDay}/day`
-}
-
 export function PricingPageContent({}: PricingPageContentProps) {
-  const [billing, setBilling] = useState<"monthly" | "annual">("annual")
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const displayPlans = PLANS.map((plan) => {
-    const isAnnual = billing === "annual" && typeof plan.annualPkrPerMonth === "number"
-    const amount = isAnnual ? plan.annualPkrPerMonth! : plan.monthlyPkr
-    const savings = isAnnual && ANNUAL_SAVINGS[plan.plan] ? `Saving ${formatPkr(ANNUAL_SAVINGS[plan.plan])}/year` : undefined
-
-    const descriptionOverride =
-      plan.plan === "Free"
-        ? "10 drafts/month · No card · No expiry"
-        : plan.plan === "Solo"
-          ? "Everything in Free, plus direct LinkedIn publishing, unlimited drafts, and an archive that gets smarter the more you use it."
-          : plan.description
-
     const noteOverride =
       plan.plan === "Free"
         ? "Real free. Not a 7-day trial disguised as a free plan."
@@ -77,23 +53,23 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
     return {
       ...plan,
-      description: descriptionOverride,
+      description: plan.description,
       note: noteOverride,
-      price: formatPkr(amount),
-      perDay: plan.monthlyPkr > 0 ? perDayLabel(amount) : undefined,
-      annualSavings: savings,
-      usdReference: isAnnual ? "Billed annually - cancel anytime" : "Billed monthly - upgrade to annual anytime",
+      price: formatPkr(plan.monthlyPkr),
+      annualSavings: plan.annualPkrPerMonth && plan.monthlyPkr > 0 ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}` : undefined,
+      usdReference: plan.annualPkrPerMonth && plan.monthlyPkr > 0 ? `Save ${annualSavingsPercent}%` : "Free forever",
     }
   })
 
-  const maxAnnualSave = formatPkr(Math.max(...Object.values(ANNUAL_SAVINGS)))
+  const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
+  const maxAnnualSave = annualFraming
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
 
       {/* Urgency / early-access banner */}
       <div className="bg-teal text-white text-center py-2.5 px-4 text-xs font-semibold tracking-wide">
-        Early-access pricing — rates increase when self-serve checkout launches.{" "}
+        Early-access pricing - rates increase when self-serve checkout launches.{" "}
         <span className="text-gold font-bold">Lock your rate now.</span>
       </div>
 
@@ -122,35 +98,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                <strong className="text-zinc-700">PKR 499/mo</strong> Solo - less than a weekly chai run
+                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.monthlyPkr)}/mo` : "Solo"}</strong> Solo
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                Annual saves up to <strong className="text-zinc-700">{maxAnnualSave}/year</strong>
+                Annual saves <strong className="text-zinc-700">{maxAnnualSave}</strong>
               </span>
             </div>
 
-            {/* Billing toggle */}
-            <div className="inline-flex items-center gap-1 rounded-xl bg-zinc-100 p-1.5">
-              <button
-                onClick={() => setBilling("monthly")}
-                className={`rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                  billing === "monthly" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setBilling("annual")}
-                className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold transition-all ${
-                  billing === "annual" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
-                }`}
-              >
-                Annual
-                <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">
-                  Save 20%
-                </span>
-              </button>
+            <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-700">
+              Annual billing: <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">{annualFraming}</span>
             </div>
             <p className="mt-3 text-xs text-zinc-400">No credit card required for Free. Paid plans start instantly.</p>
           </FadeUp>
@@ -206,12 +163,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <AnimatePresence mode="wait">
             <motion.div
-              key={billing}
+              key="monthly-pricing"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-5"
+              className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
             >
               {displayPlans.map((plan, i) => (
                 <FadeUp key={plan.plan} delay={i * 0.08}>
@@ -235,19 +192,17 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp>
             <h2 className="mb-3 text-2xl font-bold text-zinc-900">Card not working? Pay manually.</h2>
             <p className="mb-7 text-base leading-relaxed text-zinc-600">
-              Send payment via JazzCash, Easypaisa, or bank transfer. Screenshot to WhatsApp - plan activated within 2 hours.
+              Send payment via JazzCash, Easypaisa, or bank transfer. Email the payment screenshot - plan activated after manual review.
             </p>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <a
-                href="https://wa.me/923714156567"
-                target="_blank"
-                rel="noopener noreferrer"
+                href={`mailto:${UPGRADES_EMAIL}`}
                 className="inline-flex items-center gap-2 rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
               >
-                WhatsApp to Pay → +923714156567
+                Email payment team
               </a>
             </motion.div>
-            <p className="mt-4 text-xs text-zinc-400">Available Mon–Sat, 9am–9pm PKT</p>
+            <p className="mt-4 text-xs text-zinc-400">Support response time: under 4 hours</p>
           </FadeUp>
         </div>
       </section>
@@ -261,22 +216,22 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </div>
 
-      {/* What this replaces — value anchor */}
+      {/* What this replaces - value anchor */}
       <section className="border-y border-zinc-100 bg-white px-6 py-16">
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
             <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 499 replaces</h2>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 899 replaces</h2>
             <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
           </FadeUp>
 
           <FadeUp>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                { label: "LinkedIn Ghostwriter", cost: "PKR 20,000–80,000/month", note: "For one person, one voice, inconsistent availability" },
-                { label: "Content Scheduling Tool", cost: "PKR 4,000–8,000/month", note: "No AI, no voice memory, no analytics depth" },
-                { label: "AI Writing Assistant (generic)", cost: "PKR 2,500–5,000/month", note: "No LinkedIn-specific training, no archive, no workflow" },
-                { label: "Analytics + Competitor Research", cost: "PKR 5,000–15,000/month", note: "Separate tool, separate login, separate bill" },
+                { label: "LinkedIn Ghostwriter", cost: "PKR 20,000-80,000/month", note: "For one person, one voice, inconsistent availability" },
+                { label: "Content Scheduling Tool", cost: "PKR 4,000-8,000/month", note: "No AI, no voice memory, no analytics depth" },
+                { label: "AI Writing Assistant (generic)", cost: "PKR 2,500-5,000/month", note: "No LinkedIn-specific training, no archive, no workflow" },
+                { label: "Analytics + Competitor Research", cost: "PKR 5,000-15,000/month", note: "Separate tool, separate login, separate bill" },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -292,7 +247,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 499/month.</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 899/month.</p>
               <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
             </div>
           </FadeUp>
@@ -316,8 +271,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency Starter</th>
-                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency Growth</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency</th>
+                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">-</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">

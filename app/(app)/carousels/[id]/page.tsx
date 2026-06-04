@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { LockedFeature } from "@/components/LockedFeature"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
@@ -135,7 +136,9 @@ export default function CarouselEditorPage() {
         </div>
         <div className="flex items-center gap-3">
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as text</button>
-          <button onClick={exportAsPdf} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as PDF</button>
+          <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
+            <button onClick={exportAsPdf} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as PDF</button>
+          </LockedFeature>
           <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-400">PNG export comes next</span>
         </div>
       </div>

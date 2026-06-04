@@ -6,9 +6,9 @@ import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
-import { UPGRADES_EMAIL, whatsappUpgradeUrl, upgradesMailUrl } from "@/lib/contact"
+import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 
-const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"]
+const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
 const isValidLinkedInUrl = (value: string) => {
   if (!value.trim()) return true
   try {
@@ -22,10 +22,11 @@ const isValidLinkedInUrl = (value: string) => {
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "Starter workspace, 10 drafts/month",
-  Solo: "50 drafts, publish, scheduling",
-  Pro: "Unlimited drafts, carousels, research",
-  "Agency Starter": "3 client workspaces, 5 seats",
-  "Agency Growth": "Unlimited workspaces and seats",
+  Solo: "25 drafts, scheduling, scoring",
+  Pro: "60 drafts, carousels, research",
+  Agency: "5 workspaces, 10 seats",
+  "Agency Starter": "5 workspaces, 10 seats",
+  "Agency Growth": "5 workspaces, 10 seats",
 }
 
 export default function SettingsPage() {
@@ -103,7 +104,6 @@ export default function SettingsPage() {
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
   const planSummary = getPlanSummary(billing.plan)
 
-  const whatsappHref = whatsappUpgradeUrl(billingDraft.plan, user?.email || "", upgradePrice)
   const mailHref = upgradesMailUrl(billingDraft.plan, user?.email || "")
 
   return (
@@ -187,7 +187,7 @@ export default function SettingsPage() {
                 onClick={() => setBillingDraft((prev) => ({ ...prev, billingCycle: cycle }))}
                 className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${billingDraft.billingCycle === cycle ? "bg-teal text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}
               >
-                {cycle === "monthly" ? "Monthly" : "Annual (save ~20%)"}
+                {cycle === "monthly" ? "Monthly" : "Annual (4 months free)"}
               </button>
             ))}
           </div>
@@ -218,20 +218,12 @@ export default function SettingsPage() {
               </div>
               <div className="p-4">
                 <ol className="space-y-2 text-sm text-amber-800">
-                  <li className="flex gap-2"><span className="font-bold">1.</span>Message us on WhatsApp or email - we confirm the amount and send payment details.</li>
+                  <li className="flex gap-2"><span className="font-bold">1.</span>Email us - we confirm the amount and send payment details.</li>
                   <li className="flex gap-2"><span className="font-bold">2.</span>Pay via Easypaisa, JazzCash, or bank transfer.</li>
                   <li className="flex gap-2"><span className="font-bold">3.</span>Send your payment screenshot in the same thread.</li>
                   <li className="flex gap-2"><span className="font-bold">4.</span>Your workspace plan is updated within 24 hours.</li>
                 </ol>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1daf54]"
-                  >
-                    WhatsApp us
-                  </a>
                   <a
                     href={mailHref}
                     className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"

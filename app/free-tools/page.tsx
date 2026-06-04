@@ -14,10 +14,10 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Free LinkedIn Tools | Qalam",
   description:
-    "Six free LinkedIn tools — hook generator, headline analyzer, profile optimizer, viral checker, and more. No account required. Instant results.",
+    "Six free LinkedIn tools - hook generator, headline analyzer, profile optimizer, viral checker, and more. No account required. Instant results.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
-    title: "Free LinkedIn Tools — Qalam",
+    title: "Free LinkedIn Tools - Qalam",
     description:
       "Six focused tools to help you write better, profile stronger, and pressure-test ideas before they hit the feed. No sign-in required.",
     url: `${SITE_URL}/free-tools`,
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn Tools — Qalam",
+    title: "Free LinkedIn Tools - Qalam",
     description:
       "Hook generator, headline analyzer, profile optimizer, viral checker. No account required.",
   },

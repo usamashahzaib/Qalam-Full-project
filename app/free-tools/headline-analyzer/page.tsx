@@ -3,12 +3,12 @@ import { HeadlineAnalyzerTool } from "@/components/tools/HeadlineAnalyzerTool"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "LinkedIn Headline Analyzer — Free Tool | Qalam",
+  title: "LinkedIn Headline Analyzer - Free Tool | Qalam",
   description:
     "Score your LinkedIn headline instantly across 5 proven dimensions: length, power words, specificity, structure, and role clarity. Free, no account required.",
   alternates: { canonical: `${SITE_URL}/free-tools/headline-analyzer` },
   openGraph: {
-    title: "LinkedIn Headline Analyzer — Free | Qalam",
+    title: "LinkedIn Headline Analyzer - Free | Qalam",
     description:
       "Score your LinkedIn headline across 5 proven dimensions with specific improvement suggestions. No sign-in required.",
     url: `${SITE_URL}/free-tools/headline-analyzer`,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LinkedIn Headline Analyzer — Free | Qalam",
+    title: "LinkedIn Headline Analyzer - Free | Qalam",
     description:
       "Instant LinkedIn headline score across 5 dimensions. No account required.",
   },
@@ -27,7 +27,7 @@ const headlineAnalyzerSchema = {
   "@type": "HowTo",
   name: "How to improve your LinkedIn headline",
   description:
-    "Score your LinkedIn headline for visibility, keyword strength, and clarity using Qalam's free analyzer — no account required.",
+    "Score your LinkedIn headline for visibility, keyword strength, and clarity using Qalam's free analyzer - no account required.",
   tool: { "@type": "HowToTool", name: "Qalam LinkedIn Headline Analyzer" },
   step: [
     {

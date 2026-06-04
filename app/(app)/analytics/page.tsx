@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { LockedFeature } from "@/components/LockedFeature"
 import { analyzeContent } from "@/lib/content-intelligence"
 import { withClientParam } from "@/lib/workspace-navigation"
 
@@ -135,6 +136,7 @@ export default function AnalyticsPage() {
   const hasData = state.posts.length > 0 || events.length > 0
 
   return (
+    <LockedFeature feature="Analytics dashboard" requiredPlan="Solo">
     <div className="mx-auto max-w-6xl px-6 py-10 font-jakarta sm:px-10">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full" style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }} />
@@ -288,6 +290,7 @@ export default function AnalyticsPage() {
         </>
       ) : null}
     </div>
+    </LockedFeature>
   )
 }
 

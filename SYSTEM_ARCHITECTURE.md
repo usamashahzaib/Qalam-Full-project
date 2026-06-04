@@ -24,7 +24,7 @@ This document breaks down the most critical functions engineered during the fina
 
 ## 4. Competitor Analytics (`lib/server/competitors.ts`)
 ### Function: `analyzeCompetitorPaste()`
-*   **How it works:** It takes raw text pasted from a competitor's LinkedIn profile, injects it into a highly opinionated, zero-shot system prompt, and sends it to the Groq API using the `llama3-8b-8192` model. It forces the LLM to output a strict JSON response containing themes, hooks, CTAs, and a contrarian recommendation.
+*   **How it works:** It takes raw text pasted from a competitor's LinkedIn profile, injects it into a highly opinionated, zero-shot system prompt, and sends it to the Groq API using the `llama-3.1-8b-instant` model. It forces the LLM to output a strict JSON response containing themes, hooks, CTAs, and a contrarian recommendation.
 *   **Why it exists:** It replaces a fragile Regex-matching script. Instead of just counting words like "growth" or "hiring", it provides actual semantic understanding and tactical ghostwriting advice, which represents a massive value-add for premium SaaS users.
 *   **How it performs:** Extremely fast due to Groq's LPU architecture (often generating the full JSON in under 800ms) with a very low temperature (`0.2`) to ensure JSON schema consistency and reduce hallucinations.
 

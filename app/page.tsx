@@ -119,7 +119,7 @@ const LIVE_SURFACE = [
   {
     title: "Active workflows",
     items: [
-      "Paid plan activation via WhatsApp",
+      "Paid plan activation via email",
       "Team and agency onboarding",
       "Agency workspace setup",
       "JazzCash, Easypaisa, bank billing",
@@ -163,6 +163,9 @@ const FAQ_ITEMS = [
   },
 ]
 
+const SOLO_PLAN = PLANS.find((plan) => plan.plan === "Solo")
+const SOLO_MONTHLY_PRICE = SOLO_PLAN ? `${formatPkr(SOLO_PLAN.monthlyPkr)}/month` : "Paid plan"
+
 function ProductMockup() {
   return (
     <div className="relative" style={{ perspective: "1200px" }}>
@@ -192,9 +195,8 @@ function ProductMockup() {
           {["Witty", "Professional", "Bold"].map((tone, i) => (
             <span
               key={tone}
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                i === 0 ? "border-gold bg-gold text-white" : "border-white/15 text-white/55"
-              }`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium ${i === 0 ? "border-gold bg-gold text-white" : "border-white/15 text-white/55"
+                }`}
             >
               {tone}
             </span>
@@ -254,7 +256,7 @@ function ProductMockup() {
       >
         <p className="text-[10px] font-medium text-zinc-500">Live product</p>
         <p className="text-xl font-bold text-teal">Free to start</p>
-        <p className="text-[10px] font-medium text-zinc-500">PKR 499/month to unlock all</p>
+        <p className="text-[10px] font-medium text-zinc-500">{SOLO_MONTHLY_PRICE} to unlock Solo</p>
       </motion.div>
     </div>
   )
@@ -483,7 +485,7 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
               className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
             >
-              Qalam learns how you write and turns the thought you&apos;ve been sitting on into a post that sounds exactly like you — in minutes, not hours.
+              Qalam learns how you write and turns the thought you&apos;ve been sitting on into a post that sounds exactly like you - in minutes, not hours.
             </motion.p>
 
             <motion.div
@@ -497,7 +499,7 @@ export default function HomePage() {
                   href="/auth/sign-up"
                   className="pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
                 >
-                  Start free — no card needed
+                  Start free - no card needed
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -511,7 +513,7 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["Your drafts are private — no one reads your content.", "Pay how you want — JazzCash, Easypaisa, or card.", "Free plan is real — 10 drafts. No card. No expiry."].map((item) => (
+              {["Your drafts are private - no one reads your content.", "Pay how you want - JazzCash, Easypaisa, or card.", "Free plan is real - 10 drafts. No card. No expiry."].map((item) => (
                 <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
                   <CheckIcon className="h-4 w-4 text-gold" />
                   {item}
@@ -531,9 +533,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              "Your drafts are private — No one at Qalam reads your content. Ever.",
-              "Pay how you want — JazzCash, Easypaisa, or card. All work.",
-              "Free plan is real — 10 drafts a month. No card. No expiry. No trick.",
+              "Your drafts are private - No one at Qalam reads your content. Ever.",
+              "Pay how you want - JazzCash, Easypaisa, or card. All work.",
+              "Free plan is real - 10 drafts a month. No card. No expiry. No trick.",
             ].map((block) => (
               <div key={block} className="rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-5 text-center text-sm font-medium text-zinc-700 shadow-sm">
                 {block}
@@ -564,7 +566,7 @@ export default function HomePage() {
               <div className="flex h-full flex-col rounded-2xl border border-teal/30 bg-teal-50/40 p-8 shadow-sm">
                 <span className="mb-4 inline-flex self-start rounded-full bg-teal px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white">With Qalam</span>
                 <p className="flex-1 text-sm leading-relaxed text-zinc-700">
-                  &ldquo;I once sent a salary offer without checking the currency. Told a candidate PKR when I meant USD. She accepted before I caught it. That mistake cost the company 3x what the role was budgeted for — and cost me 3 months of trust with the CEO. The most expensive HR errors aren&apos;t policy failures. They&apos;re one unconsidered line in an email. I learned to slow down that day.&rdquo;
+                  &ldquo;I once sent a salary offer without checking the currency. Told a candidate PKR when I meant USD. She accepted before I caught it. That mistake cost the company 3x what the role was budgeted for - and cost me 3 months of trust with the CEO. The most expensive HR errors aren&apos;t policy failures. They&apos;re one unconsidered line in an email. I learned to slow down that day.&rdquo;
                 </p>
                 <span className="mt-6 inline-flex self-start rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">Sounds like you. Gets saved, shared, and remembered.</span>
               </div>
@@ -584,7 +586,7 @@ export default function HomePage() {
               ChatGPT is a typewriter. <span className="text-gold gold-underline">Qalam is a system.</span>
             </h2>
             <p className="text-xl leading-relaxed text-zinc-600">
-              ChatGPT gives you a post and forgets you the moment you close the tab. Qalam remembers your voice, stores every hook that worked, builds your archive over time — so the longer you use it, the better it knows you. Month six is easier than month one. That&apos;s not how any other tool works.
+              ChatGPT gives you a post and forgets you the moment you close the tab. Qalam remembers your voice, stores every hook that worked, builds your archive over time - so the longer you use it, the better it knows you. Month six is easier than month one. That&apos;s not how any other tool works.
             </p>
           </FadeUp>
         </div>
@@ -727,14 +729,14 @@ export default function HomePage() {
               The first 30 users get something no paid plan includes.
             </h2>
             <p className="mb-8 text-xl leading-relaxed text-zinc-600">
-              I&apos;m personally onboarding the first 30 people who sign up. 20 minutes. I set up your voice profile with you, and we draft your first three posts together. Once those 30 spots are gone, this doesn&apos;t come back — I physically can&apos;t do it at scale. Right now, I can.
+              The first 30 users get guided onboarding from the Qalam team. 20 minutes. We set up your voice profile with you and draft your first three posts together. Once those 30 spots are gone, this offer closes because guided setup does not scale forever.
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Link
                 href="/auth/sign-up"
                 className="inline-flex items-center gap-2 rounded-xl bg-teal px-8 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
               >
-                Claim a spot — it&apos;s free to start
+                Claim a spot - it&apos;s free to start
               </Link>
             </motion.div>
             <p className="mt-4 text-sm text-zinc-400">Spots are tracked manually. When they&apos;re gone, they&apos;re gone.</p>
@@ -742,16 +744,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Founder section */}
-      <section className="border-b border-zinc-100 bg-white px-6 py-20">
-        <div className="mx-auto max-w-[760px]">
-          <FadeUp>
-            <h2 className="mb-5 text-3xl font-bold text-zinc-900">I built Qalam. I answer every message myself.</h2>
-            <p className="mb-6 text-lg leading-relaxed text-zinc-600">
-              I&apos;m Usama — 5 years building HR at startups, 30,000 people on LinkedIn, and a recurring problem: I had things worth saying and no consistent way to say them. I built Qalam to fix that. Not for HR professionals specifically. For anyone who has ever typed a post, stared at it, and deleted it. If you sign up and something breaks or doesn&apos;t feel right — WhatsApp me directly: +923714156567. I mean that.
-            </p>
-            <p className="text-base font-semibold text-zinc-700">— Usama Shahzaib, Founder, Qalam</p>
-          </FadeUp>
+      <section className="bg-white py-20">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-lg leading-relaxed text-slate-600">
+            Built for people who post with intention. Qalam helps you show up consistently - without sounding like everyone else. Questions? Reach us at info@byqalam.com
+          </p>
         </div>
       </section>
 
@@ -763,7 +760,7 @@ export default function HomePage() {
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">
-              Free is live now. Paid plans use PKR-first pricing — activate within 2 hours via JazzCash, Easypaisa, or bank transfer.
+              Free is live now. Paid plans use PKR-first pricing - activate within 2 hours via JazzCash, Easypaisa, or bank transfer.
             </p>
           </FadeUp>
 
@@ -811,7 +808,7 @@ export default function HomePage() {
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link href="/auth/sign-up" className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
-                Start free — 10 drafts, no card
+                Start free - 10 drafts, no card
               </Link>
             </motion.div>
             <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/35 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
@@ -824,6 +821,3 @@ export default function HomePage() {
     </>
   )
 }
-
-
-

@@ -6,7 +6,7 @@
 BEGIN;
 
 -- ----------------------------------------------------------------
--- 1. organizations — rename billing_plan → plan (idempotent)
+-- 1. organizations - rename billing_plan → plan (idempotent)
 -- ----------------------------------------------------------------
 DO $$ BEGIN
   IF EXISTS (
@@ -29,7 +29,7 @@ ALTER TABLE public.organizations ALTER COLUMN plan SET NOT NULL;
 ALTER TABLE public.organizations ALTER COLUMN plan SET DEFAULT 'Free';
 
 -- ----------------------------------------------------------------
--- 2. organizations — plan CHECK constraint
+-- 2. organizations - plan CHECK constraint
 -- ----------------------------------------------------------------
 ALTER TABLE public.organizations
   DROP CONSTRAINT IF EXISTS organizations_plan_check;
@@ -39,7 +39,7 @@ ALTER TABLE public.organizations
   CHECK (plan IN ('Free', 'Solo', 'Pro', 'Agency Starter', 'Agency Growth'));
 
 -- ----------------------------------------------------------------
--- 3. organizations — subscription_status
+-- 3. organizations - subscription_status
 -- ----------------------------------------------------------------
 ALTER TABLE public.organizations
   ADD COLUMN IF NOT EXISTS subscription_status text NOT NULL DEFAULT 'active';
@@ -56,7 +56,7 @@ ALTER TABLE public.organizations
   CHECK (subscription_status IN ('active', 'trialing', 'past_due', 'canceled', 'paused'));
 
 -- ----------------------------------------------------------------
--- 4. organizations — billing metadata columns
+-- 4. organizations - billing metadata columns
 -- ----------------------------------------------------------------
 ALTER TABLE public.organizations
   ADD COLUMN IF NOT EXISTS plan_updated_at timestamptz NOT NULL DEFAULT now();
@@ -74,13 +74,13 @@ ALTER TABLE public.organizations
   ADD COLUMN IF NOT EXISTS plan_expires_at timestamptz;
 
 -- ----------------------------------------------------------------
--- 5. users — session_version (for instant session invalidation)
+-- 5. users - session_version (for instant session invalidation)
 -- ----------------------------------------------------------------
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS session_version integer NOT NULL DEFAULT 1;
 
 -- ----------------------------------------------------------------
--- 6. plan_audit_log — immutable change history
+-- 6. plan_audit_log - immutable change history
 -- ----------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.plan_audit_log (
   id              uuid        PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS public.plan_audit_log (
 ALTER TABLE public.plan_audit_log ENABLE ROW LEVEL SECURITY;
 
 -- ----------------------------------------------------------------
--- 7. Trigger — auto-log plan/status changes + refresh plan_updated_at
+-- 7. Trigger - auto-log plan/status changes + refresh plan_updated_at
 -- ----------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.fn_track_plan_change()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$

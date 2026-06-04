@@ -12,10 +12,10 @@ const UPDATES = [
     date: "May 2026",
     title: "Security hardening and agency hub",
     items: [
-      "LinkedIn access token removed from session cookie — stored exclusively in Supabase via server-side credentials table.",
+      "LinkedIn access token removed from session cookie - stored exclusively in Supabase via server-side credentials table.",
       "Cron analytics endpoint redesigned: no longer relies on browser cookies, now queries all connected users from the database using CRON_SECRET verification.",
       "Agency Hub wired to real database (agency_clients table with RLS). Fake mock clients removed.",
-      "Workspace save loop replaced with single batch upsert — eliminates N+1 write pattern at scale.",
+      "Workspace save loop replaced with single batch upsert - eliminates N+1 write pattern at scale.",
       "Background Sync tag now registered in PWA so offline replay actually fires when connectivity returns.",
       "Service worker updated: replaced unreliable navigator.onLine check with try/catch fetch pattern.",
     ],
@@ -27,7 +27,7 @@ const UPDATES = [
       "Deleted dead /write redirect folder that competed with the config-level 308 redirect.",
       "Purged committed dev log files from the repository. *.log already excluded in .gitignore.",
       "Fixed import ordering violation in app-session.ts.",
-      "Rate limiter WARNING comment added — known in-memory limitation pending Upstash/KV migration.",
+      "Rate limiter WARNING comment added - known in-memory limitation pending Upstash/KV migration.",
     ],
   },
   {

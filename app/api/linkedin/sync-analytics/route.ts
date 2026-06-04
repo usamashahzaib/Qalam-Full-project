@@ -5,7 +5,7 @@ import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 /**
  * Cron-triggered analytics sync.
- * Runs hourly via Vercel Cron (vercel.json) — no browser cookies available.
+ * Runs hourly via Vercel Cron (vercel.json) - no browser cookies available.
  * Instead of relying on a session cookie, queries all users with valid LinkedIn
  * tokens from the linkedin_credentials table, then polls analytics for each
  * user's published posts.

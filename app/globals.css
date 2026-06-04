@@ -151,7 +151,7 @@ summary {
   border-radius: 2px;
 }
 
-/* Chip / pill badge — uses border-width/style so Tailwind border-color utilities win */
+/* Chip / pill badge - uses border-width/style so Tailwind border-color utilities win */
 .chip {
   display: inline-flex;
   align-items: center;
@@ -292,7 +292,7 @@ img {
   user-drag: none;
 }
 
-/* Explicit protection class — apply to premium/proprietary UI blocks */
+/* Explicit protection class - apply to premium/proprietary UI blocks */
 [data-protect] {
   -webkit-user-select: none;
   user-select: none;
@@ -303,10 +303,10 @@ img {
   pointer-events: auto;
 }
 
-/* Print watermark — visible on every printed page and print-to-PDF */
+/* Print watermark - visible on every printed page and print-to-PDF */
 @media print {
   body::before {
-    content: "© Qalam (byqalam.com) — Confidential. Unauthorized reproduction prohibited.";
+    content: "© Qalam (byqalam.com) - Confidential. Unauthorized reproduction prohibited.";
     position: fixed;
     top: 50%;
     left: 50%;

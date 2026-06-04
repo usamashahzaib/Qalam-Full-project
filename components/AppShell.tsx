@@ -36,15 +36,15 @@ const NAV_GROUPS = [
     links: [
       { href: "/calendar", label: "Planner", icon: CalendarIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/approvals", label: "Approvals", icon: AnalyticsIcon, requiredPlan: "Pro" as PlanTier },
-      { href: "/analytics", label: "Analytics", icon: GrowthIcon },
+      { href: "/analytics", label: "Analytics", icon: GrowthIcon, requiredPlan: "Solo" as PlanTier },
     ],
   },
   {
     label: "Intelligence",
     links: [
-      { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
+      { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/library", label: "Library", icon: LibraryIcon },
-      { href: "/carousels", label: "Carousels", icon: CarouselIcon, requiredPlan: "Solo" as PlanTier },
+      { href: "/carousels", label: "Carousels", icon: CarouselIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
     ],
   },

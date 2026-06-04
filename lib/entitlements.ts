@@ -1,11 +1,12 @@
-export type PlanTier = "Free" | "Solo" | "Pro" | "Agency Starter" | "Agency Growth"
+export type PlanTier = "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"
 
-export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"]
+export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency Starter", "Agency", "Agency Growth"]
 
 export const PLAN_HIERARCHY: Record<PlanTier, number> = {
   Free: 0,
   Solo: 1,
   Pro: 2,
+  Agency: 4,
   "Agency Starter": 3,
   "Agency Growth": 4,
 }
@@ -45,8 +46,8 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "basic",
   },
   Solo: {
-    aiDraftsPerMonth: 50,
-    carouselGenerationsPerMonth: 3,
+    aiDraftsPerMonth: 25,
+    carouselGenerationsPerMonth: 0,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,
     seats: 1,
@@ -54,10 +55,10 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     scheduling: true,
     approvals: false,
     canExport: false,
-    analyticsDepth: "full",
+    analyticsDepth: "basic",
   },
   Pro: {
-    aiDraftsPerMonth: "unlimited",
+    aiDraftsPerMonth: 60,
     carouselGenerationsPerMonth: 10,
     researchRunsPerMonth: 5,
     clientWorkspaces: 0,
@@ -68,12 +69,24 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     canExport: true,
     analyticsDepth: "full",
   },
+  Agency: {
+    aiDraftsPerMonth: 60,
+    carouselGenerationsPerMonth: 10,
+    researchRunsPerMonth: 5,
+    clientWorkspaces: 5,
+    seats: 10,
+    linkedinPublish: true,
+    scheduling: true,
+    approvals: true,
+    canExport: true,
+    analyticsDepth: "full",
+  },
   "Agency Starter": {
-    aiDraftsPerMonth: "unlimited",
-    carouselGenerationsPerMonth: 20,
-    researchRunsPerMonth: 15,
-    clientWorkspaces: 3,
-    seats: 5,
+    aiDraftsPerMonth: 60,
+    carouselGenerationsPerMonth: 10,
+    researchRunsPerMonth: 5,
+    clientWorkspaces: 5,
+    seats: 10,
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
@@ -81,11 +94,11 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "full",
   },
   "Agency Growth": {
-    aiDraftsPerMonth: "unlimited",
-    carouselGenerationsPerMonth: "unlimited",
-    researchRunsPerMonth: "unlimited",
-    clientWorkspaces: "unlimited",
-    seats: "unlimited",
+    aiDraftsPerMonth: 60,
+    carouselGenerationsPerMonth: 10,
+    researchRunsPerMonth: 5,
+    clientWorkspaces: 5,
+    seats: 10,
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
@@ -107,11 +120,7 @@ export const formatLimit = (value: number | "unlimited"): string => {
 export const getPlanSummary = (plan: string): string[] => {
   const limits = getPlanLimits(plan)
   const items: string[] = []
-  if (limits.aiDraftsPerMonth === "unlimited") {
-    items.push("Unlimited AI drafts")
-  } else {
-    items.push(`${limits.aiDraftsPerMonth} AI drafts/month`)
-  }
+  items.push(`${formatLimit(limits.aiDraftsPerMonth)} AI drafts/month`)
   if (limits.carouselGenerationsPerMonth === 0) {
     items.push("No carousel generation")
   } else if (limits.carouselGenerationsPerMonth === "unlimited") {

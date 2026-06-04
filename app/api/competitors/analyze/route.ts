@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       }, "return=representation")
       job = rows?.[0] || null
     } catch {
-      // Supabase unavailable — analysis result still returned
+      // Supabase unavailable - analysis result still returned
     }
 
     return NextResponse.json({ analysis, job })

@@ -31,7 +31,7 @@ export type WorkspaceProfile = {
 }
 
 export type WorkspaceBilling = {
-  plan: "Free" | "Solo" | "Pro" | "Agency Starter" | "Agency Growth"
+  plan: "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"
   billingCycle: "monthly" | "annual"
   checkoutReady: boolean
 }
@@ -126,8 +126,7 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverP
       if (!raw) return defaultBilling
       const stored = JSON.parse(raw) as Partial<WorkspaceBilling>
       // Migrate old plan names from previous schema
-      if (stored.plan === ("Team" as string)) stored.plan = "Agency Starter"
-      if (stored.plan === ("Agency" as string)) stored.plan = "Agency Growth"
+      if (stored.plan === ("Team" as string)) stored.plan = "Agency"
       return { ...defaultBilling, ...stored }
     } catch {
       return defaultBilling

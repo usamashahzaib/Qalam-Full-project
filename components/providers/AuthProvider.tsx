@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetch("/api/linkedin/token", { method: "DELETE" })
     } catch {
-      // Token delete failed — proceed with local clear anyway
+      // Token delete failed - proceed with local clear anyway
     }
     persistUser({
       ...user,

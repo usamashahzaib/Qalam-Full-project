@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import { PlanGate } from "@/components/PlanGate"
+import { LockedFeature } from "@/components/LockedFeature"
 import { withClientParam } from "@/lib/workspace-navigation"
 
 type Post = { id: string; title: string; status: string; type: string; content: string | null; updated_at: string }
@@ -72,7 +72,7 @@ export default function ApprovalsPage() {
   const resolved = items.filter((i) => i.post.status !== "pending_approval")
 
   return (
-    <PlanGate requiredPlan="Pro" feature="Approval Workflow" description="Manage post reviews and client approvals with the ">
+    <LockedFeature requiredPlan="Pro" feature="Approval workflow">
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10 font-jakarta">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div
@@ -178,6 +178,6 @@ export default function ApprovalsPage() {
         </div>
       )}
     </div>
-    </PlanGate>
+    </LockedFeature>
   )
 }

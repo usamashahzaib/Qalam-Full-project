@@ -24,7 +24,7 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
-  // Session version check — catches instantly-invalidated sessions (plan downgrades, logouts)
+  // Session version check - catches instantly-invalidated sessions (plan downgrades, logouts)
   if (!options.skipSessionVersion) {
     try {
       await validateSessionVersion(session)

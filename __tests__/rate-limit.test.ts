@@ -29,7 +29,7 @@ describe("TokenBucket", () => {
   it("does not refill beyond capacity", () => {
     vi.useFakeTimers()
     const bucket = new TokenBucket(3, 3)
-    vi.advanceTimersByTime(10_000) // would add 30 tokens — capped at 3
+    vi.advanceTimersByTime(10_000) // would add 30 tokens - capped at 3
     let count = 0
     while (bucket.tryConsume()) count++
     expect(count).toBe(3)

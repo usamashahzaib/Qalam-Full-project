@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     }
 
     const aiText = String(data.choices?.[0]?.message?.content || "")
-      .replace(/[—–]/g, "-")
+      .replace(/[--]/g, "-")
       .replace(/\*\*/g, "")
       .replace(/^#+\s*/gm, "")
       .trim()

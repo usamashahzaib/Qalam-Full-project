@@ -17,7 +17,7 @@ type Slide = {
   body?: string
 }
 
-function buildSlides(text: string, authorName: string, authorHandle: string, accentLabel: string): Slide[] {
+function buildSlides(text: string): Slide[] {
   const chunks = text
     .trim()
     .split(/\n+/)
@@ -66,7 +66,7 @@ export default function CarouselBuilderPage() {
 
   const handleBuild = () => {
     if (!text.trim()) return
-    const built = buildSlides(text, authorName, authorHandle, accentLabel)
+    const built = buildSlides(text)
     setSlides(built)
     setActiveSlide(0)
     setExportDone(false)
@@ -180,7 +180,7 @@ export default function CarouselBuilderPage() {
                     type="text"
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
-                    placeholder="e.g. Usama Shahzaib"
+                    placeholder="e.g. Your Name"
                     className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
                   />
                 </div>
@@ -190,7 +190,7 @@ export default function CarouselBuilderPage() {
                     type="text"
                     value={authorHandle}
                     onChange={(e) => setAuthorHandle(e.target.value)}
-                    placeholder="e.g. @usamashahzaib"
+                    placeholder="e.g. @yourhandle"
                     className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
                   />
                 </div>

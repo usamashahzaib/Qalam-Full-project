@@ -5,7 +5,6 @@ import {
   CONTACT_INBOXES,
   MANUAL_UPGRADE_METHODS,
   MANUAL_UPGRADE_SLA,
-  SUPPORT_WHATSAPP_URL,
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
@@ -53,7 +52,7 @@ export default function ContactPage() {
               <h2 className="mb-3 text-2xl font-bold text-zinc-900">How paid access works today</h2>
               <ol className="space-y-2 text-sm leading-relaxed text-zinc-600">
                 <li>1. Pick the plan that matches your workload.</li>
-                <li>2. Message the team on WhatsApp or email for payment instructions.</li>
+                <li>2. Email the team for payment instructions.</li>
                 <li>3. Pay using {MANUAL_UPGRADE_METHODS.join(", ")}.</li>
                 <li>4. Send the payment screenshot in the same thread.</li>
                 <li>5. Qalam unlocks your workspace after manual review.</li>
@@ -62,14 +61,6 @@ export default function ContactPage() {
                 {MANUAL_UPGRADE_SLA}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <a
-                  href={SUPPORT_WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#1daf54]"
-                >
-                  Open WhatsApp
-                </a>
                 <Link
                   href="/pricing"
                   className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"

@@ -6,7 +6,7 @@ import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supa
 type DbPost = { id: string; title: string; status: string; type: string; content: string | null; updated_at: string }
 type DbApproval = { id: string; post_id: string; reviewer_id: string | null; status: string; comments: string | null; created_at: string; updated_at: string }
 
-/** GET /api/approvals — list all posts pending approval in the workspace */
+/** GET /api/approvals - list all posts pending approval in the workspace */
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/approvals — approve or reject a post.
+ * POST /api/approvals - approve or reject a post.
  * Requires: client_reviewer, agency_admin, or super_admin.
  * editors and viewers cannot approve/reject.
  */

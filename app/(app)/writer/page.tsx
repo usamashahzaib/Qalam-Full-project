@@ -8,8 +8,10 @@ import type { ContentAnalysis } from "@/lib/content-intelligence"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { cleanErrorMessage, sanitizeGeneratedText } from "@/lib/content-guard"
-import { canAccessPlan } from "@/lib/entitlements"
+import { canAccessPlan, getPlanLimits } from "@/lib/entitlements"
 import { LockIcon } from "@/components/PlanGate"
+import { DraftCounter, incrementDraftUsage, readDraftUsage } from "@/components/DraftCounter"
+import { LockedFeature } from "@/components/LockedFeature"
 
 const POST_TYPES = ["LinkedIn - Text post", "LinkedIn - Carousel", "LinkedIn - Visual"]
 const POST_FILTERS = [
@@ -27,6 +29,7 @@ type GenerateResponse = { text?: string; error?: string; analysis?: ContentAnaly
 type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: HookOption[]; error?: string }
 type HookOption = { style: string; text: string }
 type RichReply = { comment: string; style: string; reply: string }
+type DraftVersion = { content: string; createdAt: string }
 
 const normalizeLinkedInUrn = (value: string) => {
   const urn = value.trim()
@@ -75,8 +78,6 @@ export default function WriterPage() {
   const { user } = useAuth()
   const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state, billing } = useWorkspace()
   const canPublish = canAccessPlan(billing.plan, "Solo")
-  const canSchedule = canAccessPlan(billing.plan, "Solo")
-  const canApprove = canAccessPlan(billing.plan, "Pro")
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const bootstrap = useMemo(() => readWriterBootstrap(), [])
   const isClientWorkspace = Boolean(activeClientId)
@@ -88,6 +89,7 @@ export default function WriterPage() {
   const [isThinking, setIsThinking] = useState(false)
   const [isRepairingDraft, setIsRepairingDraft] = useState(false)
   const [content, setContent] = useState(bootstrap.post?.content || "")
+  const [, setVersions] = useState<DraftVersion[]>([])
   const [postType, setPostType] = useState(bootstrap.post?.type || POST_TYPES[0])
   const [scheduleDate, setScheduleDate] = useState(bootstrap.scheduleDate)
   const [scheduleTime, setScheduleTime] = useState("09:00")
@@ -124,6 +126,7 @@ export default function WriterPage() {
     setTitle("")
     setAiPrompt("")
     setContent("")
+    setVersions([])
     setPostType(POST_TYPES[0])
     setScheduleDate("")
     setScheduleTime("09:00")
@@ -262,19 +265,39 @@ export default function WriterPage() {
   }
 
   const onGenerate = async () => {
-    const prompt = aiPrompt.trim()
+    const previousDraft = content.trim()
+    const currentHook = previousDraft.split("\n").find((line) => line.trim())?.trim() || ""
+    const isVariation = Boolean(previousDraft)
+    const prompt = aiPrompt.trim() || title.trim() || currentHook
     if (!prompt) { setStatus("Add a prompt first"); return }
+    const draftLimit = getPlanLimits(billing.plan).aiDraftsPerMonth
+    if (typeof draftLimit === "number") {
+      const month = new Date().toISOString().slice(0, 7)
+      const serverUsed = posts.filter((post) => String(post.updatedAt || "").startsWith(month)).length
+      if (Math.max(readDraftUsage(workspaceId), serverUsed) >= draftLimit) {
+        setStatus("Draft limit reached. Upgrade to generate more drafts.")
+        window.dispatchEvent(new CustomEvent("qalam:draft-limit-hit"))
+        return
+      }
+    }
     setIsGenerating(true)
-    setStatus("Generating post via AI...")
+    setStatus(isVariation ? "Regenerating..." : "Generating post via AI...")
     try {
-      const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, postType, title: title.trim(), profile }) })
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, postType, title: title.trim(), profile, hook: currentHook, previousDraft, variation: isVariation }),
+      })
       const data = (await res.json().catch(() => ({}))) as GenerateResponse
       if (!res.ok) throw new Error(data.error || "Generation failed")
       const nextContent = String(data.text || "").trim()
       if (!nextContent) throw new Error("AI returned an empty draft")
-      setContent(sanitizeGeneratedText(nextContent))
+      const cleanContent = sanitizeGeneratedText(nextContent)
+      setContent(cleanContent)
+      setVersions((prev) => [...prev, { content: cleanContent, createdAt: new Date().toISOString() }])
+      incrementDraftUsage(workspaceId)
       if (data.analysis) setAnalysis(data.analysis)
-      setStatus(postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
+      setStatus(isVariation ? "New draft version ready." : postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
     } catch (error) {
       setStatus(cleanErrorMessage((error as Error).message))
     } finally {
@@ -318,6 +341,7 @@ export default function WriterPage() {
     setEditingId(post.id)
     setTitle(post.title)
     setContent(post.content)
+    setVersions([])
     setPostType(post.type)
     setScheduleDate(post.scheduledTime?.split("T")[0] || (/^\d{4}-\d{2}-\d{2}$/.test(post.date) ? post.date : ""))
     setScheduleTime(post.scheduledTime?.split("T")[1]?.slice(0, 5) || "09:00")
@@ -422,9 +446,9 @@ export default function WriterPage() {
                 </button>
               ) : null}
               {isClientWorkspace && (
-                canApprove
-                  ? <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
-                  : <button onClick={() => setStatus("Approval workflow requires Pro plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-400"><LockIcon className="h-3 w-3" />Approval</button>
+                <LockedFeature feature="Approval workflow" requiredPlan="Pro" className="inline-block rounded-lg">
+                  <button onClick={onSendForApproval} className="cursor-pointer rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 transition-colors hover:bg-amber-100">Send for approval</button>
+                </LockedFeature>
               )}
               {canPublish
                 ? <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : "Publish"}</button>
@@ -437,10 +461,11 @@ export default function WriterPage() {
         <div className="p-6">
           {/* Title + AI prompt */}
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Working title (optional)" className="mb-3 w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
+          <DraftCounter className="mb-4" />
           <div className="mb-5 flex flex-col gap-2 sm:flex-row">
-            <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction for AI Draft" className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" onKeyDown={(e) => e.key === "Enter" && !isGenerating && aiPrompt.trim() && onGenerate()} />
-            <button onClick={onGenerate} disabled={isGenerating || !aiPrompt.trim()} className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">
-              {isGenerating ? "Writing..." : generateLabel}
+            <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction for AI Draft" className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" onKeyDown={(e) => e.key === "Enter" && !isGenerating && (aiPrompt.trim() || content.trim()) && onGenerate()} />
+            <button onClick={onGenerate} disabled={isGenerating || (!aiPrompt.trim() && !content.trim())} className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">
+              {isGenerating ? (content.trim() ? "Regenerating..." : "Writing...") : generateLabel}
             </button>
           </div>
 
@@ -677,10 +702,9 @@ export default function WriterPage() {
                 <input type="time" min={scheduleDate === todayInput() ? nowTimeInput() : undefined} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
               </div>
             </div>
-            {canSchedule
-              ? <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
-              : <button onClick={() => setStatus("Post scheduling requires Solo plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-100 px-6 py-2.5 text-sm font-semibold text-zinc-400"><LockIcon className="h-4 w-4" />Schedule Post</button>
-            }
+            <LockedFeature feature="Scheduling" requiredPlan="Solo" className="sm:w-auto">
+              <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
+            </LockedFeature>
           </div>
 
           {status && <p className={`mt-3 text-sm ${status.toLowerCase().includes("fail") ? "text-red-600" : "text-zinc-500"}`}>{status}</p>}

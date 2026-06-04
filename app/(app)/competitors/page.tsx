@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { analyzeCompetitorPaste } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
-import { PlanGate } from "@/components/PlanGate"
+import { LockedFeature } from "@/components/LockedFeature"
 
 const PLATFORMS = ["LinkedIn", "Twitter / X", "Instagram", "YouTube", "Other"] as const
 
@@ -177,7 +177,7 @@ export default function CompetitorsPage() {
   }, [activeClientId, router])
 
   return (
-    <PlanGate requiredPlan="Pro" feature="Competitor Research" description="Analyze pasted competitor profiles and posts without exposing raw platform noise.">
+    <LockedFeature requiredPlan="Pro" feature="Competitor research">
       <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
         <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
           <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full" style={{ background: "radial-gradient(circle, rgba(201,135,31,0.1) 0%, transparent 70%)" }} />
@@ -306,7 +306,7 @@ export default function CompetitorsPage() {
           )}
         </section>
       </div>
-    </PlanGate>
+    </LockedFeature>
   )
 }
 

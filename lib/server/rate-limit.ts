@@ -27,7 +27,7 @@ export class TokenBucket {
   }
 }
 
-// WARNING: In-memory store — resets on every serverless cold start.
+// WARNING: In-memory store - resets on every serverless cold start.
 // Provides best-effort per-isolate rate limiting only. A determined attacker
 // bypasses this trivially by hitting different isolates.
 // TODO: Replace with Upstash Redis or Vercel KV for production-grade rate limiting.

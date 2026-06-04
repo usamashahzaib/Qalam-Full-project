@@ -13,7 +13,7 @@ export const env = {
   linkedInClientSecret: read("LINKEDIN_CLIENT_SECRET"),
   linkedInRedirectUri: read("LINKEDIN_REDIRECT_URI"),
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
-  // Lazy getter — throws in production so a missing secret surfaces on the first auth request,
+  // Lazy getter - throws in production so a missing secret surfaces on the first auth request,
   // not at build time with a silent plaintext fallback.
   get appSessionSecret(): string {
     if (_sessionSecret !== undefined) return _sessionSecret
@@ -46,12 +46,7 @@ export const requireSupabaseEnv = () => {
 }
 
 export const supportEnv = {
-  email: read("APP_SUPPORT_EMAIL") || "info@byqalam.com",
-  whatsapp: read("APP_SUPPORT_WHATSAPP") || "+923714156567",
-  whatsappUrl: (() => {
-    const raw = read("APP_SUPPORT_WHATSAPP") || "+923714156567"
-    return `https://wa.me/${raw.replace(/[^0-9]/g, "")}`
-  })(),
+  email: read("APP_SUPPORT_EMAIL") || "support@byqalam.com",
 }
 
 export const groqApiKey = read("GROQ_API_KEY")

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { LockedFeature } from "@/components/LockedFeature"
 
 const LINKEDIN_RE = /^https:\/\/(www\.)?linkedin\.com\/(in|company)\/[A-Za-z0-9-_%]+\/?$/
 
@@ -76,6 +77,7 @@ export default function VoiceProfilePage() {
   const statusTone = status === "Saved" ? "text-emerald-600" : status === "Saving..." ? "text-zinc-500" : "text-red-600"
 
   return (
+    <LockedFeature feature="Voice profile" requiredPlan="Solo">
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div
@@ -214,6 +216,7 @@ export default function VoiceProfilePage() {
         </aside>
       </div>
     </div>
+    </LockedFeature>
   )
 }
 

@@ -60,7 +60,7 @@ const fallbackSlides = (content: string): CarouselSlideDraft[] => {
   ]
 }
 
-/** GET /api/carousel — list all carousel projects in the workspace */
+/** GET /api/carousel - list all carousel projects in the workspace */
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)

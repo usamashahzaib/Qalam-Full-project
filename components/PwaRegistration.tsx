@@ -16,7 +16,7 @@ export function PwaRegistration() {
               (registration as ServiceWorkerRegistration & { sync: { register: (tag: string) => Promise<void> } })
                 .sync.register("qalam-replay-queue")
                 .catch(() => {
-                  // Background Sync not supported or permission denied — silent fallback
+                  // Background Sync not supported or permission denied - silent fallback
                 })
             }
           })

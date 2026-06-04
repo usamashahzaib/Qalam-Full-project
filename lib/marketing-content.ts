@@ -169,7 +169,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
     slug: "the-three-habits-that-separate-linkedin-authority-from-linkedin-noise",
     title: "The three habits that separate LinkedIn authority from LinkedIn noise",
     description:
-      "Most LinkedIn content disappears without building anything. Three habits — specificity, first-person experience, and consistent perspective — are what separate authority from noise.",
+      "Most LinkedIn content disappears without building anything. Three habits - specificity, first-person experience, and consistent perspective - are what separate authority from noise.",
     excerpt:
       "Frequency is not the point. One specific post with a real perspective compounds faster than ten polished generalities.",
     tag: "Strategy",
@@ -181,7 +181,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
       {
         heading: "Most LinkedIn content does not build reputation",
         paragraphs: [
-          "Volume is not the variable that separates authority accounts from forgettable ones. The feeds that generate real professional credibility tend to post less, not more — but what they post carries a specific claim, a real experience, or a perspective that is not shared by everyone else in the industry.",
+          "Volume is not the variable that separates authority accounts from forgettable ones. The feeds that generate real professional credibility tend to post less, not more - but what they post carries a specific claim, a real experience, or a perspective that is not shared by everyone else in the industry.",
           "The three habits below are not tactics. They are the underlying structural differences between the LinkedIn presence that accumulates trust over time and the one that posts consistently without compounding anything.",
         ],
       },
@@ -203,7 +203,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
       {
         heading: "Habit three: commit to a perspective over time",
         paragraphs: [
-          "The third habit is the slowest-building and the most durable. Authority on LinkedIn does not come from any single post. It comes from showing up repeatedly with the same underlying perspective applied to different situations — so that over time, a reader associates the author with a territory of thought rather than a collection of individual opinions.",
+          "The third habit is the slowest-building and the most durable. Authority on LinkedIn does not come from any single post. It comes from showing up repeatedly with the same underlying perspective applied to different situations - so that over time, a reader associates the author with a territory of thought rather than a collection of individual opinions.",
           "This is what separates accounts that get consistently engaged from accounts that have occasional viral posts. The consistent account has a recognizable worldview. The occasional viral account has good luck.",
           "Building a recognizable perspective requires keeping a record of what you have said, revisiting the positions that held up, and being willing to publish the same core belief from different angles until it lands.",
         ],
@@ -224,7 +224,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
     slug: "why-hr-content-sounds-the-same-and-how-to-fix-it",
     title: "HR leaders and employer brand: why most content sounds the same",
     description:
-      "Employer brand content on LinkedIn has collapsed into the same twelve phrases. The cause is structural — multiple approvals, risk aversion, and committee writing flatten every real claim into a safe abstraction.",
+      "Employer brand content on LinkedIn has collapsed into the same twelve phrases. The cause is structural - multiple approvals, risk aversion, and committee writing flatten every real claim into a safe abstraction.",
     excerpt:
       "The problem with most employer brand content is not the writer. It is the approval process that removes every specific claim before the post reaches an audience.",
     tag: "HR",
@@ -236,14 +236,14 @@ export const BLOG_POSTS: MarketingArticle[] = [
       {
         heading: "Employer brand language has collapsed into the same phrases",
         paragraphs: [
-          "Scroll through employer brand content from any five mid-size companies and you will find the same vocabulary: people-first, growth mindset, collaborative environment, inclusive culture, learning and development opportunities. The phrases are not wrong. They are simply empty — they no longer carry meaning because everyone uses them to say the same thing.",
+          "Scroll through employer brand content from any five mid-size companies and you will find the same vocabulary: people-first, growth mindset, collaborative environment, inclusive culture, learning and development opportunities. The phrases are not wrong. They are simply empty - they no longer carry meaning because everyone uses them to say the same thing.",
           "The result is that companies spend meaningful budget on employer brand content that conveys nothing specific about what it is actually like to work there, why someone would choose the role over a comparable one, or what leadership believes about the way work should happen.",
         ],
       },
       {
         heading: "Committee approval is the real cause",
         paragraphs: [
-          "Most employer brand content does not start in a committee. An HR leader, a recruiter, or a chief people officer writes something real — a specific story about a hire that changed the team dynamic, a policy decision and why it was made, a failure that shifted how the company thinks about onboarding.",
+          "Most employer brand content does not start in a committee. An HR leader, a recruiter, or a chief people officer writes something real - a specific story about a hire that changed the team dynamic, a policy decision and why it was made, a failure that shifted how the company thinks about onboarding.",
           "Then the draft goes through legal, marketing, senior leadership, and possibly a communications agency. Each pass removes the specific in favor of the safe. By the time the post is approved, the actual experience has been converted into a generality that offends no one and says nothing.",
           "The writing problem is a process problem. The solution is not better prompts or better writers. It is fewer approvals and more tolerance for specificity.",
         ],
@@ -258,7 +258,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
       {
         heading: "What HR leaders on LinkedIn can do differently",
         paragraphs: [
-          "The shift is from brand statement to operational reporting. Instead of publishing what the company believes, publish what the company actually did — a real decision, a real outcome, a real lesson. The belief becomes implicit in the specifics.",
+          "The shift is from brand statement to operational reporting. Instead of publishing what the company believes, publish what the company actually did - a real decision, a real outcome, a real lesson. The belief becomes implicit in the specifics.",
           "HR leaders who publish this way build a different kind of credibility than employer brand accounts. They become associated with a body of real operational thought rather than a communications output. That credibility transfers to candidates, to industry peers, and to the organization itself.",
         ],
       },
@@ -270,7 +270,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
       },
       {
         q: "How can HR leaders improve their LinkedIn content?",
-        a: "Write from a specific operational moment — a hire that changed the team, a policy decision and its reasoning, a real lesson from onboarding — instead of starting from company values statements. The specific is the brand.",
+        a: "Write from a specific operational moment - a hire that changed the team, a policy decision and its reasoning, a real lesson from onboarding - instead of starting from company values statements. The specific is the brand.",
       },
     ],
   },
@@ -278,9 +278,9 @@ export const BLOG_POSTS: MarketingArticle[] = [
     slug: "from-consultant-to-thought-leader-the-archive-is-the-product",
     title: "From consultant to thought leader: the archive is the product",
     description:
-      "Most consultants have years of private expertise and almost no public record of it. The archive — a searchable body of specific published thought — is what converts a practitioner into a recognized authority.",
+      "Most consultants have years of private expertise and almost no public record of it. The archive - a searchable body of specific published thought - is what converts a practitioner into a recognized authority.",
     excerpt:
-      "The expertise exists. The public record usually does not. Thought leadership is not about posting more — it is about building an archive that compounds.",
+      "The expertise exists. The public record usually does not. Thought leadership is not about posting more - it is about building an archive that compounds.",
     tag: "Consulting",
     readMinutes: 6,
     datePublished: "2026-05-18",
@@ -291,13 +291,13 @@ export const BLOG_POSTS: MarketingArticle[] = [
         heading: "The expertise exists. The public record does not.",
         paragraphs: [
           "Senior consultants carry years of real pattern recognition across industries, organizations, and failure modes. Most of it never appears publicly because the client relationship requires discretion, and because translating operational knowledge into publishable thought requires a discipline that consulting work rarely builds.",
-          "The result is that consultants who know more than almost anyone in their field are largely invisible to the buyers who would most benefit from working with them. A prospective client searching for expertise in a domain finds academic papers, journalists, and the occasional consultant who has prioritized publishing — not necessarily the most capable practitioner.",
+          "The result is that consultants who know more than almost anyone in their field are largely invisible to the buyers who would most benefit from working with them. A prospective client searching for expertise in a domain finds academic papers, journalists, and the occasional consultant who has prioritized publishing - not necessarily the most capable practitioner.",
         ],
       },
       {
         heading: "An archive compounds in ways individual posts do not",
         paragraphs: [
-          "The distinction between posting and archiving is not about frequency. It is about whether content accumulates into something searchable, thematically coherent, and growing over time — or whether each post exists in isolation and disappears.",
+          "The distinction between posting and archiving is not about frequency. It is about whether content accumulates into something searchable, thematically coherent, and growing over time - or whether each post exists in isolation and disappears.",
           "A consultant who publishes one specific insight per week for a year does not have 52 posts. They have a body of work that covers a recognizable territory. A prospective client can spend thirty minutes reading through that archive and form a genuine impression of how the consultant thinks, what problems they have worked on, and whether their worldview matches the client's situation.",
           "That thirty-minute evaluation converts in a way that a single post never does. The archive is what enables asynchronous credibility building at scale.",
         ],
@@ -307,13 +307,13 @@ export const BLOG_POSTS: MarketingArticle[] = [
         paragraphs: [
           "When a new contact lands on a consultant's LinkedIn profile, the most credible signal available is not the headline or the number of connections. It is the answer to: what has this person actually published, and does it reflect real thinking on problems I care about?",
           "A sparse content history sends a specific signal: either this person is too cautious to commit positions in public, or they do not have enough conviction about their own views to write them down. Neither reading helps the consultant win work.",
-          "Building the archive is not about marketing. It is about creating the evidentiary record that allows a prospective client to self-qualify — to recognize that this consultant's thinking is relevant to their situation without requiring a referral or a pitch meeting first.",
+          "Building the archive is not about marketing. It is about creating the evidentiary record that allows a prospective client to self-qualify - to recognize that this consultant's thinking is relevant to their situation without requiring a referral or a pitch meeting first.",
         ],
       },
       {
         heading: "How to start building the archive",
         paragraphs: [
-          "The starting point is not a content calendar. It is a standing list of the specific problems the consultant has seen repeatedly — the patterns that show up across engagements, the mistakes clients make before they hire a specialist, the decisions that look obvious in retrospect but are rarely made correctly in advance.",
+          "The starting point is not a content calendar. It is a standing list of the specific problems the consultant has seen repeatedly - the patterns that show up across engagements, the mistakes clients make before they hire a specialist, the decisions that look obvious in retrospect but are rarely made correctly in advance.",
           "Each item on that list is a post. Not a general thought about the industry, but a specific claim: what the problem looks like, why it persists, and what actually fixes it. The specificity is what makes the content useful and what makes the author memorable.",
           "Over time, the archive develops its own logic. Topics recur, positions accumulate evidence, and the consultant's worldview becomes visible to anyone who reads enough of it. That visible worldview is what converts a practitioner into a recognized authority in their domain.",
         ],
@@ -322,7 +322,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
     faqs: [
       {
         q: "How do consultants build thought leadership on LinkedIn?",
-        a: "By converting private expertise into a persistent public archive of specific insights — not by chasing viral content. The searchable body of work is what allows prospective clients to evaluate fit before a first conversation.",
+        a: "By converting private expertise into a persistent public archive of specific insights - not by chasing viral content. The searchable body of work is what allows prospective clients to evaluate fit before a first conversation.",
       },
       {
         q: "What is the difference between a thought leader and a regular LinkedIn poster?",

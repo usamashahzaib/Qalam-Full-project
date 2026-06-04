@@ -4,10 +4,10 @@
 
 Two-layer enforcement:
 
-1. **Frontend (UX)** — `PlanGate` component and `usePlan` hook. Hides locked features in the UI. Readable from client; not a security control.
-2. **Backend (Security)** — `requirePlan()` middleware in `lib/server/require-plan.ts`. All plan-gated API routes enforce this server-side. Cannot be bypassed from the client.
+1. **Frontend (UX)** - `PlanGate` component and `usePlan` hook. Hides locked features in the UI. Readable from client; not a security control.
+2. **Backend (Security)** - `requirePlan()` middleware in `lib/server/require-plan.ts`. All plan-gated API routes enforce this server-side. Cannot be bypassed from the client.
 
-The plan source of truth is `organizations.plan` in Supabase, fetched via `fetchWorkspacePlan()`. The value in localStorage is a UX cache only — it is always overridden by the server response from `/api/workspace`.
+The plan source of truth is `organizations.plan` in Supabase, fetched via `fetchWorkspacePlan()`. The value in localStorage is a UX cache only - it is always overridden by the server response from `/api/workspace`.
 
 ## Plan Hierarchy
 
@@ -19,7 +19,7 @@ The plan source of truth is `organizations.plan` in Supabase, fetched via `fetch
 | Agency Starter | 3    |
 | Agency Growth  | 4    |
 
-Plans are cumulative — a higher tier includes all features of lower tiers.
+Plans are cumulative - a higher tier includes all features of lower tiers.
 
 ## Files
 
@@ -31,7 +31,7 @@ Plans are cumulative — a higher tier includes all features of lower tiers.
 | `lib/hooks/usePlan.ts` | Client hook for plan-aware UI |
 | `components/PlanGate.tsx` | Full-page lock component for restricted routes |
 | `components/AppShell.tsx` | Nav lock icons on restricted links |
-| `supabase/migrations/0004_subscription_system.sql` | DB migration — adds plan columns, audit log, session_version |
+| `supabase/migrations/0004_subscription_system.sql` | DB migration - adds plan columns, audit log, session_version |
 
 ## API Routes with Plan Enforcement
 

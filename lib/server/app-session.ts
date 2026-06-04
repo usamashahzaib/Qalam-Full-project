@@ -134,7 +134,7 @@ export const validateSessionVersion = async (session: AppSessionPayload): Promis
     if (tokenVersion < dbVersion) throw new Error("session_invalidated")
   } catch (err) {
     if ((err as Error).message === "session_invalidated") throw err
-    // DB unreachable — allow through rather than locking users out on infra issues
+    // DB unreachable - allow through rather than locking users out on infra issues
   }
 }
 
