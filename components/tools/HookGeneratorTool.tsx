@@ -6,29 +6,44 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { HookIcon } from "@/components/ui/qalam-icons"
 
-const HOOK_TEMPLATES = [
-  (t: string) => `Hot take: ${t} is misunderstood by most people. Here's what's actually going on:`,
-  (t: string) => `I spent two years on ${t}. Here's the one insight that changed everything:`,
-  (t: string) => `Nobody talks about the uncomfortable truth behind ${t}. But it's the part that matters most:`,
-  (t: string) => `The counterintuitive lesson I learned from ${t} - that no article mentions:`,
-  (t: string) => `5 things I wish I knew about ${t} before I started:`,
-  (t: string) => `I used to think ${t} was complicated. Then I realized the real problem:`,
-  (t: string) => `Everyone in my network talks about ${t}. But they're missing the most important part:`,
-  (t: string) => `Here's what a year of working on ${t} taught me that no one says out loud:`,
-  (t: string) => `The biggest mistake I made with ${t} - and what I do differently now:`,
-  (t: string) => `${t} changed how I work. This is what I tell everyone who asks me about it:`,
-]
-
 export function HookGeneratorTool() {
   const [topic, setTopic] = useState("")
   const [hooks, setHooks] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [generated, setGenerated] = useState(false)
   const [copied, setCopied] = useState<number | null>(null)
 
-  const handleGenerate = () => {
-    if (!topic.trim()) return
-    setHooks(HOOK_TEMPLATES.map((fn) => fn(topic.trim())))
-    setGenerated(true)
+  const handleGenerate = async () => {
+    const trimmed = topic.trim()
+    if (!trimmed) return
+    setLoading(true)
+    setError(null)
+    setHooks([])
+    setGenerated(false)
+
+    try {
+      const res = await fetch("/api/tools/hook-generator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: trimmed }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || "Failed to generate hooks. Please try again.")
+        return
+      }
+      if (!data.hooks || data.hooks.length === 0) {
+        setError("No hooks returned. Please try a different topic.")
+        return
+      }
+      setHooks(data.hooks)
+      setGenerated(true)
+    } catch {
+      setError("Network error. Please check your connection and try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleCopy = async (text: string, index: number) => {
@@ -59,7 +74,7 @@ export function HookGeneratorTool() {
               LinkedIn Hook Generator
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              Enter your topic and get 10 opening lines built on proven LinkedIn hook patterns - ready to copy, edit, and post. No sign-in required.
+              Enter your topic and get 5 AI-written opening lines built on proven LinkedIn hook patterns - ready to copy, edit, and post. No sign-in required.
             </p>
           </FadeUp>
         </div>
@@ -76,20 +91,31 @@ export function HookGeneratorTool() {
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+                    onKeyDown={(e) => e.key === "Enter" && !loading && handleGenerate()}
                     placeholder="e.g. building a personal brand, remote work culture, hiring mistakes..."
                     className="flex-1 rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 transition-all focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
+                    disabled={loading}
                   />
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleGenerate}
-                    disabled={!topic.trim()}
+                    disabled={!topic.trim() || loading}
                     className={`shrink-0 rounded-xl px-6 py-3 text-sm font-semibold transition-all ${
-                      topic.trim() ? "bg-teal text-white shadow-sm hover:bg-teal-600" : "cursor-not-allowed bg-zinc-200 text-zinc-400"
+                      topic.trim() && !loading
+                        ? "bg-teal text-white shadow-sm hover:bg-teal-600"
+                        : "cursor-not-allowed bg-zinc-200 text-zinc-400"
                     }`}
                   >
-                    Generate 10 Hooks
+                    {loading ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : "Generate 5 Hooks"}
                   </motion.button>
                 </div>
                 <p className="mt-2 text-xs text-zinc-400">
@@ -97,11 +123,17 @@ export function HookGeneratorTool() {
                 </p>
               </div>
 
+              {error && (
+                <div className="border-b border-red-100 bg-red-50 px-6 py-4">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              )}
+
               <AnimatePresence>
                 {generated && hooks.length > 0 && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
                     <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-6 py-4">
-                      <p className="text-sm font-semibold text-zinc-700">10 hook options for &quot;{topic}&quot;</p>
+                      <p className="text-sm font-semibold text-zinc-700">5 AI hooks for &quot;{topic}&quot;</p>
                       <span className="text-xs text-zinc-400">Click any hook to copy</span>
                     </div>
                     <div className="divide-y divide-zinc-50">
@@ -110,7 +142,7 @@ export function HookGeneratorTool() {
                           key={i}
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: i * 0.04 }}
+                          transition={{ duration: 0.3, delay: i * 0.06 }}
                           onClick={() => void handleCopy(hook, i)}
                           className="group flex w-full items-start gap-4 px-6 py-4 text-left transition-colors hover:bg-zinc-50"
                         >
@@ -123,7 +155,7 @@ export function HookGeneratorTool() {
                               copied === i ? "bg-green-50 text-green-700" : "bg-zinc-100 text-zinc-500 opacity-0 group-hover:opacity-100"
                             }`}
                           >
-                            {copied === i ? "Copied" : "Copy"}
+                            {copied === i ? "Copied!" : "Copy"}
                           </span>
                         </motion.button>
                       ))}
@@ -138,10 +170,10 @@ export function HookGeneratorTool() {
             <div className="rounded-2xl border border-zinc-100 bg-white p-6">
               <h3 className="mb-3 text-sm font-semibold text-zinc-800">How these hooks work</h3>
               <p className="mb-4 text-sm leading-relaxed text-zinc-500">
-                These 10 patterns are built on consistently strong LinkedIn hook structures: contrarian framing, numbered lists, personal revelation, experience distillation, and curiosity gaps.
+                AI generates hooks using the highest-performing LinkedIn structures: contrarian framing, numbered lists, personal revelation, experience distillation, and curiosity gaps.
               </p>
               <p className="text-sm leading-relaxed text-zinc-500">
-                For a full workspace with drafting, archive continuity, and voice settings, use the Qalam app. Paid onboarding is currently handled manually.
+                For a full workspace with drafting, archive continuity, and voice settings, use the Qalam app.
               </p>
             </div>
           </FadeUp>

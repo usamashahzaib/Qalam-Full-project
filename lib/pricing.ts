@@ -1,4 +1,4 @@
-﻿export interface PricingPlan {
+export interface PricingPlan {
   plan: string
   monthlyPkr: number
   annualPkrPerMonth?: number
@@ -149,3 +149,51 @@ export const formatPkr = (amount: number): string => {
   if (amount === 0) return "Free"
   return `PKR ${amount.toLocaleString("en-PK")}`
 }
+
+/** Feature list per plan — used by PlanGate, settings, and upgrade CTA components */
+export const PLAN_FEATURES: Record<string, string[]> = {
+  Free: [
+    "10 AI drafts per month",
+    "1 personal workspace",
+    "Content scoring and hashtag hints",
+    "Basic analytics (activity log)",
+    "Community support",
+  ],
+  Solo: [
+    "50 AI drafts per month",
+    "LinkedIn publish directly from app",
+    "Post scheduling and planner",
+    "3 carousel projects per month",
+    "Full analytics dashboard",
+    "Content scoring and voice profile",
+    "Priority email support",
+  ],
+  Pro: [
+    "Unlimited AI drafts",
+    "10 carousel projects per month",
+    "5 competitor research runs per month",
+    "Approval workflow for client review",
+    "Export to PDF and text",
+    "Voice intelligence and post scoring",
+    "Priority support",
+  ],
+  "Agency Starter": [
+    "Everything in Pro",
+    "3 client workspaces",
+    "Up to 5 team seats",
+    "Per-workspace approvals and publish logs",
+    "Shared voice profiles",
+    "Guided agency onboarding",
+    "WhatsApp support",
+  ],
+  "Agency Growth": [
+    "Everything in Agency Starter",
+    "Unlimited client workspaces",
+    "Unlimited team seats",
+    "Workspace-level analytics",
+    "Per-client billing scope",
+    "Commercial rollout support",
+    "Priority WhatsApp support",
+  ],
+}
+

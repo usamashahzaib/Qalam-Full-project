@@ -12,11 +12,11 @@ import { UPGRADES_EMAIL } from "@/lib/contact"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit — 10 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
+    a: "Yes. Free is live with no time limit - 10 AI drafts per month, your workspace, and content scoring. It's a real product, not a fake trial. When you're ready to publish, schedule, and scale, you upgrade.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month — less than a single coffee per week. Pro is PKR 990/month with unlimited AI drafts. Agency plans start at PKR 2,490/month for team workflows. Annual billing saves you 20%.",
+    a: "Solo starts at PKR 499/month - less than a single coffee per week. Pro is PKR 990/month with unlimited AI drafts. Agency plans start at PKR 2,490/month for team workflows. Annual billing saves you 20%.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
@@ -24,15 +24,15 @@ const PRICING_FAQ = [
   },
   {
     q: "What is the difference between Agency Starter and Agency Growth?",
-    a: "Agency Starter supports up to 3 client workspaces and 5 team seats — enough for a focused agency. Agency Growth removes all caps: unlimited clients, unlimited seats, workspace-level analytics, and priority support.",
+    a: "Agency Starter supports up to 3 client workspaces and 5 team seats - enough for a focused agency. Agency Growth removes all caps: unlimited clients, unlimited seats, workspace-level analytics, and priority support.",
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans can be cancelled — your workspace and drafts stay accessible on the Free tier. You never lose your content history.",
+    a: "Yes. Paid plans can be cancelled - your workspace and drafts stay accessible on the Free tier. You never lose your content history.",
   },
   {
     q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000–80,000/month. Qalam gives you AI that learns your voice, a scheduling system, and analytics for PKR 499/month. It's not a ghostwriter replacement — it's the infrastructure that makes your writing sharper, faster, and consistent every single week.",
+    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI that learns your voice, a scheduling system, and analytics for PKR 499/month. It's not a ghostwriter replacement - it's the infrastructure that makes your writing sharper, faster, and consistent every single week.",
   },
 ]
 
@@ -82,7 +82,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       price: formatPkr(amount),
       perDay: plan.monthlyPkr > 0 ? perDayLabel(amount) : undefined,
       annualSavings: savings,
-      usdReference: isAnnual ? "Billed annually — cancel anytime" : "Billed monthly — upgrade to annual anytime",
+      usdReference: isAnnual ? "Billed annually - cancel anytime" : "Billed monthly - upgrade to annual anytime",
     }
   })
 
@@ -122,7 +122,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                <strong className="text-zinc-700">PKR 499/mo</strong> Solo — less than a weekly chai run
+                <strong className="text-zinc-700">PKR 499/mo</strong> Solo - less than a weekly chai run
               </span>
               <span className="text-zinc-200">|</span>
               <span>
@@ -165,7 +165,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               {
                 icon: VoiceIcon,
                 label: "AI that learns your voice",
-                sub: "Not a template machine — a memory layer that gets sharper with every post",
+                sub: "Not a template machine - a memory layer that gets sharper with every post",
               },
               {
                 icon: ArchiveIcon,
@@ -235,7 +235,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp>
             <h2 className="mb-3 text-2xl font-bold text-zinc-900">Card not working? Pay manually.</h2>
             <p className="mb-7 text-base leading-relaxed text-zinc-600">
-              Send payment via JazzCash, Easypaisa, or bank transfer. Screenshot to WhatsApp — plan activated within 2 hours.
+              Send payment via JazzCash, Easypaisa, or bank transfer. Screenshot to WhatsApp - plan activated within 2 hours.
             </p>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <a
@@ -256,7 +256,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       <div className="border-b border-zinc-100 bg-white px-6 py-5">
         <div className="mx-auto max-w-[860px] text-center">
           <p className="text-xs leading-relaxed text-zinc-400">
-            Your drafts are private. No one at Qalam reads your content. LinkedIn data is used only for publishing — nothing stored beyond what you authorize.
+            Your drafts are private. No one at Qalam reads your content. LinkedIn data is used only for publishing - nothing stored beyond what you authorize.
           </p>
         </div>
       </div>
@@ -331,11 +331,11 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       className="transition-colors hover:bg-zinc-50/50"
                     >
                       <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "—" : row.free}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "—" : row.solo}</td>
-                      <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "—" : row.pro}</span></td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter === "-" ? "—" : row.agencyStarter}</td>
-                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth === "-" ? "—" : row.agencyGrowth}</span></td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "-" : row.free}</td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "-" : row.solo}</td>
+                      <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "-" : row.pro}</span></td>
+                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter === "-" ? "-" : row.agencyStarter}</td>
+                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth === "-" ? "-" : row.agencyGrowth}</span></td>
                     </motion.tr>
                   ))}
                 </tbody>

@@ -11,6 +11,7 @@ create table public.users (
     email text unique not null,
     full_name text,
     image_url text,
+    session_version integer not null default 1,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
@@ -20,9 +21,13 @@ create table public.organizations (
     id uuid primary key default uuid_generate_v4(),
     name text not null,
     billing_plan text default 'Free',
+    plan text not null default 'Free',
+    subscription_status text not null default 'active',
+    plan_expires_at timestamptz,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
 );
+
 
 -- Workspaces (Clients / Brands)
 create table public.workspaces (
