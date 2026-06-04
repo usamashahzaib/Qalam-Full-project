@@ -34,35 +34,15 @@ const BASE_RULES = [
   "No markdown headings, bold markers, labels, or preamble.",
 ]
 
-const buildDraftSystemPrompt = ({ profile, postType, title, variation }: GenerateBody) => {
-  const goals = Array.isArray(profile?.goals) ? profile.goals.filter(Boolean).join(", ") : ""
-  return [
-    "You are an expert LinkedIn ghostwriter.",
-    "Write one polished LinkedIn post based on the user's prompt.",
-    "The post must be ready to paste into LinkedIn without edits.",
-    postType ? `Format target: ${postType}.` : "",
-    title ? `Working title: ${title}.` : "",
-    profile?.name ? `Writer name: ${profile.name}.` : "",
-    profile?.title ? `Writer role: ${profile.title}.` : "",
-    profile?.industry ? `Industry: ${profile.industry}.` : "",
-    profile?.tone ? `Tone to match: ${profile.tone}.` : "",
-    goals ? `Content goals: ${goals}.` : "",
-    postType?.toLowerCase().includes("carousel")
-      ? "Write a carousel-ready outline: 6 to 8 slide blocks, each with a punchy title and 1 useful line."
-      : postType?.toLowerCase().includes("visual")
-        ? "Write a visual post: one strong caption plus a clear visual concept line for the image/designer."
-        : "Write a text post of 150 to 220 words.",
-    "Open with a scroll-stopping first line under 90 characters.",
-    "Use at least 4 short paragraphs. Add one concrete example, one practical takeaway, and a natural CTA.",
-    "If the prompt is broad, choose a specific angle instead of writing generic advice.",
-    variation ? "This is a regeneration request. Write a materially different version with a different angle and hook while preserving the core topic." : "",
-    variation ? "Do not paraphrase the previous draft. Change the opening, structure, examples, and CTA." : "",
-    "Do not include hashtags unless the user asks.",
-    "Do not include preamble, labels, quotation marks, or explanations.",
-    "Return only the post body.",
-    ...BASE_RULES,
-  ].filter(Boolean).join(" ")
-}
+const buildDraftSystemPrompt = (_body: GenerateBody) => `You are a LinkedIn ghostwriter. Write exactly what was asked — nothing more.
+
+Rules:
+- Output ONLY the post text. No title. No "Introduction:" header. No section labels.
+- No markdown. No asterisks. No bold. Plain text only.
+- Max 1,300 characters unless the user explicitly asks for long form.
+- 3-5 hashtags at the end, on a new line. No more.
+- Do not add a CTA unless the user asked for one.
+- Write like a person, not a content template.`
 
 const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
   if (!body.variation) return prompt
