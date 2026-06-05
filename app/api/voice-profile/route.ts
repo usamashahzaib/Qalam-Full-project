@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabasePatch, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type DbVoiceProfile = {

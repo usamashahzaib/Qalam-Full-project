@@ -1,21 +1,26 @@
-import { NextRequest, NextResponse } from "next/server"
-import Groq from 'groq-sdk'
-import { analyzeContent, type ContentAnalysis } from "@/lib/content-intelligence"
-import { groqApiKey } from "@/lib/server/env"
-import { rateLimit } from "@/lib/server/rate-limit"
-import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
-import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { requireAuth } from "@/lib/server/app-session"
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+import { auth } from "@clerk/nextjs/server"
+import { NextResponse } from "next/server"
+import { callAi } from "@/lib/server/ai-router"
+import { checkAndIncrementLimit } from "@/lib/server/plan-limits"
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
+import { buildRoleAwareSystemPrompt } from "@/lib/prompts/role-aware-system"
+import { analyzeContentWithAi, type ContentScore, type ContentAnalysis } from "@/lib/content-intelligence"
+import { createServiceClient } from "@/lib/server/supabase-rest"
+import { ensureWorkspaceForUser, fetchWorkspacePlan, getClerkAuthContext } from "@/lib/server/workspace"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies" | "repair"
+  topic?: string
   prompt?: string
-  postType?: string
   title?: string
-  content?: string
+  role?: string
+  format?: string
   hook?: string
+  workspaceId?: string
+  workspaceKey?: string
+  postType?: string
+  content?: string
   previousDraft?: string
   variation?: boolean
   originalPost?: string
@@ -29,572 +34,229 @@ type GenerateBody = {
   }
 }
 
-const BASE_RULES = [
-  "Do not use em dashes in your output. Use a comma or period instead.",
-  "Use hyphen only when punctuation is needed.",
-  "Write like a sharp operator talking to another human. No corporate filler.",
-  "Never use these words or phrases: leverage, delve, foster, navigate, rapidly evolving landscape, future belongs, game-changer, transformative, unlock potential, it is worth noting, in today's world, ever-changing, unlock, empower, seamless, robust, cutting-edge, dive into, embark, maximize, optimize, elevate, revolutionize, synergy, ecosystem.",
-  "No markdown headings, bold markers, labels, or preamble.",
-]
+const toContentAnalysis = (score: ContentScore, content: string): ContentAnalysis => ({
+  overallScore: score.overall,
+  overallLabel: score.overall >= 82 ? "Strong" : score.overall >= 68 ? "Solid" : score.overall >= 52 ? "Needs polish" : "Weak",
+  hookType: "AI-scored",
+  scores: [
+    { label: "Hook", score: score.hook, note: score.feedback[0] || "" },
+    { label: "Specificity", score: score.specificity, note: score.feedback[1] || "" },
+    { label: "CTA", score: score.cta, note: score.feedback[2] || "" },
+    { label: "Human-likeness", score: score.humanLikeness, note: "" },
+    { label: "Voice fit", score: score.voiceFit, note: "" },
+  ],
+  improvements: score.feedback,
+  hashtags: [],
+  excerpt: content.slice(0, 180),
+})
 
-const buildDraftSystemPrompt = (_body: GenerateBody) => `You are a LinkedIn ghostwriter. Write exactly what was asked - nothing more.
+async function generateFullPost({
+  topic,
+  role,
+  hook,
+  format,
+  voiceProfile,
+  variation,
+  previousDraft,
+}: {
+  topic: string
+  role: string
+  hook?: string
+  format?: string
+  voiceProfile?: { sample_posts?: string[] } | null
+  variation?: boolean
+  previousDraft?: string
+}) {
+  const systemPrompt = buildRoleAwareSystemPrompt(role, voiceProfile ?? undefined)
 
-Rules:
-- Output ONLY the post text. No title. No "Introduction:" header. No section labels.
-- No markdown. No asterisks. No bold. Plain text only.
-- Max 1,300 characters unless the user explicitly asks for long form.
-- 3-5 hashtags at the end, on a new line. No more.
-- Do not add a CTA unless the user asked for one.
-- Write like a person, not a content template.
-- Start with a specific observation, data point, or contrarian take.
-- Match the user's tone literally: friendly means warm, professional means clean, witty means lightly clever.
-- Never use: leverage, delve, foster, navigate, rapidly evolving landscape, game-changer, transformative, unlock potential, seamless, robust, cutting-edge, synergy, ecosystem.`
+  let userPrompt = hook
+    ? `Write a LinkedIn post using this hook: "${hook}"\n\nTopic: ${topic}`
+    : `Write a LinkedIn post about: ${topic}`
 
-const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
-  if (!body.variation) return prompt
-  return [
-    "Regenerate this LinkedIn post as a different variation.",
-    "Use a different angle and a different hook.",
-    body.hook ? `Current hook to avoid repeating:\n${body.hook}` : "",
-    body.previousDraft ? `Previous draft to avoid copying:\n${body.previousDraft}` : "",
-    `Original instruction:\n${prompt}`,
-  ].filter(Boolean).join("\n\n")
-}
-
-const buildVisualPrompt = (body: GenerateBody, prompt: string) => [
-  "Create a LinkedIn visual post package. Return strict JSON only.",
-  "Caption rules: max 150 characters, plain text, no markdown, no em dashes, no generic CTA.",
-  "Image prompt rules: describe one simple professional visual that supports the caption.",
-  "Return this exact JSON shape:",
-  '{"caption":"short caption","imagePrompt":"specific image direction"}',
-  body.profile?.title ? `Writer role: ${body.profile.title}` : "",
-  body.profile?.industry ? `Industry: ${body.profile.industry}` : "",
-  body.profile?.tone ? `Tone: ${body.profile.tone}` : "",
-  `Topic:\n${prompt}`,
-].filter(Boolean).join("\n")
-
-const QUALITY_LABELS = ["Hook strength", "Body engagement", "CTA clarity"] as const
-type QualityLabel = (typeof QUALITY_LABELS)[number]
-
-const toScore = (value: unknown) => {
-  const n = Number(value)
-  return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0
-}
-
-const qualityPasses = (analysis: ContentAnalysis) => analysis.overallScore >= 80
-
-const qualityRank = (analysis: ContentAnalysis) =>
-  analysis.overallScore + Math.min(...analysis.scores.map((item) => item.score))
-
-const buildQualityScorePrompt = ({ title, profile, postType }: GenerateBody, prompt: string, draft: string) => [
-  "Score this LinkedIn post. Return strict JSON only.",
-  "Score with this exact rubric. Total 100 points:",
-  "- Hook strength (0-40): scroll-stopping, specific, surprising, contrarian.",
-  "- Body engagement (0-35): readable, concrete, keeps attention, no jargon walls.",
-  "- CTA clarity (0-25): clear next step, question, save prompt, or direct engagement.",
-  "",
-  "Return this exact JSON shape:",
-  '{"hookStrength":32,"bodyEngagement":30,"ctaClarity":20,"overallScore":82,"scores":[{"label":"Hook strength","score":80,"note":"short note"},{"label":"Body engagement","score":86,"note":"short note"},{"label":"CTA clarity","score":80,"note":"short note"}],"improvements":["short rewrite instruction"]}',
-  "",
-  title ? `Working title: ${title}` : "",
-  postType ? `Post type: ${postType}` : "",
-  profile?.title ? `Writer role: ${profile.title}` : "",
-  profile?.industry ? `Industry: ${profile.industry}` : "",
-  profile?.tone ? `Voice profile tone: ${profile.tone}` : "",
-  profile?.goals?.length ? `Voice profile goals: ${profile.goals.join(", ")}` : "",
-  `Original user request:\n${prompt}`,
-  "",
-  `Draft to score:\n${draft}`,
-].filter(Boolean).join("\n")
-
-const normalizeQualityAnalysis = (raw: string, draft: string, body: GenerateBody): ContentAnalysis => {
-  const fallback = analyzeContent({ title: body.title, content: draft, type: body.postType, profile: body.profile })
-  let parsed: Record<string, unknown> = {}
-  try { parsed = JSON.parse(raw) as Record<string, unknown> } catch {}
-  const rawScores = Array.isArray(parsed.scores) ? parsed.scores as Record<string, unknown>[] : []
-  const weightedScores: Record<string, number> = {
-    "Hook strength": toScore(parsed.hookStrength) * 2.5,
-    "Body engagement": Math.round(toScore(parsed.bodyEngagement) * (100 / 35)),
-    "CTA clarity": toScore(parsed.ctaClarity) * 4,
-  }
-  const scores = QUALITY_LABELS.map((label) => {
-    const matched = rawScores.find((item) => String(item.label || "").toLowerCase() === label.toLowerCase())
-    const local = fallback.scores.find((item) => item.label === label)
-    const score = toScore(matched?.score ?? weightedScores[label] ?? local?.score ?? 0)
-    return {
-      label: label as QualityLabel,
-      score,
-      note: String(matched?.note || local?.note || "No note returned"),
-      actionHint: score < 70 ? `Improve ${label.toLowerCase()}` : undefined,
-    }
-  })
-  const total = toScore(parsed.overallScore ?? (toScore(parsed.hookStrength) + toScore(parsed.bodyEngagement) + toScore(parsed.ctaClarity)))
-  const improvements = Array.isArray(parsed.improvements)
-    ? parsed.improvements.filter((item): item is string => typeof item === "string").slice(0, 4)
-    : fallback.improvements
-  return {
-    ...fallback,
-    overallScore: total,
-    overallLabel: total >= 90 ? "Ready to publish" : total >= 80 ? "Strong" : "Needs polish",
-    scores,
-    improvements,
-  }
-}
-
-const buildQualityRewritePrompt = (body: GenerateBody, prompt: string, draft: string, analysis: ContentAnalysis) => {
-  const weak = analysis.scores.filter((item) => item.score < 70)
-  const strong = analysis.scores.filter((item) => item.score >= 80)
-  return [
-    "Rewrite this LinkedIn post to pass the quality gate.",
-    "Return only the full rewritten post text.",
-    "Keep strong sections unchanged where possible.",
-    "Rewrite weak sections specifically. Do not rewrite for the sake of rewriting.",
-    "No markdown. No labels. No em dashes.",
-    "Quality gate: overall score >= 80 using Hook strength 40, Body engagement 35, CTA clarity 25.",
-    "",
-    `Current overall score: ${analysis.overallScore}`,
-    weak.length ? `Weak sections: ${weak.map((item) => `${item.label} ${item.score}/100 - ${item.note}`).join("; ")}` : "",
-    strong.length ? `Strong sections to preserve: ${strong.map((item) => `${item.label} ${item.score}/100`).join(", ")}` : "",
-    analysis.improvements.length ? `Rewrite instructions: ${analysis.improvements.join(" ")}` : "",
-    body.profile?.tone ? `Voice tone to preserve: ${body.profile.tone}` : "",
-    body.profile?.title ? `Writer role: ${body.profile.title}` : "",
-    `Original user request:\n${prompt}`,
-    "",
-    `Draft:\n${draft}`,
-  ].filter(Boolean).join("\n")
-}
-
-const qualityControlDraft = async (body: GenerateBody, prompt: string, initialText: string, forceRewrite = false) => {
-  let bestText = sanitizeGeneratedText(initialText)
-  let usageCost = 1
-  let bestAnalysis = normalizeQualityAnalysis(await callGroq(
-    buildQualityScorePrompt(body, prompt, bestText),
-    "Score this draft.",
-    0.2,
-  ), bestText, body)
-
-  const isFailedPass = (analysis: ContentAnalysis, text: string) => {
-    return !qualityPasses(analysis) || hasAiSlop(text)
+  if (variation && previousDraft) {
+    userPrompt += `\n\nRegenerate as a different variation. Do not repeat this previous draft:\n${previousDraft}`
   }
 
-  let needsRewrite = forceRewrite || isFailedPass(bestAnalysis, bestText)
+  const content = sanitizeGeneratedText(await callAi(systemPrompt, userPrompt, { temperature: 0.8, timeout: 20000 }))
 
-  for (let attempt = 0; attempt < 3 && needsRewrite; attempt++) {
-    // Note: Do not count internal retries as user-visible drafts, so usageCost remains 1.
-    const candidate = sanitizeGeneratedText(await callGroqText(
-      buildDraftSystemPrompt(body),
-      buildQualityRewritePrompt(body, prompt, bestText, bestAnalysis),
-      0.55,
-    ))
-    if (!candidate) break
-    const candidateAnalysis = normalizeQualityAnalysis(await callGroq(
-      buildQualityScorePrompt(body, prompt, candidate),
-      "Score this rewritten draft.",
-      0.2,
-    ), candidate, body)
-    if (qualityRank(candidateAnalysis) >= qualityRank(bestAnalysis)) {
-      bestText = candidate
-      bestAnalysis = candidateAnalysis
-    }
-    needsRewrite = isFailedPass(bestAnalysis, bestText)
+  let qualityScore = await analyzeContentWithAi(content, role, voiceProfile ?? undefined)
+  let finalContent = content
+  let finalScore = qualityScore
+
+  if (qualityScore.overall < 75) {
+    const rewritePrompt = `The previous post scored ${qualityScore.overall}/100. Issues: ${qualityScore.feedback.join(", ")}.\n\nRewrite this post to fix these issues. Make it more specific, more human, and more engaging.\n\nOriginal: ${content}`
+    finalContent = sanitizeGeneratedText(await callAi(systemPrompt, rewritePrompt, { temperature: 0.9, timeout: 20000 }))
+    finalScore = await analyzeContentWithAi(finalContent, role, voiceProfile ?? undefined)
   }
 
-  const metTarget = !isFailedPass(bestAnalysis, bestText)
-  const visibleAnalysis = metTarget ? bestAnalysis : { ...bestAnalysis, overallScore: Math.max(80, bestAnalysis.overallScore), overallLabel: "Needs polish" }
-  return { text: bestText, analysis: visibleAnalysis, metTarget, needsPolish: !metTarget, usageCost }
+  return { finalContent, finalScore }
 }
 
-const buildIntelligencePrompt = ({ title, content, profile, postType }: GenerateBody) =>
-  [
-    "You are a senior LinkedIn content strategist.",
-    "Analyze the post below and return strict JSON only.",
-    "Keep all outputs short, specific, and immediately actionable.",
-    ...BASE_RULES,
-    "",
-    "Return this exact JSON shape:",
-    '{"hashtags":["#RealHashtag","#RealHashtag"],"improvements":["short actionable tip"],"hookSuggestions":[{"style":"Sharp","text":"..."},{"style":"Authority","text":"..."},{"style":"Story","text":"..."},{"style":"Curiosity","text":"..."},{"style":"Direct","text":"..."}]}',
-    "",
-    "HASHTAG RULES: Generate 8 to 12 real LinkedIn discovery hashtags based on the actual post topic.",
-    "Use hashtags real professionals search: #HumanResources #Leadership #ProductManagement #Hiring #B2BSales #Entrepreneurship etc.",
-    "Never return placeholder hashtags like #One #Two #Tag #Post or generic noise.",
-    "Mix: 2-3 broad category tags + 3-4 niche topic tags + 1-2 audience function tags.",
-    profile?.industry ? `Industry context for hashtags: ${profile.industry}` : "",
-    profile?.title ? `Role context for hashtags: ${profile.title}` : "",
-    "",
-    "HOOK SUGGESTIONS RULES: Write 5 alternative first-line hooks for this post.",
-    "Each hook must be derived from the actual post content, not generic.",
-    "Sharp: contrarian or challenging take. Authority: specific result or credential. Story: first-person moment. Curiosity: open loop. Direct: clean numbered or practical.",
-    "Each hook should be under 100 characters. No em dashes.",
-    "",
-    "IMPROVEMENTS RULES: 2 to 3 short, specific suggestions.",
-    "",
-    title ? `Title: ${title}` : "",
-    postType ? `Type: ${postType}` : "",
-    profile?.title ? `Role: ${profile.title}` : "",
-    profile?.industry ? `Industry: ${profile.industry}` : "",
-    profile?.tone ? `Tone preference: ${profile.tone}` : "",
-    profile?.goals?.length ? `Goals: ${profile.goals.join(", ")}` : "",
-    `Post:\n${content || ""}`,
-  ].filter(Boolean).join("\n")
-
-const buildHooksPrompt = ({ content, title, profile }: GenerateBody) =>
-  [
-    "You are a LinkedIn hook specialist.",
-    "Generate 5 alternative opening lines (hooks) for the post below.",
-    "Use these exact frameworks once each: Contrarian, Data Shock, Personal Story, Direct Challenge, Curiosity Gap.",
-    "Score each hook from 0-100 for scroll-stopping strength.",
-    "Each hook must be directly tied to the post content, not generic.",
-    ...BASE_RULES,
-    "",
-    "Return strict JSON only with this shape:",
-    '{"hooks":[{"style":"Contrarian","text":"...","score":85},{"style":"Data Shock","text":"...","score":85},{"style":"Personal Story","text":"...","score":85},{"style":"Direct Challenge","text":"...","score":85},{"style":"Curiosity Gap","text":"...","score":85}]}',
-    "",
-    "RULES:",
-    "Every hook must reference something specific from the post content.",
-    "No generic placeholders. No em dashes. Under 100 characters each.",
-    profile?.name ? `Writer: ${profile.name}` : "",
-    profile?.title ? `Role: ${profile.title}` : "",
-    profile?.tone ? `Tone: ${profile.tone}` : "",
-    title ? `Title: ${title}` : "",
-    `Post:\n${content || ""}`,
-  ].filter(Boolean).join("\n")
-
-const scoreLocalHook = (text: string) => {
-  const t = text.trim()
-  let score = 55
-  if (/[?]/.test(t)) score += 10
-  if (/\d/.test(t)) score += 14
-  if (/most people|nobody|stop|mistake|truth|unpopular|why|what if|I\b|we\b/i.test(t)) score += 16
-  if (t.length > 15 && t.length <= 100) score += 10
-  return Math.min(100, score)
-}
-
-const cleanHookItems = (hooks: { style?: string; text?: string; score?: number }[], content: string, title?: string) => {
-  const fallback = fallbackHooks(content, title).map((hook) => ({ text: hook.text, score: scoreLocalHook(hook.text) }))
-  const scored = hooks
-    .filter((h) => h?.text && h.text.length > 8)
-    .map((h) => ({ text: sanitizeGeneratedText(String(h.text)).slice(0, 100), score: toScore(h.score ?? scoreLocalHook(String(h.text))) }))
-    .concat(fallback)
-    .sort((a, b) => b.score - a.score)
-  const seen = new Set<string>()
-  return scored.filter((item) => item.score >= 80 && !seen.has(item.text.toLowerCase()) && seen.add(item.text.toLowerCase())).map((item) => item.text).slice(0, 5)
-}
-
-const buildCommentRepliesPrompt = ({ originalPost, comments, profile }: GenerateBody) =>
-  [
-    "You are a LinkedIn engagement specialist.",
-    "Parse the comments below and generate multiple reply options per comment.",
-    "Replies must feel like a real human who actually read and understood the discussion.",
-    ...BASE_RULES,
-    "",
-    "REPLY RULES:",
-    "Replies must be short: 1 to 3 sentences max.",
-    "Never sound like AI. No generic praise like 'Great point!' or 'Totally agree!'",
-    "Reference something specific from the comment.",
-    "Different styles: Thoughtful adds perspective, Warm is friendly and personal, Sharp is direct or slightly challenging, Concise is minimal and crisp.",
-    "",
-    "Return strict JSON only with this shape:",
-    '{"replies":[{"comment":"the original comment text","style":"Thoughtful","reply":"..."},{"comment":"same comment","style":"Warm","reply":"..."},{"comment":"same comment","style":"Sharp","reply":"..."}]}',
-    "",
-    "Generate 3 reply styles per comment (Thoughtful, Warm, Sharp).",
-    "Parse each comment from the comments block below as a separate comment.",
-    "",
-    originalPost ? `Original post context:\n${originalPost.slice(0, 600)}` : "",
-    profile?.name ? `Replier name: ${profile.name}` : "",
-    profile?.title ? `Replier role: ${profile.title}` : "",
-    profile?.tone ? `Tone preference: ${profile.tone}` : "",
-    `Comments:\n${comments || ""}`,
-  ].filter(Boolean).join("\n")
-
-async function callGroq(systemPrompt: string, userMessage: string, temperature = 0.6): Promise<string> {
+export async function POST(request: Request) {
   try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature,
-      response_format: { type: 'json_object' },
-    })
-    return chatCompletion.choices[0]?.message?.content || '{}'
-  } catch (error: any) {
-    throw new Error(error?.message || 'AI service error')
-  }
-}
+    const { userId } = await auth()
+    if (!userId) return NextResponse.json({ error: "auth_required" }, { status: 401 })
 
-async function callGroqText(systemPrompt: string, userMessage: string, temperature = 0.7): Promise<string> {
-  try {
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      model: 'llama-3.1-8b-instant',
-      temperature,
-    })
-    return chatCompletion.choices[0]?.message?.content || ''
-  } catch (error: any) {
-    throw new Error(error?.message || 'AI service error')
-  }
-}
-
-const strengthenDraft = (text: string, prompt: string, postType?: string): { text: string; needsRewrite: boolean } => {
-  const cleaned = sanitizeGeneratedText(text)
-  if (postType?.toLowerCase().includes("carousel") || postType?.toLowerCase().includes("visual")) {
-    return { text: cleaned, needsRewrite: false }
-  }
-  const words = cleaned.split(/\s+/).filter(Boolean)
-  const isShort = words.length < 130
-  const hasSlop = hasAiSlop(cleaned)
-  if (isShort || hasSlop) {
-    return { text: cleaned, needsRewrite: true }
-  }
-  return { text: cleaned, needsRewrite: false }
-}
-
-const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<typeof analyzeContent>, body: GenerateBody) => [
-  "Repair this LinkedIn draft.",
-  "Keep the same topic and overall claim.",
-  "Make it feel more human and more specific.",
-  "No markdown, no headings, no em dashes.",
-  "Do not invent fake metrics or credentials.",
-  body.profile?.title ? `Writer role: ${body.profile.title}.` : "",
-  body.profile?.industry ? `Industry: ${body.profile.industry}.` : "",
-  body.profile?.tone ? `Tone to match: ${body.profile.tone}.` : "",
-  body.profile?.goals?.length ? `Goals: ${body.profile.goals.join(", ")}.` : "",
-  "Target shape:",
-  "- 170 to 240 words",
-  "- first line under 90 characters",
-  "- 4 to 6 short paragraphs",
-  "- one concrete example or consequence",
-  "- one practical takeaway",
-  "- one natural CTA",
-  `Current score: ${analysis.overallScore}/100.`,
-  `Weak dimensions: ${analysis.scores.filter((item) => item.score < 75).map((item) => `${item.label} (${item.score})`).join(", ") || "none"}.`,
-  `Fix list: ${analysis.improvements.join(" ") || "Make the post stronger overall."}`,
-  "",
-  `Prompt:\n${prompt}`,
-  "",
-  `Draft to repair:\n${draft}`,
-].filter(Boolean).join("\n")
-
-export async function POST(request: NextRequest) {
-  try {
-    const { userId } = await requireAuth(request)
-    if (!(await rateLimit(`groq:${userId}`, 10, 60))) {
-      return NextResponse.json({ error: "Rate limit exceeded. Max 10 generations per minute." }, { status: 429 })
-    }
-
-    const planCheck = await requirePlan(request, "Free")
-    if (!planCheck.ok) return planCheck.response
-    const { session, workspaceId, limits } = planCheck
-
-    if (!(await rateLimit(`gen_${session.email}`, 10, 60))) {
-      return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
-    }
-
+    const ctx = await getClerkAuthContext()
     const body = (await request.json()) as GenerateBody
     const mode = body.mode || "draft"
 
-    // Enforce monthly draft limit on draft mode only
-    if (mode === "draft") {
-      if (limits.aiDraftsPerMonth !== "unlimited") {
-        const used = await getMonthlyCount("posts", workspaceId)
-        const limitErr = enforceMonthlyLimit(used, limits.aiDraftsPerMonth, "AI drafts")
-        if (limitErr) return limitErr
-      }
+    const ip = getClientIp(request as Parameters<typeof getClientIp>[0])
+    const topic = String(body.topic || body.prompt || body.title || "").trim()
+    const role = body.role || "ceo-founder"
+    const format = body.format || body.postType || "text"
+    const hook = body.hook?.trim()
+
+    const supabase = createServiceClient()
+    const { data: membership } = await supabase
+      .from("memberships")
+      .select("workspace_id")
+      .eq("user_id", ctx.supabaseUserId)
+      .limit(1)
+      .maybeSingle()
+
+    let wsId = body.workspaceId || body.workspaceKey || membership?.workspace_id
+    if (!wsId) {
+      wsId = await ensureWorkspaceForUser({ userId: ctx.supabaseUserId, firstName: ctx.firstName })
     }
 
-    // --- intelligence mode ---
-    if (mode === "intelligence") {
-      const content = String(body.content || "").trim()
-      if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 })
+    const { plan } = await fetchWorkspacePlan(wsId, ctx.email)
 
-      const analysis = analyzeContent({
-        title: body.title,
-        content,
-        type: body.postType,
-        profile: body.profile,
-      })
-
-      if (!groqApiKey) return NextResponse.json({ analysis })
-
-      try {
-        const contentJson = await callGroq(buildIntelligencePrompt(body), "Analyze this post.", 0.4)
-        let parsed: {
-          hashtags?: string[]
-          improvements?: string[]
-          hookSuggestions?: { style: string; text: string }[]
-        } = {}
-        try { parsed = JSON.parse(contentJson) } catch {}
-
-        const cleanHashtags = (parsed.hashtags || [])
-          .filter((t): t is string => typeof t === "string" && t.startsWith("#") && t.length > 3 && !/^#(one|two|three|tag|post|here|real|this|your)$/i.test(t))
-          .slice(0, 12)
-
-        const cleanHooks = (parsed.hookSuggestions || [])
-          .filter((h) => h?.style && h?.text && h.text.length > 10)
-          .map((h) => ({ ...h, text: sanitizeGeneratedText(h.text).slice(0, 100) }))
-          .slice(0, 5)
-
-        return NextResponse.json({
-          analysis: {
-            ...analysis,
-            hashtags: cleanHashtags.length >= 3 ? cleanHashtags : analysis.hashtags,
-            improvements: parsed.improvements?.filter(Boolean)?.slice(0, 3) || analysis.improvements,
-          },
-          hookSuggestions: cleanHooks,
-        })
-      } catch {
-        return NextResponse.json({ analysis })
-      }
+    const rateCheck = await checkRateLimit(userId, plan, ip)
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "rate_limit",
+          message: "Too many requests. Please wait a moment.",
+          reset: rateCheck.reset,
+        },
+        { status: 429 }
+      )
     }
 
-    // --- hooks mode ---
     if (mode === "hooks") {
-      const content = String(body.content || "").trim()
+      const content = String(body.content || topic).trim()
       if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 })
 
-      if (!groqApiKey) {
-        return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
-      }
-
-      let usageCost = 1
-      let parsed: { hooks?: { style?: string; text?: string; score?: number }[] } = {}
+      const hooksJson = await callAi(
+        `Generate exactly 5 LinkedIn hook openers as a JSON object: {"hooks":["hook1","hook2","hook3","hook4","hook5"]}. Each hook must be under 20 words, specific, and scroll-stopping. No banned AI words.`,
+        `Topic or draft:\n${content}`,
+        { json: true, temperature: 0.8, timeout: 15000 }
+      )
+      let hooks: string[] = []
       try {
-        const contentJson = await callGroq(buildHooksPrompt(body), "Generate hook alternatives.", 0.8)
-        parsed = JSON.parse(contentJson)
-        let cleanHooks = cleanHookItems(parsed.hooks || [], content, body.title)
-        if (!cleanHooks.length) {
-          usageCost += 1
-          const retryJson = await callGroq(buildHooksPrompt(body), "Generate stronger hook alternatives over 80 score.", 0.9)
-          parsed = JSON.parse(retryJson)
-          cleanHooks = cleanHookItems(parsed.hooks || [], content, body.title)
-        }
-        return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5), usageCost })
+        const parsed = JSON.parse(hooksJson) as { hooks?: string[] }
+        hooks = (parsed.hooks || []).map((h) => sanitizeGeneratedText(String(h))).filter(Boolean).slice(0, 5)
       } catch {
-        return NextResponse.json({ hooks: fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5), usageCost })
+        hooks = []
       }
+      return NextResponse.json({ hooks, usageCost: 1 })
     }
 
-    // --- comment-replies mode ---
     if (mode === "comment-replies") {
       const comments = String(body.comments || "").trim()
       if (!comments) return NextResponse.json({ error: "Comments are required." }, { status: 400 })
 
-      if (!groqApiKey) {
-        return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
+      const repliesJson = await callAi(
+        `Generate thoughtful LinkedIn comment replies as JSON: {"replies":[{"comment":"...","style":"helpful","reply":"..."}]}. Keep replies human, specific, and under 280 characters.`,
+        `Original post:\n${body.originalPost || body.content || ""}\n\nComments:\n${comments}`,
+        { json: true, temperature: 0.7, timeout: 15000 }
+      )
+      let replies: Array<{ comment: string; style: string; reply: string }> = []
+      try {
+        const parsed = JSON.parse(repliesJson) as { replies?: Array<{ comment: string; style: string; reply: string }> }
+        replies = (parsed.replies || []).filter((r) => r?.comment && r?.reply).slice(0, 18)
+      } catch {
+        replies = []
       }
-
-      const contentJson = await callGroq(buildCommentRepliesPrompt(body), "Generate replies.", 0.7)
-      let parsed: { replies?: { comment: string; style: string; reply: string }[] } = {}
-      try { parsed = JSON.parse(contentJson) } catch {}
-
-      const cleanReplies = (parsed.replies || [])
-        .filter((r) => r?.comment && r?.reply && r.reply.length > 5)
-        .slice(0, 18)
-
-      return NextResponse.json({ replies: cleanReplies })
+      return NextResponse.json({ replies })
     }
 
-    // --- repair mode ---
     if (mode === "repair") {
       const content = String(body.content || "").trim()
       if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 })
-      if (!groqApiKey) {
-        return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
-      }
 
-      const currentAnalysis = analyzeContent({
-        title: body.title,
-        content,
-        type: body.postType,
-        profile: body.profile,
-      })
-
-      try {
-        const repaired = sanitizeGeneratedText(await callGroqText(
-          buildDraftSystemPrompt(body),
-          buildRepairPrompt(content, String(body.prompt || body.title || "Improve this draft"), currentAnalysis, body),
-          0.55,
-        ))
-        const repairedAnalysis = analyzeContent({
-          title: body.title,
-          content: repaired,
-          type: body.postType,
-          profile: body.profile,
-        })
-        return NextResponse.json({ text: repaired, analysis: repairedAnalysis, metTarget: repairedAnalysis.overallScore >= 90, usageCost: 1 })
-      } catch (error) {
-        return NextResponse.json({ error: cleanErrorMessage((error as Error).message) }, { status: 502 })
-      }
+      const systemPrompt = buildRoleAwareSystemPrompt(role)
+      const repairPrompt = `${body.prompt || "Improve this draft toward 90+ quality."}\n\nDraft:\n${content}`
+      const repaired = sanitizeGeneratedText(await callAi(systemPrompt, repairPrompt, { temperature: 0.7, timeout: 20000 }))
+      const score = await analyzeContentWithAi(repaired, role)
+      const analysis = toContentAnalysis(score, repaired)
+      return NextResponse.json({ text: repaired, analysis, metTarget: score.overall >= 90, usageCost: 1 })
     }
 
-    // --- draft mode ---
-    const prompt = String(body.prompt || "").trim()
-    if (!prompt) return NextResponse.json({ error: "Prompt is required." }, { status: 400 })
-    if (!groqApiKey) {
-      return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
+    if (mode === "intelligence") {
+      const content = String(body.content || "").trim()
+      if (!content) return NextResponse.json({ error: "Content is required." }, { status: 400 })
+      const score = await analyzeContentWithAi(content, role)
+      return NextResponse.json({ analysis: toContentAnalysis(score, content) })
     }
 
-    if (body.postType?.toLowerCase().includes("visual")) {
-      try {
-        const contentJson = await callGroq(buildVisualPrompt(body, prompt), "Generate visual caption.", body.variation ? 0.9 : 0.6)
-        let parsed: { caption?: string; imagePrompt?: string } = {}
-        try { parsed = JSON.parse(contentJson) } catch {}
-        const caption = sanitizeGeneratedText(String(parsed.caption || "")).slice(0, 150)
-        const imagePrompt = String(parsed.imagePrompt || `Professional LinkedIn visual about ${prompt}`).trim()
-        if (!caption) return NextResponse.json({ error: "AI returned an empty caption." }, { status: 502 })
-        const analysis = analyzeContent({ title: body.title, content: caption, type: body.postType, profile: body.profile })
-        return NextResponse.json({ text: caption, analysis, metTarget: true, usageCost: 1, visual: { imagePrompt } })
-      } catch (error) {
-        return NextResponse.json({ error: cleanErrorMessage((error as Error).message) }, { status: 502 })
-      }
+    if (!topic) return NextResponse.json({ error: "Prompt is required." }, { status: 400 })
+
+    const limitCheck = await checkAndIncrementLimit(wsId, "drafts", plan)
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: "plan_limit",
+          message: `You have reached your ${limitCheck.limit} draft limit for this month. Upgrade to continue.`,
+        },
+        { status: 403 }
+      )
     }
 
-    let text = ""
-    let initialNeedsRewrite = false
-    try {
-      const userMessage = buildDraftUserMessage(body, prompt)
-      const result = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), userMessage, body.variation ? 0.9 : 0.7), prompt, body.postType)
-      text = result.text
-      initialNeedsRewrite = result.needsRewrite
-    } catch (error) {
-      const message = (error as Error).message || "Failed to generate content."
-      console.error("Groq API error:", message)
-      return NextResponse.json({ error: cleanErrorMessage(message) }, { status: 502 })
-    }
+    const { data: voiceProfile } = await supabase
+      .from("voice_profiles")
+      .select("*")
+      .eq("workspace_id", wsId)
+      .maybeSingle()
 
-    let finalAnalysis = analyzeContent({
-      title: body.title,
-      content: text,
-      type: body.postType,
-      profile: body.profile,
+    const { finalContent, finalScore } = await generateFullPost({
+      topic,
+      role,
+      hook,
+      format,
+      voiceProfile,
+      variation: body.variation,
+      previousDraft: body.previousDraft,
     })
 
-    let usageCost = 1
-    let needsPolish = false
-    if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
-      try {
-        const quality = await qualityControlDraft(body, prompt, text, initialNeedsRewrite)
-        text = quality.text
-        finalAnalysis = quality.analysis
-        usageCost = quality.usageCost
-        needsPolish = quality.needsPolish
-      } catch {
-        // keep first visible draft if internal quality control fails
-      }
+    const { data: post, error: insertError } = await supabase
+      .from("posts")
+      .insert({
+        workspace_id: wsId,
+        author_id: ctx.supabaseUserId,
+        title: topic.slice(0, 200),
+        content: finalContent,
+        type: format,
+        status: "draft",
+      })
+      .select("id")
+      .single()
+
+    if (insertError) {
+      console.error("generate_post_insert_failed", insertError)
+      return NextResponse.json({ error: "failed_to_save_post" }, { status: 500 })
     }
 
-    if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
-    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: qualityPasses(finalAnalysis), needsPolish, usageCost })
+    const analysis = toContentAnalysis(finalScore, finalContent)
+
+    return NextResponse.json({
+      text: finalContent,
+      post: finalContent,
+      postId: post?.id,
+      qualityScore: finalScore,
+      analysis,
+      metTarget: finalScore.overall >= 75,
+      needsPolish: finalScore.overall < 90,
+      remainingDrafts: limitCheck.remaining,
+      usageCost: 1,
+    })
   } catch (error) {
+    console.error("Generate error:", error)
     const message = (error as Error).message || "Internal server error"
     if (message === "auth_required") {
       return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
     }
-    console.error("Generate error:", error)
-    return NextResponse.json({ error: cleanErrorMessage(message) }, { status: 500 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

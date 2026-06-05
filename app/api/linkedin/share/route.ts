@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAppSession, resolveWorkspaceId } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
@@ -11,11 +12,12 @@ type ShareRequestBody = {
 }
 
 export async function POST(request: NextRequest) {
-  const session = getAppSession(request)
-  if (!session?.email) {
+  const { userId } = await auth()
+  if (!userId) {
     return NextResponse.json({ error: "auth_required" }, { status: 401 })
   }
 
+  const ctx = await getClerkAuthContext()
   const body = (await request.json()) as ShareRequestBody
   if (!body.content?.trim()) {
     return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
@@ -30,7 +32,7 @@ export async function POST(request: NextRequest) {
   }
 
   const account = await getLinkedInPublishingAccount(workspaceId)
-  const legacyCred = account ? null : await getLinkedInToken(session.email)
+  const legacyCred = account ? null : await getLinkedInToken(ctx.email)
   const accessToken = account?.access_token || legacyCred?.access_token || null
   const authorId = account?.provider_account_id || legacyCred?.member_id || null
   const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacyCred?.token_expires_at || null

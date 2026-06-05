@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { appSessionCookieName, createAppSession, ensureWorkspaceForEmail, toPublicAuthUser } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext, resolveWorkspaceId, ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { consumeLinkedInSession, linkedInSessionCookieName } from "@/lib/server/linkedin"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 
@@ -9,16 +10,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "linkedin_session_missing" }, { status: 404 })
   }
 
+  const { userId } = await auth()
+  if (!userId) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 })
+  }
+
   try {
     const session = consumeLinkedInSession(token)
     const profile = session.profile || {}
-    const ownerEmail = String(profile.email || "").trim().toLowerCase() || `linkedin-${profile.sub || Date.now()}@local.qalam`
+    const ctx = await getClerkAuthContext()
+    const ownerEmail = ctx.email
     const memberId = String(profile.sub || "") || null
     const fullName =
       String(profile.name || "").trim() ||
       `${String(profile.given_name || "")} ${String(profile.family_name || "")}`.trim() ||
-      "LinkedIn User"
-    const firstName = String(profile.given_name || "").trim() || fullName.split(" ")[0] || "User"
+      ctx.fullName
 
     try {
       await storeLinkedInToken({
@@ -32,7 +38,10 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      const workspaceId = await ensureWorkspaceForEmail({ email: ownerEmail, firstName })
+      const workspaceId = await ensureWorkspaceForUser({
+        userId: ctx.supabaseUserId,
+        firstName: ctx.firstName,
+      })
       await storeLinkedInPublishingAccount({
         workspaceId,
         accessToken: session.accessToken,
@@ -43,28 +52,21 @@ export async function GET(request: NextRequest) {
       console.error("publishing_account_store_failed", error)
     }
 
-    const appSession = await createAppSession({
-      email: ownerEmail,
-      name: fullName,
-      imageUrl: String(profile.picture || "") || null,
-      linkedinMemberId: memberId,
-      linkedinTokenExpiresAt: session.expiresAt,
+    const success = NextResponse.json({
+      user: {
+        email: ownerEmail,
+        fullName,
+        firstName: ctx.firstName,
+        role: ctx.role,
+        imageUrl: String(profile.picture || "") || ctx.imageUrl,
+        linkedinMemberId: memberId,
+        linkedinTokenExpiresAt: session.expiresAt,
+      },
     })
-
-    const success = NextResponse.json({ user: toPublicAuthUser(appSession.payload) })
     success.cookies.set({
       name: linkedInSessionCookieName,
       value: "",
       maxAge: 0,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-    })
-    success.cookies.set({
-      name: appSessionCookieName,
-      value: appSession.token,
-      maxAge: appSession.maxAge,
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",

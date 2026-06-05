@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/admin"
+import { requireAdminRequest } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type OverrideInput = {
@@ -31,7 +31,7 @@ const writeAudit = (adminEmail: string, targetEmail: string, action: string, old
 export async function POST(request: NextRequest) {
   let admin
   try {
-    admin = requireAdminRequest(request)
+    admin = await requireAdminRequest(request)
   } catch {
     return notFound()
   }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   let admin
   try {
-    admin = requireAdminRequest(request)
+    admin = await requireAdminRequest(request)
   } catch {
     return notFound()
   }
@@ -83,7 +83,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let admin
   try {
-    admin = requireAdminRequest(request)
+    admin = await requireAdminRequest(request)
   } catch {
     return notFound()
   }

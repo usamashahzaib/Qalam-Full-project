@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/admin"
+import { requireAdminRequest } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
 export async function GET(request: NextRequest) {
   try {
-    requireAdminRequest(request)
+    await requireAdminRequest(request)
   } catch {
     return notFound()
   }

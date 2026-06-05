@@ -27,6 +27,7 @@ type AuthContextValue = {
   beginLinkedInAuth: (nextPath?: string) => Promise<void>
   completeLinkedInAuth: () => Promise<AuthUser>
   disconnectLinkedIn: () => Promise<void>
+  refreshAuth: () => Promise<void>
   logout: () => void
 }
 
@@ -92,6 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return loginWithLinkedIn(user)
   }, [loginWithLinkedIn])
 
+  const refreshAuth = useCallback(async () => {
+    const { user } = await loadAuthSession()
+    persistUser(user)
+  }, [persistUser])
+
   const disconnectLinkedIn = useCallback(async () => {
     if (!user) return
     try {
@@ -125,9 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       beginLinkedInAuth,
       completeLinkedInAuth,
       disconnectLinkedIn,
+      refreshAuth,
       logout,
     }),
-    [authChecked, beginLinkedInAuth, completeLinkedInAuth, disconnectLinkedIn, loginWithLinkedIn, logout, user]
+    [authChecked, beginLinkedInAuth, completeLinkedInAuth, disconnectLinkedIn, loginWithLinkedIn, logout, refreshAuth, user]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

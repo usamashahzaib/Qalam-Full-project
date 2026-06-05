@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { callAi } from "@/lib/ai-router"
-import { rateLimit } from "@/lib/server/rate-limit"
-
-function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "anonymous"
-  )
-}
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 
 export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
 
-  // 5 requests per day per IP (86400 seconds)
-  const allowed = await rateLimit(`hook-gen:${ip}`, 5, 86400)
-  if (!allowed) {
+  const rate = await checkRateLimit(`hook-gen:${ip}`, "Free", ip)
+  if (!rate.allowed) {
     return NextResponse.json(
-      { error: "Daily limit reached. Come back tomorrow for more free hooks." },
+      { error: "rate_limit_exceeded", message: "Too many requests. Please wait a moment.", ...rate },
       { status: 429 }
     )
   }
@@ -54,7 +45,6 @@ Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Ho
   try {
     const raw = await callAi(systemPrompt, userMessage, { json: false, temperature: 0.8 })
 
-    // Parse JSON array from response
     let hooks: string[] = []
     const match = raw.match(/\[[\s\S]*\]/)
     if (match) {
@@ -64,7 +54,6 @@ Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Ho
       }
     }
 
-    // Fallback: split by newlines if JSON parsing failed
     if (hooks.length === 0) {
       hooks = raw
         .split("\n")

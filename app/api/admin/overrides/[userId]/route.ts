@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/admin"
+import { requireAdminRequest } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
@@ -18,7 +18,7 @@ type Params = { params: Promise<{ userId: string }> }
 
 export async function GET(request: NextRequest, context: Params) {
   try {
-    requireAdminRequest(request)
+    await requireAdminRequest(request)
   } catch {
     return notFound()
   }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, context: Params) {
 export async function DELETE(request: NextRequest, context: Params) {
   let admin
   try {
-    admin = requireAdminRequest(request)
+    admin = await requireAdminRequest(request)
   } catch {
     return notFound()
   }

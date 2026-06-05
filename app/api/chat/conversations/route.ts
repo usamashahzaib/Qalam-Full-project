@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAppSession, resolveWorkspaceId } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId, getClerkAuthContext } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
 type ConversationRow = {
@@ -22,21 +23,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
+
     const workspaceId = await resolveWorkspaceId(request)
     const body = await request.json()
     const title = body.title || "New Conversation"
 
-    const session = requireAppSession(request)
-    const users = await supabaseSelect<{ id: string }>("users", `email=eq.${encodeURIComponent(session.email)}&limit=1`)
-    const userId = users?.[0]?.id
-
-    if (!userId) {
-       return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
+    const ctx = await getClerkAuthContext()
+    const dbUserId = ctx.supabaseUserId
 
     const conv = await supabaseInsert("conversations", {
       workspace_id: workspaceId,
-      user_id: userId,
+      user_id: dbUserId,
       title
     }, "return=representation")
 

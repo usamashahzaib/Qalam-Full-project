@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, resolveWorkspaceId } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { requirePlan } from "@/lib/server/require-plan"
@@ -9,7 +10,10 @@ type DbConversation = { id: string; workspace_id: string }
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth(request)
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
 
@@ -28,7 +32,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request)
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
     const { workspaceId } = planCheck

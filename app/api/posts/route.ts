@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId, requireAppSession } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId, getClerkAuthContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -59,11 +60,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
+
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
-    const session = requireAppSession(request)
-    const users = await supabaseSelect<{ id: string }>("users", `email=eq.${encodeURIComponent(session.email)}&limit=1`)
-    const authorId = users?.[0]?.id ?? null
+    const ctx = await getClerkAuthContext()
+    const authorId = ctx.supabaseUserId
 
     const body = await request.json()
     const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body

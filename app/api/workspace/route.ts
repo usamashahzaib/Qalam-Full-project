@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAppSession, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/workspace"
 
 const toStatus = (message: string) => {
   switch (message) {
@@ -14,15 +15,16 @@ const toStatus = (message: string) => {
   }
 }
 
-/**
- * GET /api/workspace - resolves and returns the active workspace ID.
- * The server validates membership. The client uses this to know which workspace to operate in.
- */
 export async function GET(request: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 })
+  }
+
   try {
-    const session = requireAppSession(request)
+    const ctx = await getClerkAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
-    const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
+    const planInfo = await fetchWorkspacePlan(workspaceId, ctx.email)
     return NextResponse.json({ workspaceId, ...planInfo })
   } catch (error) {
     const message = (error as Error).message || "server_error"
@@ -30,11 +32,12 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * PUT /api/workspace - deprecated legacy endpoint.
- * New code must write through domain APIs such as /api/posts.
- */
 export async function PUT(request: NextRequest) {
+  const { userId } = await auth()
+  if (!userId) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 })
+  }
+
   try {
     await resolveWorkspaceId(request)
     return NextResponse.json(

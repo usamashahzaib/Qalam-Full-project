@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, resolveWorkspaceId } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { rateLimit } from "@/lib/server/rate-limit"
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 
 type CarouselProjectRow = {
   id: string
@@ -176,13 +177,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request)
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
-    const { workspaceId, limits, session } = planCheck
+    const { workspaceId, limits, plan } = planCheck
 
-    if (!(await rateLimit(`carousel_${session.email}`, 5, 60))) {
-      return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
+    const rate = await checkRateLimit(userId, plan, getClientIp(request))
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "rate_limit_exceeded", message: "Rate limit exceeded. Please wait a moment.", ...rate },
+        { status: 429 }
+      )
     }
 
     // Monthly carousel generation limit

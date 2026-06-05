@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
 import { requirePlan } from "@/lib/server/require-plan"
-import { transcribeAudio, analyzeVoiceText, trainVoiceProfile } from "@/lib/voice-analyzer"
+import { transcribeAudio, trainVoiceProfile } from "@/lib/voice-analyzer"
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. Authenticate user
-    const { userId } = await requireAuth(request)
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
 
-    // 2. Enforce Solo plan for voice training features
     const planCheck = await requirePlan(request, "Solo")
     if (!planCheck.ok) return planCheck.response
     const { workspaceId } = planCheck
 
-    // 3. Parse form data
     const formData = await request.formData()
     const file = formData.get("file") as Blob | null
     const text = formData.get("text") as string | null
@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     let contentToAnalyze = ""
 
     if (file && file.size > 0) {
-      // Transcribe the audio file
       try {
         contentToAnalyze = await transcribeAudio(file)
       } catch (err) {
@@ -46,7 +45,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 4. Run voice training and persist to database
     const result = await trainVoiceProfile(workspaceId, [contentToAnalyze])
 
     return NextResponse.json({

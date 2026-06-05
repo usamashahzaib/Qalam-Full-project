@@ -1,4 +1,12 @@
+import { createClient } from "@supabase/supabase-js"
 import { env, requireSupabaseEnv } from "@/lib/server/env"
+
+export function createServiceClient() {
+  requireSupabaseEnv()
+  return createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
 
 type RestResponse<T> = {
   data: T

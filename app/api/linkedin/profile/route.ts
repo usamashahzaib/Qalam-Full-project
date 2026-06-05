@@ -1,25 +1,35 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAppSession } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getAppSession(request)
-    if (!session) {
+    const { userId } = await auth()
+    if (!userId) {
       return NextResponse.json({ error: "auth_required" }, { status: 401 })
     }
 
-    if (!session.linkedinMemberId) {
+    const ctx = await getClerkAuthContext()
+    const workspaceId = await resolveWorkspaceId(request)
+    const account = await getLinkedInPublishingAccount(workspaceId)
+    const legacy = account ? null : await getLinkedInToken(ctx.email)
+    const memberId = account?.provider_account_id || legacy?.member_id || null
+    const expiresAt = account?.expires_at
+      ? Date.parse(account.expires_at)
+      : legacy?.token_expires_at || null
+
+    if (!memberId) {
       return NextResponse.json({ connected: false })
     }
 
-    // Default mock company context or derived from profile industry
     return NextResponse.json({
       connected: true,
-      memberId: session.linkedinMemberId,
-      name: session.fullName,
-      avatar: session.imageUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(session.email)}`,
+      memberId,
+      name: ctx.fullName,
+      avatar: ctx.imageUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(ctx.email)}`,
       company: "Qalam Creator",
-      expiresAt: session.linkedinTokenExpiresAt,
+      expiresAt,
     })
   } catch (error) {
     console.error("LinkedIn profile error:", error)

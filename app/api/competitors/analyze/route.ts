@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
-import { rateLimit } from "@/lib/server/rate-limit"
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { requireAuth } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -25,14 +25,20 @@ type Job = {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth(request)
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
-    const { session, workspaceId, limits } = planCheck
+    const { workspaceId, limits, plan } = planCheck
 
-    // Rate Limit: 5 analysis requests per minute per user
-    if (!(await rateLimit(`analyze_${session.email}`, 5, 60))) {
-      return NextResponse.json({ error: "Rate limit exceeded. Please slow down." }, { status: 429 })
+    const rate = await checkRateLimit(userId, plan, getClientIp(request))
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "rate_limit_exceeded", message: "Rate limit exceeded. Please slow down.", ...rate },
+        { status: 429 }
+      )
     }
 
     // Monthly research run limit

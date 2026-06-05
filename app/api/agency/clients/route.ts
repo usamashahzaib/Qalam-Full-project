@@ -1,26 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAppSession } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext } from "@/lib/server/workspace"
 import { errorToStatus } from "@/lib/server/roles"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getAppSession(request)
-    if (!session?.email) return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
 
-    const users = await supabaseSelect<{ id: string }>(
-      "users",
-      `email=eq.${encodeURIComponent(session.email)}&limit=1`
-    )
-    const userId = users?.[0]?.id
-    if (!userId) return NextResponse.json({ error: "user_not_found" }, { status: 404 })
+    const ctx = await getClerkAuthContext()
+    const dbUserId = ctx.supabaseUserId
 
-    // Fetch all memberships for this user
     const memberships = await supabaseSelect<{
       workspace_id: string | null
       organization_id: string
       role: string
-    }>("memberships", `user_id=eq.${userId}`)
+    }>("memberships", `user_id=eq.${dbUserId}`)
 
     const orgIds = Array.from(
       new Set((memberships || []).map((m) => m.organization_id).filter(Boolean))
@@ -29,7 +27,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ clients: [] })
     }
 
-    // Fetch all workspaces in these orgs
     const workspaces = await supabaseSelect<{
       id: string
       name: string
@@ -37,13 +34,12 @@ export async function GET(request: NextRequest) {
       created_at: string
     }>("workspaces", `organization_id=in.(${orgIds.join(",")})`)
 
-    // Build a set of workspace IDs the user is explicitly a member of
     const memberWorkspaceIds = new Set(
       (memberships || []).map((m) => m.workspace_id).filter(Boolean)
     )
 
     const clients = (workspaces || [])
-      .filter((ws) => memberWorkspaceIds.has(ws.id)) // only include workspaces user belongs to
+      .filter((ws) => memberWorkspaceIds.has(ws.id))
       .map((ws) => {
         const wsRole = (memberships || []).find((m) => m.workspace_id === ws.id)?.role ?? "viewer"
         return {
@@ -65,33 +61,28 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = getAppSession(request)
-    if (!session?.email) return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: "auth_required" }, { status: 401 })
+    }
 
-    const users = await supabaseSelect<{ id: string }>(
-      "users",
-      `email=eq.${encodeURIComponent(session.email)}&limit=1`
-    )
-    const userId = users?.[0]?.id
-    if (!userId) return NextResponse.json({ error: "user_not_found" }, { status: 404 })
+    const ctx = await getClerkAuthContext()
+    const dbUserId = ctx.supabaseUserId
 
     const memberships = await supabaseSelect<{
       organization_id: string
       workspace_id: string | null
       role: string
-    }>("memberships", `user_id=eq.${userId}`)
+    }>("memberships", `user_id=eq.${dbUserId}`)
 
     const orgMembership = (memberships || []).find((m) => !m.workspace_id) || (memberships || [])[0]
     const orgId = orgMembership?.organization_id
     if (!orgId) return NextResponse.json({ error: "no_organization" }, { status: 403 })
 
-    // ── Role check: must be agency_admin or super_admin to add clients ──────
-    // Find the user's org-level role
     const orgRole = orgMembership?.role ?? "viewer"
     if (!["agency_admin", "super_admin", "editor"].includes(orgRole)) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
-    // ────────────────────────────────────────────────────────────────────────
 
     const body = await request.json()
     if (!body.clientName) return NextResponse.json({ error: "missing_fields" }, { status: 400 })
@@ -108,11 +99,10 @@ export async function POST(request: NextRequest) {
     const ws = result?.[0]
 
     if (ws) {
-      // Auto-assign the creator to this new workspace as agency_admin
       await supabaseInsert(
         "memberships",
         {
-          user_id: userId,
+          user_id: dbUserId,
           organization_id: orgId,
           workspace_id: ws.id,
           role: "agency_admin",
