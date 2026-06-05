@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Helper to convert base64url string to Uint8Array
@@ -105,7 +105,7 @@ async function verifyToken(token: string, secret: string): Promise<boolean> {
   }
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Protect ALL /api/* routes EXCEPT /api/auth/* and /api/webhooks/*
@@ -141,5 +141,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/:path*"],
+  matcher: [
+    '/dashboard/:path*',
+    '/writer/:path*',
+    '/agency/:path*',
+    '/settings/:path*',
+    '/api/generate/:path*',
+    '/api/voice/:path*',
+    '/api/carousel/:path*',
+  ]
 }
+

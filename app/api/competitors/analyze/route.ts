@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const { session, workspaceId, limits } = planCheck
 
     // Rate Limit: 5 analysis requests per minute per user
-    if (!rateLimit(`analyze_${session.email}`, 5, 60)) {
+    if (!(await rateLimit(`analyze_${session.email}`, 5, 60))) {
       return NextResponse.json({ error: "Rate limit exceeded. Please slow down." }, { status: 429 })
     }
 

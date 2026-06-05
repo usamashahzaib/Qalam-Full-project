@@ -1,35 +1,30 @@
-// TODO: Replace with Upstash Redis before production launch.
+import { createClient } from '@supabase/supabase-js'
 
-type WindowCounter = {
-  count: number
-  expiresAt: number
-}
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-const counters = new Map<string, WindowCounter>()
+export async function rateLimit(
+  key: string,
+  limit: number,
+  windowSeconds: number
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('check_rate_limit', {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: windowSeconds,
+    })
 
-const cleanup = () => {
-  const now = Date.now()
-  for (const [key, item] of counters) {
-    if (item.expiresAt <= now) counters.delete(key)
-  }
-}
+    if (error) {
+      console.error('Rate limit RPC failed:', error)
+      return true
+    }
 
-if (typeof setInterval !== "undefined") {
-  setInterval(cleanup, 60_000).unref?.()
-}
-
-export function rateLimit(key: string, maxRequests: number, windowSeconds: number): boolean {
-  const now = Date.now()
-  const windowMs = windowSeconds * 1000
-  const windowKey = `${key}:${Math.floor(now / windowMs)}`
-  const current = counters.get(windowKey)
-
-  if (!current || current.expiresAt <= now) {
-    counters.set(windowKey, { count: 1, expiresAt: now + windowMs })
+    return data === true
+  } catch (err) {
+    console.error('Rate limit exception:', err)
     return true
   }
-
-  if (current.count >= maxRequests) return false
-  current.count += 1
-  return true
 }

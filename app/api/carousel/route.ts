@@ -176,14 +176,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await requireAuth(request)
-    // TODO: Replace with Upstash Redis before production launch.
+    await requireAuth(request)
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
     const { workspaceId, limits, session } = planCheck
 
-    // TODO: Replace with Upstash Redis before production launch.
-    if (!rateLimit(`carousel_${session.email}`, 5, 60)) {
+    if (!(await rateLimit(`carousel_${session.email}`, 5, 60))) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
     }
 

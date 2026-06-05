@@ -6,7 +6,7 @@ import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
-import { SITE_NAME, SITE_URL } from "@/lib/seo"
+import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 
 const jakarta = Plus_Jakarta_Sans({
@@ -15,14 +15,14 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 })
 
-const siteUrl = SITE_URL
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 
 const rootOgTitle = "Qalam | AI LinkedIn Writer with Voice Memory, Scheduling and Publishing"
 const rootOgDescription =
   "Write LinkedIn posts in your real voice. Qalam stores your drafts, edits, voice profile, scheduling flow, approvals, and LinkedIn publishing in one workspace."
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
   manifest: "/manifest.webmanifest",
   title: {
     default: rootOgTitle,
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
   publisher: SITE_NAME,
   applicationName: SITE_NAME,
   alternates: {
-    canonical: siteUrl,
+    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com",
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,

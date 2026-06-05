@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   const ip = getClientIp(request)
 
   // 5 requests per day per IP (86400 seconds)
-  const allowed = rateLimit(`hook-gen:${ip}`, 5, 86400)
+  const allowed = await rateLimit(`hook-gen:${ip}`, 5, 86400)
   if (!allowed) {
     return NextResponse.json(
       { error: "Daily limit reached. Come back tomorrow for more free hooks." },

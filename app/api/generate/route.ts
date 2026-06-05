@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
+import Groq from 'groq-sdk'
 import { analyzeContent, type ContentAnalysis } from "@/lib/content-intelligence"
 import { groqApiKey } from "@/lib/server/env"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
 import { requireAuth } from "@/lib/server/app-session"
+
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies" | "repair"
@@ -304,53 +307,36 @@ const buildCommentRepliesPrompt = ({ originalPost, comments, profile }: Generate
   ].filter(Boolean).join("\n")
 
 async function callGroq(systemPrompt: string, userMessage: string, temperature = 0.6): Promise<string> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${groqApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
+  try {
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
       ],
+      model: 'llama-3.1-8b-instant',
       temperature,
-      response_format: { type: "json_object" },
-    }),
-    cache: "no-store",
-  })
-  const raw = await response.text()
-  const data = raw ? JSON.parse(raw) : {}
-  if (!response.ok) {
-    const message = data?.error?.message || "AI service error"
-    throw new Error(message)
+      response_format: { type: 'json_object' },
+    })
+    return chatCompletion.choices[0]?.message?.content || '{}'
+  } catch (error: any) {
+    throw new Error(error?.message || 'AI service error')
   }
-  return String(data?.choices?.[0]?.message?.content || "{}")
 }
 
 async function callGroqText(systemPrompt: string, userMessage: string, temperature = 0.7): Promise<string> {
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${groqApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
+  try {
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage },
       ],
+      model: 'llama-3.1-8b-instant',
       temperature,
-    }),
-    cache: "no-store",
-  })
-  const raw = await response.text()
-  const data = raw ? JSON.parse(raw) : {}
-  if (!response.ok) throw new Error(data?.error?.message || "AI service error")
-  return String(data?.choices?.[0]?.message?.content || "")
+    })
+    return chatCompletion.choices[0]?.message?.content || ''
+  } catch (error: any) {
+    throw new Error(error?.message || 'AI service error')
+  }
 }
 
 const strengthenDraft = (text: string, prompt: string, postType?: string): { text: string; needsRewrite: boolean } => {
@@ -396,8 +382,7 @@ const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<t
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await requireAuth(request)
-    // TODO: Replace with Upstash Redis before production launch.
-    if (!rateLimit(`groq:${userId}`, 10, 60)) {
+    if (!(await rateLimit(`groq:${userId}`, 10, 60))) {
       return NextResponse.json({ error: "Rate limit exceeded. Max 10 generations per minute." }, { status: 429 })
     }
 
@@ -405,8 +390,7 @@ export async function POST(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
     const { session, workspaceId, limits } = planCheck
 
-    // TODO: Replace with Upstash Redis before production launch.
-    if (!rateLimit(`gen_${session.email}`, 10, 60)) {
+    if (!(await rateLimit(`gen_${session.email}`, 10, 60))) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
     }
 

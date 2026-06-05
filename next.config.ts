@@ -14,7 +14,7 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self'",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data:",
       "connect-src 'self' https://www.linkedin.com https://api.linkedin.com https://*.supabase.co",
@@ -27,6 +27,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   compress: true,
+  pageExtensions: ["ts", "tsx"],
   poweredByHeader: false,
   async redirects() {
     return [
