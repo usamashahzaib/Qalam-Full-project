@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { analyzeContent } from "@/lib/content-intelligence"
+import { analyzeContent, type ContentAnalysis } from "@/lib/content-intelligence"
 import { groqApiKey } from "@/lib/server/env"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { getPlanLimits } from "@/lib/entitlements"
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies" | "repair"
@@ -34,7 +33,7 @@ const BASE_RULES = [
   "No markdown headings, bold markers, labels, or preamble.",
 ]
 
-const buildDraftSystemPrompt = (_body: GenerateBody) => `You are a LinkedIn ghostwriter. Write exactly what was asked — nothing more.
+const buildDraftSystemPrompt = (_body: GenerateBody) => `You are a LinkedIn ghostwriter. Write exactly what was asked - nothing more.
 
 Rules:
 - Output ONLY the post text. No title. No "Introduction:" header. No section labels.
@@ -53,6 +52,126 @@ const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
     body.previousDraft ? `Previous draft to avoid copying:\n${body.previousDraft}` : "",
     `Original instruction:\n${prompt}`,
   ].filter(Boolean).join("\n\n")
+}
+
+const QUALITY_LABELS = ["Hook", "CTA", "Readability", "Authority", "Specificity", "Human-likeness", "Voice fit"] as const
+type QualityLabel = (typeof QUALITY_LABELS)[number]
+
+const toScore = (value: unknown) => {
+  const n = Number(value)
+  return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0
+}
+
+const qualityPasses = (analysis: ContentAnalysis) =>
+  analysis.overallScore >= 85 && analysis.scores.every((item) => item.score >= 70)
+
+const qualityRank = (analysis: ContentAnalysis) =>
+  analysis.overallScore + Math.min(...analysis.scores.map((item) => item.score))
+
+const buildQualityScorePrompt = ({ title, profile, postType }: GenerateBody, prompt: string, draft: string) => [
+  "Score this LinkedIn post. Return strict JSON only.",
+  "Use these criteria:",
+  "- Hook (0-100): Does the opening line stop the scroll? Is it specific, surprising, or contrarian?",
+  "- CTA (0-100): Does it end with a clear next step? Question, save prompt, or direct engagement?",
+  "- Readability (0-100): Short paragraphs, white space, no jargon walls.",
+  "- Authority (0-100): Proof signals, data, or specific examples.",
+  "- Specificity (0-100): Concrete situations, not generic advice.",
+  "- Human-likeness (0-100): Sounds like a person, not AI.",
+  "- Voice fit (0-100): Matches the user's saved voice profile.",
+  "",
+  "Return this exact JSON shape:",
+  '{"overallScore":85,"scores":[{"label":"Hook","score":80,"note":"short note"},{"label":"CTA","score":80,"note":"short note"},{"label":"Readability","score":80,"note":"short note"},{"label":"Authority","score":80,"note":"short note"},{"label":"Specificity","score":80,"note":"short note"},{"label":"Human-likeness","score":80,"note":"short note"},{"label":"Voice fit","score":80,"note":"short note"}],"improvements":["short rewrite instruction"]}',
+  "",
+  title ? `Working title: ${title}` : "",
+  postType ? `Post type: ${postType}` : "",
+  profile?.title ? `Writer role: ${profile.title}` : "",
+  profile?.industry ? `Industry: ${profile.industry}` : "",
+  profile?.tone ? `Voice profile tone: ${profile.tone}` : "",
+  profile?.goals?.length ? `Voice profile goals: ${profile.goals.join(", ")}` : "",
+  `Original user request:\n${prompt}`,
+  "",
+  `Draft to score:\n${draft}`,
+].filter(Boolean).join("\n")
+
+const normalizeQualityAnalysis = (raw: string, draft: string, body: GenerateBody): ContentAnalysis => {
+  const fallback = analyzeContent({ title: body.title, content: draft, type: body.postType, profile: body.profile })
+  let parsed: Record<string, unknown> = {}
+  try { parsed = JSON.parse(raw) as Record<string, unknown> } catch {}
+  const rawScores = Array.isArray(parsed.scores) ? parsed.scores as Record<string, unknown>[] : []
+  const scores = QUALITY_LABELS.map((label) => {
+    const matched = rawScores.find((item) => String(item.label || "").toLowerCase() === label.toLowerCase())
+    const local = fallback.scores.find((item) => item.label === label)
+    const score = toScore(matched?.score ?? local?.score ?? 0)
+    return {
+      label: label as QualityLabel,
+      score,
+      note: String(matched?.note || local?.note || "No note returned"),
+      actionHint: score < 70 ? `Improve ${label.toLowerCase()}` : undefined,
+    }
+  })
+  const average = Math.round(scores.reduce((sum, item) => sum + item.score, 0) / scores.length)
+  const improvements = Array.isArray(parsed.improvements)
+    ? parsed.improvements.filter((item): item is string => typeof item === "string").slice(0, 4)
+    : fallback.improvements
+  return {
+    ...fallback,
+    overallScore: toScore(parsed.overallScore ?? average),
+    overallLabel: average >= 85 ? "Strong" : average >= 70 ? "Solid" : "Needs polish",
+    scores,
+    improvements,
+  }
+}
+
+const buildQualityRewritePrompt = (body: GenerateBody, prompt: string, draft: string, analysis: ContentAnalysis) => {
+  const weak = analysis.scores.filter((item) => item.score < 70)
+  const strong = analysis.scores.filter((item) => item.score >= 80)
+  return [
+    "Rewrite this LinkedIn post to pass the quality gate.",
+    "Return only the full rewritten post text.",
+    "Keep strong sections unchanged where possible.",
+    "Rewrite weak sections specifically. Do not rewrite for the sake of rewriting.",
+    "No markdown. No labels. No em dashes.",
+    "Quality gate: overall score >= 85 and every individual score >= 70.",
+    "",
+    `Current overall score: ${analysis.overallScore}`,
+    weak.length ? `Weak sections: ${weak.map((item) => `${item.label} ${item.score}/100 - ${item.note}`).join("; ")}` : "",
+    strong.length ? `Strong sections to preserve: ${strong.map((item) => `${item.label} ${item.score}/100`).join(", ")}` : "",
+    analysis.improvements.length ? `Rewrite instructions: ${analysis.improvements.join(" ")}` : "",
+    body.profile?.tone ? `Voice tone to preserve: ${body.profile.tone}` : "",
+    body.profile?.title ? `Writer role: ${body.profile.title}` : "",
+    `Original user request:\n${prompt}`,
+    "",
+    `Draft:\n${draft}`,
+  ].filter(Boolean).join("\n")
+}
+
+const qualityControlDraft = async (body: GenerateBody, prompt: string, initialText: string) => {
+  let bestText = sanitizeGeneratedText(initialText)
+  let bestAnalysis = normalizeQualityAnalysis(await callGroq(
+    buildQualityScorePrompt(body, prompt, bestText),
+    "Score this draft.",
+    0.2,
+  ), bestText, body)
+
+  for (let attempt = 0; attempt < 2 && !qualityPasses(bestAnalysis); attempt++) {
+    const candidate = sanitizeGeneratedText(await callGroqText(
+      buildDraftSystemPrompt(body),
+      buildQualityRewritePrompt(body, prompt, bestText, bestAnalysis),
+      0.55,
+    ))
+    if (!candidate) break
+    const candidateAnalysis = normalizeQualityAnalysis(await callGroq(
+      buildQualityScorePrompt(body, prompt, candidate),
+      "Score this rewritten draft.",
+      0.2,
+    ), candidate, body)
+    if (qualityRank(candidateAnalysis) >= qualityRank(bestAnalysis)) {
+      bestText = candidate
+      bestAnalysis = candidateAnalysis
+    }
+  }
+
+  return { text: bestText, analysis: bestAnalysis, metTarget: qualityPasses(bestAnalysis) }
 }
 
 const buildIntelligencePrompt = ({ title, content, profile, postType }: GenerateBody) =>
@@ -244,7 +363,7 @@ export async function POST(request: NextRequest) {
     // Free plan is allowed - every tier can generate, just with different caps
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
-    const { session, workspaceId, plan } = planCheck
+    const { session, workspaceId, limits } = planCheck
 
     if (!rateLimit(`gen_${session.email}`, 12, 60)) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
@@ -255,7 +374,6 @@ export async function POST(request: NextRequest) {
 
     // Enforce monthly draft limit on draft mode only
     if (mode === "draft") {
-      const limits = getPlanLimits(plan)
       if (limits.aiDraftsPerMonth !== "unlimited") {
         const used = await getMonthlyCount("posts", workspaceId)
         const limitErr = enforceMonthlyLimit(used, limits.aiDraftsPerMonth, "AI drafts")
@@ -322,15 +440,15 @@ export async function POST(request: NextRequest) {
         const contentJson = await callGroq(buildHooksPrompt(body), "Generate hook alternatives.", 0.8)
         parsed = JSON.parse(contentJson)
       } catch {
-        return NextResponse.json({ hooks: fallbackHooks(content, body.title) })
+        return NextResponse.json({ hooks: fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5) })
       }
 
       const cleanHooks = (parsed.hooks || [])
         .filter((h) => h?.style && h?.text && h.text.length > 8)
-        .map((h) => ({ ...h, text: sanitizeGeneratedText(h.text).slice(0, 100) }))
+        .map((h) => sanitizeGeneratedText(h.text).slice(0, 100))
         .slice(0, 5)
 
-      return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title) })
+      return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5) })
     }
 
     // --- comment-replies mode ---
@@ -403,51 +521,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: cleanErrorMessage(message) }, { status: 502 })
     }
 
-    if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
-      let bestText = text
-      let bestAnalysis = analyzeContent({
-        title: body.title,
-        content: text,
-        type: body.postType,
-        profile: body.profile,
-      })
-
-      if (bestAnalysis.overallScore < 90) {
-        try {
-          const repaired = sanitizeGeneratedText(await callGroqText(
-            buildDraftSystemPrompt(body),
-            buildRepairPrompt(text, prompt, bestAnalysis, body),
-            0.55,
-          ))
-          const repairedAnalysis = analyzeContent({
-            title: body.title,
-            content: repaired,
-            type: body.postType,
-            profile: body.profile,
-          })
-          if (repairedAnalysis.overallScore >= bestAnalysis.overallScore) {
-            bestText = strengthenDraft(repaired, prompt, body.postType)
-            bestAnalysis = repairedAnalysis
-          }
-        } catch {
-          // keep best local draft
-        }
-      }
-
-      text = bestText
-      if (bestAnalysis.overallScore < 90) {
-        text = strengthenDraft(bestText, prompt, body.postType)
-      }
-    }
-
-    if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
-    const finalAnalysis = analyzeContent({
+    let finalAnalysis = analyzeContent({
       title: body.title,
       content: text,
       type: body.postType,
       profile: body.profile,
     })
-    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: finalAnalysis.overallScore >= 90 })
+
+    if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
+      try {
+        const quality = await qualityControlDraft(body, prompt, text)
+        text = quality.text
+        finalAnalysis = quality.analysis
+      } catch {
+        // keep first visible draft if internal quality control fails
+      }
+    }
+
+    if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
+    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: qualityPasses(finalAnalysis) })
   } catch (error) {
     const message = (error as Error).message || "Internal server error"
     if (message === "auth_required") {

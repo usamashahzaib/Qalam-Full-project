@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
 import { createSignedToken, readSignedToken } from "@/lib/server/token"
 import { supabaseInsert, supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
+import { applyUserOverrides } from "@/lib/server/overrides"
 
 type AppSessionPayload = {
   email: string
@@ -18,7 +19,7 @@ type PublicAuthUser = Omit<AppSessionPayload, "createdAt">
 
 export const appSessionCookieName = "qalam_app_session"
 const APP_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
-const ADMIN_EMAILS = (process.env.APP_ADMIN_EMAILS || "")
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
   .map((item) => item.trim().toLowerCase())
   .filter(Boolean)
@@ -257,9 +258,10 @@ export type WorkspacePlanInfo = {
   plan: string
   status: string
   expiresAt: string | null
+  planExpired?: boolean
 }
 
-export const fetchWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
+const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
   try {
     const workspaces = await supabaseSelect<{ organization_id: string }>(
       "workspaces",
@@ -273,12 +275,30 @@ export const fetchWorkspacePlan = async (workspaceId: string): Promise<Workspace
     )
     const org = orgs?.[0]
     if (!org) return { plan: "Free", status: "active", expiresAt: null }
+    const expired = Boolean(org.plan_expires_at && new Date(org.plan_expires_at).getTime() < Date.now() && org.plan !== "Free")
+    if (expired) {
+      await supabasePatch("organizations", `id=eq.${encodeURIComponent(orgId)}`, {
+        plan: "Free",
+        subscription_status: "canceled",
+        updated_at: new Date().toISOString(),
+      }).catch(() => undefined)
+      return {
+        plan: "Free",
+        status: "canceled",
+        expiresAt: org.plan_expires_at ?? null,
+        planExpired: true,
+      }
+    }
     return {
       plan: org.plan || "Free",
       status: org.subscription_status || "active",
       expiresAt: org.plan_expires_at ?? null,
+      planExpired: false,
     }
   } catch {
     return { plan: "Free", status: "active", expiresAt: null }
   }
 }
+
+export const fetchWorkspacePlan = async (workspaceId: string, email?: string | null) =>
+  applyUserOverrides(await fetchBaseWorkspacePlan(workspaceId), email)

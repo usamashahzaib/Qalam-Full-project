@@ -148,7 +148,10 @@ export default function SettingsPage() {
               <h2 className="text-base font-semibold text-zinc-900">Your plan</h2>
               <p className="mt-1 text-sm text-zinc-500">Upgrade by selecting a plan and following the instructions below.</p>
             </div>
-            <span className="shrink-0 rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">{billing.plan}</span>
+            <div className="flex shrink-0 flex-wrap justify-end gap-2">
+              <span className="rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">{billing.plan}</span>
+              {billing.overrideActive ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Override active</span> : null}
+            </div>
           </div>
 
           {/* Current plan summary */}

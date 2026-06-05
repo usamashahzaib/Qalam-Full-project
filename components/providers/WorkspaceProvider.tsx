@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { QalamMark } from "@/components/QalamLogo"
 import { cleanErrorMessage } from "@/lib/content-guard"
-import { VALID_PLAN_NAMES } from "@/lib/entitlements"
+import { VALID_PLAN_NAMES, type PlanLimits } from "@/lib/entitlements"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -34,6 +34,12 @@ export type WorkspaceBilling = {
   plan: "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"
   billingCycle: "monthly" | "annual"
   checkoutReady: boolean
+  overrideActive?: boolean
+  complimentaryTrialBanner?: boolean
+  overridePlan?: string | null
+  planExpired?: boolean
+  limits?: PlanLimits
+  featureFlags?: Record<string, boolean>
 }
 
 type LegacyWorkspaceState = {
@@ -113,7 +119,7 @@ const friendlyPostError = (message?: string) => {
   return cleanErrorMessage(message)
 }
 
-function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverPlan }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null; serverPlan: WorkspaceBilling["plan"] | null }) {
+function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverBilling }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null; serverBilling: Partial<WorkspaceBilling> | null }) {
   const [posts, setPosts] = useState<WorkspacePost[]>([])
   const [isLoadingPosts, setIsLoadingPosts] = useState(true)
   const [postsError, setPostsError] = useState<string | null>(null)
@@ -177,10 +183,10 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverP
   }, [fetchPosts, fetchProfile])
 
   useEffect(() => {
-    if (!serverPlan) return
+    if (!serverBilling?.plan) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBilling((prev) => ({ ...prev, plan: serverPlan }))
-  }, [serverPlan])
+    setBilling((prev) => ({ ...prev, ...serverBilling }))
+  }, [serverBilling])
 
   useEffect(() => {
     try {
@@ -385,7 +391,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return null
     return sessionStorage.getItem(workspaceCacheKey(clientParam))
   })
-  const [serverPlan, setServerPlan] = useState<WorkspaceBilling["plan"] | null>(null)
+  const [serverBilling, setServerBilling] = useState<Partial<WorkspaceBilling> | null>(null)
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
 
@@ -413,7 +419,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
         setWorkspaceId(data.workspaceId)
         if (data.plan && VALID_PLAN_NAMES.includes(data.plan as string)) {
-          setServerPlan(data.plan as WorkspaceBilling["plan"])
+          setServerBilling({
+            plan: data.plan as WorkspaceBilling["plan"],
+            overrideActive: Boolean(data.overrideActive),
+            complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
+            overridePlan: data.overridePlan || null,
+            planExpired: Boolean(data.planExpired),
+            limits: data.limits,
+            featureFlags: data.featureFlags || {},
+          })
         }
         try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
         setResolveError(null)
@@ -463,7 +477,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} serverPlan={serverPlan} key={workspaceId}>
+    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} serverBilling={serverBilling} key={workspaceId}>
       {children}
     </WorkspaceProviderInner>
   )

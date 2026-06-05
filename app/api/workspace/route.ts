@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/app-session"
+import { requireAppSession, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/app-session"
 
 const toStatus = (message: string) => {
   switch (message) {
@@ -20,8 +20,9 @@ const toStatus = (message: string) => {
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = requireAppSession(request)
     const workspaceId = await resolveWorkspaceId(request)
-    const planInfo = await fetchWorkspacePlan(workspaceId)
+    const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
     return NextResponse.json({ workspaceId, ...planInfo })
   } catch (error) {
     const message = (error as Error).message || "server_error"

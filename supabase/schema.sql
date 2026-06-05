@@ -11,6 +11,8 @@ create table public.users (
     email text unique not null,
     full_name text,
     image_url text,
+    plan text not null default 'Free' check (plan in ('Free', 'Solo', 'Pro', 'Agency')),
+    plan_expires_at timestamptz,
     session_version integer not null default 1,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
@@ -21,7 +23,7 @@ create table public.organizations (
     id uuid primary key default uuid_generate_v4(),
     name text not null,
     billing_plan text default 'Free',
-    plan text not null default 'Free',
+    plan text not null default 'Free' check (plan in ('Free', 'Solo', 'Pro', 'Agency')),
     subscription_status text not null default 'active',
     plan_expires_at timestamptz,
     created_at timestamptz not null default now(),
@@ -51,6 +53,49 @@ create table public.memberships (
     role text not null check (role in ('super_admin', 'agency_admin', 'editor', 'client_reviewer', 'viewer')),
     created_at timestamptz not null default now(),
     unique(user_id, organization_id, workspace_id)
+);
+
+-- Admin Overrides
+create table public.user_overrides (
+    id uuid primary key default uuid_generate_v4(),
+    user_id uuid references public.users(id) on delete cascade not null,
+    plan_override text check (plan_override in ('Free', 'Solo', 'Pro', 'Agency')),
+    draft_limit_override integer,
+    workspace_limit_override integer,
+    feature_flags jsonb default '{}',
+    notes text,
+    expires_at timestamptz,
+    created_at timestamptz default now(),
+    updated_at timestamptz default now(),
+    unique(user_id)
+);
+
+create table public.admin_audit_log (
+    id uuid primary key default uuid_generate_v4(),
+    admin_email text not null,
+    target_user_email text not null,
+    action text not null,
+    old_value jsonb,
+    new_value jsonb,
+    created_at timestamptz default now()
+);
+
+-- Payments
+create table public.payments (
+    id uuid primary key default uuid_generate_v4(),
+    provider text not null check (provider in ('stripe', 'jazzcash', 'easypaisa')),
+    transaction_id text not null,
+    user_id uuid references public.users(id) on delete set null,
+    organization_id uuid references public.organizations(id) on delete set null,
+    amount numeric(12,2) not null default 0,
+    currency text not null default 'PKR',
+    plan_name text not null check (plan_name in ('Free', 'Solo', 'Pro', 'Agency')),
+    billing_cycle text not null default 'monthly' check (billing_cycle in ('monthly', 'annual')),
+    status text not null check (status in ('paid', 'failed', 'cancelled')),
+    raw_payload jsonb not null default '{}',
+    processed_at timestamptz not null default now(),
+    created_at timestamptz not null default now(),
+    unique(provider, transaction_id)
 );
 
 -- Publishing Accounts
@@ -230,6 +275,9 @@ alter table public.notifications enable row level security;
 alter table public.linkedin_credentials enable row level security;
 alter table public.voice_profiles enable row level security;
 alter table public.users enable row level security;
+alter table public.user_overrides enable row level security;
+alter table public.admin_audit_log enable row level security;
+alter table public.payments enable row level security;
 
 -- =============================================================
 -- RLS POLICIES
@@ -291,4 +339,8 @@ create policy "voice_profile_members" on public.voice_profiles
 
 -- notifications: users see their own
 create policy "notifications_own" on public.notifications
+  for select using (user_id::text = auth.uid()::text);
+
+-- payments: users can read their own payment history
+create policy "payments_own_select" on public.payments
   for select using (user_id::text = auth.uid()::text);

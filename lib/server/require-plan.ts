@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAppSession, resolveWorkspaceId, fetchWorkspacePlan, validateSessionVersion } from "@/lib/server/app-session"
 import { canAccessPlan } from "@/lib/entitlements"
-import type { PlanTier } from "@/lib/entitlements"
+import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 type PlanCheckResult =
-  | { ok: true; session: ReturnType<typeof requireAppSession>; workspaceId: string; plan: string; status: string }
+  | { ok: true; session: ReturnType<typeof requireAppSession>; workspaceId: string; plan: string; status: string; limits: PlanLimits; overrideActive: boolean; planExpired: boolean }
   | { ok: false; response: NextResponse }
 
 /**
@@ -42,10 +42,9 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
 
-  const planInfo = await fetchWorkspacePlan(workspaceId)
+  const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
 
-  // Treat expired subscriptions as Free
-  const effectivePlan = isExpired(planInfo.expiresAt) ? "Free" : planInfo.plan
+  const effectivePlan = planInfo.plan
 
   if (!canAccessPlan(effectivePlan, requiredPlan)) {
     return {
@@ -57,12 +56,7 @@ export const requirePlan = async (
     }
   }
 
-  return { ok: true, session, workspaceId, plan: effectivePlan, status: planInfo.status }
-}
-
-const isExpired = (expiresAt: string | null): boolean => {
-  if (!expiresAt) return false
-  return new Date(expiresAt).getTime() < Date.now()
+  return { ok: true, session, workspaceId, plan: effectivePlan, status: planInfo.status, limits: planInfo.limits || getPlanLimits(effectivePlan), overrideActive: Boolean(planInfo.overrideActive), planExpired: Boolean(planInfo.planExpired) }
 }
 
 /**

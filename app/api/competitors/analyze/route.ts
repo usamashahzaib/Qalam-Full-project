@@ -3,7 +3,6 @@ import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { getPlanLimits } from "@/lib/entitlements"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -27,7 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
-    const { session, workspaceId, plan } = planCheck
+    const { session, workspaceId, limits } = planCheck
 
     // Rate Limit: 5 analysis requests per minute per user
     if (!rateLimit(`analyze_${session.email}`, 5, 60)) {
@@ -35,7 +34,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Monthly research run limit
-    const limits = getPlanLimits(plan)
     if (limits.researchRunsPerMonth !== "unlimited") {
       const used = await getMonthlyCount("jobs", workspaceId)
       const limitErr = enforceMonthlyLimit(used, limits.researchRunsPerMonth, "Competitor research")

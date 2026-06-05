@@ -4,7 +4,6 @@ import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { getPlanLimits } from "@/lib/entitlements"
 
 type CarouselProjectRow = {
   id: string
@@ -17,7 +16,18 @@ type CarouselProjectRow = {
 
 type CarouselSlideDraft = {
   title?: string
+  body?: string
   content?: string
+  visualDirection?: string
+  visual?: string
+}
+
+type CarouselScore = {
+  hookSlideScore: number
+  flowScore: number
+  ctaSlideScore: number
+  overallScore: number
+  notes: string[]
 }
 
 type GroqResponse = {
@@ -52,12 +62,100 @@ const themeFrom = (title = "", content = "", theme = "") => {
 const fallbackSlides = (content: string): CarouselSlideDraft[] => {
   const clean = sanitizeGeneratedText(content)
   return [
-    { title: "The real problem", content: clean.slice(0, 150) || "Start with the tension your audience already feels." },
-    { title: "What most teams miss", content: "The issue is rarely effort. It is usually unclear ownership, weak examples, or a rushed decision." },
-    { title: "A better lens", content: "Name the tradeoff, show the consequence, then give people a concrete next step." },
-    { title: "Use this test", content: "If the reader cannot repeat the point in one sentence, the slide is doing too much." },
-    { title: "Takeaway", content: "Make it useful enough to save, not just polished enough to skim." },
+    { title: "Stop the scroll", body: clean.slice(0, 120) || "Your carousel needs one sharp tension, not a broad topic.", visualDirection: "Bold text-only cover with high contrast" },
+    { title: "The hidden issue", body: "Most drafts explain too much before they create urgency.", visualDirection: "Warning icon with simple split layout" },
+    { title: "Why it fails", body: "Readers leave when slides feel like paragraphs instead of decisions.", visualDirection: "Drop-off chart or broken flow line" },
+    { title: "Use this frame", body: "Hook, problem, framework, proof, then one clear action.", visualDirection: "Five-step horizontal framework" },
+    { title: "Make it saveable", body: "Each slide should teach one idea someone can repeat later.", visualDirection: "Bookmark icon with checklist" },
+    { title: "Save this", body: "Save this before writing your next carousel.", visualDirection: "CTA slide with save icon" },
   ]
+}
+
+const scoreText = (value: string, fallback = 70) => {
+  const words = value.trim().split(/\s+/).filter(Boolean).length
+  if (!words) return fallback - 20
+  if (words <= 25) return 92
+  if (words <= 35) return 78
+  return 62
+}
+
+const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)))
+
+const slideBody = (slide: CarouselSlideDraft) => sanitizeGeneratedText(slide.body || slide.content || "")
+
+const normalizeSlides = (slides: CarouselSlideDraft[]) => slides.slice(0, 7).map((slide, index) => ({
+  title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`).split(/\s+/).slice(0, 5).join(" "),
+  body: slideBody(slide),
+  content: slideBody(slide),
+  visualDirection: sanitizeGeneratedText(slide.visualDirection || slide.visual || "Simple supporting visual"),
+}))
+
+const scoreCarousel = (slides: ReturnType<typeof normalizeSlides>): CarouselScore => {
+  const first = slides[0]
+  const last = slides[slides.length - 1]
+  const notes: string[] = []
+  const hookSignals = /stop|why|mistake|problem|truth|never|before|hidden|most|nobody|wrong/i.test(`${first?.title} ${first?.body}`) ? 18 : 0
+  const ctaSignals = /save|follow|comment|dm|share|try|use|reply/i.test(`${last?.title} ${last?.body}`) ? 18 : 0
+  const hookSlideScore = clampScore(scoreText(first?.body || "", 68) + hookSignals - (slides.length < 5 ? 10 : 0))
+  const ctaSlideScore = clampScore(scoreText(last?.body || "", 68) + ctaSignals)
+  const flowScore = clampScore(72 + Math.min(slides.length, 7) * 3 + (slides.every((slide) => slide.visualDirection) ? 8 : 0))
+  const overallScore = clampScore((hookSlideScore + flowScore + ctaSlideScore) / 3)
+  if (hookSlideScore < 85) notes.push("Slide 1 needs a sharper scroll-stopper.")
+  if (flowScore < 85) notes.push("Story flow needs clearer problem, solution, proof progression.")
+  if (ctaSlideScore < 85) notes.push("Last slide needs a clearer action.")
+  return { hookSlideScore, flowScore, ctaSlideScore, overallScore, notes }
+}
+
+const parseSlides = (data: GroqResponse, content: string) => {
+  try {
+    const text = data.choices?.[0]?.message?.content || "[]"
+    const jsonMatch = text.match(/\[[\s\S]*\]/)
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text) as unknown
+    return Array.isArray(parsed) ? normalizeSlides(parsed as CarouselSlideDraft[]) : normalizeSlides(fallbackSlides(content))
+  } catch {
+    return normalizeSlides(fallbackSlides(content))
+  }
+}
+
+const carouselPrompt = (topic: string) => `Create a 5-7 slide LinkedIn carousel outline on: ${topic}.
+Each slide must have:
+- Slide title (max 5 words)
+- Slide body (max 25 words, punchy, scannable)
+- Visual direction (what image/chart/icon would support this slide)
+
+Rules:
+- Slide 1: Hook only (the scroll-stopper, no context)
+- Slide 2-3: Problem or insight
+- Slide 4-5: Solution or framework
+- Slide 6-7: Proof or result
+- Last slide: CTA only (follow, comment, save, DM)
+
+Total word count across all slides: 150-200 words max.
+Each slide should be standalone-readable.`
+
+const generateSlides = async (topic: string, theme: string, currentSlides?: ReturnType<typeof normalizeSlides>, score?: CarouselScore) => {
+  const repairContext = currentSlides && score
+    ? `\n\nCurrent slides scored ${score.overallScore}/100. Improve only weak areas. Weak notes: ${score.notes.join(" ")}\n\nCurrent slides:\n${JSON.stringify(currentSlides)}`
+    : ""
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${groqApiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-3.1-8b-instant",
+      messages: [
+        {
+          role: "system",
+          content: `Return strict JSON only. Output an array of 5-7 slides with title, body, and visualDirection. Theme: ${theme}. No markdown. No em dashes.`,
+        },
+        { role: "user", content: `${carouselPrompt(topic)}${repairContext}` },
+      ],
+      temperature: currentSlides ? 0.75 : 0.55,
+    }),
+  })
+  return parseSlides((await response.json()) as GroqResponse, topic)
 }
 
 /** GET /api/carousel - list all carousel projects in the workspace */
@@ -79,10 +177,9 @@ export async function POST(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Solo")
     if (!planCheck.ok) return planCheck.response
-    const { workspaceId, plan } = planCheck
+    const { workspaceId, limits } = planCheck
 
     // Monthly carousel generation limit
-    const limits = getPlanLimits(plan)
     if (limits.carouselGenerationsPerMonth !== "unlimited") {
       const used = await getMonthlyCount("carousel_projects", workspaceId)
       const limitErr = enforceMonthlyLimit(used, limits.carouselGenerationsPerMonth, "Carousel generation")
@@ -99,44 +196,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "AI generation is not configured" }, { status: 503 })
     }
 
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${groqApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [
-          {
-            role: "system",
-            content:
-              `You are a premium LinkedIn carousel strategist. Convert the user's text into a 6-8 slide carousel with specific, useful slides. Theme: ${themeFrom(title, content, theme)}. No generic motivational copy. No em dashes. Slide 1 must frame the tension. Middle slides must teach or prove. Final slide must close with a useful takeaway or CTA. Each slide needs a sharp title and 1-2 concise sentences. Output strict JSON array only: [{"title":"...","content":"..."}].`,
-          },
-          { role: "user", content: `Convert this post into carousel slides:\n\n${content}` },
-        ],
-        temperature: 0.4,
-      }),
-    })
-
-    const data = (await response.json()) as GroqResponse
-    let slidesData: CarouselSlideDraft[] = []
-    try {
-      const text = data.choices?.[0]?.message?.content || "[]"
-      const jsonMatch = text.match(/\[[\s\S]*\]/)
-      const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text) as unknown
-      slidesData = Array.isArray(parsed) ? (parsed as CarouselSlideDraft[]) : []
-    } catch {
-      slidesData = fallbackSlides(content)
+    const topic = content.trim()
+    const resolvedTheme = themeFrom(title, content, theme)
+    let slidesData = await generateSlides(topic, resolvedTheme)
+    if (slidesData.length < 5) slidesData = normalizeSlides(fallbackSlides(content))
+    let carouselScore = scoreCarousel(slidesData)
+    for (let attempt = 0; carouselScore.overallScore < 85 && attempt < 2; attempt += 1) {
+      slidesData = await generateSlides(topic, resolvedTheme, slidesData, carouselScore)
+      if (slidesData.length < 5) slidesData = normalizeSlides(fallbackSlides(content))
+      carouselScore = scoreCarousel(slidesData)
     }
-    if (slidesData.length < 4) slidesData = fallbackSlides(content)
+    if (carouselScore.overallScore < 85) {
+      return NextResponse.json({ error: "Carousel score below quality threshold", score: carouselScore }, { status: 422 })
+    }
 
     const projectRows = await supabaseInsert<CarouselProjectRow>(
       "carousel_projects",
       {
         workspace_id: workspaceId,
         post_id: postId || null,
-        theme: themeFrom(title, content, theme),
+        theme: resolvedTheme,
       },
       "return=representation"
     )
@@ -147,7 +226,7 @@ export async function POST(request: NextRequest) {
       carousel_id: projectId,
       order_index: index,
       title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`),
-      content: sanitizeGeneratedText(slide.content || ""),
+      content: sanitizeGeneratedText(slide.body || slide.content || ""),
     }))
 
     const slides = await supabaseInsert(
@@ -162,14 +241,14 @@ export async function POST(request: NextRequest) {
         workspace_id: workspaceId,
         type: "carousel_generation",
         status: "completed",
-        payload: { projectId, postId: postId || null, theme: themeFrom(title, content, theme) },
+        payload: { projectId, postId: postId || null, theme: resolvedTheme, score: carouselScore, slides: slidesData },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       },
       "return=minimal"
     ).catch(() => undefined)
 
-    return NextResponse.json({ projectId, slides, theme: themeFrom(title, content, theme) })
+    return NextResponse.json({ projectId, slides: slidesData.map((slide, index) => ({ ...(slides?.[index] as object || {}), ...slide })), theme: resolvedTheme, score: carouselScore })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }

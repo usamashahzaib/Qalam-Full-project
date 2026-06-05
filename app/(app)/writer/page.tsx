@@ -8,10 +8,11 @@ import type { ContentAnalysis } from "@/lib/content-intelligence"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { cleanErrorMessage, sanitizeGeneratedText } from "@/lib/content-guard"
-import { canAccessPlan, getPlanLimits } from "@/lib/entitlements"
-import { LockIcon } from "@/components/PlanGate"
+import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
 import { DraftCounter, incrementDraftUsage, readDraftUsage } from "@/components/DraftCounter"
 import { LockedFeature } from "@/components/LockedFeature"
+import { UpgradeModal } from "@/components/UpgradeModal"
+import { HookCard } from "@/components/writer/HookCard"
 
 const POST_TYPES = ["LinkedIn - Text post", "LinkedIn - Carousel", "LinkedIn - Visual"]
 const POST_FILTERS = [
@@ -26,10 +27,12 @@ type PublishState = { status: "idle" | "loading" | "success" | "error"; message:
 type WriterBootstrapPost = { id?: string; title?: string; content?: string; type?: string; externalPostUrn?: string | null }
 type WriterBootstrap = { post: WriterBootstrapPost | null; scheduleDate: string; parseFailed: boolean; hasWriterLoad: boolean; hasWriterScheduleDate: boolean }
 type GenerateResponse = { text?: string; error?: string; analysis?: ContentAnalysis; metTarget?: boolean }
-type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: HookOption[]; error?: string }
-type HookOption = { style: string; text: string }
+type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: string[]; error?: string }
 type RichReply = { comment: string; style: string; reply: string }
 type DraftVersion = { content: string; createdAt: string }
+type CarouselScore = { hookSlideScore: number; flowScore: number; ctaSlideScore: number; overallScore: number; notes?: string[] }
+type CarouselSlidePreview = { title: string; body?: string; content?: string; visualDirection?: string }
+type CarouselResponse = { projectId?: string; slides?: CarouselSlidePreview[]; score?: CarouselScore; error?: string }
 
 const normalizeLinkedInUrn = (value: string) => {
   const urn = value.trim()
@@ -71,13 +74,26 @@ const scheduleError = (date: string, time: string) => {
   if (Number.isNaN(selected.getTime())) return "Select a valid date and time"
   return selected.getTime() <= Date.now() ? "Choose a future time. Past dates and current minutes are locked." : null
 }
+const usageMonthKey = () => new Date().toISOString().slice(0, 7)
+const pushAttemptKey = (workspaceId: string) => `qalam-push-90:${workspaceId}:${usageMonthKey()}`
+const readPushAttempts = (workspaceId: string) => {
+  if (typeof window === "undefined") return 0
+  const value = Number(localStorage.getItem(pushAttemptKey(workspaceId)) || 0)
+  return Number.isFinite(value) ? value : 0
+}
+const incrementPushAttempts = (workspaceId: string) => {
+  if (typeof window === "undefined") return 0
+  const next = readPushAttempts(workspaceId) + 1
+  localStorage.setItem(pushAttemptKey(workspaceId), String(next))
+  return next
+}
 
 export default function WriterPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user } = useAuth()
   const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state, billing } = useWorkspace()
-  const canPublish = canAccessPlan(billing.plan, "Solo")
+  const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const bootstrap = useMemo(() => readWriterBootstrap(), [])
   const isClientWorkspace = Boolean(activeClientId)
@@ -99,87 +115,144 @@ export default function WriterPage() {
   const [commentsText, setCommentsText] = useState("")
   const [originalPostText, setOriginalPostText] = useState("")
   const [analysis, setAnalysis] = useState<ContentAnalysis | null>(null)
-  const [hookSuggestions, setHookSuggestions] = useState<HookOption[]>([])
-  const [hookPanelOpen, setHookPanelOpen] = useState(false)
-  const [isImprovingHook, setIsImprovingHook] = useState(false)
+  const [hookAlternatives, setHookAlternatives] = useState<string[]>([])
+  const [isGeneratingHooks, setIsGeneratingHooks] = useState(false)
+  const [isRewritingCta, setIsRewritingCta] = useState(false)
   const [richReplies, setRichReplies] = useState<RichReply[]>([])
   const [isGeneratingReplies, setIsGeneratingReplies] = useState(false)
   const [replyPanelOpen, setReplyPanelOpen] = useState(false)
   const [insightNote, setInsightNote] = useState<string | null>(null)
+  const [upgradePrompt, setUpgradePrompt] = useState<"publish" | null>(null)
+  const [carouselSlides, setCarouselSlides] = useState<CarouselSlidePreview[]>([])
+  const [carouselScore, setCarouselScore] = useState<CarouselScore | null>(null)
+  const [carouselProjectId, setCarouselProjectId] = useState<string | null>(null)
+  const [activeCarouselSlide, setActiveCarouselSlide] = useState(0)
+  const [localDraftUsage, setLocalDraftUsage] = useState(0)
+  const [pushAttempts, setPushAttempts] = useState(0)
+
+  // Step flow state variables
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
+  const [inlineHookPanelOpen, setInlineHookPanelOpen] = useState(false)
+  const [inlineHookSuggestions, setInlineHookSuggestions] = useState<string[]>([])
+  const [isImprovingInlineHook, setIsImprovingInlineHook] = useState(false)
 
   const wordCount = useMemo(() => (content.trim() ? content.trim().split(/\s+/).length : 0), [content])
   const characterCount = content.length
   const resolveTitle = useCallback(() => title.trim() || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post", [content, title])
   const currentDraftLabel = editingId ? `Editing ${editingId.slice(0, 8)}` : "New draft"
   const publishLabel = user?.linkedinMemberId ? "LinkedIn connected" : "LinkedIn needs connection"
-  const generateLabel = postType.includes("Carousel") ? "Generate Carousel Draft" : postType.includes("Visual") ? "Generate Visual Caption" : content.trim() ? "Regenerate Draft" : "Generate Draft"
-  const scoreGap = analysis ? Math.max(0, 90 - analysis.overallScore) : null
-  const filteredPosts = useMemo(() => {
-    const ordered = [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
-    return postFilter === "all" ? ordered : ordered.filter((post) => post.status === postFilter)
-  }, [postFilter, posts])
+  const isCarouselMode = postType.includes("Carousel")
+  const isVisualMode = postType.includes("Visual")
+  const generateLabel = postType.includes("Carousel") ? "Generate Carousel Draft" : postType.includes("Visual") ? "Generate Visual Caption" : "Generate hooks"
+  const scoreGap = analysis ? Math.max(0, 90 - analysis.overallScore) : 0
+  const filteredPosts = useMemo(() => postFilter === "all" ? posts : posts.filter((post) => post.status === postFilter), [postFilter, posts])
+  const currentDraftLimit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
+  const currentMonth = new Date().toISOString().slice(0, 7)
+  const currentServerUsed = posts.filter((post) => String(post.updatedAt || "").startsWith(currentMonth)).length
+  const currentDraftUsed = Math.max(localDraftUsage, currentServerUsed)
+  const draftLimitHit = typeof currentDraftLimit === "number" && currentDraftUsed >= currentDraftLimit
+  const noDraftsMessage = "0 drafts left. Upgrade to Solo for 25 more."
+  const freePushLimitHit = billing.plan === "Free" && pushAttempts >= 1
+  const pushDisabledMessage = draftLimitHit ? noDraftsMessage : freePushLimitHit ? "Free includes 1 Push to 90+ attempt. Upgrade to Solo for more." : null
+  const canGenerate = Boolean(aiPrompt.trim() || content.trim() || (isCarouselMode && title.trim())) && !draftLimitHit
+  const canStartFlow = (isCarouselMode || isVisualMode ? canGenerate : Boolean(aiPrompt.trim() || title.trim())) && !draftLimitHit
+  const draftText = content
+  const draftHookLine = draftText.split("\n").find((line) => line.trim())?.trim() || ""
 
   useEffect(() => {
-    if (searchParams.get("compose") !== "new") return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEditingId(null)
-    setTitle("")
-    setAiPrompt("")
-    setContent("")
-    setVersions([])
-    setPostType(POST_TYPES[0])
-    setScheduleDate("")
-    setScheduleTime("09:00")
-    setPublish({ status: "idle", message: "", postUrn: null })
-    setCommentsText("")
-    setOriginalPostText("")
-    setAnalysis(null)
-    setRichReplies([])
-    setHookSuggestions([])
-    setHookPanelOpen(false)
-    setStatus("Fresh draft ready")
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("writerLoad")
-      sessionStorage.removeItem("writerScheduleDate")
-    }
-    router.replace(withClientParam("/writer", activeClientId))
-  }, [activeClientId, router, searchParams])
+    setLocalDraftUsage(readDraftUsage(workspaceId))
+    setPushAttempts(readPushAttempts(workspaceId))
+    const sync = () => setLocalDraftUsage(readDraftUsage(workspaceId))
+    window.addEventListener("qalam:draft-usage", sync)
+    return () => window.removeEventListener("qalam:draft-usage", sync)
+  }, [workspaceId])
 
-  useEffect(() => {
-    if (!content.trim()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAnalysis(null)
-      setHookSuggestions([])
-      setInsightNote(null)
-      return
+  const applyInlineHook = (hookText: string) => {
+    const lines = content.split("\n")
+    const firstNonEmpty = lines.findIndex((l) => l.trim())
+    if (firstNonEmpty >= 0) {
+      lines[firstNonEmpty] = hookText
+    } else {
+      lines.unshift(hookText)
     }
-    const timeout = window.setTimeout(async () => {
-      setIsThinking(true)
-      try {
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mode: "intelligence",
-            title: resolveTitle(),
-            content,
-            postType,
-            profile,
-          }),
-        })
-        const data = (await res.json().catch(() => ({}))) as IntelligenceResponse
-        if (!res.ok) throw new Error(data.error || "Insights unavailable")
-        setAnalysis(data.analysis || null)
-        if (data.hookSuggestions?.length) setHookSuggestions(data.hookSuggestions)
-        setInsightNote("Insights refreshed")
-      } catch (error) {
-        setInsightNote((error as Error).message || "Insights unavailable")
-      } finally {
-        setIsThinking(false)
-      }
-    }, 550)
-    return () => window.clearTimeout(timeout)
-  }, [content, postType, profile, resolveTitle])
+    setContent(lines.join("\n"))
+    setInlineHookPanelOpen(false)
+    setStatus("Hook replaced")
+  }
+
+  const onGenerateHooks = async () => {
+    const topic = aiPrompt.trim() || title.trim() || content.trim().split("\n")[0]?.trim()
+    if (!topic) { setStatus("Enter a topic first"); return }
+    setIsGeneratingHooks(true)
+    setHookAlternatives([])
+    setSelectedHook(null)
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "hooks", content: topic, title: topic, profile }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Could not generate hooks")
+      setHookAlternatives((data.hooks || []).slice(0, 5))
+    } catch (e) {
+      setStatus(cleanErrorMessage((e as Error).message))
+    } finally {
+      setIsGeneratingHooks(false)
+    }
+  }
+
+  const onGenerateFromHook = async () => {
+    if (!selectedHook) return
+    const prompt = aiPrompt.trim() || title.trim()
+    if (!prompt) { setStatus("Add a topic first"); return }
+    if (!canUseDraftCredit()) return
+    setIsGenerating(true)
+    setStatus("Generating post from your selected hook...")
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, postType, title: title.trim(), profile, hook: selectedHook }),
+      })
+      const data = (await res.json().catch(() => ({}))) as GenerateResponse
+      if (!res.ok) throw new Error(data.error || "Generation failed")
+      const nextContent = String(data.text || "").trim()
+      if (!nextContent) throw new Error("AI returned an empty draft")
+      const cleanContent = sanitizeGeneratedText(nextContent)
+      setContent(cleanContent)
+      setVersions((prev) => [...prev, { content: cleanContent, createdAt: new Date().toISOString() }])
+      useDraftCredit()
+      if (data.analysis) setAnalysis(data.analysis)
+      setStatus(data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
+    } catch (error) {
+      setStatus(cleanErrorMessage((error as Error).message))
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const onImproveHookInline = async () => {
+    if (!content.trim()) return
+    setIsImprovingInlineHook(true)
+    setInlineHookPanelOpen(true)
+    setInlineHookSuggestions([])
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "hooks", content, title: resolveTitle(), profile }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Could not generate hooks")
+      setInlineHookSuggestions((data.hooks || []).slice(0, 3))
+    } catch (e) {
+      setStatus(cleanErrorMessage((e as Error).message))
+      setInlineHookPanelOpen(false)
+    } finally {
+      setIsImprovingInlineHook(false)
+    }
+  }
 
   const createCarousel = async (postId: string) => {
     const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId), {
@@ -188,6 +261,25 @@ export default function WriterPage() {
       body: JSON.stringify({ postId, title: resolveTitle(), content, workspaceKey: workspaceId }),
     })
     return res.json().catch(() => ({}))
+  }
+
+  const canUseDraftCredit = () => {
+    if (!draftLimitHit) return true
+    setStatus(noDraftsMessage)
+    window.dispatchEvent(new CustomEvent("qalam:draft-limit-hit"))
+    return false
+  }
+
+  const useDraftCredit = () => {
+    incrementDraftUsage(workspaceId)
+    setLocalDraftUsage(readDraftUsage(workspaceId))
+  }
+
+  const canUsePushAttempt = () => {
+    if (!pushDisabledMessage) return true
+    setStatus(pushDisabledMessage)
+    if (draftLimitHit) window.dispatchEvent(new CustomEvent("qalam:draft-limit-hit"))
+    return false
   }
 
   const onSaveDraft = async () => {
@@ -265,28 +357,35 @@ export default function WriterPage() {
   }
 
   const onGenerate = async () => {
-    const previousDraft = content.trim()
-    const currentHook = previousDraft.split("\n").find((line) => line.trim())?.trim() || ""
-    const isVariation = Boolean(previousDraft)
-    const prompt = aiPrompt.trim() || title.trim() || currentHook
+    const prompt = aiPrompt.trim() || title.trim()
     if (!prompt) { setStatus("Add a prompt first"); return }
-    const draftLimit = getPlanLimits(billing.plan).aiDraftsPerMonth
-    if (typeof draftLimit === "number") {
-      const month = new Date().toISOString().slice(0, 7)
-      const serverUsed = posts.filter((post) => String(post.updatedAt || "").startsWith(month)).length
-      if (Math.max(readDraftUsage(workspaceId), serverUsed) >= draftLimit) {
-        setStatus("Draft limit reached. Upgrade to generate more drafts.")
-        window.dispatchEvent(new CustomEvent("qalam:draft-limit-hit"))
+    setIsGenerating(true)
+    setStatus(isCarouselMode ? "Generating carousel outline..." : "Generating post via AI...")
+    try {
+      if (isCarouselMode) {
+        const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: title.trim() || prompt.slice(0, 80), content: prompt, workspaceKey: workspaceId }),
+        })
+        const data = (await res.json().catch(() => ({}))) as CarouselResponse
+        if (!res.ok) throw new Error(data.error || "Carousel generation failed")
+        const slides = data.slides || []
+        if (!slides.length) throw new Error("AI returned an empty carousel")
+        setCarouselSlides(slides)
+        setCarouselScore(data.score || null)
+        setCarouselProjectId(data.projectId || null)
+        setActiveCarouselSlide(0)
+        setContent("")
+        setAnalysis(null)
+        useDraftCredit()
+        setStatus(data.score ? `Carousel outline ready at ${data.score.overallScore}/100.` : "Carousel outline ready.")
         return
       }
-    }
-    setIsGenerating(true)
-    setStatus(isVariation ? "Regenerating..." : "Generating post via AI...")
-    try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, postType, title: title.trim(), profile, hook: currentHook, previousDraft, variation: isVariation }),
+        body: JSON.stringify({ prompt, postType, title: title.trim(), profile }),
       })
       const data = (await res.json().catch(() => ({}))) as GenerateResponse
       if (!res.ok) throw new Error(data.error || "Generation failed")
@@ -295,9 +394,9 @@ export default function WriterPage() {
       const cleanContent = sanitizeGeneratedText(nextContent)
       setContent(cleanContent)
       setVersions((prev) => [...prev, { content: cleanContent, createdAt: new Date().toISOString() }])
-      incrementDraftUsage(workspaceId)
+      useDraftCredit()
       if (data.analysis) setAnalysis(data.analysis)
-      setStatus(isVariation ? "New draft version ready." : postType.includes("Carousel") ? "Carousel outline ready. Save or schedule to build slides." : postType.includes("Visual") ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
+      setStatus(isVisualMode ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
     } catch (error) {
       setStatus(cleanErrorMessage((error as Error).message))
     } finally {
@@ -307,6 +406,8 @@ export default function WriterPage() {
 
   const onPushToNinety = async () => {
     if (!content.trim()) { setStatus("Write a draft first"); return }
+    if (!canUseDraftCredit()) return
+    if (!canUsePushAttempt()) return
     setIsRepairingDraft(true)
     setStatus("Improving draft toward 90+...")
     try {
@@ -326,6 +427,8 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Could not improve draft")
       if (!data.text?.trim()) throw new Error("Repair returned an empty draft")
       setContent(sanitizeGeneratedText(data.text))
+      useDraftCredit()
+      setPushAttempts(incrementPushAttempts(workspaceId))
       if (data.analysis) setAnalysis(data.analysis)
       setStatus(data.metTarget ? "Draft improved to 90+ quality." : "Draft improved. Review the remaining weak dimensions.")
     } catch (error) {
@@ -349,38 +452,35 @@ export default function WriterPage() {
     setStatus(`Loaded ${post.status} post`)
   }
 
-  const applyHook = (hookText: string) => {
-    const lines = content.split("\n")
-    const firstNonEmpty = lines.findIndex((l) => l.trim())
-    if (firstNonEmpty >= 0) {
-      lines[firstNonEmpty] = hookText
-    } else {
-      lines.unshift(hookText)
-    }
-    setContent(lines.join("\n"))
-    setHookPanelOpen(false)
-    setStatus("Hook applied")
-  }
-
-  const onImproveHook = async () => {
+  const onRewriteCta = async () => {
     if (!content.trim()) { setStatus("Write a draft first"); return }
-    setIsImprovingHook(true)
-    setHookPanelOpen(true)
-    setHookSuggestions([])
+    if (!canUseDraftCredit()) return
+    setIsRewritingCta(true)
+    setStatus("Rewriting CTA...")
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "hooks", content, title: resolveTitle(), profile }),
+        body: JSON.stringify({
+          mode: "repair",
+          prompt: "Rewrite only the CTA or final paragraph. Keep the rest of the post as unchanged as possible.",
+          title: title.trim(),
+          content,
+          postType,
+          profile,
+        }),
       })
-      const data = (await res.json().catch(() => ({}))) as { hooks?: HookOption[]; error?: string }
-      if (!res.ok) throw new Error(data.error || "Could not generate hooks")
-      setHookSuggestions(data.hooks || [])
-    } catch (e) {
-      setStatus(cleanErrorMessage((e as Error).message))
-      setHookPanelOpen(false)
+      const data = (await res.json().catch(() => ({}))) as GenerateResponse
+      if (!res.ok) throw new Error(data.error || "Could not rewrite CTA")
+      if (!data.text?.trim()) throw new Error("CTA rewrite returned an empty draft")
+      setContent(sanitizeGeneratedText(data.text))
+      useDraftCredit()
+      if (data.analysis) setAnalysis(data.analysis)
+      setStatus("CTA rewritten")
+    } catch (error) {
+      setStatus(cleanErrorMessage((error as Error).message))
     } finally {
-      setIsImprovingHook(false)
+      setIsRewritingCta(false)
     }
   }
 
@@ -424,7 +524,8 @@ export default function WriterPage() {
   }
 
   return (
-    <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+    <>
+    <div className="mx-auto grid max-w-[1200px] grid-cols-1 gap-6 px-6 py-8 lg:grid-cols-[minmax(0,1fr)_340px]">
       <section className="flex flex-col gap-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         {/* Writer header bar */}
         <div className="border-b border-zinc-100 bg-zinc-50/60 px-6 py-4">
@@ -441,8 +542,8 @@ export default function WriterPage() {
             <div className="flex items-center gap-2">
               <button onClick={onSaveDraft} className="cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-400">Save draft</button>
               {!postType.includes("Carousel") && !postType.includes("Visual") ? (
-                <button onClick={onPushToNinety} disabled={isRepairingDraft || !content.trim() || Boolean(analysis && analysis.overallScore >= 90)} className="cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/12 disabled:opacity-45">
-                  {isRepairingDraft ? "Improving..." : analysis?.overallScore && analysis.overallScore >= 90 ? "90+ ready" : "Push to 90+"}
+                <button onClick={onPushToNinety} disabled={isRepairingDraft || Boolean(pushDisabledMessage) || !content.trim() || Boolean(analysis && analysis.overallScore >= 90)} className="cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/12 disabled:opacity-45">
+                  {pushDisabledMessage || (isRepairingDraft ? "Improving..." : analysis?.overallScore && analysis.overallScore >= 90 ? "90+ ready" : "Push to 90+ (uses 1 draft)")}
                 </button>
               ) : null}
               {isClientWorkspace && (
@@ -452,260 +553,317 @@ export default function WriterPage() {
               )}
               {canPublish
                 ? <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : "Publish"}</button>
-                : <button onClick={() => setStatus("LinkedIn publish requires Solo plan. Upgrade in Settings.")} className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 px-4 py-1.5 text-xs font-bold text-zinc-400"><LockIcon className="h-3 w-3" />Publish</button>
+                : <button onClick={() => setUpgradePrompt("publish")} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600">Unlock in Solo</button>
               }
             </div>
           </div>
         </div>
 
         <div className="p-6">
-          {/* Title + AI prompt */}
+          {/* Title + topic prompt */}
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Working title (optional)" className="mb-3 w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm font-medium text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
-          <DraftCounter className="mb-4" />
-          <div className="mb-5 flex flex-col gap-2 sm:flex-row">
-            <input value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} placeholder="Topic, angle, or instruction for AI Draft" className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" onKeyDown={(e) => e.key === "Enter" && !isGenerating && (aiPrompt.trim() || content.trim()) && onGenerate()} />
-            <button onClick={onGenerate} disabled={isGenerating || (!aiPrompt.trim() && !content.trim())} className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50">
-              {isGenerating ? (content.trim() ? "Regenerating..." : "Writing...") : generateLabel}
-            </button>
-          </div>
-
-          {/* Score cards */}
-          <div className="mb-5 grid gap-3 sm:grid-cols-3">
-            <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={analysis ? (analysis.overallScore >= 90 ? "Copy-paste ready" : `${scoreGap} points short of 90`) : "Waiting for draft"} accent="teal" action={analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? { label: "Push to 90+", onClick: onPushToNinety, loading: isRepairingDraft } : undefined} />
-            <MetricCard
-              label="Hook type"
-              value={analysis?.hookType || "--"}
-              note={analysis ? (analysis.scores[0]?.note || "First line") : "First line analysis"}
-              accent="amber"
-              action={analysis && (analysis.scores.find((s) => s.label === "Hook")?.score ?? 100) < 70 ? { label: "Improve hook", onClick: onImproveHook, loading: isImprovingHook } : undefined}
+          <div className="mb-5">
+            <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              placeholder={isCarouselMode ? "Topic for carousel slides..." : "Topic, angle, or instruction..."}
+              className="flex-1 rounded-xl border border-teal/25 bg-teal/[0.03] px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10"
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return
+                if (isCarouselMode || isVisualMode) { if (!isGenerating && canStartFlow) onGenerate() }
+                else { if (!isGeneratingHooks && canStartFlow) void onGenerateHooks() }
+              }}
             />
-            <MetricCard label="Voice fit" value={analysis ? `${analysis.scores.find((item) => item.label === "Voice fit")?.score ?? 0}/100` : "--"} note={profile.name || profile.title ? "Using saved profile" : "Add voice profile for better fit"} accent="zinc" />
-          </div>
-
-          {/* Post textarea */}
-          <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-teal/40 focus-within:ring-4 focus-within:ring-teal/10">
-            <textarea value={content} onChange={(e) => { setContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px` }} placeholder="Write your post here, or generate one above..." className="min-h-[400px] w-full resize-none bg-transparent px-5 py-5 text-base leading-[1.8] text-zinc-900 outline-none" style={{ overflow: "hidden" }} />
-            <div className="flex items-center gap-4 border-t border-zinc-100 bg-zinc-50/60 px-5 py-2.5 text-xs text-zinc-400">
-              <span>{wordCount} words</span>
-              <span>{characterCount} chars</span>
-              <span className="ml-auto">{publishLabel}</span>
+            <div className="flex flex-col items-stretch sm:items-end">
+              <button
+                onClick={() => isCarouselMode || isVisualMode ? void onGenerate() : void onGenerateHooks()}
+                disabled={isGenerating || isGeneratingHooks || !canStartFlow}
+                className="cursor-pointer whitespace-nowrap rounded-xl bg-teal/10 px-5 py-2.5 text-sm font-bold text-teal transition-colors hover:bg-teal/20 disabled:opacity-50"
+              >
+                {isGenerating || isGeneratingHooks ? "Generating..." : draftLimitHit ? "Upgrade to Solo" : generateLabel}
+              </button>
             </div>
+            </div>
+            <DraftCounter compact className="mt-2" />
           </div>
 
-          {/* Hook suggestions panel */}
-          {hookPanelOpen && (
-            <div className="mt-5 overflow-hidden rounded-2xl border border-teal/20 bg-white shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-100 bg-teal/5 px-5 py-3.5">
-                <div>
-                  <h2 className="text-sm font-bold text-zinc-900">Hook alternatives</h2>
-                  <p className="mt-0.5 text-xs text-zinc-500">Click any to replace your current opening line</p>
-                </div>
-                <button onClick={() => setHookPanelOpen(false)} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-50">Close</button>
-              </div>
-              <div className="divide-y divide-zinc-100">
-                {isImprovingHook ? (
-                  <div className="flex items-center gap-3 px-5 py-8 text-sm text-zinc-500">
-                    <span className="flex gap-1.5">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: "0.15s" }} />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-teal/60" style={{ animationDelay: "0.3s" }} />
-                    </span>
-                    Generating hook alternatives from your post...
+          {isCarouselMode ? (
+            <CarouselPreview
+              activeIndex={activeCarouselSlide}
+              projectId={carouselProjectId}
+              score={carouselScore}
+              slides={carouselSlides}
+              onBuild={(projectId) => router.push(withClientParam(`/carousels/${projectId}`, activeClientId))}
+              onSelect={setActiveCarouselSlide}
+            />
+          ) : (
+            <>
+              {/* Hook selection row */}
+              {(hookAlternatives.length > 0 || isGeneratingHooks) && (
+                <div className="mb-6 rounded-2xl border border-zinc-200 bg-zinc-50/50 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-sm font-bold text-zinc-900">Choose your opening hook</h2>
+                      <p className="mt-0.5 text-xs text-zinc-500">
+                        {selectedHook ? "Hook selected - generate your full post below" : "Click a hook to select it, then generate your post"}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => void onGenerateHooks()}
+                      disabled={isGeneratingHooks || (!aiPrompt.trim() && !title.trim() && !content.trim())}
+                      className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:opacity-50"
+                    >
+                      {isGeneratingHooks ? "..." : "Regenerate"}
+                    </button>
                   </div>
-                ) : hookSuggestions.length ? (
-                  hookSuggestions.map((hook) => {
-                    const styleColor = hook.style === "Sharp" ? "bg-red-50 text-red-700 border-red-100" : hook.style === "Authority" ? "bg-amber-50 text-amber-700 border-amber-100" : hook.style === "Story" ? "bg-blue-50 text-blue-700 border-blue-100" : hook.style === "Curiosity" ? "bg-purple-50 text-purple-700 border-purple-100" : "bg-zinc-100 text-zinc-600 border-zinc-200"
-                    return (
-                      <div key={hook.style} className="flex items-start gap-4 px-5 py-4 transition-colors hover:bg-zinc-50">
-                        <span className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${styleColor}`}>{hook.style}</span>
-                        <p className="flex-1 text-sm leading-relaxed text-zinc-900">{hook.text}</p>
-                        <button onClick={() => applyHook(hook.text)} className="cursor-pointer shrink-0 rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">Use</button>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <p className="px-5 py-6 text-sm text-zinc-400">No hooks generated. Try again or add more content.</p>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* Score analysis + hashtags + replies */}
-          <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-zinc-900">Improve this draft</h2>
-                <span className={`text-xs ${isThinking ? "animate-pulse text-teal" : "text-zinc-400"}`}>{isThinking ? "Analyzing..." : insightNote || "Live insights"}</span>
-              </div>
-              {(analysis?.scores || []).length === 0 ? (
-                <p className="py-4 text-center text-xs text-zinc-400">Write a post to see dimension scores.</p>
-              ) : (
-                <div className="space-y-2.5">
-                  {(analysis?.scores || []).map((item) => {
-                    const barColor = item.score >= 82 ? "bg-teal" : item.score >= 68 ? "bg-teal/60" : item.score >= 52 ? "bg-amber-400" : "bg-red-400"
-                    const scoreColor = item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"
-                    const isHook = item.label === "Hook"
-                    return (
-                      <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
-                        <div className="mb-1.5 flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{item.label}</span>
-                          <div className="flex items-center gap-2">
-                            {isHook && item.score < 70 && (
-                              <button onClick={onImproveHook} disabled={isImprovingHook} className="cursor-pointer rounded-full border border-teal/25 bg-teal/8 px-2.5 py-0.5 text-[10px] font-bold text-teal transition-colors hover:bg-teal/15 disabled:opacity-50">
-                                {isImprovingHook ? "..." : "Suggest hooks"}
-                              </button>
-                            )}
-                            <span className={`text-sm font-bold ${scoreColor}`}>{item.score}</span>
-                          </div>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-zinc-100">
-                          <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${item.score}%` }} />
-                        </div>
-                        <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">{item.note}</p>
-                        {item.actionHint && item.label !== "Hook" && (
-                          <p className="mt-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-[10px] font-medium text-zinc-500">{item.actionHint}</p>
-                        )}
-                      </div>
-                    )
-                  })}
+                  {isGeneratingHooks ? (
+                    <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-36 w-64 shrink-0 animate-pulse rounded-2xl bg-zinc-200/60 sm:w-auto" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
+                      {hookAlternatives.slice(0, 5).map((hook) => (
+                        <HookCard
+                          key={hook}
+                          hook={hook}
+                          selected={selectedHook === hook}
+                          onSelect={() => setSelectedHook(selectedHook === hook ? null : hook)}
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="mt-4">
+                    <button
+                      onClick={() => void onGenerateFromHook()}
+                      disabled={!selectedHook || isGenerating || draftLimitHit}
+                      className="w-full cursor-pointer rounded-xl bg-teal py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {isGenerating ? "Generating post..." : draftLimitHit ? "Upgrade to Solo for more drafts" : "Generate full post from this hook"}
+                    </button>
+                  </div>
                 </div>
               )}
-              {analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? (
-                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
-                  <p className="font-bold">Quality gate not met yet</p>
-                  <p className="mt-1 leading-relaxed">This draft is {scoreGap} points short of the 90+ copy-ready target. Run another quality pass or regenerate from the same prompt.</p>
-                </div>
-              ) : null}
-              {analysis?.improvements?.length ? (
-                <ul className="mt-3 space-y-1.5">
-                  {analysis.improvements.map((item) => (
-                    <li key={item} className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-xs text-zinc-600">
-                      <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
 
-            <div className="space-y-4">
-              {/* Hashtags */}
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-semibold text-zinc-900">Hashtags</h2>
-                  {(analysis?.hashtags || []).length > 0 && (
-                    <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy all</button>
-                  )}
-                </div>
-                {(analysis?.hashtags || []).length ? (
-                  <div className="flex flex-wrap gap-1.5">
-                    {analysis!.hashtags.map((tag) => (
-                      <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
-                        {tag}
-                      </button>
-                    ))}
+              {/* Draft view */}
+              {draftText.trim() && (
+                <>
+                  {/* Score cards */}
+                  <div className="mb-5 grid gap-3 sm:grid-cols-3">
+                    <MetricCard label="Content score" value={analysis ? `${analysis.overallScore}/100` : "--"} note={draftLimitHit ? noDraftsMessage : analysis ? (analysis.overallScore >= 90 ? "Copy-paste ready" : `${scoreGap} points short of 90`) : "Waiting for draft"} accent="teal" action={analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? { label: draftLimitHit ? noDraftsMessage : "Push to 90+ (uses 1 draft)", onClick: onPushToNinety, loading: isRepairingDraft, disabled: draftLimitHit } : undefined} />
+                    <MetricCard
+                      label="Hook type"
+                      value={analysis?.hookType || "--"}
+                      note={analysis ? (analysis.scores[0]?.note || "First line") : "First line analysis"}
+                      accent="amber"
+                    />
+                    <MetricCard label="Voice fit" value={analysis ? `${analysis.scores.find((item) => item.label === "Voice fit")?.score ?? 0}/100` : "--"} note={profile.name || profile.title ? "Using saved profile" : "Add voice profile for better fit"} accent="zinc" />
                   </div>
-                ) : (
-                  <p className="text-xs text-zinc-400">Write more to generate real hashtags.</p>
-                )}
-              </div>
 
-              {/* Comment replies */}
-              <div className="rounded-2xl border border-zinc-200 bg-white">
-                <button onClick={() => setReplyPanelOpen((v) => !v)} className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left">
-                  <div>
-                    <h2 className="text-sm font-semibold text-zinc-900">Comment replies</h2>
-                    {richReplies.length > 0 && <p className="mt-0.5 text-[10px] text-zinc-400">{Math.ceil(richReplies.length / 3)} comment{Math.ceil(richReplies.length / 3) !== 1 ? "s" : ""} covered</p>}
-                  </div>
-                  <span className="text-xs text-zinc-400">{replyPanelOpen ? "Hide" : "Show"}</span>
-                </button>
-
-                {replyPanelOpen && (
-                  <div className="border-t border-zinc-100 p-4">
-                    <div className="mb-3 space-y-3">
-                      <div>
-                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Your post (optional, adds context)</label>
-                        <textarea
-                          value={originalPostText}
-                          onChange={(e) => setOriginalPostText(e.target.value)}
-                          rows={3}
-                          placeholder="Paste the post you published (optional, helps replies feel more grounded)..."
-                          className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Comments to reply to</label>
-                        <textarea
-                          value={commentsText}
-                          onChange={(e) => setCommentsText(e.target.value)}
-                          rows={4}
-                          placeholder={"Paste comments here, one per line.\nExample:\nThis is exactly what I needed to hear.\nHow do you handle pushback from senior leadership?"}
-                          className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={onGenerateReplies} disabled={isGeneratingReplies || !commentsText.trim()} className="cursor-pointer flex-1 rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">
-                          {isGeneratingReplies ? "Generating replies..." : "Generate replies"}
+                  {/* Post textarea */}
+                  <div className="relative w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition-all focus-within:border-teal/40 focus-within:ring-4 focus-within:ring-teal/10">
+                    <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-semibold leading-relaxed text-zinc-900">{draftHookLine || "Hook line"}</p>
+                        <button onClick={() => { if (inlineHookPanelOpen) { setInlineHookPanelOpen(false) } else { void onImproveHookInline() } }} className="shrink-0 cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/15">
+                          {inlineHookPanelOpen ? "Close" : "Improve hook"}
                         </button>
-                        {richReplies.length > 0 && (
-                          <button onClick={() => { setRichReplies([]); setCommentsText(""); setOriginalPostText("") }} className="cursor-pointer rounded-xl border border-zinc-200 px-3 py-2.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-50">Clear</button>
-                        )}
+                      </div>
+                      <div className={`overflow-hidden transition-all duration-200 ${inlineHookPanelOpen ? "mt-3 max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                        <div className="rounded-xl border border-zinc-200 bg-white">
+                          {isImprovingInlineHook ? (
+                            <div className="px-4 py-5 text-sm text-zinc-500">Generating stronger hook alternatives...</div>
+                          ) : inlineHookSuggestions.length ? (
+                            inlineHookSuggestions.map((hook) => (
+                              <div key={hook} className="flex cursor-pointer items-start gap-4 border-b border-zinc-100 px-4 py-3.5 last:border-b-0 hover:bg-zinc-50" onClick={() => applyInlineHook(hook)}>
+                                <p className="flex-1 text-sm leading-relaxed text-zinc-900">{hook}</p>
+                                <button onClick={(e) => { e.stopPropagation(); applyInlineHook(hook) }} className="cursor-pointer shrink-0 rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">Use</button>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="px-4 py-5 text-sm text-zinc-400">No alternatives generated. Try again.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                    {richReplies.length > 0 && (
-                      <div className="mt-4 space-y-4">
-                        {Array.from(new Set(richReplies.map((r) => r.comment))).map((comment) => {
-                          const replies = richReplies.filter((r) => r.comment === comment)
-                          return (
-                            <div key={comment} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
-                              <div className="border-b border-zinc-100 bg-white px-3 py-2.5">
-                                <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Comment</p>
-                                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{comment}</p>
+                    <textarea value={draftText} onChange={(e) => { setContent(e.target.value); e.target.style.height = "auto"; e.target.style.height = `${e.target.scrollHeight}px` }} placeholder="Write your post here, or generate one above..." className="min-h-[400px] w-full resize-none bg-transparent px-5 py-5 text-base leading-[1.8] text-zinc-900 outline-none" style={{ overflow: "hidden" }} />
+                    <div className="flex items-center gap-4 border-t border-zinc-100 bg-zinc-50/60 px-5 py-2.5 text-xs text-zinc-400">
+                      <span>{wordCount} words</span>
+                      <span>{characterCount} chars</span>
+                      <span className="ml-auto">{publishLabel}</span>
+                    </div>
+                  </div>
+                  {/* Score analysis + hashtags + replies */}
+                  <div className="mt-5 grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+                    <div className="rounded-2xl border border-zinc-100 bg-zinc-50/70 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-zinc-900">Improve this draft</h2>
+                        <span className={`text-xs ${isThinking ? "animate-pulse text-teal" : "text-zinc-400"}`}>{isThinking ? "Analyzing..." : insightNote || "Live insights"}</span>
+                      </div>
+                      {(analysis?.scores || []).length === 0 ? (
+                        <p className="py-4 text-center text-xs text-zinc-400">Write a post to see dimension scores.</p>
+                      ) : (
+                        <div className="space-y-2.5">
+                          {(analysis?.scores || []).map((item) => {
+                            const barColor = item.score >= 82 ? "bg-teal" : item.score >= 68 ? "bg-teal/60" : item.score >= 52 ? "bg-amber-400" : "bg-red-400"
+                            const scoreColor = item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"
+                            const isHook = item.label === "Hook"
+                            return (
+                              <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
+                                <div className="mb-1.5 flex items-center justify-between gap-2">
+                                  <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{item.label}</span>
+                                  <div className="flex items-center gap-2">
+                                    {isHook && item.score < 70 && (
+                                      <button onClick={() => void onGenerateHooks()} disabled={isGeneratingHooks || (!aiPrompt.trim() && !title.trim() && !content.trim())} className="cursor-pointer rounded-full border border-teal/25 bg-teal/8 px-2.5 py-0.5 text-[10px] font-bold text-teal transition-colors hover:bg-teal/15 disabled:opacity-50">
+                                        {isGeneratingHooks ? "..." : "Suggest hooks"}
+                                      </button>
+                                    )}
+                                    <span className={`text-sm font-bold ${scoreColor}`}>{item.score}</span>
+                                  </div>
+                                </div>
+                                <div className="h-1.5 rounded-full bg-zinc-100">
+                                  <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${item.score}%` }} />
+                                </div>
+                                <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">{item.note}</p>
+                                {item.actionHint && item.label !== "Hook" && (
+                                  <p className="mt-1.5 rounded-lg bg-zinc-50 px-2.5 py-1.5 text-[10px] font-medium text-zinc-500">{item.actionHint}</p>
+                                )}
                               </div>
-                              <div className="divide-y divide-zinc-100">
-                                {replies.map((r) => {
-                                  const styleColor = r.style === "Thoughtful" ? "text-blue-700 bg-blue-50 border-blue-100" : r.style === "Warm" ? "text-emerald-700 bg-emerald-50 border-emerald-100" : r.style === "Sharp" ? "text-red-600 bg-red-50 border-red-100" : "text-zinc-600 bg-zinc-100 border-zinc-200"
+                            )
+                          })}
+                        </div>
+                      )}
+                      {analysis && analysis.overallScore < 90 && !postType.includes("Carousel") && !postType.includes("Visual") ? (
+                        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
+                          <p className="font-bold">Quality gate not met yet</p>
+                          <p className="mt-1 leading-relaxed">This draft is {scoreGap} points short of the 90+ copy-ready target. Run another quality pass or regenerate from the same prompt.</p>
+                        </div>
+                      ) : null}
+                      {analysis?.improvements?.length ? (
+                        <ul className="mt-3 space-y-1.5">
+                          {analysis.improvements.map((item) => (
+                            <li key={item} className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-xs text-zinc-600">
+                              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Hashtags */}
+                      <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                        <div className="mb-3 flex items-center justify-between">
+                          <h2 className="text-sm font-semibold text-zinc-900">Hashtags</h2>
+                          {(analysis?.hashtags || []).length > 0 && (
+                            <button onClick={() => copyText((analysis?.hashtags || []).join(" "))} className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700">Copy all</button>
+                          )}
+                        </div>
+                        {(analysis?.hashtags || []).length ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {analysis!.hashtags.map((tag) => (
+                              <button key={tag} onClick={() => copyText(tag)} className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10">
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-400">Write more to generate real hashtags.</p>
+                        )}
+                      </div>
+
+                      {/* Comment replies */}
+                      <div className="rounded-2xl border border-zinc-200 bg-white">
+                        <button onClick={() => setReplyPanelOpen((v) => !v)} className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left">
+                          <div>
+                            <h2 className="text-sm font-semibold text-zinc-900">Comment replies</h2>
+                            {richReplies.length > 0 && <p className="mt-0.5 text-[10px] text-zinc-400">{Math.ceil(richReplies.length / 3)} comment{Math.ceil(richReplies.length / 3) !== 1 ? "s" : ""} covered</p>}
+                          </div>
+                          <span className="text-xs text-zinc-400">{replyPanelOpen ? "Hide" : "Show"}</span>
+                        </button>
+
+                        {replyPanelOpen && (
+                          <div className="border-t border-zinc-100 p-4">
+                            <div className="mb-3 space-y-3">
+                              <div>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Your post (optional, adds context)</label>
+                                <textarea value={originalPostText} onChange={(e) => setOriginalPostText(e.target.value)} rows={3} placeholder="Paste the post you published (optional, helps replies feel more grounded)..." className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
+                              </div>
+                              <div>
+                                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Comments to reply to</label>
+                                <textarea value={commentsText} onChange={(e) => setCommentsText(e.target.value)} rows={4} placeholder={"Paste comments here, one per line.\nExample:\nThis is exactly what I needed to hear.\nHow do you handle pushback from senior leadership?"} className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10" />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button onClick={onGenerateReplies} disabled={isGeneratingReplies || !commentsText.trim()} className="cursor-pointer flex-1 rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">
+                                  {isGeneratingReplies ? "Generating replies..." : "Generate replies"}
+                                </button>
+                                {richReplies.length > 0 && (
+                                  <button onClick={() => { setRichReplies([]); setCommentsText(""); setOriginalPostText("") }} className="cursor-pointer rounded-xl border border-zinc-200 px-3 py-2.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-50">Clear</button>
+                                )}
+                              </div>
+                            </div>
+
+                            {richReplies.length > 0 && (
+                              <div className="mt-4 space-y-4">
+                                {Array.from(new Set(richReplies.map((r) => r.comment))).map((comment) => {
+                                  const replies = richReplies.filter((r) => r.comment === comment)
                                   return (
-                                    <div key={r.style} className="flex items-start gap-3 px-3 py-2.5">
-                                      <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${styleColor}`}>{r.style}</span>
-                                      <p className="flex-1 text-xs leading-relaxed text-zinc-900">{r.reply}</p>
-                                      <button onClick={() => copyText(r.reply)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal transition-colors hover:text-teal-700">Copy</button>
+                                    <div key={comment} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50">
+                                      <div className="border-b border-zinc-100 bg-white px-3 py-2.5">
+                                        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Comment</p>
+                                        <p className="mt-1 text-xs leading-relaxed text-zinc-600">{comment}</p>
+                                      </div>
+                                      <div className="divide-y divide-zinc-100">
+                                        {replies.map((r) => {
+                                          const styleColor = r.style === "Thoughtful" ? "text-blue-700 bg-blue-50 border-blue-100" : r.style === "Warm" ? "text-emerald-700 bg-emerald-50 border-emerald-100" : r.style === "Sharp" ? "text-red-600 bg-red-50 border-red-100" : "text-zinc-600 bg-zinc-100 border-zinc-200"
+                                          return (
+                                            <div key={r.style} className="flex items-start gap-3 px-3 py-2.5">
+                                              <span className={`mt-0.5 shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${styleColor}`}>{r.style}</span>
+                                              <p className="flex-1 text-xs leading-relaxed text-zinc-900">{r.reply}</p>
+                                              <button onClick={() => copyText(r.reply)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal transition-colors hover:text-teal-700">Copy</button>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
                                     </div>
                                   )
                                 })}
                               </div>
-                            </div>
-                          )
-                        })}
+                            )}
+                            {!richReplies.length && !isGeneratingReplies && (
+                              <p className="mt-2 text-xs text-zinc-400">Paste one or more comments above and tap Generate replies. Each comment gets 3 styles: Thoughtful, Warm, and Sharp.</p>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    )}
-
-                    {!richReplies.length && !isGeneratingReplies && (
-                      <p className="mt-2 text-xs text-zinc-400">Paste one or more comments above and tap Generate replies. Each comment gets 3 styles: Thoughtful, Warm, and Sharp.</p>
-                    )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Schedule bar */}
-          <div className="mt-5 flex flex-col items-stretch gap-3 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-r from-zinc-50/80 to-white p-4 shadow-sm sm:flex-row sm:items-center">
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Publish Date</label>
-                <input type="date" min={todayInput()} value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
-              </div>
-              <div className="relative sm:w-36">
-                <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Time</label>
-                <input type="time" min={scheduleDate === todayInput() ? nowTimeInput() : undefined} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
-              </div>
-            </div>
-            <LockedFeature feature="Scheduling" requiredPlan="Solo" className="sm:w-auto">
-              <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
-            </LockedFeature>
-          </div>
+                  {/* Schedule bar */}
+                  <div className="mt-5 flex flex-col items-stretch gap-3 overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-r from-zinc-50/80 to-white p-4 shadow-sm sm:flex-row sm:items-center">
+                    <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                      <div className="relative flex-1">
+                        <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Publish Date</label>
+                        <input type="date" min={todayInput()} value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+                      </div>
+                      <div className="relative sm:w-36">
+                        <label className="absolute -top-2.5 left-3 inline-block bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Time</label>
+                        <input type="time" min={scheduleDate === todayInput() ? nowTimeInput() : undefined} value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 shadow-sm transition-all focus:border-teal focus:outline-none focus:ring-4 focus:ring-teal/10" />
+                      </div>
+                    </div>
+                    <LockedFeature feature="Scheduling" requiredPlan="Solo" className="sm:w-auto">
+                      <button onClick={onSchedule} className="cursor-pointer rounded-xl bg-zinc-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-zinc-800">Schedule Post</button>
+                    </LockedFeature>
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           {status && <p className={`mt-3 text-sm ${status.toLowerCase().includes("fail") ? "text-red-600" : "text-zinc-500"}`}>{status}</p>}
           {publish.status !== "idle" && (
@@ -785,6 +943,76 @@ export default function WriterPage() {
         </div>
       </aside>
     </div>
+    {upgradePrompt ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" reason="linkedin publish locked" onClose={() => setUpgradePrompt(null)} /> : null}
+    </>
+  )
+}
+
+function CarouselPreview({ activeIndex, projectId, score, slides, onBuild, onSelect }: {
+  activeIndex: number
+  projectId: string | null
+  score: CarouselScore | null
+  slides: CarouselSlidePreview[]
+  onBuild: (projectId: string) => void
+  onSelect: (index: number) => void
+}) {
+  const activeSlide = slides[activeIndex] || slides[0]
+  return (
+    <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4">
+      {score ? (
+        <div className="mb-4 grid gap-3 sm:grid-cols-4">
+          <MetricCard label="Hook slide" value={`${score.hookSlideScore}/100`} note="Slide 1 scroll-stop" accent="teal" />
+          <MetricCard label="Flow" value={`${score.flowScore}/100`} note="Story progression" accent="amber" />
+          <MetricCard label="CTA slide" value={`${score.ctaSlideScore}/100`} note="Final action" accent="zinc" />
+          <MetricCard label="Overall" value={`${score.overallScore}/100`} note={score.overallScore >= 85 ? "Quality gate passed" : "Needs another pass"} accent="teal" />
+        </div>
+      ) : null}
+
+      {activeSlide ? (
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-zinc-100 bg-white px-5 py-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-teal">Slide {activeIndex + 1} of {slides.length}</span>
+            <div className="flex gap-1.5">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  aria-label={`Show slide ${index + 1}`}
+                  onClick={() => onSelect(index)}
+                  className={`h-2.5 w-2.5 cursor-pointer rounded-full transition-colors ${index === activeIndex ? "bg-teal" : "bg-zinc-200 hover:bg-zinc-300"}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="grid min-h-[360px] gap-5 p-5 md:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="flex min-h-[300px] flex-col justify-between rounded-xl border border-zinc-200 bg-zinc-900 p-6 text-white">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-teal-200">LinkedIn carousel</p>
+                <h2 className="mt-4 text-3xl font-bold leading-tight">{activeSlide.title}</h2>
+                <p className="mt-5 text-lg leading-relaxed text-zinc-100">{activeSlide.body || activeSlide.content}</p>
+              </div>
+              <p className="mt-8 text-sm text-zinc-400">Qalam draft preview</p>
+            </div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Visual suggestion</p>
+              <p className="mt-3 text-sm leading-relaxed text-zinc-700">{activeSlide.visualDirection || "Simple supporting visual"}</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-white px-5 py-16 text-center">
+          <p className="text-sm font-semibold text-zinc-700">No carousel generated yet</p>
+          <p className="mt-1 text-xs text-zinc-400">Add a topic and generate a 5-7 slide outline.</p>
+        </div>
+      )}
+
+      <button
+        onClick={() => projectId && onBuild(projectId)}
+        disabled={!projectId}
+        className="mt-4 w-full cursor-pointer rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Build slides
+      </button>
+    </div>
   )
 }
 
@@ -793,7 +1021,7 @@ function MetricCard({ label, value, note, accent, action }: {
   value: string
   note: string
   accent: "teal" | "amber" | "zinc"
-  action?: { label: string; onClick: () => void; loading?: boolean }
+  action?: { label: string; onClick: () => void; loading?: boolean; disabled?: boolean }
 }) {
   const leftBorder = accent === "amber" ? "border-l-amber-400" : accent === "zinc" ? "border-l-zinc-300" : "border-l-teal"
   const valueColor = accent === "amber" ? "text-amber-700" : accent === "zinc" ? "text-zinc-700" : "text-teal"
@@ -803,7 +1031,7 @@ function MetricCard({ label, value, note, accent, action }: {
       <p className={`mt-2 text-xl font-bold ${valueColor}`}>{value}</p>
       <p className="mt-1 text-[11px] leading-snug text-zinc-500">{note}</p>
       {action && (
-        <button onClick={action.onClick} disabled={action.loading} className="mt-2 cursor-pointer rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50">
+        <button onClick={action.onClick} disabled={action.loading || action.disabled} className="mt-2 cursor-pointer rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 transition-colors hover:bg-amber-100 disabled:opacity-50">
           {action.loading ? "..." : action.label}
         </button>
       )}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import { canAccessPlan, getPlanLimits } from "@/lib/entitlements"
+import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
 import type { PlanTier, PlanLimits } from "@/lib/entitlements"
 
 export type UsePlanReturn = {
@@ -18,7 +18,7 @@ export const usePlan = (): UsePlanReturn => {
 
   return {
     plan,
-    limits: getPlanLimits(plan),
+    limits: getEffectivePlanLimits(plan, state.billing?.limits),
     isLoading,
     canAccess: (requiredPlan: PlanTier) => canAccessPlan(plan, requiredPlan),
   }

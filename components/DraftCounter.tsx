@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import { getPlanLimits } from "@/lib/entitlements"
+import { getEffectivePlanLimits } from "@/lib/entitlements"
+import { UpgradeModal } from "@/components/UpgradeModal"
 
 const usageMonth = () => new Date().toISOString().slice(0, 7)
 
@@ -25,11 +26,11 @@ export const incrementDraftUsage = (workspaceId: string) => {
   return next
 }
 
-export function DraftCounter({ className = "" }: { className?: string }) {
+export function DraftCounter({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   const { billing, posts, workspaceId } = useWorkspace()
   const [localUsed, setLocalUsed] = useState(0)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const limit = getPlanLimits(billing.plan).aiDraftsPerMonth
+  const limit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
   const serverUsed = useMemo(() => {
     const month = usageMonth()
     return posts.filter((post) => String(post.updatedAt || "").startsWith(month)).length
@@ -58,6 +59,27 @@ export function DraftCounter({ className = "" }: { className?: string }) {
 
   if (limit === "unlimited") return null
 
+  if (compact) {
+    return (
+      <>
+        <div title="Each click = 1 draft. Includes scoring and rewrites." className={`flex items-center justify-end gap-2 text-right text-[11px] font-semibold ${remaining === 0 ? "text-red-600" : "text-zinc-500"} ${className}`}>
+          <span>
+            {remaining === 0 ? (
+              <>
+                0 drafts left. <Link href="/pricing" className="font-bold underline underline-offset-2">Upgrade to Solo for 25 more.</Link>
+              </>
+            ) : `${cappedUsed} / ${limit} drafts used`}
+          </span>
+          <span className="h-1.5 w-16 overflow-hidden rounded-full bg-zinc-100">
+            <span className={`block h-full rounded-full transition-all ${tone}`} style={{ width: `${pct}%` }} />
+          </span>
+        </div>
+
+        {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${cappedUsed}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
+      </>
+    )
+  }
+
   return (
     <>
       <div className={`rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ${className}`}>
@@ -73,18 +95,7 @@ export function DraftCounter({ className = "" }: { className?: string }) {
         ) : null}
       </div>
 
-      {showUpgrade ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
-            <h2 className="text-lg font-bold text-zinc-900">Draft limit reached</h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-500">You used {cappedUsed} / {limit} AI drafts this month. Upgrade to keep generating.</p>
-            <div className="mt-5 flex justify-center gap-2">
-              <button onClick={() => setShowUpgrade(false)} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Close</button>
-              <Link href="/settings" className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white hover:bg-teal-600">Upgrade</Link>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${cappedUsed}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
     </>
   )
 }

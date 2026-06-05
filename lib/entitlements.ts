@@ -110,6 +110,33 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
 export const getPlanLimits = (plan: string): PlanLimits =>
   PLAN_LIMITS[plan as PlanTier] ?? PLAN_LIMITS.Free
 
+export const getEffectivePlanLimits = (plan: string, overrideLimits?: PlanLimits): PlanLimits =>
+  overrideLimits ?? getPlanLimits(plan)
+
+export const featureOverrideKey = (feature: string) => {
+  const normalized = feature.toLowerCase()
+  if (normalized.includes("schedul") || normalized.includes("planner")) return "scheduling"
+  if (normalized.includes("voice")) return "voiceProfiles"
+  if (normalized.includes("analytic")) return "analytics"
+  if (normalized.includes("carousel")) return "carouselBuilder"
+  if (normalized.includes("competitor") || normalized.includes("research")) return "competitorResearch"
+  if (normalized.includes("approval")) return "approvalWorkflow"
+  if (normalized.includes("export") || normalized.includes("pdf")) return "exportPdf"
+  if (normalized.includes("white")) return "whiteLabel"
+  return ""
+}
+
+export const hasFeatureAccess = (
+  plan: string,
+  requiredPlan: PlanTier,
+  feature: string,
+  featureFlags?: Record<string, boolean>
+) => {
+  const key = featureOverrideKey(feature)
+  if (key && featureFlags?.[key] !== undefined) return featureFlags[key]
+  return canAccessPlan(plan, requiredPlan)
+}
+
 export const formatLimit = (value: number | "unlimited"): string => {
   if (value === "unlimited") return "Unlimited"
   if (value === 0) return "Not included"
