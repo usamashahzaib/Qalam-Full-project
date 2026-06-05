@@ -1,0 +1,32 @@
+# Qalam: AI-Powered LinkedIn Content Engine
+
+Qalam is a premium SaaS platform designed for professionals, founders, and marketing teams to automate and enhance their LinkedIn content strategy. It serves as a specialized AI writing partner that goes beyond generic generation by learning a user's unique writing style.
+
+## Primary Purpose
+To help users write less, post more, and grow faster on LinkedIn by turning raw ideas into high-performing, authentic content in seconds.
+
+## Key Features
+- **Voice Fingerprint (AI Voice Learning):** The core differentiator. Qalam analyzes a user's past posts to mirror their specific tone, vocabulary, and cadence.
+- **AI Post Writer:** Generates compelling LinkedIn posts trained on millions of viral content pieces.
+- **Hook Generator:** Crafts scroll-stopping first lines to maximize reach and engagement.
+- **Idea Library:** Provides a personalized bank of trending topics and ideas tailored to the user's niche.
+- **Post Scheduler:** Allows users to plan and publish content at peak times automatically.
+- **LinkedIn Analytics:** Provides insights into which formats and hooks drive the most growth.
+
+## Target Audience
+- **Creators & Professionals:** Building a personal brand.
+- **Founders:** Establishing thought leadership.
+- **Marketing Teams & HR Leaders:** Scaling company page presence and employee advocacy.
+
+## Pricing Tiers
+- **Free ($0/forever):** 5 AI posts per week, 3 hook variations, basic tone options.
+- **Pro ($19/mo):** Unlimited AI posts, Voice Fingerprint training, all tone modes, unlimited Hook Generator, scheduling (30 posts/mo), and analytics.
+- **Team ($49/mo):** 5 team seats, custom voice profiles per seat, team analytics, brand voice guidelines, and unlimited scheduling.
+
+## Social Proof
+- **Rating:** 4.9/5 stars.
+- **User Base:** Trusted by over 12,000+ creators and teams at companies like Stripe, Microsoft, and LinkedIn.
+
+## Contact & URL
+- **Website:** https://qalam.ai
+- **Email:** hello@qalam.ai
