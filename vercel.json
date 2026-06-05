@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/linkedin/publish-scheduled",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/linkedin/sync-analytics",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
