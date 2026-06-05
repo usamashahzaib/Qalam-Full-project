@@ -26,7 +26,7 @@ const POST_FILTERS = [
 type PublishState = { status: "idle" | "loading" | "success" | "error"; message: string; postUrn: string | null }
 type WriterBootstrapPost = { id?: string; title?: string; content?: string; type?: string; externalPostUrn?: string | null }
 type WriterBootstrap = { post: WriterBootstrapPost | null; scheduleDate: string; parseFailed: boolean; hasWriterLoad: boolean; hasWriterScheduleDate: boolean }
-type GenerateResponse = { text?: string; error?: string; analysis?: ContentAnalysis; metTarget?: boolean }
+type GenerateResponse = { text?: string; error?: string; analysis?: ContentAnalysis; metTarget?: boolean; usageCost?: number; needsPolish?: boolean; visual?: { imagePrompt?: string } }
 type IntelligenceResponse = { analysis?: ContentAnalysis; hookSuggestions?: string[]; error?: string }
 type RichReply = { comment: string; style: string; reply: string }
 type DraftVersion = { content: string; createdAt: string }
@@ -87,6 +87,18 @@ const incrementPushAttempts = (workspaceId: string) => {
   localStorage.setItem(pushAttemptKey(workspaceId), String(next))
   return next
 }
+const termsKey = (workspaceId: string) => `qalam-publish-terms:${workspaceId}`
+const readPublishTerms = (workspaceId: string) => typeof window !== "undefined" && localStorage.getItem(termsKey(workspaceId)) === "accepted"
+const profileTopics = (profile: { title?: string; industry?: string; goals?: string[] }) => {
+  const role = profile.title || "your role"
+  const industry = profile.industry || "your industry"
+  const goal = profile.goals?.[0] || "building trust"
+  return [
+    `A hard lesson from ${role}`,
+    `What ${industry} teams get wrong about ${goal}`,
+    `One contrarian take from your work in ${industry}`,
+  ]
+}
 
 export default function WriterPage() {
   const router = useRouter()
@@ -94,6 +106,8 @@ export default function WriterPage() {
   const { user } = useAuth()
   const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state, billing } = useWorkspace()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
+  const canUseProTools = canAccessPlan(billing.plan, "Pro")
+  const availablePostTypes = useMemo(() => canUseProTools ? POST_TYPES : POST_TYPES.filter((type) => !type.includes("Carousel") && !type.includes("Visual")), [canUseProTools])
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const bootstrap = useMemo(() => readWriterBootstrap(), [])
   const isClientWorkspace = Boolean(activeClientId)
@@ -129,12 +143,17 @@ export default function WriterPage() {
   const [activeCarouselSlide, setActiveCarouselSlide] = useState(0)
   const [localDraftUsage, setLocalDraftUsage] = useState(0)
   const [pushAttempts, setPushAttempts] = useState(0)
+  const [profileTopicSuggestions, setProfileTopicSuggestions] = useState<string[]>([])
+  const [visualPrompt, setVisualPrompt] = useState("")
+  const [visualPreviewUrl, setVisualPreviewUrl] = useState("")
 
   // Step flow state variables
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
   const [inlineHookPanelOpen, setInlineHookPanelOpen] = useState(false)
   const [inlineHookSuggestions, setInlineHookSuggestions] = useState<string[]>([])
   const [isImprovingInlineHook, setIsImprovingInlineHook] = useState(false)
+  const [showPublishTerms, setShowPublishTerms] = useState(false)
+  const [publishTermsAccepted, setPublishTermsAccepted] = useState(false)
 
   const wordCount = useMemo(() => (content.trim() ? content.trim().split(/\s+/).length : 0), [content])
   const characterCount = content.length
@@ -154,18 +173,24 @@ export default function WriterPage() {
   const noDraftsMessage = "0 drafts left. Upgrade to Solo for 25 more."
   const freePushLimitHit = billing.plan === "Free" && pushAttempts >= 1
   const pushDisabledMessage = draftLimitHit ? noDraftsMessage : freePushLimitHit ? "Free includes 1 Push to 90+ attempt. Upgrade to Solo for more." : null
+  const hasProfileContext = Boolean(profile.title || profile.industry || profile.goals.length)
   const canGenerate = Boolean(aiPrompt.trim() || content.trim() || (isCarouselMode && title.trim())) && !draftLimitHit
-  const canStartFlow = (isCarouselMode || isVisualMode ? canGenerate : Boolean(aiPrompt.trim() || title.trim())) && !draftLimitHit
+  const canStartFlow = (isCarouselMode || isVisualMode ? canGenerate : Boolean(aiPrompt.trim() || title.trim() || hasProfileContext)) && !draftLimitHit
   const draftText = content
   const draftHookLine = draftText.split("\n").find((line) => line.trim())?.trim() || ""
 
   useEffect(() => {
     setLocalDraftUsage(readDraftUsage(workspaceId))
     setPushAttempts(readPushAttempts(workspaceId))
+    setPublishTermsAccepted(readPublishTerms(workspaceId))
     const sync = () => setLocalDraftUsage(readDraftUsage(workspaceId))
     window.addEventListener("qalam:draft-usage", sync)
     return () => window.removeEventListener("qalam:draft-usage", sync)
   }, [workspaceId])
+
+  useEffect(() => {
+    if (!availablePostTypes.includes(postType)) setPostType(POST_TYPES[0])
+  }, [availablePostTypes, postType])
 
   const applyInlineHook = (hookText: string) => {
     const lines = content.split("\n")
@@ -180,9 +205,42 @@ export default function WriterPage() {
     setStatus("Hook replaced")
   }
 
-  const onGenerateHooks = async () => {
-    const topic = aiPrompt.trim() || title.trim() || content.trim().split("\n")[0]?.trim()
-    if (!topic) { setStatus("Enter a topic first"); return }
+  const applyInlineHookAndRegenerate = async (hookText: string) => {
+    const prompt = aiPrompt.trim() || title.trim() || resolveTitle()
+    applyInlineHook(hookText)
+    setIsImprovingInlineHook(true)
+    setStatus("Regenerating from selected hook...")
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, postType, title: title.trim(), profile, hook: hookText, previousDraft: content, variation: true }),
+      })
+      const data = (await res.json().catch(() => ({}))) as GenerateResponse
+      if (!res.ok) throw new Error(data.error || "Could not regenerate draft")
+      if (!data.text?.trim()) throw new Error("Regeneration returned an empty draft")
+      const next = sanitizeGeneratedText(data.text)
+      setContent(next)
+      setVersions((prev) => [...prev, { content: next, createdAt: new Date().toISOString() }])
+      if (data.analysis) setAnalysis(data.analysis)
+      setStatus(data.needsPolish ? "Draft regenerated. Push to 90+ if needed." : "Draft regenerated")
+    } catch (error) {
+      setStatus(cleanErrorMessage((error as Error).message))
+    } finally {
+      setIsImprovingInlineHook(false)
+    }
+  }
+
+  const onGenerateHooks = async (topicOverride?: string) => {
+    const topic = topicOverride?.trim() || aiPrompt.trim() || title.trim() || content.trim().split("\n")[0]?.trim()
+    if (!topic) {
+      if (hasProfileContext) {
+        setProfileTopicSuggestions(profileTopics(profile))
+        setStatus("Pick a topic to start.")
+      } else setStatus("Enter a topic first")
+      return
+    }
+    if (!canUseDraftCredit()) return
     setIsGeneratingHooks(true)
     setHookAlternatives([])
     setSelectedHook(null)
@@ -192,9 +250,11 @@ export default function WriterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "hooks", content: topic, title: topic, profile }),
       })
-      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string; usageCost?: number }
       if (!res.ok) throw new Error(data.error || "Could not generate hooks")
       setHookAlternatives((data.hooks || []).slice(0, 5))
+      setProfileTopicSuggestions([])
+      useDraftCredit(data.usageCost || 1)
     } catch (e) {
       setStatus(cleanErrorMessage((e as Error).message))
     } finally {
@@ -222,7 +282,7 @@ export default function WriterPage() {
       const cleanContent = sanitizeGeneratedText(nextContent)
       setContent(cleanContent)
       setVersions((prev) => [...prev, { content: cleanContent, createdAt: new Date().toISOString() }])
-      useDraftCredit()
+      useDraftCredit(data.usageCost || 1)
       if (data.analysis) setAnalysis(data.analysis)
       setStatus(data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
     } catch (error) {
@@ -234,6 +294,8 @@ export default function WriterPage() {
 
   const onImproveHookInline = async () => {
     if (!content.trim()) return
+    if (!canUseDraftCredit()) return
+    if (!canUsePushAttempt()) return
     setIsImprovingInlineHook(true)
     setInlineHookPanelOpen(true)
     setInlineHookSuggestions([])
@@ -243,9 +305,10 @@ export default function WriterPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode: "hooks", content, title: resolveTitle(), profile }),
       })
-      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string; usageCost?: number }
       if (!res.ok) throw new Error(data.error || "Could not generate hooks")
       setInlineHookSuggestions((data.hooks || []).slice(0, 3))
+      useDraftCredit(data.usageCost || 1)
     } catch (e) {
       setStatus(cleanErrorMessage((e as Error).message))
       setInlineHookPanelOpen(false)
@@ -270,8 +333,8 @@ export default function WriterPage() {
     return false
   }
 
-  const useDraftCredit = () => {
-    incrementDraftUsage(workspaceId)
+  const useDraftCredit = (count = 1) => {
+    for (let i = 0; i < count; i += 1) incrementDraftUsage(workspaceId)
     setLocalDraftUsage(readDraftUsage(workspaceId))
   }
 
@@ -320,6 +383,7 @@ export default function WriterPage() {
   const openLinkedInComposer = () => {
     const linkedInUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(content)}`
     window.open(linkedInUrl, "_blank", "noopener,noreferrer")
+    setShowPublishTerms(false)
     setPublish({
       status: "success",
       message: "Opened LinkedIn composer. Client only needs to review and click Post there.",
@@ -327,10 +391,12 @@ export default function WriterPage() {
     })
   }
 
-  const onPublish = async () => {
+  const onPublish = async (forceAccepted = false) => {
     if (!content.trim()) { setPublish({ status: "error", message: "Write content first", postUrn: null }); return }
-    const publishDirectly = window.confirm("Publish directly from Qalam?\n\nOK = publish now from Qalam.\nCancel = open LinkedIn with this draft ready for manual review.")
-    if (!publishDirectly) return openLinkedInComposer()
+    if (!forceAccepted && !publishTermsAccepted) {
+      setShowPublishTerms(true)
+      return
+    }
     if (!user?.linkedinMemberId) {
       setPublish({ status: "error", message: "Connect LinkedIn first or use manual handoff.", postUrn: null })
       return
@@ -354,6 +420,13 @@ export default function WriterPage() {
     } catch (error) {
       setPublish({ status: "error", message: (error as Error).message || "LinkedIn publish failed", postUrn: null })
     }
+  }
+
+  const acceptTermsAndPublish = () => {
+    localStorage.setItem(termsKey(workspaceId), "accepted")
+    setPublishTermsAccepted(true)
+    setShowPublishTerms(false)
+    void onPublish(true)
   }
 
   const onGenerate = async () => {
@@ -394,8 +467,9 @@ export default function WriterPage() {
       const cleanContent = sanitizeGeneratedText(nextContent)
       setContent(cleanContent)
       setVersions((prev) => [...prev, { content: cleanContent, createdAt: new Date().toISOString() }])
-      useDraftCredit()
+      useDraftCredit(data.usageCost || 1)
       if (data.analysis) setAnalysis(data.analysis)
+      if (data.visual?.imagePrompt) setVisualPrompt(data.visual.imagePrompt)
       setStatus(isVisualMode ? "Visual caption ready" : data.metTarget ? "Draft ready at 90+ quality." : "Draft ready. One more quality pass is available.")
     } catch (error) {
       setStatus(cleanErrorMessage((error as Error).message))
@@ -427,7 +501,7 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Could not improve draft")
       if (!data.text?.trim()) throw new Error("Repair returned an empty draft")
       setContent(sanitizeGeneratedText(data.text))
-      useDraftCredit()
+      useDraftCredit(data.usageCost || 1)
       setPushAttempts(incrementPushAttempts(workspaceId))
       if (data.analysis) setAnalysis(data.analysis)
       setStatus(data.metTarget ? "Draft improved to 90+ quality." : "Draft improved. Review the remaining weak dimensions.")
@@ -474,7 +548,7 @@ export default function WriterPage() {
       if (!res.ok) throw new Error(data.error || "Could not rewrite CTA")
       if (!data.text?.trim()) throw new Error("CTA rewrite returned an empty draft")
       setContent(sanitizeGeneratedText(data.text))
-      useDraftCredit()
+      useDraftCredit(data.usageCost || 1)
       if (data.analysis) setAnalysis(data.analysis)
       setStatus("CTA rewritten")
     } catch (error) {
@@ -536,7 +610,7 @@ export default function WriterPage() {
                 <p className="text-xs text-zinc-500">{currentDraftLabel}</p>
               </div>
               <select value={postType} onChange={(e) => setPostType(e.target.value)} className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none focus:border-teal">
-                {POST_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                {availablePostTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-2">
@@ -552,7 +626,7 @@ export default function WriterPage() {
                 </LockedFeature>
               )}
               {canPublish
-                ? <button onClick={onPublish} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : "Publish"}</button>
+                ? <button onClick={() => void onPublish()} disabled={publish.status === "loading"} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-60">{publish.status === "loading" ? "Publishing..." : "Publish"}</button>
                 : <button onClick={() => setUpgradePrompt("publish")} className="cursor-pointer rounded-lg bg-teal px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600">Unlock in Solo</button>
               }
             </div>
@@ -585,6 +659,19 @@ export default function WriterPage() {
               </button>
             </div>
             </div>
+            {profileTopicSuggestions.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {profileTopicSuggestions.map((topic) => (
+                  <button
+                    key={topic}
+                    onClick={() => { setAiPrompt(topic); setProfileTopicSuggestions([]); void onGenerateHooks(topic) }}
+                    className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-3 py-1.5 text-xs font-semibold text-teal transition-colors hover:bg-teal/10"
+                  >
+                    {topic}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <DraftCounter compact className="mt-2" />
           </div>
 
@@ -597,6 +684,30 @@ export default function WriterPage() {
               onBuild={(projectId) => router.push(withClientParam(`/carousels/${projectId}`, activeClientId))}
               onSelect={setActiveCarouselSlide}
             />
+          ) : isVisualMode ? (
+            <div className="rounded-2xl border border-zinc-200 bg-zinc-50/60 p-5">
+              <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Visual caption</p>
+                  <textarea value={content} onChange={(e) => setContent(e.target.value)} maxLength={150} placeholder="Generate a short visual caption..." className="mt-3 min-h-[140px] w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" />
+                  <p className="mt-2 text-right text-xs text-zinc-400">{content.length}/150</p>
+                  <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Image prompt</p>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-700">{visualPrompt || "Generate a visual caption to get an image direction."}</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Upload visual</p>
+                  <label className="mt-3 flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-center text-sm text-zinc-500">
+                    {visualPreviewUrl ? <img src={visualPreviewUrl} alt="Visual preview" className="h-full max-h-[260px] w-full object-cover" /> : <span>Upload image preview</span>}
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) setVisualPreviewUrl(URL.createObjectURL(file))
+                    }} />
+                  </label>
+                </div>
+              </div>
+            </div>
           ) : (
             <>
               {/* Hook selection row */}
@@ -669,8 +780,8 @@ export default function WriterPage() {
                     <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-4">
                       <div className="flex items-start justify-between gap-3">
                         <p className="text-sm font-semibold leading-relaxed text-zinc-900">{draftHookLine || "Hook line"}</p>
-                        <button onClick={() => { if (inlineHookPanelOpen) { setInlineHookPanelOpen(false) } else { void onImproveHookInline() } }} className="shrink-0 cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/15">
-                          {inlineHookPanelOpen ? "Close" : "Improve hook"}
+                        <button onClick={() => { if (inlineHookPanelOpen) { setInlineHookPanelOpen(false) } else { void onImproveHookInline() } }} disabled={Boolean(pushDisabledMessage)} className="shrink-0 cursor-pointer rounded-lg border border-teal/25 bg-teal/8 px-3 py-1.5 text-xs font-bold text-teal transition-colors hover:bg-teal/15 disabled:cursor-not-allowed disabled:opacity-45">
+                          {pushDisabledMessage || (inlineHookPanelOpen ? "Close" : "Improve hook (uses 1 draft)")}
                         </button>
                       </div>
                       <div className={`overflow-hidden transition-all duration-200 ${inlineHookPanelOpen ? "mt-3 max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
@@ -679,9 +790,12 @@ export default function WriterPage() {
                             <div className="px-4 py-5 text-sm text-zinc-500">Generating stronger hook alternatives...</div>
                           ) : inlineHookSuggestions.length ? (
                             inlineHookSuggestions.map((hook) => (
-                              <div key={hook} className="flex cursor-pointer items-start gap-4 border-b border-zinc-100 px-4 py-3.5 last:border-b-0 hover:bg-zinc-50" onClick={() => applyInlineHook(hook)}>
-                                <p className="flex-1 text-sm leading-relaxed text-zinc-900">{hook}</p>
-                                <button onClick={(e) => { e.stopPropagation(); applyInlineHook(hook) }} className="cursor-pointer shrink-0 rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">Use</button>
+                              <div key={hook} className="flex cursor-pointer items-start gap-4 border-b border-zinc-100 px-4 py-3.5 last:border-b-0 hover:bg-zinc-50" onClick={() => void applyInlineHookAndRegenerate(hook)}>
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold leading-relaxed text-zinc-900">{hook}</p>
+                                  <p className="mt-1 text-xs leading-relaxed text-zinc-500">{[hook, ...content.split("\n").filter((line) => line.trim()).slice(1, 2)].join(" ")}</p>
+                                </div>
+                                <button onClick={(e) => { e.stopPropagation(); void applyInlineHookAndRegenerate(hook) }} disabled={isImprovingInlineHook} className="cursor-pointer shrink-0 rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">Use</button>
                               </div>
                             ))
                           ) : (
@@ -711,7 +825,7 @@ export default function WriterPage() {
                           {(analysis?.scores || []).map((item) => {
                             const barColor = item.score >= 82 ? "bg-teal" : item.score >= 68 ? "bg-teal/60" : item.score >= 52 ? "bg-amber-400" : "bg-red-400"
                             const scoreColor = item.score >= 68 ? "text-teal" : item.score >= 52 ? "text-amber-600" : "text-red-500"
-                            const isHook = item.label === "Hook"
+                            const isHook = item.label === "Hook" || item.label === "Hook strength"
                             return (
                               <div key={item.label} className="rounded-xl border border-zinc-200 bg-white p-3">
                                 <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -921,28 +1035,41 @@ export default function WriterPage() {
           </div>
         </div>
 
-        {/* Quick guide */}
+        {/* Quick actions */}
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-500">Publish flow</h2>
           <div className="space-y-2">
             {[
-              { label: "Save draft", desc: "Stores to workspace without publishing" },
-              { label: "Schedule", desc: "Adds to planner with date and time" },
-              { label: "Publish now", desc: "Sends to LinkedIn or opens manual handoff" },
-              { label: "Approvals", desc: "Client workspaces only" },
+              { label: "Save draft", desc: "Stores to workspace", onClick: onSaveDraft, disabled: !content.trim() },
+              { label: "Schedule", desc: "Adds to planner", onClick: onSchedule, disabled: !content.trim() },
+              { label: "Publish now", desc: "LinkedIn or handoff", onClick: () => void onPublish(), disabled: !content.trim() },
+              { label: "Approvals", desc: "Client workspaces", onClick: onSendForApproval, disabled: !isClientWorkspace || !content.trim() },
             ].map((item) => (
-              <div key={item.label} className="flex items-start gap-2">
-                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />
+              <button key={item.label} onClick={item.onClick} disabled={item.disabled} className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-45">
                 <div>
                   <span className="text-xs font-semibold text-zinc-800">{item.label}</span>
                   <span className="ml-1 text-xs text-zinc-500">{item.desc}</span>
                 </div>
-              </div>
+                <span className="text-xs font-bold text-teal">&gt;</span>
+              </button>
             ))}
           </div>
         </div>
       </aside>
     </div>
+    {showPublishTerms ? (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 px-4">
+        <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl">
+          <h2 className="text-lg font-bold text-zinc-900">Confirm LinkedIn publish</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">You are responsible for reviewing this post before it goes live. Qalam will publish exactly what is in the editor.</p>
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <button onClick={openLinkedInComposer} className="cursor-pointer rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Open composer</button>
+            <button onClick={acceptTermsAndPublish} className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Accept and publish</button>
+          </div>
+          <button onClick={() => setShowPublishTerms(false)} className="mt-3 w-full cursor-pointer text-xs font-semibold text-zinc-400 hover:text-zinc-600">Cancel</button>
+        </div>
+      </div>
+    ) : null}
     {upgradePrompt ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" reason="linkedin publish locked" onClose={() => setUpgradePrompt(null)} /> : null}
     </>
   )

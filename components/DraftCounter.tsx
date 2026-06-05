@@ -39,7 +39,8 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
   const cappedUsed = typeof limit === "number" ? Math.min(used, limit) : used
   const remaining = typeof limit === "number" ? Math.max(0, limit - used) : null
   const pct = typeof limit === "number" && limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0
-  const tone = pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-400" : "bg-teal"
+  const remainingPct = typeof limit === "number" && limit > 0 && remaining !== null ? Math.round((remaining / limit) * 100) : 100
+  const tone = remainingPct < 20 ? "bg-red-500" : remainingPct <= 50 ? "bg-amber-400" : "bg-teal"
 
   useEffect(() => {
     setLocalUsed(readDraftUsage(workspaceId))
@@ -68,7 +69,12 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
               <>
                 0 drafts left. <Link href="/pricing" className="font-bold underline underline-offset-2">Upgrade to Solo for 25 more.</Link>
               </>
-            ) : `${cappedUsed} / ${limit} drafts used`}
+            ) : (
+              <>
+                {`${cappedUsed} / ${limit} drafts used`}
+                {remaining !== null && remaining < 3 ? <Link href="/pricing" className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
+              </>
+            )}
           </span>
           <span className="h-1.5 w-16 overflow-hidden rounded-full bg-zinc-100">
             <span className={`block h-full rounded-full transition-all ${tone}`} style={{ width: `${pct}%` }} />

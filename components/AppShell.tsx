@@ -76,7 +76,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const currentPlan = workspace.state.billing.plan
   const hasAgencyAccess = currentPlan === "Agency"
   const canAddWorkspace = hasAgencyAccess
-  const addWorkspaceUnlockLabel = canAccessPlan(currentPlan, "Pro") ? "Unlock in Agency" : "Unlock in Pro"
+  const showAddWorkspace = canAddWorkspace || canAccessPlan(currentPlan, "Pro")
+  const addWorkspaceUnlockLabel = "Unlock in Agency"
 
   useEffect(() => {
     if (!user) return
@@ -108,7 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const name = client.client_name.trim()
     return name !== "Personal Workspace" && list.findIndex((item) => item.id === client.id || item.client_name.trim().toLowerCase() === name.toLowerCase()) === index
   }), [clients])
-  const showManageClientList = hasAgencyAccess
+  const showManageClientList = hasAgencyAccess && clientWorkspaces.length > 0
 
   const activeClientName = useMemo(() => {
     if (!activeClientId) return "Personal Workspace"
@@ -186,9 +187,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs font-semibold text-gold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link> : null}
                   {canAddWorkspace ? (
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
-                  ) : (
+                  ) : showAddWorkspace ? (
                     <button disabled className="w-full cursor-not-allowed px-4 py-3 text-left text-xs font-semibold text-zinc-500">Add workspace - {addWorkspaceUnlockLabel}</button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}
@@ -214,7 +215,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             onClick={() => setUpgradePrompt({ plan: link.requiredPlan!, reason: `${link.label.toLowerCase()} locked` })}
                             className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
                           >
-                            Unlock in {link.requiredPlan}
+                            Unlock - Upgrade to {link.requiredPlan}
                           </button>
                         </div>
                       )
@@ -303,9 +304,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="block px-4 py-2.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Manage client list &gt;</Link> : null}
               {canAddWorkspace ? (
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
-              ) : (
+              ) : showAddWorkspace ? (
                 <button disabled className="w-full cursor-not-allowed px-4 py-2.5 text-left text-xs font-semibold text-zinc-400">Add workspace - {addWorkspaceUnlockLabel}</button>
-              )}
+              ) : null}
             </div>
           </div>
         )}

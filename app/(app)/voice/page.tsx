@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { LockedFeature } from "@/components/LockedFeature"
 
-const LINKEDIN_RE = /^https:\/\/(www\.)?linkedin\.com\/(in|company)\/[A-Za-z0-9-_%]+\/?$/
+const LINKEDIN_RE = /^https:\/\/www\.linkedin\.com\/in\/[A-Za-z0-9-_%]{3,}\/?$/
 
 export default function VoiceProfilePage() {
   const { profile, saveProfile, isLoadingProfile, posts, drafts, scheduled, published } = useWorkspace()
@@ -24,6 +24,7 @@ export default function VoiceProfilePage() {
     () => [profile.name, profile.title, profile.linkedinUrl, profile.industry, profile.tone, profile.goals.length ? "goals" : ""].filter(Boolean).length,
     [profile]
   )
+  const linkedinInvalid = Boolean(draft.linkedinUrl.trim()) && !LINKEDIN_RE.test(draft.linkedinUrl.trim())
 
   const resetDraft = () => {
     setDraft({
@@ -46,7 +47,7 @@ export default function VoiceProfilePage() {
   const save = async () => {
     const trimmedUrl = draft.linkedinUrl.trim()
     if (trimmedUrl && !LINKEDIN_RE.test(trimmedUrl)) {
-      setStatus("Use a valid LinkedIn /in/ or /company/ URL.")
+      setStatus("Use a valid LinkedIn profile URL: https://www.linkedin.com/in/your-handle")
       return
     }
     try {
@@ -114,7 +115,7 @@ export default function VoiceProfilePage() {
             { label: "Content goals", filled: profile.goals.length > 0 },
           ].map((field) => (
             <div key={field.label} className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-semibold transition-all ${field.filled ? "border-teal/20 bg-teal/5 text-teal" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
-              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${field.filled ? "bg-teal text-white" : "border border-zinc-200 bg-white text-zinc-400"}`}>{field.filled ? "✓" : ""}</span>
+              <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-bold ${field.filled ? "bg-teal text-white" : "border border-zinc-200 bg-white text-zinc-400"}`}>{field.filled ? "OK" : ""}</span>
               {field.label}
             </div>
           ))}
@@ -133,7 +134,7 @@ export default function VoiceProfilePage() {
             ) : (
               <div className="flex items-center gap-2">
                 <button onClick={() => { setEditing(false); setStatus(null); resetDraft() }} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Cancel</button>
-                <button onClick={save} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Save</button>
+                <button onClick={save} disabled={linkedinInvalid} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50">Save</button>
               </div>
             )}
           </div>
@@ -167,7 +168,10 @@ export default function VoiceProfilePage() {
             <div className="space-y-4">
               <Field label="Name"><input value={draft.name} onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))} className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" /></Field>
               <Field label="Title / Role"><input value={draft.title} onChange={(e) => setDraft((prev) => ({ ...prev, title: e.target.value }))} className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" /></Field>
-              <Field label="LinkedIn URL"><input value={draft.linkedinUrl} onChange={(e) => setDraft((prev) => ({ ...prev, linkedinUrl: e.target.value }))} placeholder="https://www.linkedin.com/in/your-handle" className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" /></Field>
+              <Field label="LinkedIn URL">
+                <input value={draft.linkedinUrl} onChange={(e) => setDraft((prev) => ({ ...prev, linkedinUrl: e.target.value }))} placeholder="https://www.linkedin.com/in/your-handle" className={`w-full rounded-xl border px-4 py-3 text-sm text-zinc-900 outline-none focus:ring-4 ${linkedinInvalid ? "border-red-300 focus:border-red-400 focus:ring-red-100" : "border-zinc-200 focus:border-teal focus:ring-teal/10"}`} />
+                {linkedinInvalid ? <p className="mt-1.5 text-xs font-semibold text-red-600">Use https://www.linkedin.com/in/ plus at least 3 characters.</p> : null}
+              </Field>
               <Field label="Industry"><input value={draft.industry} onChange={(e) => setDraft((prev) => ({ ...prev, industry: e.target.value }))} className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" /></Field>
               <Field label="Tone"><input value={draft.tone} onChange={(e) => setDraft((prev) => ({ ...prev, tone: e.target.value }))} placeholder="Direct, calm, sharp, friendly" className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10" /></Field>
               <div>

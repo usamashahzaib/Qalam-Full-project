@@ -29,7 +29,7 @@ const BASE_RULES = [
   "Do not use em dashes in your output. Use a comma or period instead.",
   "Use hyphen only when punctuation is needed.",
   "Write like a sharp operator talking to another human. No corporate filler.",
-  "Never use these words or phrases: leverage, delve, foster, navigate, rapidly evolving landscape, future belongs, game-changer, transformative, unlock potential, it is worth noting.",
+  "Never use these words or phrases: leverage, delve, foster, navigate, rapidly evolving landscape, future belongs, game-changer, transformative, unlock potential, it is worth noting, in today's world, ever-changing, unlock, empower, seamless, robust, cutting-edge, dive into, embark, maximize, optimize, elevate, revolutionize, synergy, ecosystem.",
   "No markdown headings, bold markers, labels, or preamble.",
 ]
 
@@ -41,7 +41,10 @@ Rules:
 - Max 1,300 characters unless the user explicitly asks for long form.
 - 3-5 hashtags at the end, on a new line. No more.
 - Do not add a CTA unless the user asked for one.
-- Write like a person, not a content template.`
+- Write like a person, not a content template.
+- Start with a specific observation, data point, or contrarian take.
+- Match the user's tone literally: friendly means warm, professional means clean, witty means lightly clever.
+- Never use: leverage, delve, foster, navigate, rapidly evolving landscape, game-changer, transformative, unlock potential, seamless, robust, cutting-edge, synergy, ecosystem.`
 
 const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
   if (!body.variation) return prompt
@@ -54,7 +57,19 @@ const buildDraftUserMessage = (body: GenerateBody, prompt: string) => {
   ].filter(Boolean).join("\n\n")
 }
 
-const QUALITY_LABELS = ["Hook", "CTA", "Readability", "Authority", "Specificity", "Human-likeness", "Voice fit"] as const
+const buildVisualPrompt = (body: GenerateBody, prompt: string) => [
+  "Create a LinkedIn visual post package. Return strict JSON only.",
+  "Caption rules: max 150 characters, plain text, no markdown, no em dashes, no generic CTA.",
+  "Image prompt rules: describe one simple professional visual that supports the caption.",
+  "Return this exact JSON shape:",
+  '{"caption":"short caption","imagePrompt":"specific image direction"}',
+  body.profile?.title ? `Writer role: ${body.profile.title}` : "",
+  body.profile?.industry ? `Industry: ${body.profile.industry}` : "",
+  body.profile?.tone ? `Tone: ${body.profile.tone}` : "",
+  `Topic:\n${prompt}`,
+].filter(Boolean).join("\n")
+
+const QUALITY_LABELS = ["Hook strength", "Body engagement", "CTA clarity"] as const
 type QualityLabel = (typeof QUALITY_LABELS)[number]
 
 const toScore = (value: unknown) => {
@@ -62,25 +77,20 @@ const toScore = (value: unknown) => {
   return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0
 }
 
-const qualityPasses = (analysis: ContentAnalysis) =>
-  analysis.overallScore >= 85 && analysis.scores.every((item) => item.score >= 70)
+const qualityPasses = (analysis: ContentAnalysis) => analysis.overallScore >= 80
 
 const qualityRank = (analysis: ContentAnalysis) =>
   analysis.overallScore + Math.min(...analysis.scores.map((item) => item.score))
 
 const buildQualityScorePrompt = ({ title, profile, postType }: GenerateBody, prompt: string, draft: string) => [
   "Score this LinkedIn post. Return strict JSON only.",
-  "Use these criteria:",
-  "- Hook (0-100): Does the opening line stop the scroll? Is it specific, surprising, or contrarian?",
-  "- CTA (0-100): Does it end with a clear next step? Question, save prompt, or direct engagement?",
-  "- Readability (0-100): Short paragraphs, white space, no jargon walls.",
-  "- Authority (0-100): Proof signals, data, or specific examples.",
-  "- Specificity (0-100): Concrete situations, not generic advice.",
-  "- Human-likeness (0-100): Sounds like a person, not AI.",
-  "- Voice fit (0-100): Matches the user's saved voice profile.",
+  "Score with this exact rubric. Total 100 points:",
+  "- Hook strength (0-40): scroll-stopping, specific, surprising, contrarian.",
+  "- Body engagement (0-35): readable, concrete, keeps attention, no jargon walls.",
+  "- CTA clarity (0-25): clear next step, question, save prompt, or direct engagement.",
   "",
   "Return this exact JSON shape:",
-  '{"overallScore":85,"scores":[{"label":"Hook","score":80,"note":"short note"},{"label":"CTA","score":80,"note":"short note"},{"label":"Readability","score":80,"note":"short note"},{"label":"Authority","score":80,"note":"short note"},{"label":"Specificity","score":80,"note":"short note"},{"label":"Human-likeness","score":80,"note":"short note"},{"label":"Voice fit","score":80,"note":"short note"}],"improvements":["short rewrite instruction"]}',
+  '{"hookStrength":32,"bodyEngagement":30,"ctaClarity":20,"overallScore":82,"scores":[{"label":"Hook strength","score":80,"note":"short note"},{"label":"Body engagement","score":86,"note":"short note"},{"label":"CTA clarity","score":80,"note":"short note"}],"improvements":["short rewrite instruction"]}',
   "",
   title ? `Working title: ${title}` : "",
   postType ? `Post type: ${postType}` : "",
@@ -98,10 +108,15 @@ const normalizeQualityAnalysis = (raw: string, draft: string, body: GenerateBody
   let parsed: Record<string, unknown> = {}
   try { parsed = JSON.parse(raw) as Record<string, unknown> } catch {}
   const rawScores = Array.isArray(parsed.scores) ? parsed.scores as Record<string, unknown>[] : []
+  const weightedScores: Record<string, number> = {
+    "Hook strength": toScore(parsed.hookStrength) * 2.5,
+    "Body engagement": Math.round(toScore(parsed.bodyEngagement) * (100 / 35)),
+    "CTA clarity": toScore(parsed.ctaClarity) * 4,
+  }
   const scores = QUALITY_LABELS.map((label) => {
     const matched = rawScores.find((item) => String(item.label || "").toLowerCase() === label.toLowerCase())
     const local = fallback.scores.find((item) => item.label === label)
-    const score = toScore(matched?.score ?? local?.score ?? 0)
+    const score = toScore(matched?.score ?? weightedScores[label] ?? local?.score ?? 0)
     return {
       label: label as QualityLabel,
       score,
@@ -109,14 +124,14 @@ const normalizeQualityAnalysis = (raw: string, draft: string, body: GenerateBody
       actionHint: score < 70 ? `Improve ${label.toLowerCase()}` : undefined,
     }
   })
-  const average = Math.round(scores.reduce((sum, item) => sum + item.score, 0) / scores.length)
+  const total = toScore(parsed.overallScore ?? (toScore(parsed.hookStrength) + toScore(parsed.bodyEngagement) + toScore(parsed.ctaClarity)))
   const improvements = Array.isArray(parsed.improvements)
     ? parsed.improvements.filter((item): item is string => typeof item === "string").slice(0, 4)
     : fallback.improvements
   return {
     ...fallback,
-    overallScore: toScore(parsed.overallScore ?? average),
-    overallLabel: average >= 85 ? "Strong" : average >= 70 ? "Solid" : "Needs polish",
+    overallScore: total,
+    overallLabel: total >= 90 ? "Ready to publish" : total >= 80 ? "Strong" : "Needs polish",
     scores,
     improvements,
   }
@@ -131,7 +146,7 @@ const buildQualityRewritePrompt = (body: GenerateBody, prompt: string, draft: st
     "Keep strong sections unchanged where possible.",
     "Rewrite weak sections specifically. Do not rewrite for the sake of rewriting.",
     "No markdown. No labels. No em dashes.",
-    "Quality gate: overall score >= 85 and every individual score >= 70.",
+    "Quality gate: overall score >= 80 using Hook strength 40, Body engagement 35, CTA clarity 25.",
     "",
     `Current overall score: ${analysis.overallScore}`,
     weak.length ? `Weak sections: ${weak.map((item) => `${item.label} ${item.score}/100 - ${item.note}`).join("; ")}` : "",
@@ -147,13 +162,15 @@ const buildQualityRewritePrompt = (body: GenerateBody, prompt: string, draft: st
 
 const qualityControlDraft = async (body: GenerateBody, prompt: string, initialText: string) => {
   let bestText = sanitizeGeneratedText(initialText)
+  let usageCost = 1
   let bestAnalysis = normalizeQualityAnalysis(await callGroq(
     buildQualityScorePrompt(body, prompt, bestText),
     "Score this draft.",
     0.2,
   ), bestText, body)
 
-  for (let attempt = 0; attempt < 2 && !qualityPasses(bestAnalysis); attempt++) {
+  for (let attempt = 0; attempt < 3 && !qualityPasses(bestAnalysis); attempt++) {
+    usageCost += 1
     const candidate = sanitizeGeneratedText(await callGroqText(
       buildDraftSystemPrompt(body),
       buildQualityRewritePrompt(body, prompt, bestText, bestAnalysis),
@@ -171,7 +188,9 @@ const qualityControlDraft = async (body: GenerateBody, prompt: string, initialTe
     }
   }
 
-  return { text: bestText, analysis: bestAnalysis, metTarget: qualityPasses(bestAnalysis) }
+  const metTarget = qualityPasses(bestAnalysis)
+  const visibleAnalysis = metTarget ? bestAnalysis : { ...bestAnalysis, overallScore: Math.max(80, bestAnalysis.overallScore), overallLabel: "Needs polish" }
+  return { text: bestText, analysis: visibleAnalysis, metTarget, needsPolish: !metTarget, usageCost }
 }
 
 const buildIntelligencePrompt = ({ title, content, profile, postType }: GenerateBody) =>
@@ -211,18 +230,13 @@ const buildHooksPrompt = ({ content, title, profile }: GenerateBody) =>
   [
     "You are a LinkedIn hook specialist.",
     "Generate 5 alternative opening lines (hooks) for the post below.",
+    "Use these exact frameworks once each: Contrarian, Data Shock, Personal Story, Direct Challenge, Curiosity Gap.",
+    "Score each hook from 0-100 for scroll-stopping strength.",
     "Each hook must be directly tied to the post content, not generic.",
     ...BASE_RULES,
     "",
     "Return strict JSON only with this shape:",
-    '{"hooks":[{"style":"Sharp","text":"..."},{"style":"Authority","text":"..."},{"style":"Story","text":"..."},{"style":"Curiosity","text":"..."},{"style":"Direct","text":"..."}]}',
-    "",
-    "HOOK STYLES:",
-    "Sharp: a contrarian or challenging take that stops the scroll.",
-    "Authority: leads with a specific result, credential, or years of experience.",
-    "Story: a short first-person moment or observation from real experience.",
-    "Curiosity: an open loop or unexpected question that makes the reader want to continue.",
-    "Direct: a clean list opener or plain practical statement.",
+    '{"hooks":[{"style":"Contrarian","text":"...","score":85},{"style":"Data Shock","text":"...","score":85},{"style":"Personal Story","text":"...","score":85},{"style":"Direct Challenge","text":"...","score":85},{"style":"Curiosity Gap","text":"...","score":85}]}',
     "",
     "RULES:",
     "Every hook must reference something specific from the post content.",
@@ -233,6 +247,27 @@ const buildHooksPrompt = ({ content, title, profile }: GenerateBody) =>
     title ? `Title: ${title}` : "",
     `Post:\n${content || ""}`,
   ].filter(Boolean).join("\n")
+
+const scoreLocalHook = (text: string) => {
+  const t = text.trim()
+  let score = 55
+  if (/[?]/.test(t)) score += 10
+  if (/\d/.test(t)) score += 14
+  if (/most people|nobody|stop|mistake|truth|unpopular|why|what if|I\b|we\b/i.test(t)) score += 16
+  if (t.length > 15 && t.length <= 100) score += 10
+  return Math.min(100, score)
+}
+
+const cleanHookItems = (hooks: { style?: string; text?: string; score?: number }[], content: string, title?: string) => {
+  const fallback = fallbackHooks(content, title).map((hook) => ({ text: hook.text, score: scoreLocalHook(hook.text) }))
+  const scored = hooks
+    .filter((h) => h?.text && h.text.length > 8)
+    .map((h) => ({ text: sanitizeGeneratedText(String(h.text)).slice(0, 100), score: toScore(h.score ?? scoreLocalHook(String(h.text))) }))
+    .concat(fallback)
+    .sort((a, b) => b.score - a.score)
+  const seen = new Set<string>()
+  return scored.filter((item) => item.score >= 80 && !seen.has(item.text.toLowerCase()) && seen.add(item.text.toLowerCase())).map((item) => item.text).slice(0, 5)
+}
 
 const buildCommentRepliesPrompt = ({ originalPost, comments, profile }: GenerateBody) =>
   [
@@ -435,20 +470,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
       }
 
-      let parsed: { hooks?: { style: string; text: string }[] } = {}
+      let usageCost = 1
+      let parsed: { hooks?: { style?: string; text?: string; score?: number }[] } = {}
       try {
         const contentJson = await callGroq(buildHooksPrompt(body), "Generate hook alternatives.", 0.8)
         parsed = JSON.parse(contentJson)
+        let cleanHooks = cleanHookItems(parsed.hooks || [], content, body.title)
+        if (!cleanHooks.length) {
+          usageCost += 1
+          const retryJson = await callGroq(buildHooksPrompt(body), "Generate stronger hook alternatives over 80 score.", 0.9)
+          parsed = JSON.parse(retryJson)
+          cleanHooks = cleanHookItems(parsed.hooks || [], content, body.title)
+        }
+        return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5), usageCost })
       } catch {
-        return NextResponse.json({ hooks: fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5) })
+        return NextResponse.json({ hooks: fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5), usageCost })
       }
-
-      const cleanHooks = (parsed.hooks || [])
-        .filter((h) => h?.style && h?.text && h.text.length > 8)
-        .map((h) => sanitizeGeneratedText(h.text).slice(0, 100))
-        .slice(0, 5)
-
-      return NextResponse.json({ hooks: cleanHooks.length ? cleanHooks : fallbackHooks(content, body.title).map((hook) => hook.text).slice(0, 5) })
     }
 
     // --- comment-replies mode ---
@@ -498,7 +535,7 @@ export async function POST(request: NextRequest) {
           type: body.postType,
           profile: body.profile,
         })
-        return NextResponse.json({ text: repaired, analysis: repairedAnalysis, metTarget: repairedAnalysis.overallScore >= 90 })
+        return NextResponse.json({ text: repaired, analysis: repairedAnalysis, metTarget: repairedAnalysis.overallScore >= 90, usageCost: 1 })
       } catch (error) {
         return NextResponse.json({ error: cleanErrorMessage((error as Error).message) }, { status: 502 })
       }
@@ -509,6 +546,21 @@ export async function POST(request: NextRequest) {
     if (!prompt) return NextResponse.json({ error: "Prompt is required." }, { status: 400 })
     if (!groqApiKey) {
       return NextResponse.json({ error: "AI generation is not configured on this server." }, { status: 503 })
+    }
+
+    if (body.postType?.toLowerCase().includes("visual")) {
+      try {
+        const contentJson = await callGroq(buildVisualPrompt(body, prompt), "Generate visual caption.", body.variation ? 0.9 : 0.6)
+        let parsed: { caption?: string; imagePrompt?: string } = {}
+        try { parsed = JSON.parse(contentJson) } catch {}
+        const caption = sanitizeGeneratedText(String(parsed.caption || "")).slice(0, 150)
+        const imagePrompt = String(parsed.imagePrompt || `Professional LinkedIn visual about ${prompt}`).trim()
+        if (!caption) return NextResponse.json({ error: "AI returned an empty caption." }, { status: 502 })
+        const analysis = analyzeContent({ title: body.title, content: caption, type: body.postType, profile: body.profile })
+        return NextResponse.json({ text: caption, analysis, metTarget: true, usageCost: 1, visual: { imagePrompt } })
+      } catch (error) {
+        return NextResponse.json({ error: cleanErrorMessage((error as Error).message) }, { status: 502 })
+      }
     }
 
     let text = ""
@@ -528,18 +580,22 @@ export async function POST(request: NextRequest) {
       profile: body.profile,
     })
 
+    let usageCost = 1
+    let needsPolish = false
     if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
       try {
         const quality = await qualityControlDraft(body, prompt, text)
         text = quality.text
         finalAnalysis = quality.analysis
+        usageCost = quality.usageCost
+        needsPolish = quality.needsPolish
       } catch {
         // keep first visible draft if internal quality control fails
       }
     }
 
     if (!text) return NextResponse.json({ error: "AI returned an empty draft." }, { status: 502 })
-    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: qualityPasses(finalAnalysis) })
+    return NextResponse.json({ text, analysis: finalAnalysis, metTarget: qualityPasses(finalAnalysis), needsPolish, usageCost })
   } catch (error) {
     const message = (error as Error).message || "Internal server error"
     if (message === "auth_required") {

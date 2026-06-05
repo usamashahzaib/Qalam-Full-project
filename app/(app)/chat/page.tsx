@@ -123,12 +123,20 @@ export default function ChatWorkspace() {
 
   const deleteConversation = async (conversationId: string) => {
     if (!window.confirm("Delete this conversation?")) return
-    await fetch(`/api/chat/conversations?conversationId=${encodeURIComponent(conversationId)}`, { method: "DELETE" })
+    const previousConversations = conversations
+    const previousActiveId = activeConvId
+    const previousMessages = messages
     const nextConversations = conversations.filter((item) => item.id !== conversationId)
     setConversations(nextConversations)
     if (activeConvId === conversationId) {
       setActiveConvId(nextConversations[0]?.id || null)
       setMessages([])
+    }
+    const res = await fetch(`/api/chat/conversations?conversationId=${encodeURIComponent(conversationId)}`, { method: "DELETE" })
+    if (!res.ok) {
+      setConversations(previousConversations)
+      setActiveConvId(previousActiveId)
+      setMessages(previousMessages)
     }
   }
 

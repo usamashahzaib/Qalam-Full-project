@@ -50,7 +50,7 @@ export const requirePlan = async (
     return {
       ok: false,
       response: NextResponse.json(
-        { error: "plan_required", requiredPlan, currentPlan: effectivePlan },
+        { error: "upgrade_required", requiredPlan, currentPlan: effectivePlan },
         { status: 403 }
       ),
     }
