@@ -3,72 +3,55 @@ export const plans = [
     name: 'Free',
     monthlyPrice: 0,
     annualPrice: 0,
+    draftsPerMonth: 10,
+    carouselsPerMonth: 2,
+    researchPerMonth: 0,
     annualLabel: 'Free forever',
     description: 'Try the real workflow. No card, no time limit - just a capped starter workspace.',
-    features: [
-      '10 AI drafts per month',
-      '1 personal workspace',
-      'Content scoring and hashtag hints',
-      'Activity log (basic)',
-      'Community support'
-    ],
+    features: ['Basic AI Writer', '2 Carousel Templates', 'Hook Generator'],
     cta: 'Start free',
     badge: 'No card required',
-    limits: { drafts: 10, workspaces: 1, carousels: 0, competitorRuns: 0, voiceProfiles: 0 }
+    limits: { drafts: 10, workspaces: 1, carousels: 2, competitorRuns: 0, voiceProfiles: 0 }
   },
   {
     name: 'Solo',
     monthlyPrice: 899,
     annualPrice: 599,
+    draftsPerMonth: 25,
+    carouselsPerMonth: 6,
+    researchPerMonth: 0,
     annualLabel: 'PKR 599/mo billed annually',
     description: 'For individual professionals building a consistent LinkedIn presence.',
-    features: [
-      '25 AI drafts per month',
-      'LinkedIn publish directly from app',
-      'Post scheduling and planner',
-      '1 voice profile',
-      'Basic content scoring',
-      'Priority email support'
-    ],
+    features: ['AI Writer', '5 Carousel Templates', 'Voice Profile', 'Basic Analytics'],
     cta: 'Get Solo',
     badge: 'Most popular',
-    limits: { drafts: 25, workspaces: 1, carousels: 0, competitorRuns: 0, voiceProfiles: 1 }
+    limits: { drafts: 25, workspaces: 1, carousels: 6, competitorRuns: 0, voiceProfiles: 1 }
   },
   {
     name: 'Pro',
     monthlyPrice: 1899,
     annualPrice: 1266,
+    draftsPerMonth: 60,
+    carouselsPerMonth: 15,
+    researchPerMonth: 5,
     annualLabel: 'PKR 1,266/mo billed annually',
     description: 'For serious creators and consultants who need full AI power and research.',
-    features: [
-      '60 AI drafts per month',
-      '10 carousel projects per month',
-      '5 competitor research runs per month',
-      'Approval workflow (send for client review)',
-      'Export to PDF and text',
-      'Voice intelligence and post scoring',
-      'Full analytics dashboard',
-      'Priority support'
-    ],
+    features: ['AI Writer', '15 Carousel Templates', 'Voice Training', 'AI Strategist', 'Priority Queue', 'Advanced Analytics'],
     cta: 'Get Pro',
     badge: 'Best value',
-    limits: { drafts: 60, workspaces: 1, carousels: 10, competitorRuns: 5, voiceProfiles: 5 }
+    limits: { drafts: 60, workspaces: 1, carousels: 15, competitorRuns: 5, voiceProfiles: 5 }
   },
   {
     name: 'Agency',
     monthlyPrice: 7490,
     annualPrice: 4993,
+    draftsPerMonth: 60,
+    carouselsPerMonth: 50,
+    researchPerMonth: 25,
+    workspaces: 5,
     annualLabel: 'PKR 4,993/mo billed annually',
     description: 'For teams managing multiple clients and brands.',
-    features: [
-      '60 AI drafts per workspace',
-      '5 client workspaces',
-      'White-label options',
-      'Team seats (up to 10)',
-      'Shared asset library',
-      'Client approval workflows',
-      'Dedicated support'
-    ],
+    features: ['Everything in Pro', '5 Workspaces', 'Approval Workflow', 'Team Analytics', 'White-label Export'],
     cta: 'Get Agency',
     badge: 'For teams',
     limits: { drafts: 60, workspaces: 5, carousels: 50, competitorRuns: 25, voiceProfiles: 25 }
@@ -90,7 +73,7 @@ export function hasFeature(planName: string, feature: string): boolean {
     case 'scheduling': return plan.name !== 'Free';
     case 'voiceProfile': return plan.name !== 'Free';
     case 'analytics': return plan.name !== 'Free';
-    case 'carousel': return plan.name === 'Pro' || plan.name === 'Agency';
+    case 'carousel': return plan.limits.carousels > 0;
     case 'competitorResearch': return plan.name === 'Pro' || plan.name === 'Agency';
     case 'approvalWorkflow': return plan.name === 'Pro' || plan.name === 'Agency';
     case 'export': return plan.name === 'Pro' || plan.name === 'Agency';
@@ -148,7 +131,7 @@ export const COMPARISON_ROWS: {
   { label: 'Post scheduling', free: '-', solo: 'Live', pro: 'Live', agencyStarter: 'Live', agencyGrowth: '-' },
   { label: 'Voice profiles', free: '-', solo: '1', pro: '5', agencyStarter: '25', agencyGrowth: '-' },
   { label: 'Scoring', free: 'Basic', solo: 'Basic', pro: 'Full', agencyStarter: 'Full', agencyGrowth: '-' },
-  { label: 'Carousel generation', free: '-', solo: '-', pro: '10/month', agencyStarter: '50/month', agencyGrowth: '-' },
+  { label: 'Carousel generation', free: '2/month', solo: '6/month', pro: '15/month', agencyStarter: '50/month', agencyGrowth: '-' },
   { label: 'Competitor research', free: '-', solo: '-', pro: '5 runs/month', agencyStarter: '25 runs/month', agencyGrowth: '-' },
   { label: 'Approval workflow', free: '-', solo: '-', pro: 'Live', agencyStarter: 'Live', agencyGrowth: '-' },
   { label: 'Analytics', free: '-', solo: 'Basic', pro: 'Full', agencyStarter: 'Full', agencyGrowth: '-' },
