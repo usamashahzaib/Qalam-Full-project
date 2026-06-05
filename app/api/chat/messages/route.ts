@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId } from "@/lib/server/app-session"
+import { requireAuth, resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
+import { requirePlan } from "@/lib/server/require-plan"
 
 type DbMessage = { id: string; conversation_id: string; role: "user" | "assistant" | "system"; content: string; created_at: string }
 type DbConversation = { id: string; workspace_id: string }
 
 export async function GET(request: NextRequest) {
   try {
-    await resolveWorkspaceId(request)
+    await requireAuth(request)
+    const planCheck = await requirePlan(request, "Free")
+    if (!planCheck.ok) return planCheck.response
+
     const conversationId = request.nextUrl.searchParams.get("conversationId")
     if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 
@@ -16,13 +20,19 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({ messages: messages || [] })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    await requireAuth(request)
+    const planCheck = await requirePlan(request, "Free")
+    if (!planCheck.ok) return planCheck.response
+    const { workspaceId } = planCheck
+
     const body = await request.json()
     const { conversationId, content } = body
 
@@ -95,6 +105,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: aiMsg?.[0] })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

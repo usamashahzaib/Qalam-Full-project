@@ -4,6 +4,7 @@ import { groqApiKey } from "@/lib/server/env"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { cleanErrorMessage, fallbackHooks, hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { requireAuth } from "@/lib/server/app-session"
 
 type GenerateBody = {
   mode?: "draft" | "intelligence" | "hooks" | "comment-replies" | "repair"
@@ -160,7 +161,7 @@ const buildQualityRewritePrompt = (body: GenerateBody, prompt: string, draft: st
   ].filter(Boolean).join("\n")
 }
 
-const qualityControlDraft = async (body: GenerateBody, prompt: string, initialText: string) => {
+const qualityControlDraft = async (body: GenerateBody, prompt: string, initialText: string, forceRewrite = false) => {
   let bestText = sanitizeGeneratedText(initialText)
   let usageCost = 1
   let bestAnalysis = normalizeQualityAnalysis(await callGroq(
@@ -169,8 +170,14 @@ const qualityControlDraft = async (body: GenerateBody, prompt: string, initialTe
     0.2,
   ), bestText, body)
 
-  for (let attempt = 0; attempt < 3 && !qualityPasses(bestAnalysis); attempt++) {
-    usageCost += 1
+  const isFailedPass = (analysis: ContentAnalysis, text: string) => {
+    return !qualityPasses(analysis) || hasAiSlop(text)
+  }
+
+  let needsRewrite = forceRewrite || isFailedPass(bestAnalysis, bestText)
+
+  for (let attempt = 0; attempt < 3 && needsRewrite; attempt++) {
+    // Note: Do not count internal retries as user-visible drafts, so usageCost remains 1.
     const candidate = sanitizeGeneratedText(await callGroqText(
       buildDraftSystemPrompt(body),
       buildQualityRewritePrompt(body, prompt, bestText, bestAnalysis),
@@ -186,9 +193,10 @@ const qualityControlDraft = async (body: GenerateBody, prompt: string, initialTe
       bestText = candidate
       bestAnalysis = candidateAnalysis
     }
+    needsRewrite = isFailedPass(bestAnalysis, bestText)
   }
 
-  const metTarget = qualityPasses(bestAnalysis)
+  const metTarget = !isFailedPass(bestAnalysis, bestText)
   const visibleAnalysis = metTarget ? bestAnalysis : { ...bestAnalysis, overallScore: Math.max(80, bestAnalysis.overallScore), overallLabel: "Needs polish" }
   return { text: bestText, analysis: visibleAnalysis, metTarget, needsPolish: !metTarget, usageCost }
 }
@@ -345,26 +353,18 @@ async function callGroqText(systemPrompt: string, userMessage: string, temperatu
   return String(data?.choices?.[0]?.message?.content || "")
 }
 
-const strengthenDraft = (text: string, prompt: string, postType?: string) => {
+const strengthenDraft = (text: string, prompt: string, postType?: string): { text: string; needsRewrite: boolean } => {
   const cleaned = sanitizeGeneratedText(text)
-  if (postType?.toLowerCase().includes("carousel") || postType?.toLowerCase().includes("visual")) return cleaned
+  if (postType?.toLowerCase().includes("carousel") || postType?.toLowerCase().includes("visual")) {
+    return { text: cleaned, needsRewrite: false }
+  }
   const words = cleaned.split(/\s+/).filter(Boolean)
-  if (words.length >= 130 && !hasAiSlop(cleaned)) return cleaned
-  const topic = prompt.replace(/\s+/g, " ").trim().slice(0, 80) || "this topic"
-  const base = cleaned || `Most teams treat ${topic} like a content problem. It is usually a clarity problem.`
-  return sanitizeGeneratedText(`${base}
-
-Here is the part that matters: people can feel when a post was written to fill a slot. They keep reading when it sounds like someone has actually dealt with the problem.
-
-A better draft should do three things:
-
-1. Name the real tension.
-2. Show one specific example.
-3. Leave the reader with a useful next move.
-
-For ${topic}, the useful move is simple: write from the decision, mistake, or tradeoff behind the idea. That is where the human part lives.
-
-What would you add from your own experience?`)
+  const isShort = words.length < 130
+  const hasSlop = hasAiSlop(cleaned)
+  if (isShort || hasSlop) {
+    return { text: cleaned, needsRewrite: true }
+  }
+  return { text: cleaned, needsRewrite: false }
 }
 
 const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<typeof analyzeContent>, body: GenerateBody) => [
@@ -395,12 +395,18 @@ const buildRepairPrompt = (draft: string, prompt: string, analysis: ReturnType<t
 
 export async function POST(request: NextRequest) {
   try {
-    // Free plan is allowed - every tier can generate, just with different caps
+    const { userId } = await requireAuth(request)
+    // TODO: Replace with Upstash Redis before production launch.
+    if (!rateLimit(`groq:${userId}`, 10, 60)) {
+      return NextResponse.json({ error: "Rate limit exceeded. Max 10 generations per minute." }, { status: 429 })
+    }
+
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
     const { session, workspaceId, limits } = planCheck
 
-    if (!rateLimit(`gen_${session.email}`, 12, 60)) {
+    // TODO: Replace with Upstash Redis before production launch.
+    if (!rateLimit(`gen_${session.email}`, 10, 60)) {
       return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
     }
 
@@ -564,9 +570,12 @@ export async function POST(request: NextRequest) {
     }
 
     let text = ""
+    let initialNeedsRewrite = false
     try {
       const userMessage = buildDraftUserMessage(body, prompt)
-      text = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), userMessage, body.variation ? 0.9 : 0.7), prompt, body.postType)
+      const result = strengthenDraft(await callGroqText(buildDraftSystemPrompt(body), userMessage, body.variation ? 0.9 : 0.7), prompt, body.postType)
+      text = result.text
+      initialNeedsRewrite = result.needsRewrite
     } catch (error) {
       const message = (error as Error).message || "Failed to generate content."
       console.error("Groq API error:", message)
@@ -584,7 +593,7 @@ export async function POST(request: NextRequest) {
     let needsPolish = false
     if (!body.postType?.toLowerCase().includes("carousel") && !body.postType?.toLowerCase().includes("visual")) {
       try {
-        const quality = await qualityControlDraft(body, prompt, text)
+        const quality = await qualityControlDraft(body, prompt, text, initialNeedsRewrite)
         text = quality.text
         finalAnalysis = quality.analysis
         usageCost = quality.usageCost

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { resolveWorkspaceId } from "@/lib/server/app-session"
+import { requireAuth, resolveWorkspaceId } from "@/lib/server/app-session"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { rateLimit } from "@/lib/server/rate-limit"
 
 type CarouselProjectRow = {
   id: string
@@ -175,9 +176,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const planCheck = await requirePlan(request, "Solo")
+    const { userId } = await requireAuth(request)
+    // TODO: Replace with Upstash Redis before production launch.
+    const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
-    const { workspaceId, limits } = planCheck
+    const { workspaceId, limits, session } = planCheck
+
+    // TODO: Replace with Upstash Redis before production launch.
+    if (!rateLimit(`carousel_${session.email}`, 5, 60)) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please wait a moment." }, { status: 429 })
+    }
 
     // Monthly carousel generation limit
     if (limits.carouselGenerationsPerMonth !== "unlimited") {
@@ -250,6 +258,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ projectId, slides: slidesData.map((slide, index) => ({ ...(slides?.[index] as object || {}), ...slide })), theme: resolvedTheme, score: carouselScore })
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    const message = (error as Error).message || "server_error"
+    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

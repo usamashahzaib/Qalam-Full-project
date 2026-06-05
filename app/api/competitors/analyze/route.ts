@@ -3,6 +3,7 @@ import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { rateLimit } from "@/lib/server/rate-limit"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
+import { requireAuth } from "@/lib/server/app-session"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -24,6 +25,7 @@ type Job = {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth(request)
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
     const { session, workspaceId, limits } = planCheck
@@ -74,6 +76,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ analysis, job })
   } catch (error) {
     const message = (error as Error).message || "server_error"
+    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
     return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
   }
 }

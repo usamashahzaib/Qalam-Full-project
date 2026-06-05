@@ -97,8 +97,14 @@ export const createAppSession = async ({
 export const readAppSession = (token: string) =>
   readSignedToken<AppSessionPayload>(token, "app_session_invalid")
 
+export const getSessionToken = (request: NextRequest) => {
+  const header = request.headers.get("Authorization")?.trim()
+  const bearer = header?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
+  return bearer || header || request.cookies.get(appSessionCookieName)?.value || null
+}
+
 export const getAppSession = (request: NextRequest) => {
-  const token = request.cookies.get(appSessionCookieName)?.value
+  const token = getSessionToken(request)
   if (!token) return null
   try {
     return readAppSession(token)
@@ -122,6 +128,24 @@ export const requireAppSession = (request: NextRequest) => {
   const session = getAppSession(request)
   if (!session?.email) throw new Error("auth_required")
   return session
+}
+
+export const requireAuth = async (request: NextRequest) => {
+  const session = requireAppSession(request)
+  try {
+    await validateSessionVersion(session)
+  } catch {
+    throw new Error("auth_required")
+  }
+  const workspaceId = await resolveWorkspaceId(request)
+  const users = await supabaseSelect<{ id: string }>(
+    "users",
+    `email=eq.${encodeURIComponent(session.email)}&select=id&limit=1`
+  )
+  const userId = users?.[0]?.id
+  if (!userId) throw new Error("auth_required")
+  const { plan } = await fetchWorkspacePlan(workspaceId, session.email)
+  return { userId, email: session.email, plan }
 }
 
 export const validateSessionVersion = async (session: AppSessionPayload): Promise<void> => {

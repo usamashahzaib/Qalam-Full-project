@@ -1,42 +1,35 @@
-export class TokenBucket {
-  private tokens: number;
-  private lastRefill: number;
-  
-  constructor(private capacity: number, private refillRatePerSec: number) {
-    this.tokens = capacity;
-    this.lastRefill = Date.now();
-  }
+// TODO: Replace with Upstash Redis before production launch.
 
-  tryConsume(tokens = 1): boolean {
-    this.refill();
-    if (this.tokens >= tokens) {
-      this.tokens -= tokens;
-      return true;
-    }
-    return false;
-  }
+type WindowCounter = {
+  count: number
+  expiresAt: number
+}
 
-  private refill() {
-    const now = Date.now();
-    const elapsedSec = (now - this.lastRefill) / 1000;
-    const newTokens = Math.floor(elapsedSec * this.refillRatePerSec);
-    if (newTokens > 0) {
-      this.tokens = Math.min(this.capacity, this.tokens + newTokens);
-      this.lastRefill = now;
-    }
+const counters = new Map<string, WindowCounter>()
+
+const cleanup = () => {
+  const now = Date.now()
+  for (const [key, item] of counters) {
+    if (item.expiresAt <= now) counters.delete(key)
   }
 }
 
-// WARNING: In-memory store - resets on every serverless cold start.
-// Provides best-effort per-isolate rate limiting only. A determined attacker
-// bypasses this trivially by hitting different isolates.
-// TODO: Replace with Upstash Redis or Vercel KV for production-grade rate limiting.
-const limiters = new Map<string, TokenBucket>();
+if (typeof setInterval !== "undefined") {
+  setInterval(cleanup, 60_000).unref?.()
+}
 
-export const rateLimit = (identifier: string, limit = 5, windowSec = 60): boolean => {
-  if (!limiters.has(identifier)) {
-    limiters.set(identifier, new TokenBucket(limit, limit / windowSec));
+export function rateLimit(key: string, maxRequests: number, windowSeconds: number): boolean {
+  const now = Date.now()
+  const windowMs = windowSeconds * 1000
+  const windowKey = `${key}:${Math.floor(now / windowMs)}`
+  const current = counters.get(windowKey)
+
+  if (!current || current.expiresAt <= now) {
+    counters.set(windowKey, { count: 1, expiresAt: now + windowMs })
+    return true
   }
-  const bucket = limiters.get(identifier)!;
-  return bucket.tryConsume(1);
+
+  if (current.count >= maxRequests) return false
+  current.count += 1
+  return true
 }

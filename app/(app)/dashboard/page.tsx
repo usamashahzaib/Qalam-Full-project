@@ -77,6 +77,37 @@ export default function DashboardPage() {
     { key: "agency", title: "Manage client workspace access", minutes: "5 min", done: Boolean(activeClientId || state.agency.clients.length), href: withClientParam("/agency", activeClientId), icon: TeamIcon, summary: "Separate clients, roles, approvals, and voice memory across workspaces." },
   ]
   const setupDone = setupItems.filter((item) => item.done).length
+  const hasAgencyAccess = state.billing.plan.startsWith("Agency")
+
+  if (!isLoading && posts.length === 0) {
+    return (
+      <div className="flex min-h-[80vh] items-center justify-center px-6 py-12 font-jakarta">
+        <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 text-center shadow-lg shadow-zinc-100/50">
+          <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/10 to-gold/10 shadow-sm mx-auto">
+            <ComposeIcon className="h-7 w-7 text-teal" />
+          </div>
+          <h2 className="text-xl font-bold text-zinc-900">Your workspace is empty</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+            {activeClientId 
+              ? "This client workspace is ready. Generate client-specific LinkedIn posts, recycles, or carousel decks."
+              : "Welcome to Qalam! Get started by writing your first LinkedIn post or configuring client workspaces."}
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Link href={withClientParam("/writer", activeClientId)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-teal-600 hover:scale-[1.01] active:scale-[0.99] cursor-pointer">
+              <ComposeIcon className="h-4 w-4" />
+              Write your first post
+            </Link>
+            {hasAgencyAccess && !activeClientId && (
+              <Link href="/agency" className="inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-3 text-sm font-bold text-zinc-700 hover:bg-zinc-50 transition-all cursor-pointer">
+                <TeamIcon className="h-4 w-4 text-zinc-400" />
+                Create client workspace
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 font-jakarta sm:px-10">
@@ -160,7 +191,17 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/50 px-6 py-4"><h2 className="text-sm font-bold text-zinc-900">Recent Posts</h2><span className="text-xs font-semibold text-zinc-500">{posts.length} total in workspace</span></div>
               <div className="flex-1 divide-y divide-zinc-100">
                 {!recentPosts.length ? (
-                  <div className="px-6 py-12 text-center"><p className="text-sm font-medium text-zinc-500">No posts yet.</p><Link href={withClientParam("/writer", activeClientId)} className="mt-3 inline-flex text-xs font-bold text-teal hover:underline">Start writing {">"}</Link></div>
+                  <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal/10 to-gold/10 shadow-sm">
+                      <ComposeIcon className="h-7 w-7 text-teal" />
+                    </div>
+                    <h3 className="text-lg font-bold text-zinc-900">Your workspace is ready</h3>
+                    <p className="mt-2 max-w-sm text-sm leading-relaxed text-zinc-500">Write your first post with AI Writer. Qalam will score it, suggest hooks, and help you hit 90+ quality.</p>
+                    <Link href={withClientParam("/writer", activeClientId)} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-all hover:bg-teal-600 hover:scale-[1.02] active:scale-[0.98]">
+                      <ComposeIcon className="h-4 w-4" />
+                      Create your first post
+                    </Link>
+                  </div>
                 ) : recentPosts.map((post) => (
                   <div key={post.id} className="flex items-center justify-between px-6 py-3.5 transition-colors hover:bg-zinc-50/80">
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-zinc-900">{post.title}</p><p className="mt-0.5 text-xs text-zinc-500">{post.type}</p></div>

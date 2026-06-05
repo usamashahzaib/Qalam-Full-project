@@ -989,6 +989,38 @@ export default function WriterPage() {
       </section>
 
       <aside className="space-y-4">
+        {/* LinkedIn Account Status */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-400">LinkedIn Account</h2>
+          {user?.linkedinMemberId ? (
+            <div className="flex items-center gap-3 rounded-xl bg-zinc-50/50 p-3 border border-zinc-100">
+              {user.imageUrl ? (
+                <img src={user.imageUrl} alt="LinkedIn Avatar" className="h-9 w-9 rounded-full object-cover ring-2 ring-[#0A66C2]/20" />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0A66C2]/15 text-[#0A66C2] font-bold text-sm">
+                  {user.fullName.charAt(0)}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-bold text-zinc-800">{user.fullName}</p>
+                <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Connected
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl bg-zinc-50/50 p-3 border border-zinc-200 border-dashed text-center">
+              <p className="text-xs text-zinc-400 font-medium">No account connected</p>
+              <div className="mt-2.5 flex flex-col gap-1.5">
+                <a href="/api/linkedin/connect?mock=true&redirectTo=/writer" className="inline-block rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition-colors cursor-pointer text-center">
+                  Connect Mock Profile
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Workspace posts */}
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/60 px-4 py-3">

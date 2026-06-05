@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -44,6 +44,22 @@ export default function SettingsPage() {
   const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [profileError, setProfileError] = useState<string | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string; company?: string } | null>(null)
+
+  useEffect(() => {
+    if (!user?.linkedinMemberId) {
+      setLinkedinProfile(null)
+      return
+    }
+    fetch("/api/linkedin/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.connected) {
+          setLinkedinProfile(data)
+        }
+      })
+      .catch(() => {})
+  }, [user?.linkedinMemberId])
 
   useEffect(() => {
     if (profileStatus === "saving") return
@@ -248,29 +264,41 @@ export default function SettingsPage() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* Integrations */}
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-base font-semibold text-zinc-900">Integrations</h2>
-          <div className="mt-4 rounded-xl border border-zinc-200 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-semibold text-zinc-900">LinkedIn</h3>
-                <p className="mt-1 text-sm text-zinc-500">{user?.linkedinMemberId ? "Connected and ready for publishing" : "Not connected"}</p>
-                {user?.linkedinTokenExpiresAt && (
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Publishing token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </p>
+          <div className="mt-4 rounded-2xl border border-zinc-200 p-5 bg-zinc-50/50">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                {user?.linkedinMemberId && linkedinProfile?.avatar ? (
+                  <img src={linkedinProfile.avatar} alt="LinkedIn Avatar" className="h-10 w-10 rounded-full object-cover ring-2 ring-[#0A66C2]/20" />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A66C2]/15 text-[#0A66C2]">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                  </div>
                 )}
+                <div>
+                  <h3 className="text-sm font-bold text-zinc-900">{user?.linkedinMemberId ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
+                  <p className="text-xs text-zinc-500">{user?.linkedinMemberId ? (linkedinProfile?.company || "Connected and ready") : "Not connected"}</p>
+                  {user?.linkedinTokenExpiresAt && (
+                    <p className="mt-1 text-[10px] text-zinc-400">
+                      Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
               </div>
               {user?.linkedinMemberId ? (
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Connected</span>
-                  <button onClick={onDisconnectLinkedIn} disabled={disconnecting} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50">{disconnecting ? "Disconnecting..." : "Disconnect"}</button>
+                  <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">Connected</span>
+                  <button onClick={onDisconnectLinkedIn} disabled={disconnecting} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 cursor-pointer">{disconnecting ? "Disconnecting..." : "Disconnect"}</button>
                 </div>
               ) : (
-                <button onClick={() => beginLinkedInAuth("/settings")} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#085fa8]">Connect LinkedIn</button>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => beginLinkedInAuth("/settings")} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#085fa8] cursor-pointer">Connect LinkedIn</button>
+                  <a href="/api/linkedin/connect?mock=true" className="rounded-lg bg-zinc-800 hover:bg-zinc-700 px-4 py-2 text-sm font-bold text-white transition-colors cursor-pointer text-center">Connect Mock Profile</a>
+                </div>
               )}
             </div>
-            <p className="mt-3 text-xs text-zinc-500">Disconnect removes the publishing token from the server. Future publishes will fail until you reconnect.</p>
+            <p className="mt-4 text-xs text-zinc-500 border-t border-zinc-200/55 pt-3">Disconnecting removes the publishing token from the server. Future publishes will fail until you reconnect.</p>
           </div>
         </section>
 

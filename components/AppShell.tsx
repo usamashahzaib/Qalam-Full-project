@@ -20,7 +20,7 @@ import {
   LinkedInIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
-import { canAccessPlan, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
 const NAV_GROUPS = [
@@ -58,6 +58,9 @@ const NAV_GROUPS = [
   },
 ]
 
+const sidebarSectionStateKey = "qalam-sidebar-sections"
+const defaultSectionState = () => Object.fromEntries(NAV_GROUPS.map((group) => [group.label, true]))
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -71,13 +74,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [clients, setClients] = useState<Array<{ id: string; client_name: string }>>([])
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return defaultSectionState()
+    try {
+      return { ...defaultSectionState(), ...JSON.parse(localStorage.getItem(sidebarSectionStateKey) || "{}") }
+    } catch {
+      return defaultSectionState()
+    }
+  })
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
   const currentPlan = workspace.state.billing.plan
-  const hasAgencyAccess = currentPlan === "Agency"
+  const hasAgencyAccess = currentPlan.startsWith("Agency")
   const canAddWorkspace = hasAgencyAccess
-  const showAddWorkspace = canAddWorkspace || canAccessPlan(currentPlan, "Pro")
-  const addWorkspaceUnlockLabel = "Unlock in Agency"
 
   useEffect(() => {
     if (!user) return
@@ -89,9 +98,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         const seen = new Set<string>()
         setClients(Array.isArray(data.clients) ? data.clients.filter((client: { id?: string; client_name?: string }) => {
           const name = client.client_name?.trim()
-          if (!name || name === "Personal Workspace") return false
-          const key = `${client.id || ""}:${name.toLowerCase()}`
-          if (seen.has(key)) return false
+          const key = name?.toLowerCase()
+          if (!name || name === "Personal Workspace" || !key || seen.has(key)) return false
           seen.add(key)
           return true
         }) : [])
@@ -125,6 +133,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleOutsideClick)
     return () => document.removeEventListener("mousedown", handleOutsideClick)
   }, [])
+
+  useEffect(() => {
+    localStorage.setItem(sidebarSectionStateKey, JSON.stringify(openSections))
+  }, [openSections])
+
+  const toggleSection = (label: string) => {
+    setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }))
+  }
 
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -187,9 +203,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs font-semibold text-gold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link> : null}
                   {canAddWorkspace ? (
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
-                  ) : showAddWorkspace ? (
-                    <button disabled className="w-full cursor-not-allowed px-4 py-3 text-left text-xs font-semibold text-zinc-500">Add workspace - {addWorkspaceUnlockLabel}</button>
-                  ) : null}
+                  ) : (
+                    <div className="px-3 py-2 text-xs text-zinc-500">
+                      Add workspace - <a href="/pricing?plan=Agency" className="text-teal-600 hover:underline">Unlock in Agency</a>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -198,18 +216,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="qalam-scrollbar-dark min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
             {NAV_GROUPS.map((group) => (
               <div key={group.label}>
-                <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-widest text-zinc-600">{group.label}</p>
-                <div className="space-y-0.5">
+                <button
+                  onClick={() => toggleSection(group.label)}
+                  className="mb-1 flex w-full cursor-pointer items-center justify-between px-3 text-left text-[9px] font-bold uppercase tracking-widest text-zinc-600 transition-colors hover:text-zinc-400"
+                  aria-expanded={openSections[group.label] ?? true}
+                >
+                  <span>{group.label}</span>
+                  <svg className={`h-3 w-3 transition-transform ${(openSections[group.label] ?? true) ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {(openSections[group.label] ?? true) ? <div className="space-y-0.5">
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
                     const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, workspace.state.billing.featureFlags)
                     if (isLocked && link.requiredPlan) {
                       return (
-                        <div key={link.href} className="rounded-xl px-3 py-2 text-sm font-medium text-zinc-400">
+                        <div key={link.href} className={`rounded-xl py-2 pl-3 pr-3 text-sm font-medium ${active ? "border-l-2 border-teal-600 bg-teal-50/50 text-zinc-900" : "text-zinc-400"}`}>
                           <div className="flex items-center gap-3">
-                            <Icon className="h-4 w-4 shrink-0 text-zinc-600" />
-                            <span className="flex-1">{link.label}</span>
+                            <Icon className={`h-4 w-4 shrink-0 ${active ? "text-teal-600" : "text-zinc-600"}`} />
+                            <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
                           </div>
                           <button
                             onClick={() => setUpgradePrompt({ plan: link.requiredPlan!, reason: `${link.label.toLowerCase()} locked` })}
@@ -221,13 +248,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       )
                     }
                     return (
-                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all group ${active ? "bg-teal/90 text-white shadow-sm shadow-teal/20" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                        <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-gold" : "text-zinc-600 group-hover:text-zinc-300"}`} />
+                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl py-2 pl-3 pr-3 text-sm transition-all group ${active ? "border-l-2 border-teal-600 bg-teal-50/50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
+                        <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-teal-600" : "text-zinc-600 group-hover:text-zinc-300"}`} />
                         <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
                       </Link>
                     )
                   })}
-                </div>
+                </div> : null}
               </div>
             ))}
           </nav>
@@ -304,9 +331,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="block px-4 py-2.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Manage client list &gt;</Link> : null}
               {canAddWorkspace ? (
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
-              ) : showAddWorkspace ? (
-                <button disabled className="w-full cursor-not-allowed px-4 py-2.5 text-left text-xs font-semibold text-zinc-400">Add workspace - {addWorkspaceUnlockLabel}</button>
-              ) : null}
+              ) : (
+                <div className="px-3 py-2 text-xs text-zinc-500">
+                  Add workspace - <a href="/pricing?plan=Agency" className="text-teal-600 hover:underline">Unlock in Agency</a>
+                </div>
+              )}
             </div>
           </div>
         )}
