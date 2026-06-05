@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { env, requireLinkedInEnv } from "@/lib/server/env"
 import { fetchJson } from "@/lib/server/supabase-rest"
-import { createSignedToken, readSignedToken } from "@/lib/server/token"
+import { createSignedToken, readSignedToken } from "@/lib/server/oauth-state"
 
 type StatePayload = {
   nonce: string

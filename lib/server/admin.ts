@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { NextRequest } from "next/server"
-import { appSessionCookieName, readAppSession, requireAppSession } from "@/lib/server/app-session"
+import { auth, currentUser } from "@clerk/nextjs/server"
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
   .split(",")
@@ -20,32 +20,22 @@ const safeEqual = (left: string, right: string) => {
 export const hasValidAdminKey = (key?: string | null) =>
   Boolean(process.env.ADMIN_SECRET_KEY && key && safeEqual(key, process.env.ADMIN_SECRET_KEY))
 
-export const requireAdminRequest = (request: NextRequest) => {
-  const session = requireAppSession(request)
-  if (!isAdminEmail(session.email) || !hasValidAdminKey(request.headers.get("x-admin-key"))) throw new Error("not_found")
-  return session
-}
-
-export const requireAdminToken = (token?: string, adminKey?: string | null) => {
-  let session = null
-  try {
-    session = token ? readAppSession(token) : null
-  } catch {
-    session = null
+export const requireAdminRequest = async (request: NextRequest) => {
+  const { userId } = await auth()
+  if (!userId) throw new Error("not_found")
+  const user = await currentUser()
+  const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
+  if (!isAdminEmail(email) || !hasValidAdminKey(request.headers.get("x-admin-key"))) {
+    throw new Error("not_found")
   }
-  if (!isAdminEmail(session?.email) || !hasValidAdminKey(adminKey)) notFound()
-  return session
+  return { email: email || "", userId }
 }
 
-export const requireAdminPageToken = (token?: string) => {
-  let session = null
-  try {
-    session = token ? readAppSession(token) : null
-  } catch {
-    session = null
-  }
-  if (!isAdminEmail(session?.email)) notFound()
-  return session
+export const requireAdminPage = async () => {
+  const { userId } = await auth()
+  if (!userId) notFound()
+  const user = await currentUser()
+  const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
+  if (!isAdminEmail(email)) notFound()
+  return { email: email || "", userId }
 }
-
-export { appSessionCookieName }

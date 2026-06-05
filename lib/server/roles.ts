@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
-import { requireAppSession } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { getClerkAuthContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 export type WorkspaceRole = "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer"
@@ -9,10 +10,6 @@ type MembershipRow = {
   workspace_id: string | null
 }
 
-/**
- * Ordered from most to least privileged.
- * Any role at position N or lower implies all permissions of roles > N.
- */
 const ROLE_HIERARCHY: WorkspaceRole[] = [
   "super_admin",
   "agency_admin",
@@ -21,9 +18,6 @@ const ROLE_HIERARCHY: WorkspaceRole[] = [
   "viewer",
 ]
 
-/**
- * Returns true if `userRole` meets or exceeds `requiredRole` in the hierarchy.
- */
 export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRole): boolean => {
   const userIdx = ROLE_HIERARCHY.indexOf(userRole)
   const requiredIdx = ROLE_HIERARCHY.indexOf(requiredRole)
@@ -31,23 +25,15 @@ export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRo
   return userIdx <= requiredIdx
 }
 
-/**
- * Resolves the calling user's role in a specific workspace.
- * Throws "auth_required" if no session exists.
- * Throws "unauthorized_workspace" if the user has no membership.
- */
 export const resolveWorkspaceMembership = async (
   request: NextRequest,
   workspaceId: string
 ): Promise<{ userId: string; role: WorkspaceRole }> => {
-  const session = requireAppSession(request)
+  const { userId: clerkUserId } = await auth()
+  if (!clerkUserId) throw new Error("auth_required")
 
-  const users = await supabaseSelect<{ id: string }>(
-    "users",
-    `email=eq.${encodeURIComponent(session.email)}&limit=1`
-  )
-  const userId = users?.[0]?.id
-  if (!userId) throw new Error("auth_required")
+  const ctx = await getClerkAuthContext()
+  const userId = ctx.supabaseUserId
 
   const memberships = await supabaseSelect<MembershipRow>(
     "memberships",
@@ -61,10 +47,6 @@ export const resolveWorkspaceMembership = async (
   return { userId, role: memberships[0].role }
 }
 
-/**
- * Convenience guard: resolves membership and throws "forbidden" if the
- * caller does not have at least `requiredRole`.
- */
 export const requireRole = async (
   request: NextRequest,
   workspaceId: string,
@@ -77,9 +59,6 @@ export const requireRole = async (
   return membership
 }
 
-/**
- * Maps error message strings to HTTP status codes for uniform API responses.
- */
 export const errorToStatus = (msg: string): number => {
   if (msg === "auth_required") return 401
   if (msg === "forbidden") return 403

@@ -1,36 +1,40 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAppSession, resolveWorkspaceId, fetchWorkspacePlan, validateSessionVersion } from "@/lib/server/app-session"
+import { auth } from "@clerk/nextjs/server"
+import { resolveWorkspaceId, fetchWorkspacePlan, getClerkAuthContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 type PlanCheckResult =
-  | { ok: true; session: ReturnType<typeof requireAppSession>; workspaceId: string; plan: string; status: string; limits: PlanLimits; overrideActive: boolean; planExpired: boolean }
+  | {
+      ok: true
+      session: Awaited<ReturnType<typeof getClerkAuthContext>>
+      workspaceId: string
+      plan: string
+      status: string
+      limits: PlanLimits
+      overrideActive: boolean
+      planExpired: boolean
+    }
   | { ok: false; response: NextResponse }
 
 /**
- * Core enforcement middleware. Validates session, resolves workspace, checks plan hierarchy,
- * and optionally verifies session version for instant invalidation.
+ * Core enforcement middleware. Validates Clerk session, resolves workspace, checks plan hierarchy.
  */
 export const requirePlan = async (
   request: NextRequest,
-  requiredPlan: PlanTier,
-  options: { skipSessionVersion?: boolean } = {}
+  requiredPlan: PlanTier
 ): Promise<PlanCheckResult> => {
-  let session: ReturnType<typeof requireAppSession>
-  try {
-    session = requireAppSession(request)
-  } catch {
+  const { userId } = await auth()
+  if (!userId) {
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
-  // Session version check - catches instantly-invalidated sessions (plan downgrades, logouts)
-  if (!options.skipSessionVersion) {
-    try {
-      await validateSessionVersion(session)
-    } catch {
-      return { ok: false, response: NextResponse.json({ error: "session_invalidated" }, { status: 401 }) }
-    }
+  let session: Awaited<ReturnType<typeof getClerkAuthContext>>
+  try {
+    session = await getClerkAuthContext()
+  } catch {
+    return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
   let workspaceId: string
@@ -43,7 +47,6 @@ export const requirePlan = async (
   }
 
   const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
-
   const effectivePlan = planInfo.plan
 
   if (!canAccessPlan(effectivePlan, requiredPlan)) {
@@ -56,13 +59,18 @@ export const requirePlan = async (
     }
   }
 
-  return { ok: true, session, workspaceId, plan: effectivePlan, status: planInfo.status, limits: planInfo.limits || getPlanLimits(effectivePlan), overrideActive: Boolean(planInfo.overrideActive), planExpired: Boolean(planInfo.planExpired) }
+  return {
+    ok: true,
+    session,
+    workspaceId,
+    plan: effectivePlan,
+    status: planInfo.status,
+    limits: planInfo.limits || getPlanLimits(effectivePlan),
+    overrideActive: Boolean(planInfo.overrideActive),
+    planExpired: Boolean(planInfo.planExpired),
+  }
 }
 
-/**
- * Checks how many times a resource has been created this calendar month for a workspace.
- * Used to enforce monthly generation limits.
- */
 export const getMonthlyCount = async (
   table: string,
   workspaceId: string,
@@ -84,10 +92,6 @@ export const getMonthlyCount = async (
   }
 }
 
-/**
- * Returns a 403 response if the user has exhausted their monthly limit for a feature.
- * Pass null for limit to indicate "unlimited".
- */
 export const enforceMonthlyLimit = (
   current: number,
   limit: number | "unlimited",

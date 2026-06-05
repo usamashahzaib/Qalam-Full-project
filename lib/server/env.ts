@@ -1,6 +1,6 @@
 const read = (key: string) => process.env[key]?.trim() || ""
 
-let _sessionSecret: string | undefined
+let _oauthStateSecret: string | undefined
 
 export const env = {
   supabaseUrl: read("NEXT_PUBLIC_SUPABASE_URL") || read("SUPABASE_URL"),
@@ -13,16 +13,15 @@ export const env = {
   linkedInClientSecret: read("LINKEDIN_CLIENT_SECRET"),
   linkedInRedirectUri: read("LINKEDIN_REDIRECT_URI"),
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
-  // Lazy getter - throws in production so a missing secret surfaces on the first auth request,
-  // not at build time with a silent plaintext fallback.
-  get appSessionSecret(): string {
-    if (_sessionSecret !== undefined) return _sessionSecret
-    const secret = read("APP_SESSION_SECRET")
-    if (secret) return (_sessionSecret = secret)
+  // Lazy getter for OAuth state signing (LinkedIn callback state tokens).
+  get oauthStateSecret(): string {
+    if (_oauthStateSecret !== undefined) return _oauthStateSecret
+    const secret = read("OAUTH_STATE_SECRET") || read("APP_SESSION_SECRET")
+    if (secret) return (_oauthStateSecret = secret)
     if (process.env.NODE_ENV === "production") {
-      throw new Error("APP_SESSION_SECRET env var is required in production")
+      throw new Error("OAUTH_STATE_SECRET env var is required in production")
     }
-    return (_sessionSecret = "qalam-dev-secret-local-only")
+    return (_oauthStateSecret = "qalam-dev-oauth-state-local-only")
   },
   frontendOrigin:
     read("FRONTEND_ORIGIN") ||

@@ -1,6 +1,6 @@
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
-import type { WorkspacePlanInfo } from "@/lib/server/app-session"
+import type { WorkspacePlanInfo } from "@/lib/server/workspace"
 
 export type FeatureFlags = Partial<Record<
   | "scheduling"
