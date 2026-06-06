@@ -2,7 +2,7 @@ import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import type { NextRequest } from "next/server"
 
-type Limiters = Record<"free" | "solo" | "pro" | "ip", Ratelimit>
+type Limiters = Record<<"free" | "solo" | "pro" | "ip", Ratelimit>
 
 let limiters: Limiters | null = null
 
@@ -32,11 +32,16 @@ const getLimiters = () => {
 }
 
 export function getClientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "anonymous"
-  )
+  // SECURITY FIX: Pehle first IP le raha tha - user spoof kar sakta tha
+  // Ab last IP le rahe hain (Vercel ka proxy add karta hai yeh)
+  const forwarded = request.headers.get("x-forwarded-for")
+  if (forwarded) {
+    const ips = forwarded.split(",").map(s => s.trim()).filter(Boolean)
+    if (ips.length > 0) {
+      return ips[ips.length - 1]
+    }
+  }
+  return request.headers.get("x-real-ip") || "anonymous"
 }
 
 export async function checkRateLimit(
@@ -48,16 +53,17 @@ export async function checkRateLimit(
     const activeLimiters = getLimiters()
     if (!activeLimiters) return { allowed: true, limit: Infinity, remaining: Infinity, reset: Date.now() + 60000 }
 
-    // Check IP first (DDoS protection) - FAIL CLOSED
+    // IP check pehle - DDoS protection
     const ipResult = await activeLimiters.ip.limit(ip)
     if (!ipResult.success) {
       return { allowed: false, limit: 30, remaining: 0, reset: Date.now() + 60000 }
     }
 
-    // Check user plan limit
+    // Case-insensitive plan matching - "Pro", "pro", "PRO" sab same
+    const planLower = plan.toLowerCase()
     let limiter = activeLimiters.free
-    if (plan === "Solo") limiter = activeLimiters.solo
-    if (plan === "Pro" || plan === "Agency") limiter = activeLimiters.pro
+    if (planLower === "solo") limiter = activeLimiters.solo
+    if (planLower === "pro" || planLower === "agency") limiter = activeLimiters.pro
 
     const result = await limiter.limit(identifier)
 

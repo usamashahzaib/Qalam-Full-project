@@ -88,8 +88,9 @@ const ROLE_PROFILES: Record<string, RoleProfile> = {
   },
 }
 
-type VoiceProfile = { sample_posts?: Array<string | { text?: string }> } | null
+type VoiceProfile = { sample_posts?: Array<{ text?: string } | string> } | null
 type PostFormat = "short" | "medium" | "long"
+
 type GeneratedPost = {
   hook: string
   body: string
@@ -98,6 +99,7 @@ type GeneratedPost = {
   engagement_prediction: string
   suggested_hashtags: string[]
 }
+
 type ContentScore = {
   total_score: number
   hook_score: number
@@ -109,11 +111,66 @@ type ContentScore = {
   is_good_enough: boolean
 }
 
-const parseJson = <T>(raw: string): T => {
-  const text = raw.trim()
-  const match = text.match(/\{[\s\S]*\}/)
-  return JSON.parse(match ? match[0] : text) as T
+// VALIDATORS - AI agar garbage return kare toh app crash nahi hoga
+function validatePostJson(raw: unknown): GeneratedPost {
+  if (typeof raw !== 'object' || raw === null) throw new Error("Invalid JSON structure");
+  const obj = raw as Record<string, unknown>;
+  
+  const required = ['hook', 'body', 'cta', 'full_text', 'engagement_prediction', 'suggested_hashtags'];
+  for (const key of required) {
+    if (!(key in obj)) throw new Error(`Missing required field: ${key}`);
+  }
+  
+  if (!Array.isArray(obj.suggested_hashtags)) throw new Error("hashtags must be an array");
+  
+  return {
+    hook: String(obj.hook),
+    body: String(obj.body),
+    cta: String(obj.cta),
+    full_text: String(obj.full_text),
+    engagement_prediction: String(obj.engagement_prediction),
+    suggested_hashtags: obj.suggested_hashtags.map(h => String(h)),
+  };
 }
+
+function validateScoreJson(raw: unknown): ContentScore {
+  if (typeof raw !== 'object' || raw === null) throw new Error("Invalid score JSON");
+  const obj = raw as Record<string, unknown>;
+  
+  const scores = ['total_score', 'hook_score', 'authenticity_score', 'specificity_score', 'engagement_score', 'formatting_score'];
+  for (const key of scores) {
+    if (typeof obj[key] !== 'number') throw new Error(`Missing or invalid score: ${key}`);
+  }
+  
+  return {
+    total_score: Number(obj.total_score),
+    hook_score: Number(obj.hook_score),
+    authenticity_score: Number(obj.authenticity_score),
+    specificity_score: Number(obj.specificity_score),
+    engagement_score: Number(obj.engagement_score),
+    formatting_score: Number(obj.formatting_score),
+    feedback: String(obj.feedback || ""),
+    is_good_enough: Boolean(obj.is_good_enough),
+  };
+}
+
+// SAFE JSON PARSER - Pehle regex se parse kar raha tha, ab proper validation
+const parseJson = <T>(raw: string, validator: (data: unknown) => T): T => {
+  const text = raw.trim();
+  // Pehle markdown code block check karo
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  const jsonText = codeBlockMatch ? codeBlockMatch[1] : text;
+  
+  // First { aur last } dhoondo
+  const start = jsonText.indexOf('{');
+  const end = jsonText.lastIndexOf('}');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error("No valid JSON object found in AI response");
+  }
+  
+  const parsed = JSON.parse(jsonText.slice(start, end + 1));
+  return validator(parsed);
+};
 
 export const roleOptions = Object.keys(ROLE_PROFILES)
 
@@ -163,7 +220,7 @@ OUTPUT JSON:
   "engagement_prediction": "why this will work",
   "suggested_hashtags": ["tag1", "tag2", "tag3"]
 }`
-  return parseJson<GeneratedPost>(await callAi("Return strict JSON only.", prompt, { json: true, temperature: 0.7, timeout: 15000 }))
+  return parseJson(await callAi("Return strict JSON only.", prompt, { json: true, temperature: 0.7, timeout: 15000 }), validatePostJson)
 }
 
 export async function scoreContent(content: string, role: string) {
@@ -189,7 +246,7 @@ OUTPUT JSON:
   "feedback": "specific improvements",
   "is_good_enough": boolean
 }`
-  return parseJson<ContentScore>(await callAi("Return strict JSON only.", prompt, { json: true, temperature: 0.3, timeout: 10000 }))
+  return parseJson(await callAi("Return strict JSON only.", prompt, { json: true, temperature: 0.3, timeout: 10000 }), validateScoreJson)
 }
 
 export async function rewriteWithFeedback(content: string, feedback: string, role: string) {

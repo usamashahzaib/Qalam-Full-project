@@ -1,6 +1,8 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useCallback, useState, useEffect } from "react"
+import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts"
+import { useAutosave } from "@/lib/hooks/useAutosave"
 
 const ROLES = [
   ["founder", "Founder"],
@@ -57,6 +59,35 @@ export default function WritePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [status, setStatus] = useState("")
+const [saveStatus, setSaveStatus] = useState<<"idle" | "saving" | "saved">("idle")
+
+// Keyboard shortcuts - Ctrl+Enter to generate, Ctrl+S to save edit
+useKeyboardShortcuts({
+  "ctrl+enter": () => { if (!isGenerating) generate() },
+  "ctrl+s": () => { if (isEditing && post?.id) saveEdit() },
+})
+
+// Autosave - 3 seconds after user stops typing
+useAutosave(post?.id || "draft", editedContent, async (content) => {
+  if (!post?.id || !isEditing) return
+  setSaveStatus("saving")
+  try {
+    await fetch("/api/generate", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: post.id, content }),
+    })
+    setSaveStatus("saved")
+    setTimeout(() => setSaveStatus("idle"), 2000)
+  } catch (e) {
+    setSaveStatus("idle")
+  }
+{saveStatus !== "idle" && (
+  <span className="ml-2 text-xs text-gray-400">
+    {saveStatus === "saving" ? "Saving..." : "Saved"}
+  </span>
+)}
+})
 
   const displayed = useMemo(() => {
     if (!post) return { hook: "", body: "", cta: "" }
@@ -79,7 +110,7 @@ export default function WritePage() {
 
   const generate = async (nextTopic = topic) => {
     setIsGenerating(true)
-    setStatus("Generating... Estimated time: 15-30 seconds.")
+    setStatus("Qalam is writing... This usually takes 10 seconds.")
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
