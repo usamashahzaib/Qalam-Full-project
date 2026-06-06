@@ -185,11 +185,11 @@ export default function RootLayout({
   )
 
   return (
-    <html lang="en" className={`${jakarta.variable}`}>
+    <html lang="en" className={`${jakarta.variable}`} suppressHydrationWarning>
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
       </head>
-      <body className="flex min-h-screen flex-col antialiased">
+      <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {hasValidClerkPublishableKey() ? <ClerkProvider>{app}</ClerkProvider> : app}
       </body>
     </html>

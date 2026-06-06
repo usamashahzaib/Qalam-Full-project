@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qalam-v1.2';
+const CACHE_NAME = 'qalam-v1.3';
 const OFFLINE_URL = '/';
 
 self.addEventListener('install', (event) => {
@@ -46,6 +46,9 @@ function openDB() {
 }
 
 async function queueRequest(request) {
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || !url.pathname.startsWith('/api/')) return;
+
   const db = await openDB();
   const tx = db.transaction(SYNC_STORE_NAME, 'readwrite');
   const store = tx.objectStore(SYNC_STORE_NAME);
@@ -62,9 +65,13 @@ async function queueRequest(request) {
 }
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  if (url.origin !== self.location.origin) return;
+
   // For mutation requests (POST/PUT), attempt the fetch and queue on failure
   // instead of relying on navigator.onLine which is unreliable in SW context.
-  if (event.request.method === 'POST' || event.request.method === 'PUT') {
+  if ((event.request.method === 'POST' || event.request.method === 'PUT') && url.pathname.startsWith('/api/')) {
     event.respondWith(
       (async () => {
         try {
@@ -114,6 +121,8 @@ self.addEventListener('sync', (event) => {
             const items = getAllRequest.result;
             for (const item of items) {
               try {
+                const url = new URL(item.url);
+                if (url.origin !== self.location.origin || !url.pathname.startsWith('/api/')) continue;
                 await fetch(item.url, {
                   method: item.method,
                   headers: item.headers,

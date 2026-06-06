@@ -27,7 +27,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    if ((error as Error).message === "Unauthorized") return NextResponse.json({ user: null }, { status: 401 })
+    if ((error as Error).message === "Unauthorized") return NextResponse.json({ user: null })
     const user = await currentUser()
     if (!user) return NextResponse.json({ user: null })
     const email = user.primaryEmailAddress?.emailAddress?.trim().toLowerCase() || ""
