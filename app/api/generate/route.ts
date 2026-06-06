@@ -15,6 +15,17 @@ type GenerateBody = {
   qualityCheck?: boolean
 }
 
+type ScoreResult = {
+  total_score: number
+  hook_score: number
+  authenticity_score: number
+  specificity_score: number
+  engagement_score: number
+  formatting_score: number
+  feedback: string
+  is_good_enough: boolean
+}
+
 export async function GET() {
   try {
     const userId = await requireAuth()
@@ -59,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     const post = await generatePost({ topic, role, tone: body.tone, voiceProfile, goal: body.goal, format })
     let finalContent = post.full_text
-    let finalScore: Awaited<<ReturnType<<typeof scoreContent>> | null = null
+    let finalScore: ScoreResult | null = null
 
     if (qualityCheck) {
       const score = await scoreContent(finalContent, role)
