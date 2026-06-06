@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { getCurrentWorkspace } from "@/lib/server/workspace"
-import { generatePost, scoreContent, rewriteWithFeedback } from "@/lib/server/content-generator"
-import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
-import { checkPlanLimit } from "@/lib/server/plan-limits"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/server/clerk-client";
+import { getCurrentWorkspace } from "@/lib/server/workspace";
+import { generatePost, scoreContent, rewriteWithFeedback } from "@/lib/server/content-generator";
+import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit";
+import { checkPlanLimit } from "@/lib/server/plan-limits";
+import { createServiceClient } from "@/lib/server/supabase-rest";
 
 type GenerateBody = {
   topic?: string
@@ -18,8 +18,8 @@ type GenerateBody = {
 export async function GET() {
   try {
     const userId = await requireAuth()
-    const usage = await getPlanLimitStatus(userId, "ai_drafts")
-    return NextResponse.json({ usage })
+    const { allowed, current, limit } = await checkPlanLimit(userId, "ai_drafts")
+    return NextResponse.json({ usage: { allowed, current, limit } })
   } catch (error) {
     const message = (error as Error).message || "Failed to load usage"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     const post = await generatePost({ topic, role, tone: body.tone, voiceProfile, goal: body.goal, format })
     let finalContent = post.full_text
-    let finalScore: Awaited<ReturnType<typeof scoreContent>> | null = null
+    let finalScore: Awaited<<ReturnType<<typeof scoreContent>> | null = null
 
     if (qualityCheck) {
       const score = await scoreContent(finalContent, role)
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      usage: { ...plan, remaining: savedPostId ? plan.remaining : Math.max(0, Number(plan.remaining || 0)) },
+      usage: { allowed: plan.allowed, current: plan.current, limit: plan.limit },
       post: {
         id: savedPostId || undefined,
         content: finalContent,
