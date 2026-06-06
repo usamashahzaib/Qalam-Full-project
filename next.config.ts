@@ -15,10 +15,11 @@ const securityHeaders = [
       "default-src 'self'",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // WARNING: 'unsafe-inline' for scripts is a risk. Remove when you hire a senior dev to implement nonces.
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com",
       "img-src 'self' data: https: blob:",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://www.linkedin.com https://api.linkedin.com https://*.supabase.co",
+      "connect-src 'self' https://www.linkedin.com https://api.linkedin.com https://*.supabase.co https://*.clerk.accounts.dev https://*.clerk.com",
+      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

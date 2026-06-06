@@ -15,15 +15,21 @@ const PROTECTED_PREFIXES = [
   "/api/voice(.*)",
   "/api/carousel(.*)",
   "/carousel(.*)",
-  "/api/linkedin(.*)",
   "/api/posts(.*)",
   "/api/analytics(.*)",
   "/api/schedule(.*)",
   "/api/approval(.*)",
 ]
 
+const PUBLIC_PREFIXES = [
+  "/api/linkedin/auth-url",
+  "/api/linkedin/callback",
+]
+
 const isProtectedRoute = (req: NextRequest) => {
   const path = req.nextUrl.pathname
+  if (PUBLIC_PREFIXES.some((route) => path.startsWith(route))) return false
+  if (path.startsWith("/api/linkedin/")) return true
   return PROTECTED_PREFIXES.some((route) => path.startsWith(route.replace("(.*)", "")))
 }
 
