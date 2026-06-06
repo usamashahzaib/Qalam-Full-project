@@ -23,8 +23,6 @@ const STARTER_EXAMPLES = [
   },
 ];
 
-const TONE_TAGS = ['Reflective', 'Assertive', 'Storytelling', 'Data-driven', 'Vulnerable', 'Contrarian', 'Inspirational'];
-
 function ExampleCard({ ex, onRemove }) {
   const [expanded, setExpanded] = useState(false);
   return (

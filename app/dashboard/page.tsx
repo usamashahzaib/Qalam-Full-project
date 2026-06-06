@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
 interface Stats {
@@ -17,7 +16,6 @@ interface PlanStatus {
 }
 
 export default function DashboardPage() {
-  const { isLoaded, userId } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [plan, setPlan] = useState<PlanStatus | null>(null);
@@ -25,13 +23,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
     loadDashboard();
-  }, [isLoaded, userId]);
+  }, []);
 
   async function loadDashboard() {
     try {
@@ -61,7 +54,7 @@ export default function DashboardPage() {
     { label: "Carousel", path: "/carousel", icon: "🎠" },
   ];
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>

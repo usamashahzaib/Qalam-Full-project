@@ -2,7 +2,7 @@ import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import type { NextRequest } from "next/server"
 
-type Limiters = Record<<"free" | "solo" | "pro" | "ip", Ratelimit>
+type Limiters = Record<"free" | "solo" | "pro" | "ip", Ratelimit>
 
 let limiters: Limiters | null = null
 

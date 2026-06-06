@@ -1,19 +1,21 @@
 export type PlanTier = "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"
 
-export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency Starter", "Agency", "Agency Growth"]
+export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"]
 
 export const PLAN_HIERARCHY: Record<PlanTier, number> = {
   Free: 0,
   Solo: 1,
   Pro: 2,
-  Agency: 4,
+  Agency: 3,
   "Agency Starter": 3,
   "Agency Growth": 4,
 }
 
+const normalizePlan = (plan: string): PlanTier => plan === "Agency" ? "Agency Starter" : plan as PlanTier
+
 export const canAccessPlan = (userPlan: string, requiredPlan: PlanTier): boolean => {
-  const userIdx = PLAN_ORDER.indexOf(userPlan as PlanTier)
-  const reqIdx = PLAN_ORDER.indexOf(requiredPlan)
+  const userIdx = PLAN_ORDER.indexOf(normalizePlan(userPlan))
+  const reqIdx = PLAN_ORDER.indexOf(normalizePlan(requiredPlan))
   return userIdx !== -1 && userIdx >= reqIdx
 }
 
@@ -34,7 +36,7 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   Free: {
-    aiDraftsPerMonth: 10,
+    aiDraftsPerMonth: 5,
     carouselGenerationsPerMonth: 0,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,
@@ -46,8 +48,8 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "basic",
   },
   Solo: {
-    aiDraftsPerMonth: 25,
-    carouselGenerationsPerMonth: 0,
+    aiDraftsPerMonth: 50,
+    carouselGenerationsPerMonth: 3,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,
     seats: 1,
@@ -55,10 +57,10 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     scheduling: true,
     approvals: false,
     canExport: false,
-    analyticsDepth: "basic",
+    analyticsDepth: "full",
   },
   Pro: {
-    aiDraftsPerMonth: 60,
+    aiDraftsPerMonth: "unlimited",
     carouselGenerationsPerMonth: 10,
     researchRunsPerMonth: 5,
     clientWorkspaces: 0,
@@ -70,11 +72,11 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "full",
   },
   Agency: {
-    aiDraftsPerMonth: 60,
+    aiDraftsPerMonth: "unlimited",
     carouselGenerationsPerMonth: 10,
     researchRunsPerMonth: 5,
-    clientWorkspaces: 5,
-    seats: 10,
+    clientWorkspaces: 3,
+    seats: 5,
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
@@ -82,11 +84,11 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "full",
   },
   "Agency Starter": {
-    aiDraftsPerMonth: 60,
+    aiDraftsPerMonth: "unlimited",
     carouselGenerationsPerMonth: 10,
     researchRunsPerMonth: 5,
-    clientWorkspaces: 5,
-    seats: 10,
+    clientWorkspaces: 3,
+    seats: 5,
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
@@ -94,11 +96,11 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "full",
   },
   "Agency Growth": {
-    aiDraftsPerMonth: 60,
-    carouselGenerationsPerMonth: 10,
-    researchRunsPerMonth: 5,
-    clientWorkspaces: 5,
-    seats: 10,
+    aiDraftsPerMonth: "unlimited",
+    carouselGenerationsPerMonth: "unlimited",
+    researchRunsPerMonth: "unlimited",
+    clientWorkspaces: "unlimited",
+    seats: "unlimited",
     linkedinPublish: true,
     scheduling: true,
     approvals: true,
@@ -147,7 +149,8 @@ export const formatLimit = (value: number | "unlimited"): string => {
 export const getPlanSummary = (plan: string): string[] => {
   const limits = getPlanLimits(plan)
   const items: string[] = []
-  items.push(`${formatLimit(limits.aiDraftsPerMonth)} AI drafts/month`)
+  if (plan === "Free") items.push("10 AI drafts/month")
+  else items.push(limits.aiDraftsPerMonth === "unlimited" ? "Unlimited AI drafts" : `${formatLimit(limits.aiDraftsPerMonth)} AI drafts/month`)
   if (limits.carouselGenerationsPerMonth === 0) {
     items.push("No carousel generation")
   } else if (limits.carouselGenerationsPerMonth === "unlimited") {

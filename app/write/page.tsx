@@ -59,35 +59,30 @@ export default function WritePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [status, setStatus] = useState("")
-const [saveStatus, setSaveStatus] = useState<<"idle" | "saving" | "saved">("idle")
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
 
 // Keyboard shortcuts - Ctrl+Enter to generate, Ctrl+S to save edit
-useKeyboardShortcuts({
-  "ctrl+enter": () => { if (!isGenerating) generate() },
-  "ctrl+s": () => { if (isEditing && post?.id) saveEdit() },
-})
+  useKeyboardShortcuts({
+    "ctrl+enter": () => { if (!isGenerating) generate() },
+    "ctrl+s": () => { if (isEditing && post?.id) saveEdit() },
+  })
 
 // Autosave - 3 seconds after user stops typing
-useAutosave(post?.id || "draft", editedContent, async (content) => {
-  if (!post?.id || !isEditing) return
-  setSaveStatus("saving")
-  try {
-    await fetch("/api/generate", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: post.id, content }),
-    })
-    setSaveStatus("saved")
-    setTimeout(() => setSaveStatus("idle"), 2000)
-  } catch (e) {
-    setSaveStatus("idle")
-  }
-{saveStatus !== "idle" && (
-  <span className="ml-2 text-xs text-gray-400">
-    {saveStatus === "saving" ? "Saving..." : "Saved"}
-  </span>
-)}
-})
+  useAutosave(post?.id || "draft", editedContent, async (content) => {
+    if (!post?.id || !isEditing) return
+    setSaveStatus("saving")
+    try {
+      await fetch("/api/generate", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: post.id, content }),
+      })
+      setSaveStatus("saved")
+      setTimeout(() => setSaveStatus("idle"), 2000)
+    } catch {
+      setSaveStatus("idle")
+    }
+  })
 
   const displayed = useMemo(() => {
     if (!post) return { hook: "", body: "", cta: "" }
@@ -294,6 +289,7 @@ useAutosave(post?.id || "draft", editedContent, async (content) => {
                 <div className="rounded-lg border border-zinc-200 p-4">
                   <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)} rows={12} className="w-full resize-y rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6 outline-none focus:border-teal" />
                   <div className="mt-3 flex justify-end gap-2">
+                    {saveStatus !== "idle" ? <span className="self-center text-xs text-zinc-400">{saveStatus === "saving" ? "Saving..." : "Saved"}</span> : null}
                     <button onClick={saveEdit} disabled={isSaving} className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isSaving ? "Saving..." : "Save edit"}</button>
                   </div>
                 </div>

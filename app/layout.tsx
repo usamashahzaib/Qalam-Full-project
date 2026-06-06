@@ -9,6 +9,7 @@ import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
+import { hasValidClerkPublishableKey } from "@/lib/clerk-env"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -168,24 +169,28 @@ const appSchema = {
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const app = (
+    <>
+      <ContentProtection />
+      <GridGlowBackground
+        glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
+        backgroundColor="#fafaf8"
+        gridColor="rgba(13,74,69,0.07)"
+        glowCount={12}
+      >
+        <NavWrapper>{children}</NavWrapper>
+      </GridGlowBackground>
+      <PwaRegistration />
+    </>
+  )
+
   return (
     <html lang="en" className={`${jakarta.variable}`}>
       <head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
-        <ClerkProvider>
-          <ContentProtection />
-          <GridGlowBackground
-            glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-            backgroundColor="#fafaf8"
-            gridColor="rgba(13,74,69,0.07)"
-            glowCount={12}
-          >
-            <NavWrapper>{children}</NavWrapper>
-          </GridGlowBackground>
-          <PwaRegistration />
-        </ClerkProvider>
+        {hasValidClerkPublishableKey() ? <ClerkProvider>{app}</ClerkProvider> : app}
       </body>
     </html>
   )

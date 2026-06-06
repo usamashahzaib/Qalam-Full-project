@@ -1,9 +1,15 @@
 import { auth } from "@clerk/nextjs/server"
 import { createClient } from "@supabase/supabase-js"
+import { hasValidClerkPublishableKey } from "@/lib/clerk-env"
 
 export async function getAuthenticatedUser() {
-  const { userId } = await auth()
-  return userId || null
+  if (!hasValidClerkPublishableKey()) return null
+  try {
+    const { userId } = await auth()
+    return userId || null
+  } catch {
+    return null
+  }
 }
 
 export async function getSupabaseForUser() {

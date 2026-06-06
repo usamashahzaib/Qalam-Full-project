@@ -8,11 +8,11 @@ import { PLANS, formatPkr } from "@/lib/pricing"
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
-const agencyPlan = PLANS.find((plan) => plan.plan === "Agency")
-const freeDrafts = freePlan?.features[0] || "10 AI drafts per month"
-const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 899"
-const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,899"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 7,490"
+const agencyPlan = PLANS.find((plan) => plan.plan === "Agency Starter")
+const freeDrafts = freePlan ? "5 AI drafts per month" : "5 AI drafts per month"
+const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 499"
+const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 990"
+const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 4,990"
 
 export const metadata: Metadata = {
   title: "Pricing | Qalam",

@@ -142,8 +142,8 @@ function FeedItem({ item, onCapitalize }) {
   );
 }
 
-export default function ActivityFeed({ competitors }) {
-  const [feed, setFeed] = useState(DEMO_FEED);
+export default function ActivityFeed() {
+  const [feed] = useState(DEMO_FEED);
   const [gaps, setGaps] = useState(CONTENT_GAPS);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('feed'); // 'feed' | 'gaps'

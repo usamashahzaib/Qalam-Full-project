@@ -51,6 +51,7 @@ export async function checkPlanLimit(
       allowed: result?.allowed || false,
       current: result?.current || 0,
       limit,
+      remaining: Math.max(0, limit - (result?.current || 0)),
       plan,
     };
   } catch (err) {

@@ -22,7 +22,6 @@ const SAMPLE_COMMENTS = [
 ];
 
 
-const SENTIMENT_COLOR = { positive: 'bg-emerald-500', neutral: 'bg-muted-foreground/40', negative: 'bg-destructive/60' };
 const MOMENTUM_COLOR = { high: 'text-primary', medium: 'text-foreground/70', rising: 'text-emerald-400' };
 const MOMENTUM_LABEL = { high: '↑ High', medium: '→ Steady', rising: '↗ Rising' };
 

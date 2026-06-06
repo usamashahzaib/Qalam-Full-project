@@ -12,19 +12,19 @@ import { UPGRADES_EMAIL } from "@/lib/contact"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 10 AI drafts per month, no scheduling, no voice memory, no analytics, and no export.",
+    a: "Yes. Free is live with no time limit - 5 AI drafts per month, no scheduling, no voice memory, no analytics, and no export.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 899/month. Pro is PKR 1,899/month with 60 AI drafts per month. Agency is PKR 7,490/month for multi-client workflows. Annual billing gives 4 months free.",
+    a: "Solo starts at PKR 499/month. Pro is PKR 990/month with unlimited AI drafts. Agency Starter is PKR 4,990/month for multi-client workflows. Annual billing gives 4 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
-    a: "Annual Solo is PKR 599/mo, Pro is PKR 1,266/mo, and Agency is PKR 4,993/mo. Each annual plan includes 4 months free.",
+    a: "Annual Solo is PKR 333/mo, Pro is PKR 660/mo, and Agency Starter is PKR 3,330/mo. Each annual plan includes 4 months free.",
   },
   {
     q: "What does Agency include?",
-    a: "Agency includes 60 AI drafts per workspace, 5 client workspaces, white-label, 10 team seats, and a shared asset library.",
+    a: "Agency Starter includes unlimited AI drafts, 3 client workspaces, white-label, 5 team seats, and a shared asset library.",
   },
   {
     q: "Can I cancel anytime?",
@@ -32,7 +32,7 @@ const PRICING_FAQ = [
   },
   {
     q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 899/month.",
+    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 499/month.",
   },
 ]
 
@@ -221,7 +221,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
             <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 899 replaces</h2>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 499 replaces</h2>
             <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
           </FadeUp>
 
@@ -247,7 +247,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 899/month.</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 499/month.</p>
               <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
             </div>
           </FadeUp>
@@ -271,8 +271,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency</th>
-                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">-</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency Starter</th>
+                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency Growth</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">

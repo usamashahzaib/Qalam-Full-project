@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
 interface Post {
@@ -15,7 +14,6 @@ interface Post {
 }
 
 export default function LibraryPage() {
-  const { isLoaded, userId } = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filter, setFilter] = useState("all");
@@ -24,13 +22,8 @@ export default function LibraryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoaded) return;
-    if (!userId) {
-      router.push("/login");
-      return;
-    }
     loadPosts();
-  }, [isLoaded, userId]);
+  }, []);
 
   async function loadPosts() {
     try {
@@ -84,7 +77,7 @@ export default function LibraryPage() {
     archived: "bg-gray-100 text-gray-800",
   };
 
-  if (!isLoaded || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Loading...</div>

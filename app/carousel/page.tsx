@@ -1,7 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
 
 interface Slide {
   slide_number: number;
@@ -11,8 +9,6 @@ interface Slide {
 }
 
 export default function CarouselPage() {
-  const { isLoaded, userId } = useAuth();
-  const router = useRouter();
   const [topic, setTopic] = useState("");
   const [role, setRole] = useState("founder");
   const [slideCount, setSlideCount] = useState(5);
@@ -65,19 +61,6 @@ export default function CarouselPage() {
   async function downloadPDF() {
     if (!projectId) return;
     window.open(`/api/carousel/${projectId}/pdf`, "_blank");
-  }
-
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>Loading...</div>
-      </div>
-    );
-  }
-
-  if (!userId) {
-    router.push("/login");
-    return null;
   }
 
   return (

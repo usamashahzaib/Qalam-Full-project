@@ -3,11 +3,7 @@ import { requireAuth } from "@/lib/server/clerk-client";
 import { getCurrentWorkspace } from "@/lib/server/workspace";
 import { generatePost, scoreContent, rewriteWithFeedback } from "@/lib/server/content-generator";
 import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit";
-<<<<<<< HEAD
 import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits";
-=======
-import { checkPlanLimit } from "@/lib/server/plan-limits";
->>>>>>> 6fcbed7ec6dee89513f4d174f4fde5ca132ee368
 import { createServiceClient } from "@/lib/server/supabase-rest";
 
 type GenerateBody = {
@@ -19,14 +15,14 @@ type GenerateBody = {
   qualityCheck?: boolean
 }
 
-<<<<<<< HEAD
 // Simple cache - same topic dobara generate nahi hoga 5 minute tak
 const generationCache = new Map<string, { content: string; timestamp: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function getCacheKey(userId: string, topic: string, role: string, format: string): string {
   return `${userId}:${topic.trim().toLowerCase()}:${role}:${format}`;
-=======
+}
+
 type ScoreResult = {
   total_score: number
   hook_score: number
@@ -36,12 +32,12 @@ type ScoreResult = {
   formatting_score: number
   feedback: string
   is_good_enough: boolean
->>>>>>> 6fcbed7ec6dee89513f4d174f4fde5ca132ee368
 }
+
+const remaining = (limit: number, current: number) => Math.max(0, limit - current)
 
 export async function GET() {
   try {
-<<<<<<< HEAD
     const userId = await requireAuth();
     const status = await getPlanStatus(userId);
     return NextResponse.json({ 
@@ -49,14 +45,10 @@ export async function GET() {
         allowed: true, 
         current: status.used.ai_drafts, 
         limit: status.limits.ai_drafts,
-        plan: status.plan
+        remaining: remaining(status.limits.ai_drafts, status.used.ai_drafts),
+        plan: status.plan,
       } 
     });
-=======
-    const userId = await requireAuth()
-    const { allowed, current, limit } = await checkPlanLimit(userId, "ai_drafts")
-    return NextResponse.json({ usage: { allowed, current, limit } })
->>>>>>> 6fcbed7ec6dee89513f4d174f4fde5ca132ee368
   } catch (error) {
     const message = (error as Error).message || "Failed to load usage";
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 });
@@ -119,15 +111,9 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId)
       .maybeSingle();
 
-<<<<<<< HEAD
     const post = await generatePost({ topic, role, tone: body.tone, voiceProfile, goal: body.goal, format });
     let finalContent = post.full_text;
-    let finalScore = null;
-=======
-    const post = await generatePost({ topic, role, tone: body.tone, voiceProfile, goal: body.goal, format })
-    let finalContent = post.full_text
-    let finalScore: ScoreResult | null = null
->>>>>>> 6fcbed7ec6dee89513f4d174f4fde5ca132ee368
+    let finalScore: ScoreResult | null = null;
 
     // Free users ke liye quality check skip karo - API cost bachao
     // Paid users ke liye bhi sirf agar score 60 se kam ho toh rewrite karo
@@ -174,11 +160,7 @@ export async function POST(req: NextRequest) {
 
     const responsePayload = {
       success: true,
-<<<<<<< HEAD
-      usage: { allowed: true, current: planLimit.current, limit: planLimit.limit },
-=======
-      usage: { allowed: plan.allowed, current: plan.current, limit: plan.limit },
->>>>>>> 6fcbed7ec6dee89513f4d174f4fde5ca132ee368
+      usage: { allowed: true, current: planLimit.current, limit: planLimit.limit, remaining: remaining(planLimit.limit, planLimit.current), plan: planLimit.plan },
       post: {
         id: savedPostId || undefined,
         content: finalContent,
