@@ -4,6 +4,7 @@ import { requireAuth } from "@/lib/server/clerk-client"
 import { fetchJson } from "@/lib/server/supabase-rest"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { ensureWorkspaceForUser, getClerkAuthContext } from "@/lib/server/workspace"
+import { handleLinkedInCallback, linkedInSessionCookieMaxAgeSeconds, linkedInSessionCookieName } from "@/lib/server/linkedin"
 
 const getRedirectUri = (request: NextRequest) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin
@@ -41,9 +42,27 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
   const storedState = cookieStore.get("linkedin_oauth_state")?.value
 
-  if (!code || !state || !storedState || state !== storedState) {
+  if (!code || !state) {
     return NextResponse.redirect(new URL("/settings?linkedin=failed", request.url))
   }
+  if (storedState !== state) {
+    try {
+      const { redirectTo, sessionToken } = await handleLinkedInCallback(state, code)
+      const response = NextResponse.redirect(new URL(redirectTo, request.url))
+      response.cookies.set(linkedInSessionCookieName, sessionToken, {
+        httpOnly: true,
+        maxAge: linkedInSessionCookieMaxAgeSeconds,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+      })
+      return response
+    } catch (error) {
+      console.error("linkedin_signed_callback_failed", error)
+      return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
+    }
+  }
+
   const userId = await requireAuth().catch(() => "")
   if (!userId) return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
   const stateUserId = Buffer.from(state, "base64").toString("utf8")

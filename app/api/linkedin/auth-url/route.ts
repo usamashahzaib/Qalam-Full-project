@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
 import { createLinkedInAuth } from "@/lib/server/linkedin"
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
     const redirectTo = request.nextUrl.searchParams.get("redirectTo") || undefined
     const auth = createLinkedInAuth(redirectTo)
     return NextResponse.json(auth)
