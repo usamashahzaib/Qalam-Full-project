@@ -124,11 +124,6 @@ export const analyzeCompetitorPaste = ({
     }),
   })
 
-export const getLinkedInAuthUrl = (redirectTo = `${window.location.origin}/auth/linkedin/callback`) =>
-  requestJson<{ url: string; state: string }>(
-    `/api/linkedin/auth-url?redirectTo=${encodeURIComponent(redirectTo)}`
-  )
-
 export const loadAuthSession = () => requestJson<{ user: AuthUser | null }>("/api/auth/session")
 
 export const logoutAuthSession = () =>

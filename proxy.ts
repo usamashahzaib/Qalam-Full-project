@@ -22,7 +22,6 @@ const PROTECTED_PREFIXES = [
 ]
 
 const PUBLIC_PREFIXES = [
-  "/api/linkedin/auth-url",
   "/api/linkedin/callback",
 ]
 

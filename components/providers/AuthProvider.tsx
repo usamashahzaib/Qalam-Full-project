@@ -1,9 +1,9 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { useSignIn } from "@clerk/nextjs"
 import {
   consumeLinkedInSession,
-  getLinkedInAuthUrl,
   loadAuthSession,
   logoutAuthSession,
 } from "@/lib/api/client"
@@ -45,6 +45,7 @@ const readStoredUser = () => {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { fetchStatus, signIn } = useSignIn()
   const [user, setUser] = useState<AuthUser | null>(readStoredUser)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -82,11 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistUser])
 
   const beginLinkedInAuth = useCallback(async (nextPath = "/dashboard") => {
+    if (fetchStatus === "fetching" || !signIn) return
     const safeNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard"
-    const callbackPath = `/auth/linkedin/callback?next=${encodeURIComponent(safeNextPath)}`
-    const { url } = await getLinkedInAuthUrl(callbackPath)
-    window.location.assign(url)
-  }, [])
+    await signIn.sso({
+      strategy: "oauth_linkedin_oidc",
+      redirectUrl: safeNextPath,
+      redirectCallbackUrl: "/sso-callback",
+    })
+  }, [fetchStatus, signIn])
 
   const completeLinkedInAuth = useCallback(async () => {
     const { user } = await consumeLinkedInSession()
