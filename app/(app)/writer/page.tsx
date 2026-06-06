@@ -245,16 +245,16 @@ export default function WriterPage() {
     setHookAlternatives([])
     setSelectedHook(null)
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/hooks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "hooks", content: topic, title: topic, profile }),
+        body: JSON.stringify({ topic, role: "ceo-founder" }),
       })
-      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string; usageCost?: number }
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
       if (!res.ok) throw new Error(data.error || "Could not generate hooks")
       setHookAlternatives((data.hooks || []).slice(0, 5))
       setProfileTopicSuggestions([])
-      useDraftCredit(data.usageCost || 1)
+      useDraftCredit(1)
     } catch (e) {
       setStatus(cleanErrorMessage((e as Error).message))
     } finally {
@@ -300,15 +300,15 @@ export default function WriterPage() {
     setInlineHookPanelOpen(true)
     setInlineHookSuggestions([])
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/hooks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "hooks", content, title: resolveTitle(), profile }),
+        body: JSON.stringify({ topic: content, role: "ceo-founder" }),
       })
-      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string; usageCost?: number }
+      const data = (await res.json().catch(() => ({}))) as { hooks?: string[]; error?: string }
       if (!res.ok) throw new Error(data.error || "Could not generate hooks")
       setInlineHookSuggestions((data.hooks || []).slice(0, 3))
-      useDraftCredit(data.usageCost || 1)
+      useDraftCredit(1)
     } catch (e) {
       setStatus(cleanErrorMessage((e as Error).message))
       setInlineHookPanelOpen(false)
@@ -1013,8 +1013,8 @@ export default function WriterPage() {
             <div className="rounded-xl bg-zinc-50/50 p-3 border border-zinc-200 border-dashed text-center">
               <p className="text-xs text-zinc-400 font-medium">No account connected</p>
               <div className="mt-2.5 flex flex-col gap-1.5">
-                <a href="/api/linkedin/connect?mock=true&redirectTo=/writer" className="inline-block rounded-xl bg-zinc-800 hover:bg-zinc-700 px-3 py-2 text-xs font-bold text-white transition-colors cursor-pointer text-center">
-                  Connect Mock Profile
+                <a href="/api/linkedin/connect" className="inline-block rounded-xl bg-[#0A66C2] hover:bg-[#085fa8] px-3 py-2 text-xs font-bold text-white transition-colors cursor-pointer text-center">
+                  Connect LinkedIn
                 </a>
               </div>
             </div>

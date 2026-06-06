@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/workspace"
 
 const toStatus = (message: string) => {
   switch (message) {
     case "auth_required":
+    case "Unauthorized":
       return 401
     case "unauthorized_workspace":
       return 403
@@ -16,12 +17,8 @@ const toStatus = (message: string) => {
 }
 
 export async function GET(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "auth_required" }, { status: 401 })
-  }
-
   try {
+    await requireAuth()
     const ctx = await getClerkAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
     const planInfo = await fetchWorkspacePlan(workspaceId, ctx.email)
@@ -33,12 +30,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "auth_required" }, { status: 401 })
-  }
-
   try {
+    await requireAuth()
     await resolveWorkspaceId(request)
     return NextResponse.json(
       { error: "workspace_snapshot_deprecated", message: "Use /api/posts and domain APIs instead." },

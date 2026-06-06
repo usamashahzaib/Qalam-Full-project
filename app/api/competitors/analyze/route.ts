@@ -3,7 +3,7 @@ import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 
 type AnalyzeRequest = {
   workspaceKey?: string
@@ -25,10 +25,7 @@ type Job = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
     const { workspaceId, limits, plan } = planCheck
@@ -82,7 +79,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ analysis, job })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    if ((message === "auth_required" || message === "Unauthorized")) return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
+    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 }

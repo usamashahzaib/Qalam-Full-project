@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/workspace"
+import { auth } from "@clerk/nextjs/server"
 import { fetchWorkspacePlan } from "@/lib/server/workspace"
 import { getMonthlyCount } from "@/lib/server/require-plan"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
@@ -10,10 +10,18 @@ type OverrideRow = { user_id: string; plan_override: string | null; draft_limit_
 type AuditRow = { id: string; admin_email: string; target_user_email: string; action: string; old_value: unknown; new_value: unknown; created_at: string }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
+const requireAdmin = async () => {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const claims = sessionClaims as { metadata?: { admin?: boolean }; email?: string }
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())
+  if (!claims?.metadata?.admin && !adminEmails.includes(String(claims?.email || "").toLowerCase())) throw new Error("Forbidden")
+  return userId
+}
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdminRequest(request)
+    await requireAdmin()
   } catch {
     return notFound()
   }

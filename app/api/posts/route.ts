@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId, getClerkAuthContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { createServiceClient, supabaseDelete, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { createClient } from "@supabase/supabase-js"
 
 type DbPost = {
   id: string
@@ -40,30 +41,31 @@ const validateSchedule = (status: string, scheduledTime?: string | null) => {
   return selected.getTime() <= Date.now() ? "scheduled_time_must_be_future" : null
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
-    const url = new URL(request.url)
-    const status = url.searchParams.get("status")
-    const limit = Math.min(Number(url.searchParams.get("limit") || 200), 500)
+    const userId = await requireAuth()
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    )
+    const { data: posts, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
 
-    let query = `workspace_id=eq.${workspaceId}&order=updated_at.desc&limit=${limit}`
-    if (status) query += `&status=eq.${encodeURIComponent(status)}`
-
-    const rows = await supabaseSelect<DbPost>("posts", query)
-    return NextResponse.json({ posts: (rows || []).map(toClientPost) })
+    if (error) return NextResponse.json({ error: "Failed to load posts" }, { status: 500 })
+    return NextResponse.json({ posts })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
 
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
@@ -81,23 +83,37 @@ export async function POST(request: NextRequest) {
     const scheduleError = validateSchedule(safeStatus, scheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
 
-    const rows = await supabaseInsert<DbPost>(
-      "posts",
-      {
-        workspace_id: workspaceId,
-        author_id: authorId,
+    const supabase = createServiceClient()
+    const dbStatus = ["draft", "published", "scheduled", "archived"].includes(safeStatus) ? safeStatus : "draft"
+    const { data: postId, error } = await supabase.rpc("create_post_with_version", {
+      p_user_id: userId,
+      p_workspace_id: workspaceId,
+      p_title: title,
+      p_content: content ?? "",
+      p_hook: null,
+      p_cta: null,
+      p_role_profile: null,
+      p_topic: title,
+      p_engagement_score: null,
+      p_metadata: { type, scheduledTime, publishedAt, externalPostUrn, status: safeStatus, authorId },
+      p_status: dbStatus,
+    })
+    if (error || !postId) throw new Error(error?.message || "post_create_failed")
+
+    return NextResponse.json({
+      post: {
+        id: postId,
         title,
         content: content ?? "",
         type,
         status: safeStatus,
-        scheduled_time: scheduledTime ?? null,
-        published_at: publishedAt ?? null,
-        external_post_urn: externalPostUrn ?? null,
+        date: (scheduledTime || publishedAt || new Date().toISOString()).slice(0, 10),
+        scheduledTime: scheduledTime ?? null,
+        externalPostUrn: externalPostUrn ?? null,
+        updatedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       },
-      "return=representation"
-    )
-
-    return NextResponse.json({ post: rows?.[0] ? toClientPost(rows[0]) : null }, { status: 201 })
+    }, { status: 201 })
   } catch (error) {
     const msg = (error as Error).message
     return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })

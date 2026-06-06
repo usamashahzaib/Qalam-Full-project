@@ -1,7 +1,9 @@
 import { NextRequest } from "next/server"
 import { notFound } from "next/navigation"
-import { auth, currentUser } from "@clerk/nextjs/server"
+import { currentUser } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { supabaseInsert, supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
 
 const ADMIN_EMAILS = (process.env.APP_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "")
@@ -41,8 +43,7 @@ export const isAdminEmail = (email?: string | null) =>
   Boolean(email && ADMIN_EMAILS.includes(email.trim().toLowerCase()))
 
 export const requireAdminRequest = async (_request: NextRequest) => {
-  const { userId } = await auth()
-  if (!userId) throw new Error("not_found")
+  const userId = await requireAuth()
   const user = await currentUser()
   const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
   if (!isAdminEmail(email)) throw new Error("not_found")
@@ -50,8 +51,12 @@ export const requireAdminRequest = async (_request: NextRequest) => {
 }
 
 export const requireAdminPage = async () => {
-  const { userId } = await auth()
-  if (!userId) notFound()
+  let userId = ""
+  try {
+    userId = await requireAuth()
+  } catch {
+    notFound()
+  }
   const user = await currentUser()
   const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
   if (!isAdminEmail(email)) notFound()
@@ -107,21 +112,15 @@ export const ensureSupabaseUser = async ({
 }
 
 export const getClerkAuthContext = async (): Promise<ClerkAuthContext> => {
-  const { userId: clerkUserId } = await auth()
-  if (!clerkUserId) throw new Error("auth_required")
+  const clerkUserId = await requireAuth().catch(() => {
+    throw new Error("auth_required")
+  })
 
   const user = await currentUser()
   const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
   if (!email) throw new Error("auth_required")
 
   const names = toNames(user?.fullName || user?.firstName || "", email)
-  const supabaseUserId = await ensureSupabaseUser({
-    clerkUserId,
-    email,
-    fullName: names.fullName,
-    imageUrl: user?.imageUrl || null,
-  })
-
   return {
     clerkUserId,
     email,
@@ -129,7 +128,7 @@ export const getClerkAuthContext = async (): Promise<ClerkAuthContext> => {
     firstName: names.firstName,
     imageUrl: user?.imageUrl || null,
     role: getClerkRole(email),
-    supabaseUserId,
+    supabaseUserId: clerkUserId,
   }
 }
 
@@ -150,37 +149,15 @@ export const ensureWorkspaceForUser = async ({
   userId: string
   firstName: string
 }) => {
-  const memberships = await supabaseSelect<{ workspace_id: string }>(
-    "memberships",
-    `user_id=eq.${userId}&limit=1`
-  )
+  const memberships = await supabaseSelect<{ workspace_id: string }>("workspace_members", `user_id=eq.${encodeURIComponent(userId)}&select=workspace_id&limit=1`).catch(() => [])
   if (memberships?.[0]?.workspace_id) return memberships[0].workspace_id
 
-  const orgs = await supabaseInsert<{ id: string }>(
-    "organizations",
-    { name: `${firstName}'s Org` },
-    "return=representation"
-  )
-  const orgId = orgs?.[0]?.id
-
-  const workspaces = await supabaseInsert<{ id: string }>(
-    "workspaces",
-    { organization_id: orgId, name: "Personal Workspace" },
-    "return=representation"
-  )
-  const workspaceId = workspaces?.[0]?.id
-
-  await supabaseInsert(
-    "memberships",
-    {
-      user_id: userId,
-      organization_id: orgId,
-      workspace_id: workspaceId,
-      role: "super_admin",
-    },
-    "return=minimal"
-  )
-
+  const supabase = createServiceClient()
+  const { data: workspaceId } = await supabase.rpc("create_workspace_with_member", {
+    p_user_id: userId,
+    p_name: `${firstName || "Personal"} Workspace`,
+    p_role: "owner",
+  })
   if (!workspaceId) throw new Error("failed_to_provision_workspace")
   return workspaceId
 }
@@ -192,14 +169,29 @@ export const ensureWorkspaceForEmail = async ({
   email: string
   firstName: string
 }) => {
-  const normalizedEmail = email.trim().toLowerCase()
-  const users = await supabaseSelect<{ id: string }>(
-    "users",
-    `email=eq.${encodeURIComponent(normalizedEmail)}&limit=1`
-  )
-  const userId = users?.[0]?.id
+  const userId = await requireAuth().catch(() => "")
   if (!userId) throw new Error("auth_required")
   return ensureWorkspaceForUser({ userId, firstName })
+}
+
+export async function getCurrentWorkspace() {
+  const userId = await requireAuth()
+  const supabase = createServiceClient()
+
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", userId)
+    .single()
+
+  if (membership) return { workspaceId: membership.workspace_id, role: membership.role }
+
+  const { data: workspaceId } = await supabase.rpc("create_personal_workspace", {
+    p_user_id: userId,
+    p_name: "Personal",
+  })
+
+  return { workspaceId: workspaceId || undefined, role: workspaceId ? "owner" : undefined }
 }
 
 export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
@@ -223,8 +215,8 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
     !requestedWorkspaceId.startsWith("client:")
   ) {
     const memberships = await supabaseSelect<{ workspace_id: string }>(
-      "memberships",
-      `user_id=eq.${ctx.supabaseUserId}&workspace_id=eq.${requestedWorkspaceId}&limit=1`
+      "workspace_members",
+      `user_id=eq.${encodeURIComponent(ctx.supabaseUserId)}&workspace_id=eq.${encodeURIComponent(requestedWorkspaceId)}&select=workspace_id&limit=1`
     )
     if (memberships?.length) return requestedWorkspaceId
     throw new Error("unauthorized_workspace")

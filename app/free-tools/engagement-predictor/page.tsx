@@ -5,22 +5,43 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 
-function scorePost(text: string) {
-  const words = text.trim().split(/\s+/).filter(Boolean)
-  const firstLine = text.split("\n")[0]?.trim() || ""
-  const score =
-    (words.length >= 80 && words.length <= 260 ? 30 : 15) +
-    (/\d|\?/.test(firstLine) ? 20 : 10) +
-    ((text.match(/\n\n/g) || []).length >= 2 ? 20 : 10) +
-    (/I |we |my |our /i.test(text) ? 15 : 5) +
-    (/comment|reply|share|follow|save/i.test(text) ? 15 : 5)
-
-  return Math.min(score, 100)
+type Result = {
+  engagement_score: number
+  reach_prediction: string
+  confidence: string
+  score_breakdown: Record<string, number>
+  why_it_will_work: string[]
+  risks: string[]
+  recommended_edits: string[]
+  stronger_opening: string
 }
 
 export default function EngagementPredictorPage() {
   const [text, setText] = useState("")
-  const [score, setScore] = useState<number | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const predict = async () => {
+    if (!text.trim()) return
+    setLoading(true)
+    setError("")
+    setResult(null)
+    try {
+      const res = await fetch("/api/free-tools/engagement-predictor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || "Prediction failed")
+      setResult(data)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="pt-24 min-h-screen bg-zinc-50">
@@ -32,8 +53,7 @@ export default function EngagementPredictorPage() {
             </Link>
             <h1 className="text-4xl sm:text-5xl font-extrabold text-zinc-900 mb-4">Engagement Predictor</h1>
             <p className="text-zinc-500 text-lg leading-relaxed max-w-xl">
-              A pre-publish heuristic score based on structure and clarity. It is directional, not a
-              claim about actual reach.
+              AI prediction based on specificity, hook quality, audience relevance, and discussion value.
             </p>
           </FadeUp>
         </div>
@@ -55,25 +75,28 @@ export default function EngagementPredictorPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => text.trim() && setScore(scorePost(text))}
-                  disabled={!text.trim()}
+                  onClick={predict}
+                  disabled={!text.trim() || loading}
                   className={`px-5 py-3 rounded-xl text-sm font-semibold transition-all ${text.trim() ? "bg-teal text-white hover:bg-teal-600" : "bg-zinc-200 text-zinc-400 cursor-not-allowed"}`}
                 >
-                  Score Draft
+                  {loading ? "Predicting..." : "Predict Engagement"}
                 </motion.button>
               </div>
+              {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
             </div>
           </FadeUp>
 
           <AnimatePresence>
-            {score !== null && (
+            {result && (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-6">
-                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-2">Heuristic score</p>
-                <p className="text-5xl font-extrabold text-zinc-900 mb-3">{score}/100</p>
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  This score rewards a clear first line, readable spacing, personal framing, reasonable
-                  length, and an explicit CTA. It does not know your audience, timing, or network quality.
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-2">Engagement score</p>
+                <p className="text-5xl font-extrabold text-zinc-900 mb-3">{result.engagement_score}/100</p>
+                <p className="text-sm font-semibold text-teal">{result.reach_prediction} reach, {result.confidence} confidence</p>
+                <div className="mt-5 grid gap-2 sm:grid-cols-5">{Object.entries(result.score_breakdown || {}).map(([k, v]) => <div key={k} className="rounded-xl bg-zinc-50 p-3"><p className="text-[10px] font-bold uppercase text-zinc-400">{k}</p><p className="mt-1 text-lg font-bold">{v}</p></div>)}</div>
+                <Section title="Why it can work" items={result.why_it_will_work} />
+                <Section title="Risks" items={result.risks} />
+                <Section title="Recommended edits" items={result.recommended_edits} />
+                {result.stronger_opening ? <p className="mt-5 rounded-xl bg-teal/5 p-4 text-sm text-zinc-800">{result.stronger_opening}</p> : null}
               </motion.div>
             )}
           </AnimatePresence>
@@ -81,4 +104,8 @@ export default function EngagementPredictorPage() {
       </section>
     </div>
   )
+}
+
+function Section({ title, items = [] }: { title: string; items?: string[] }) {
+  return items.length ? <div className="mt-5"><p className="mb-2 text-xs font-bold uppercase text-zinc-400">{title}</p><ul className="space-y-1">{items.map((item) => <li key={item} className="text-sm text-zinc-700">- {item}</li>)}</ul></div> : null
 }

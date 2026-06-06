@@ -38,7 +38,8 @@ export const env = {
 }
 
 export const requireLinkedInEnv = () => {
-  if (!env.linkedInClientId || !env.linkedInClientSecret || !env.linkedInRedirectUri) {
+  const missing = (value: string) => !value || /placeholder|your_|changeme|dummy|mock|fake/i.test(value)
+  if (missing(env.linkedInClientId) || missing(env.linkedInClientSecret) || missing(env.linkedInRedirectUri)) {
     throw new Error("linkedin_env_missing")
   }
 }

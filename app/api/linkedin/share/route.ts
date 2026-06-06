@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
@@ -12,10 +12,7 @@ type ShareRequestBody = {
 }
 
 export async function POST(request: NextRequest) {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "auth_required" }, { status: 401 })
-  }
+    const userId = await requireAuth()
 
   const ctx = await getClerkAuthContext()
   const body = (await request.json()) as ShareRequestBody
@@ -28,7 +25,7 @@ export async function POST(request: NextRequest) {
     workspaceId = await resolveWorkspaceId(request)
   } catch (error) {
     const message = (error as Error).message || "auth_required"
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 
   const account = await getLinkedInPublishingAccount(workspaceId)

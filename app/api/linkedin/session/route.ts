@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext, resolveWorkspaceId, ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { consumeLinkedInSession, linkedInSessionCookieName } from "@/lib/server/linkedin"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
@@ -9,11 +9,7 @@ export async function GET(request: NextRequest) {
   if (!token) {
     return NextResponse.json({ error: "linkedin_session_missing" }, { status: 404 })
   }
-
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ error: "auth_required" }, { status: 401 })
-  }
+    const userId = await requireAuth()
 
   try {
     const session = consumeLinkedInSession(token)

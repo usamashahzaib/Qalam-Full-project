@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/components/providers/AuthProvider"
 import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
@@ -30,7 +31,8 @@ const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
 }
 
 export default function SettingsPage() {
-  const { user, beginLinkedInAuth, disconnectLinkedIn } = useAuth()
+  const searchParams = useSearchParams()
+  const { user, disconnectLinkedIn, refreshAuth } = useAuth()
   const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
   const [profileDraft, setProfileDraft] = useState({
     name: profile.name || user?.fullName || "",
@@ -44,7 +46,18 @@ export default function SettingsPage() {
   const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [profileError, setProfileError] = useState<string | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
-  const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string; company?: string } | null>(null)
+  const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
+  const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    const linkedin = searchParams.get("linkedin")
+    if (!linkedin) return
+    setLinkedinStatus(linkedin === "success" ? "LinkedIn connected successfully." : "LinkedIn connection failed. Contact us to enable LinkedIn publishing.")
+    if (linkedin === "success") {
+      refreshAuth().catch(() => undefined)
+    }
+    window.history.replaceState({}, "", "/settings")
+  }, [refreshAuth, searchParams])
 
   useEffect(() => {
     if (!user?.linkedinMemberId) {
@@ -109,6 +122,27 @@ export default function SettingsPage() {
       await disconnectLinkedIn()
     } finally {
       setDisconnecting(false)
+    }
+  }
+
+  const onConnectLinkedIn = async () => {
+    setLinkedinStatus(null)
+    try {
+      const res = await fetch("/api/linkedin/connect", { redirect: "manual" })
+      if (res.type === "opaqueredirect" || res.status === 0) {
+        window.location.href = "/api/linkedin/connect"
+        return
+      }
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get("Location")
+        if (location) window.location.href = location
+        else window.location.href = "/api/linkedin/connect"
+        return
+      }
+      const data = await res.json().catch(() => ({}))
+      setLinkedinStatus(data.error || "LinkedIn integration is coming soon. Contact us to enable publishing.")
+    } catch {
+      window.location.href = "/api/linkedin/connect"
     }
   }
 
@@ -266,6 +300,11 @@ export default function SettingsPage() {
         {/* Integrations */}
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 shadow-sm">
           <h2 className="text-base font-semibold text-zinc-900">Integrations</h2>
+          {linkedinStatus ? (
+            <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${linkedinStatus.includes("successfully") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+              {linkedinStatus}
+            </p>
+          ) : null}
           <div className="mt-4 rounded-2xl border border-zinc-200 p-5 bg-zinc-50/50">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
@@ -278,7 +317,7 @@ export default function SettingsPage() {
                 )}
                 <div>
                   <h3 className="text-sm font-bold text-zinc-900">{user?.linkedinMemberId ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
-                  <p className="text-xs text-zinc-500">{user?.linkedinMemberId ? (linkedinProfile?.company || "Connected and ready") : "Not connected"}</p>
+                  <p className="text-xs text-zinc-500">{user?.linkedinMemberId ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
                   {user?.linkedinTokenExpiresAt && (
                     <p className="mt-1 text-[10px] text-zinc-400">
                       Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
@@ -293,8 +332,7 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2">
-                  <button onClick={() => beginLinkedInAuth("/settings")} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#085fa8] cursor-pointer">Connect LinkedIn</button>
-                  <a href="/api/linkedin/connect?mock=true" className="rounded-lg bg-zinc-800 hover:bg-zinc-700 px-4 py-2 text-sm font-bold text-white transition-colors cursor-pointer text-center">Connect Mock Profile</a>
+                  <button onClick={onConnectLinkedIn} className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#085fa8] cursor-pointer text-center">Connect LinkedIn</button>
                 </div>
               )}
             </div>

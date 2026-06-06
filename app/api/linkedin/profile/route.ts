@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    await requireAuth()
 
     const ctx = await getClerkAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
@@ -27,12 +24,12 @@ export async function GET(request: NextRequest) {
       connected: true,
       memberId,
       name: ctx.fullName,
-      avatar: ctx.imageUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(ctx.email)}`,
-      company: "Qalam Creator",
+      avatar: ctx.imageUrl,
       expiresAt,
     })
   } catch (error) {
     console.error("LinkedIn profile error:", error)
-    return NextResponse.json({ error: (error as Error).message || "profile_failed" }, { status: 500 })
+    const message = (error as Error).message || "profile_failed"
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
   }
 }

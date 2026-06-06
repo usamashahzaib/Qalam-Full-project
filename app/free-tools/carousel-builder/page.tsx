@@ -52,6 +52,8 @@ export default function CarouselBuilderPage() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [error, setError] = useState("")
 
   // Fixed refs for up to 8 slides (hooks must not be called in loops)
   const ref0 = useRef<HTMLDivElement>(null)
@@ -64,12 +66,33 @@ export default function CarouselBuilderPage() {
   const ref7 = useRef<HTMLDivElement>(null)
   const slideRefs: RefObject<HTMLDivElement | null>[] = [ref0, ref1, ref2, ref3, ref4, ref5, ref6, ref7]
 
-  const handleBuild = () => {
+  const handleBuild = async () => {
     if (!text.trim()) return
-    const built = buildSlides(text)
-    setSlides(built)
-    setActiveSlide(0)
+    setBuilding(true)
+    setError("")
     setExportDone(false)
+    try {
+      const res = await fetch("/api/free-tools/carousel-builder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: text }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || "Carousel build failed")
+      const aiSlides = Array.isArray(data.slides)
+        ? data.slides.map((slide: Partial<Slide>, index: number) => ({
+            type: slide.type === "cover" || slide.type === "cta" ? slide.type : "content",
+            title: String(slide.title || `Slide ${index + 1}`),
+            body: String(slide.body || ""),
+          }))
+        : []
+      setSlides(aiSlides.length ? aiSlides : buildSlides(text))
+      setActiveSlide(0)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBuilding(false)
+    }
   }
 
   const handleExport = async () => {
@@ -199,13 +222,14 @@ export default function CarouselBuilderPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   onClick={handleBuild}
-                  disabled={!text.trim()}
+                  disabled={!text.trim() || building}
                   className={`mt-2 w-full rounded-xl py-3 text-sm font-bold transition-all ${
-                    text.trim() ? "bg-teal text-white hover:bg-teal-600 shadow-sm" : "cursor-not-allowed bg-zinc-200 text-zinc-400"
+                    text.trim() && !building ? "bg-teal text-white hover:bg-teal-600 shadow-sm" : "cursor-not-allowed bg-zinc-200 text-zinc-400"
                   }`}
                 >
-                  Build Carousel
+                  {building ? "Building..." : "Build Carousel with AI"}
                 </motion.button>
+                {error ? <p className="text-sm text-red-600">{error}</p> : null}
               </div>
             </div>
           </FadeUp>

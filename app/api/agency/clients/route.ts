@@ -1,45 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext } from "@/lib/server/workspace"
 import { errorToStatus } from "@/lib/server/roles"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
-
+    await requireAuth()
     const ctx = await getClerkAuthContext()
     const dbUserId = ctx.supabaseUserId
 
     const memberships = await supabaseSelect<{
       workspace_id: string | null
-      organization_id: string
       role: string
-    }>("memberships", `user_id=eq.${dbUserId}`)
+    }>("workspace_members", `user_id=eq.${encodeURIComponent(dbUserId)}&select=workspace_id,role`)
 
-    const orgIds = Array.from(
-      new Set((memberships || []).map((m) => m.organization_id).filter(Boolean))
-    )
-    if (orgIds.length === 0) {
-      return NextResponse.json({ clients: [] })
-    }
-
+    const workspaceIds = (memberships || []).map((m) => m.workspace_id).filter(Boolean) as string[]
+    if (!workspaceIds.length) return NextResponse.json({ clients: [] })
     const workspaces = await supabaseSelect<{
       id: string
       name: string
-      organization_id: string
       created_at: string
-    }>("workspaces", `organization_id=in.(${orgIds.join(",")})`)
-
-    const memberWorkspaceIds = new Set(
-      (memberships || []).map((m) => m.workspace_id).filter(Boolean)
-    )
+    }>("workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at`)
 
     const clients = (workspaces || [])
-      .filter((ws) => memberWorkspaceIds.has(ws.id))
       .map((ws) => {
         const wsRole = (memberships || []).find((m) => m.workspace_id === ws.id)?.role ?? "viewer"
         return {
@@ -61,55 +45,36 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
-
+    await requireAuth()
     const ctx = await getClerkAuthContext()
     const dbUserId = ctx.supabaseUserId
 
     const memberships = await supabaseSelect<{
-      organization_id: string
       workspace_id: string | null
       role: string
-    }>("memberships", `user_id=eq.${dbUserId}`)
+    }>("workspace_members", `user_id=eq.${encodeURIComponent(dbUserId)}&select=workspace_id,role`)
 
-    const orgMembership = (memberships || []).find((m) => !m.workspace_id) || (memberships || [])[0]
-    const orgId = orgMembership?.organization_id
-    if (!orgId) return NextResponse.json({ error: "no_organization" }, { status: 403 })
-
-    const orgRole = orgMembership?.role ?? "viewer"
-    if (!["agency_admin", "super_admin", "editor"].includes(orgRole)) {
+    const canCreate = (memberships || []).some((m) => ["owner", "admin", "editor"].includes(m.role))
+    if (!canCreate) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
 
     const body = await request.json()
     if (!body.clientName) return NextResponse.json({ error: "missing_fields" }, { status: 400 })
 
-    const result = await supabaseInsert<{ id: string; name: string; created_at: string }>(
+    const supabase = createServiceClient()
+    const { data: workspaceId, error } = await supabase.rpc("create_workspace_with_member", {
+      p_user_id: dbUserId,
+      p_name: body.clientName,
+      p_role: "admin",
+    })
+    if (error || !workspaceId) throw new Error(error?.message || "workspace_create_failed")
+
+    const workspaces = await supabaseSelect<{ id: string; name: string; created_at: string }>(
       "workspaces",
-      {
-        organization_id: orgId,
-        name: body.clientName,
-      },
-      "return=representation"
+      `id=eq.${workspaceId}&select=id,name,created_at&limit=1`
     )
-
-    const ws = result?.[0]
-
-    if (ws) {
-      await supabaseInsert(
-        "memberships",
-        {
-          user_id: dbUserId,
-          organization_id: orgId,
-          workspace_id: ws.id,
-          role: "agency_admin",
-        },
-        "return=minimal"
-      )
-    }
+    const ws = workspaces?.[0]
 
     const client = ws
       ? {
@@ -117,7 +82,7 @@ export async function POST(request: NextRequest) {
           client_name: ws.name,
           status: "active",
           plan: "Standard",
-          role: "agency_admin",
+          role: "admin",
           created_at: ws.created_at,
         }
       : null

@@ -142,25 +142,71 @@ export default function ChatWorkspace() {
 
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text || !activeConvId) return
+    if (!text || isLoading) return
 
     const tempId = `temp-${Date.now()}`
-    setMessages(prev => [...prev, { id: tempId, role: "user", content: text, created_at: new Date().toISOString() }])
+    setMessages((prev) => [...prev, { id: tempId, role: "user", content: text, created_at: new Date().toISOString() }])
     setInput("")
     setIsLoading(true)
 
     try {
-      const res = await fetch("/api/chat/messages", {
+      const res = await fetch("/api/strategist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conversationId: activeConvId, content: text })
+        body: JSON.stringify({
+          message: text,
+          conversationId: activeConvId,
+          workspaceKey: workspaceId || undefined,
+        }),
       })
       const data = await res.json()
-      if (data.message) {
-        setMessages(prev => [...prev, data.message])
+      if (!res.ok) throw new Error(data.error || "Could not send message")
+
+      if (data.conversationId && data.conversationId !== activeConvId) {
+        setActiveConvId(data.conversationId)
+        setConversations((prev) => [
+          {
+            id: data.conversationId,
+            title: data.topicName || "New Conversation",
+            updated_at: new Date().toISOString(),
+          },
+          ...prev.filter((item) => item.id !== data.conversationId),
+        ])
+      } else if (data.topicName) {
+        setConversations((prev) =>
+          prev.map((item) =>
+            item.id === (data.conversationId || activeConvId)
+              ? { ...item, title: data.topicName, updated_at: new Date().toISOString() }
+              : item
+          )
+        )
       }
+
+      if (data.message) {
+        setMessages((prev) => [...prev, data.message])
+      } else if (data.response) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `assistant-${Date.now()}`,
+            role: "assistant",
+            content: data.response,
+            created_at: new Date().toISOString(),
+          },
+        ])
+      }
+    } catch (error) {
+      setMessages((prev) => prev.filter((item) => item.id !== tempId))
+      setInput(text)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      void sendMessage()
     }
   }
 
@@ -321,12 +367,7 @@ export default function ChatWorkspace() {
                     e.target.style.height = "auto"
                     e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`
                   }}
-                  onKeyDown={(e) => {
-                    if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !isLoading) {
-                      e.preventDefault()
-                      sendMessage()
-                    }
-                  }}
+                  onKeyDown={handleKeyDown}
                   placeholder="Ask for a post idea, sharper hook, or strategic angle..."
                   className="max-h-32 min-h-[44px] w-full resize-none bg-transparent py-3 pl-3 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
                   rows={1}
@@ -340,7 +381,7 @@ export default function ChatWorkspace() {
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between px-1">
-                <p className="text-[10px] text-zinc-400">Ctrl+Enter to send</p>
+                <p className="text-[10px] text-zinc-400">Enter to send · Shift+Enter for newline</p>
                 {draftStatus && (
                   <p className={`text-[10px] font-semibold ${
                     draftStatus.includes("Failed") ? "text-red-500" :

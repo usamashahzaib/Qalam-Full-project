@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
@@ -38,16 +38,6 @@ type GroqResponse = {
       content?: string
     }
   }>
-}
-
-type JobRow = {
-  id: string
-  workspace_id: string
-  type: string
-  status: string
-  payload: Record<string, unknown>
-  created_at: string
-  updated_at: string
 }
 
 const themeFrom = (title = "", content = "", theme = "") => {
@@ -171,16 +161,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ carousels: rows || [] })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
     const { workspaceId, limits, plan } = planCheck
@@ -224,48 +211,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Carousel score below quality threshold", score: carouselScore }, { status: 422 })
     }
 
-    const projectRows = await supabaseInsert<CarouselProjectRow>(
-      "carousel_projects",
-      {
-        workspace_id: workspaceId,
-        post_id: postId || null,
-        theme: resolvedTheme,
-      },
-      "return=representation"
-    )
-    const projectId = projectRows?.[0]?.id
-    if (!projectId) throw new Error("carousel_project_create_failed")
+    const supabase = createServiceClient()
+    const { data: projectId, error } = await supabase.rpc("create_carousel_project", {
+      p_user_id: userId,
+      p_workspace_id: workspaceId,
+      p_title: title || resolvedTheme,
+      p_role: resolvedTheme,
+      p_slides: slidesData.map((slide, index) => ({
+        slide_number: index + 1,
+        title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`),
+        content: sanitizeGeneratedText(slide.body || slide.content || ""),
+        visual: sanitizeGeneratedText(slide.visualDirection || ""),
+      })),
+    })
+    if (error || !projectId) throw new Error(error?.message || "carousel_project_create_failed")
 
-    const slidesToInsert = slidesData.map((slide, index) => ({
-      carousel_id: projectId,
-      order_index: index,
-      title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`),
-      content: sanitizeGeneratedText(slide.body || slide.content || ""),
-    }))
-
-    const slides = await supabaseInsert(
-      "carousel_slides",
-      slidesToInsert,
-      "return=representation"
-    )
-
-    await supabaseInsert<JobRow>(
-      "jobs",
-      {
-        workspace_id: workspaceId,
-        type: "carousel_generation",
-        status: "completed",
-        payload: { projectId, postId: postId || null, theme: resolvedTheme, score: carouselScore, slides: slidesData },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      },
-      "return=minimal"
-    ).catch(() => undefined)
-
-    return NextResponse.json({ projectId, slides: slidesData.map((slide, index) => ({ ...(slides?.[index] as object || {}), ...slide })), theme: resolvedTheme, score: carouselScore })
+    return NextResponse.json({ projectId, slides: slidesData, theme: resolvedTheme, score: carouselScore })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
+    if ((message === "auth_required" || message === "Unauthorized")) return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

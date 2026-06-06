@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -27,6 +27,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const { id } = await context.params
 
@@ -46,6 +47,6 @@ export async function GET(
     return NextResponse.json({ project: projects[0], slides: slides || [] })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }

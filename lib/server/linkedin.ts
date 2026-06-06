@@ -45,7 +45,7 @@ const linkedInAuthUrl = (state: string) => {
     client_id: env.linkedInClientId,
     redirect_uri: env.linkedInRedirectUri,
     state,
-    scope: "openid profile email w_member_social",
+    scope: "w_member_social",
   })
   return `https://www.linkedin.com/oauth/v2/authorization?${params.toString()}`
 }

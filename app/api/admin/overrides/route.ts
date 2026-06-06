@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/workspace"
+import { auth } from "@clerk/nextjs/server"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type OverrideInput = {
@@ -14,6 +14,14 @@ type OverrideInput = {
 }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
+const requireAdmin = async () => {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const claims = sessionClaims as { metadata?: { admin?: boolean }; email?: string }
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())
+  if (!claims?.metadata?.admin && !adminEmails.includes(String(claims?.email || "").toLowerCase())) throw new Error("Forbidden")
+  return { email: String(claims?.email || ""), userId }
+}
 
 const getOldOverride = (userId: string) =>
   supabaseSelect("user_overrides", `user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`).then((rows) => rows?.[0] || null).catch(() => null)
@@ -31,7 +39,7 @@ const writeAudit = (adminEmail: string, targetEmail: string, action: string, old
 export async function POST(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdminRequest(request)
+    admin = await requireAdmin()
   } catch {
     return notFound()
   }
@@ -57,7 +65,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdminRequest(request)
+    admin = await requireAdmin()
   } catch {
     return notFound()
   }
@@ -83,7 +91,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdminRequest(request)
+    admin = await requireAdmin()
   } catch {
     return notFound()
   }

@@ -1,18 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { callAi } from "@/lib/ai-router"
-import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
+import { callAi } from "@/lib/server/ai-router"
 
 export async function POST(request: NextRequest) {
-  const ip = getClientIp(request)
-
-  const rate = await checkRateLimit(`hook-gen:${ip}`, "Free", ip)
-  if (!rate.allowed) {
-    return NextResponse.json(
-      { error: "rate_limit_exceeded", message: "Too many requests. Please wait a moment.", ...rate },
-      { status: 429 }
-    )
-  }
-
   let topic: string
   try {
     const body = await request.json()

@@ -23,7 +23,7 @@ export function HookGeneratorTool() {
     setGenerated(false)
 
     try {
-      const res = await fetch("/api/tools/hook-generator", {
+      const res = await fetch("/api/free-tools/hook-generator", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ topic: trimmed }),

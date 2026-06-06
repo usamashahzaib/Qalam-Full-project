@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server"
-import { auth, currentUser } from "@clerk/nextjs/server"
+import { currentUser } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { ensureWorkspaceForUser, getClerkAuthContext, toPublicAuthUser } from "@/lib/server/workspace"
 
 export async function GET() {
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.json({ user: null })
-  }
-
   try {
+    await requireAuth()
     const ctx = await getClerkAuthContext()
     const workspaceId = await ensureWorkspaceForUser({
       userId: ctx.supabaseUserId,
@@ -29,7 +26,8 @@ export async function GET() {
         linkedinTokenExpiresAt,
       },
     })
-  } catch {
+  } catch (error) {
+    if ((error as Error).message === "Unauthorized") return NextResponse.json({ user: null }, { status: 401 })
     const user = await currentUser()
     if (!user) return NextResponse.json({ user: null })
     const email = user.primaryEmailAddress?.emailAddress?.trim().toLowerCase() || ""

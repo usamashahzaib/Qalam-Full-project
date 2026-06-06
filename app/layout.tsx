@@ -1,4 +1,5 @@
-﻿import type { Metadata, Viewport } from "next"
+import type { Metadata, Viewport } from "next"
+import { ClerkProvider } from "@clerk/nextjs"
 import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
@@ -173,16 +174,18 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
-        <ContentProtection />
-        <GridGlowBackground
-          glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-          backgroundColor="#fafaf8"
-          gridColor="rgba(13,74,69,0.07)"
-          glowCount={12}
-        >
-          <NavWrapper>{children}</NavWrapper>
-        </GridGlowBackground>
-        <PwaRegistration />
+        <ClerkProvider>
+          <ContentProtection />
+          <GridGlowBackground
+            glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
+            backgroundColor="#fafaf8"
+            gridColor="rgba(13,74,69,0.07)"
+            glowCount={12}
+          >
+            <NavWrapper>{children}</NavWrapper>
+          </GridGlowBackground>
+          <PwaRegistration />
+        </ClerkProvider>
       </body>
     </html>
   )

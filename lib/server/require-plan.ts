@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId, fetchWorkspacePlan, getClerkAuthContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
@@ -25,7 +25,7 @@ export const requirePlan = async (
   request: NextRequest,
   requiredPlan: PlanTier
 ): Promise<PlanCheckResult> => {
-  const { userId } = await auth()
+  const userId = await requireAuth().catch(() => null)
   if (!userId) {
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
@@ -42,7 +42,7 @@ export const requirePlan = async (
     workspaceId = await resolveWorkspaceId(request)
   } catch (err) {
     const msg = (err as Error).message || "server_error"
-    const status = msg === "auth_required" ? 401 : msg === "unauthorized_workspace" ? 403 : 500
+    const status = (msg === "auth_required" || msg === "Unauthorized") ? 401 : msg === "unauthorized_workspace" ? 403 : 500
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
 

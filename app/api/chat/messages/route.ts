@@ -1,76 +1,73 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { requireAuth } from "@/lib/server/clerk-client"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import { groqApiKey } from "@/lib/server/env"
 import { requirePlan } from "@/lib/server/require-plan"
 
-type DbMessage = { id: string; conversation_id: string; role: "user" | "assistant" | "system"; content: string; created_at: string }
-type DbConversation = { id: string; workspace_id: string }
+type DbMessage = { id: string; role: "user" | "assistant"; content: string; created_at: string }
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
 
     const conversationId = request.nextUrl.searchParams.get("conversationId")
     if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 
-    const messages = await supabaseSelect<DbMessage>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
-    
-    return NextResponse.json({ messages: messages || [] })
+    const supabase = createServiceClient()
+    const { data: owner } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .maybeSingle()
+    if (!owner) return NextResponse.json({ error: "Unauthorized conversation" }, { status: 403 })
+
+    const { data, error } = await supabase
+      .from("conversation_messages")
+      .select("id, role, content, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+    if (error) throw new Error(error.message)
+
+    return NextResponse.json({ messages: data || [] })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: message === "auth_required" ? "Please sign in again." : message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
     const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
-    const { workspaceId } = planCheck
 
-    const body = await request.json()
-    const { conversationId, content } = body
-
-    if (!conversationId || !content) {
+    const { conversationId, content } = await request.json()
+    const cleanContent = String(content || "").trim()
+    if (!conversationId || !cleanContent) {
       return NextResponse.json({ error: "Missing conversationId or content" }, { status: 400 })
     }
 
-    // Verify conversation belongs to workspace
-    const convCheck = await supabaseSelect<DbConversation>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
-    if (!convCheck || convCheck.length === 0) {
-      return NextResponse.json({ error: "Unauthorized conversation" }, { status: 403 })
-    }
+    const supabase = createServiceClient()
+    const { data: conversation } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .maybeSingle()
+    if (!conversation) return NextResponse.json({ error: "Unauthorized conversation" }, { status: 403 })
 
-    // 1. Insert User Message
-    await supabaseInsert("messages", {
-      conversation_id: conversationId,
-      role: "user",
-      content
-    })
+    const { data: history, error: historyError } = await supabase
+      .from("conversation_messages")
+      .select("role, content")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: true })
+      .limit(20)
+    if (historyError) throw new Error(historyError.message)
 
-    // 2. Fetch Chat History
-    const history = await supabaseSelect<DbMessage>("messages", `conversation_id=eq.${conversationId}&order=created_at.asc`)
-    const formattedHistory = (history || []).map((m) => ({
-      role: m.role,
-      content: m.content
-    }))
-
-    // 3. Get AI Response
-    if (!groqApiKey) {
-      return NextResponse.json({ error: "AI generation is not configured" }, { status: 503 })
-    }
+    if (!groqApiKey) return NextResponse.json({ error: "AI generation is not configured" }, { status: 503 })
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -86,16 +83,15 @@ export async function POST(request: NextRequest) {
             content:
               "You are Qalam AI Strategist, a human LinkedIn ghostwriter and content operator. Never sound like ChatGPT. No markdown headings, no bold markers, no generic frameworks, no corporate filler, no em dashes. Use plain spoken English, specific tradeoffs, lived examples, and ready-to-paste posts. If asked for a post, output only the post body unless the user asks for strategy. Avoid: navigate, leverage, foster, transformative, unlock potential, rapidly evolving landscape, future belongs, in conclusion.",
           },
-          ...formattedHistory,
+          ...(history || []).map((m) => ({ role: m.role, content: m.content })),
+          { role: "user", content: cleanContent },
         ],
         temperature: 0.4,
       }),
     })
 
     const data = await response.json()
-    if (!response.ok) {
-      throw new Error(data?.error?.message || "AI failed to respond")
-    }
+    if (!response.ok) throw new Error(data?.error?.message || "AI failed to respond")
 
     const aiText = String(data.choices?.[0]?.message?.content || "")
       .replace(/[--]/g, "-")
@@ -103,17 +99,27 @@ export async function POST(request: NextRequest) {
       .replace(/^#+\s*/gm, "")
       .trim()
 
-    // 4. Insert AI Message
-    const aiMsg = await supabaseInsert("messages", {
-      conversation_id: conversationId,
-      role: "assistant",
-      content: aiText
-    }, "return=representation")
+    const { error } = await supabase.rpc("append_conversation_turn", {
+      p_user_id: userId,
+      p_conversation_id: conversationId,
+      p_user_message: cleanContent,
+      p_assistant_message: aiText,
+      p_role_context: "general",
+    })
+    if (error) throw new Error(error.message)
 
-    return NextResponse.json({ message: aiMsg?.[0] })
+    const { data: latest } = await supabase
+      .from("conversation_messages")
+      .select("id, role, content, created_at")
+      .eq("conversation_id", conversationId)
+      .eq("role", "assistant")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<DbMessage>()
+
+    return NextResponse.json({ message: latest || { role: "assistant", content: aiText, created_at: new Date().toISOString() } })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    if (message === "auth_required") return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: message === "auth_required" ? "Please sign in again." : message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 }

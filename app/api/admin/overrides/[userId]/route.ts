@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAdminRequest } from "@/lib/server/workspace"
+import { auth } from "@clerk/nextjs/server"
 import { supabaseDelete, supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
+const requireAdmin = async () => {
+  const { userId, sessionClaims } = await auth()
+  if (!userId) throw new Error("Unauthorized")
+  const claims = sessionClaims as { metadata?: { admin?: boolean }; email?: string }
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())
+  if (!claims?.metadata?.admin && !adminEmails.includes(String(claims?.email || "").toLowerCase())) throw new Error("Forbidden")
+  return { email: String(claims?.email || ""), userId }
+}
 
 const writeAudit = (adminEmail: string, targetEmail: string, action: string, oldValue: unknown, newValue: unknown) =>
   supabaseInsert("admin_audit_log", {
@@ -18,7 +26,7 @@ type Params = { params: Promise<{ userId: string }> }
 
 export async function GET(request: NextRequest, context: Params) {
   try {
-    await requireAdminRequest(request)
+    await requireAdmin()
   } catch {
     return notFound()
   }
@@ -31,7 +39,7 @@ export async function GET(request: NextRequest, context: Params) {
 export async function DELETE(request: NextRequest, context: Params) {
   let admin
   try {
-    admin = await requireAdminRequest(request)
+    admin = await requireAdmin()
   } catch {
     return notFound()
   }

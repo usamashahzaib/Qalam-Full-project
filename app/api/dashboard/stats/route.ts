@@ -1,65 +1,93 @@
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { NextResponse } from "next/server"
+import { requireAuth } from "@/lib/server/clerk-client"
+import { createClient } from "@supabase/supabase-js"
+import { PLAN_USAGE_LIMITS, type PlanName } from "@/lib/server/plan-limits"
 
-type PostCount = { status: string; count: string }
-type RecentEvent = { event_type: string; recorded_at: string }
-type RecentJob = { type: string; status: string; created_at: string }
-type ApprovalPending = { id: string }
+type PostRow = {
+  id: string
+  title: string | null
+  content: string | null
+  status: string
+  engagement_score: number | null
+  topic: string | null
+  role_profile: string | null
+  created_at: string | null
+  updated_at: string | null
+}
 
-export async function GET(request: NextRequest) {
+type UsageRow = {
+  plan: string
+  ai_drafts_used: number
+  carousels_used: number
+}
+
+const normalizePlan = (plan?: string): PlanName => {
+  const value = String(plan || "free").toLowerCase()
+  return value === "solo" || value === "pro" || value === "agency" ? value : "free"
+}
+
+const timeAgo = (iso?: string | null) => {
+  const diff = Date.now() - new Date(iso || Date.now()).getTime()
+  const minutes = Math.max(1, Math.floor(diff / 60000))
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? "" : "s"} ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"} ago`
+  const days = Math.floor(hours / 24)
+  return `${days} day${days === 1 ? "" : "s"} ago`
+}
+
+export async function GET() {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    )
 
-    // Run all DB queries in parallel
-    const [postRows, eventRows, jobRows, approvalRows] = await Promise.all([
-      // Post counts by status
-      supabaseSelect<PostCount>(
-        "posts",
-        `workspace_id=eq.${workspaceId}&select=status`
-      ),
-      // Recent events (last 30 days)
-      supabaseSelect<RecentEvent>(
-        "analytics_events",
-        `workspace_id=eq.${workspaceId}&order=recorded_at.desc&limit=50&select=event_type,recorded_at`
-      ),
-      // Recent jobs (last 10)
-      supabaseSelect<RecentJob>(
-        "jobs",
-        `workspace_id=eq.${workspaceId}&order=created_at.desc&limit=10&select=type,status,created_at`
-      ),
-      // Pending approvals count
-      supabaseSelect<ApprovalPending>(
-        "posts",
-        `workspace_id=eq.${workspaceId}&status=eq.pending_approval&select=id`
-      ),
+    const [{ data: posts, error: postsError }, { data: usage }, { data: carousels }] = await Promise.all([
+      supabase.from("posts").select("id,title,content,status,engagement_score,topic,role_profile,created_at,updated_at").eq("user_id", userId).order("created_at", { ascending: false }),
+      supabase.from("plan_usage").select("plan,ai_drafts_used,carousels_used").eq("user_id", userId).maybeSingle(),
+      supabase.from("carousel_projects").select("id,title,topic,created_at").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
     ])
 
-    // Aggregate post counts
-    const postsByStatus: Record<string, number> = {}
-    for (const row of (postRows || [])) {
-      postsByStatus[row.status] = (postsByStatus[row.status] || 0) + 1
-    }
+    if (postsError) return NextResponse.json({ error: "Failed to load dashboard stats" }, { status: 500 })
 
-    const stats = {
-      posts: {
-        total: postRows?.length || 0,
-        draft: postsByStatus["draft"] || 0,
-        scheduled: postsByStatus["scheduled"] || 0,
-        published: postsByStatus["published"] || 0,
-        pending_approval: postsByStatus["pending_approval"] || 0,
-        failed: postsByStatus["failed"] || 0,
+    const rows = (posts || []) as PostRow[]
+    const total = rows.length
+    const drafts = rows.filter((p) => p.status === "draft").length
+    const published = rows.filter((p) => p.status === "published").length
+    const scores = rows.map((p) => p.engagement_score).filter((score): score is number => typeof score === "number")
+    const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
+    const plan = normalizePlan((usage as UsageRow | null)?.plan)
+    const limits = PLAN_USAGE_LIMITS[plan]
+    const recentPosts = rows.slice(0, 5)
+    const postActivity = recentPosts.map((post) => ({
+      id: `post-${post.id}`,
+      label: `Generated post about ${post.topic || post.title || "Untitled"}`,
+      time: timeAgo(post.created_at || post.updated_at),
+    }))
+    const carouselActivity = (carousels || []).map((item) => ({
+      id: `carousel-${item.id}`,
+      label: `Created carousel about ${item.topic || item.title || "Untitled"}`,
+      time: timeAgo(item.created_at),
+    }))
+
+    return NextResponse.json({
+      total,
+      drafts,
+      published,
+      avgScore,
+      recentPosts,
+      usage: {
+        plan,
+        drafts: { used: Number((usage as UsageRow | null)?.ai_drafts_used || 0), total: limits.ai_drafts },
+        carousels: { used: Number((usage as UsageRow | null)?.carousels_used || 0), total: limits.carousels },
       },
-      pendingApprovals: approvalRows?.length || 0,
-      recentEvents: (eventRows || []).slice(0, 20),
-      recentJobs: jobRows || [],
-      lastUpdated: new Date().toISOString(),
-    }
-
-    return NextResponse.json({ stats })
+      activity: [...postActivity, ...carouselActivity].slice(0, 8),
+    })
   } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    const message = (error as Error).message || "Failed to load dashboard"
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
   }
 }

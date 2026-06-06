@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -13,6 +13,7 @@ type AnalyticsEvent = {
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") || 100), 500)
     const query = `workspace_id=eq.${workspaceId}&select=*&order=recorded_at.desc&limit=${limit}`
@@ -29,12 +30,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ events })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth()
     const body = (await request.json()) as {
       id?: string
       workspaceKey?: string
@@ -53,6 +55,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ saved: true, event: rows?.[0] || null })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: message === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 }

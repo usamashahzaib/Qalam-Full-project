@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { resolveWorkspaceId, getClerkAuthContext } from "@/lib/server/workspace"
-import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { requireAuth } from "@/lib/server/clerk-client"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
-type ConversationRow = {
-  id: string
-  workspace_id: string
-  user_id: string
-  title: string
-  updated_at: string
-}
-
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
-    const conversations = await supabaseSelect<ConversationRow>("conversations", `workspace_id=eq.${workspaceId}&order=updated_at.desc`)
-    return NextResponse.json({ conversations: conversations || [] })
+    const userId = await requireAuth()
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id, title, updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+    if (error) throw new Error(error.message)
+    return NextResponse.json({ conversations: data || [] })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
@@ -23,25 +20,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
-
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
     const body = await request.json()
-    const title = body.title || "New Conversation"
-
-    const ctx = await getClerkAuthContext()
-    const dbUserId = ctx.supabaseUserId
-
-    const conv = await supabaseInsert("conversations", {
-      workspace_id: workspaceId,
-      user_id: dbUserId,
-      title
-    }, "return=representation")
-
-    return NextResponse.json({ conversation: conv?.[0] })
+    const title = String(body.title || "New Conversation").trim() || "New Conversation"
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("conversations")
+      .insert({ user_id: userId, title })
+      .select("id, title, updated_at")
+      .single()
+    if (error) throw new Error(error.message)
+    return NextResponse.json({ conversation: data })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
@@ -49,7 +38,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
     const body = await request.json()
     const conversationId = String(body.conversationId || "")
     const title = String(body.title || "").trim()
@@ -58,16 +47,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Missing conversationId or title" }, { status: 400 })
     }
 
-    const existing = await supabaseSelect<ConversationRow>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
-    if (!existing?.length) {
-      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
-    }
-
-    const rows = await supabasePatch("conversations", `id=eq.${conversationId}`, {
-      title,
-      updated_at: new Date().toISOString(),
-    })
-    return NextResponse.json({ conversation: rows?.[0] || null })
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("conversations")
+      .update({ title, updated_at: new Date().toISOString() })
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+      .select("id, title, updated_at")
+      .single()
+    if (error) throw new Error(error.message)
+    return NextResponse.json({ conversation: data })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
@@ -75,20 +64,18 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
     const conversationId = request.nextUrl.searchParams.get("conversationId")
+    if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 
-    if (!conversationId) {
-      return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
-    }
+    const supabase = createServiceClient()
+    const { error } = await supabase
+      .from("conversations")
+      .delete()
+      .eq("id", conversationId)
+      .eq("user_id", userId)
+    if (error) throw new Error(error.message)
 
-    const existing = await supabaseSelect<ConversationRow>("conversations", `id=eq.${conversationId}&workspace_id=eq.${workspaceId}&limit=1`)
-    if (!existing?.length) {
-      return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
-    }
-
-    await supabaseDelete("messages", `conversation_id=eq.${conversationId}`)
-    await supabaseDelete("conversations", `id=eq.${conversationId}`)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

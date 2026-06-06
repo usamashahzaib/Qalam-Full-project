@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
@@ -10,6 +10,7 @@ type DbApproval = { id: string; post_id: string; reviewer_id: string | null; sta
 /** GET /api/approvals - list all posts pending approval in the workspace */
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
 
     const pending = await supabaseSelect<DbPost>(
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
 
     // ── Role check: must be client_reviewer or above ──────────────────────

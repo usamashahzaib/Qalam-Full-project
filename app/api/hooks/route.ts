@@ -1,11 +1,10 @@
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { NextResponse } from "next/server"
 import { callAi } from "@/lib/server/ai-router"
 import { buildRoleAwareSystemPrompt } from "@/lib/prompts/role-aware-system"
 
 export async function POST(request: Request) {
-  const { userId } = await auth()
-  if (!userId) return NextResponse.json({ error: "auth_required" }, { status: 401 })
+  const userId = await requireAuth()
 
   const body = await request.json()
   const topic = String(body.topic || body.content || "").trim()

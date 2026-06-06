@@ -29,15 +29,6 @@ const nextConfig: NextConfig = {
   compress: true,
   pageExtensions: ["ts", "tsx"],
   poweredByHeader: false,
-  async redirects() {
-    return [
-      {
-        source: '/write',
-        destination: '/writer',
-        permanent: true,
-      },
-    ]
-  },
   async headers() {
     return [
       {

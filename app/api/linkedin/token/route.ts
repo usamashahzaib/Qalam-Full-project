@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { deleteLinkedInPublishingAccount, deleteLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 export async function DELETE(request: NextRequest) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: "auth_required" }, { status: 401 })
-    }
+    const userId = await requireAuth()
 
     const ctx = await getClerkAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
@@ -19,6 +16,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ disconnected: true })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }

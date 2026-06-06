@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server"
-import { auth } from "@clerk/nextjs/server"
-import { getClerkAuthContext } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
-export type WorkspaceRole = "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer"
+export type WorkspaceRole = "owner" | "admin" | "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer" | "member"
 
 type MembershipRow = {
   role: WorkspaceRole
@@ -11,11 +10,14 @@ type MembershipRow = {
 }
 
 const ROLE_HIERARCHY: WorkspaceRole[] = [
+  "owner",
+  "admin",
   "super_admin",
   "agency_admin",
   "editor",
   "client_reviewer",
   "viewer",
+  "member",
 ]
 
 export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRole): boolean => {
@@ -29,15 +31,13 @@ export const resolveWorkspaceMembership = async (
   request: NextRequest,
   workspaceId: string
 ): Promise<{ userId: string; role: WorkspaceRole }> => {
-  const { userId: clerkUserId } = await auth()
-  if (!clerkUserId) throw new Error("auth_required")
-
-  const ctx = await getClerkAuthContext()
-  const userId = ctx.supabaseUserId
+  const userId = await requireAuth().catch(() => {
+    throw new Error("auth_required")
+  })
 
   const memberships = await supabaseSelect<MembershipRow>(
-    "memberships",
-    `user_id=eq.${userId}&workspace_id=eq.${workspaceId}&limit=1`
+    "workspace_members",
+    `user_id=eq.${encodeURIComponent(userId)}&workspace_id=eq.${encodeURIComponent(workspaceId)}&select=role,workspace_id&limit=1`
   )
 
   if (!memberships?.length) {
@@ -60,7 +60,7 @@ export const requireRole = async (
 }
 
 export const errorToStatus = (msg: string): number => {
-  if (msg === "auth_required") return 401
+  if ((msg === "auth_required" || msg === "Unauthorized")) return 401
   if (msg === "forbidden") return 403
   if (msg === "unauthorized_workspace") return 403
   if (msg === "not_found") return 404

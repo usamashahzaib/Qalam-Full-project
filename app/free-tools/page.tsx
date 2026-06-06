@@ -67,7 +67,7 @@ const TOOLS = [
   {
     icon: MicroscopeIcon,
     title: "Viral Formula Checker",
-    desc: "Paste a post and get a heuristic breakdown of why it worked or where it weakens.",
+    desc: "Paste a post and get AI analysis of viral potential, weaknesses, and a stronger hook.",
     badge: null,
     badgeColor: "",
     href: "/free-tools/viral-checker",

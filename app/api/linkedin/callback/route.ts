@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { fetchJson } from "@/lib/server/supabase-rest"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { ensureWorkspaceForUser, getClerkAuthContext } from "@/lib/server/workspace"
@@ -9,6 +9,8 @@ const getRedirectUri = (request: NextRequest) => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin
   return `${appUrl.replace(/\/$/, "")}/api/linkedin/callback`
 }
+
+const isMissingLinkedInCredential = (value?: string) => !value || /placeholder|your_|changeme|dummy|mock|fake/i.test(value)
 
 async function fetchLinkedInMemberId(accessToken: string): Promise<string | null> {
   try {
@@ -42,25 +44,26 @@ export async function GET(request: NextRequest) {
   if (!code || !state || !storedState || state !== storedState) {
     return NextResponse.redirect(new URL("/settings?linkedin=failed", request.url))
   }
-
-  const { userId } = await auth()
-  if (!userId) {
-    return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
-  }
+  const userId = await requireAuth().catch(() => "")
+  if (!userId) return NextResponse.redirect(new URL("/auth?linkedin=failed", request.url))
+  const stateUserId = Buffer.from(state, "base64").toString("utf8")
+  if (stateUserId !== userId) return NextResponse.redirect(new URL("/settings?linkedin=failed", request.url))
 
   const clientId = process.env.LINKEDIN_CLIENT_ID
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET
-  if (!clientId || !clientSecret) {
+  if (isMissingLinkedInCredential(clientId) || isMissingLinkedInCredential(clientSecret)) {
     return NextResponse.redirect(new URL("/settings?linkedin=failed", request.url))
   }
+  const safeClientId = clientId!
+  const safeClientSecret = clientSecret!
 
   try {
     const redirectUri = getRedirectUri(request)
     const params = new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      client_id: clientId,
-      client_secret: clientSecret,
+      client_id: safeClientId,
+      client_secret: safeClientSecret,
       redirect_uri: redirectUri,
     })
 

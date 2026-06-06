@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabasePatch, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
@@ -35,6 +35,7 @@ const isValidLinkedInUrl = (value: string) =>
 
 export async function GET(request: NextRequest) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const [profileRows, workspaceRows] = await Promise.all([
       supabaseSelect<DbVoiceProfile>("voice_profiles", `workspace_id=eq.${workspaceId}&limit=1`),
@@ -47,12 +48,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ profile })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const body = await request.json()
     const { name, title, industry, tone, goals, samplePosts, linkedinUrl } = body
@@ -93,6 +95,6 @@ export async function PUT(request: NextRequest) {
     })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "auth_required" ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }

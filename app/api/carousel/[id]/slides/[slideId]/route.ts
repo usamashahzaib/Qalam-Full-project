@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
+import { requireAuth } from "@/lib/server/clerk-client"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
@@ -18,6 +18,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
   try {
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const { id: carouselId, slideId } = await context.params
 
