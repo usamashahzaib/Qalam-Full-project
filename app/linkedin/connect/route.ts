@@ -23,7 +23,7 @@ export async function GET() {
     const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/linkedin/callback`;
     const state = Buffer.from(crypto.randomUUID()).toString("base64");
 
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=w_member_social`;
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${encodeURIComponent("openid profile email w_member_social")}`;
 
     return NextResponse.redirect(authUrl);
   } catch (error: any) {

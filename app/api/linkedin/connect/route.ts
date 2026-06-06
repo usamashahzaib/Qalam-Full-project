@@ -18,7 +18,7 @@ export async function GET() {
 
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/linkedin/callback`
   const state = Buffer.from(userId).toString("base64")
-  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=w_member_social`
+  const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&scope=${encodeURIComponent("openid profile email w_member_social")}`
   const response = NextResponse.redirect(authUrl)
   response.cookies.set("linkedin_oauth_state", state, {
     httpOnly: true,

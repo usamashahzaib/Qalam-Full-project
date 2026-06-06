@@ -20,6 +20,7 @@ const securityHeaders = [
       "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://www.linkedin.com https://api.linkedin.com https://*.supabase.co https://*.clerk.accounts.dev https://*.clerk.com",
       "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
