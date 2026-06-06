@@ -41,7 +41,7 @@ Rules:
 - No generic business jargon
 - Specific, actionable content`;
 
-    const result = await callAi({ prompt, json: true, temperature: 0.7, timeout: 20000 });
+    const result = await callAi("Return strict JSON only. No markdown, no explanation.", prompt, { json: true, temperature: 0.7, timeout: 20000 });
     const slides = JSON.parse(result);
 
     const supabase = createClient(
