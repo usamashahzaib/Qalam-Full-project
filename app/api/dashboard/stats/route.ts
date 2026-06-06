@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/clerk-client"
 import { createClient } from "@supabase/supabase-js"
-import { getPlanStatus } from "@/lib/server/plan-limits"
 
 type PostRow = {
   id: string
@@ -21,7 +20,14 @@ type UsageRow = {
   carousels_used: number
 }
 
-const normalizePlan = (plan?: string): PlanName => {
+const PLAN_LIMITS = {
+  free: { ai_drafts: 10, carousels: 2, hooks: 5, analyses: 5 },
+  solo: { ai_drafts: 25, carousels: 5, hooks: 15, analyses: 15 },
+  pro: { ai_drafts: 60, carousels: 15, hooks: 50, analyses: 50 },
+  agency: { ai_drafts: 60, carousels: 50, hooks: 200, analyses: 200 },
+}
+
+const normalizePlan = (plan?: string) => {
   const value = String(plan || "free").toLowerCase()
   return value === "solo" || value === "pro" || value === "agency" ? value : "free"
 }
@@ -60,7 +66,7 @@ export async function GET() {
     const scores = rows.map((p) => p.engagement_score).filter((score): score is number => typeof score === "number")
     const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0
     const plan = normalizePlan((usage as UsageRow | null)?.plan)
-    const limits = PLAN_USAGE_LIMITS[plan]
+    const limits = PLAN_LIMITS[plan as keyof typeof PLAN_LIMITS]
     const recentPosts = rows.slice(0, 5)
     const postActivity = recentPosts.map((post) => ({
       id: `post-${post.id}`,
