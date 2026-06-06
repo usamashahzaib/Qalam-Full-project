@@ -27,14 +27,14 @@ const parseSlides = (raw: string, slideCount: number) => {
 export async function GET() {
   try {
     const userId = await requireAuth()
-    const { allowed, current, limit } = await checkPlanLimit(userId, "carousels");
-if (!allowed) {
-  return NextResponse.json(
-    { error: "Carousel limit reached", current, limit, upgrade_url: "/pricing" },
-    { status: 403 }
-  );
-}
-return NextResponse.json({ allowed: true, current, limit });
+    const { allowed, current, limit } = await checkPlanLimit(userId, "carousels")
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Carousel limit reached", current, limit, upgrade_url: "/pricing" },
+        { status: 403 }
+      )
+    }
+    return NextResponse.json({ allowed: true, current, limit })
   } catch (error) {
     const message = (error as Error).message || "Failed to load carousel usage"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     if (!safeTopic) return NextResponse.json({ error: "Topic is required" }, { status: 400 })
 
-    const { allowed, current, limit, remaining, plan } = await checkPlanLimit(userId, "carousels")
+    const { allowed, current, limit } = await checkPlanLimit(userId, "carousels")
     if (!allowed) return NextResponse.json({ error: "Carousel limit reached", current, limit }, { status: 403 })
 
     const prompt = `Create a ${count}-slide LinkedIn carousel about "${safeTopic}" for a ${safeRole.replace("_", " ")} audience.
@@ -96,7 +96,7 @@ Rules:
       return NextResponse.json({ error: "Failed to save carousel project" }, { status: 500 })
     }
 
-    return NextResponse.json({ projectId, slides, usage: { allowed, current, limit, remaining, plan } })
+    return NextResponse.json({ projectId, slides, usage: { allowed, current, limit } })
   } catch (error) {
     const message = (error as Error).message || "Failed to generate carousel"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
