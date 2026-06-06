@@ -1,235 +1,133 @@
-import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
-import { groqApiKey } from "@/lib/server/env"
-import { sanitizeGeneratedText } from "@/lib/content-guard"
-import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
+import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/server/clerk-client";
+import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits";
+import { callAi } from "@/lib/server/ai-router";
+import { createClient } from "@supabase/supabase-js";
 
-type CarouselProjectRow = {
-  id: string
-  workspace_id: string
-  post_id: string | null
-  theme: string | null
-  created_at: string
-  updated_at: string
-}
+type Slide = {
+  slide_number: number;
+  title: string;
+  content: string;
+  visual: string;
+};
 
-type CarouselSlideDraft = {
-  title?: string
-  body?: string
-  content?: string
-  visualDirection?: string
-  visual?: string
-}
-
-type CarouselScore = {
-  hookSlideScore: number
-  flowScore: number
-  ctaSlideScore: number
-  overallScore: number
-  notes: string[]
-}
-
-type GroqResponse = {
-  choices?: Array<{
-    message?: {
-      content?: string
-    }
-  }>
-}
-
-const themeFrom = (title = "", content = "", theme = "") => {
-  if (theme.trim()) return theme.trim()
-  const source = `${title} ${content}`.toLowerCase()
-  if (/salary|compensation|pay|benefit/.test(source)) return "Compensation Strategy"
-  if (/hire|recruit|talent|candidate/.test(source)) return "Talent Acquisition"
-  if (/manager|leadership|team/.test(source)) return "Manager Effectiveness"
-  if (/remote|hybrid/.test(source)) return "Remote Work"
-  if (/culture|safety|toxic/.test(source)) return "People Culture"
-  return title.trim().slice(0, 48) || "LinkedIn Carousel"
-}
-
-const fallbackSlides = (content: string): CarouselSlideDraft[] => {
-  const clean = sanitizeGeneratedText(content)
-  return [
-    { title: "Stop the scroll", body: clean.slice(0, 120) || "Your carousel needs one sharp tension, not a broad topic.", visualDirection: "Bold text-only cover with high contrast" },
-    { title: "The hidden issue", body: "Most drafts explain too much before they create urgency.", visualDirection: "Warning icon with simple split layout" },
-    { title: "Why it fails", body: "Readers leave when slides feel like paragraphs instead of decisions.", visualDirection: "Drop-off chart or broken flow line" },
-    { title: "Use this frame", body: "Hook, problem, framework, proof, then one clear action.", visualDirection: "Five-step horizontal framework" },
-    { title: "Make it saveable", body: "Each slide should teach one idea someone can repeat later.", visualDirection: "Bookmark icon with checklist" },
-    { title: "Save this", body: "Save this before writing your next carousel.", visualDirection: "CTA slide with save icon" },
-  ]
-}
-
-const scoreText = (value: string, fallback = 70) => {
-  const words = value.trim().split(/\s+/).filter(Boolean).length
-  if (!words) return fallback - 20
-  if (words <= 25) return 92
-  if (words <= 35) return 78
-  return 62
-}
-
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)))
-
-const slideBody = (slide: CarouselSlideDraft) => sanitizeGeneratedText(slide.body || slide.content || "")
-
-const normalizeSlides = (slides: CarouselSlideDraft[]) => slides.slice(0, 7).map((slide, index) => ({
-  title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`).split(/\s+/).slice(0, 5).join(" "),
-  body: slideBody(slide),
-  content: slideBody(slide),
-  visualDirection: sanitizeGeneratedText(slide.visualDirection || slide.visual || "Simple supporting visual"),
-}))
-
-const scoreCarousel = (slides: ReturnType<typeof normalizeSlides>): CarouselScore => {
-  const first = slides[0]
-  const last = slides[slides.length - 1]
-  const notes: string[] = []
-  const hookSignals = /stop|why|mistake|problem|truth|never|before|hidden|most|nobody|wrong/i.test(`${first?.title} ${first?.body}`) ? 18 : 0
-  const ctaSignals = /save|follow|comment|dm|share|try|use|reply/i.test(`${last?.title} ${last?.body}`) ? 18 : 0
-  const hookSlideScore = clampScore(scoreText(first?.body || "", 68) + hookSignals - (slides.length < 5 ? 10 : 0))
-  const ctaSlideScore = clampScore(scoreText(last?.body || "", 68) + ctaSignals)
-  const flowScore = clampScore(72 + Math.min(slides.length, 7) * 3 + (slides.every((slide) => slide.visualDirection) ? 8 : 0))
-  const overallScore = clampScore((hookSlideScore + flowScore + ctaSlideScore) / 3)
-  if (hookSlideScore < 85) notes.push("Slide 1 needs a sharper scroll-stopper.")
-  if (flowScore < 85) notes.push("Story flow needs clearer problem, solution, proof progression.")
-  if (ctaSlideScore < 85) notes.push("Last slide needs a clearer action.")
-  return { hookSlideScore, flowScore, ctaSlideScore, overallScore, notes }
-}
-
-const parseSlides = (data: GroqResponse, content: string) => {
+export async function GET() {
   try {
-    const text = data.choices?.[0]?.message?.content || "[]"
-    const jsonMatch = text.match(/\[[\s\S]*\]/)
-    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : text) as unknown
-    return Array.isArray(parsed) ? normalizeSlides(parsed as CarouselSlideDraft[]) : normalizeSlides(fallbackSlides(content))
-  } catch {
-    return normalizeSlides(fallbackSlides(content))
+    const userId = await requireAuth();
+    const status = await getPlanStatus(userId);
+    return NextResponse.json({
+      allowed: true,
+      current: status.used.carousels,
+      limit: status.limits.carousels,
+      remaining: Math.max(0, status.limits.carousels - status.used.carousels),
+      plan: status.plan,
+    });
+  } catch (error) {
+    const message = (error as Error).message || "Failed to load carousel usage";
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 });
   }
 }
 
-const carouselPrompt = (topic: string) => `Create a 5-7 slide LinkedIn carousel outline on: ${topic}.
-Each slide must have:
-- Slide title (max 5 words)
-- Slide body (max 25 words, punchy, scannable)
-- Visual direction (what image/chart/icon would support this slide)
+export async function POST(req: NextRequest) {
+  try {
+    const userId = await requireAuth();
+    const { topic, role = "founder", slideCount = 5 } = await req.json();
+
+    if (!topic || topic.trim().length < 3) {
+      return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 });
+    }
+
+    const safeSlideCount = Math.min(10, Math.max(5, Math.trunc(Number(slideCount) || 5)));
+
+    const { allowed, current, limit } = await checkPlanLimit(userId, "carousels");
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Carousel limit reached", current, limit, upgrade_url: "/pricing" },
+        { status: 403 }
+      );
+    }
+
+    const prompt = `Create a ${safeSlideCount}-slide LinkedIn carousel about "${topic}" for a ${role.replace("_", " ")} audience.
+
+Each slide should have:
+- A clear title (max 5 words)
+- Concise content (max 30 words)
+- A visual description for the designer
+
+FORMAT (JSON array):
+[
+  {"slide_number": 1, "title": "...", "content": "...", "visual": "..."},
+  ...
+]
 
 Rules:
-- Slide 1: Hook only (the scroll-stopper, no context)
-- Slide 2-3: Problem or insight
-- Slide 4-5: Solution or framework
-- Slide 6-7: Proof or result
-- Last slide: CTA only (follow, comment, save, DM)
+- Slide 1 is the hook
+- Slide ${safeSlideCount} is the CTA
+- Middle slides build the argument
+- No generic business jargon
+- Specific, actionable content`;
 
-Total word count across all slides: 150-200 words max.
-Each slide should be standalone-readable.`
+    const result = await callAi("Return strict JSON only. No markdown, no explanation.", prompt, { json: true, temperature: 0.7, timeout: 20000 });
 
-const generateSlides = async (topic: string, theme: string, currentSlides?: ReturnType<typeof normalizeSlides>, score?: CarouselScore) => {
-  const repairContext = currentSlides && score
-    ? `\n\nCurrent slides scored ${score.overallScore}/100. Improve only weak areas. Weak notes: ${score.notes.join(" ")}\n\nCurrent slides:\n${JSON.stringify(currentSlides)}`
-    : ""
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${groqApiKey}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.1-8b-instant",
-      messages: [
-        {
-          role: "system",
-          content: `Return strict JSON only. Output an array of 5-7 slides with title, body, and visualDirection. Theme: ${theme}. No markdown. No em dashes.`,
-        },
-        { role: "user", content: `${carouselPrompt(topic)}${repairContext}` },
-      ],
-      temperature: currentSlides ? 0.75 : 0.55,
-    }),
-  })
-  return parseSlides((await response.json()) as GroqResponse, topic)
-}
-
-/** GET /api/carousel - list all carousel projects in the workspace */
-export async function GET(request: NextRequest) {
-  try {
-    const workspaceId = await resolveWorkspaceId(request)
-    const rows = await supabaseSelect<CarouselProjectRow>(
-      "carousel_projects",
-      `workspace_id=eq.${workspaceId}&order=created_at.desc&limit=50`
-    )
-    return NextResponse.json({ carousels: rows || [] })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const userId = await requireAuth()
-    const planCheck = await requirePlan(request, "Pro")
-    if (!planCheck.ok) return planCheck.response
-    const { workspaceId, limits, plan } = planCheck
-
-    const rate = await checkRateLimit(userId, plan, getClientIp(request))
-    if (!rate.allowed) {
-      return NextResponse.json(
-        { error: "rate_limit_exceeded", message: "Rate limit exceeded. Please wait a moment.", ...rate },
-        { status: 429 }
-      )
+    // VALIDATION - Agar AI garbage de toh crash nahi hoga
+    let slides: Slide[];
+    try {
+      const parsed = JSON.parse(result);
+      const rawSlides = Array.isArray(parsed) ? parsed : parsed.slides || [];
+      if (!Array.isArray(rawSlides) || rawSlides.length === 0) throw new Error("No slides");
+      slides = rawSlides.slice(0, safeSlideCount).map((s: any, i: number) => ({
+        slide_number: Number(s.slide_number || i + 1),
+        title: String(s.title || `Slide ${i + 1}`).trim().slice(0, 80),
+        content: String(s.content || "").trim().slice(0, 260),
+        visual: String(s.visual || "").trim().slice(0, 320),
+      }));
+    } catch (parseError) {
+      console.error("AI parse error:", parseError, "Raw:", result);
+      return NextResponse.json({ error: "AI returned invalid format. Please try again." }, { status: 502 });
     }
 
-    // Monthly carousel generation limit
-    if (limits.carouselGenerationsPerMonth !== "unlimited") {
-      const used = await getMonthlyCount("carousel_projects", workspaceId)
-      const limitErr = enforceMonthlyLimit(used, limits.carouselGenerationsPerMonth, "Carousel generation")
-      if (limitErr) return limitErr
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
+    );
+
+    const { data: project, error: projError } = await supabase
+      .from("carousel_projects")
+      .insert({ user_id: userId, title: topic, role_profile: role })
+      .select()
+      .single();
+
+    if (projError || !project) {
+      console.error("Project save error:", projError);
+      return NextResponse.json({ error: "Failed to save project" }, { status: 500 });
     }
 
-    const body = await request.json()
-    const { postId, content, title, theme } = body as { postId?: string | null; content?: string; title?: string; theme?: string }
+    const { error: slidesError } = await supabase.from("carousel_slides").insert(
+      slides.map((s) => ({
+        project_id: project.id,
+        slide_number: s.slide_number,
+        title: s.title,
+        content: s.content,
+        image_prompt: s.visual,
+      }))
+    );
 
-    if (!content) {
-      return NextResponse.json({ error: "Missing content" }, { status: 400 })
-    }
-    if (!groqApiKey) {
-      return NextResponse.json({ error: "AI generation is not configured" }, { status: 503 })
-    }
-
-    const topic = content.trim()
-    const resolvedTheme = themeFrom(title, content, theme)
-    let slidesData = await generateSlides(topic, resolvedTheme)
-    if (slidesData.length < 5) slidesData = normalizeSlides(fallbackSlides(content))
-    let carouselScore = scoreCarousel(slidesData)
-    for (let attempt = 0; carouselScore.overallScore < 85 && attempt < 2; attempt += 1) {
-      slidesData = await generateSlides(topic, resolvedTheme, slidesData, carouselScore)
-      if (slidesData.length < 5) slidesData = normalizeSlides(fallbackSlides(content))
-      carouselScore = scoreCarousel(slidesData)
-    }
-    if (carouselScore.overallScore < 85) {
-      return NextResponse.json({ error: "Carousel score below quality threshold", score: carouselScore }, { status: 422 })
+    if (slidesError) {
+      console.error("Slides save error:", slidesError);
+      return NextResponse.json({ error: "Project saved but slides failed to save" }, { status: 500 });
     }
 
-    const supabase = createServiceClient()
-    const { data: projectId, error } = await supabase.rpc("create_carousel_project", {
-      p_user_id: userId,
-      p_workspace_id: workspaceId,
-      p_title: title || resolvedTheme,
-      p_role: resolvedTheme,
-      p_slides: slidesData.map((slide, index) => ({
-        slide_number: index + 1,
-        title: sanitizeGeneratedText(slide.title || `Slide ${index + 1}`),
-        content: sanitizeGeneratedText(slide.body || slide.content || ""),
-        visual: sanitizeGeneratedText(slide.visualDirection || ""),
-      })),
-    })
-    if (error || !projectId) throw new Error(error?.message || "carousel_project_create_failed")
-
-    return NextResponse.json({ projectId, slides: slidesData, theme: resolvedTheme, score: carouselScore })
-  } catch (error) {
-    const message = (error as Error).message || "server_error"
-    if ((message === "auth_required" || message === "Unauthorized")) return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({
+      projectId: project.id,
+      slides,
+      usage: { allowed, current, limit, remaining: Math.max(0, limit - current), plan: "carousel" },
+    });
+  } catch (error: any) {
+    console.error("Carousel generate error:", error);
+    if (error.message === "Unauthorized") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    return NextResponse.json({ error: error.message || "Failed to generate carousel" }, { status: 500 });
   }
 }

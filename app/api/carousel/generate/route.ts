@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/clerk-client"
-import { checkPlanLimit, getPlanLimitStatus } from "@/lib/server/plan-limits"
+import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits"
 import { callAi } from "@/lib/server/ai-router"
 import { createClient } from "@supabase/supabase-js"
 
@@ -27,7 +27,14 @@ const parseSlides = (raw: string, slideCount: number) => {
 export async function GET() {
   try {
     const userId = await requireAuth()
-    return NextResponse.json(await getPlanLimitStatus(userId, "carousels"))
+    const status = await getPlanStatus(userId)
+    return NextResponse.json({
+      allowed: true,
+      current: status.used.carousels,
+      limit: status.limits.carousels,
+      remaining: Math.max(0, status.limits.carousels - status.used.carousels),
+      plan: status.plan,
+    })
   } catch (error) {
     const message = (error as Error).message || "Failed to load carousel usage"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
