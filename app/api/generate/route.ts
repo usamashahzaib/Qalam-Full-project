@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/server/clerk-client"
 import { getCurrentWorkspace } from "@/lib/server/workspace"
 import { generatePost, scoreContent, rewriteWithFeedback } from "@/lib/server/content-generator"
 import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
-import { checkPlanLimit, getPlanLimitStatus } from "@/lib/server/plan-limits"
+import { checkPlanLimit } from "@/lib/server/plan-limits"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type GenerateBody = {
