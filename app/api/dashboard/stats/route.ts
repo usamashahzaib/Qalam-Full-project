@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/clerk-client"
 import { createClient } from "@supabase/supabase-js"
-import { PLAN_USAGE_LIMITS, type PlanName } from "@/lib/server/plan-limits"
+import { getPlanStatus } from "@/lib/server/plan-limits"
 
 type PostRow = {
   id: string
