@@ -27,7 +27,14 @@ const parseSlides = (raw: string, slideCount: number) => {
 export async function GET() {
   try {
     const userId = await requireAuth()
-    return NextResponse.json(await getPlanLimitStatus(userId, "carousels"))
+    const { allowed, current, limit } = await checkPlanLimit(userId, "carousels");
+if (!allowed) {
+  return NextResponse.json(
+    { error: "Carousel limit reached", current, limit, upgrade_url: "/pricing" },
+    { status: 403 }
+  );
+}
+return NextResponse.json({ allowed: true, current, limit });
   } catch (error) {
     const message = (error as Error).message || "Failed to load carousel usage"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
