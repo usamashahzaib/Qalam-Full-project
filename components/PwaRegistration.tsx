@@ -9,6 +9,7 @@ export function PwaRegistration() {
         navigator.serviceWorker
           .register("/sw.js")
           .then((registration) => {
+            registration.update().catch(() => undefined)
             // Register the Background Sync tag so the service worker's
             // sync event handler ('qalam-replay-queue') actually fires
             // when the user comes back online after an offline mutation.
