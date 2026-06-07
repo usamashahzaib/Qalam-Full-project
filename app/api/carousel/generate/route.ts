@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { requireAuth } from "@/lib/server/workspace"
 import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits"
 import { callAi } from "@/lib/server/ai-router"
 import { createClient } from "@supabase/supabase-js"
@@ -30,9 +30,9 @@ export async function GET() {
     const status = await getPlanStatus(userId)
     return NextResponse.json({
       allowed: true,
-      current: status.used.carousels,
-      limit: status.limits.carousels,
-      remaining: Math.max(0, status.limits.carousels - status.used.carousels),
+      current: status.carousels.used,
+      limit: status.carousels.limit,
+      remaining: status.carousels.remaining,
       plan: status.plan,
     })
   } catch (error) {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { requireAuth } from "@/lib/server/workspace"
 import { createClient } from "@supabase/supabase-js"
 
 type Slide = {

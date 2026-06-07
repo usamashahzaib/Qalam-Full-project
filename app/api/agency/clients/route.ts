@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
-import { getAuthContext } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
   try {
     await requireAuth()
-    const ctx = await getAuthContext()
+    const ctx = await getWorkspaceSessionContext()
     const dbUserId = ctx.supabaseUserId
 
     const memberships = await supabaseSelect<{
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
-    const ctx = await getAuthContext()
+    const ctx = await getWorkspaceSessionContext()
     const dbUserId = ctx.supabaseUserId
 
     const memberships = await supabaseSelect<{

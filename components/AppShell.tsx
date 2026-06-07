@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { signOut, useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import {
@@ -65,9 +65,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { user, logout } = useAuth()
+  const { data: session } = useSession()
   const workspace = useWorkspace()
   const activeClientId = searchParams.get("client")
+  const user = session?.user
+    ? {
+        email: session.user.email || "",
+        fullName: session.user.name || session.user.email || "User",
+        firstName: (session.user.name || session.user.email || "User").split(" ")[0],
+        imageUrl: session.user.image || null,
+        role: "user",
+        linkedinMemberId: null,
+      }
+    : null
 
   const [searchQuery, setSearchQuery] = useState("")
   const [searchFocused, setSearchFocused] = useState(false)
@@ -275,7 +285,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <button onClick={logout} className="w-full cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Sign out</button>
+          <button onClick={() => signOut({ callbackUrl: "/" })} className="w-full cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Sign out</button>
         </div>
       </aside>
 

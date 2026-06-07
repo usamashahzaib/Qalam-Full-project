@@ -1,25 +1,8 @@
 import { useLocation } from 'react-router-dom'
-import { useAuth } from '@/lib/AuthContext'
-
-function parseAdminEmails() {
-  const raw = import.meta.env.VITE_APP_ADMIN_EMAILS
-  if (!raw || typeof raw !== 'string') return []
-  return raw.split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
-}
 
 export default function PageNotFound() {
   const location = useLocation()
   const pageName = location.pathname.substring(1)
-  const { user, authChecked } = useAuth()
-
-  const adminEmails = parseAdminEmails()
-  const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? ''
-  const isAdmin =
-    authChecked &&
-    user &&
-    adminEmails.length > 0 &&
-    email &&
-    adminEmails.includes(email)
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -37,13 +20,6 @@ export default function PageNotFound() {
               not be found.
             </p>
           </div>
-          {isAdmin && (
-            <div className="mt-8 p-4 bg-muted rounded-lg border border-border">
-              <p className="text-sm text-muted-foreground">
-                This page hasn&apos;t been created yet.
-              </p>
-            </div>
-          )}
           <div className="pt-6">
             <button
               type="button"

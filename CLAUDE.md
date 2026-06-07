@@ -19,7 +19,7 @@
 - `app/`
   - marketing pages: landing, pricing, about, blog, docs, contact, legal
   - app routes: `app/(app)/*`
-  - auth routes: `app/(auth)/*`
+  - login route: `app/login/page.tsx`
   - API routes: `app/api/*`
   - SEO routes: `app/robots.ts`, `app/sitemap.ts`, `app/llms.txt/route.ts`
 - `components/`

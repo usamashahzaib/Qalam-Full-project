@@ -124,7 +124,7 @@ const PRICING_PLANS = [
       "Post preview & copy",
     ],
     cta: "Start Free →",
-    href: `${APP_ORIGIN}/auth/sign-up`,
+    href: `${APP_ORIGIN}/login`,
     highlighted: false,
   },
   {
@@ -142,7 +142,7 @@ const PRICING_PLANS = [
       "Priority support",
     ],
     cta: "Start Pro Trial →",
-    href: `${APP_ORIGIN}/auth/sign-up?plan=pro`,
+    href: `${APP_ORIGIN}/login?plan=pro`,
     highlighted: true,
     badge: "Most Popular",
   },
@@ -161,7 +161,7 @@ const PRICING_PLANS = [
       "Dedicated success manager",
     ],
     cta: "Start Team Trial →",
-    href: `${APP_ORIGIN}/auth/sign-up?plan=team`,
+    href: `${APP_ORIGIN}/login?plan=team`,
     highlighted: false,
   },
 ]
@@ -452,7 +452,7 @@ export default function HomePage() {
               >
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <Link
-                    href={`${APP_ORIGIN}/auth/sign-up`}
+                    href={`${APP_ORIGIN}/login`}
                     className="pulse-gold inline-flex items-center gap-2 px-7 py-4 bg-teal text-white font-semibold rounded-xl text-base shadow-[0_4px_24px_rgba(13,74,69,0.35)] hover:bg-teal-600 transition-colors"
                   >
                     Start Writing Free
@@ -687,7 +687,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href={`${APP_ORIGIN}/auth/sign-up`}
+                href={`${APP_ORIGIN}/login`}
                 className="pulse-gold inline-flex items-center gap-2 px-8 py-4 bg-gold text-white font-bold rounded-xl text-lg shadow-[0_8px_32px_rgba(201,135,31,0.45)] hover:bg-gold-600 transition-colors"
               >
                 Start Writing Free

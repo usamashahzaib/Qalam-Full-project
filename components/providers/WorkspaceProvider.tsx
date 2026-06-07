@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 import { cleanErrorMessage } from "@/lib/content-guard"
 import { VALID_PLAN_NAMES, type PlanLimits } from "@/lib/entitlements"
@@ -382,7 +382,7 @@ function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverB
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-  const { user, authChecked, isLoadingAuth } = useAuth()
+  const { data: session, status } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -396,10 +396,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [isResolving, setIsResolving] = useState(true)
 
   useEffect(() => {
-    if (!authChecked || isLoadingAuth) return
-    if (!user?.email) {
+    if (status === "loading") return
+    if (status !== "authenticated" || !session?.user?.email) {
       const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
-      router.replace(`/auth?next=${encodeURIComponent(next)}`)
+      router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkspaceId(null)
       setResolveError("auth_required")
@@ -437,7 +437,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setResolveError((error as Error).message || "Failed to resolve workspace")
       })
       .finally(() => setIsResolving(false))
-  }, [authChecked, clientParam, isLoadingAuth, pathname, router, searchParams, user?.email])
+  }, [clientParam, pathname, router, searchParams, session?.user?.email, status])
 
   if (isResolving && !workspaceId) {
     return (

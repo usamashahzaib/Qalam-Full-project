@@ -125,7 +125,7 @@ export type WorkspacePlanInfo = {
   planExpired?: boolean
 }
 
-export type AuthContext = {
+export type WorkspaceSessionContext = {
   userId: string
   email: string
   fullName: string
@@ -156,7 +156,7 @@ export const requireAdminPage = async () => {
   return { email: email || "", userId }
 }
 
-export const getAuthContext = async (): Promise<AuthContext> => {
+export const getWorkspaceSessionContext = async (): Promise<WorkspaceSessionContext> => {
   const session = await getAuthenticatedSession().catch(() => null)
   const userId = session?.user?.id || await requireAuth().catch(() => {
     throw new Error("auth_required")
@@ -164,7 +164,7 @@ export const getAuthContext = async (): Promise<AuthContext> => {
   const email = session?.user?.email?.trim().toLowerCase()
   if (!email) throw new Error("auth_required")
 
-  const names = toNames(session?.user?.name || session?.user?.firstName || "", email)
+  const names = toNames(session?.user?.name || "", email)
   const supabaseUserId = await ensureSupabaseUser({
     userId,
     email,
@@ -183,7 +183,7 @@ export const getAuthContext = async (): Promise<AuthContext> => {
   }
 }
 
-export const toPublicAuthUser = (ctx: AuthContext) => ({
+export const toPublicAuthUser = (ctx: WorkspaceSessionContext) => ({
   email: ctx.email,
   fullName: ctx.fullName,
   firstName: ctx.firstName,
@@ -226,7 +226,7 @@ export async function getCurrentWorkspace() {
 }
 
 export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
-  const ctx = await getAuthContext()
+  const ctx = await getWorkspaceSessionContext()
   const url = new URL(request.url)
   let requestedWorkspaceId = url.searchParams.get("workspaceKey")
 

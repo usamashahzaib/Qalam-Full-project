@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
-import { resolveWorkspaceId, getAuthContext } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/workspace"
+import { resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseDelete, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 import { createClient } from "@supabase/supabase-js"
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
-    const ctx = await getAuthContext()
+    const ctx = await getWorkspaceSessionContext()
     const authorId = ctx.supabaseUserId
 
     const body = await request.json()

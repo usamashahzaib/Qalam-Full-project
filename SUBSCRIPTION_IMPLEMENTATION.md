@@ -46,7 +46,7 @@ Plans are cumulative - a higher tier includes all features of lower tiers.
 1. Update `organizations.plan` in Supabase (via admin panel or manual SQL).
 2. The `trg_plan_change` trigger auto-writes to `plan_audit_log` and updates `plan_updated_at`.
 3. To force immediate session invalidation (e.g., on downgrade): call `incrementSessionVersion(email)`.
-4. On the next API call, `validateSessionVersion` detects the stale token and returns `401 session_invalidated`. The client should redirect to `/auth`.
+4. On the next API call, `validateSessionVersion` detects the stale token and returns `401 session_invalidated`. The client should redirect to `/login`.
 
 ## Monthly Limit Counting
 

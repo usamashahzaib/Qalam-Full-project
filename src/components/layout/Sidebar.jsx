@@ -5,7 +5,6 @@ import {
   BarChart3, Fingerprint, Users, Settings, X, Radar
 } from 'lucide-react';
 import { useApp } from '@/lib/AppContext';
-import { useAuth } from '@/lib/AuthContext';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
@@ -20,13 +19,12 @@ const navItems = [
 
 export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
-  const { logout } = useAuth();
   const { posts, profile } = useApp();
   const scheduled = posts.filter(p => p.status === 'scheduled').length;
   const drafts = posts.filter(p => p.status === 'draft').length;
 
   const handleSignOut = () => {
-    logout(true);
+    window.location.assign('/');
   };
 
   return (

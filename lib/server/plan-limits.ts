@@ -1,113 +1,114 @@
-import { createClient } from "@supabase/supabase-js";
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
-const PLAN_CONFIG = {
-  free: { ai_drafts: 10, carousels: 2, hooks: 5, analyses: 5 },
-  solo: { ai_drafts: 25, carousels: 5, hooks: 15, analyses: 15 },
-  pro: { ai_drafts: 60, carousels: 15, hooks: 50, analyses: 50 },
-  agency: { ai_drafts: 60, carousels: 50, hooks: 200, analyses: 200 },
-};
+type Feature = "drafts" | "carousels" | "voice" | "research"
+type PlanName = "free" | "pro" | "agency"
 
-export async function checkPlanLimit(
-  userId: string,
-  feature: "ai_drafts" | "carousels" | "hooks" | "analyses"
-) {
-  if (!userId) {
-    return { allowed: false, current: 0, limit: 0, plan: "free" };
-  }
+const LARGE_LIMIT = 999_999
+const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
+  free: { drafts: 10, carousels: 2, voice: 0, research: 0 },
+  pro: { drafts: 60, carousels: 10, voice: 1, research: 5 },
+  agency: { drafts: 300, carousels: 50, voice: 5, research: 25 },
+}
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
+const normalizePlan = (plan?: string | null): PlanName => {
+  const value = String(plan || "free").toLowerCase()
+  if (value.includes("agency")) return "agency"
+  if (value.includes("pro")) return "pro"
+  return "free"
+}
 
-  try {
-    const { data: usageData, error: usageError } = await supabase.rpc("get_or_create_plan_usage", {
-      p_user_id: userId,
-    });
+const monthStart = () => {
+  const date = new Date()
+  date.setUTCDate(1)
+  date.setUTCHours(0, 0, 0, 0)
+  return date.toISOString()
+}
 
-    if (usageError || !usageData) {
-      console.error("Plan usage error:", usageError);
-      return { allowed: false, current: 0, limit: 0, plan: "free" };
-    }
+const nextMonth = () => {
+  const date = new Date()
+  date.setUTCMonth(date.getUTCMonth() + 1, 1)
+  date.setUTCHours(0, 0, 0, 0)
+  return date.toISOString()
+}
 
-    const usage = usageData;
-    const plan = usage.plan || "free";
-    const config = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG];
-    const limit = config?.[feature as keyof typeof config] || 0;
+const countRows = async (table: string, userId: string) => {
+  const supabase = createServiceClient()
+  const { count } = await supabase
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", monthStart())
+  return count || 0
+}
 
-    const { data: result, error: rpcError } = await supabase.rpc("increment_plan_usage", {
-      p_user_id: userId,
-      p_field: feature,
-      p_max_allowed: limit,
-    });
-
-    if (rpcError) {
-      console.error("Increment error:", rpcError);
-      return { allowed: false, current: 0, limit, plan };
-    }
-
-    return {
-      allowed: result?.allowed || false,
-      current: result?.current || 0,
-      limit,
-      remaining: Math.max(0, limit - (result?.current || 0)),
-      plan,
-    };
-  } catch (err) {
-    console.error("checkPlanLimit error:", err);
-    return { allowed: false, current: 0, limit: 0, plan: "free" };
-  }
+const getUser = async (userId: string) => {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from("users")
+    .select("id,plan,billing_status,plan_expires_at,remaining_drafts")
+    .eq("id", userId)
+    .maybeSingle()
+  return data
 }
 
 export async function getPlanStatus(userId: string) {
-  if (!userId) {
-    return {
-      plan: "free",
-      limits: PLAN_CONFIG.free,
-      used: { ai_drafts: 0, carousels: 0, hooks: 0, analyses: 0 },
-    };
+  const user = userId ? await getUser(userId).catch(() => null) : null
+  const expired = Boolean(user?.plan_expires_at && new Date(user.plan_expires_at).getTime() < Date.now())
+  const plan = expired ? "free" : normalizePlan(user?.plan)
+  const config = PLAN_CONFIG[plan]
+  const used = await countRows("posts", userId).catch(() => 0)
+  const carouselsUsed = await countRows("carousel_projects", userId).catch(() => 0)
+
+  return {
+    plan,
+    limit: config.drafts || LARGE_LIMIT,
+    used,
+    remaining: Math.max(0, (config.drafts || LARGE_LIMIT) - used),
+    resetsAt: nextMonth(),
+    carousels: { used: carouselsUsed, limit: config.carousels, remaining: Math.max(0, config.carousels - carouselsUsed) },
   }
+}
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
+export async function checkPlanLimit(userId: string, feature: Feature) {
+  const status = await getPlanStatus(userId)
+  const plan = normalizePlan(status.plan)
+  const limit = PLAN_CONFIG[plan][feature] || 0
+  const current =
+    feature === "drafts" ? status.used :
+    feature === "carousels" ? status.carousels.used :
+    0
+  const remaining = Math.max(0, limit - current)
+  const allowed = remaining > 0
 
+  return {
+    allowed,
+    current,
+    limit,
+    remaining,
+    plan,
+    ...(plan === "free" && feature === "carousels" && !allowed ? { message: "upgrade_required" } : {}),
+  }
+}
+
+export async function decrementDraft(userId: string) {
+  const supabase = createServiceClient()
   try {
-    const { data, error } = await supabase.rpc("get_or_create_plan_usage", {
-      p_user_id: userId,
-    });
-
-    if (error || !data) {
-      console.error("Get plan status error:", error);
-      return {
-        plan: "free",
-        limits: PLAN_CONFIG.free,
-        used: { ai_drafts: 0, carousels: 0, hooks: 0, analyses: 0 },
-      };
+    const { data, error } = await supabase.rpc("decrement_remaining_drafts", { p_user_id: userId })
+    if (!error && data) {
+      const row = Array.isArray(data) ? data[0] : data
+      return { success: Boolean(row?.success ?? true), remaining: Number(row?.remaining ?? 0) }
     }
+  } catch {}
 
-    const plan = data.plan || "free";
-    const config = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG];
+  const user = await getUser(userId).catch(() => null)
+  const remaining = Number(user?.remaining_drafts ?? 0)
+  if (remaining <= 0) return { success: false, remaining: 0 }
 
-    return {
-      plan,
-      limits: config,
-      used: {
-        ai_drafts: data.ai_drafts_used || 0,
-        carousels: data.carousels_used || 0,
-        hooks: data.hooks_used || 0,
-        analyses: data.analyses_used || 0,
-      },
-    };
-  } catch (err) {
-    console.error("getPlanStatus error:", err);
-    return {
-      plan: "free",
-      limits: PLAN_CONFIG.free,
-      used: { ai_drafts: 0, carousels: 0, hooks: 0, analyses: 0 },
-    };
-  }
+  const { error } = await supabase
+    .from("users")
+    .update({ remaining_drafts: remaining - 1, updated_at: new Date().toISOString() })
+    .eq("id", userId)
+    .gt("remaining_drafts", 0)
+
+  return { success: !error, remaining: error ? remaining : remaining - 1 }
 }

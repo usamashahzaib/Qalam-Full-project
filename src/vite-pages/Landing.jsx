@@ -121,10 +121,10 @@ export default function Landing() {
             <a href="#pricing" className="hover:text-foreground transition-colors">Pricing</a>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/login" className="text-[13px] text-muted-foreground hover:text-foreground transition-colors">
               Sign in
             </Link>
-            <Link to="/auth">
+            <Link to="/login">
               <Button size="sm" className="text-xs h-8 bg-primary text-primary-foreground hover:bg-primary/90">
                 Start writing
               </Button>
@@ -157,7 +157,7 @@ export default function Landing() {
             </p>
 
             <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Link to="/auth">
+              <Link to="/login">
                 <Button className="h-11 px-7 text-[13px] bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
                   Start your first draft
                   <ArrowRight className="ml-2 w-3.5 h-3.5" />
@@ -426,7 +426,7 @@ export default function Landing() {
                 </ul>
 
                 <div className="px-6 pb-6">
-                  <Link to="/auth" className="w-full block">
+                  <Link to="/login" className="w-full block">
                     <Button
                       className={`w-full text-[12px] h-9 font-medium ${
                         plan.highlight
@@ -465,7 +465,7 @@ export default function Landing() {
             <p className="text-[13px] text-muted-foreground mb-9 leading-relaxed max-w-sm mx-auto">
               Start writing in under five minutes. No template. No onboarding call. Just your voice and a system to ship it every week.
             </p>
-            <Link to="/auth">
+            <Link to="/login">
               <Button className="h-11 px-8 text-[13px] bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
                 Get started free
                 <ArrowRight className="ml-2 w-3.5 h-3.5" />

@@ -372,7 +372,7 @@ export default function CarouselBuilderPage() {
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
                 Qalam AI builds the slides, you refine and export. Voice-matched, on-brand, every time.
               </p>
-              <Link href="/auth/sign-up" className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+              <Link href="/login" className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
                 {"Start free ->"}
               </Link>
             </div>

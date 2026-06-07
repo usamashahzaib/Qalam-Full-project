@@ -13,8 +13,6 @@ const PRIVATE_ROUTES = [
   "/agency",
   "/competitors",
   "/settings",
-  "/auth",
-  "/auth/sign-up",
   "/login",
   "/signup",
 ]

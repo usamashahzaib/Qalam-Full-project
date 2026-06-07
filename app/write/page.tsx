@@ -1,309 +1,307 @@
 "use client"
 
-import { useMemo, useCallback, useState, useEffect } from "react"
-import { useKeyboardShortcuts } from "@/lib/hooks/useKeyboardShortcuts"
-import { useAutosave } from "@/lib/hooks/useAutosave"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { ChatPanel, type ChatConversation } from "@/components/chat-panel"
 
-const ROLES = [
-  ["founder", "Founder"],
-  ["ceo", "CEO"],
-  ["ai_engineer", "AI Engineer"],
-  ["hr", "HR"],
-  ["sales", "Sales"],
-  ["designer", "Designer"],
-  ["consultant", "Consultant"],
-] as const
-const FORMATS = ["short", "medium", "long"] as const
-
-type Score = {
-  total_score: number
-  hook_score: number
-  authenticity_score: number
-  specificity_score: number
-  engagement_score: number
-  formatting_score: number
-  feedback: string
-  is_good_enough: boolean
-}
-type Generated = {
-  id?: string
+type Format = "short" | "medium" | "long"
+type Tab = "write" | "chat" | "history"
+type GeneratedPost = {
+  id?: string | null
   content: string
   hook: string
   body: string
   cta: string
-  hashtags: string[]
-  score: Score | null
+  hashtags?: string[]
   role: string
-  saved: boolean
 }
-type Usage = { current: number; limit: number | "unlimited"; remaining: number | "unlimited"; plan?: string }
+type HookOption = { hook: string; style: string }
+type Usage = { current: number; limit: number; remaining: number; plan: string }
+type Score = { total_score: number; feedback?: string }
+type HistoryPost = GeneratedPost & { createdAt: string; score?: Score | null }
 
-const splitPost = (content: string) => {
-  const parts = content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean)
-  return {
-    hook: parts[0] || "",
-    cta: parts.length > 1 ? parts[parts.length - 1] : "",
-    body: parts.slice(1, -1).join("\n\n") || parts.slice(1).join("\n\n"),
-  }
+const roles = [
+  ["ai_engineer", "AI Engineer", "ML"],
+  ["ceo", "CEO", "CEO"],
+  ["hr", "HR", "HR"],
+  ["sales", "Sales", "SLS"],
+  ["designer", "Designer", "UX"],
+  ["consultant", "Consultant", "CON"],
+  ["founder", "Founder", "FND"],
+  ["developer", "Developer", "DEV"],
+] as const
+
+const formats: Format[] = ["short", "medium", "long"]
+const historyKey = "qalam-write-history"
+const toast = {
+  success: (message: string) => console.info(message),
+  error: (message: string) => console.error(message),
 }
 
 export default function WritePage() {
   const [topic, setTopic] = useState("")
   const [role, setRole] = useState("founder")
-  const [format, setFormat] = useState<(typeof FORMATS)[number]>("medium")
+  const [format, setFormat] = useState<Format>("medium")
   const [goal, setGoal] = useState("")
-  const [post, setPost] = useState<Generated | null>(null)
+  const [post, setPost] = useState<GeneratedPost | null>(null)
+  const [hooks, setHooks] = useState<HookOption[]>([])
+  const [selectedHook, setSelectedHook] = useState("")
   const [usage, setUsage] = useState<Usage | null>(null)
-  const [editedContent, setEditedContent] = useState("")
-  const [isEditing, setIsEditing] = useState(false)
+  const [score, setScore] = useState<Score | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [status, setStatus] = useState("")
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle")
-
-// Keyboard shortcuts - Ctrl+Enter to generate, Ctrl+S to save edit
-  useKeyboardShortcuts({
-    "ctrl+enter": () => { if (!isGenerating) generate() },
-    "ctrl+s": () => { if (isEditing && post?.id) saveEdit() },
-  })
-
-// Autosave - 3 seconds after user stops typing
-  useAutosave(post?.id || "draft", editedContent, async (content) => {
-    if (!post?.id || !isEditing) return
-    setSaveStatus("saving")
-    try {
-      await fetch("/api/generate", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: post.id, content }),
-      })
-      setSaveStatus("saved")
-      setTimeout(() => setSaveStatus("idle"), 2000)
-    } catch {
-      setSaveStatus("idle")
-    }
-  })
-
-  const displayed = useMemo(() => {
-    if (!post) return { hook: "", body: "", cta: "" }
-    return {
-      hook: post.hook || splitPost(post.content).hook,
-      body: post.body || splitPost(post.content).body,
-      cta: post.cta || splitPost(post.content).cta,
-    }
-  }, [post])
+  const [isImproving, setIsImproving] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>("write")
+  const [hookCards, setHookCards] = useState(true)
+  const [history, setHistory] = useState<HistoryPost[]>([])
+  const [historyRole, setHistoryRole] = useState("all")
+  const [conversationName, setConversationName] = useState("New conversation")
+  const [conversations, setConversations] = useState<ChatConversation[]>([])
 
   const loadUsage = useCallback(async () => {
-    const res = await fetch("/api/generate", { method: "GET" })
+    const res = await fetch("/api/generate")
     const data = await res.json().catch(() => ({}))
-    if (res.ok && data.usage) setUsage(data.usage)
+    if (res.ok) setUsage({ current: data.current, limit: data.limit, remaining: data.remaining, plan: data.plan })
   }, [])
 
   useEffect(() => {
-    void loadUsage()
+    loadUsage().catch(() => toast.error("Could not load usage"))
+    fetch("/api/voice-profile").catch(() => undefined)
+    try {
+      setHistory(JSON.parse(localStorage.getItem(historyKey) || "[]"))
+    } catch {
+      setHistory([])
+    }
   }, [loadUsage])
 
-  const generate = async (nextTopic = topic) => {
-    setIsGenerating(true)
-    setStatus("Qalam is writing... This usually takes 10 seconds.")
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        event.preventDefault()
+        generatePost()
+      }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+        event.preventDefault()
+        saveToLibrary()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  })
+
+  useEffect(() => {
+    if (topic.trim()) setConversationName(topic.trim().slice(0, 30))
+  }, [topic])
+
+  const saveHistory = (nextPost: GeneratedPost, nextScore?: Score | null) => {
+    const item = { ...nextPost, createdAt: new Date().toISOString(), score: nextScore }
+    const next = [item, ...history.filter((post) => post.id !== nextPost.id)].slice(0, 50)
+    setHistory(next)
+    localStorage.setItem(historyKey, JSON.stringify(next))
+  }
+
+  const generatePost = async (hook = selectedHook, improve = false) => {
+    if (topic.trim().length < 3) return toast.error("Topic must be at least 3 characters")
+    improve ? setIsImproving(true) : setIsGenerating(true)
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: nextTopic, role, format, goal, qualityCheck: true }),
+        body: JSON.stringify({
+          topic: hook ? `${topic}\nUse this hook: ${hook}` : topic,
+          role,
+          format,
+          goal,
+          qualityCheck: improve || usage?.plan !== "free",
+        }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || "Generation failed")
       setPost(data.post)
-      setEditedContent(data.post?.content || "")
+      setHooks(data.hooks || [])
+      setScore(data.score || null)
       if (data.usage) setUsage(data.usage)
-      setIsEditing(false)
-      setStatus(data.post?.saved ? "Saved to library." : "Generated. Save failed server-side.")
+      saveHistory(data.post, data.score)
+      setActiveTab("write")
+      toast.success("Post generated")
     } catch (error) {
-      setStatus((error as Error).message)
+      toast.error((error as Error).message)
     } finally {
       setIsGenerating(false)
+      setIsImproving(false)
     }
   }
 
-  const confirmSaved = async () => {
-    if (!post?.id) return setStatus("No saved post id returned.")
-    setIsSaving(true)
-    try {
-      const res = await fetch("/api/generate", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: post.id, confirmOnly: true }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Save confirmation failed")
-      setStatus("Library save confirmed.")
-    } catch (error) {
-      setStatus((error as Error).message)
-    } finally {
-      setIsSaving(false)
-    }
+  const saveToLibrary = async () => {
+    if (!post?.id) return toast.error("No saved post id")
+    const res = await fetch("/api/generate", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: post.id, confirmOnly: true }),
+    })
+    toast[res.ok ? "success" : "error"](res.ok ? "Saved to library" : "Save failed")
   }
 
-  const openEditor = async () => {
-    if (!post?.id) return
-    setIsSaving(true)
-    try {
-      const res = await fetch("/api/generate", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: post.id, confirmOnly: true }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Could not load editor")
-      setEditedContent(String(data.post?.content || post.content))
-      setIsEditing(true)
-      setStatus("Editor loaded.")
-    } catch (error) {
-      setStatus((error as Error).message)
-    } finally {
-      setIsSaving(false)
-    }
+  const copyPost = async () => {
+    if (!post?.content) return
+    await navigator.clipboard.writeText(post.content)
+    toast.success("Copied")
   }
 
-  const saveEdit = async () => {
-    if (!post?.id) return
-    setIsSaving(true)
-    try {
-      const res = await fetch("/api/generate", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: post.id, content: editedContent }),
-      })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || "Update failed")
-      const parts = splitPost(editedContent)
-      setPost({ ...post, content: editedContent, hook: parts.hook, body: parts.body, cta: parts.cta, saved: true })
-      setIsEditing(false)
-      setStatus("Edited post saved.")
-    } catch (error) {
-      setStatus((error as Error).message)
-    } finally {
-      setIsSaving(false)
-    }
-  }
+  const filteredHistory = useMemo(
+    () => history.filter((item) => historyRole === "all" || item.role === historyRole),
+    [history, historyRole]
+  )
 
-  const draftsLeft = usage ? usage.remaining === "unlimited" ? "Unlimited drafts left this month" : `${usage.remaining} drafts left this month` : "Loading draft limit..."
+  const draftsLow = usage?.plan === "free" && usage.remaining < 3
 
   return (
     <main className="min-h-screen bg-zinc-50 px-4 py-6 text-zinc-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-100 pb-4">
-            <div>
-              <h1 className="text-xl font-bold">AI Writer</h1>
-              <p className="mt-1 text-sm text-zinc-500">{draftsLeft}</p>
-            </div>
-            <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-600">{usage?.plan || "plan"}</span>
+      <div className="mx-auto max-w-7xl space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-teal">Qalam Writer</p>
+            <h1 className="text-3xl font-black tracking-tight">Write a sharper LinkedIn post</h1>
           </div>
-
-          <div className="mt-5 space-y-4">
-            <label className="block">
-              <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Topic</span>
-              <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={4} className="mt-1 w-full resize-none rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal" />
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Role</span>
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal">
-                  {ROLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Format</span>
-                <select value={format} onChange={(e) => setFormat(e.target.value as typeof format)} className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal">
-                  {FORMATS.map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
-              </label>
-            </div>
-            <label className="block">
-              <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Goal</span>
-              <input value={goal} onChange={(e) => setGoal(e.target.value)} className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal" />
-            </label>
-            <button onClick={() => generate()} disabled={isGenerating || topic.trim().length < 3} className="w-full rounded-lg bg-zinc-950 px-4 py-3 text-sm font-bold text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50">
-              {isGenerating ? "Generating..." : "Generate"}
-            </button>
+          <div className="flex rounded-xl border border-zinc-200 bg-white p-1">
+            {(["write", "chat", "history"] as Tab[]).map((tab) => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`rounded-lg px-4 py-2 text-sm font-bold capitalize ${activeTab === tab ? "bg-zinc-950 text-white" : "text-zinc-500 hover:text-zinc-950"}`}>
+                {tab}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {status ? <p className="mt-4 rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-700">{status}</p> : null}
-        </section>
+        {draftsLow ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-900">
+            Only {usage.remaining} drafts left. <a href="/pricing" className="underline">Upgrade to Pro</a>
+          </div>
+        ) : null}
 
-        <section className="min-h-[640px] rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-          {!post ? (
-            <div className="flex h-full min-h-[520px] items-center justify-center border border-dashed border-zinc-200">
-              <p className="text-sm text-zinc-400">Generated post appears here.</p>
+        {activeTab === "chat" ? (
+          <ChatPanel
+            topic={topic}
+            conversationName={conversationName}
+            conversations={conversations}
+            onConversationsChange={setConversations}
+          />
+        ) : null}
+
+        {activeTab === "history" ? (
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-black">History</h2>
+              <select value={historyRole} onChange={(event) => setHistoryRole(event.target.value)} className="rounded-lg border border-zinc-200 px-3 py-2 text-sm">
+                <option value="all">All roles</option>
+                {roles.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
             </div>
-          ) : (
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 pb-4">
+            <div className="grid gap-3">
+              {filteredHistory.map((item) => (
+                <button key={`${item.id}-${item.createdAt}`} onClick={() => { setPost(item); setScore(item.score || null); setActiveTab("write") }} className="rounded-xl border border-zinc-200 p-4 text-left hover:bg-zinc-50">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="line-clamp-1 font-bold">{item.hook || item.content}</p>
+                    <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-bold">{item.role}</span>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">{new Date(item.createdAt).toLocaleString()}</p>
+                </button>
+              ))}
+              {!filteredHistory.length ? <p className="rounded-xl border border-dashed border-zinc-200 p-8 text-center text-sm text-zinc-400">No posts yet.</p> : null}
+            </div>
+          </section>
+        ) : null}
+
+        {activeTab === "write" ? (
+          <div className="grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)]">
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Topic</span>
+                  <textarea value={topic} onChange={(event) => setTopic(event.target.value)} rows={5} placeholder="What should this post be about?" className="mt-2 w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-base font-semibold outline-none focus:border-teal" />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Role</span>
+                  <select value={role} onChange={(event) => setRole(event.target.value)} className="mt-2 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm font-semibold outline-none focus:border-teal">
+                    {roles.map(([value, label, icon]) => <option key={value} value={value}>{icon} - {label}</option>)}
+                  </select>
+                </label>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Draft</p>
-                  <h2 className="mt-1 text-lg font-bold">{topic || "Generated post"}</h2>
-                </div>
-                {post.score ? (
-                  <div className="rounded-lg border border-zinc-200 px-4 py-2 text-right">
-                    <p className="text-xs font-semibold text-zinc-500">Quality score</p>
-                    <p className="text-2xl font-bold text-teal">{post.score.total_score}/100</p>
+                  <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Format</span>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {formats.map((item) => (
+                      <button key={item} onClick={() => setFormat(item)} className={`rounded-xl border px-3 py-2 text-sm font-bold capitalize ${format === item ? "border-zinc-950 bg-zinc-950 text-white" : "border-zinc-200 bg-white"}`}>
+                        {item}
+                      </button>
+                    ))}
                   </div>
-                ) : null}
+                </div>
+                <label className="block">
+                  <span className="text-xs font-bold uppercase tracking-wide text-zinc-500">Goal</span>
+                  <input value={goal} onChange={(event) => setGoal(event.target.value)} placeholder="Optional context" className="mt-2 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal" />
+                </label>
+                <div className="rounded-xl bg-zinc-50 px-4 py-3 text-xs font-bold text-zinc-600">
+                  {usage ? `${usage.current} of ${usage.limit} drafts used - ${usage.remaining} remaining` : "Loading usage"}
+                </div>
+                <button onClick={() => generatePost()} disabled={isGenerating} className="w-full rounded-xl bg-teal px-4 py-3 text-sm font-black text-white hover:bg-teal-700 disabled:opacity-50">
+                  {isGenerating ? "Generating..." : "Generate Post"}
+                </button>
               </div>
+            </section>
 
-              <div className="grid gap-4">
-                <article className="rounded-lg border border-zinc-200 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Hook</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{displayed.hook}</p>
-                </article>
-                <article className="rounded-lg border border-zinc-200 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">Body</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{displayed.body}</p>
-                </article>
-                <article className="rounded-lg border border-zinc-200 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-zinc-400">CTA</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{displayed.cta}</p>
-                </article>
-              </div>
-
-              {post.score ? (
-                <div className="grid gap-3 sm:grid-cols-5">
-                  {[
-                    ["Hook", post.score.hook_score],
-                    ["Voice", post.score.authenticity_score],
-                    ["Specificity", post.score.specificity_score],
-                    ["Engagement", post.score.engagement_score],
-                    ["Format", post.score.formatting_score],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg bg-zinc-50 px-3 py-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
-                      <p className="mt-1 text-lg font-bold">{value}</p>
+            <section className="space-y-5">
+              {hookCards ? (
+                <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <h2 className="font-black">Hook options</h2>
+                    <div className="flex gap-2">
+                      <button onClick={() => generatePost()} disabled={isGenerating} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold hover:bg-zinc-50">Generate new hooks</button>
+                      <button onClick={() => setHookCards(false)} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-bold hover:bg-zinc-50">Hide</button>
                     </div>
-                  ))}
-                </div>
-              ) : null}
-
-              {isEditing ? (
-                <div className="rounded-lg border border-zinc-200 p-4">
-                  <textarea value={editedContent} onChange={(e) => setEditedContent(e.target.value)} rows={12} className="w-full resize-y rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6 outline-none focus:border-teal" />
-                  <div className="mt-3 flex justify-end gap-2">
-                    {saveStatus !== "idle" ? <span className="self-center text-xs text-zinc-400">{saveStatus === "saving" ? "Saving..." : "Saved"}</span> : null}
-                    <button onClick={saveEdit} disabled={isSaving} className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isSaving ? "Saving..." : "Save edit"}</button>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {hooks.length ? hooks.map((item) => (
+                      <button key={item.hook} onClick={() => { setSelectedHook(item.hook); generatePost(item.hook) }} className={`rounded-xl border p-4 text-left hover:bg-zinc-50 ${selectedHook === item.hook ? "border-teal" : "border-zinc-200"}`}>
+                        <span className="rounded-full bg-teal/10 px-2 py-1 text-[10px] font-black uppercase text-teal">{item.style}</span>
+                        <p className="mt-3 text-sm font-bold leading-6">{item.hook}</p>
+                      </button>
+                    )) : <p className="rounded-xl border border-dashed border-zinc-200 p-6 text-sm text-zinc-400 md:col-span-2">Hooks appear after generation.</p>}
                   </div>
                 </div>
               ) : null}
 
-              <div className="flex flex-wrap gap-2">
-                <button onClick={confirmSaved} disabled={isSaving || !post.id} className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isSaving ? "Checking..." : "Save to Library"}</button>
-                <button onClick={() => generate(topic)} disabled={isGenerating} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold hover:bg-zinc-50 disabled:opacity-50">Regenerate</button>
-                <button onClick={openEditor} disabled={isSaving || !post.id} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-semibold hover:bg-zinc-50 disabled:opacity-50">Edit</button>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+                {!post ? (
+                  <div className="flex min-h-[380px] items-center justify-center rounded-xl border border-dashed border-zinc-200">
+                    <p className="text-sm text-zinc-400">Your generated post will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <PostSection title="Hook" value={post.hook} />
+                    <PostSection title="Body" value={post.body} />
+                    <PostSection title="CTA" value={post.cta} />
+                    <div className="flex flex-wrap gap-2">
+                      {(post.hashtags || []).map((tag) => <span key={tag} className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold">#{tag.replace(/^#/, "")}</span>)}
+                    </div>
+                    {score ? <div className="rounded-xl border border-zinc-200 p-4 text-sm"><b>Quality score:</b> {score.total_score}/100 {score.feedback ? `- ${score.feedback}` : ""}</div> : null}
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => generatePost(selectedHook, true)} disabled={isImproving || usage?.plan === "free"} className="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{isImproving ? "Improving..." : "Push to 90+"}</button>
+                      <button onClick={copyPost} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-bold">Copy</button>
+                      <button onClick={saveToLibrary} className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-bold">Save to library</button>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-        </section>
+            </section>
+          </div>
+        ) : null}
       </div>
     </main>
+  )
+}
+
+function PostSection({ title, value }: { title: string; value: string }) {
+  return (
+    <article className="rounded-xl border border-zinc-200 p-4">
+      <p className="text-xs font-black uppercase tracking-wide text-zinc-400">{title}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-7">{value}</p>
+    </article>
   )
 }

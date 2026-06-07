@@ -19,7 +19,6 @@
       }
     ],
     "paths": {
-      "@/lib/server/auth-helpers": ["./lib/server/workspace"],
       "@/*": ["./*"]
     }
   },

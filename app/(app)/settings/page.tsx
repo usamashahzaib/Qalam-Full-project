@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
@@ -32,7 +32,16 @@ const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
-  const { user, disconnectLinkedIn, refreshAuth } = useAuth()
+  const { data: session, update } = useSession()
+  const user = session?.user
+    ? {
+        email: session.user.email || "",
+        fullName: session.user.name || session.user.email || "",
+        imageUrl: session.user.image || null,
+        linkedinMemberId: session.user.email || null,
+        linkedinTokenExpiresAt: null,
+      }
+    : null
   const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
   const [profileDraft, setProfileDraft] = useState({
     name: profile.name || user?.fullName || "",
@@ -54,10 +63,10 @@ export default function SettingsPage() {
     if (!linkedin) return
     setLinkedinStatus(linkedin === "success" ? "LinkedIn connected successfully." : "LinkedIn connection failed. Contact us to enable LinkedIn publishing.")
     if (linkedin === "success") {
-      refreshAuth().catch(() => undefined)
+      update().catch(() => undefined)
     }
     window.history.replaceState({}, "", "/settings")
-  }, [refreshAuth, searchParams])
+  }, [searchParams, update])
 
   useEffect(() => {
     if (!user?.linkedinMemberId) {
@@ -119,7 +128,7 @@ export default function SettingsPage() {
     if (!confirm("Disconnect LinkedIn? This removes the saved publishing token and you will need to reconnect.")) return
     setDisconnecting(true)
     try {
-      await disconnectLinkedIn()
+      await fetch("/api/linkedin/token", { method: "DELETE" })
     } finally {
       setDisconnecting(false)
     }

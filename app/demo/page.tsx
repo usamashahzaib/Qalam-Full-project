@@ -3,8 +3,8 @@
 import Link from "next/link"
 import { useCallback, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { useAuthPanel } from "@/components/providers/AuthPanelContext"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useLoginPanel } from "@/components/providers/AuthPanelContext"
+import { useSession } from "next-auth/react"
 
 const DEMO_HOOKS = [
   "I deleted 47 LinkedIn posts last year. Every one beat the content I wrote trying to sound viral.",
@@ -78,15 +78,16 @@ const TABS = [
 type Tab = (typeof TABS)[number]["id"]
 
 function DemoBanner() {
-  const { openPanel } = useAuthPanel()
-  const { isAuthenticated, user } = useAuth()
+  const { openPanel } = useLoginPanel()
+  const { data: session, status } = useSession()
+  const user = session?.user
 
-  if (isAuthenticated && user) {
+  if (status === "authenticated" && user) {
     return (
       <div className="border-b border-teal/20 bg-teal/5 px-4 py-3 sm:px-6">
         <div className="mx-auto flex max-w-[1100px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-zinc-600">
-            Signed in as <span className="font-semibold text-teal">{user.firstName || user.email}</span>. This is the demo workspace.
+            Signed in as <span className="font-semibold text-teal">{user.name || user.email}</span>. This is the demo workspace.
           </p>
           <Link href="/dashboard" className="rounded-lg bg-teal px-4 py-2 text-center text-xs font-semibold text-white hover:bg-teal-600">
             Go to my workspace
@@ -343,7 +344,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 
 export default function DemoPage() {
   const [activeTab, setActiveTab] = useState<Tab>("writer")
-  const { openPanel } = useAuthPanel()
+  const { openPanel } = useLoginPanel()
   const handleStart = useCallback(() => openPanel("sign-up"), [openPanel])
 
   return (

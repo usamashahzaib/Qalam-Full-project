@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthenticatedSession } from "@/lib/server/auth-helpers"
+import { getAuthenticatedSession } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type OverrideInput = {

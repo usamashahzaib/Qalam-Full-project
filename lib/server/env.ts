@@ -10,6 +10,12 @@ export const env = {
   linkedInClientId: read("LINKEDIN_CLIENT_ID"),
   linkedInClientSecret: read("LINKEDIN_CLIENT_SECRET"),
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
+  geminiApiKey: read("GEMINI_API_KEY"),
+  groqApiKey: read("GROQ_API_KEY"),
+  authSecret: read("AUTH_SECRET"),
+  upstashRedisUrl: read("UPSTASH_REDIS_REST_URL"),
+  upstashRedisToken: read("UPSTASH_REDIS_REST_TOKEN"),
+  appAdminEmails: read("APP_ADMIN_EMAILS"),
   frontendOrigin:
     read("FRONTEND_ORIGIN") ||
     read("NEXT_PUBLIC_APP_URL") ||
@@ -28,8 +34,25 @@ export const requireSupabaseEnv = () => {
   }
 }
 
+export const requireAiEnv = () => {
+  if (!env.groqApiKey && !env.geminiApiKey) {
+    throw new Error("ai_env_missing")
+  }
+}
+
+export const requireAuthEnv = () => {
+  if (!env.authSecret) {
+    throw new Error("auth_env_missing")
+  }
+}
+
 export const supportEnv = {
   email: read("APP_SUPPORT_EMAIL") || "support@byqalam.com",
 }
 
-export const groqApiKey = read("GROQ_API_KEY")
+export const groqApiKey = env.groqApiKey
+export const geminiApiKey = env.geminiApiKey
+export const authSecret = env.authSecret
+export const upstashRedisUrl = env.upstashRedisUrl
+export const upstashRedisToken = env.upstashRedisToken
+export const appAdminEmails = env.appAdminEmails

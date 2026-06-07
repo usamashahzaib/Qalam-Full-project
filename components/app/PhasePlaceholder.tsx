@@ -27,7 +27,7 @@ export function PhasePlaceholder({ title, summary, route, apiStatus }: PhasePlac
           </div>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/auth" className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600">
+          <Link href="/login" className="rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600">
             Back to auth
           </Link>
           <Link href="/" className="rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">

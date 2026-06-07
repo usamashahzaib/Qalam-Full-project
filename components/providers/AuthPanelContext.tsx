@@ -33,8 +33,8 @@ export function AuthPanelProvider({ children }: { children: ReactNode }) {
   )
 }
 
-export function useAuthPanel() {
+export function useLoginPanel() {
   const ctx = useContext(AuthPanelContext)
-  if (!ctx) throw new Error("useAuthPanel must be used within AuthPanelProvider")
+  if (!ctx) throw new Error("useLoginPanel must be used within AuthPanelProvider")
   return ctx
 }

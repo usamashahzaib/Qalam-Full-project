@@ -189,7 +189,7 @@ export default function FreeToolsPage() {
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
-                  href="/auth/sign-up?plan=pro"
+                  href="/login?plan=pro"
                   className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
                 >
                   Start 7-Day Free Trial

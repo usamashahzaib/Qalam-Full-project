@@ -1,8 +1,6 @@
-import { supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
-import { groqApiKey } from "@/lib/server/env"
-import { callAi } from "./server/ai-router"
+import { callAi } from "@/lib/server/ai-router"
 
-export interface VoiceAnalysis {
+export type VoiceAnalysis = {
   tone: string
   sentenceLength: string
   formatting: string
@@ -10,110 +8,125 @@ export interface VoiceAnalysis {
   hashtagUsage: string
   vocabulary: string[]
   patterns: string[]
+}
+
+export type VoiceFingerprint = {
+  signaturePhrases: string[]
+  typicalSentenceLength: string
+  emotionalRange: string
+  argumentStructure: string
+  uniqueVerbalTics: string[]
+  confidenceLevel: number
+  storytellingApproach: string
+}
+
+export type VoiceProfile = {
+  analysis: VoiceAnalysis
+  fingerprint: VoiceFingerprint
   samplePosts: string[]
+  createdAt: string
 }
 
-export async function analyzeVoiceWithAi(posts: string[]): Promise<VoiceAnalysis> {
-  const combinedPosts = posts.slice(0, 10).join("\n\n---\n\n")
+const fallbackAnalysis: VoiceAnalysis = {
+  tone: "professional and direct",
+  sentenceLength: "mixed",
+  formatting: "short paragraphs with clear line breaks",
+  emojiUsage: "light",
+  hashtagUsage: "light",
+  vocabulary: [],
+  patterns: [],
+}
 
-  const systemPrompt = `Analyze the writing style of these LinkedIn posts. Return JSON with:
-{
-  "tone": "descriptive label (e.g., 'direct and contrarian', 'empathetic and data-driven')",
-  "sentenceLength": "short/medium/long/mixed",
-  "formatting": "how they structure posts (paragraphs, bullets, line breaks)",
-  "emojiUsage": "none/light/moderate/heavy",
-  "hashtagUsage": "none/light/moderate/heavy",
-  "vocabulary": ["5-10 distinctive words or phrases they use"],
-  "patterns": ["3-5 recurring writing patterns"]
-}`
-
-  const result = await callAi(systemPrompt, combinedPosts, { json: true, timeout: 10000 })
-  const parsed = JSON.parse(result)
-
-  return {
-    tone: parsed.tone || "professional",
-    sentenceLength: parsed.sentenceLength || "medium",
-    formatting: parsed.formatting || "paragraphs",
-    emojiUsage: parsed.emojiUsage || "light",
-    hashtagUsage: parsed.hashtagUsage || "light",
-    vocabulary: parsed.vocabulary || [],
-    patterns: parsed.patterns || [],
-    samplePosts: posts.slice(0, 20),
+const safeJson = <T>(text: string, fallback: T): T => {
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    return fallback
   }
 }
 
-/**
- * Transcribe audio using Groq Whisper API
- */
-export async function transcribeAudio(file: Blob): Promise<string> {
-  if (!groqApiKey) {
-    throw new Error("Groq API key not configured for audio transcription.")
-  }
-
-  const formData = new FormData()
-  formData.append("file", file, "audio.mp3")
-  formData.append("model", "whisper-large-v3")
-
-  const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${groqApiKey}`,
-    },
-    body: formData,
-  })
-
-  if (!response.ok) {
-    const errText = await response.text()
-    throw new Error(`Groq Whisper transcription failed: ${errText}`)
-  }
-
-  const data = await response.json()
-  return data.text || ""
+export async function extractWritingSamples(text: string): Promise<string[]> {
+  return text
+    .split(/\n\s*(?:---+|\*\*\*+|#{2,}|\d+\.\s+Post\s+\d+)\s*\n|\n{3,}/i)
+    .map((sample) => sample.replace(/\s+/g, " ").trim())
+    .filter((sample) => sample.length >= 40)
+    .slice(0, 25)
 }
 
-/**
- * Train and save the voice profile from post samples or transcribed audio
- */
-export async function trainVoiceProfile(workspaceId: string, samples: string[]) {
-  const rows = await supabaseSelect<{ sample_posts?: string[]; name?: string; title?: string; industry?: string; goals?: string[] }>(
-    "voice_profiles",
-    `workspace_id=eq.${workspaceId}&limit=1`
-  )
-  const existing = rows?.[0] ?? {}
-  const existingSamples: string[] = Array.isArray(existing.sample_posts) ? existing.sample_posts : []
-  const merged = Array.from(new Set([...existingSamples, ...samples.filter((s) => s && s.trim())]))
+export async function generateVoiceFingerprint(analysis: VoiceAnalysis): Promise<VoiceFingerprint> {
+  try {
+    const result = await callAi(
+      "Return strict JSON for a writing fingerprint.",
+      `Analyze this style profile and return JSON with signaturePhrases, typicalSentenceLength, emotionalRange, argumentStructure, uniqueVerbalTics, confidenceLevel, storytellingApproach.\n\n${JSON.stringify(analysis)}`,
+      { json: true, temperature: 0.4, timeout: 10000 }
+    )
+    const parsed = safeJson<Partial<VoiceFingerprint>>(result, {})
+    return {
+      signaturePhrases: parsed.signaturePhrases || analysis.vocabulary.slice(0, 6),
+      typicalSentenceLength: parsed.typicalSentenceLength || analysis.sentenceLength,
+      emotionalRange: parsed.emotionalRange || "balanced",
+      argumentStructure: parsed.argumentStructure || analysis.patterns[0] || "hook, context, lesson, CTA",
+      uniqueVerbalTics: parsed.uniqueVerbalTics || [],
+      confidenceLevel: Number(parsed.confidenceLevel || 60),
+      storytellingApproach: parsed.storytellingApproach || "practical examples",
+    }
+  } catch {
+    return {
+      signaturePhrases: analysis.vocabulary.slice(0, 6),
+      typicalSentenceLength: analysis.sentenceLength,
+      emotionalRange: "balanced",
+      argumentStructure: analysis.patterns[0] || "hook, context, lesson, CTA",
+      uniqueVerbalTics: [],
+      confidenceLevel: 50,
+      storytellingApproach: "practical examples",
+    }
+  }
+}
 
-  const analysis = await analyzeVoiceWithAi(merged)
+export async function analyzeVoiceFromText(samples: string[]): Promise<VoiceProfile> {
+  const cleanSamples = samples.map((s) => s.trim()).filter(Boolean).slice(0, 20)
+  try {
+    const result = await callAi(
+      "Analyze LinkedIn writing voice. Return strict JSON only.",
+      `Return JSON with tone, sentenceLength, formatting, emojiUsage, hashtagUsage, vocabulary, patterns.\n\nSamples:\n${cleanSamples.join("\n\n---\n\n")}`,
+      { json: true, temperature: 0.35, timeout: 15000 }
+    )
+    const parsed = safeJson<Partial<VoiceAnalysis>>(result, fallbackAnalysis)
+    const analysis: VoiceAnalysis = {
+      tone: parsed.tone || fallbackAnalysis.tone,
+      sentenceLength: parsed.sentenceLength || fallbackAnalysis.sentenceLength,
+      formatting: parsed.formatting || fallbackAnalysis.formatting,
+      emojiUsage: parsed.emojiUsage || fallbackAnalysis.emojiUsage,
+      hashtagUsage: parsed.hashtagUsage || fallbackAnalysis.hashtagUsage,
+      vocabulary: Array.isArray(parsed.vocabulary) ? parsed.vocabulary : [],
+      patterns: Array.isArray(parsed.patterns) ? parsed.patterns : [],
+    }
+    return {
+      analysis,
+      fingerprint: await generateVoiceFingerprint(analysis),
+      samplePosts: cleanSamples,
+      createdAt: new Date().toISOString(),
+    }
+  } catch {
+    return {
+      analysis: fallbackAnalysis,
+      fingerprint: await generateVoiceFingerprint(fallbackAnalysis),
+      samplePosts: cleanSamples,
+      createdAt: new Date().toISOString(),
+    }
+  }
+}
 
-  const structuredTone = [
-    `Tone: ${analysis.tone}`,
-    `Sentence length: ${analysis.sentenceLength}`,
-    `Formatting: ${analysis.formatting}`,
-    `Emojis: ${analysis.emojiUsage}`,
-    `Hashtags: ${analysis.hashtagUsage}`,
-    analysis.vocabulary.length ? `Vocabulary: ${analysis.vocabulary.join(", ")}` : "",
-    analysis.patterns.length ? `Patterns: ${analysis.patterns.join("; ")}` : "",
-  ]
-    .filter(Boolean)
-    .join(" | ")
-
-  const upserted = await supabaseUpsert(
-    "voice_profiles",
-    {
-      workspace_id: workspaceId,
-      sample_posts: analysis.samplePosts.length ? analysis.samplePosts : merged,
-      name: existing.name ?? "Trained Voice",
-      title: existing.title ?? null,
-      industry: existing.industry ?? null,
-      tone: structuredTone,
-      goals: existing.goals ?? [],
-      updated_at: new Date().toISOString(),
-    },
-    "workspace_id"
-  )
-
-  return {
-    profile: upserted?.[0] ?? null,
-    analysis,
+export async function compareVoiceToRole(voiceProfile: VoiceProfile, role: string): Promise<{ match: number; suggestions: string[] }> {
+  try {
+    const result = await callAi(
+      "Compare a voice profile to a LinkedIn role. Return strict JSON.",
+      `Role: ${role}\nVoice profile: ${JSON.stringify(voiceProfile)}\nReturn { "match": 0-100, "suggestions": [] }.`,
+      { json: true, temperature: 0.3, timeout: 10000 }
+    )
+    const parsed = safeJson<{ match?: number; suggestions?: string[] }>(result, {})
+    return { match: Math.max(0, Math.min(100, Number(parsed.match || 50))), suggestions: parsed.suggestions || [] }
+  } catch {
+    return { match: 50, suggestions: ["Add more role-specific vocabulary.", "Use more concrete examples."] }
   }
 }

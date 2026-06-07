@@ -6,15 +6,12 @@ import {
   BrowserRouter as Router,
   Route,
   Routes,
-  Navigate,
   Outlet,
 } from 'react-router-dom'
 import PageNotFound from './lib/PageNotFound'
-import { AuthProvider, useAuth } from '@/lib/AuthContext'
 import { AppProvider } from '@/lib/AppContext'
 
 import Landing from '@/vite-pages/Landing'
-import Auth from '@/vite-pages/Auth'
 import Onboarding from '@/vite-pages/Onboarding'
 import AppLayout from '@/components/layout/AppLayout'
 import Dashboard from '@/vite-pages/Dashboard'
@@ -27,34 +24,14 @@ import Agency from '@/vite-pages/Agency'
 import Settings from '@/vite-pages/Settings'
 import Competitors from '@/vite-pages/Competitors'
 
-const AppShellLoader = () => (
-  <div className="fixed inset-0 flex items-center justify-center bg-background">
-    <div className="flex flex-col items-center gap-3">
-      <div className="w-6 h-6 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin" />
-      <span className="text-xs text-muted-foreground">Loading</span>
-    </div>
-  </div>
-)
-
 const RequireAuth = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authChecked, isAuthenticated } =
-    useAuth()
-
-  if (isLoadingPublicSettings || isLoadingAuth || !authChecked) {
-    return <AppShellLoader />
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />
-  }
-
   return <Outlet />
 }
 
 const AppRoutes = () => (
   <Routes>
     <Route path="/" element={<Landing />} />
-    <Route path="/auth/*" element={<Auth />} />
+    <Route path="/login" element={<Landing />} />
     <Route element={<RequireAuth />}>
       <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<AppLayout />}>
@@ -75,29 +52,27 @@ const AppRoutes = () => (
 
 function App() {
   return (
-    <AuthProvider>
-      <AppProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AppRoutes />
-          </Router>
-          <Toaster />
-          <SonnerToaster
-            theme="light"
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: 'hsl(0 0% 100%)',
-                border: '1px solid hsl(140 12% 88%)',
-                color: 'hsl(220 20% 11%)',
-                fontSize: '13px',
-                boxShadow: '0 10px 40px -12px rgba(6, 55, 43, 0.15)',
-              },
-            }}
-          />
-        </QueryClientProvider>
-      </AppProvider>
-    </AuthProvider>
+    <AppProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AppRoutes />
+        </Router>
+        <Toaster />
+        <SonnerToaster
+          theme="light"
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: 'hsl(0 0% 100%)',
+              border: '1px solid hsl(140 12% 88%)',
+              color: 'hsl(220 20% 11%)',
+              fontSize: '13px',
+              boxShadow: '0 10px 40px -12px rgba(6, 55, 43, 0.15)',
+            },
+          }}
+        />
+      </QueryClientProvider>
+    </AppProvider>
   )
 }
 

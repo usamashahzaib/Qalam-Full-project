@@ -3,7 +3,7 @@ import { analyzeCompetitorPaste } from "@/lib/server/competitors"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { requireAuth } from "@/lib/server/workspace"
 
 type AnalyzeRequest = {
   workspaceKey?: string

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useSession } from "next-auth/react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import type { ContentAnalysis } from "@/lib/content-intelligence"
 import { shareToLinkedIn } from "@/lib/api/client"
@@ -103,7 +103,14 @@ const profileTopics = (profile: { title?: string; industry?: string; goals?: str
 export default function WriterPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user } = useAuth()
+  const { data: session } = useSession()
+  const user = session?.user
+    ? {
+        fullName: session.user.name || session.user.email || "User",
+        imageUrl: session.user.image || null,
+        linkedinMemberId: session.user.email || null,
+      }
+    : null
   const { posts, profile, saveDraft, schedulePost, publishPost, isLoadingPosts, workspaceId, state, billing } = useWorkspace()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")

@@ -8,7 +8,6 @@ import React, {
 } from 'react'
 import { addDays } from 'date-fns'
 import { toast } from 'sonner'
-import { useAuth } from '@/lib/AuthContext'
 import {
   defaultWorkspace,
   loadLocalWorkspace,
@@ -25,7 +24,8 @@ const AppContext = createContext(null)
 const nextId = () => crypto.randomUUID()
 
 export function AppProvider({ children }) {
-  const { user, authChecked: userLoaded } = useAuth()
+  const user = null
+  const userLoaded = true
   const userId = user?.id ?? null
 
   const [hydrated, setHydrated] = useState(false)

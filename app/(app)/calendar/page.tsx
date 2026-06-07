@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
@@ -31,7 +31,8 @@ const goToWriter = (router: ReturnType<typeof useRouter>, clientId?: string | nu
 
 export default function CalendarPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { data: session } = useSession()
+  const user = session?.user ? { linkedinMemberId: session.user.email || null } : null
   const { state, publishPost, createJob, workspaceId } = useWorkspace()
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
   const [status, setStatus] = useState<string | null>(null)

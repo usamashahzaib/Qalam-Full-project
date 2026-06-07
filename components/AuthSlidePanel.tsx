@@ -2,9 +2,9 @@
 
 import { useCallback, useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { AnimatePresence, motion } from "framer-motion"
-import { useAuthPanel } from "@/components/providers/AuthPanelContext"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useLoginPanel } from "@/components/providers/AuthPanelContext"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 
@@ -17,16 +17,15 @@ function XIcon() {
 }
 
 export function AuthSlidePanel() {
-  const { isOpen, view, closePanel, openPanel } = useAuthPanel()
-  const { beginLinkedInAuth } = useAuth()
+  const { isOpen, view, closePanel, openPanel } = useLoginPanel()
   const [loading, setLoading] = useState(false)
 
   const isSignUp = view === "sign-up"
 
   const handleLinkedIn = useCallback(async () => {
     setLoading(true)
-    await beginLinkedInAuth("/dashboard")
-  }, [beginLinkedInAuth])
+    await signIn("linkedin", { callbackUrl: "/dashboard" })
+  }, [])
 
   return (
     <AnimatePresence>

@@ -2,21 +2,21 @@
 
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const { authChecked, isAuthenticated } = useAuth()
+  const { status } = useSession()
 
   useEffect(() => {
-    if (authChecked && !isAuthenticated) {
-      router.replace(`/auth?next=${encodeURIComponent(pathname || "/dashboard")}`)
+    if (status === "unauthenticated") {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname || "/dashboard")}`)
     }
-  }, [authChecked, isAuthenticated, pathname, router])
+  }, [pathname, router, status])
 
-  if (!authChecked) {
+  if (status === "loading") {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-zinc-50">
         <QalamMark size={48} />
@@ -33,6 +33,6 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!isAuthenticated) return null
+  if (status !== "authenticated") return null
   return <>{children}</>
 }

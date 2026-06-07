@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
-import { resolveWorkspaceId, fetchWorkspacePlan, getAuthContext } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/workspace"
+import { resolveWorkspaceId, fetchWorkspacePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
@@ -8,7 +8,7 @@ import { supabaseSelect } from "@/lib/server/supabase-rest"
 type PlanCheckResult =
   | {
       ok: true
-      session: Awaited<ReturnType<typeof getAuthContext>>
+      session: Awaited<ReturnType<typeof getWorkspaceSessionContext>>
       workspaceId: string
       plan: string
       status: string
@@ -30,9 +30,9 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
-  let session: Awaited<ReturnType<typeof getAuthContext>>
+  let session: Awaited<ReturnType<typeof getWorkspaceSessionContext>>
   try {
-    session = await getAuthContext()
+    session = await getWorkspaceSessionContext()
   } catch {
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { fetchWorkspacePlan } from "@/lib/server/workspace"
-import { getAuthenticatedSession } from "@/lib/server/auth-helpers"
+import { getAuthenticatedSession } from "@/lib/server/workspace"
 import { getMonthlyCount } from "@/lib/server/require-plan"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 

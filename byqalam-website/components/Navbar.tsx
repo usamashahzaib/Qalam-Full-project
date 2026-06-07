@@ -114,14 +114,14 @@ export function Navbar() {
           {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              href={`${APP_ORIGIN}/auth`}
+              href={`${APP_ORIGIN}/login`}
               className="px-4 py-2 text-sm font-semibold text-teal hover:bg-teal/10 rounded-lg transition-colors"
             >
               Log In
             </Link>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href={`${APP_ORIGIN}/auth/sign-up`}
+                href={`${APP_ORIGIN}/login`}
                 className="px-4 py-2 text-sm font-semibold text-white bg-teal hover:bg-teal-600 rounded-lg transition-colors shadow-sm"
               >
                 Get Started Free
@@ -176,14 +176,14 @@ export function Navbar() {
                 ))}
                 <div className="mt-3 pt-3 border-t border-zinc-200 flex flex-col gap-2">
                   <Link
-                    href={`${APP_ORIGIN}/auth`}
+                    href={`${APP_ORIGIN}/login`}
                     onClick={() => setMobileOpen(false)}
                     className="px-3 py-2.5 text-sm font-semibold text-teal hover:bg-teal/10 rounded-lg transition-colors text-center"
                   >
                     Log In
                   </Link>
                   <Link
-                    href={`${APP_ORIGIN}/auth/sign-up`}
+                    href={`${APP_ORIGIN}/login`}
                     onClick={() => setMobileOpen(false)}
                     className="px-3 py-2.5 text-sm font-semibold text-white bg-teal hover:bg-teal-600 rounded-lg transition-colors text-center"
                   >
