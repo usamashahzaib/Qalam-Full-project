@@ -1,96 +1,88 @@
-import { randomUUID } from "node:crypto"
+import { cookies } from "next/headers"
 import { auth } from "@/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
-type UserRow = {
-  id: string
+export type AuthUser = {
+  userId: string
   email: string
-  plan?: string | null
-  role?: string | null
+  name: string
+  image: string | null
+  plan: string
+  role: string
 }
 
-const unauthorized = () => new Error("Unauthorized")
-
-const adminEmails = () =>
-  (process.env.APP_ADMIN_EMAILS || "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean)
-
-export async function requireAuth() {
-  try {
-    const session = await auth()
-    const userId = session?.user?.id
-    if (!userId) throw unauthorized()
-    return userId
-  } catch (error) {
-    if ((error as Error).message === "Unauthorized") throw error
-    throw unauthorized()
+export async function requireAuth(): Promise<string> {
+  const session = await auth()
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
   }
+  return session.user.id
 }
 
-export async function requireAuthWithUser() {
-  try {
-    const session = await auth()
-    const email = session?.user?.email?.trim().toLowerCase()
-    if (!session || !email) throw unauthorized()
+export async function requireAuthWithUser(): Promise<AuthUser> {
+  const session = await auth()
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized")
+  }
 
-    const supabase = createServiceClient()
-    const { data: existing, error: selectError } = await supabase
-      .from("users")
-      .select("id,email,plan,role")
-      .eq("email", email)
-      .maybeSingle<UserRow>()
+  const supabase = createServiceClient()
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id, email, name, avatar_url, plan, role")
+    .eq("email", session.user.email)
+    .single()
 
-    if (selectError) throw new Error("auth_lookup_failed")
-
-    const user = existing || (await createUser(supabase, session.user, email))
-
+  if (existingUser) {
     return {
-      userId: user.id,
-      email: user.email,
-      plan: user.plan || "free",
-      role: user.role || "user",
+      userId: existingUser.id,
+      email: existingUser.email,
+      name: existingUser.name || session.user.name || "",
+      image: existingUser.avatar_url || session.user.image || null,
+      plan: existingUser.plan || "free",
+      role: existingUser.role || "user",
     }
-  } catch (error) {
-    if ((error as Error).message === "Unauthorized") throw error
-    throw new Error("Authentication unavailable")
   }
-}
 
-export async function isAdmin() {
-  try {
-    const session = await auth()
-    const email = session?.user?.email?.trim().toLowerCase()
-    return Boolean(email && adminEmails().includes(email))
-  } catch {
-    return false
-  }
-}
-
-async function createUser(
-  supabase: ReturnType<typeof createServiceClient>,
-  user: { name?: string | null; image?: string | null },
-  email: string
-) {
-  const now = new Date().toISOString()
-  const payload = {
-    id: randomUUID(),
-    email,
-    name: user.name || "",
-    avatar_url: user.image || "",
+  // Create new user on first sign-in
+  const newUser = {
+    id: crypto.randomUUID(),
+    email: session.user.email,
+    name: session.user.name || "",
+    avatar_url: session.user.image || "",
     plan: "free",
     role: "user",
-    created_at: now,
-    updated_at: now,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   }
 
-  const { data, error } = await supabase
-    .from("users")
-    .insert(payload)
-    .select("id,email,plan,role")
-    .single<UserRow>()
+  const { error } = await supabase.from("users").insert(newUser)
+  if (error) {
+    console.error("[auth-helpers] Failed to create user:", error)
+    throw new Error("Failed to create user account")
+  }
 
-  if (error || !data) throw new Error("auth_create_failed")
-  return data
+  return {
+    userId: newUser.id,
+    email: newUser.email,
+    name: newUser.name,
+    image: newUser.avatar_url || null,
+    plan: newUser.plan,
+    role: newUser.role,
+  }
+}
+
+export async function isAdmin(): Promise<boolean> {
+  const session = await auth()
+  if (!session?.user?.email) return false
+
+  const adminEmails = process.env.APP_ADMIN_EMAILS?.split(",").map((e) => e.trim()) || []
+  return adminEmails.includes(session.user.email)
+}
+
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  try {
+    return await requireAuthWithUser()
+  } catch {
+    return null
+  }
 }
