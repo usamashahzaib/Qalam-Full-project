@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS posts CASCADE;
 
 CREATE TABLE posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id TEXT NOT NULL, -- Clerk user ID
+  user_id TEXT NOT NULL, -- External user ID
   workspace_id UUID,
   title TEXT,
   content TEXT NOT NULL,

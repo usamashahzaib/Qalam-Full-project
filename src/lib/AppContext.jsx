@@ -6,14 +6,14 @@ import React, {
   useEffect,
   useRef,
 } from 'react'
-import { useAuth, useUser } from '@clerk/clerk-react'
 import { addDays } from 'date-fns'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/AuthContext'
 import {
   defaultWorkspace,
   loadLocalWorkspace,
   saveLocalWorkspace,
-  createSupabaseWithClerk,
+  createSupabaseClient,
   loadRemoteWorkspace,
   pushRemoteWorkspace,
   mergeWorkspaces,
@@ -25,8 +25,7 @@ const AppContext = createContext(null)
 const nextId = () => crypto.randomUUID()
 
 export function AppProvider({ children }) {
-  const { user, isLoaded: userLoaded } = useUser()
-  const { getToken } = useAuth()
+  const { user, authChecked: userLoaded } = useAuth()
   const userId = user?.id ?? null
 
   const [hydrated, setHydrated] = useState(false)
@@ -43,14 +42,14 @@ export function AppProvider({ children }) {
     const ws = workspaceRef.current
     if (!ws || !userId) return
     saveLocalWorkspace(userId, ws)
-    const sb = createSupabaseWithClerk(getToken)
+    const sb = createSupabaseClient()
     if (!sb) return
     try {
       await pushRemoteWorkspace(sb, userId, ws)
     } catch (e) {
       console.warn('[Qalam] Supabase sync failed (using local only):', e?.message || e)
     }
-  }, [getToken, userId])
+  }, [userId])
 
   const schedulePersist = useCallback(() => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
@@ -87,7 +86,7 @@ export function AppProvider({ children }) {
       const local = loadLocalWorkspace(userId)
       let merged = normalizeWorkspace(local, user)
 
-      const sb = createSupabaseWithClerk(getToken)
+      const sb = createSupabaseClient()
       if (sb) {
         try {
           const remote = await loadRemoteWorkspace(sb, userId)
@@ -113,7 +112,7 @@ export function AppProvider({ children }) {
     return () => {
       cancelled = true
     }
-  }, [userLoaded, userId, user, getToken])
+  }, [userLoaded, userId, user])
 
   useEffect(() => {
     if (!hydrated || !userId) return

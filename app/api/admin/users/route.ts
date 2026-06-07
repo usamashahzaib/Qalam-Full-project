@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@clerk/nextjs/server"
 import { fetchWorkspacePlan } from "@/lib/server/workspace"
+import { getAuthenticatedSession } from "@/lib/server/auth-helpers"
 import { getMonthlyCount } from "@/lib/server/require-plan"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -11,12 +11,11 @@ type AuditRow = { id: string; admin_email: string; target_user_email: string; ac
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 const requireAdmin = async () => {
-  const { userId, sessionClaims } = await auth()
-  if (!userId) throw new Error("Unauthorized")
-  const claims = sessionClaims as { metadata?: { admin?: boolean }; email?: string }
+  const session = await getAuthenticatedSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())
-  if (!claims?.metadata?.admin && !adminEmails.includes(String(claims?.email || "").toLowerCase())) throw new Error("Forbidden")
-  return userId
+  if (!adminEmails.includes(String(session.user.email || "").toLowerCase())) throw new Error("Forbidden")
+  return session.user.id
 }
 
 export async function GET(request: NextRequest) {

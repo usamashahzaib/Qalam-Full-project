@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
+import { requireAuth } from "@/lib/server/auth-helpers"
 import { createClient } from "@supabase/supabase-js"
 
 type PostRow = {

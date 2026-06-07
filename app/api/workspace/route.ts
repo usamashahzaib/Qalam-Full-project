@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { getClerkAuthContext, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { getAuthContext, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/workspace"
 
 const toStatus = (message: string) => {
   switch (message) {
@@ -19,7 +19,7 @@ const toStatus = (message: string) => {
 export async function GET(request: NextRequest) {
   try {
     await requireAuth()
-    const ctx = await getClerkAuthContext()
+    const ctx = await getAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
     const planInfo = await fetchWorkspacePlan(workspaceId, ctx.email)
     return NextResponse.json({ workspaceId, ...planInfo })

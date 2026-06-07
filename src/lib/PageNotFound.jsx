@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import { useAuth } from '@/lib/AuthContext'
 
 function parseAdminEmails() {
   const raw = import.meta.env.VITE_APP_ADMIN_EMAILS
@@ -10,12 +10,12 @@ function parseAdminEmails() {
 export default function PageNotFound() {
   const location = useLocation()
   const pageName = location.pathname.substring(1)
-  const { user, isLoaded } = useUser()
+  const { user, authChecked } = useAuth()
 
   const adminEmails = parseAdminEmails()
   const email = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? ''
   const isAdmin =
-    isLoaded &&
+    authChecked &&
     user &&
     adminEmails.length > 0 &&
     email &&

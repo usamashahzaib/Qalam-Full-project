@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { resolveWorkspaceId, fetchWorkspacePlan, getClerkAuthContext } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { resolveWorkspaceId, fetchWorkspacePlan, getAuthContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
@@ -8,7 +8,7 @@ import { supabaseSelect } from "@/lib/server/supabase-rest"
 type PlanCheckResult =
   | {
       ok: true
-      session: Awaited<ReturnType<typeof getClerkAuthContext>>
+      session: Awaited<ReturnType<typeof getAuthContext>>
       workspaceId: string
       plan: string
       status: string
@@ -19,7 +19,7 @@ type PlanCheckResult =
   | { ok: false; response: NextResponse }
 
 /**
- * Core enforcement middleware. Validates Clerk session, resolves workspace, checks plan hierarchy.
+ * Core enforcement middleware. Validates auth session, resolves workspace, checks plan hierarchy.
  */
 export const requirePlan = async (
   request: NextRequest,
@@ -30,9 +30,9 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
-  let session: Awaited<ReturnType<typeof getClerkAuthContext>>
+  let session: Awaited<ReturnType<typeof getAuthContext>>
   try {
-    session = await getClerkAuthContext()
+    session = await getAuthContext()
   } catch {
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { getAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
@@ -14,7 +14,7 @@ type ShareRequestBody = {
 export async function POST(request: NextRequest) {
     const userId = await requireAuth()
 
-  const ctx = await getClerkAuthContext()
+  const ctx = await getAuthContext()
   const body = (await request.json()) as ShareRequestBody
   if (!body.content?.trim()) {
     return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })

@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/server/clerk-client"
+import { requireAuth } from "@/lib/server/auth-helpers"
 import { NextResponse } from "next/server"
 import { callAi } from "@/lib/server/ai-router"
 import { buildRoleAwareSystemPrompt } from "@/lib/prompts/role-aware-system"

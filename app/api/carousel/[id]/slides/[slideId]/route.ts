@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
+import { requireAuth } from "@/lib/server/auth-helpers"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"

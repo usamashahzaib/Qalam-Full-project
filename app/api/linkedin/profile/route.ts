@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { getAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 export async function GET(request: NextRequest) {
   try {
     await requireAuth()
 
-    const ctx = await getClerkAuthContext()
+    const ctx = await getAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
     const account = await getLinkedInPublishingAccount(workspaceId)
     const legacy = account ? null : await getLinkedInToken(ctx.email)

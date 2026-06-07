@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { ChevronRightIcon } from "@/components/ui/qalam-icons"
-import { useAuth } from "@/components/providers/AuthProvider"
-import { useAuthPanel } from "@/components/providers/AuthPanelContext"
+import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 
 const PRODUCT_LINKS = [
@@ -116,8 +115,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileSection, setMobileSection] = useState<"product" | "use-cases" | null>(null)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
-  const { isAuthenticated, isLoadingAuth, user } = useAuth()
-  const { openPanel } = useAuthPanel()
+  const { data: session, status } = useSession()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16)
@@ -186,27 +184,17 @@ export function Navbar() {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
-            {!isLoadingAuth && isAuthenticated && user ? (
-              <>
-                <Link href="/dashboard" className="rounded-lg px-4 py-2 text-sm font-semibold text-teal transition-colors hover:bg-teal/10">
-                  Dashboard
-                </Link>
-                <UserAvatar name={user.fullName || user.email} imageUrl={user.imageUrl} />
-              </>
-            ) : (
-              <>
-                <button onClick={() => openPanel("sign-in")} className="rounded-lg px-4 py-2 text-sm font-semibold text-teal transition-colors hover:bg-teal/10">
-                  Log In
+            {status === "loading" ? (
+              <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+            ) : session ? (
+              <div className="flex items-center gap-3">
+                <img src={session.user?.image || "/default-avatar.png"} alt="Profile" className="w-8 h-8 rounded-full" />
+                <button onClick={() => signOut({ callbackUrl: "/" })} className="text-sm text-gray-600 hover:text-gray-900">
+                  Log out
                 </button>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => openPanel("sign-up")}
-                  className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
-                >
-                  Get Started Free
-                </motion.button>
-              </>
+              </div>
+            ) : (
+              <Link href="/login" className="text-sm font-medium">Log in</Link>
             )}
           </div>
 
@@ -282,25 +270,17 @@ export function Navbar() {
                 ))}
 
                 <div className="mt-3 flex flex-col gap-2 border-t border-zinc-200 pt-3">
-                  {!isLoadingAuth && isAuthenticated && user ? (
-                    <>
-                      <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-teal transition-colors hover:bg-teal/10">
-                        Dashboard
-                      </Link>
-                      <div className="flex items-center justify-center gap-2 py-1">
-                        <UserAvatar name={user.fullName || user.email} imageUrl={user.imageUrl} />
-                        <span className="text-sm text-zinc-600">{user.firstName || user.email}</span>
-                      </div>
-                    </>
+                  {status === "loading" ? (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                  ) : session ? (
+                    <div className="flex items-center gap-3">
+                      <img src={session.user?.image || "/default-avatar.png"} alt="Profile" className="w-8 h-8 rounded-full" />
+                      <button onClick={() => signOut({ callbackUrl: "/" })} className="text-sm text-gray-600 hover:text-gray-900">
+                        Log out
+                      </button>
+                    </div>
                   ) : (
-                    <>
-                      <button onClick={() => { setMobileOpen(false); openPanel("sign-in") }} className="w-full rounded-lg px-3 py-2.5 text-center text-sm font-semibold text-teal transition-colors hover:bg-teal/10">
-                        Log In
-                      </button>
-                      <button onClick={() => { setMobileOpen(false); openPanel("sign-up") }} className="w-full rounded-lg bg-teal px-3 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-teal-600">
-                        Get Started Free
-                      </button>
-                    </>
+                    <Link href="/login" className="text-sm font-medium">Log in</Link>
                   )}
                 </div>
               </div>

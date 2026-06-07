@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/clerk-client";
+import { requireAuth } from "@/lib/server/auth-helpers";
 import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits";
 import { callAi } from "@/lib/server/ai-router";
 import { createClient } from "@supabase/supabase-js";

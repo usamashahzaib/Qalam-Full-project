@@ -1,15 +1,122 @@
 import { NextRequest } from "next/server"
 import { notFound } from "next/navigation"
-import { currentUser } from "@clerk/nextjs/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { supabaseInsert, supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
+import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
+import { auth } from "@/auth"
 
-const ADMIN_EMAILS = (process.env.APP_ADMIN_EMAILS || process.env.ADMIN_EMAILS || "")
-  .split(",")
-  .map((item) => item.trim().toLowerCase())
-  .filter(Boolean)
+export async function getAuthenticatedSession() {
+  return await auth()
+}
+
+export async function requireAuth(): Promise<string> {
+  const session = await auth()
+  const id = session?.user?.id
+  if (!id) throw new Error("auth_required")
+  return id
+}
+
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false
+  const adminEmails = ["usama@byqalam.com", "admin@byqalam.com"]
+  return adminEmails.includes(email.trim().toLowerCase()) || email.endsWith("@byqalam.com")
+}
+
+export function getAuthRole(email?: string | null): "admin" | "user" {
+  return isAdminEmail(email) ? "admin" : "user"
+}
+
+export function toNames(name: string | null, email?: string | null) {
+  const cleanName = name?.trim() || email?.split("@")[0] || "User"
+  const firstName = cleanName.split(" ")[0] || "User"
+  return { firstName, fullName: cleanName }
+}
+
+export async function ensureSupabaseUser({
+  userId,
+  email,
+  fullName,
+  imageUrl,
+}: {
+  userId: string
+  email: string
+  fullName: string
+  imageUrl: string | null
+}): Promise<string> {
+  const supabase = createServiceClient()
+  
+  const { data: userByExt } = await supabase
+    .from("users")
+    .select("id")
+    .eq("external_user_id", userId)
+    .maybeSingle()
+
+  if (userByExt) return userByExt.id
+
+  const { data: userByEmail } = await supabase
+    .from("users")
+    .select("id, external_user_id")
+    .eq("email", email)
+    .maybeSingle()
+
+  if (userByEmail) {
+    if (!userByEmail.external_user_id) {
+      await supabase
+        .from("users")
+        .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })
+        .eq("id", userByEmail.id)
+    }
+    return userByEmail.id
+  }
+
+  const { data: newUser, error } = await supabase
+    .from("users")
+    .insert({
+      email,
+      external_user_id: userId,
+      full_name: fullName,
+      image_url: imageUrl,
+      plan: "Free",
+    })
+    .select("id")
+    .single()
+
+  if (error || !newUser) {
+    throw new Error("failed_to_ensure_user")
+  }
+  return newUser.id
+}
+
+async function getOrCreateWorkspaceForUser(userId: string) {
+  const supabase = createServiceClient()
+  const { data: membership } = await supabase
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", userId)
+    .single()
+
+  if (membership) return membership.workspace_id
+
+  const { data: workspaceId } = await supabase.rpc("create_personal_workspace", {
+    p_user_id: userId,
+    p_name: "Personal",
+  })
+  return workspaceId || null
+}
+
+export async function ensureWorkspaceForUser({
+  userId,
+}: {
+  userId: string
+  firstName?: string
+}): Promise<string> {
+  const workspaceId = await getOrCreateWorkspaceForUser(userId)
+  if (!workspaceId) {
+    throw new Error("failed_to_ensure_workspace")
+  }
+  return workspaceId
+}
+
 
 export type WorkspacePlanInfo = {
   plan: string
@@ -18,8 +125,8 @@ export type WorkspacePlanInfo = {
   planExpired?: boolean
 }
 
-export type ClerkAuthContext = {
-  clerkUserId: string
+export type AuthContext = {
+  userId: string
   email: string
   fullName: string
   firstName: string
@@ -28,24 +135,10 @@ export type ClerkAuthContext = {
   supabaseUserId: string
 }
 
-const toNames = (name: string, email: string) => {
-  const trimmed = name.trim() || email.split("@")[0] || "User"
-  return {
-    fullName: trimmed,
-    firstName: trimmed.split(" ")[0] || "User",
-  }
-}
-
-export const getClerkRole = (email: string): "admin" | "user" =>
-  ADMIN_EMAILS.includes(email.trim().toLowerCase()) ? "admin" : "user"
-
-export const isAdminEmail = (email?: string | null) =>
-  Boolean(email && ADMIN_EMAILS.includes(email.trim().toLowerCase()))
-
 export const requireAdminRequest = async (_request: NextRequest) => {
-  const userId = await requireAuth()
-  const user = await currentUser()
-  const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
+  const session = await getAuthenticatedSession()
+  const userId = session?.user?.id || ""
+  const email = session?.user?.email?.trim().toLowerCase()
   if (!isAdminEmail(email)) throw new Error("not_found")
   return { email: email || "", userId }
 }
@@ -57,82 +150,40 @@ export const requireAdminPage = async () => {
   } catch {
     notFound()
   }
-  const user = await currentUser()
-  const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
+  const session = await getAuthenticatedSession()
+  const email = session?.user?.email?.trim().toLowerCase()
   if (!isAdminEmail(email)) notFound()
   return { email: email || "", userId }
 }
 
-export const ensureSupabaseUser = async ({
-  clerkUserId,
-  email,
-  fullName,
-  imageUrl = null,
-}: {
-  clerkUserId: string
-  email: string
-  fullName: string
-  imageUrl?: string | null
-}) => {
-  const normalizedEmail = email.trim().toLowerCase()
-  const byClerk = await supabaseSelect<{ id: string }>(
-    "users",
-    `clerk_user_id=eq.${encodeURIComponent(clerkUserId)}&select=id&limit=1`
-  ).catch(() => [])
-  if (byClerk?.[0]?.id) return byClerk[0].id
-
-  const byEmail = await supabaseSelect<{ id: string }>(
-    "users",
-    `email=eq.${encodeURIComponent(normalizedEmail)}&select=id&limit=1`
-  ).catch(() => [])
-
-  if (byEmail?.[0]?.id) {
-    await supabasePatch("users", `id=eq.${byEmail[0].id}`, {
-      clerk_user_id: clerkUserId,
-      full_name: fullName,
-      image_url: imageUrl,
-      updated_at: new Date().toISOString(),
-    }).catch(() => undefined)
-    return byEmail[0].id
-  }
-
-  const created = await supabaseInsert<{ id: string }>(
-    "users",
-    {
-      clerk_user_id: clerkUserId,
-      email: normalizedEmail,
-      full_name: fullName,
-      image_url: imageUrl,
-    },
-    "return=representation"
-  )
-  const userId = created?.[0]?.id
-  if (!userId) throw new Error("auth_required")
-  return userId
-}
-
-export const getClerkAuthContext = async (): Promise<ClerkAuthContext> => {
-  const clerkUserId = await requireAuth().catch(() => {
+export const getAuthContext = async (): Promise<AuthContext> => {
+  const session = await getAuthenticatedSession().catch(() => null)
+  const userId = session?.user?.id || await requireAuth().catch(() => {
     throw new Error("auth_required")
   })
-
-  const user = await currentUser()
-  const email = user?.primaryEmailAddress?.emailAddress?.trim().toLowerCase()
+  const email = session?.user?.email?.trim().toLowerCase()
   if (!email) throw new Error("auth_required")
 
-  const names = toNames(user?.fullName || user?.firstName || "", email)
+  const names = toNames(session?.user?.name || session?.user?.firstName || "", email)
+  const supabaseUserId = await ensureSupabaseUser({
+    userId,
+    email,
+    fullName: names.fullName,
+    imageUrl: session?.user?.image || null,
+  })
+
   return {
-    clerkUserId,
+    userId,
     email,
     fullName: names.fullName,
     firstName: names.firstName,
-    imageUrl: user?.imageUrl || null,
-    role: getClerkRole(email),
-    supabaseUserId: clerkUserId,
+    imageUrl: session?.user?.image || null,
+    role: getAuthRole(email),
+    supabaseUserId,
   }
 }
 
-export const toPublicAuthUser = (ctx: ClerkAuthContext) => ({
+export const toPublicAuthUser = (ctx: AuthContext) => ({
   email: ctx.email,
   fullName: ctx.fullName,
   firstName: ctx.firstName,
@@ -141,26 +192,6 @@ export const toPublicAuthUser = (ctx: ClerkAuthContext) => ({
   linkedinMemberId: null as string | null,
   linkedinTokenExpiresAt: null as number | null,
 })
-
-export const ensureWorkspaceForUser = async ({
-  userId,
-  firstName,
-}: {
-  userId: string
-  firstName: string
-}) => {
-  const memberships = await supabaseSelect<{ workspace_id: string }>("workspace_members", `user_id=eq.${encodeURIComponent(userId)}&select=workspace_id&limit=1`).catch(() => [])
-  if (memberships?.[0]?.workspace_id) return memberships[0].workspace_id
-
-  const supabase = createServiceClient()
-  const { data: workspaceId } = await supabase.rpc("create_workspace_with_member", {
-    p_user_id: userId,
-    p_name: `${firstName || "Personal"} Workspace`,
-    p_role: "owner",
-  })
-  if (!workspaceId) throw new Error("failed_to_provision_workspace")
-  return workspaceId
-}
 
 export const ensureWorkspaceForEmail = async ({
   email,
@@ -195,7 +226,7 @@ export async function getCurrentWorkspace() {
 }
 
 export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
-  const ctx = await getClerkAuthContext()
+  const ctx = await getAuthContext()
   const url = new URL(request.url)
   let requestedWorkspaceId = url.searchParams.get("workspaceKey")
 

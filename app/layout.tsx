@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next"
-import { ClerkProvider } from "@clerk/nextjs"
 import { Plus_Jakarta_Sans } from "next/font/google"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
@@ -9,7 +8,8 @@ import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
-import { hasValidClerkPublishableKey } from "@/lib/clerk-env"
+import { SessionProvider } from "next-auth/react"
+import { auth } from "@/auth"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,6 +47,7 @@ export const metadata: Metadata = {
     "LinkedIn AI assistant",
     "LinkedIn publishing tool",
     "best AI tool for LinkedIn",
+    "auth",
   ],
   authors: [{ name: SITE_NAME, url: siteUrl }],
   creator: SITE_NAME,
@@ -166,11 +167,13 @@ const appSchema = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: { children: React.ReactNode }) {
+  const session = await auth()
+
   const app = (
-    <>
+    <SessionProvider session={session}>
       <ContentProtection />
       <GridGlowBackground
         glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
@@ -181,7 +184,7 @@ export default function RootLayout({
         <NavWrapper>{children}</NavWrapper>
       </GridGlowBackground>
       <PwaRegistration />
-    </>
+    </SessionProvider>
   )
 
   return (
@@ -190,7 +193,7 @@ export default function RootLayout({
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema) }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
-        {hasValidClerkPublishableKey() ? <ClerkProvider>{app}</ClerkProvider> : app}
+        {app}
       </body>
     </html>
   )

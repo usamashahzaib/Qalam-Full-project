@@ -1,13 +1,11 @@
--- Clerk auth integration: link Supabase users to Clerk IDs and enforce RLS.
--- Requires Clerk ↔ Supabase JWT integration so auth.jwt()->>'sub' is the Clerk user id.
--- https://supabase.com/docs/guides/auth/third-party/clerk
-
+-- Auth integration: link Supabase users to external IDs and enforce RLS.
+-- -- 
 ALTER TABLE public.users
-  ADD COLUMN IF NOT EXISTS clerk_user_id text;
+  ADD COLUMN IF NOT EXISTS external_user_id text;
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_clerk_user_id_key
-  ON public.users (clerk_user_id)
-  WHERE clerk_user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS users_external_user_id_key
+  ON public.users (external_user_id)
+  WHERE external_user_id IS NOT NULL;
 
 CREATE OR REPLACE FUNCTION public.requesting_user_id()
 RETURNS uuid
@@ -18,7 +16,7 @@ SET search_path = public
 AS $$
   SELECT id
   FROM public.users
-  WHERE clerk_user_id = (SELECT auth.jwt()->>'sub')
+  WHERE external_user_id = (SELECT auth.jwt()->>'sub')
   LIMIT 1;
 $$;
 
@@ -44,7 +42,7 @@ DROP POLICY IF EXISTS "Carousel projects in workspace" ON public.carousel_projec
 
 -- Users can only see their own data
 CREATE POLICY "Users own their profiles" ON public.users
-  FOR ALL USING (clerk_user_id = (SELECT auth.jwt()->>'sub'));
+  FOR ALL USING (external_user_id = (SELECT auth.jwt()->>'sub'));
 
 -- Workspaces - members only
 CREATE POLICY "Workspace members" ON public.workspaces

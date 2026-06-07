@@ -1,12 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { useSignIn } from "@clerk/nextjs"
-import {
-  consumeLinkedInSession,
-  loadAuthSession,
-  logoutAuthSession,
-} from "@/lib/api/client"
+import { getSession, signIn, signOut } from "next-auth/react"
 
 type AuthUser = {
   email: string
@@ -44,8 +39,21 @@ const readStoredUser = () => {
   }
 }
 
+const toAuthUser = (session: Awaited<ReturnType<typeof getSession>>): AuthUser | null => {
+  const user = session?.user
+  if (!user?.email) return null
+  return {
+    email: user.email,
+    fullName: user.name || user.email.split("@")[0] || "User",
+    firstName: user.firstName || (user.name || user.email).split(" ")[0] || "User",
+    imageUrl: user.image || null,
+    role: user.role || "user",
+    linkedinMemberId: user.linkedinMemberId || null,
+    linkedinTokenExpiresAt: user.linkedinTokenExpiresAt || null,
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { fetchStatus, signIn } = useSignIn()
   const [user, setUser] = useState<AuthUser | null>(readStoredUser)
   const [authChecked, setAuthChecked] = useState(false)
 
@@ -61,10 +69,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true
-    loadAuthSession()
-      .then(({ user }) => {
+    getSession()
+      .then((session) => {
         if (!active) return
-        persistUser(user)
+        persistUser(toAuthUser(session))
         setAuthChecked(true)
       })
       .catch(() => {
@@ -83,23 +91,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistUser])
 
   const beginLinkedInAuth = useCallback(async (nextPath = "/dashboard") => {
-    if (fetchStatus === "fetching" || !signIn) return
     const safeNextPath = nextPath.startsWith("/") ? nextPath : "/dashboard"
-    await signIn.sso({
-      strategy: "oauth_linkedin_oidc",
-      redirectUrl: safeNextPath,
-      redirectCallbackUrl: "/sso-callback",
-    })
-  }, [fetchStatus, signIn])
+    await signIn("linkedin", { callbackUrl: safeNextPath })
+  }, [])
 
   const completeLinkedInAuth = useCallback(async () => {
-    const { user } = await consumeLinkedInSession()
+    const user = toAuthUser(await getSession())
+    if (!user) throw new Error("auth_required")
     return loginWithLinkedIn(user)
   }, [loginWithLinkedIn])
 
   const refreshAuth = useCallback(async () => {
-    const { user } = await loadAuthSession()
-    persistUser(user)
+    persistUser(toAuthUser(await getSession()))
   }, [persistUser])
 
   const disconnectLinkedIn = useCallback(async () => {
@@ -117,12 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [persistUser, user])
 
   const logout = useCallback(() => {
-    logoutAuthSession()
-      .catch(() => undefined)
-      .finally(() => {
-        persistUser(null)
-        window.location.assign("/auth")
-      })
+    persistUser(null)
+    signOut({ callbackUrl: "/auth" }).catch(() => window.location.assign("/auth"))
   }, [persistUser])
 
   const value = useMemo<AuthContextValue>(

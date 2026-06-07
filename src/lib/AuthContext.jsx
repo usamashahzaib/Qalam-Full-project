@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useMemo, useCallback } from 'react'
-import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react'
 
 const AuthContext = createContext(null)
 
@@ -9,47 +8,43 @@ function parseEmailList(envVal) {
 }
 
 export const AuthProvider = ({ children }) => {
-  const { isLoaded, isSignedIn, signOut } = useClerkAuth()
-  const { user: clerkUser, isLoaded: userLoaded } = useUser()
-
   const adminEmails = useMemo(
     () => parseEmailList(import.meta.env.VITE_APP_ADMIN_EMAILS),
     []
   )
 
   const user = useMemo(() => {
-    if (!clerkUser) return null
-    const email =
-      clerkUser.primaryEmailAddress?.emailAddress?.toLowerCase() ?? ''
+    const email = localStorage.getItem('qalam_user_email') || ''
+    if (!email) return null
     return {
-      id: clerkUser.id,
-      email: clerkUser.primaryEmailAddress?.emailAddress,
-      fullName: clerkUser.fullName,
-      firstName: clerkUser.firstName,
-      imageUrl: clerkUser.imageUrl,
-      role:
-        adminEmails.length && email && adminEmails.includes(email)
-          ? 'admin'
-          : 'user',
+      id: email,
+      email,
+      fullName: localStorage.getItem('qalam_user_name') || email.split('@')[0],
+      firstName: (localStorage.getItem('qalam_user_name') || email).split(' ')[0],
+      imageUrl: null,
+      role: adminEmails.length && adminEmails.includes(email.toLowerCase()) ? 'admin' : 'user',
     }
-  }, [clerkUser, adminEmails])
+  }, [adminEmails])
 
-  const isLoadingAuth = !isLoaded || !userLoaded
+  const isLoadingAuth = false
   const isLoadingPublicSettings = isLoadingAuth
-  const authChecked = isLoaded && userLoaded
-  const isAuthenticated = Boolean(isSignedIn && user)
+  const authChecked = true
+  const isAuthenticated = Boolean(user)
   const authError = null
   const appPublicSettings = null
 
   const logout = useCallback(
     async (shouldRedirect = true) => {
       if (shouldRedirect) {
-        await signOut({ redirectUrl: window.location.origin + '/' })
+        localStorage.removeItem('qalam_user_email')
+        localStorage.removeItem('qalam_user_name')
+        window.location.assign('/')
       } else {
-        await signOut()
+        localStorage.removeItem('qalam_user_email')
+        localStorage.removeItem('qalam_user_name')
       }
     },
-    [signOut]
+    []
   )
 
   const navigateToLogin = useCallback(() => {

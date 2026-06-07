@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
+import { requireAuth } from "@/lib/server/auth-helpers"
 import { callAi } from "@/lib/server/ai-router"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 

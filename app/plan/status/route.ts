@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/clerk-client";
+import { requireAuth } from "@/lib/server/auth-helpers";
 import { getPlanStatus } from "@/lib/server/plan-limits";
 
 export async function GET() {

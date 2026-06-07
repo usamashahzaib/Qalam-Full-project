@@ -19,11 +19,11 @@ export function defaultVoiceSettings() {
   }
 }
 
-export function defaultWorkspace(clerkUser) {
+export function defaultWorkspace(authUser) {
   const name =
-    clerkUser?.fullName ||
-    [clerkUser?.firstName, clerkUser?.lastName].filter(Boolean).join(' ') ||
-    clerkUser?.primaryEmailAddress?.emailAddress?.split('@')[0] ||
+    authUser?.fullName ||
+    [authUser?.firstName, authUser?.lastName].filter(Boolean).join(' ') ||
+    authUser?.email?.split('@')[0] ||
     'Creator'
   return {
     updatedAt: new Date().toISOString(),
@@ -41,8 +41,8 @@ export function defaultWorkspace(clerkUser) {
   }
 }
 
-function normalizeWorkspace(raw, clerkUser) {
-  const base = defaultWorkspace(clerkUser)
+function normalizeWorkspace(raw, authUser) {
+  const base = defaultWorkspace(authUser)
   if (!raw || typeof raw !== 'object') return base
   return {
     ...base,
@@ -77,28 +77,17 @@ export function saveLocalWorkspace(userId, workspace) {
   localStorage.setItem(STORAGE_PREFIX + userId, JSON.stringify(workspace))
 }
 
-export function createSupabaseWithClerk(getToken, template) {
+export function createSupabaseClient() {
   const url = import.meta.env.VITE_SUPABASE_URL
   const anon = import.meta.env.VITE_SUPABASE_ANON_KEY
-  if (!url || !anon || !getToken) return null
-  const tmpl = template || import.meta.env.VITE_CLERK_JWT_TEMPLATE || 'supabase'
-  return createClient(url, anon, {
-    global: {
-      fetch: async (input, init = {}) => {
-        const headers = new Headers(init.headers)
-        const token = await getToken({ template: tmpl })
-        if (token) headers.set('Authorization', `Bearer ${token}`)
-        return fetch(input, { ...init, headers })
-      },
-    },
-  })
+  return url && anon ? createClient(url, anon) : null
 }
 
 export async function loadRemoteWorkspace(sb, userId) {
   const { data, error } = await sb
     .from('user_workspace')
     .select('data, updated_at')
-    .eq('clerk_user_id', userId)
+    .eq(external_user_id, userId)
     .maybeSingle()
   if (error) throw error
   return data
@@ -108,19 +97,19 @@ export async function pushRemoteWorkspace(sb, userId, workspace) {
   const updatedAt = workspace.updatedAt || new Date().toISOString()
   const { error } = await sb.from('user_workspace').upsert(
     {
-      clerk_user_id: userId,
+      [external_user_id]: userId,
       data: { ...workspace, updatedAt },
       updated_at: updatedAt,
     },
-    { onConflict: 'clerk_user_id' }
+    { onConflict: external_user_id }
   )
   if (error) throw error
 }
 
-export function mergeWorkspaces(localW, remoteRow, clerkUser) {
-  const local = normalizeWorkspace(localW || {}, clerkUser)
+export function mergeWorkspaces(localW, remoteRow, authUser) {
+  const local = normalizeWorkspace(localW || {}, authUser)
   if (!remoteRow?.data) return local
-  const remote = normalizeWorkspace(remoteRow.data, clerkUser)
+  const remote = normalizeWorkspace(remoteRow.data, authUser)
   const tLocal = new Date(local.updatedAt || 0).getTime()
   const tRemote = new Date(remoteRow.updated_at || remote.updatedAt || 0).getTime()
   if (tRemote >= tLocal) {

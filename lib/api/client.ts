@@ -16,16 +16,6 @@ export type WorkspaceJobInput = {
   createdAt?: string
 }
 
-type AuthUser = {
-  email: string
-  fullName: string
-  firstName: string
-  imageUrl: string | null
-  role: "admin" | "user"
-  linkedinMemberId?: string | null
-  linkedinTokenExpiresAt?: number | null
-}
-
 const asJson = async <T>(response: Response): Promise<T> => {
   const text = await response.text()
   const data = (text ? JSON.parse(text) : null) as T & { error?: string; message?: string }
@@ -123,15 +113,6 @@ export const analyzeCompetitorPaste = ({
       sourceText,
     }),
   })
-
-export const loadAuthSession = () => requestJson<{ user: AuthUser | null }>("/api/auth/session")
-
-export const logoutAuthSession = () =>
-  requestJson<{ ok: boolean }>("/api/auth/logout", {
-    method: "POST",
-  })
-
-export const consumeLinkedInSession = () => requestJson<{ user: AuthUser }>("/api/linkedin/session")
 
 export const shareToLinkedIn = ({
   content,

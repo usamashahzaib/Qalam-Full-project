@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/clerk-client";
+import { requireAuth } from "@/lib/server/auth-helpers";
 import { getCurrentWorkspace } from "@/lib/server/workspace";
 import { generatePost, scoreContent, rewriteWithFeedback } from "@/lib/server/content-generator";
 import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit";

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
+import { requireAuth } from "@/lib/server/auth-helpers"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 export type WorkspaceRole = "owner" | "admin" | "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer" | "member"

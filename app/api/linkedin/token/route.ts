@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/clerk-client"
-import { getClerkAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { getAuthContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { deleteLinkedInPublishingAccount, deleteLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 export async function DELETE(request: NextRequest) {
   try {
     const userId = await requireAuth()
 
-    const ctx = await getClerkAuthContext()
+    const ctx = await getAuthContext()
     const workspaceId = await resolveWorkspaceId(request)
     await Promise.all([
       deleteLinkedInPublishingAccount(workspaceId).catch(() => undefined),

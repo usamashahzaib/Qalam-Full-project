@@ -1,28 +1,14 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { SignIn, SignUp } from '@clerk/clerk-react'
 import QalamLogo from '@/components/layout/QalamLogo'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/lib/AuthContext'
 
-const clerkAppearance = {
-  variables: {
-    colorPrimary: 'hsl(164, 81%, 12%)',
-    colorText: 'hsl(220, 20%, 11%)',
-    colorTextSecondary: 'hsl(220, 10%, 40%)',
-    colorBackground: 'hsl(0, 0%, 100%)',
-    colorInputBackground: 'hsl(140, 15%, 96%)',
-    colorInputText: 'hsl(220, 20%, 11%)',
-    borderRadius: '0.5rem',
-  },
-  elements: {
-    card: 'shadow-lg border border-[hsl(140_12%_88%)]',
-    headerTitle: 'font-semibold tracking-tight',
-    headerSubtitle: 'text-[hsl(220_10%_40%)]',
-    socialButtonsBlockButton: 'border-[hsl(140_12%_88%)]',
-    formButtonPrimary: 'bg-[hsl(164,81%,12%)] hover:bg-[hsl(164,81%,16%)]',
-  },
-}
+const AuthForm = () => (
+  <button onClick={() => window.location.assign('/api/linkedin/connect')} className="w-full rounded-lg bg-primary px-4 py-3 text-primary-foreground">
+    Continue with LinkedIn
+  </button>
+)
 
 export default function Auth() {
   const { isAuthenticated, isLoadingAuth, authChecked } = useAuth()
@@ -65,28 +51,8 @@ export default function Auth() {
             <QalamLogo size="md" />
           </div>
           <Routes>
-            <Route
-              path="sign-up/*"
-              element={
-                <SignUp
-                  routing="path"
-                  path="/auth/sign-up"
-                  signInUrl="/auth"
-                  appearance={clerkAppearance}
-                />
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <SignIn
-                  routing="path"
-                  path="/auth"
-                  signUpUrl="/auth/sign-up"
-                  appearance={clerkAppearance}
-                />
-              }
-            />
+            <Route path="sign-up/*" element={<AuthForm />} />
+            <Route path="*" element={<AuthForm />} />
           </Routes>
         </motion.div>
       </div>
