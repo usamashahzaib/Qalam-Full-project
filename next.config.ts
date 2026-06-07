@@ -14,9 +14,9 @@ const nextConfig: NextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-              "connect-src 'self'",
-              "img-src 'self' data: blob:",
-              "frame-src 'self'",
+              "connect-src 'self' https://*.linkedin.com https://*.licdn.com",
+              "img-src 'self' data: blob: https://*.linkedin.com https://*.licdn.com",
+              "frame-src 'self' https://*.linkedin.com",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self'",
             ].join("; "),
