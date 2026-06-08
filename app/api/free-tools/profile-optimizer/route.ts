@@ -46,7 +46,7 @@ OUTPUT JSON:
       {
         json: true,
         temperature: 0.4,
-        timeout: 12000,
+        timeout: 25000,
         userId: `free_${ip}`,
         plan: "free",
         cache: true,

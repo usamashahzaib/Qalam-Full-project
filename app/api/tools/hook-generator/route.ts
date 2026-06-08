@@ -37,7 +37,7 @@ Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Ho
       {
         json: false,
         temperature: 0.8,
-        timeout: 12000,
+        timeout: 25000,
         userId: `free_${ip}`,
         plan: "free",
         cache: true,
