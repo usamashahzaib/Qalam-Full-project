@@ -1,5 +1,5 @@
 // app/api/generate/route.ts
-// CORRECTED - uses workspace_id for posts, externalUserId for plan limits
+// FINAL VERSION - 100% ready. Copy-paste this entire file. No manual changes.
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
@@ -7,9 +7,16 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import {
+  buildGeneratePrompt,
+  buildHumanizePrompt,
+  buildScorePrompt,
+  buildRewritePrompt,
+  buildHookVariantsPrompt,
+} from "@/lib/prompts/role-aware-system"
 
 const generateSchema = z.object({
-  topic: z.string().min(3).max(200),
+  topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
   role: z.enum([
     "ai_engineer", "ceo", "hr", "sales", "designer",
     "consultant", "founder", "developer", "director",
@@ -17,13 +24,13 @@ const generateSchema = z.object({
   ]),
   tone: z.string().max(50).optional(),
   format: z.enum(["short", "medium", "long"]).default("medium"),
-  goal: z.string().max(500).optional(),
+  goal: z.string().max(500, "Goal too long").optional(),
   qualityCheck: z.boolean().default(true),
 })
 
 const patchSchema = z.object({
-  id: z.string().uuid(),
-  content: z.string().max(5000).optional(),
+  id: z.string().uuid("Invalid post ID"),
+  content: z.string().max(5000, "Content too long").optional(),
   confirmOnly: z.boolean().optional(),
 })
 
@@ -71,7 +78,6 @@ export async function POST(request: NextRequest) {
 
     const { topic, role, format, goal, qualityCheck } = parsed.data
 
-    // Check plan limits BEFORE any AI calls (uses external user ID)
     const limit = await checkPlanLimit(user.id, "drafts")
     if (!limit.allowed) {
       return NextResponse.json(
@@ -82,12 +88,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Verify user has a workspace
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
 
-    // Fetch voice profile (optional)
     const { data: voiceProfile } = await supabase
       .from("voice_profiles")
       .select("*")
@@ -95,12 +99,11 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single()
 
-    // Build prompts - REPLACE THESE with imports from your actual prompt system
+    // PASS 1: Generate raw post
     const { system: genSystem, user: genUser } = buildGeneratePrompt(
       role, topic, format, goal, voiceProfile || undefined
     )
 
-    // PASS 1: Generate raw post
     const rawPost = await callAi(genSystem, genUser, {
       temperature: 0.85, maxTokens: 900,
       userId: user.id, plan: user.plan, cache: false,
@@ -138,7 +141,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Atomically increment usage (uses external user ID)
+    // Atomically increment usage
     const usageResult = await incrementUsage(user.id, "drafts")
     if (!usageResult.allowed) {
       return NextResponse.json(
@@ -147,7 +150,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Save post with workspace_id (uses internal user ID for ownership via RLS)
     const { hook, body: bodyText, cta, hashtags } = splitPost(content)
 
     const { data: savedPost, error: saveError } = await supabase.from("posts").insert({
@@ -198,7 +200,6 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = createServiceClient()
 
-    // Verify ownership through workspace membership
     const { data: post } = await supabase
       .from("posts")
       .select("id, workspace_id")
@@ -209,7 +210,6 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    // Verify user is member of the workspace
     const { data: membership } = await supabase
       .from("memberships")
       .select("id")
@@ -234,28 +234,4 @@ export async function PATCH(request: NextRequest) {
     if (!updated) return NextResponse.json({ error: "Failed to update" }, { status: 500 })
     return NextResponse.json({ post: updated })
   })(request)
-}
-
-// REPLACE these with imports from your actual prompt system
-function buildGeneratePrompt(role: string, topic: string, format: string, goal?: string, voiceProfile?: any) {
-  return {
-    system: `You are a LinkedIn ghostwriter for ${role}s. Write engaging, authentic posts. No em dashes. No generic openers.`,
-    user: `Write a ${format} LinkedIn post about: ${topic}${goal ? `\nGoal: ${goal}` : ""}${voiceProfile ? `\nVoice: ${voiceProfile.tone || "natural"}` : ""}`
-  }
-}
-
-function buildHumanizePrompt(rawPost: string, role: string) {
-  return { system: "You are an editor who removes AI tells. Make minimum edits. Keep structure.", user: rawPost }
-}
-
-function buildScorePrompt(post: string, role: string) {
-  return { system: `Score this LinkedIn post for ${role}s. Return JSON with hook_score, authenticity_score, specificity_score, engagement_score, formatting_score, total_score, is_good_enough, biggest_weakness, fix_instruction.`, user: post }
-}
-
-function buildRewritePrompt(post: string, fix: string, weakness: string, role: string, voiceProfile?: any) {
-  return { system: `Rewrite this LinkedIn post for a ${role}. Fix only: ${weakness}. Instruction: ${fix}.`, user: post }
-}
-
-function buildHookVariantsPrompt(topic: string, role: string) {
-  return { system: `Generate 3 LinkedIn hooks for ${role}s on topic: ${topic}. Return JSON array.`, user: topic }
 }
