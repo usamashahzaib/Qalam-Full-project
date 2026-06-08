@@ -72,7 +72,8 @@
       "Bash(npx playwright *)",
       "Bash(cat vercel.json)",
       "Bash(ls .env*)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(git commit *)"
     ]
   }
 }
