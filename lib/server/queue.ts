@@ -1,15 +1,15 @@
 import { Redis } from "@upstash/redis"
 import { Ratelimit } from "@upstash/ratelimit"
+import { requireRedisEnv } from "@/lib/server/env"
 
 let redis: Redis | null = null
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
 
 const getRedis = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
-  if (!url || !token || url.includes("...") || token.includes("...")) return null
-  redis ??= new Redis({ url, token })
+  const config = requireRedisEnv()
+  if (!config) return null
+  redis ??= new Redis({ url: config.url, token: config.token })
   return redis
 }
 
