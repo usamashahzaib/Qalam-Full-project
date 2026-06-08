@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { callAi } from "@/lib/server/ai-router-v2"
+import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 
 const schema = z.object({
   headline: z.string().min(3).max(300),
@@ -51,7 +51,9 @@ OUTPUT JSON:
       }
     )
 
-    return NextResponse.json(JSON.parse(result))
+    const aiJson = safeParseJson(result)
+    if (!aiJson) return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
+    return NextResponse.json(aiJson)
   } catch (error) {
     console.error("[Free Tool Error]", error)
     return NextResponse.json(

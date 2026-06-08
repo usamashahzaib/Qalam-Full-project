@@ -1,6 +1,18 @@
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 
+// Strips markdown fences, extracts first JSON object/array, returns null on failure
+export function safeParseJson<T = unknown>(raw: string): T | null {
+  try {
+    const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim()
+    const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/)
+    if (!match) return null
+    return JSON.parse(match[0]) as T
+  } catch {
+    return null
+  }
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
@@ -34,8 +46,7 @@ async function callGemini(
           ],
           generationConfig: {
             temperature: 0.7,
-            responseMimeType: json ? "application/json" : "text/plain",
-            maxOutputTokens: 2048,
+            maxOutputTokens: 8192,
           },
         }),
       }
