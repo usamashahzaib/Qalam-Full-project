@@ -74,7 +74,8 @@
       "Bash(ls .env*)",
       "Bash(git fetch *)",
       "Bash(git commit *)",
-      "Bash(del *)"
+      "Bash(del *)",
+      "Bash(npx vercel *)"
     ]
   }
 }

@@ -1,13 +1,16 @@
+// lib/server/plan-limits-v2.ts
+// CORRECTED - uses your actual plan_usage table and increment_plan_usage RPC
+
 import { createServiceClient } from "./supabase-rest"
 
-export type Feature = "drafts" | "carousels" | "voice" | "research"
+export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
 export type PlanName = "free" | "solo" | "pro" | "agency"
 
 const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
-  free: { drafts: 5, carousels: 1, voice: 0, research: 0 },
-  solo: { drafts: 30, carousels: 3, voice: 0, research: 0 },
-  pro: { drafts: 60, carousels: 10, voice: 1, research: 5 },
-  agency: { drafts: 300, carousels: 50, voice: 5, research: 25 },
+  free: { drafts: 5, carousels: 1, hooks: 5, analyses: 3 },
+  solo: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
+  pro: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
+  agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
 }
 
 const normalizePlan = (plan?: string | null): PlanName => {
@@ -18,114 +21,103 @@ const normalizePlan = (plan?: string | null): PlanName => {
   return "free"
 }
 
-const getMonthBounds = () => {
-  const now = new Date()
-  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
-  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0))
-  return { start: start.toISOString(), end: end.toISOString() }
+const FIELD_MAP: Record<Feature, string> = {
+  drafts: "ai_drafts_used",
+  carousels: "carousels_used",
+  hooks: "hooks_used",
+  analyses: "analyses_used",
 }
 
-export async function getPlanStatus(userId: string) {
+// Get plan status from plan_usage table
+export async function getPlanStatus(externalUserId: string) {
   const supabase = createServiceClient()
-  const { start, end } = getMonthBounds()
 
-  const { data: user } = await supabase
-    .from("users")
-    .select("plan, plan_expires_at, remaining_drafts")
-    .eq("id", userId)
-    .single()
+  const { data: usageData } = await supabase.rpc("get_or_create_plan_usage", {
+    p_user_id: externalUserId
+  })
 
-  const expired = user?.plan_expires_at && new Date(user.plan_expires_at) < new Date()
-  const plan = expired ? "free" : normalizePlan(user?.plan)
+  const usage = usageData ? JSON.parse(JSON.stringify(usageData)) : null
+  const plan = normalizePlan(usage?.plan)
   const config = PLAN_CONFIG[plan]
-
-  const { count: postsCount } = await supabase
-    .from("posts")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", start)
-    .lt("created_at", end)
-
-  const { count: carouselsCount } = await supabase
-    .from("carousels")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .gte("created_at", start)
-    .lt("created_at", end)
 
   return {
     plan,
-    limit: config.drafts,
-    used: postsCount || 0,
-    remaining: Math.max(0, config.drafts - (postsCount || 0)),
-    resetsAt: end,
-    carousels: {
-      used: carouselsCount || 0,
-      limit: config.carousels,
-      remaining: Math.max(0, config.carousels - (carouselsCount || 0)),
+    drafts: {
+      used: usage?.ai_drafts_used || 0,
+      limit: config.drafts,
+      remaining: Math.max(0, config.drafts - (usage?.ai_drafts_used || 0))
     },
-    voice: config.voice,
-    research: config.research,
+    carousels: {
+      used: usage?.carousels_used || 0,
+      limit: config.carousels,
+      remaining: Math.max(0, config.carousels - (usage?.carousels_used || 0))
+    },
+    hooks: {
+      used: usage?.hooks_used || 0,
+      limit: config.hooks,
+      remaining: Math.max(0, config.hooks - (usage?.hooks_used || 0))
+    },
+    analyses: {
+      used: usage?.analyses_used || 0,
+      limit: config.analyses,
+      remaining: Math.max(0, config.analyses - (usage?.analyses_used || 0))
+    },
+    cycleEnd: usage?.cycle_end,
   }
 }
 
-export async function checkPlanLimit(userId: string, feature: Feature) {
-  const status = await getPlanStatus(userId)
-  const config = PLAN_CONFIG[status.plan as PlanName]
-  const limit = config[feature] || 0
-  const current =
-    feature === "drafts"
-      ? status.used
-      : feature === "carousels"
-        ? status.carousels.used
-        : 0
-  const remaining = Math.max(0, limit - current)
+// Check if user can use a feature
+export async function checkPlanLimit(externalUserId: string, feature: Feature) {
+  const status = await getPlanStatus(externalUserId)
+  const featureData = status[feature]
 
-  return { allowed: remaining > 0, current, limit, remaining, plan: status.plan }
+  return {
+    allowed: featureData.remaining > 0,
+    current: featureData.used,
+    limit: featureData.limit,
+    remaining: featureData.remaining,
+    plan: status.plan,
+  }
 }
 
-export async function decrementDraft(userId: string) {
+// Atomically increment usage using your existing RPC
+export async function incrementUsage(externalUserId: string, feature: Feature) {
   const supabase = createServiceClient()
+  const plan = (await checkPlanLimit(externalUserId, feature)).plan
+  const config = PLAN_CONFIG[plan]
+  const limit = config[feature]
+  const field = FIELD_MAP[feature]
 
-  try {
-    const { data, error } = await supabase.rpc("atomic_decrement_draft", { p_user_id: userId })
-    if (!error && data) {
-      const row = Array.isArray(data) ? data[0] : data
-      return { success: Boolean(row?.success ?? true), remaining: Number(row?.remaining ?? 0) }
-    }
-  } catch (e) {
-    console.error("[decrementDraft] RPC failed:", e)
+  const { data: result } = await supabase.rpc("increment_plan_usage", {
+    p_user_id: externalUserId,
+    p_field: field,
+    p_max_allowed: limit
+  })
+
+  if (!result) {
+    return { allowed: false, current: 0, limit, error: "RPC failed" }
   }
 
-  // Fallback: read-then-update with row-level guard
-  const { data: user } = await supabase
-    .from("users")
-    .select("remaining_drafts")
-    .eq("id", userId)
-    .single()
-
-  const current = Number(user?.remaining_drafts ?? 0)
-  if (current <= 0) return { success: false, remaining: 0 }
-
-  const { data: updated, error } = await supabase
-    .from("users")
-    .update({ remaining_drafts: current - 1, updated_at: new Date().toISOString() })
-    .eq("id", userId)
-    .gt("remaining_drafts", 0)
-    .select("remaining_drafts")
-    .single()
-
-  if (error || !updated) return { success: false, remaining: 0 }
-  return { success: true, remaining: updated.remaining_drafts }
+  const parsed = JSON.parse(JSON.stringify(result))
+  return {
+    allowed: parsed.allowed === true,
+    current: parsed.current || 0,
+    limit: parsed.limit || limit,
+    remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
+    error: parsed.error,
+  }
 }
 
+// Check if a feature is allowed by plan name
 export function isFeatureAllowed(plan: string, feature: string): boolean {
   const normalized = normalizePlan(plan)
   const config = PLAN_CONFIG[normalized]
-  if (feature === "carousel" || feature === "carousel_standard") return config.carousels > 0
-  if (feature === "voice" || feature === "voiceProfile") return config.voice > 0
-  if (feature === "research" || feature === "competitorResearch") return config.research > 0
+
+  if (feature === "carousel" || feature === "carousel_standard" || feature === "carousels") return config.carousels > 0
+  if (feature === "voice" || feature === "voiceProfile") return normalized !== "free"
+  if (feature === "research" || feature === "competitorResearch") return normalized !== "free"
   if (feature === "approvalWorkflow" || feature === "teamSeats") return normalized === "agency"
   if (feature === "basic_analytics") return normalized !== "free"
+
   return normalized !== "free"
 }
