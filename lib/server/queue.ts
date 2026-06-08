@@ -61,14 +61,27 @@ export async function cacheAiResponse(
   ttlSeconds = 86400
 ) {
   const r = getRedis()
-  if (!r) return
-  await r.setex(`ai_cache:${promptHash}`, ttlSeconds, response)
+  if (!r) {
+    console.log("[Redis] Not configured — skipping cache write")
+    return
+  }
+  try {
+    await r.setex(`ai_cache:${promptHash}`, ttlSeconds, response)
+    console.log(`[Redis] Cached key ai_cache:${promptHash}`)
+  } catch (e) {
+    console.error("[Redis Cache Write Error]", (e as Error).message)
+  }
 }
 
 export async function getCachedAiResponse(promptHash: string): Promise<string | null> {
   const r = getRedis()
   if (!r) return null
-  return await r.get<string>(`ai_cache:${promptHash}`)
+  try {
+    return await r.get<string>(`ai_cache:${promptHash}`)
+  } catch (e) {
+    console.error("[Redis Cache Read Error]", (e as Error).message)
+    return null
+  }
 }
 
 export function hashPrompt(system: string, user: string, options: unknown): string {
