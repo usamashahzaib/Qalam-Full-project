@@ -1,27 +1,17 @@
-import NextAuth, { type NextAuthConfig } from "next-auth"
+import NextAuth, { type NextAuthConfig, type DefaultSession } from "next-auth"
 import LinkedIn from "next-auth/providers/linkedin"
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string
-      email?: string | null
-      name?: string | null
-      image?: string | null
-    }
+    } & DefaultSession["user"]
   }
-
-  interface User {
-    id?: string
-  }
-}
-
-declare module "@auth/core/jwt" {
   interface JWT {
     id?: string
-    email?: string | null
-    name?: string | null
-    picture?: string | null
+    email?: string
+    name?: string
+    picture?: string
   }
 }
 
@@ -37,24 +27,24 @@ const config: NextAuthConfig = {
   session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   pages: { signIn: "/login", error: "/login" },
   callbacks: {
-    async signIn({ user, account }) {
-      console.log("nextauth_signin", { provider: account?.provider, email: user.email })
+    async signIn({ user }) {
+      console.log("Sign-in attempt:", user.email)
       return true
     },
     async jwt({ token, user, trigger }) {
       if (trigger === "signIn" && user) {
         token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.picture = user.image
+        token.email = user.email ?? undefined
+        token.name = user.name ?? undefined
+        token.picture = user.image ?? undefined
       }
       return token
     },
     async session({ session, token }) {
-      session.user.id = String(token.id || "")
-      session.user.email = String(token.email || "")
-      session.user.name = token.name || null
-      session.user.image = token.picture || null
+      session.user.id = token.id as string
+      session.user.email = token.email as string
+      session.user.name = (token.name as string) ?? null
+      session.user.image = (token.picture as string) ?? null
       return session
     },
   },

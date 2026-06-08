@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const botPatterns = [/bot/i, /crawler/i, /spider/i, /headless/i, /phantom/i, /selenium/i, /playwright/i, /puppeteer/i, /curl/i, /wget/i]
+const BOT_PATTERN = /bot|crawler|spider|headless|python-requests|curl|wget|scrapy|postman|phantom|selenium|playwright|puppeteer/i
 
 export function detectBot(request: NextRequest): { isBot: boolean; reason?: string } {
   const ua = request.headers.get("user-agent") || ""
-  if (!ua.trim()) return { isBot: true, reason: "missing_user_agent" }
-  if (botPatterns.some((pattern) => pattern.test(ua))) return { isBot: true, reason: "bot_user_agent" }
+  if (!ua.trim()) return { isBot: true, reason: "No user agent" }
+  if (BOT_PATTERN.test(ua)) return { isBot: true, reason: "Known bot pattern" }
   if (request.headers.get("x-headless") || request.headers.get("x-automation") || request.headers.get("sec-ch-ua")?.includes("Headless")) {
-    return { isBot: true, reason: "automation_headers" }
+    return { isBot: true, reason: "Automation headers detected" }
   }
   return { isBot: false }
 }
@@ -24,7 +24,7 @@ export function sanitizeInput(input: string): string {
 }
 
 export function generateRequestId(): string {
-  return `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
 }
 
 export function setSecurityHeaders(response: NextResponse): NextResponse {
@@ -36,14 +36,8 @@ export function setSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-export function logApiRequest(request: NextRequest, requestId: string) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown"
-  console.log("api_request", {
-    requestId,
-    method: request.method,
-    path: request.nextUrl.pathname,
-    ip,
-    userAgent: request.headers.get("user-agent") || "",
-    timestamp: new Date().toISOString(),
-  })
+export function logApiRequest(request: NextRequest, requestId: string): void {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+  const ua = request.headers.get("user-agent")?.substring(0, 50)
+  console.log(`[${requestId}] ${request.method} ${request.nextUrl.pathname} - IP: ${ip} - UA: ${ua}`)
 }

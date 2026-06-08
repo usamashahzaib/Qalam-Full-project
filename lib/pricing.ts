@@ -1,17 +1,29 @@
-export type PlanName = "Free" | "Pro" | "Agency"
+export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
 
 export type Plan = {
   name: PlanName
-  monthlyPrice: number
-  annualPrice?: number
-  draftsPerMonth: number
-  carouselsPerMonth: number
+  monthlyPrice: number | null
+  annualPrice?: number | null
+  postsPerMonth: number | null
+  draftsPerMonth: number | null
+  carouselsPerMonth: number | null
   researchPerMonth: number
   voiceProfiles: number
   workspaces: number
+  annualSavingsLabel: string
   features: string[]
   cta: string
   badge: string
+  comingSoon?: boolean
+}
+
+export type ManagedPlan = {
+  name: string
+  monthlyPrice: number
+  postsPerMonth: number
+  description: string
+  features: string[]
+  cta: string
 }
 
 export const annualFraming = "5 months free"
@@ -21,58 +33,110 @@ export const plans: Plan[] = [
   {
     name: "Free",
     monthlyPrice: 0,
-    draftsPerMonth: 10,
-    carouselsPerMonth: 2,
+    postsPerMonth: 5,
+    draftsPerMonth: 5,
+    carouselsPerMonth: 1,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    features: ["Basic AI Writer", "Hook Generator", "2 Carousel Templates"],
+    annualSavingsLabel: "",
+    features: ["5 posts/month", "1 carousel/month", "Basic AI Writer", "Hook Generator"],
     cta: "Start Free",
     badge: "No card required",
   },
   {
+    name: "Solo",
+    monthlyPrice: 499,
+    annualPrice: 3493,
+    postsPerMonth: 30,
+    draftsPerMonth: 30,
+    carouselsPerMonth: 3,
+    researchPerMonth: 0,
+    voiceProfiles: 0,
+    workspaces: 1,
+    annualSavingsLabel: "Save PKR 2,495",
+    features: ["30 posts/month", "3 carousels/month", "Role-Aware AI Writer", "Hook Generator", "Post Library"],
+    cta: "Start Solo",
+    badge: "Most popular",
+  },
+  {
     name: "Pro",
-    monthlyPrice: 990,
-    annualPrice: 6930,
+    monthlyPrice: 1490,
+    annualPrice: 10430,
+    postsPerMonth: 60,
     draftsPerMonth: 60,
     carouselsPerMonth: 10,
     researchPerMonth: 5,
     voiceProfiles: 1,
     workspaces: 1,
-    features: ["AI Writer", "10 Carousel Templates", "Voice Training", "AI Strategist", "Priority Queue", "Analytics"],
+    annualSavingsLabel: "Save PKR 7,450",
+    features: ["60 posts/month", "10 carousels/month", "Voice Training", "Push to 90+ quality check", "AI Strategist", "Priority Queue", "Analytics"],
     cta: "Get Pro",
     badge: "Best value",
   },
   {
     name: "Agency",
-    monthlyPrice: 4990,
-    annualPrice: 34930,
-    draftsPerMonth: 300,
-    carouselsPerMonth: 50,
-    researchPerMonth: 25,
+    monthlyPrice: null,
+    annualPrice: null,
+    postsPerMonth: null,
+    draftsPerMonth: null,
+    carouselsPerMonth: null,
+    researchPerMonth: 0,
     voiceProfiles: 5,
     workspaces: 5,
-    features: ["Everything in Pro", "5 Workspaces", "Approval Workflow", "Team Analytics"],
-    cta: "Get Agency",
-    badge: "For teams",
+    comingSoon: true,
+    annualSavingsLabel: "",
+    features: ["Everything in Pro", "5 Workspaces", "Approval Workflow", "Team Analytics", "Dedicated Support"],
+    cta: "Join Waitlist",
+    badge: "Coming Soon",
   },
 ]
 
-export const getPlanByName = (name: string) => plans.find((p) => p.name.toLowerCase() === name.toLowerCase()) || plans[0]
-export const getPlanFeatures = (name: string) => getPlanByName(name).features
-export const getCarouselLimit = (plan: string) => getPlanByName(plan).carouselsPerMonth
-export const canUseVoice = (plan: string) => getPlanByName(plan).voiceProfiles > 0
-export const getAnnualSavings = (planName: string) => {
+export const MANAGED_PLANS: ManagedPlan[] = [
+  {
+    name: "Basic Management",
+    monthlyPrice: 2999,
+    postsPerMonth: 12,
+    description: "We write and post 3x/week on your behalf. 1 revision per post.",
+    features: ["12 posts/month", "Client approval flow", "1 revision per post", "Monthly report"],
+    cta: "Apply Now",
+  },
+  {
+    name: "Premium Management",
+    monthlyPrice: 6999,
+    postsPerMonth: 20,
+    description: "Full LinkedIn management - posts, carousels, voice, strategy.",
+    features: ["20 posts/month", "2 carousels/month", "Voice training", "Engagement strategy", "Analytics report", "WhatsApp support"],
+    cta: "Apply Now",
+  },
+]
+
+export const getPlanByName = (name: string): Plan =>
+  plans.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? plans[0]
+
+export const getPlanFeatures = (name: string): string[] => getPlanByName(name).features
+
+export const getCarouselLimit = (plan: string): number => getPlanByName(plan).carouselsPerMonth ?? 0
+
+export const getPostLimit = (plan: string): number => getPlanByName(plan).postsPerMonth ?? 0
+
+export const canUseVoice = (plan: string): boolean => getPlanByName(plan).voiceProfiles > 0
+
+export const getAnnualSavings = (planName: string): number => {
   const plan = getPlanByName(planName)
-  return plan.annualPrice ? plan.monthlyPrice * 12 - plan.annualPrice : 0
+  if (!plan.monthlyPrice || !plan.annualPrice) return 0
+  return plan.monthlyPrice * 12 - plan.annualPrice
 }
 
-export function isFeatureAllowed(plan: string, feature: string) {
+export const isComingSoon = (plan: string): boolean => getPlanByName(plan).comingSoon === true
+
+export function isFeatureAllowed(plan: string, feature: string): boolean {
   const current = getPlanByName(plan)
-  if (feature === "carousel") return current.carouselsPerMonth > 0
+  if (feature === "carousel" || feature === "carousel_standard") return (current.carouselsPerMonth ?? 0) > 0
   if (feature === "voice" || feature === "voiceProfile") return current.voiceProfiles > 0
   if (feature === "research" || feature === "competitorResearch") return current.researchPerMonth > 0
   if (feature === "approvalWorkflow" || feature === "teamSeats") return current.name === "Agency"
+  if (feature === "basic_analytics") return current.name === "Solo" || current.name === "Pro" || current.name === "Agency"
   return current.name !== "Free"
 }
 
@@ -80,7 +144,7 @@ export const hasFeature = isFeatureAllowed
 
 export interface PricingPlan {
   plan: string
-  monthlyPkr: number
+  monthlyPkr: number | null
   annualPkrPerMonth?: number
   period: string
   description: string
@@ -90,40 +154,93 @@ export interface PricingPlan {
   highlighted?: boolean
   badge?: string
   featureStatus: "live" | "beta" | "coming_soon"
+  comingSoon?: boolean
 }
 
 export const PLANS: PricingPlan[] = plans.map((plan) => ({
   plan: plan.name,
   monthlyPkr: plan.monthlyPrice,
-  annualPkrPerMonth: plan.annualPrice ? Math.round(plan.annualPrice / 12) : undefined,
-  period: plan.monthlyPrice === 0 ? "forever" : "mo",
+  annualPkrPerMonth: plan.annualPrice != null ? Math.round(plan.annualPrice / 12) : undefined,
+  period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "mo",
   description:
     plan.name === "Free"
       ? "Start with essential LinkedIn writing tools."
-      : plan.name === "Pro"
-        ? "For creators who need voice, strategy, analytics, and more output."
-        : "For teams managing multiple workspaces and approvals.",
+      : plan.name === "Solo"
+        ? "For creators ready to publish consistently."
+        : plan.name === "Pro"
+          ? "For creators who need voice, strategy, analytics, and more output."
+          : "For teams managing multiple workspaces and approvals.",
   features: plan.features,
   cta: plan.cta,
-  href: plan.name === "Agency" ? "/contact" : "/login",
-  highlighted: plan.name === "Pro",
+  href: plan.comingSoon ? "/contact" : "/login",
+  highlighted: plan.name === "Solo",
   badge: plan.badge,
-  featureStatus: plan.name === "Agency" ? "beta" : "live",
+  featureStatus: plan.comingSoon ? "coming_soon" : "live",
+  comingSoon: plan.comingSoon,
 }))
 
 export const PLAN_PRICES: Record<string, { monthly: number; annual: number }> = Object.fromEntries(
-  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice, annual: plan.annualPrice || 0 }])
+  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice ?? 0, annual: plan.annualPrice ?? 0 }])
 )
 
-export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(plans.map((plan) => [plan.name, plan.features]))
+export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
+  plans.map((plan) => [plan.name, plan.features])
+)
 
 export const COMPARISON_ROWS = [
-  { label: "AI drafts", free: "10/month", solo: "-", pro: "60/month", agencyStarter: "300/month", agencyGrowth: "-" },
-  { label: "Voice profiles", free: "-", solo: "-", pro: "1", agencyStarter: "5", agencyGrowth: "-" },
-  { label: "Carousel generation", free: "2/month", solo: "-", pro: "10/month", agencyStarter: "50/month", agencyGrowth: "-" },
-  { label: "Research", free: "-", solo: "-", pro: "5/month", agencyStarter: "25/month", agencyGrowth: "-" },
-  { label: "Client workspaces", free: "1", solo: "-", pro: "1", agencyStarter: "5", agencyGrowth: "-" },
-  { label: "Monthly price", free: "Free", solo: "-", pro: "PKR 990", agencyStarter: "PKR 4,990", agencyGrowth: "-" },
+  {
+    label: "Posts per month",
+    free: "5",
+    solo: "30",
+    pro: "60",
+    agency: "Coming Soon",
+  },
+  {
+    label: "Carousels per month",
+    free: "1",
+    solo: "3",
+    pro: "10",
+    agency: "Coming Soon",
+  },
+  {
+    label: "AI Writer",
+    free: "Basic",
+    solo: "Role-Aware",
+    pro: "Role-Aware + Strategist",
+    agency: "Full",
+  },
+  {
+    label: "Voice profiles",
+    free: "-",
+    solo: "-",
+    pro: "1",
+    agency: "5",
+  },
+  {
+    label: "Client workspaces",
+    free: "1",
+    solo: "1",
+    pro: "1",
+    agency: "5",
+  },
+  {
+    label: "Analytics",
+    free: "-",
+    solo: "-",
+    pro: "Yes",
+    agency: "Team Analytics",
+  },
+  {
+    label: "Monthly price",
+    free: "Free",
+    solo: "PKR 499",
+    pro: "PKR 1,490",
+    agency: "Coming Soon",
+  },
 ]
 
-export const formatPkr = (amount: number) => (amount === 0 ? "Free" : `PKR ${amount.toLocaleString("en-PK")}`)
+export const formatPkr = (amount: number | null | undefined): string => {
+  if (amount == null) return "Contact Us"
+  if (amount === 0) return "Free"
+  return `PKR ${amount.toLocaleString("en-PK")}`
+}

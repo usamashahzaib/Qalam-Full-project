@@ -56,8 +56,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
       description: plan.description,
       note: noteOverride,
       price: formatPkr(plan.monthlyPkr),
-      annualSavings: plan.annualPkrPerMonth && plan.monthlyPkr > 0 ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}` : undefined,
-      usdReference: plan.annualPkrPerMonth && plan.monthlyPkr > 0 ? `Save ${annualSavingsPercent}%` : "Free forever",
+      annualSavings: plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0 ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}` : undefined,
+      usdReference: plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0 ? `Save ${annualSavingsPercent}%` : "Free forever",
     }
   })
 
@@ -267,12 +267,11 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <table className="min-w-[820px] w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="w-[24%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
+                    <th className="w-[28%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
-                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency Starter</th>
-                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency Growth</th>
+                    <th className="bg-gold/5 px-4 py-4 text-center font-semibold text-gold">Agency</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -289,8 +288,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "-" : row.free}</td>
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "-" : row.solo}</td>
                       <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "-" : row.pro}</span></td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.agencyStarter === "-" ? "-" : row.agencyStarter}</td>
-                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agencyGrowth === "-" ? "-" : row.agencyGrowth}</span></td>
+                      <td className="bg-gold/5 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-gold">{row.agency === "-" ? "-" : row.agency}</span></td>
                     </motion.tr>
                   ))}
                 </tbody>

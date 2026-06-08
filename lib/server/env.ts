@@ -34,16 +34,21 @@ export const requireSupabaseEnv = () => {
   }
 }
 
-export const requireAiEnv = () => {
+export function requireAiEnv(): void {
   if (!env.groqApiKey && !env.geminiApiKey) {
-    throw new Error("ai_env_missing")
+    throw new Error("At least one AI provider key is required (GROQ_API_KEY or GEMINI_API_KEY)")
   }
 }
 
-export const requireAuthEnv = () => {
+export function requireAuthEnv(): void {
   if (!env.authSecret) {
-    throw new Error("auth_env_missing")
+    throw new Error("AUTH_SECRET is required")
   }
+}
+
+export function requireRedisEnv(): { url: string; token: string } | null {
+  if (!env.upstashRedisUrl || !env.upstashRedisToken) return null
+  return { url: env.upstashRedisUrl, token: env.upstashRedisToken }
 }
 
 export const supportEnv = {

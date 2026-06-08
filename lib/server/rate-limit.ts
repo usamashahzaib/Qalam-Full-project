@@ -1,90 +1,87 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import type { NextRequest } from "next/server"
+import { env } from "@/lib/server/env"
 
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
 type Bucket = { count: number; resetTime: number }
-type Plan = "free" | "solo" | "pro" | "agency"
 
-const limits: Record<Plan | "ip", number> = { free: 5, solo: 10, pro: 20, agency: 20, ip: 30 }
-const buckets = new Map<string, Bucket>()
+const memoryStore = new Map<string, Bucket>()
 const WINDOW_MS = 60_000
-let lastCleanup = 0
-let redisLimiters: Record<"free" | "solo" | "pro" | "ip", Ratelimit> | null = null
 
-const hasRedis = () =>
-  Boolean(process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://") && process.env.UPSTASH_REDIS_REST_TOKEN)
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, bucket] of memoryStore) {
+    if (bucket.resetTime < now) memoryStore.delete(key)
+  }
+}, WINDOW_MS)
 
-const getRedisLimiters = () => {
-  if (!hasRedis()) return null
-  if (redisLimiters) return redisLimiters
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  })
+const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
+
+let redisClient: Redis | null = null
+let redisLimiters: Record<string, Ratelimit> | null = null
+
+const getRedis = (): { redis: Redis; limiters: Record<string, Ratelimit> } | null => {
+  if (!env.upstashRedisUrl?.startsWith("https://") || !env.upstashRedisToken) return null
+  if (redisClient && redisLimiters) return { redis: redisClient, limiters: redisLimiters }
+  redisClient = new Redis({ url: env.upstashRedisUrl, token: env.upstashRedisToken })
   redisLimiters = {
-    free: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(limits.free, "1 m") }),
-    solo: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(limits.solo, "1 m") }),
-    pro: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(limits.pro, "1 m") }),
-    ip: new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(limits.ip, "1 m") }),
+    free: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.free, "1 m") }),
+    solo: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.solo, "1 m") }),
+    pro: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.pro, "1 m") }),
+    agency: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.agency, "1 m") }),
   }
-  return redisLimiters
+  return { redis: redisClient, limiters: redisLimiters }
 }
 
-const clean = () => {
+const memoryFallback = (key: string, limit: number): LimitResult => {
   const now = Date.now()
-  if (now - lastCleanup < WINDOW_MS) return
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetTime <= now) buckets.delete(key)
+  const existing = memoryStore.get(key)
+  if (existing && existing.resetTime > now) {
+    existing.count += 1
+    const allowed = existing.count <= limit
+    return { allowed, limit, remaining: Math.max(0, limit - existing.count), reset: existing.resetTime }
   }
-  lastCleanup = now
-}
-
-const fallbackLimit = (key: string, limit: number): LimitResult => {
-  clean()
-  const now = Date.now()
-  const bucket = buckets.get(key)
-  if (!bucket || bucket.resetTime <= now) {
-    buckets.set(key, { count: 1, resetTime: now + WINDOW_MS })
-    return { allowed: true, limit, remaining: limit - 1, reset: now + WINDOW_MS }
-  }
-  if (bucket.count >= limit) return { allowed: false, limit, remaining: 0, reset: bucket.resetTime }
-  bucket.count += 1
-  return { allowed: true, limit, remaining: Math.max(0, limit - bucket.count), reset: bucket.resetTime }
-}
-
-const planKey = (plan: string): Plan => {
-  const key = plan.toLowerCase()
-  if (key === "solo") return "solo"
-  if (key === "pro") return "pro"
-  if (key === "agency") return "agency"
-  return "free"
+  const resetTime = now + WINDOW_MS
+  memoryStore.set(key, { count: 1, resetTime })
+  return { allowed: true, limit, remaining: limit - 1, reset: resetTime }
 }
 
 export function getClientIp(request: NextRequest): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "anonymous"
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 }
 
-export async function checkRateLimit(identifier: string, plan: string, ip: string): Promise<LimitResult> {
-  const key = planKey(plan)
+export async function checkRateLimit(
+  identifier: string,
+  plan: string,
+  ip: string,
+): Promise<LimitResult> {
+  const planKey = planLimits[plan.toLowerCase()] !== undefined ? plan.toLowerCase() : "free"
+  const limit = planLimits[planKey]
+  const memKey = `ip:${ip}:route:${identifier}`
+
   try {
-    const redis = getRedisLimiters()
-    if (redis) {
-      const ipResult = await redis.ip.limit(`ip:${ip}`)
-      if (!ipResult.success) return { allowed: false, limit: limits.ip, remaining: 0, reset: ipResult.reset }
-      const limiter = key === "agency" ? redis.pro : redis[key]
-      const result = await limiter.limit(`user:${identifier}`)
-      return { allowed: result.success, limit: result.limit, remaining: result.remaining, reset: result.reset }
+    const store = getRedis()
+    if (store) {
+      const limiter = store.limiters[planKey] ?? store.limiters.free
+      const result = await limiter.limit(memKey)
+      return {
+        allowed: result.success,
+        limit: result.limit,
+        remaining: result.remaining,
+        reset: result.reset,
+      }
     }
-    const ipResult = fallbackLimit(`ip:${ip}:route:all`, limits.ip)
-    if (!ipResult.allowed) return ipResult
-    return fallbackLimit(`ip:${ip}:route:${identifier}`, limits[key])
   } catch {
-    return fallbackLimit(`ip:${ip}:route:${identifier}`, limits[key])
+    // Redis failed — fall through to in-memory
   }
+
+  return memoryFallback(memKey, limit)
 }
 
-export async function checkBotDetection(ip: string, userAgent: string): Promise<boolean> {
-  if (!ip || !userAgent?.trim()) return true
-  return /(bot|crawler|spider|scrapy|curl|wget|python-requests|headless|phantom|selenium|playwright)/i.test(userAgent)
+export async function checkBotDetection(ip: string, userAgent: string | null): Promise<boolean> {
+  if (!userAgent || !userAgent.trim()) return true
+  const botPattern =
+    /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i
+  return botPattern.test(userAgent)
 }

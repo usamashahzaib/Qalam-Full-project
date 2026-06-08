@@ -6,6 +6,10 @@ describe("formatPkr", () => {
     expect(formatPkr(0)).toBe("Free")
   })
 
+  it("returns 'Contact Us' for null", () => {
+    expect(formatPkr(null)).toBe("Contact Us")
+  })
+
   it("formats non-zero amounts with PKR prefix", () => {
     expect(formatPkr(499)).toContain("PKR")
     expect(formatPkr(499)).toContain("499")
@@ -18,11 +22,11 @@ describe("formatPkr", () => {
 })
 
 describe("PLANS", () => {
-  it("has exactly 5 plans", () => {
-    expect(PLANS).toHaveLength(5)
+  it("has exactly 4 plans", () => {
+    expect(PLANS).toHaveLength(4)
   })
 
-  it("Free plan has zero monthly price", () => {
+  it("Free plan has zero monthly price and no annual option", () => {
     const free = PLANS.find((p) => p.plan === "Free")!
     expect(free.monthlyPkr).toBe(0)
     expect(free.annualPkrPerMonth).toBeUndefined()
@@ -33,20 +37,32 @@ describe("PLANS", () => {
     expect(solo.monthlyPkr).toBe(499)
   })
 
-  it("all paid plans have a positive monthly price", () => {
-    PLANS.filter((p) => p.plan !== "Free").forEach((plan) => {
+  it("Pro starts at 1490 PKR/month", () => {
+    const pro = PLANS.find((p) => p.plan === "Pro")!
+    expect(pro.monthlyPkr).toBe(1490)
+  })
+
+  it("Agency is coming-soon with null price", () => {
+    const agency = PLANS.find((p) => p.plan === "Agency")!
+    expect(agency.monthlyPkr).toBeNull()
+    expect(agency.comingSoon).toBe(true)
+  })
+
+  it("active paid plans have a positive monthly price", () => {
+    PLANS.filter((p) => p.plan !== "Free" && !p.comingSoon).forEach((plan) => {
       expect(plan.monthlyPkr).toBeGreaterThan(0)
     })
   })
 
-  it("annual price is lower than monthly for all paid plans that offer it", () => {
+  it("annual price per month is lower than monthly for plans that offer it", () => {
     PLANS.filter((p) => p.annualPkrPerMonth != null).forEach((plan) => {
-      expect(plan.annualPkrPerMonth!).toBeLessThan(plan.monthlyPkr)
+      expect(plan.annualPkrPerMonth!).toBeLessThan(plan.monthlyPkr!)
     })
   })
 
-  it("plans are in ascending price order", () => {
-    const prices = PLANS.map((p) => p.monthlyPkr)
+  it("active plans are in ascending price order", () => {
+    const activePlans = PLANS.filter((p) => !p.comingSoon)
+    const prices = activePlans.map((p) => p.monthlyPkr ?? 0)
     for (let i = 1; i < prices.length; i++) {
       expect(prices[i]).toBeGreaterThanOrEqual(prices[i - 1])
     }
@@ -70,18 +86,18 @@ describe("PLANS", () => {
 })
 
 describe("PLAN_PRICES consistency with PLANS", () => {
-  it("monthly prices match PLANS entries", () => {
-    PLANS.forEach((plan) => {
+  it("monthly prices match PLANS entries for active plans", () => {
+    PLANS.filter((p) => !p.comingSoon).forEach((plan) => {
       if (PLAN_PRICES[plan.plan]) {
         expect(PLAN_PRICES[plan.plan].monthly).toBe(plan.monthlyPkr)
       }
     })
   })
 
-  it("annual prices are lower than monthly for all paid plans", () => {
+  it("annual total is less than 12 monthly payments for all paid plans", () => {
     Object.entries(PLAN_PRICES).forEach(([, prices]) => {
-      if (prices.monthly > 0) {
-        expect(prices.annual).toBeLessThan(prices.monthly)
+      if (prices.monthly > 0 && prices.annual > 0) {
+        expect(prices.annual).toBeLessThan(prices.monthly * 12)
       }
     })
   })
@@ -97,21 +113,21 @@ describe("COMPARISON_ROWS integrity", () => {
     expect(COMPARISON_ROWS.length).toBeGreaterThan(0)
   })
 
-  it("every row has all five plan columns", () => {
+  it("every row has all four plan columns", () => {
     COMPARISON_ROWS.forEach((row) => {
       expect(row).toHaveProperty("label")
       expect(row).toHaveProperty("free")
       expect(row).toHaveProperty("solo")
       expect(row).toHaveProperty("pro")
-      expect(row).toHaveProperty("agencyStarter")
-      expect(row).toHaveProperty("agencyGrowth")
+      expect(row).toHaveProperty("agency")
     })
   })
 
-  it("monthly price row matches PLANS pricing", () => {
+  it("monthly price row matches current PLANS pricing", () => {
     const priceRow = COMPARISON_ROWS.find((r) => r.label === "Monthly price")!
     expect(priceRow.free).toBe("Free")
     expect(priceRow.solo).toContain("499")
-    expect(priceRow.pro).toContain("990")
+    expect(priceRow.pro).toContain("1,490")
+    expect(priceRow.agency).toContain("Coming Soon")
   })
 })

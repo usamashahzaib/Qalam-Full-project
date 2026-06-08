@@ -1,4 +1,3 @@
-import { cookies } from "next/headers"
 import { auth } from "@/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 

@@ -1,226 +1,465 @@
-import { getSystemPrompt } from "@/lib/prompts/role-aware-system"
-import { callAi } from "@/lib/server/ai-router"
+// lib/server/content-generator.ts
+// 3-pass pipeline: Generate -> Humanize -> Score + Rewrite (paid only)
+// Free users: Pass 1 + 2. Paid users: all 3 passes, up to 3 rewrite attempts.
+// Cost per post: ~$0.001 on Groq. Budget neutral even at 1000 users.
 
-export type RoleProfile = {
-  vocabulary: string[]
-  pain_points: string[]
-  hook_templates: string[]
-  banned_words: string[]
-  tone: string
+import { callAi as routerCallAi } from "@/lib/server/ai-router";
+import {
+  buildGeneratePrompt,
+  buildHumanizePrompt,
+  buildScorePrompt,
+  buildRewritePrompt,
+  buildTopicSuggestionsPrompt,
+  buildHookVariantsPrompt,
+  buildEngagementPredictionPrompt,
+  ROLE_PROFILES,
+  GENERIC_PROFILE,
+  type PostFormat,
+  type VoiceProfile,
+} from "@/lib/prompts/role-aware-system";
+
+// ---------------------------------------------------------------------------
+// TYPES
+// ---------------------------------------------------------------------------
+
+export interface GeneratedPost {
+  full_text: string;
+  hook: string;        // First line extracted
+  hashtags: string[];  // Tags extracted from end of post
+  word_count: number;
+  char_count: number;
 }
 
-export type VoiceProfile = {
-  tone?: string
-  sentenceLength?: string
-  formatting?: string
-  emojiUsage?: string
-  hashtagUsage?: string
-  vocabulary?: string[]
-  patterns?: string[]
+export interface ScoreResult {
+  hook_score: number;
+  authenticity_score: number;
+  specificity_score: number;
+  engagement_score: number;
+  formatting_score: number;
+  total_score: number;
+  is_good_enough: boolean;
+  biggest_weakness: string;
+  fix_instruction: string;
 }
 
-export type GeneratedPost = {
-  full_text: string
-  hook: string
-  body: string
-  cta: string
-  suggested_hashtags: string[]
-  engagement_prediction: string
+export interface QualityControlResult {
+  final_content: string;
+  final_score: ScoreResult;
+  attempts_used: number;
+  improved: boolean;
 }
 
-export type ScoreResult = {
-  total_score: number
-  hook_score: number
-  authenticity_score: number
-  specificity_score: number
-  engagement_score: number
-  formatting_score: number
-  feedback: string
-  is_good_enough: boolean
+export interface HookVariant {
+  style: string;
+  hook: string;
 }
 
-export type HookOption = { hook: string; style: string }
-
-export const roleOptions = ["ai_engineer", "ceo", "hr", "sales", "designer", "consultant", "founder", "developer"]
-
-const fallbackPost = (topic: string): GeneratedPost => ({
-  hook: `Most people are solving the wrong problem with ${topic}.`,
-  body: `The real issue is usually more specific than the advice sounds.\n\nStart with the constraint.\nFind the behavior behind it.\nThen build the smallest next step that proves what works.`,
-  cta: "What would you test first?",
-  full_text: `Most people are solving the wrong problem with ${topic}.\n\nThe real issue is usually more specific than the advice sounds.\n\nStart with the constraint.\nFind the behavior behind it.\nThen build the smallest next step that proves what works.\n\nWhat would you test first?\n\n#LinkedIn #Growth #Strategy`,
-  suggested_hashtags: ["LinkedIn", "Growth", "Strategy"],
-  engagement_prediction: "Specific enough to invite replies and broad enough for role-based discussion.",
-})
-
-const fallbackScore = (feedback = "Add more specific examples and a sharper first line."): ScoreResult => ({
-  total_score: 70,
-  hook_score: 70,
-  authenticity_score: 70,
-  specificity_score: 70,
-  engagement_score: 70,
-  formatting_score: 70,
-  feedback,
-  is_good_enough: false,
-})
-
-const extractJson = (text: string) => {
-  const block = text.match(/```(?:json)?\s*([\s\S]*?)```/)
-  const raw = block?.[1] || text
-  const start = raw.indexOf("{")
-  const end = raw.lastIndexOf("}")
-  if (start < 0 || end < start) throw new Error("json_missing")
-  return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>
+export interface EngagementPrediction {
+  estimated_reactions: number;
+  estimated_comments: number;
+  confidence: "low" | "medium" | "high";
+  reason: string;
 }
 
-const splitPost = (text: string) => {
-  const lines = text.split("\n").map((line) => line.trim()).filter(Boolean)
-  const hashtagLine = lines.findLast((line) => line.includes("#")) || ""
-  const suggested_hashtags = [...hashtagLine.matchAll(/#([\w-]+)/g)].map((match) => match[1]).slice(0, 5)
-  const hook = lines[0] || ""
-  const cta = [...lines].reverse().find((line) => line.endsWith("?")) || lines.at(-1) || ""
-  const body = lines.filter((line) => line !== hook && line !== cta && line !== hashtagLine).join("\n\n")
-  return { hook, body, cta, suggested_hashtags }
+export interface GenerateOptions {
+  topic: string;
+  role: string;
+  format?: PostFormat;
+  goal?: string;
+  voiceProfile?: VoiceProfile;
+  isPaidUser?: boolean;   // controls whether Pass 3 runs
+  maxRetries?: number;    // max rewrite attempts in Pass 3 (default 3)
 }
 
-const normalizePost = (raw: string): GeneratedPost => {
+// ---------------------------------------------------------------------------
+// AI CALLER
+// Thin wrapper over ai-router so call-sites use named options.
+// ---------------------------------------------------------------------------
+
+interface AiCallOptions {
+  temperature?: number;
+  maxTokens?: number;   // noted but ai-router does not forward this yet
+  expectJson?: boolean;
+}
+
+async function callAi(
+  system: string,
+  user: string,
+  options: AiCallOptions = {}
+): Promise<string> {
+  return routerCallAi(system, user, {
+    temperature: options.temperature,
+    json: options.expectJson,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// HELPERS
+// ---------------------------------------------------------------------------
+
+function extractHook(fullText: string): string {
+  const lines = fullText.split("\n").filter((l) => l.trim().length > 0);
+  return lines[0] ?? "";
+}
+
+function extractHashtags(fullText: string): string[] {
+  const matches = fullText.match(/#[\w؀-ۿ]+/g);
+  return matches ?? [];
+}
+
+function parseJson<T>(raw: string): T | null {
   try {
-    const parsed = extractJson(raw)
-    const hook = String(parsed.hook || "").trim()
-    const body = String(parsed.body || "").trim()
-    const cta = String(parsed.cta || "").trim()
-    const full_text = String(parsed.full_text || [hook, body, cta].filter(Boolean).join("\n\n")).trim()
-    const suggested_hashtags = Array.isArray(parsed.suggested_hashtags)
-      ? parsed.suggested_hashtags.map(String).map((tag) => tag.replace(/^#/, "")).filter(Boolean).slice(0, 5)
-      : splitPost(full_text).suggested_hashtags
-    return {
-      hook,
-      body,
-      cta,
-      full_text,
-      suggested_hashtags,
-      engagement_prediction: String(parsed.engagement_prediction || "Strong hook, mobile formatting, and clear CTA."),
-    }
+    const cleaned = raw
+      .replace(/```json\n?/gi, "")
+      .replace(/```\n?/g, "")
+      .trim();
+    return JSON.parse(cleaned) as T;
   } catch {
-    const parts = splitPost(raw)
-    return {
-      ...parts,
-      full_text: raw.trim(),
-      engagement_prediction: "Strong hook, mobile formatting, and clear CTA.",
-    }
+    return null;
   }
 }
 
-export async function generatePost(options: {
-  topic: string
-  role: string
-  tone?: string
+function buildPost(fullText: string): GeneratedPost {
+  return {
+    full_text: fullText.trim(),
+    hook: extractHook(fullText),
+    hashtags: extractHashtags(fullText),
+    word_count: fullText.split(/\s+/).filter(Boolean).length,
+    char_count: fullText.length,
+  };
+}
+
+// Validate the role exists - fall back to generic silently
+function resolveRole(role: string): string {
+  return role in ROLE_PROFILES ? role : "generic";
+}
+
+// ---------------------------------------------------------------------------
+// PASS 1: GENERATE
+// ---------------------------------------------------------------------------
+
+export async function generateRawPost(
+  topic: string,
+  role: string,
+  format: PostFormat = "medium",
+  goal?: string,
   voiceProfile?: VoiceProfile
-  goal?: string
-  format?: "short" | "medium" | "long"
-}): Promise<GeneratedPost> {
-  const format = options.format || "medium"
-  const systemPrompt = getSystemPrompt(options.role, options.voiceProfile, options.goal)
-  const userMessage = `Topic: ${options.topic}
-Role: ${options.role}
-Tone override: ${options.tone || "none"}
-Format: ${format}
-Return JSON with full_text, hook, body, cta, suggested_hashtags, engagement_prediction.`
+): Promise<string> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildGeneratePrompt(
+    resolvedRole,
+    topic,
+    format,
+    goal,
+    voiceProfile
+  );
 
-  try {
-    const first = await callAi(systemPrompt, userMessage, { json: false, temperature: 0.8 })
-    const post = normalizePost(first)
-    if (post.hook && post.full_text) return post
-    const retry = await callAi(systemPrompt, `Write one ${format} LinkedIn post about ${options.topic}. Return only post text.`, { json: false, temperature: 0.7 })
-    return normalizePost(retry)
-  } catch {
-    return fallbackPost(options.topic)
-  }
+  const raw = await callAi(system, user, { temperature: 0.85, maxTokens: 900 });
+  return raw.trim();
 }
 
-export async function scoreContent(content: string, role: string): Promise<ScoreResult> {
-  const prompt = `Score this LinkedIn post for role ${role}. Return strict JSON with total_score, hook_score, authenticity_score, specificity_score, engagement_score, formatting_score, feedback, is_good_enough.
+// ---------------------------------------------------------------------------
+// PASS 2: HUMANIZE
+// ---------------------------------------------------------------------------
 
-Content:
-${content}`
+export async function humanizePost(rawPost: string, role: string): Promise<string> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildHumanizePrompt(rawPost, resolvedRole);
 
-  try {
-    const raw = await callAi("You are a strict LinkedIn content quality judge.", prompt, { json: true, temperature: 0.2 })
-    const data = extractJson(raw)
-    const scores = {
-      hook_score: Number(data.hook_score || 0),
-      authenticity_score: Number(data.authenticity_score || 0),
-      specificity_score: Number(data.specificity_score || 0),
-      engagement_score: Number(data.engagement_score || 0),
-      formatting_score: Number(data.formatting_score || 0),
+  const humanized = await callAi(system, user, {
+    temperature: 0.4,
+    maxTokens: 900,
+  });
+  return humanized.trim();
+}
+
+// ---------------------------------------------------------------------------
+// PASS 3A: SCORE
+// ---------------------------------------------------------------------------
+
+export async function scorePost(post: string, role: string): Promise<ScoreResult | null> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildScorePrompt(post, resolvedRole);
+
+  const raw = await callAi(system, user, {
+    temperature: 0.2,
+    maxTokens: 400,
+    expectJson: true,
+  });
+
+  const parsed = parseJson<ScoreResult>(raw);
+  return parsed;
+}
+
+// ---------------------------------------------------------------------------
+// PASS 3B: REWRITE WITH FEEDBACK
+// ---------------------------------------------------------------------------
+
+export async function rewritePost(
+  post: string,
+  score: ScoreResult,
+  role: string,
+  voiceProfile?: VoiceProfile
+): Promise<string> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildRewritePrompt(
+    post,
+    score.fix_instruction,
+    score.biggest_weakness,
+    resolvedRole,
+    voiceProfile
+  );
+
+  const rewritten = await callAi(system, user, {
+    temperature: 0.7,
+    maxTokens: 900,
+  });
+  return rewritten.trim();
+}
+
+// ---------------------------------------------------------------------------
+// QUALITY CONTROL LOOP (Pass 3 full - paid users only)
+// Retries up to maxRetries times. Keeps the best version by score.
+// ---------------------------------------------------------------------------
+
+export async function qualityControlPost(
+  post: string,
+  role: string,
+  voiceProfile?: VoiceProfile,
+  maxRetries = 3
+): Promise<QualityControlResult> {
+  let current = post;
+  let bestContent = post;
+  let bestScore: ScoreResult | null = null;
+  let attemptsUsed = 0;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    attemptsUsed = attempt + 1;
+
+    const score = await scorePost(current, role);
+
+    // If scoring fails (JSON parse error, model hiccup), stop retrying
+    if (!score) {
+      break;
     }
-    const total = Number(data.total_score || Math.round(Object.values(scores).reduce((sum, value) => sum + value, 0) / 5))
-    return {
-      total_score: total,
-      ...scores,
-      feedback: String(data.feedback || "Make the hook sharper and add more concrete details."),
-      is_good_enough: Boolean(data.is_good_enough ?? total >= 80),
+
+    // Track best version
+    if (!bestScore || score.total_score > bestScore.total_score) {
+      bestScore = score;
+      bestContent = current;
     }
-  } catch {
-    return fallbackScore()
-  }
-}
 
-export async function rewriteWithFeedback(content: string, feedback: string, role: string, voiceProfile?: VoiceProfile) {
-  try {
-    return await callAi(
-      getSystemPrompt(role, voiceProfile),
-      `Rewrite this post using the feedback. Preserve the hook structure but improve it.
+    // Good enough - stop
+    if (score.is_good_enough) {
+      break;
+    }
 
-Feedback:
-${feedback}
+    // Last attempt - no point rewriting if we're about to stop
+    if (attempt === maxRetries - 1) {
+      break;
+    }
 
-Post:
-${content}`,
-      { json: false, temperature: 0.75 }
-    )
-  } catch {
-    return content
-  }
-}
-
-export async function qualityControlDraft(content: string, role: string, voiceProfile?: VoiceProfile, maxRetries = 3) {
-  let finalContent = content
-  let finalScore = await scoreContent(finalContent, role)
-  let attemptsUsed = 0
-
-  while (finalScore.total_score < 80 && attemptsUsed < maxRetries) {
-    attemptsUsed += 1
-    const rewritten = await rewriteWithFeedback(finalContent, finalScore.feedback, role, voiceProfile)
-    const nextScore = await scoreContent(rewritten, role)
-    if (nextScore.total_score <= finalScore.total_score) break
-    finalContent = rewritten
-    finalScore = nextScore
+    // Rewrite targeting the specific weakness
+    const rewritten = await rewritePost(current, score, role, voiceProfile);
+    current = rewritten;
   }
 
-  return { finalContent, finalScore, attemptsUsed }
+  const fallbackScore: ScoreResult = {
+    hook_score: 0,
+    authenticity_score: 0,
+    specificity_score: 0,
+    engagement_score: 0,
+    formatting_score: 0,
+    total_score: 0,
+    is_good_enough: false,
+    biggest_weakness: "Scoring unavailable",
+    fix_instruction: "Review manually",
+  };
+
+  return {
+    final_content: bestContent,
+    final_score: bestScore ?? fallbackScore,
+    attempts_used: attemptsUsed,
+    improved: bestScore ? bestScore.total_score > 60 : false,
+  };
 }
 
-export async function generateHooks(topic: string, role: string, count = 3): Promise<HookOption[]> {
-  try {
-    const raw = await callAi(
-      getSystemPrompt(role),
-      `Generate ${count} LinkedIn hook options for topic: ${topic}. Use different styles: question, statement, statistic, story opener, contrarian take. Return JSON: {"hooks":[{"hook":"...","style":"..."}]}`,
-      { json: true, temperature: 0.9 }
-    )
-    const data = extractJson(raw)
-    const hooks = Array.isArray(data.hooks) ? data.hooks : []
-    return hooks
-      .map((item) => {
-        const row = item as Record<string, unknown>
-        return { hook: String(row.hook || ""), style: String(row.style || "Hook") }
-      })
-      .filter((item) => item.hook)
-      .slice(0, count)
-  } catch {
-    return [
-      { hook: `What if ${topic} is not the real problem?`, style: "Question" },
-      { hook: `Most people get ${topic} backwards.`, style: "Contrarian" },
-      { hook: `I learned this about ${topic} the hard way.`, style: "Story" },
-    ].slice(0, count)
+// ---------------------------------------------------------------------------
+// MAIN EXPORT: generatePost
+// This is what your API route calls.
+// ---------------------------------------------------------------------------
+
+export async function generatePost(options: GenerateOptions): Promise<{
+  post: GeneratedPost;
+  score: ScoreResult | null;
+  quality_result: QualityControlResult | null;
+}> {
+  const {
+    topic,
+    role,
+    format = "medium",
+    goal,
+    voiceProfile,
+    isPaidUser = false,
+    maxRetries = 3,
+  } = options;
+
+  // Pass 1: Generate raw post
+  let content = await generateRawPost(topic, role, format, goal, voiceProfile);
+
+  // Pass 2: Humanize (runs for everyone)
+  content = await humanizePost(content, role);
+
+  let qualityResult: QualityControlResult | null = null;
+
+  // Pass 3: Score + rewrite loop (paid users only)
+  if (isPaidUser) {
+    qualityResult = await qualityControlPost(content, role, voiceProfile, maxRetries);
+    content = qualityResult.final_content;
   }
+
+  return {
+    post: buildPost(content),
+    score: qualityResult?.final_score ?? null,
+    quality_result: qualityResult,
+  };
 }
+
+// ---------------------------------------------------------------------------
+// HOOK VARIANTS (for hook cards feature on writer page)
+// ---------------------------------------------------------------------------
+
+export async function generateHookVariants(
+  topic: string,
+  role: string
+): Promise<HookVariant[]> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildHookVariantsPrompt(topic, resolvedRole);
+
+  const raw = await callAi(system, user, {
+    temperature: 0.9,
+    maxTokens: 400,
+    expectJson: true,
+  });
+
+  const parsed = parseJson<HookVariant[]>(raw);
+  if (!parsed || !Array.isArray(parsed)) {
+    return [];
+  }
+  return parsed;
+}
+
+// ---------------------------------------------------------------------------
+// TOPIC SUGGESTIONS (blank-page-killer)
+// ---------------------------------------------------------------------------
+
+export async function generateTopicSuggestions(
+  role: string,
+  recentTopics: string[] = []
+): Promise<string[]> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildTopicSuggestionsPrompt(resolvedRole, recentTopics);
+
+  const raw = await callAi(system, user, {
+    temperature: 0.9,
+    maxTokens: 300,
+    expectJson: true,
+  });
+
+  const parsed = parseJson<string[]>(raw);
+  if (!parsed || !Array.isArray(parsed)) {
+    return [];
+  }
+  return parsed.slice(0, 3); // Always exactly 3
+}
+
+// ---------------------------------------------------------------------------
+// ENGAGEMENT PREDICTION (vanity feature for addiction loop)
+// Use the 8b model for this - it's a simple estimation task.
+// ---------------------------------------------------------------------------
+
+export async function predictEngagement(
+  post: string,
+  role: string
+): Promise<EngagementPrediction | null> {
+  const resolvedRole = resolveRole(role);
+  const { system, user } = buildEngagementPredictionPrompt(post, resolvedRole);
+
+  const raw = await callAi(system, user, {
+    temperature: 0.3,
+    maxTokens: 200,
+    expectJson: true,
+  });
+
+  return parseJson<EngagementPrediction>(raw);
+}
+
+// ---------------------------------------------------------------------------
+// ROLE LIST (for UI - role selector on onboarding)
+// ---------------------------------------------------------------------------
+
+export function getRoleList(): Array<{ value: string; label: string }> {
+  return Object.entries(ROLE_PROFILES).map(([value, profile]) => ({
+    value,
+    label: profile.label,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// BACKWARD-COMPAT SHIMS
+// app/api/generate/route.ts imports these names. They delegate to the new
+// pipeline functions above and reshape the return value to the old contract.
+// ---------------------------------------------------------------------------
+
+/** @deprecated Use scorePost */
+export async function scoreContent(
+  content: string,
+  role: string
+): Promise<ScoreResult & { feedback: string }> {
+  const result = await scorePost(content, role);
+  const fallback: ScoreResult & { feedback: string } = {
+    hook_score: 70,
+    authenticity_score: 70,
+    specificity_score: 70,
+    engagement_score: 70,
+    formatting_score: 70,
+    total_score: 70,
+    is_good_enough: false,
+    biggest_weakness: "Add more specific examples and a sharper first line.",
+    fix_instruction: "Rewrite the opening line with a concrete detail or number.",
+    feedback: "Add more specific examples and a sharper first line.",
+  };
+  if (!result) return fallback;
+  return { ...result, feedback: result.biggest_weakness };
+}
+
+/** @deprecated Use qualityControlPost */
+export async function qualityControlDraft(
+  content: string,
+  role: string,
+  voiceProfile?: VoiceProfile,
+  maxRetries = 3
+): Promise<{
+  finalContent: string;
+  finalScore: ScoreResult & { feedback: string };
+  attemptsUsed: number;
+}> {
+  const qc = await qualityControlPost(content, role, voiceProfile, maxRetries);
+  return {
+    finalContent: qc.final_content,
+    finalScore: { ...qc.final_score, feedback: qc.final_score.biggest_weakness },
+    attemptsUsed: qc.attempts_used,
+  };
+}
+
+/** @deprecated Use generateHookVariants */
+export async function generateHooks(
+  topic: string,
+  role: string,
+  count = 3
+): Promise<HookVariant[]> {
+  const variants = await generateHookVariants(topic, role);
+  return variants.slice(0, count);
+}
+
+export type { PostFormat, VoiceProfile };
