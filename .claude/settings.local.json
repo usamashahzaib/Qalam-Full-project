@@ -73,7 +73,8 @@
       "Bash(cat vercel.json)",
       "Bash(ls .env*)",
       "Bash(git fetch *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(del *)"
     ]
   }
 }

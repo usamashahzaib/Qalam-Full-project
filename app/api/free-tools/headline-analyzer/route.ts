@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from "next/server"
-import { callAi } from "@/lib/server/ai-router"
+import { z } from "zod"
+import { callAi } from "@/lib/server/ai-router-v2"
+
+const schema = z.object({
+  headline: z.string().min(3).max(300),
+})
 
 export async function POST(req: NextRequest) {
   try {
-    const { headline } = await req.json()
-    if (!String(headline || "").trim()) return NextResponse.json({ error: "Headline is required" }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
     const result = await callAi(
       "Return strict JSON only.",
       `Analyze this LinkedIn profile headline as the hook for a profile visit. Score it for clarity, authority, differentiation, keyword strength, and buyer relevance.
 
 HEADLINE:
-${headline}
+${parsed.data.headline}
 
 OUTPUT JSON:
 {
@@ -27,11 +40,23 @@ OUTPUT JSON:
   "specific_feedback": ["specific issue or strength"],
   "rewritten_headlines": ["option 1", "option 2", "option 3"]
 }`,
-      { json: true, temperature: 0.3, timeout: 10000 }
+      {
+        json: true,
+        temperature: 0.3,
+        timeout: 10000,
+        userId: `free_${ip}`,
+        plan: "free",
+        cache: true,
+        cacheTtl: 3600,
+      }
     )
 
     return NextResponse.json(JSON.parse(result))
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "Headline analysis failed" }, { status: 503 })
+    console.error("[Free Tool Error]", error)
+    return NextResponse.json(
+      { error: (error as Error).message || "Headline analysis failed" },
+      { status: 503 }
+    )
   }
 }

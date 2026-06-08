@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
-import { callAi } from "@/lib/server/ai-router"
+import { z } from "zod"
+import { callAi } from "@/lib/server/ai-router-v2"
+
+const schema = z.object({
+  topic: z.string().min(3).max(300),
+})
 
 export async function POST(request: NextRequest) {
-  let topic: string
   try {
-    const body = await request.json()
-    topic = (body?.topic || "").trim()
-  } catch {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 })
-  }
+    const body = await request.json().catch(() => ({}))
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
 
-  if (!topic) {
-    return NextResponse.json({ error: "Topic is required" }, { status: 400 })
-  }
-  if (topic.length > 300) {
-    return NextResponse.json({ error: "Topic too long (max 300 characters)" }, { status: 400 })
-  }
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
-  const systemPrompt = `You are an elite LinkedIn content strategist specializing in high-performing hooks. 
-Generate exactly 5 powerful LinkedIn post opening lines (hooks) for the given topic. 
+    const systemPrompt = `You are an elite LinkedIn content strategist specializing in high-performing hooks.
+Generate exactly 5 powerful LinkedIn post opening lines (hooks) for the given topic.
 Rules:
 - Each hook must be a single sentence or short 2-line opener (no more than 20 words)
 - Use proven hook structures: contrarian, numbered list, personal revelation, curiosity gap, bold claim
@@ -29,35 +31,50 @@ Rules:
 Return ONLY a JSON array of 5 strings. No explanation, no markdown, just the JSON array.
 Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Hook 5 here"]`
 
-  const userMessage = `Generate 5 LinkedIn hooks for this topic: ${topic}`
-
-  try {
-    const raw = await callAi(systemPrompt, userMessage, { json: false, temperature: 0.8 })
+    const raw = await callAi(
+      systemPrompt,
+      `Generate 5 LinkedIn hooks for this topic: ${parsed.data.topic}`,
+      {
+        json: false,
+        temperature: 0.8,
+        timeout: 12000,
+        userId: `free_${ip}`,
+        plan: "free",
+        cache: true,
+        cacheTtl: 3600,
+      }
+    )
 
     let hooks: string[] = []
     const match = raw.match(/\[[\s\S]*\]/)
     if (match) {
-      const parsed = JSON.parse(match[0])
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        hooks = parsed.slice(0, 5).map((h: unknown) => String(h).trim())
+      const parsed2 = JSON.parse(match[0])
+      if (Array.isArray(parsed2) && parsed2.length > 0) {
+        hooks = parsed2.slice(0, 5).map((h: unknown) => String(h).trim())
       }
     }
 
     if (hooks.length === 0) {
       hooks = raw
         .split("\n")
-        .map((line) => line.replace(/^\d+\.\s*/, "").replace(/^["']|["']$/g, "").trim())
-        .filter((line) => line.length > 10)
+        .map((line: string) => line.replace(/^\d+\.\s*/, "").replace(/^["']|["']$/g, "").trim())
+        .filter((line: string) => line.length > 10)
         .slice(0, 5)
     }
 
     if (hooks.length === 0) {
-      return NextResponse.json({ error: "Could not generate hooks. Please try again." }, { status: 500 })
+      return NextResponse.json(
+        { error: "Could not generate hooks. Please try again." },
+        { status: 500 }
+      )
     }
 
     return NextResponse.json({ hooks })
   } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg || "AI generation failed" }, { status: 500 })
+    console.error("[Free Tool Error]", error)
+    return NextResponse.json(
+      { error: (error as Error).message || "AI generation failed" },
+      { status: 503 }
+    )
   }
 }

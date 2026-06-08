@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { withAuth } from "@/lib/server/auth"
 import { generatePost, scoreContent, qualityControlDraft, generateHooks } from "@/lib/server/content-generator"
-import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
-import { checkPlanLimit, getPlanStatus, decrementDraft } from "@/lib/server/plan-limits"
+import { checkPlanLimit, getPlanStatus, decrementDraft } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-
-// ---------------------------------------------------------------------------
-// SCHEMAS
-// ---------------------------------------------------------------------------
 
 const generateSchema = z.object({
   topic: z.string().min(3).max(200),
-  role: z.enum(["ai_engineer", "ceo", "hr", "sales", "designer", "consultant", "founder", "developer"]),
-  tone: z.string().optional(),
+  role: z.enum([
+    "ai_engineer", "ceo", "hr", "sales", "designer", "consultant",
+    "founder", "developer", "director", "marketer", "product_manager",
+    "recruiter", "content_creator", "freelancer",
+  ]),
+  tone: z.string().max(50).optional(),
   format: z.enum(["short", "medium", "long"]).default("medium"),
   goal: z.string().max(500).optional(),
   qualityCheck: z.boolean().default(true),
@@ -21,15 +20,10 @@ const generateSchema = z.object({
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  content: z.string().optional(),
+  content: z.string().max(5000).optional(),
   confirmOnly: z.boolean().optional(),
 })
 
-// ---------------------------------------------------------------------------
-// HELPERS
-// ---------------------------------------------------------------------------
-
-// Derive display sections from the full post text.
 function splitPost(text: string) {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
   const hashtagLine = lines.findLast((l) => /^#\w/.test(l)) ?? ""
@@ -37,17 +31,12 @@ function splitPost(text: string) {
   const bodyLines = lines.filter((l) => l !== hook && l !== hashtagLine)
   const cta = bodyLines.at(-1) ?? ""
   const body = bodyLines.slice(0, -1).join("\n\n")
-  return { hook, body, cta }
+  return { hook, body, cta, hashtags: hashtagLine }
 }
 
-// ---------------------------------------------------------------------------
-// GET /api/generate — usage status
-// ---------------------------------------------------------------------------
-
 export async function GET() {
-  try {
-    const userId = await requireAuth()
-    const status = await getPlanStatus(userId)
+  return withAuth(async (_req, user) => {
+    const status = await getPlanStatus(user.id)
     return NextResponse.json({
       allowed: status.remaining > 0,
       current: status.used,
@@ -55,21 +44,19 @@ export async function GET() {
       remaining: status.remaining,
       plan: status.plan,
     })
-  } catch (error) {
-    const message = (error as Error).message
-    if (message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+  })(new NextRequest("http://localhost"))
 }
 
-// ---------------------------------------------------------------------------
-// POST /api/generate — generate a post
-// ---------------------------------------------------------------------------
-
 export async function POST(request: NextRequest) {
-  try {
-    const rawBody = await request.json().catch(() => null)
-    const parsed = generateSchema.safeParse(rawBody)
+  return withAuth(async (req, user) => {
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
+
+    const parsed = generateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid input", details: parsed.error.flatten() },
@@ -79,28 +66,20 @@ export async function POST(request: NextRequest) {
 
     const { topic, role, format, goal, qualityCheck } = parsed.data
 
-    const userId = await requireAuth()
-    const planStatus = await getPlanStatus(userId)
-    const ip = getClientIp(request)
-
-    const rate = await checkRateLimit(userId, planStatus.plan, ip)
-    if (!rate.allowed) {
-      return NextResponse.json({ error: "Rate limit exceeded. Try again shortly." }, { status: 429 })
-    }
-
-    const limit = await checkPlanLimit(userId, "drafts")
+    const limit = await checkPlanLimit(user.id, "drafts")
     if (!limit.allowed) {
-      return NextResponse.json({ error: "Draft limit reached. Upgrade your plan." }, { status: 403 })
+      return NextResponse.json(
+        { error: "Draft limit reached. Upgrade your plan.", remaining: 0 },
+        { status: 403 }
+      )
     }
 
     const supabase = createServiceClient()
-
     const { data: voiceProfile } = await supabase
       .from("voice_profiles")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single()
-    // voiceProfile is null when none exists — proceed without it
 
     const result = await generatePost({
       topic,
@@ -113,7 +92,7 @@ export async function POST(request: NextRequest) {
     let content = result.post.full_text
     let score = await scoreContent(content, role)
 
-    if (qualityCheck && planStatus.plan.toLowerCase() !== "free") {
+    if (qualityCheck && user.plan !== "free") {
       const qc = await qualityControlDraft(content, role, voiceProfile ?? undefined)
       if (qc.finalScore.total_score > score.total_score) {
         content = qc.finalContent
@@ -121,62 +100,68 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const decrement = await decrementDraft(userId)
+    const decrement = await decrementDraft(user.id)
     if (!decrement.success) {
-      return NextResponse.json({ error: "Failed to decrement draft" }, { status: 403 })
+      return NextResponse.json(
+        { error: "Failed to record usage. Please try again." },
+        { status: 500 }
+      )
     }
 
-    const { hook, body, cta } = splitPost(content)
+    const { hook, body: bodyText, cta, hashtags } = splitPost(content)
 
     const { data: savedPost, error: saveError } = await supabase
       .from("posts")
       .insert({
-        user_id: userId,
+        user_id: user.id,
         content,
         role,
         format,
         score: score.total_score,
         hook,
+        status: "draft",
         created_at: new Date().toISOString(),
       })
       .select("id")
       .single()
 
-    if (saveError) {
-      return NextResponse.json({ error: "Failed to save post" }, { status: 500 })
+    if (saveError || !savedPost) {
+      console.error("[Save Error]", saveError)
+      return NextResponse.json(
+        { error: "Failed to save post. Please try again." },
+        { status: 500 }
+      )
     }
 
     const hooks = await generateHooks(topic, role, 3)
 
     return NextResponse.json({
       post: {
-        id: savedPost?.id ?? null,
+        id: savedPost.id,
         content,
         hook,
-        body,
+        body: bodyText,
         cta,
-        hashtags: result.post.hashtags,
+        hashtags: hashtags || result.post.hashtags,
         role,
       },
       score,
       hooks,
       usage: { remaining: decrement.remaining },
     })
-  } catch (error) {
-    const message = (error as Error).message
-    if (message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+  })(request)
 }
 
-// ---------------------------------------------------------------------------
-// PATCH /api/generate — update or confirm a post
-// ---------------------------------------------------------------------------
-
 export async function PATCH(request: NextRequest) {
-  try {
-    const rawBody = await request.json().catch(() => null)
-    const parsed = patchSchema.safeParse(rawBody)
+  return withAuth(async (req, user) => {
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
+
+    const parsed = patchSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid input", details: parsed.error.flatten() },
@@ -184,47 +169,40 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const userId = await requireAuth()
     const supabase = createServiceClient()
-
-    // Verify ownership before any read or write
-    const { data: existing, error: lookupError } = await supabase
+    const { data: existing } = await supabase
       .from("posts")
       .select("id")
       .eq("id", parsed.data.id)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single()
 
-    if (lookupError || !existing) {
+    if (!existing) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
     if (parsed.data.confirmOnly) {
-      const { data: post, error: fetchError } = await supabase
+      const { data: post, error } = await supabase
         .from("posts")
         .select("*")
         .eq("id", parsed.data.id)
         .single()
-      if (fetchError || !post) return NextResponse.json({ error: "Post not found" }, { status: 404 })
+      if (error || !post) return NextResponse.json({ error: "Post not found" }, { status: 404 })
       return NextResponse.json({ post })
     }
 
-    const { data: updated, error: updateError } = await supabase
+    const { data: updated, error } = await supabase
       .from("posts")
       .update({ content: parsed.data.content, updated_at: new Date().toISOString() })
       .eq("id", parsed.data.id)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .select()
       .single()
 
-    if (updateError) {
+    if (error || !updated) {
       return NextResponse.json({ error: "Failed to update post" }, { status: 500 })
     }
 
     return NextResponse.json({ post: updated })
-  } catch (error) {
-    const message = (error as Error).message
-    if (message === "Unauthorized") return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+  })(request)
 }

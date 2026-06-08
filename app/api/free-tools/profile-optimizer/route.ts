@@ -1,23 +1,38 @@
 import { NextRequest, NextResponse } from "next/server"
-import { callAi } from "@/lib/server/ai-router"
+import { z } from "zod"
+import { callAi } from "@/lib/server/ai-router-v2"
+
+const schema = z.object({
+  about: z.string().min(10).max(3000),
+  headline: z.string().max(300).optional().default(""),
+  audience: z.string().max(300).optional().default(""),
+})
 
 export async function POST(req: NextRequest) {
   try {
-    const { about, headline = "", audience = "" } = await req.json()
-    if (!String(about || "").trim()) return NextResponse.json({ error: "About section is required" }, { status: 400 })
+    const body = await req.json().catch(() => ({}))
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: parsed.error.flatten() },
+        { status: 400 }
+      )
+    }
+
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
     const result = await callAi(
       "Return strict JSON only.",
       `Rewrite and optimize this LinkedIn About section. Preserve truth. Improve positioning, clarity, credibility, and conversion.
 
 HEADLINE:
-${headline}
+${parsed.data.headline}
 
 TARGET AUDIENCE:
-${audience}
+${parsed.data.audience}
 
 ABOUT SECTION:
-${about}
+${parsed.data.about}
 
 OUTPUT JSON:
 {
@@ -28,11 +43,23 @@ OUTPUT JSON:
   "top_fixes": ["specific fix"],
   "keyword_suggestions": ["keyword"]
 }`,
-      { json: true, temperature: 0.4, timeout: 12000 }
+      {
+        json: true,
+        temperature: 0.4,
+        timeout: 12000,
+        userId: `free_${ip}`,
+        plan: "free",
+        cache: true,
+        cacheTtl: 3600,
+      }
     )
 
     return NextResponse.json(JSON.parse(result))
   } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "Profile optimization failed" }, { status: 503 })
+    console.error("[Free Tool Error]", error)
+    return NextResponse.json(
+      { error: (error as Error).message || "Profile optimization failed" },
+      { status: 503 }
+    )
   }
 }

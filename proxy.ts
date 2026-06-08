@@ -14,18 +14,32 @@ setInterval(() => {
   }
 }, WINDOW_MS)
 
-const protectedPaths = [
-  "/write",
+const PROTECTED_ROUTES = [
   "/dashboard",
-  "/library",
-  "/voice",
+  "/write",
+  "/writer",
   "/carousel",
+  "/library",
+  "/analytics",
+  "/voice",
+  "/settings",
+  "/agency",
+  "/agency-setup",
+  "/competitors",
+  "/calendar",
   "/strategist",
   "/admin",
-  "/agency-setup",
 ]
 
-const publicApiPrefixes = ["/api/auth", "/api/health", "/api/webhooks"]
+const PROTECTED_API_ROUTES = [
+  "/api/generate",
+  "/api/carousel",
+  "/api/voice",
+  "/api/posts",
+  "/api/analytics",
+]
+
+const PUBLIC_API_PREFIXES = ["/api/auth", "/api/health", "/api/webhooks", "/api/free-tools", "/api/tools", "/api/geo"]
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY")
@@ -62,29 +76,45 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const { pathname } = request.nextUrl
 
-  const isProtected = protectedPaths.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`)
-  )
-  const isApiRoute = pathname.startsWith("/api/")
-  const isPublicApi = publicApiPrefixes.some(
+  const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
 
-  if (isProtected || (isApiRoute && !isPublicApi)) {
-    const session = await auth()
-    if (!session) {
-      if (isApiRoute) {
-        return addSecurityHeaders(
-          NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        )
-      }
-      const loginUrl = new URL("/login", request.url)
-      loginUrl.searchParams.set("callbackUrl", pathname)
-      return addSecurityHeaders(NextResponse.redirect(loginUrl))
-    }
+  if (isPublicApi) {
+    return addSecurityHeaders(NextResponse.next())
   }
 
-  return addSecurityHeaders(NextResponse.next())
+  const isProtectedRoute = PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
+  const isProtectedApi = PROTECTED_API_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
+
+  if (!isProtectedRoute && !isProtectedApi) {
+    return addSecurityHeaders(NextResponse.next())
+  }
+
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    if (isProtectedApi) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      )
+    }
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("callbackUrl", pathname)
+    return addSecurityHeaders(NextResponse.redirect(loginUrl))
+  }
+
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-user-id", session.user.id)
+  if (session.user.email) requestHeaders.set("x-user-email", session.user.email)
+
+  return addSecurityHeaders(
+    NextResponse.next({ request: { headers: requestHeaders } })
+  )
 }
 
 export const config = {
