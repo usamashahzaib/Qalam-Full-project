@@ -75,7 +75,10 @@
       "Bash(git fetch *)",
       "Bash(git commit *)",
       "Bash(del *)",
-      "Bash(npx vercel *)"
+      "Bash(npx vercel *)",
+      "Bash(Get-ChildItem -Path \"U:\\\\Usama\\\\Qalam\\\\Code\\\\Full project\\\\byqalam-website\" -Directory)",
+      "Skill(run)",
+      "Bash(grep -Hm1 ^description: 'U:\\\\Usama\\\\Qalam\\\\Code\\\\Full project\\\\byqalam-website/.claude/skills/*/SKILL.md')"
     ]
   }
 }
