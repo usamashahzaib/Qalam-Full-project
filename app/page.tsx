@@ -462,7 +462,7 @@ export default function HomePage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
               <span className="chip mb-6 inline-flex border-teal/20 bg-white/80 text-teal shadow-sm backdrop-blur">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
-                Live product, strict product truth
+                Live product. Honest status.
               </span>
             </motion.div>
 

@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
   title: "About",
-  description: "Qalam's product principles: voice fidelity, retained memory, and strict product truth.",
+  description: "Qalam's product principles: voice fidelity, retained memory, and honest product status.",
   path: "/about",
 })
 
