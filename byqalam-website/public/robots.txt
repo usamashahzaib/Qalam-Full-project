@@ -1,8 +1,0 @@
-User-agent: *
-Allow: /
-
-# Block private/app routes
-Disallow: /dashboard
-Disallow: /api/
-
-Sitemap: https://qalam.ai/sitemap.xml

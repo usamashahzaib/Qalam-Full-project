@@ -44,19 +44,19 @@ type PricingPageContentProps = {
 function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   return (
     <FadeUp delay={index * 0.08}>
-      <div className="relative flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:border-gold/40 hover:shadow-md">
-        <span className="mb-3 inline-flex w-fit items-center rounded-full bg-gold-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold-600 border border-gold/20">
+      <div className="relative flex h-full flex-col rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-sm transition-all hover:border-gold/60 hover:shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
+        <span className="mb-3 inline-flex w-fit items-center rounded-full border border-gold/30 bg-zinc-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold">
           Managed
         </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{plan.name}</p>
-        <p className="mt-1 text-3xl font-extrabold text-zinc-900">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{plan.name}</p>
+        <p className="mt-1 text-3xl font-extrabold text-white">
           {formatPkr(plan.monthlyPrice)}
-          <span className="text-sm font-medium text-zinc-400">/mo</span>
+          <span className="text-sm font-medium text-zinc-500">/mo</span>
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-500">{plan.description}</p>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-400">{plan.description}</p>
         <ul className="mt-4 flex flex-col gap-2.5">
           {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-600">
+            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-300">
               <svg className="mt-0.5 h-4 w-4 shrink-0 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -67,7 +67,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
         <div className="mt-auto pt-6">
           <a
             href={`mailto:${UPGRADES_EMAIL}`}
-            className="block w-full rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+            className="block w-full rounded-xl bg-gold px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-gold-600"
           >
             {plan.cta}
           </a>
