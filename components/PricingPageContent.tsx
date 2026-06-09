@@ -6,21 +6,22 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
+import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
+import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 10 AI drafts per month, no scheduling, no voice training, no analytics, and no carousels.",
+    a: "Yes. Free is live with no time limit - 5 AI posts per month, 1 carousel, no scheduling, no voice training, no analytics.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 899/month with 25 drafts. Pro is PKR 1,899/month with 60 drafts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 4 months free.",
+    a: "Solo starts at PKR 499/month with 30 posts. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 4 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
-    a: "Annual Solo is PKR 599/mo (save PKR 3,596), Pro is PKR 1,266/mo (save PKR 7,596), and Agency is PKR 4,993/mo. Each annual plan includes 4 months free.",
+    a: "Annual Solo is PKR 291/mo (save PKR 2,496), Pro is PKR 869/mo (save PKR 7,450). Each annual plan includes 4 months free.",
   },
   {
     q: "What does Pro include that Solo doesn't?",
@@ -32,12 +33,48 @@ const PRICING_FAQ = [
   },
   {
     q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 899/month.",
+    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 499/month.",
   },
 ]
 
 type PricingPageContentProps = {
   pricingCurrency?: { currencyCode?: string; label?: string }
+}
+
+function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
+  return (
+    <FadeUp delay={index * 0.08}>
+      <div className="relative flex h-full flex-col rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition-all hover:border-gold/40 hover:shadow-md">
+        <span className="mb-3 inline-flex w-fit items-center rounded-full bg-gold-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold-600 border border-gold/20">
+          Managed
+        </span>
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">{plan.name}</p>
+        <p className="mt-1 text-3xl font-extrabold text-zinc-900">
+          {formatPkr(plan.monthlyPrice)}
+          <span className="text-sm font-medium text-zinc-400">/mo</span>
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-500">{plan.description}</p>
+        <ul className="mt-4 flex flex-col gap-2.5">
+          {plan.features.map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-600">
+              <svg className="mt-0.5 h-4 w-4 shrink-0 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {feature}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-auto pt-6">
+          <a
+            href={`mailto:${UPGRADES_EMAIL}`}
+            className="block w-full rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+          >
+            {plan.cta}
+          </a>
+        </div>
+      </div>
+    </FadeUp>
+  )
 }
 
 export function PricingPageContent({}: PricingPageContentProps) {
@@ -168,12 +205,15 @@ export function PricingPageContent({}: PricingPageContentProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
+              className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
             >
               {displayPlans.map((plan, i) => (
                 <FadeUp key={plan.plan} delay={i * 0.08}>
                   <PricingCard {...plan} />
                 </FadeUp>
+              ))}
+              {MANAGED_PLANS.map((plan, i) => (
+                <ManagedCard key={plan.name} plan={plan} index={i + 4} />
               ))}
             </motion.div>
           </AnimatePresence>
@@ -221,7 +261,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
             <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 899 replaces</h2>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 499 replaces</h2>
             <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
           </FadeUp>
 
@@ -247,7 +287,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 899/month.</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 499/month.</p>
               <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
             </div>
           </FadeUp>
