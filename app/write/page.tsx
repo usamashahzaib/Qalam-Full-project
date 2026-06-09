@@ -203,7 +203,7 @@ export default function WritePage() {
   }, [])
 
   // ---------------------------------------------------------------------------
-  // Chat — post update callback for ChatPanel
+  // Chat - post update callback for ChatPanel
   // ---------------------------------------------------------------------------
 
   const handleUpdate = useCallback(
@@ -277,9 +277,9 @@ export default function WritePage() {
         {/* Draft warning */}
         {draftsLow && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-800">
-            Almost out of drafts — {usage.remaining} remaining.{" "}
+            Almost out of drafts - {usage.remaining} remaining.{" "}
             <a href="/pricing" className="underline hover:text-red-900">
-              Upgrade to Pro for PKR 1,490/mo.
+              Upgrade to Pro for PKR 1,899/mo.
             </a>
           </div>
         )}
@@ -289,7 +289,7 @@ export default function WritePage() {
         {/* ----------------------------------------------------------------- */}
         {activeTab === "write" && (
           <div className="space-y-5">
-            {/* Hook cards — TOP, full width, shown after first generation */}
+            {/* Hook cards - TOP, full width, shown after first generation */}
             {hooks.length > 0 && (
               <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex items-center justify-between gap-3">
@@ -446,7 +446,7 @@ export default function WritePage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {/* Hook — distinct box */}
+                    {/* Hook - distinct box */}
                     <article className="rounded-xl border-l-4 border-teal bg-teal/5 px-4 py-3">
                       <p className="text-[10px] font-black uppercase tracking-widest text-teal">Hook</p>
                       <p className="mt-2 text-sm font-bold leading-relaxed">{post.hook}</p>

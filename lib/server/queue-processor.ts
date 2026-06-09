@@ -56,7 +56,7 @@ async function handleItem(item: QueueItem): Promise<unknown> {
     return JSON.parse(content)
   }
 
-  // voice: stub — wired up when voice pipeline is ready
+  // voice: stub - wired up when voice pipeline is ready
   return { accepted: true, type: item.type }
 }
 
@@ -130,7 +130,7 @@ export async function getQueueStatus(
           return { position, estimatedWaitSeconds: position * 3 }
         }
       } catch {
-        // malformed entry — keep counting
+        // malformed entry - keep counting
       }
     }
   }
@@ -140,7 +140,7 @@ export async function getQueueStatus(
 
 export async function scheduleQueueProcessor(): Promise<void> {
   if (!getRedis()) {
-    console.log("[queue-processor] Redis unavailable — processor not started")
+    console.log("[queue-processor] Redis unavailable - processor not started")
     return
   }
 

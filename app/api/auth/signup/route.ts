@@ -1,0 +1,163 @@
+import { NextRequest, NextResponse } from "next/server"
+import { createServiceClient } from "@/lib/server/supabase-rest"
+import { hashPassword, generateToken, hashToken } from "@/lib/server/password"
+import { sendTransactionalEmail } from "@/lib/server/email"
+import { getClientIp } from "@/lib/server/rate-limit"
+
+const VALID_ROLES = [
+  "HR Professional",
+  "Marketing Professional",
+  "Founder / Entrepreneur",
+  "Consultant",
+  "Content Creator",
+  "Other",
+]
+
+// In-memory rate limit: 5 signups per IP per 15 min
+const SIGNUP_LIMITS = new Map<string, { count: number; resetAt: number }>()
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now()
+  const bucket = SIGNUP_LIMITS.get(ip)
+  if (bucket && bucket.resetAt > now) {
+    bucket.count += 1
+    return bucket.count > 5
+  }
+  SIGNUP_LIMITS.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
+  return false
+}
+
+export async function POST(req: NextRequest) {
+  const ip = getClientIp(req)
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Too many signup attempts. Please wait 15 minutes before trying again." },
+      { status: 429 }
+    )
+  }
+
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: "Invalid request body." }, { status: 400 })
+  }
+
+  const name = String(body.name ?? "").trim()
+  const email = String(body.email ?? "").trim().toLowerCase()
+  const password = String(body.password ?? "")
+  const role = String(body.role ?? "").trim()
+
+  if (!name || !email || !password || !role) {
+    return NextResponse.json({ error: "All fields are required." }, { status: 400 })
+  }
+  if (name.length < 2) {
+    return NextResponse.json({ error: "Name must be at least 2 characters." }, { status: 400 })
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 })
+  }
+  if (password.length < 8) {
+    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 })
+  }
+  if (!VALID_ROLES.includes(role)) {
+    return NextResponse.json({ error: "Select a valid role." }, { status: 400 })
+  }
+
+  const supabase = createServiceClient()
+
+  // Check duplicate email
+  const { data: existing } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle()
+
+  if (existing) {
+    return NextResponse.json(
+      { error: "An account with this email already exists. Try signing in." },
+      { status: 409 }
+    )
+  }
+
+  const userId = crypto.randomUUID()
+  const passwordHash = hashPassword(password)
+  const verificationToken = generateToken()
+  const verificationTokenHash = hashToken(verificationToken)
+
+  // Create user
+  const { error: insertErr } = await supabase.from("users").insert({
+    id: userId,
+    email,
+    name,
+    password_hash: passwordHash,
+    auth_provider: "email",
+    email_verified: false,
+    role,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  })
+
+  if (insertErr) {
+    console.error("[signup] insert error:", insertErr)
+    return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
+  }
+
+  // Bootstrap plan_usage, workspace, membership - fail silently (schema may vary)
+  try {
+    await supabase
+      .from("plan_usage")
+      .insert({ user_id: userId, plan: "free", ai_drafts_used: 0, carousels_used: 0, hooks_used: 0, analyses_used: 0 })
+  } catch { /* ignore - table may not exist yet */ }
+
+  const workspaceId = crypto.randomUUID()
+  try {
+    await supabase.from("workspaces").insert({
+      id: workspaceId,
+      name: `${name}'s Workspace`,
+      slug: `workspace-${userId.slice(0, 8)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+  } catch { /* ignore */ }
+
+  try {
+    await supabase.from("memberships").insert({
+      workspace_id: workspaceId,
+      user_id: userId,
+      role: "owner",
+      invited_at: new Date().toISOString(),
+      joined_at: new Date().toISOString(),
+    })
+  } catch { /* ignore */ }
+
+  // Save email verification token
+  try {
+    await supabase.from("email_verifications").insert({
+      user_id: userId,
+      token_hash: verificationTokenHash,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    })
+  } catch { /* ignore - migration may not have run yet */ }
+
+  // Send verification email (fire-and-forget)
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
+  sendTransactionalEmail({
+    to: email,
+    subject: "Verify your Qalam account",
+    text: [
+      `Welcome to Qalam, ${name}!`,
+      "",
+      "Verify your email address to activate your account:",
+      `${siteUrl}/verify-email?token=${verificationToken}`,
+      "",
+      "This link expires in 24 hours.",
+      "If you did not create an account, ignore this email.",
+    ].join("\n"),
+  }).catch(() => undefined)
+
+  return NextResponse.json({
+    success: true,
+    message: "Account created. Check your email to verify your address before signing in.",
+  })
+}

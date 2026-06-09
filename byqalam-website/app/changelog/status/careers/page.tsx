@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -17,14 +17,14 @@ const OPEN_ROLES = [
     department: "Engineering",
     location: "Remote (Worldwide)",
     type: "Full-time",
-    description: "You'll own the Voice Fingerprint model — the core of what makes Qalam different. Fine-tune LLMs, build feedback loops, and push the boundaries of personalized generation.",
+    description: "You'll own the Voice Fingerprint model - the core of what makes Qalam different. Fine-tune LLMs, build feedback loops, and push the boundaries of personalized generation.",
   },
   {
     title: "Product Designer",
     department: "Design",
     location: "Remote (Worldwide)",
     type: "Full-time",
-    description: "Design the future of AI-assisted writing. You'll own the end-to-end product experience — from the first blank page to the moment someone hits publish.",
+    description: "Design the future of AI-assisted writing. You'll own the end-to-end product experience - from the first blank page to the moment someone hits publish.",
   },
   {
     title: "Content Marketing Lead",
@@ -52,10 +52,10 @@ const OPEN_ROLES = [
 const PERKS = [
   { icon: "🌍", title: "Fully remote", desc: "Work from anywhere. We care about output, not office hours." },
   { icon: "💰", title: "Competitive pay", desc: "Top-of-market salary + meaningful equity. We share the upside." },
-  { icon: "📚", title: "$2,000/yr learning budget", desc: "Books, courses, conferences — whatever makes you better at your craft." },
+  { icon: "📚", title: "$2,000/yr learning budget", desc: "Books, courses, conferences - whatever makes you better at your craft." },
   { icon: "🏥", title: "Full health coverage", desc: "Medical, dental, and vision. For you and your dependents." },
   { icon: "🏖️", title: "Unlimited PTO", desc: "With a 20-day minimum. We actually mean it." },
-  { icon: "🖥️", title: "Premium setup", desc: "MacBook Pro, external monitor, mechanical keyboard — whatever you need to do your best work." },
+  { icon: "🖥️", title: "Premium setup", desc: "MacBook Pro, external monitor, mechanical keyboard - whatever you need to do your best work." },
 ]
 
 const deptColors: Record<string, string> = {
@@ -75,7 +75,7 @@ export default function CareersPage() {
           <FadeUp>
             <span className="chip border-white/20 text-white/70 bg-white/5 mb-6 inline-flex">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-              We&apos;re hiring — {OPEN_ROLES.length} open roles
+              We&apos;re hiring - {OPEN_ROLES.length} open roles
             </span>
             <h1 className="text-5xl sm:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6">
               Help us give everyone<br />
@@ -83,7 +83,7 @@ export default function CareersPage() {
             </h1>
             <p className="text-xl text-white/55 leading-relaxed mb-8">
               We&apos;re a small team building something that actually matters. 
-              If you want ownership, not just a job description — you&apos;re going to like it here.
+              If you want ownership, not just a job description - you&apos;re going to like it here.
             </p>
             <a
               href="#open-roles"
@@ -108,7 +108,7 @@ export default function CareersPage() {
                   that real users use within your first week.
                 </p>
                 <p>
-                  We&apos;re honest about what we don&apos;t know. We share numbers with everyone — 
+                  We&apos;re honest about what we don&apos;t know. We share numbers with everyone - 
                   revenue, churn, what&apos;s working, what&apos;s broken. No information silos.
                 </p>
                 <p>
@@ -116,7 +116,7 @@ export default function CareersPage() {
                   not 80-hour weeks. We optimize for sustained output over heroic sprints.
                 </p>
                 <p className="text-white font-medium">
-                  We&apos;re building a $100M company. That&apos;s not a fantasy — it&apos;s a plan. 
+                  We&apos;re building a $100M company. That&apos;s not a fantasy - it&apos;s a plan. 
                   And the people who join now will have the equity and the story to show for it.
                 </p>
               </div>

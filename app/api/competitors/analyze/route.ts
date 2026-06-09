@@ -1,85 +1,114 @@
-import { NextRequest, NextResponse } from "next/server"
-import { analyzeCompetitorPaste } from "@/lib/server/competitors"
-import { supabaseInsert } from "@/lib/server/supabase-rest"
-import { checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
-import { requirePlan, getMonthlyCount, enforceMonthlyLimit } from "@/lib/server/require-plan"
-import { requireAuth } from "@/lib/server/workspace"
+﻿import { NextRequest, NextResponse } from "next/server"
+import { withAuth } from "@/lib/server/auth"
+import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
-type AnalyzeRequest = {
-  workspaceKey?: string
-  profileId?: string | null
-  profileName?: string | null
-  platform?: string
-  sourceText?: string
+const MONTHLY_LIMIT = 5
+
+const isProOrAbove = (plan: string) => {
+  const p = plan.toLowerCase()
+  return p === "pro" || p === "agency" || p.startsWith("agency")
 }
 
-type Job = {
-  id: string
-  workspace_id: string
-  type: string
-  status: string
-  payload: Record<string, unknown>
-  created_at: string
-  updated_at: string
+type AnalysisResult = {
+  hookStructure: { pattern: string; length: string; type: string }
+  engagementFactors: string[]
+  contentPattern: { framework: string; structure: string; estimatedReadTime: string }
+  improvements: string[]
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const userId = await requireAuth()
-    const planCheck = await requirePlan(request, "Pro")
-    if (!planCheck.ok) return planCheck.response
-    const { workspaceId, limits, plan } = planCheck
+  return withAuth(async (req, user) => {
+    if (!isProOrAbove(user.plan)) {
+      return NextResponse.json({ error: "Competitor research requires Pro plan." }, { status: 403 })
+    }
 
-    const rate = await checkRateLimit(userId, plan, getClientIp(request))
-    if (!rate.allowed) {
+    const supabase = createServiceClient()
+
+    const { data: usage } = await supabase
+      .from("plan_usage")
+      .select("competitor_runs_used")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    const runsUsed = (usage as { competitor_runs_used?: number } | null)?.competitor_runs_used ?? 0
+
+    if (runsUsed >= MONTHLY_LIMIT) {
       return NextResponse.json(
-        { error: "rate_limit_exceeded", message: "Rate limit exceeded. Please slow down.", ...rate },
+        { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: MONTHLY_LIMIT },
         { status: 429 }
       )
     }
 
-    // Monthly research run limit
-    if (limits.researchRunsPerMonth !== "unlimited") {
-      const used = await getMonthlyCount("jobs", workspaceId)
-      const limitErr = enforceMonthlyLimit(used, limits.researchRunsPerMonth, "Competitor research")
-      if (limitErr) return limitErr
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
 
-    const body = (await request.json()) as AnalyzeRequest
-    if (!body.sourceText?.trim()) {
-      return NextResponse.json({ error: "competitor_source_missing" }, { status: 400 })
+    const postText = String(body.postText || "").trim()
+    const postUrl = String(body.postUrl || "").trim()
+
+    if (postText.length < 50) {
+      return NextResponse.json({ error: "Paste at least 50 characters of the competitor post" }, { status: 400 })
     }
 
-    const analysis = await analyzeCompetitorPaste({
-      sourceText: body.sourceText,
-      profileName: body.profileName || "",
+    const system = `You are an expert LinkedIn content strategist. Analyze posts with surgical precision. Return only valid JSON. No markdown, no extra text.`
+
+    const userMsg = `Analyze this LinkedIn post and return a structured breakdown.
+
+POST TEXT:
+${postText.slice(0, 3000)}
+
+Return JSON with exactly this structure:
+{
+  "hookStructure": {
+    "pattern": "e.g. Bold claim, Question, Story opener, Data-led, Contrarian",
+    "length": "short | medium | long",
+    "type": "e.g. Contrarian, Curiosity, Authority, Personal, Data"
+  },
+  "engagementFactors": [
+    "specific factor 1 (e.g. personal vulnerability with concrete numbers)",
+    "specific factor 2",
+    "specific factor 3",
+    "specific factor 4"
+  ],
+  "contentPattern": {
+    "framework": "e.g. Problem-Agitate-Solve, Listicle, Narrative, Data-Story, Before-After-Bridge",
+    "structure": "e.g. Hook → Context → 3 key insights → CTA",
+    "estimatedReadTime": "e.g. 45 seconds"
+  },
+  "improvements": [
+    "specific actionable tip 1",
+    "specific actionable tip 2",
+    "specific actionable tip 3"
+  ]
+}`
+
+    const raw = await callAi(system, userMsg, {
+      json: true, temperature: 0.3, maxTokens: 900,
+      userId: user.id, plan: user.plan, cache: false,
     })
 
-    let job: Job | null = null
-    try {
-      const rows = await supabaseInsert<Job>("jobs", {
-        workspace_id: workspaceId,
-        type: "competitor_analysis",
-        status: "completed",
-        payload: {
-          profileId: body.profileId || null,
-          profileName: body.profileName || null,
-          platform: body.platform || "linkedin",
-          sourceText: body.sourceText,
-          analysis,
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, "return=representation")
-      job = rows?.[0] || null
-    } catch {
-      // Supabase unavailable - analysis result still returned
+    const analysis = safeParseJson<AnalysisResult>(raw)
+    if (!analysis) {
+      return NextResponse.json({ error: "Analysis failed - try again" }, { status: 502 })
     }
 
-    return NextResponse.json({ analysis, job })
-  } catch (error) {
-    const message = (error as Error).message || "server_error"
-    if ((message === "auth_required" || message === "Unauthorized")) return NextResponse.json({ error: "Please sign in again." }, { status: 401 })
-    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
-  }
+    await supabase.from("competitor_analyses").insert({
+      user_id: user.id,
+      post_text: postText.slice(0, 2000),
+      post_url: postUrl || null,
+      hook_structure: analysis.hookStructure,
+      engagement_factors: analysis.engagementFactors,
+      content_pattern: analysis.contentPattern,
+      improvements: analysis.improvements,
+    })
+
+    await supabase
+      .from("plan_usage")
+      .update({ competitor_runs_used: runsUsed + 1 })
+      .eq("user_id", user.id)
+
+    return NextResponse.json({ analysis, runsUsed: runsUsed + 1, limit: MONTHLY_LIMIT })
+  })(request)
 }

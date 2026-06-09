@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { PLAN_FEATURES, PLAN_PRICES, formatPkr } from "@/lib/pricing"
+import { UPGRADES_EMAIL } from "@/lib/contact"
 import type { PlanTier } from "@/lib/entitlements"
 
 type UpgradeModalProps = {
@@ -19,6 +20,36 @@ const unlocksFor = (plan: PlanTier) => {
 }
 
 export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, onClose }: UpgradeModalProps) {
+  const isAgency = requiredPlan === "Agency" || requiredPlan.startsWith("Agency")
+
+  if (isAgency) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
+          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-500">
+            Coming Soon
+          </span>
+          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency tier is coming soon</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            Multi-workspace support, approval workflows, and team analytics are on the way. Join the waitlist to get early access.
+          </p>
+          <a
+            href={`mailto:${UPGRADES_EMAIL}?subject=Agency%20Early%20Access`}
+            className="mt-5 block rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-zinc-800"
+          >
+            Join Waitlist
+          </a>
+          <button
+            onClick={onClose}
+            className="mt-3 text-sm text-zinc-400 transition-colors hover:text-zinc-600"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const priceKey = requiredPlan.startsWith("Agency") ? "Agency" : requiredPlan
   const price = PLAN_PRICES[priceKey]?.monthly ?? 0
   const planParam = encodeURIComponent(requiredPlan)

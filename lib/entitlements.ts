@@ -36,7 +36,7 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
   Free: {
-    aiDraftsPerMonth: 5,
+    aiDraftsPerMonth: 10,
     carouselGenerationsPerMonth: 0,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,
@@ -48,8 +48,8 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "basic",
   },
   Solo: {
-    aiDraftsPerMonth: 50,
-    carouselGenerationsPerMonth: 3,
+    aiDraftsPerMonth: 25,
+    carouselGenerationsPerMonth: 0,
     researchRunsPerMonth: 0,
     clientWorkspaces: 0,
     seats: 1,
@@ -60,7 +60,7 @@ export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
     analyticsDepth: "full",
   },
   Pro: {
-    aiDraftsPerMonth: "unlimited",
+    aiDraftsPerMonth: 60,
     carouselGenerationsPerMonth: 10,
     researchRunsPerMonth: 5,
     clientWorkspaces: 0,
@@ -149,7 +149,7 @@ export const formatLimit = (value: number | "unlimited"): string => {
 export const getPlanSummary = (plan: string): string[] => {
   const limits = getPlanLimits(plan)
   const items: string[] = []
-  if (plan === "Free") items.push("10 AI drafts/month")
+  if (plan === "Free") items.push("10 drafts/month")
   else items.push(limits.aiDraftsPerMonth === "unlimited" ? "Unlimited AI drafts" : `${formatLimit(limits.aiDraftsPerMonth)} AI drafts/month`)
   if (limits.carouselGenerationsPerMonth === 0) {
     items.push("No carousel generation")

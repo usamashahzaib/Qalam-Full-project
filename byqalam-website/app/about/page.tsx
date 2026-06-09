@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -7,7 +7,7 @@ import Link from "next/link"
 const FEATURED = {
   title: "The LinkedIn Algorithm in 2025: What Actually Works (We Tested 10,000 Posts)",
   excerpt:
-    "We ran every format, every hook style, every posting time through our analytics engine. Here's what the data actually says — and why most LinkedIn advice is dead wrong.",
+    "We ran every format, every hook style, every posting time through our analytics engine. Here's what the data actually says - and why most LinkedIn advice is dead wrong.",
   category: "Research",
   readTime: "12 min read",
   date: "May 2, 2025",
@@ -17,7 +17,7 @@ const FEATURED = {
 const POSTS = [
   {
     title: "Why Your LinkedIn Posts Sound Fake (And How to Fix It in 10 Minutes)",
-    excerpt: "Most people write LinkedIn posts the way they were taught to write emails — formal, structured, and completely devoid of personality. Here's the fix.",
+    excerpt: "Most people write LinkedIn posts the way they were taught to write emails - formal, structured, and completely devoid of personality. Here's the fix.",
     category: "Writing Tips",
     readTime: "6 min read",
     date: "Apr 28, 2025",
@@ -41,7 +41,7 @@ const POSTS = [
   },
   {
     title: "The Voice Fingerprint Method: How to Train AI to Write Like You",
-    excerpt: "Generic AI content is the new spam. Here's how to give any AI tool enough context to actually sound like a human being — specifically, you.",
+    excerpt: "Generic AI content is the new spam. Here's how to give any AI tool enough context to actually sound like a human being - specifically, you.",
     category: "AI & Tools",
     readTime: "7 min read",
     date: "Apr 7, 2025",
@@ -92,7 +92,7 @@ export default function BlogPage() {
               The LinkedIn <span className="text-gold gold-underline">Playbook</span>
             </h1>
             <p className="text-xl text-white/55 max-w-2xl mx-auto leading-relaxed">
-              Data-backed strategies, real breakdowns, and writing advice that actually works — 
+              Data-backed strategies, real breakdowns, and writing advice that actually works - 
               from a team obsessed with LinkedIn growth.
             </p>
           </FadeUp>
@@ -188,7 +188,7 @@ export default function BlogPage() {
               <h3 className="text-2xl font-bold text-white mb-3">
                 Get the best LinkedIn strategies, weekly.
               </h3>
-              <p className="text-white/50 mb-6">No fluff. Just what&apos;s actually working right now — delivered every Tuesday.</p>
+              <p className="text-white/50 mb-6">No fluff. Just what&apos;s actually working right now - delivered every Tuesday.</p>
               <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
                 <input
                   type="email"

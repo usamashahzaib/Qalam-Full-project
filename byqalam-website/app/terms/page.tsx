@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { FadeUp } from "@/components/FadeUp"
 
@@ -13,7 +13,7 @@ If you violate these terms, we may suspend or terminate your account. We'll give
   },
   {
     title: "Your content",
-    content: `Anything you create using Qalam — posts, drafts, voice training data — remains yours. We don't claim ownership of your content.
+    content: `Anything you create using Qalam - posts, drafts, voice training data - remains yours. We don't claim ownership of your content.
 
 By using Qalam, you give us permission to use your content for the sole purpose of providing the service to you. For example, your posts are processed to generate your Voice Fingerprint and to produce new drafts. Nothing more.
 
@@ -29,7 +29,7 @@ If we increase the price of your plan, we will notify you at least 30 days in ad
   },
   {
     title: "Refund policy",
-    content: `If you're not satisfied within the first 7 days of a paid plan, contact us at billing@byqalam.com and we'll issue a full refund — no questions asked.
+    content: `If you're not satisfied within the first 7 days of a paid plan, contact us at billing@byqalam.com and we'll issue a full refund - no questions asked.
 
 After 7 days, refunds are evaluated case-by-case. We're reasonable. If something didn't work as expected, talk to us.`,
   },

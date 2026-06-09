@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -15,7 +15,7 @@ const TEAM = [
   {
     name: "Raza Hussain",
     role: "Co-Founder & CTO",
-    bio: "Ex-Google engineer. Built AI systems at scale. Believes the next generation of writing tools should feel like thinking out loud — not filling out a form.",
+    bio: "Ex-Google engineer. Built AI systems at scale. Believes the next generation of writing tools should feel like thinking out loud - not filling out a form.",
     initials: "RH",
     color: "#C9871F",
   },
@@ -44,7 +44,7 @@ const VALUES = [
   {
     icon: "⚡",
     title: "Speed is a feature",
-    desc: "The best content ideas die in drafts. We build for the moment of inspiration — when you have 90 seconds between meetings and a thought that needs to exist.",
+    desc: "The best content ideas die in drafts. We build for the moment of inspiration - when you have 90 seconds between meetings and a thought that needs to exist.",
   },
   {
     icon: "🔍",
@@ -82,7 +82,7 @@ export default function AboutPage() {
             </h1>
             <p className="text-xl text-white/60 leading-relaxed max-w-2xl mx-auto">
               Qalam started because every AI writing tool we tried made us sound like everyone else. 
-              Generic. Corporate. Forgettable. We knew the technology could do better — 
+              Generic. Corporate. Forgettable. We knew the technology could do better - 
               so we built the tool we actually wanted to use.
             </p>
           </FadeUp>
@@ -110,11 +110,11 @@ export default function AboutPage() {
                   people who weren&apos;t really reading it.
                 </p>
                 <p>
-                  So she called Raza. And they spent the next six months building something different — 
+                  So she called Raza. And they spent the next six months building something different - 
                   a tool that asks &quot;what do you actually sound like?&quot; before it writes a single word.
                 </p>
                 <p className="text-white font-medium">
-                  That&apos;s Qalam. Named after the Arabic and Urdu word for &quot;pen&quot; — because the best 
+                  That&apos;s Qalam. Named after the Arabic and Urdu word for &quot;pen&quot; - because the best 
                   writing tool should feel like an extension of your hand, not a replacement for your brain.
                 </p>
               </div>

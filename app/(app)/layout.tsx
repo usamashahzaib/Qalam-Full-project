@@ -17,8 +17,11 @@ export const metadata: Metadata = {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedAppProviders>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <AppShell>
-        {children}
+        <div id="main-content">
+          {children}
+        </div>
       </AppShell>
       <AppMobileNav />
     </ProtectedAppProviders>

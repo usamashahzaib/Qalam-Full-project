@@ -10,6 +10,8 @@ export const env = {
   linkedInClientId: read("LINKEDIN_CLIENT_ID"),
   linkedInClientSecret: read("LINKEDIN_CLIENT_SECRET"),
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
+  googleClientId: read("GOOGLE_CLIENT_ID"),
+  googleClientSecret: read("GOOGLE_CLIENT_SECRET"),
   geminiApiKey: read("GEMINI_API_KEY"),
   groqApiKey: read("GROQ_API_KEY"),
   authSecret: read("AUTH_SECRET"),

@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
+
+const ACCOUNT_ROLES = [
+  "HR Professional",
+  "Marketing Professional",
+  "Founder / Entrepreneur",
+  "Consultant",
+  "Content Creator",
+  "Other",
+]
 
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
 const isValidLinkedInUrl = (value: string) => {
@@ -57,6 +66,16 @@ export default function SettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
   const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
+  const [userData, setUserData] = useState<{ email: string; name: string; role: string; authProvider: string } | null>(null)
+  const [accountDraft, setAccountDraft] = useState({ name: "", role: "" })
+  const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [accountError, setAccountError] = useState<string | null>(null)
+  const [passwordDraft, setPasswordDraft] = useState({ current: "", new: "", confirm: "" })
+  const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [deleteStep, setDeleteStep] = useState<"idle" | "confirm" | "deleting">("idle")
+  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     const linkedin = searchParams.get("linkedin")
@@ -67,6 +86,18 @@ export default function SettingsPage() {
     }
     window.history.replaceState({}, "", "/settings")
   }, [searchParams, update])
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          setUserData(data.user)
+          setAccountDraft({ name: data.user.name || "", role: data.user.role || "" })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!user?.linkedinMemberId) {
@@ -152,6 +183,70 @@ export default function SettingsPage() {
       setLinkedinStatus(data.error || "LinkedIn integration is coming soon. Contact us to enable publishing.")
     } catch {
       window.location.href = "/api/linkedin/connect"
+    }
+  }
+
+  const onSaveAccount = async () => {
+    setAccountStatus("saving")
+    setAccountError(null)
+    try {
+      const res = await fetch("/api/auth/update-account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: accountDraft.name.trim(), role: accountDraft.role }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to save account.")
+      await update()
+      setAccountStatus("saved")
+      setTimeout(() => setAccountStatus("idle"), 2500)
+    } catch (e) {
+      setAccountStatus("error")
+      setAccountError((e as Error).message || "Save failed")
+    }
+  }
+
+  const onChangePassword = async () => {
+    setPasswordError(null)
+    if (passwordDraft.new !== passwordDraft.confirm) {
+      setPasswordError("New passwords do not match.")
+      return
+    }
+    if (passwordDraft.new.length < 8) {
+      setPasswordError("Password must be at least 8 characters.")
+      return
+    }
+    setPasswordStatus("saving")
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: passwordDraft.current, newPassword: passwordDraft.new }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update password.")
+      setPasswordDraft({ current: "", new: "", confirm: "" })
+      setPasswordStatus("saved")
+      setTimeout(() => setPasswordStatus("idle"), 2500)
+    } catch (e) {
+      setPasswordStatus("error")
+      setPasswordError((e as Error).message || "Update failed")
+    }
+  }
+
+  const onDeleteAccount = async () => {
+    setDeleteStep("deleting")
+    try {
+      const res = await fetch("/api/auth/delete-account", { method: "DELETE" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Failed to delete account.")
+      }
+      await signOut({ callbackUrl: "/" })
+    } catch (e) {
+      setDeleteStep("confirm")
+      setDeleteConfirm("")
+      setDeleteError((e as Error).message || "Delete failed. Please try again.")
     }
   }
 
@@ -359,6 +454,203 @@ export default function SettingsPage() {
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
           <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Billing upgrades are manual until automated checkout is live.</p>
+        </section>
+      </div>
+      {/* Account + Password */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        {/* Account details */}
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-base font-semibold text-zinc-900">Account</h2>
+            {accountStatus === "saved" && <span className="text-xs font-semibold text-emerald-600">Saved</span>}
+            {accountStatus === "error" && <span className="text-xs text-red-600">{accountError}</span>}
+          </div>
+          <div className="space-y-3">
+            <Field label="Full name">
+              <input
+                value={accountDraft.name}
+                onChange={(e) => setAccountDraft((prev) => ({ ...prev, name: e.target.value }))}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
+                placeholder="Your name"
+              />
+            </Field>
+            <Field label="Email">
+              <input
+                value={userData?.email || user?.email || ""}
+                disabled
+                className="w-full rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 cursor-not-allowed"
+              />
+              <p className="mt-1 text-xs text-zinc-400">Contact support to change your email address.</p>
+            </Field>
+            <Field label="Role">
+              <select
+                value={accountDraft.role}
+                onChange={(e) => setAccountDraft((prev) => ({ ...prev, role: e.target.value }))}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
+              >
+                <option value="">Select role…</option>
+                {ACCOUNT_ROLES.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <button
+            onClick={onSaveAccount}
+            disabled={accountStatus === "saving"}
+            className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+          >
+            {accountStatus === "saving" ? "Saving..." : "Save changes"}
+          </button>
+        </section>
+
+        {/* Password change */}
+        {userData === null || userData.authProvider === "email" ? (
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-semibold text-zinc-900">Change password</h2>
+              {passwordStatus === "saved" && <span className="text-xs font-semibold text-emerald-600">Updated</span>}
+              {passwordStatus === "error" && <span className="text-xs text-red-600">{passwordError}</span>}
+            </div>
+            <div className="space-y-3">
+              <Field label="Current password">
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  value={passwordDraft.current}
+                  onChange={(e) => setPasswordDraft((prev) => ({ ...prev, current: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
+                  placeholder="••••••••"
+                />
+              </Field>
+              <Field label="New password">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordDraft.new}
+                  onChange={(e) => setPasswordDraft((prev) => ({ ...prev, new: e.target.value }))}
+                  className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
+                  placeholder="Min. 8 characters"
+                />
+              </Field>
+              <Field label="Confirm new password">
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={passwordDraft.confirm}
+                  onChange={(e) => setPasswordDraft((prev) => ({ ...prev, confirm: e.target.value }))}
+                  className={`w-full rounded-lg border px-3 py-2 text-sm text-zinc-900 focus:outline-none ${
+                    passwordDraft.confirm && passwordDraft.confirm !== passwordDraft.new
+                      ? "border-red-300 focus:border-red-400"
+                      : "border-zinc-200 focus:border-teal"
+                  }`}
+                  placeholder="Re-enter new password"
+                />
+              </Field>
+            </div>
+            <button
+              onClick={onChangePassword}
+              disabled={
+                passwordStatus === "saving" ||
+                !passwordDraft.current ||
+                !passwordDraft.new ||
+                !passwordDraft.confirm
+              }
+              className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+            >
+              {passwordStatus === "saving" ? "Updating..." : "Update password"}
+            </button>
+          </section>
+        ) : (
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+            <h2 className="mb-3 text-base font-semibold text-zinc-900">Password</h2>
+            <p className="text-sm text-zinc-500">
+              Your account uses{" "}
+              <span className="font-semibold capitalize">{userData.authProvider}</span> sign-in.
+              Password management is handled by your provider.
+            </p>
+          </section>
+        )}
+      </div>
+
+      {/* Billing history */}
+      <div className="mt-6">
+        <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
+          <h2 className="mb-4 text-base font-semibold text-zinc-900">Billing history</h2>
+          <div className="overflow-hidden rounded-xl border border-zinc-100">
+            <div className="grid grid-cols-4 bg-zinc-50 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+              <span>Date</span>
+              <span>Plan</span>
+              <span>Amount</span>
+              <span>Status</span>
+            </div>
+            <div className="divide-y divide-zinc-100">
+              <div className="px-4 py-8 text-center text-sm text-zinc-400">
+                No billing records yet.
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-zinc-400">
+            Billing history will appear here once automated checkout is live. For manual payments, contact{" "}
+            <a href="mailto:support@byqalam.com" className="underline hover:text-zinc-600">support@byqalam.com</a>.
+          </p>
+        </section>
+      </div>
+
+      {/* Danger zone */}
+      <div className="mt-6">
+        <section className="rounded-2xl border border-red-200 bg-white p-5 sm:p-6">
+          <h2 className="mb-1 text-base font-semibold text-red-800">Danger zone</h2>
+          <p className="mb-4 text-sm text-zinc-500">
+            Permanently delete your account and all associated data. This action cannot be undone.
+          </p>
+          {deleteError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {deleteError}
+            </div>
+          )}
+          {deleteStep === "idle" && (
+            <button
+              onClick={() => { setDeleteStep("confirm"); setDeleteError(null) }}
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+            >
+              Delete account
+            </button>
+          )}
+          {deleteStep === "confirm" && (
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-700">
+                Type{" "}
+                <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs">delete my account</code>
+                {" "}to confirm:
+              </p>
+              <input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                className="w-full max-w-xs rounded-lg border border-red-200 px-3 py-2 text-sm text-zinc-900 focus:border-red-400 focus:outline-none"
+                placeholder="delete my account"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={onDeleteAccount}
+                  disabled={deleteConfirm !== "delete my account"}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Delete permanently
+                </button>
+                <button
+                  onClick={() => { setDeleteStep("idle"); setDeleteConfirm("") }}
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          {deleteStep === "deleting" && (
+            <p className="text-sm text-zinc-500">Deleting your account…</p>
+          )}
         </section>
       </div>
     </div>

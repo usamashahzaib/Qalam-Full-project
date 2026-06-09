@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { FadeUp } from "@/components/FadeUp"
 
@@ -8,11 +8,11 @@ const UPDATES = [
     date: "May 2, 2025",
     tag: "Major Release",
     tagColor: "bg-gold/20 text-gold border-gold/20",
-    title: "Voice Fingerprint 2.0 — Now 3x More Accurate",
+    title: "Voice Fingerprint 2.0 - Now 3x More Accurate",
     updates: [
       { type: "new", text: "Completely rebuilt voice model with 500M+ LinkedIn post training data" },
       { type: "new", text: "Vocabulary analysis: Qalam now learns your specific word choices, not just tone" },
-      { type: "new", text: "Sentence rhythm detection — shorter posts, longer posts, mixed? We match it." },
+      { type: "new", text: "Sentence rhythm detection - shorter posts, longer posts, mixed? We match it." },
       { type: "improved", text: "Voice training now requires only 3 posts (down from 10)" },
       { type: "improved", text: "Generation speed reduced from 8s to under 2s" },
     ],
@@ -62,7 +62,7 @@ const UPDATES = [
     date: "February 14, 2025",
     tag: "Major Release",
     tagColor: "bg-gold/20 text-gold border-gold/20",
-    title: "Qalam 2.0 — Complete Rebuild",
+    title: "Qalam 2.0 - Complete Rebuild",
     updates: [
       { type: "new", text: "Fully redesigned editor with distraction-free mode" },
       { type: "new", text: "Team workspaces: collaborate on content with up to 5 seats" },
@@ -93,7 +93,7 @@ export default function ChangelogPage() {
             </span>
             <h1 className="text-5xl font-extrabold text-white mb-4">Changelog</h1>
             <p className="text-white/50 text-lg leading-relaxed">
-              Every update, fix, and new feature — documented. We ship every two weeks and 
+              Every update, fix, and new feature - documented. We ship every two weeks and 
               we&apos;re transparent about exactly what changed and why.
             </p>
           </FadeUp>

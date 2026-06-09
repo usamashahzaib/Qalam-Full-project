@@ -71,15 +71,54 @@ html {
 :root {
   --font-jakarta: var(--font-jakarta, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
   --font-cormorant: Georgia, "Times New Roman", serif;
+  --surface-bg: #fafaf8;
+  --surface-fg: #1a1a1a;
+  --surface-card: #ffffff;
+  --surface-border: #e4e4e7;
+  --surface-muted: #f4f4f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-bg: #111113;
+    --surface-fg: #f1f1f1;
+    --surface-card: #1c1c1e;
+    --surface-border: #2d2d30;
+    --surface-muted: #1c1c1e;
+  }
 }
 
 body {
-  background: #fafaf8;
-  color: #1a1a1a;
+  background: var(--surface-bg);
+  color: var(--surface-fg);
   font-family: var(--font-jakarta);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-gutter: stable;
+}
+
+/* Dark mode overrides for app content area */
+@media (prefers-color-scheme: dark) {
+  .qalam-app-canvas {
+    background: var(--surface-bg);
+  }
+  .qalam-app-canvas .bg-zinc-50 {
+    background-color: var(--surface-bg);
+  }
+  .qalam-app-canvas .bg-white {
+    background-color: var(--surface-card);
+  }
+  .qalam-app-canvas .border-zinc-200 {
+    border-color: var(--surface-border);
+  }
+  .qalam-app-canvas .text-zinc-900,
+  .qalam-app-canvas .text-zinc-950 {
+    color: var(--surface-fg);
+  }
+  .qalam-app-canvas .text-zinc-500,
+  .qalam-app-canvas .text-zinc-400 {
+    color: #a1a1aa;
+  }
 }
 
 button,
@@ -87,6 +126,40 @@ a,
 [role="button"],
 summary {
   cursor: pointer;
+}
+
+/* ─── Keyboard navigation focus styles ───────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid #0D4A45;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Remove default focus ring when using mouse (focus-visible only shows for keyboard) */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Ensure skip-to-content link is accessible */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #0D4A45;
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  transition: top 0.1s;
+}
+.skip-link:focus {
+  top: 0;
+  outline: 2px solid #C9871F;
+  outline-offset: 2px;
 }
 
 /* ─── Reusable utility classes ────────────────────────────────── */

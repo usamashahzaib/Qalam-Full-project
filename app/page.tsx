@@ -773,19 +773,19 @@ export default function HomePage() {
           </div>
 
           <FadeUp className="mt-8">
-            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-teal/20 bg-teal-800/5 p-8 md:flex-row md:items-center">
+            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 opacity-80 md:flex-row md:items-center">
               <div>
-                <span className="chip mb-3 inline-flex border-gold/40 bg-gold/5 text-gold">Agency Plan</span>
-                <h3 className="mb-2 text-xl font-bold text-zinc-900">Running content for multiple clients?</h3>
-                <p className="max-w-lg text-sm leading-relaxed text-zinc-600">
-                  {agencyPlan.price}/mo is the current market-facing agency price. {agencyPlan.usdReference} remains available as the annual equivalent while agency onboarding stays assisted.
+                <span className="chip mb-3 inline-flex border-zinc-300 bg-zinc-100 text-zinc-500">Coming Soon</span>
+                <h3 className="mb-2 text-xl font-bold text-zinc-700">Agency Plan - launching soon</h3>
+                <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
+                  Multi-workspace support, approval workflows, team analytics, and dedicated support for agencies managing multiple clients. Join the waitlist to get early access.
                 </p>
               </div>
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="shrink-0">
-                <Link href={agencyPlan.href} className="inline-flex items-center gap-2 rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600">
-                  Discuss Agency Setup
+              <div className="shrink-0">
+                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
+                  Join Waitlist
                 </Link>
-              </motion.div>
+              </div>
             </div>
           </FadeUp>
         </div>

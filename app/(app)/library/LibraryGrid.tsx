@@ -22,7 +22,7 @@ const fmtDate = (iso: string) =>
 
 const scoreBadge = (score: number | null | undefined) => {
   const v = Number(score ?? 0)
-  if (!v) return { label: "—", cls: "bg-zinc-100 text-zinc-400 border-zinc-200" }
+  if (!v) return { label: "-", cls: "bg-zinc-100 text-zinc-400 border-zinc-200" }
   if (v >= 80) return { label: String(v), cls: "bg-teal/8 text-teal border-teal/20" }
   if (v >= 60) return { label: String(v), cls: "bg-amber-50 text-amber-700 border-amber-200" }
   return { label: String(v), cls: "bg-red-50 text-red-600 border-red-200" }

@@ -26,58 +26,58 @@ export type ManagedPlan = {
   cta: string
 }
 
-export const annualFraming = "5 months free"
-export const annualSavingsPercent = 42
+export const annualFraming = "4 months free"
+export const annualSavingsPercent = 33
 
 export const plans: Plan[] = [
   {
     name: "Free",
     monthlyPrice: 0,
-    postsPerMonth: 5,
-    draftsPerMonth: 5,
-    carouselsPerMonth: 1,
+    postsPerMonth: 10,
+    draftsPerMonth: 10,
+    carouselsPerMonth: 0,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "",
-    features: ["5 posts/month", "1 carousel/month", "Basic AI Writer", "Hook Generator"],
+    features: ["10 drafts/month", "Basic AI Writer", "Hook Generator"],
     cta: "Start Free",
     badge: "No card required",
   },
   {
     name: "Solo",
-    monthlyPrice: 499,
-    annualPrice: 3493,
-    postsPerMonth: 30,
-    draftsPerMonth: 30,
-    carouselsPerMonth: 3,
+    monthlyPrice: 899,
+    annualPrice: 7192,
+    postsPerMonth: 25,
+    draftsPerMonth: 25,
+    carouselsPerMonth: 0,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 2,495",
-    features: ["30 posts/month", "3 carousels/month", "Role-Aware AI Writer", "Hook Generator", "Post Library"],
+    annualSavingsLabel: "Save PKR 3,596",
+    features: ["25 drafts/month", "Role-Aware AI Writer", "Hook Generator", "Post Library"],
     cta: "Start Solo",
     badge: "Most popular",
   },
   {
     name: "Pro",
-    monthlyPrice: 1490,
-    annualPrice: 10430,
+    monthlyPrice: 1899,
+    annualPrice: 15192,
     postsPerMonth: 60,
     draftsPerMonth: 60,
     carouselsPerMonth: 10,
     researchPerMonth: 5,
     voiceProfiles: 1,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 7,450",
-    features: ["60 posts/month", "10 carousels/month", "Voice Training", "Push to 90+ quality check", "AI Strategist", "Priority Queue", "Analytics"],
+    annualSavingsLabel: "Save PKR 7,596",
+    features: ["60 drafts/month", "10 carousels/month", "Voice Training", "Push to 90+ quality check", "AI Strategist", "Priority Queue", "Analytics"],
     cta: "Get Pro",
     badge: "Best value",
   },
   {
     name: "Agency",
-    monthlyPrice: null,
-    annualPrice: null,
+    monthlyPrice: 7490,
+    annualPrice: 59920,
     postsPerMonth: null,
     draftsPerMonth: null,
     carouselsPerMonth: null,
@@ -86,7 +86,7 @@ export const plans: Plan[] = [
     workspaces: 5,
     comingSoon: true,
     annualSavingsLabel: "",
-    features: ["Everything in Pro", "5 Workspaces", "Approval Workflow", "Team Analytics", "Dedicated Support"],
+    features: ["60 drafts × 5 workspaces", "White-label", "Team seats", "Approval Workflow", "Team Analytics", "Dedicated Support"],
     cta: "Join Waitlist",
     badge: "Coming Soon",
   },
@@ -189,16 +189,16 @@ export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
 
 export const COMPARISON_ROWS = [
   {
-    label: "Posts per month",
-    free: "5",
-    solo: "30",
+    label: "Drafts per month",
+    free: "10",
+    solo: "25",
     pro: "60",
     agency: "Coming Soon",
   },
   {
     label: "Carousels per month",
-    free: "1",
-    solo: "3",
+    free: "-",
+    solo: "-",
     pro: "10",
     agency: "Coming Soon",
   },
@@ -233,9 +233,9 @@ export const COMPARISON_ROWS = [
   {
     label: "Monthly price",
     free: "Free",
-    solo: "PKR 499",
-    pro: "PKR 1,490",
-    agency: "Coming Soon",
+    solo: "PKR 899",
+    pro: "PKR 1,899",
+    agency: "PKR 7,490",
   },
 ]
 

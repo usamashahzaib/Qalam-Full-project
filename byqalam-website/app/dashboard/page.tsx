@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
@@ -41,7 +41,7 @@ const RECENT_POSTS = [
     preview: "Hot take: Most LinkedIn advice is written by people who don't actually use LinkedIn. Here's what actually drives growth in 2025...",
     tone: "Bold",
     status: "scheduled",
-    impressions: "—",
+    impressions: "-",
     date: "Tomorrow 9:00 AM",
   },
   {
@@ -49,7 +49,7 @@ const RECENT_POSTS = [
     preview: "5 things I learned from growing from 0 to 10K LinkedIn followers in 6 months (thread):",
     tone: "Professional",
     status: "draft",
-    impressions: "—",
+    impressions: "-",
     date: "Draft",
   },
   {
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                       <span className="text-xs text-zinc-400 border border-zinc-200 px-2 py-0.5 rounded-md">
                         {post.tone}
                       </span>
-                      {post.impressions !== "—" && (
+                      {post.impressions !== "-" && (
                         <span className="text-xs text-zinc-500">
                           👁 {post.impressions} impressions
                         </span>

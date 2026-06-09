@@ -77,7 +77,7 @@ export async function generateVoiceFingerprint(analysis: VoiceAnalysis): Promise
     try {
       parsed = JSON.parse(result) as Partial<VoiceFingerprint>
     } catch {
-      // malformed AI output — defaults applied below
+      // malformed AI output - defaults applied below
     }
     return {
       signaturePhrases: Array.isArray(parsed.signaturePhrases)

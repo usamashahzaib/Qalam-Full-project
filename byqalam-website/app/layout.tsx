@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+﻿import type { Metadata } from "next"
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
 import { NavWrapper } from "@/components/NavWrapper"
@@ -24,11 +24,11 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
   title: {
-    default: "ByQalam — AI Writing Assistant for Professionals",
+    default: "ByQalam - AI Writing Assistant for Professionals",
     template: "%s | ByQalam",
   },
   description:
-    "ByQalam learns your voice and helps you write LinkedIn and professional content faster — without sounding generic. Built for creators and teams in Pakistan and beyond.",
+    "ByQalam learns your voice and helps you write LinkedIn and professional content faster - without sounding generic. Built for creators and teams in Pakistan and beyond.",
   keywords: [
     "AI LinkedIn post generator",
     "LinkedIn content AI tool",
@@ -51,24 +51,24 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName: "ByQalam",
-    title: "ByQalam — AI Writing Assistant",
+    title: "ByQalam - AI Writing Assistant",
     description:
-      "AI-powered writing that sounds like you — for LinkedIn, threads, and professional content.",
+      "AI-powered writing that sounds like you - for LinkedIn, threads, and professional content.",
     images: [
       {
         url: `${siteUrl}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "ByQalam — AI writing assistant",
+        alt: "ByQalam - AI writing assistant",
       },
     ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ByQalam — AI Writing Assistant",
+    title: "ByQalam - AI Writing Assistant",
     description:
-      "Write in your own voice with AI — LinkedIn and professional content for Pakistan and beyond.",
+      "Write in your own voice with AI - LinkedIn and professional content for Pakistan and beyond.",
     images: [`${siteUrl}/og-image.png`],
     creator: "@byqalam",
     site: "@byqalam",
@@ -114,7 +114,7 @@ export default function RootLayout({
                   name: "Starter",
                   price: "1499",
                   priceCurrency: "PKR",
-                  description: "Monthly Starter plan — Pakistan-friendly pricing.",
+                  description: "Monthly Starter plan - Pakistan-friendly pricing.",
                 },
                 {
                   "@type": "Offer",
@@ -166,7 +166,7 @@ export default function RootLayout({
                   name: "How does the Voice Fingerprint work?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "You paste in 5\u201310 of your existing LinkedIn posts, and Qalam analyzes your sentence structure, vocabulary, tone, and cadence. It then mirrors your style in every piece of content it generates — so your audience always hears your authentic voice.",
+                    text: "You paste in 5\u201310 of your existing LinkedIn posts, and Qalam analyzes your sentence structure, vocabulary, tone, and cadence. It then mirrors your style in every piece of content it generates - so your audience always hears your authentic voice.",
                   },
                 },
                 {
@@ -198,7 +198,7 @@ export default function RootLayout({
                   name: "Is there a free trial for Pro?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "Yes — Pro and Team plans include a 7-day free trial. No credit card required to start. Experience the full power of Qalam before committing.",
+                    text: "Yes - Pro and Team plans include a 7-day free trial. No credit card required to start. Experience the full power of Qalam before committing.",
                   },
                 },
               ],

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -72,7 +72,7 @@ export default function SignupPage() {
             {[
               { icon: "📈", label: "Average engagement increase", value: "+340%" },
               { icon: "⏱️", label: "Time saved per post", value: "47 min" },
-              { icon: "🚀", label: "Follower growth (30 days)", value: "×3–8×" },
+              { icon: "🚀", label: "Follower growth (30 days)", value: "×3-8×" },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center gap-4 bg-white/5 rounded-xl p-4 border border-white/10">
                 <span className="text-2xl">{stat.icon}</span>

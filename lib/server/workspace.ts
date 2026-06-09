@@ -18,8 +18,9 @@ export async function requireAuth(): Promise<string> {
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false
-  const adminEmails = ["usama@byqalam.com", "admin@byqalam.com"]
-  return adminEmails.includes(email.trim().toLowerCase()) || email.endsWith("@byqalam.com")
+  const envList = process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "admin@byqalam.com"
+  const adminEmails = envList.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
+  return adminEmails.includes(email.trim().toLowerCase())
 }
 
 export function getAuthRole(email?: string | null): "admin" | "user" {

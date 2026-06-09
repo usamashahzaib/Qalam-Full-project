@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { FadeUp } from "@/components/FadeUp"
@@ -89,7 +89,7 @@ export default function DocsPage() {
               How can we <span className="text-gold">help?</span>
             </h1>
             <p className="text-white/50 text-lg mb-8">
-              Everything you need to get the most out of Qalam — from setup to advanced features.
+              Everything you need to get the most out of Qalam - from setup to advanced features.
             </p>
             <div className="relative">
               <input

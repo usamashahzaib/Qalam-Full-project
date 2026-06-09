@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -40,7 +40,7 @@ const FEATURES = [
   {
     icon: "🎙️",
     title: "Voice Fingerprint",
-    desc: "Train Qalam on your past posts — it writes in your exact tone, style, and cadence every time.",
+    desc: "Train Qalam on your past posts - it writes in your exact tone, style, and cadence every time.",
   },
   {
     icon: "💡",
@@ -69,7 +69,7 @@ const HOW_IT_WORKS = [
   {
     step: "02",
     title: "Pick Your Tone",
-    desc: "Choose from Witty, Professional, Bold, Storytelling, or Direct — or use your Voice Fingerprint.",
+    desc: "Choose from Witty, Professional, Bold, Storytelling, or Direct - or use your Voice Fingerprint.",
     icon: "🎚️",
   },
   {
@@ -83,7 +83,7 @@ const HOW_IT_WORKS = [
 const TESTIMONIALS = [
   {
     quote:
-      "Qalam 10x'd my LinkedIn engagement in 30 days. I went from 800 impressions per post to over 12,000 — without spending a single extra hour writing.",
+      "Qalam 10x'd my LinkedIn engagement in 30 days. I went from 800 impressions per post to over 12,000 - without spending a single extra hour writing.",
     name: "Sarah Chen",
     title: "Head of Marketing",
     company: "Stripe",
@@ -173,7 +173,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How does the Voice Fingerprint work?",
-    a: "You paste in 5–10 of your existing LinkedIn posts, and Qalam analyzes your sentence structure, vocabulary, tone, and cadence. It then mirrors your style in every piece of content it generates — so your audience always hears your authentic voice.",
+    a: "You paste in 5-10 of your existing LinkedIn posts, and Qalam analyzes your sentence structure, vocabulary, tone, and cadence. It then mirrors your style in every piece of content it generates - so your audience always hears your authentic voice.",
   },
   {
     q: "Can I cancel my subscription anytime?",
@@ -189,7 +189,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Is there a free trial for Pro?",
-    a: "Yes — Pro and Team plans include a 7-day free trial. No credit card required to start. Experience the full power of Qalam before committing.",
+    a: "Yes - Pro and Team plans include a 7-day free trial. No credit card required to start. Experience the full power of Qalam before committing.",
   },
 ]
 
@@ -415,7 +415,7 @@ export default function HomePage() {
               >
                 <span className="chip border-teal/30 text-teal bg-teal/10 mb-6 inline-flex">
                   <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-                  AI Voice Fingerprint — Now Live
+                  AI Voice Fingerprint - Now Live
                 </span>
               </motion.div>
 
@@ -440,7 +440,7 @@ export default function HomePage() {
                 transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
                 className="font-cormorant text-2xl italic text-zinc-600 leading-relaxed mb-8 max-w-xl"
               >
-                Your AI writing partner that learns your voice and turns raw ideas into scroll-stopping LinkedIn content — in seconds.
+                Your AI writing partner that learns your voice and turns raw ideas into scroll-stopping LinkedIn content - in seconds.
               </motion.p>
 
               {/* CTAs */}

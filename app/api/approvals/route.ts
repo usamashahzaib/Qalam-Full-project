@@ -1,106 +1,96 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { withAuth } from "@/lib/server/auth"
+import { createServiceClient } from "@/lib/server/supabase-rest"
+import { sendTransactionalEmail } from "@/lib/server/email"
+import { env } from "@/lib/server/env"
 
-type DbPost = { id: string; title: string; status: string; type: string; content: string | null; updated_at: string }
-type DbApproval = { id: string; post_id: string; reviewer_id: string | null; status: string; comments: string | null; created_at: string; updated_at: string }
-
-/** GET /api/approvals - list all posts pending approval in the workspace */
-export async function GET(request: NextRequest) {
-  try {
-    await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
-
-    const pending = await supabaseSelect<DbPost>(
-      "posts",
-      `workspace_id=eq.${workspaceId}&status=in.(pending_approval,approved,rejected)&order=updated_at.desc&limit=100`
-    )
-
-    const postIds = (pending || []).map((p) => p.id)
-    let approvals: DbApproval[] = []
-    if (postIds.length > 0) {
-      approvals =
-        (await supabaseSelect<DbApproval>(
-          "approvals",
-          `post_id=in.(${postIds.join(",")})&order=created_at.desc`
-        )) || []
-    }
-
-    const approvalsByPostId = new Map(approvals.map((a) => [a.post_id, a]))
-
-    const items = (pending || []).map((post) => ({
-      post,
-      approval: approvalsByPostId.get(post.id) || null,
-    }))
-
-    return NextResponse.json({ items })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
-  }
+const isProOrAbove = (plan: string) => {
+  const p = plan.toLowerCase()
+  return p === "pro" || p === "agency" || p.startsWith("agency")
 }
 
-/**
- * POST /api/approvals - approve or reject a post.
- * Requires: client_reviewer, agency_admin, or super_admin.
- * editors and viewers cannot approve/reject.
- */
+export async function GET(request: NextRequest) {
+  return withAuth(async (_req, user) => {
+    const supabase = createServiceClient()
+
+    const { data: rows } = await supabase
+      .from("approvals")
+      .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
+      .eq("requester_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50)
+
+    return NextResponse.json({ approvals: rows || [] })
+  })(request)
+}
+
 export async function POST(request: NextRequest) {
-  try {
-    await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
-
-    // ── Role check: must be client_reviewer or above ──────────────────────
-    const { userId: reviewerUserId } = await requireRole(request, workspaceId, "client_reviewer")
-    // ─────────────────────────────────────────────────────────────────────
-
-    const body = await request.json()
-    const { postId, decision, comments } = body as {
-      postId: string
-      decision: "approved" | "rejected"
-      comments?: string
+  return withAuth(async (req, user) => {
+    if (!isProOrAbove(user.plan)) {
+      return NextResponse.json({ error: "Approval workflow requires Pro plan." }, { status: 403 })
     }
 
-    if (!postId || !["approved", "rejected"].includes(decision)) {
-      return NextResponse.json(
-        { error: "postId and valid decision (approved|rejected) required" },
-        { status: 400 }
-      )
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
 
-    // Verify post belongs to this workspace
-    const posts = await supabaseSelect<{ id: string }>(
-      "posts",
-      `id=eq.${postId}&workspace_id=eq.${workspaceId}&limit=1`
-    )
-    if (!posts || posts.length === 0) {
-      return NextResponse.json({ error: "post_not_found" }, { status: 404 })
+    const reviewerEmail = String(body.reviewerEmail || "").trim().toLowerCase()
+    const postContent = String(body.postContent || "").trim()
+    const postTitle = String(body.postTitle || "").trim() || "Untitled post"
+    const message = String(body.message || "").trim()
+    const postId = body.postId ? String(body.postId) : null
+
+    if (!reviewerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reviewerEmail)) {
+      return NextResponse.json({ error: "Valid reviewer email is required" }, { status: 400 })
+    }
+    if (!postContent) {
+      return NextResponse.json({ error: "Post content is required" }, { status: 400 })
     }
 
-    // Write approval record with resolved reviewerId
-    const approval = await supabaseInsert<DbApproval>(
-      "approvals",
-      {
+    const supabase = createServiceClient()
+
+    const { data: approval, error } = await supabase
+      .from("approvals")
+      .insert({
         post_id: postId,
-        reviewer_id: reviewerUserId,
-        status: decision,
-        comments: comments ?? null,
-      },
-      "return=representation"
-    )
+        requester_id: user.id,
+        reviewer_email: reviewerEmail,
+        post_title: postTitle,
+        post_content: postContent,
+        status: "pending",
+        message: message || null,
+      })
+      .select("id, post_title, status, created_at")
+      .single()
 
-    // Update post status
-    await supabasePatch("posts", `id=eq.${postId}`, {
-      status: decision,
-      updated_at: new Date().toISOString(),
+    if (error || !approval) {
+      return NextResponse.json({ error: "Failed to create approval request" }, { status: 500 })
+    }
+
+    const reviewUrl = `${env.frontendOrigin}/approvals/${approval.id}/review`
+    const requesterName = user.name || user.email || "Someone"
+
+    await sendTransactionalEmail({
+      to: reviewerEmail,
+      subject: `Review request: "${postTitle}"`,
+      text: [
+        `${requesterName} has sent you a LinkedIn post to review.`,
+        "",
+        message ? `Their message: "${message}"` : "",
+        "",
+        `Post: "${postTitle}"`,
+        "",
+        "---",
+        postContent.slice(0, 500) + (postContent.length > 500 ? "..." : ""),
+        "---",
+        "",
+        `Review it here: ${reviewUrl}`,
+        "",
+        "You can approve or request changes at the link above.",
+      ].filter((l) => l !== undefined).join("\n"),
     })
 
-    return NextResponse.json({ approval: approval?.[0] || null, postStatus: decision })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
-  }
+    return NextResponse.json({ approval }, { status: 201 })
+  })(request)
 }
-

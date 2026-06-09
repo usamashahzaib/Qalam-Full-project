@@ -1,11 +1,11 @@
-"use client"
+﻿"use client"
 
 import { FadeUp } from "@/components/FadeUp"
 
 const SECTIONS = [
   {
     title: "What we collect",
-    content: `When you sign up for Qalam, we collect your name, email address, and payment information (processed securely by Stripe — we never store your card details). When you connect your LinkedIn account, we access your public profile information and, with your permission, your post history to train your Voice Fingerprint.
+    content: `When you sign up for Qalam, we collect your name, email address, and payment information (processed securely by Stripe - we never store your card details). When you connect your LinkedIn account, we access your public profile information and, with your permission, your post history to train your Voice Fingerprint.
 
 We also collect standard usage data: pages visited, features used, and general interaction patterns. This is anonymized and used solely to improve the product.`,
   },
@@ -23,17 +23,17 @@ Anonymized, aggregated usage data helps us understand which features are working
     title: "Data storage and security",
     content: `All data is stored on servers in the EU and US, compliant with GDPR and SOC 2 standards. Data is encrypted in transit (TLS 1.3) and at rest (AES-256).
 
-We conduct regular security audits and penetration testing. If we ever discover a breach that affects your data, we will notify you within 72 hours — well within legal requirements.`,
+We conduct regular security audits and penetration testing. If we ever discover a breach that affects your data, we will notify you within 72 hours - well within legal requirements.`,
   },
   {
     title: "Third-party services",
     content: `We use a small number of trusted third-party services to operate Qalam:
 
-• Stripe — payment processing
-• AWS — infrastructure and storage  
-• Resend — transactional email
-• PostHog — anonymized product analytics
-• Sentry — error monitoring
+• Stripe - payment processing
+• AWS - infrastructure and storage  
+• Resend - transactional email
+• PostHog - anonymized product analytics
+• Sentry - error monitoring
 
 Each of these services is bound by their own privacy policies and by our data processing agreements. We do not use advertising networks or data brokers.`,
   },
@@ -41,7 +41,7 @@ Each of these services is bound by their own privacy policies and by our data pr
     title: "Your rights",
     content: `You have the right to access all data we hold about you. You have the right to request correction, deletion, or export of your data at any time.
 
-To exercise any of these rights, email privacy@byqalam.com. We respond within 48 hours and fulfill requests within 30 days — usually much faster.
+To exercise any of these rights, email privacy@byqalam.com. We respond within 48 hours and fulfill requests within 30 days - usually much faster.
 
 If you're in the EU, you also have the right to lodge a complaint with your local data protection authority. We'd prefer you contact us first so we can make it right, but that right is yours regardless.`,
   },

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Image from "next/image"
 import { motion } from "framer-motion"
@@ -8,7 +8,7 @@ export function HomeContent() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        {/* Logo — animates in on load */}
+        {/* Logo - animates in on load */}
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -24,7 +24,7 @@ export function HomeContent() {
           />
         </motion.div>
 
-        {/* Heading + paragraph — staggered scroll-triggered reveal */}
+        {/* Heading + paragraph - staggered scroll-triggered reveal */}
         <Stagger
           className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left"
           staggerDelay={0.12}
@@ -61,7 +61,7 @@ export function HomeContent() {
           </StaggerItem>
         </Stagger>
 
-        {/* CTA buttons — staggered scroll-triggered reveal with hover effects */}
+        {/* CTA buttons - staggered scroll-triggered reveal with hover effects */}
         <Stagger
           className="flex flex-col gap-4 text-base font-medium sm:flex-row"
           staggerDelay={0.1}

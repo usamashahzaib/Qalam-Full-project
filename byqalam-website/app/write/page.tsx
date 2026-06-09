@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import Link from "next/link"
@@ -17,11 +17,11 @@ const SAMPLE_HOOKS = [
   "I tried 47 different LinkedIn strategies last year. Here's the only one that actually worked:",
   "Nobody tells you this when you start posting on LinkedIn. (I wish someone had told me sooner.)",
   "Hot take: The best LinkedIn posts are written in 10 minutes, not 2 hours. Here's why:",
-  "I was embarrassed to post on LinkedIn. Then I realized everyone else was too — and that changed everything.",
+  "I was embarrassed to post on LinkedIn. Then I realized everyone else was too - and that changed everything.",
   "Stop optimizing for followers. Start optimizing for this one metric instead:",
 ]
 
-const SAMPLE_POST = `I was embarrassed to post on LinkedIn. Then I realized everyone else was too — and that changed everything.
+const SAMPLE_POST = `I was embarrassed to post on LinkedIn. Then I realized everyone else was too - and that changed everything.
 
 For 2 years, I had a half-drafted post sitting in my notes. Every time I opened it, I'd think:
 

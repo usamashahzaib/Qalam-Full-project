@@ -73,7 +73,7 @@ export async function checkRateLimit(
       }
     }
   } catch {
-    // Redis failed — fall through to in-memory
+    // Redis failed - fall through to in-memory
   }
 
   return memoryFallback(memKey, limit)

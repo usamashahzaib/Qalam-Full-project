@@ -62,7 +62,7 @@ export async function cacheAiResponse(
 ) {
   const r = getRedis()
   if (!r) {
-    console.log("[Redis] Not configured — skipping cache write")
+    console.log("[Redis] Not configured - skipping cache write")
     return
   }
   try {

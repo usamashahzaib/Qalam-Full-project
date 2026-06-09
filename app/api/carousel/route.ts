@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, decrementDraft } from "@/lib/server/plan-limits"
 import { callAi } from "@/lib/server/ai-router"
 
-// Future: POST /api/carousel/[id]/export?format=pdf — render slides via headless browser and return PDF blob
+// Future: POST /api/carousel/[id]/export?format=pdf - render slides via headless browser and return PDF blob
 
 const schema = z.object({
   topic: z.string().min(3).max(200),

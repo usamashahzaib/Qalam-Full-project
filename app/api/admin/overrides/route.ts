@@ -14,7 +14,10 @@ type OverrideInput = {
 }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
-const requireAdmin = async () => {
+const requireAdmin = async (request: NextRequest) => {
+  const adminKey = request.headers.get("x-admin-key") || ""
+  const secretKey = process.env.ADMIN_SECRET_KEY || ""
+  if (!secretKey || adminKey !== secretKey) throw new Error("Forbidden")
   const session = await getAuthenticatedSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())
@@ -38,7 +41,7 @@ const writeAudit = (adminEmail: string, targetEmail: string, action: string, old
 export async function POST(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin()
+    admin = await requireAdmin(request)
   } catch {
     return notFound()
   }
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin()
+    admin = await requireAdmin(request)
   } catch {
     return notFound()
   }
@@ -90,7 +93,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin()
+    admin = await requireAdmin(request)
   } catch {
     return notFound()
   }

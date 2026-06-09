@@ -1,17 +1,13 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 
-const normalizeLinkedInUrn = (value: string) => {
-  const urn = value.trim()
-  if (!urn) return ""
-  return urn.startsWith("urn:") ? urn : `urn:li:share:${urn}`
-}
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const monthLabel = (date: Date) => date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
 const toDate = (value: string) => new Date(`${value}T00:00:00`)
@@ -29,19 +25,60 @@ const goToWriter = (router: ReturnType<typeof useRouter>, clientId?: string | nu
   router.push(withClientParam("/writer", clientId))
 }
 
+const normalizeLinkedInUrn = (value: string) => {
+  const urn = value.trim()
+  if (!urn) return ""
+  return urn.startsWith("urn:") ? urn : `urn:li:share:${urn}`
+}
+
+const formatDateLabel = (iso: string) =>
+  isIsoDate(iso) ? toDate(iso).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Selected day"
+
+const formatDateTime = (iso: string | null) => {
+  if (!iso) return ""
+  try {
+    return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+  } catch {
+    return iso.slice(0, 10)
+  }
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: string }) {
+  const cls =
+    status === "scheduled" ? "bg-amber-100 text-amber-700" :
+    status === "published" ? "bg-emerald-100 text-emerald-700" :
+    "bg-zinc-100 text-zinc-500"
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${cls}`}>{status}</span>
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
 export default function CalendarPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const user = session?.user ? { linkedinMemberId: session.user.email || null } : null
-  const { state, publishPost, createJob, workspaceId } = useWorkspace()
+  const { state, publishPost, createJob, workspaceId, refreshPosts } = useWorkspace()
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+
   const [status, setStatus] = useState<string | null>(null)
   const [publishingId, setPublishingId] = useState<string | null>(null)
   const [monthCursor, setMonthCursor] = useState(() => {
     const scheduledDate = state.scheduled.find((post) => isIsoDate(post.date))?.date
     return scheduledDate ? toDate(scheduledDate) : new Date()
   })
-  const [selectedDay, setSelectedDay] = useState(new Date().toISOString().slice(0, 10))
+  const [selectedDay, setSelectedDay] = useState(todayIso())
+  const [view, setView] = useState<"calendar" | "list">("calendar")
+  const [draggingPost, setDraggingPost] = useState<WorkspacePost | null>(null)
+  const [dragOverDay, setDragOverDay] = useState<string | null>(null)
+  const [rescheduling, setRescheduling] = useState(false)
+  const DRAG_POST_KEY = "qalam-drag-post-id"
+  const dragPostRef = useRef<WorkspacePost | null>(null)
+
+  const today = todayIso()
+
+  // ─── Data maps ───────────────────────────────────────────────────────────
 
   const scheduledByDay = useMemo(() => {
     const map = new Map<string, WorkspacePost[]>()
@@ -74,10 +111,15 @@ export default function CalendarPage() {
   }, [state.published])
 
   const effectiveSelectedDay = useMemo(() => {
-    const inCurrentMonth = selectedDay && isIsoDate(selectedDay) && toDate(selectedDay).getMonth() === monthCursor.getMonth() && toDate(selectedDay).getFullYear() === monthCursor.getFullYear()
+    const inCurrentMonth = selectedDay && isIsoDate(selectedDay) &&
+      toDate(selectedDay).getMonth() === monthCursor.getMonth() &&
+      toDate(selectedDay).getFullYear() === monthCursor.getFullYear()
     if (inCurrentMonth) return selectedDay
-    return state.scheduled.find((post) => isIsoDate(post.date) && toDate(post.date).getMonth() === monthCursor.getMonth() && toDate(post.date).getFullYear() === monthCursor.getFullYear())?.date
-      || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10)
+    return state.scheduled.find((post) =>
+      isIsoDate(post.date) &&
+      toDate(post.date).getMonth() === monthCursor.getMonth() &&
+      toDate(post.date).getFullYear() === monthCursor.getFullYear()
+    )?.date || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10)
   }, [monthCursor, selectedDay, state.scheduled])
 
   const monthGrid = useMemo(() => {
@@ -100,18 +142,27 @@ export default function CalendarPage() {
     })
   }, [draftByDay, monthCursor, publishedByDay, scheduledByDay])
 
-  const dayItems = useMemo(() => {
-    return {
-      scheduled: scheduledByDay.get(effectiveSelectedDay) || [],
-      drafts: draftByDay.get(effectiveSelectedDay) || [],
-      published: publishedByDay.get(effectiveSelectedDay) || [],
-    }
-  }, [draftByDay, effectiveSelectedDay, publishedByDay, scheduledByDay])
+  const dayItems = useMemo(() => ({
+    scheduled: scheduledByDay.get(effectiveSelectedDay) || [],
+    drafts: draftByDay.get(effectiveSelectedDay) || [],
+    published: publishedByDay.get(effectiveSelectedDay) || [],
+  }), [draftByDay, effectiveSelectedDay, publishedByDay, scheduledByDay])
 
   const selectedMonthScheduled = useMemo(
-    () => state.scheduled.filter((post) => isIsoDate(post.date) && toDate(post.date).getMonth() === monthCursor.getMonth() && toDate(post.date).getFullYear() === monthCursor.getFullYear()),
+    () => state.scheduled.filter((post) =>
+      isIsoDate(post.date) &&
+      toDate(post.date).getMonth() === monthCursor.getMonth() &&
+      toDate(post.date).getFullYear() === monthCursor.getFullYear()
+    ),
     [monthCursor, state.scheduled]
   )
+
+  const allScheduledSorted = useMemo(
+    () => [...state.scheduled].sort((a, b) => (a.scheduledTime || a.date).localeCompare(b.scheduledTime || b.date)),
+    [state.scheduled]
+  )
+
+  // ─── Actions ─────────────────────────────────────────────────────────────
 
   const onPublishNow = async (post: WorkspacePost) => {
     if (!user?.linkedinMemberId) { setStatus("Connect LinkedIn in settings first"); return }
@@ -124,12 +175,85 @@ export default function CalendarPage() {
       if (post.type.toLowerCase().includes("carousel")) {
         await createJob({ type: "carousel_generation", status: "queued", title: "Carousel asset generation", payload: { postId: post.id, postUrn, title: post.title } }).catch(() => undefined)
       }
-      setStatus(`Published ${post.title}`)
+      setStatus(`Published: ${post.title}`)
     } catch (error) {
       setStatus((error as Error).message || "LinkedIn publish failed")
     } finally {
       setPublishingId(null)
     }
+  }
+
+  const onReschedule = async (postId: string, newDate: string) => {
+    setRescheduling(true)
+    try {
+      const res = await fetch("/api/posts/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, date: newDate, workspaceKey: workspaceId }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Reschedule failed")
+      }
+      await refreshPosts()
+      setStatus(`Rescheduled to ${newDate}`)
+      setTimeout(() => setStatus(null), 3000)
+    } catch (e) {
+      setStatus((e as Error).message)
+    } finally {
+      setRescheduling(false)
+    }
+  }
+
+  const onUnschedule = async (postId: string) => {
+    try {
+      const res = await fetch("/api/posts/unschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, workspaceKey: workspaceId }),
+      })
+      if (!res.ok) throw new Error("Unschedule failed")
+      await refreshPosts()
+      setStatus("Post moved back to drafts")
+      setTimeout(() => setStatus(null), 3000)
+    } catch (e) {
+      setStatus((e as Error).message)
+    }
+  }
+
+  // ─── Drag-to-reschedule ───────────────────────────────────────────────────
+
+  const onDragStart = (e: React.DragEvent, post: WorkspacePost) => {
+    e.dataTransfer.setData(DRAG_POST_KEY, post.id)
+    e.dataTransfer.effectAllowed = "move"
+    dragPostRef.current = post
+    setDraggingPost(post)
+  }
+
+  const onDragEnd = () => {
+    setDraggingPost(null)
+    setDragOverDay(null)
+    dragPostRef.current = null
+  }
+
+  const onDragOver = (e: React.DragEvent, iso: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "move"
+    setDragOverDay(iso)
+  }
+
+  const onDragLeave = () => setDragOverDay(null)
+
+  const onDrop = async (e: React.DragEvent, targetDate: string) => {
+    e.preventDefault()
+    setDragOverDay(null)
+    const postId = e.dataTransfer.getData(DRAG_POST_KEY)
+    const post = dragPostRef.current
+    if (!postId || !post) return
+    if (post.date === targetDate) return
+    setDraggingPost(null)
+    dragPostRef.current = null
+    await onReschedule(postId, targetDate)
   }
 
   const shiftMonth = (delta: number) => {
@@ -138,111 +262,376 @@ export default function CalendarPage() {
     setMonthCursor(next)
   }
 
-  const selectedDateLabel = isIsoDate(effectiveSelectedDay) ? toDate(effectiveSelectedDay).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Selected day"
+  const goToToday = () => {
+    setMonthCursor(new Date())
+    setSelectedDay(today)
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+
+      {/* Header */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Planner</h1>
-          <p className="mt-1 text-sm text-zinc-500">Month view with draft, scheduled, and published activity by day.</p>
+          <h1 className="text-2xl font-bold text-zinc-900">Planner</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">Schedule and manage your content pipeline.</p>
         </div>
-        <button onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)} disabled={isPastDay(effectiveSelectedDay)} className="cursor-pointer rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-300">New post for selected day</button>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex rounded-xl border border-zinc-200 bg-white p-1">
+            <button
+              onClick={() => setView("calendar")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${view === "calendar" ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${view === "list" ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              List
+            </button>
+          </div>
+          <button
+            onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)}
+            disabled={isPastDay(effectiveSelectedDay)}
+            className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-300"
+          >
+            New post
+          </button>
+        </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Scheduled posts" value={String(state.scheduled.length)} />
-        <Stat label="Drafts with date" value={String(Array.from(draftByDay.values()).reduce((sum, items) => sum + items.length, 0))} />
-        <Stat label="Published with date" value={String(Array.from(publishedByDay.values()).reduce((sum, items) => sum + items.length, 0))} />
+      {/* Stats */}
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat label="Scheduled" value={String(state.scheduled.length)} />
+        <Stat label="Drafts" value={String(state.drafts.length)} />
+        <Stat label="Published" value={String(state.published.length)} />
         <Stat label="This month" value={String(selectedMonthScheduled.length)} />
       </div>
 
-      {status ? <p className="mb-4 text-sm text-zinc-600">{status}</p> : null}
+      {status && (
+        <div className="mb-4 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-700">
+          {rescheduling && <span className="mr-2 animate-pulse">⏳</span>}{status}
+        </div>
+      )}
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <button onClick={() => shiftMonth(-1)} className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">&lt;</button>
-            <h2 className="text-lg font-semibold text-zinc-900">{monthLabel(monthCursor)}</h2>
-            <button onClick={() => shiftMonth(1)} className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">&gt;</button>
-          </div>
-          <div className="grid grid-cols-7 gap-2 text-center text-[11px] font-bold uppercase tracking-wide text-zinc-400">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => <div key={day}>{day}</div>)}
-          </div>
-          <div className="mt-2 grid grid-cols-7 gap-2">
-            {monthGrid.map((day) => {
-              const isActive = day.iso === effectiveSelectedDay
-              return (
-                <button key={day.iso} onClick={() => setSelectedDay(day.iso)} className={`min-h-28 cursor-pointer rounded-2xl border p-2 text-left transition-colors ${isPastDay(day.iso) ? "border-zinc-100 bg-zinc-50 text-zinc-400 opacity-70" : isActive ? "border-teal bg-teal/5" : day.inMonth ? "border-zinc-200 bg-white hover:bg-zinc-50" : "border-zinc-100 bg-zinc-50 text-zinc-400"}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{day.day}</span>
-                    {day.scheduled.length > 0 ? <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700">{day.scheduled.length}</span> : null}
-                  </div>
-                  <div className="mt-2 space-y-1">
-                    {day.scheduled.slice(0, 2).map((post) => <div key={post.id} className="truncate rounded-lg bg-amber-50 px-2 py-1 text-[10px] font-medium text-amber-800">{post.title}</div>)}
-                    {day.drafts.length > 0 ? <div className="text-[10px] text-zinc-500">{day.drafts.length} draft{day.drafts.length > 1 ? "s" : ""}</div> : null}
-                    {day.published.length > 0 ? <div className="text-[10px] text-emerald-600">{day.published.length} published</div> : null}
-                  </div>
+      {/* ── Calendar view ─────────────────────────────────────────────────── */}
+      {view === "calendar" && (
+        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+
+          {/* Grid */}
+          <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-3.5">
+              <button onClick={() => shiftMonth(-1)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50">&lt;</button>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-zinc-900">{monthLabel(monthCursor)}</h2>
+                <button
+                  onClick={goToToday}
+                  className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-bold text-zinc-500 hover:bg-zinc-100"
+                >
+                  Today
                 </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-zinc-900">{selectedDateLabel}</h2>
-                <p className="text-xs text-zinc-500">Everything tied to this day.</p>
               </div>
-              <button onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)} disabled={isPastDay(effectiveSelectedDay)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700 disabled:cursor-not-allowed disabled:text-zinc-400">Write here</button>
+              <button onClick={() => shiftMonth(1)} className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-semibold text-zinc-600 hover:bg-zinc-50">&gt;</button>
             </div>
-            <PlannerBlock title="Scheduled" items={dayItems.scheduled} empty="No scheduled posts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} onPublish={onPublishNow} publishingId={publishingId} canPublish={Boolean(user?.linkedinMemberId)} />
-            <PlannerBlock title="Drafts" items={dayItems.drafts} empty="No dated drafts." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} />
-            <PlannerBlock title="Published" items={dayItems.published} empty="No published posts on this day." onEdit={(post) => goToWriter(router, activeClientId, post, selectedDay)} />
-          </div>
 
-          <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold text-zinc-900">This month queue</h2>
-                <p className="text-xs text-zinc-500">{selectedMonthScheduled.length} scheduled post{selectedMonthScheduled.length === 1 ? "" : "s"}</p>
+            <div className="px-3 pb-3 pt-2">
+              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-zinc-400 pb-1">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d}>{d}</div>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {monthGrid.map((day) => {
+                  const isSelected = day.iso === effectiveSelectedDay
+                  const isToday = day.iso === today
+                  const isDragOver = day.iso === dragOverDay
+                  const hasContent = day.scheduled.length + day.drafts.length + day.published.length > 0
+                  return (
+                    <button
+                      key={day.iso}
+                      onClick={() => setSelectedDay(day.iso)}
+                      onDragOver={(e) => onDragOver(e, day.iso)}
+                      onDragLeave={onDragLeave}
+                      onDrop={(e) => void onDrop(e, day.iso)}
+                      className={`relative min-h-[80px] cursor-pointer rounded-xl border p-1.5 text-left transition-all ${
+                        isDragOver
+                          ? "border-teal bg-teal/10 ring-2 ring-teal/30"
+                          : isSelected
+                          ? "border-teal bg-teal/5"
+                          : day.inMonth
+                          ? "border-zinc-200 bg-white hover:bg-zinc-50/80"
+                          : "border-zinc-100 bg-zinc-50 opacity-50"
+                      }`}
+                    >
+                      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold ${
+                        isToday ? "bg-teal text-white" : isSelected ? "text-teal" : "text-zinc-700"
+                      }`}>
+                        {day.day}
+                      </span>
+                      <div className="mt-1 space-y-0.5">
+                        {day.scheduled.slice(0, 2).map((post) => (
+                          <div
+                            key={post.id}
+                            draggable
+                            onDragStart={(e) => onDragStart(e, post)}
+                            onDragEnd={onDragEnd}
+                            onClick={(e) => e.stopPropagation()}
+                            className={`truncate rounded-md px-1.5 py-0.5 text-[9px] font-medium text-amber-800 transition-opacity cursor-grab ${draggingPost?.id === post.id ? "opacity-40" : "bg-amber-50"}`}
+                          >
+                            {post.title}
+                          </div>
+                        ))}
+                        {day.scheduled.length > 2 && (
+                          <div className="text-[9px] text-zinc-400">+{day.scheduled.length - 2} more</div>
+                        )}
+                        {hasContent && day.scheduled.length === 0 && (
+                          <div className="flex gap-0.5 mt-0.5">
+                            {day.drafts.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />}
+                            {day.published.length > 0 && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
-            {selectedMonthScheduled.length === 0 ? <p className="text-sm text-zinc-500">No scheduled posts in this month yet.</p> : <div className="space-y-3">{selectedMonthScheduled.slice(0, 8).map((post) => <article key={post.id} className="rounded-xl border border-zinc-200 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold text-zinc-900">{post.title}</p><p className="mt-1 text-xs text-zinc-500">{post.date}{post.scheduledTime ? ` at ${post.scheduledTime}` : ""}</p></div><button onClick={() => goToWriter(router, activeClientId, post, post.date)} className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700">Edit</button></div></article>)}</div>}
+
+            {draggingPost && (
+              <div className="border-t border-zinc-100 bg-zinc-50/80 px-4 py-2.5 text-xs text-zinc-500">
+                Drop <span className="font-semibold text-zinc-800">{draggingPost.title}</span> onto a day to reschedule
+              </div>
+            )}
+          </section>
+
+          {/* Day sidebar */}
+          <section className="space-y-4">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-zinc-900">{formatDateLabel(effectiveSelectedDay)}</h2>
+                  <p className="text-xs text-zinc-500">Posts for this day</p>
+                </div>
+                <button
+                  onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)}
+                  disabled={isPastDay(effectiveSelectedDay)}
+                  className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700 disabled:cursor-not-allowed disabled:text-zinc-400"
+                >
+                  Write here
+                </button>
+              </div>
+              <PlannerBlock
+                title="Scheduled"
+                items={dayItems.scheduled}
+                empty="No scheduled posts."
+                onEdit={(post) => goToWriter(router, activeClientId, post, effectiveSelectedDay)}
+                onPublish={onPublishNow}
+                onUnschedule={onUnschedule}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                publishingId={publishingId}
+                canPublish={Boolean(user?.linkedinMemberId)}
+                draggingId={draggingPost?.id || null}
+              />
+              <PlannerBlock
+                title="Drafts"
+                items={dayItems.drafts}
+                empty="No dated drafts."
+                onEdit={(post) => goToWriter(router, activeClientId, post, effectiveSelectedDay)}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                draggingId={draggingPost?.id || null}
+              />
+              <PlannerBlock
+                title="Published"
+                items={dayItems.published}
+                empty="No published posts on this day."
+                onEdit={(post) => goToWriter(router, activeClientId, post, effectiveSelectedDay)}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                draggingId={draggingPost?.id || null}
+              />
+            </div>
+
+            {/* Month queue */}
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+              <h2 className="mb-3 text-sm font-semibold text-zinc-900">
+                This month queue
+                <span className="ml-2 text-xs font-normal text-zinc-400">({selectedMonthScheduled.length})</span>
+              </h2>
+              {selectedMonthScheduled.length === 0 ? (
+                <p className="text-sm text-zinc-400">Nothing scheduled this month.</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedMonthScheduled.slice(0, 8).map((post) => (
+                    <div key={post.id} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-100 p-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
+                        <p className="text-[10px] text-zinc-400">{post.date}{post.scheduledTime ? ` · ${post.scheduledTime.slice(11, 16)}` : ""}</p>
+                      </div>
+                      <button
+                        onClick={() => goToWriter(router, activeClientId, post, post.date)}
+                        className="shrink-0 cursor-pointer text-[10px] font-bold text-teal hover:text-teal-700"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* ── List view ─────────────────────────────────────────────────────── */}
+      {view === "list" && (
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="border-b border-zinc-100 px-5 py-3.5">
+            <h2 className="text-sm font-bold text-zinc-900">All scheduled posts</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">{allScheduledSorted.length} posts sorted by date</p>
           </div>
-        </section>
-      </div>
+          {allScheduledSorted.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <p className="text-sm font-semibold text-zinc-700">No scheduled posts yet</p>
+              <p className="mt-1 text-xs text-zinc-400">Go to the writer and schedule a post to see it here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-100 bg-zinc-50">
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Title</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Type</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Scheduled</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Status</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50">
+                  {allScheduledSorted.map((post) => (
+                    <tr key={post.id} className="group hover:bg-zinc-50/60">
+                      <td className="px-5 py-3">
+                        <p className="max-w-xs truncate text-sm font-medium text-zinc-900">{post.title}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-500">
+                          {post.type.toLowerCase().includes("carousel") ? "Carousel" : "Text"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-zinc-500">
+                        {formatDateTime(post.scheduledTime)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={post.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={() => goToWriter(router, activeClientId, post, post.date)}
+                            className="cursor-pointer text-xs font-semibold text-teal hover:text-teal-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => void onUnschedule(post.id)}
+                            className="cursor-pointer text-xs font-semibold text-zinc-400 hover:text-zinc-700"
+                          >
+                            Unschedule
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 function Stat({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-xs text-zinc-500">{label}</p><p className="mt-1 text-lg font-bold text-zinc-900">{value}</p></div>
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="mt-1 text-xl font-bold text-zinc-900">{value}</p>
+    </div>
+  )
 }
 
 function PlannerBlock({
-  title,
-  items,
-  empty,
-  onEdit,
-  onPublish,
-  publishingId,
-  canPublish,
+  title, items, empty, onEdit, onPublish, onUnschedule, onDragStart, onDragEnd, publishingId, canPublish, draggingId,
 }: {
   title: string
   items: WorkspacePost[]
   empty: string
   onEdit: (post: WorkspacePost) => void
   onPublish?: (post: WorkspacePost) => void
+  onUnschedule?: (id: string) => void
+  onDragStart?: (e: React.DragEvent, post: WorkspacePost) => void
+  onDragEnd?: () => void
   publishingId?: string | null
   canPublish?: boolean
+  draggingId?: string | null
 }) {
+  if (!items.length) return (
+    <div className="mb-3 last:mb-0">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400">{title}</p>
+      <p className="rounded-xl bg-zinc-50 px-3 py-2.5 text-xs text-zinc-400">{empty}</p>
+    </div>
+  )
+
   return (
-    <div className="mb-4 last:mb-0">
-      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</h3>
-      {items.length === 0 ? <p className="rounded-xl bg-zinc-50 px-3 py-3 text-sm text-zinc-500">{empty}</p> : <div className="space-y-2">{items.map((post) => <div key={post.id} className="rounded-xl border border-zinc-200 p-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-semibold text-zinc-900">{post.title}</p><p className="mt-1 line-clamp-2 text-xs text-zinc-500">{post.content}</p></div><div className="flex shrink-0 items-center gap-2"><button onClick={() => onEdit(post)} className="cursor-pointer rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Open</button>{onPublish ? <button onClick={() => onPublish(post)} disabled={!canPublish || publishingId === post.id} className="cursor-pointer rounded-lg bg-teal px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-60">{publishingId === post.id ? "Publishing..." : "Publish"}</button> : null}</div></div></div>)}</div>}
+    <div className="mb-3 last:mb-0">
+      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400">{title} ({items.length})</p>
+      <div className="space-y-2">
+        {items.map((post) => (
+          <div
+            key={post.id}
+            draggable={!!onDragStart}
+            onDragStart={onDragStart ? (e) => onDragStart(e, post) : undefined}
+            onDragEnd={onDragEnd}
+            className={`rounded-xl border border-zinc-200 p-3 transition-opacity ${draggingId === post.id ? "opacity-40" : ""} ${onDragStart ? "cursor-grab active:cursor-grabbing" : ""}`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
+                <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-400">{post.content?.slice(0, 80)}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button onClick={() => onEdit(post)} className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[10px] font-semibold text-zinc-600 hover:bg-zinc-50">
+                  Edit
+                </button>
+                {onPublish && (
+                  <button
+                    onClick={() => onPublish(post)}
+                    disabled={!canPublish || publishingId === post.id}
+                    className="cursor-pointer rounded-lg bg-teal px-2 py-1 text-[10px] font-semibold text-white hover:bg-teal-600 disabled:opacity-50"
+                  >
+                    {publishingId === post.id ? "..." : "Publish"}
+                  </button>
+                )}
+                {onUnschedule && (
+                  <button
+                    onClick={() => onUnschedule(post.id)}
+                    className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[10px] font-semibold text-zinc-400 hover:text-zinc-700"
+                    title="Move back to drafts"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

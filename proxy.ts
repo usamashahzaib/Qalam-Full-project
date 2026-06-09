@@ -19,6 +19,7 @@ const PROTECTED_ROUTES = [
   "/write",
   "/writer",
   "/carousel",
+  "/carousels",
   "/library",
   "/analytics",
   "/voice",
@@ -28,8 +29,12 @@ const PROTECTED_ROUTES = [
   "/competitors",
   "/calendar",
   "/strategist",
+  "/approvals",
+  "/chat",
   "/admin",
 ]
+
+const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
 
 const PROTECTED_API_ROUTES = [
   "/api/generate",
@@ -90,18 +95,32 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isProtectedApi = PROTECTED_API_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
+  const isAuthOnly = AUTH_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
 
-  if (!isProtectedRoute && !isProtectedApi) {
+  if (!isProtectedRoute && !isProtectedApi && !isAuthOnly) {
     return addSecurityHeaders(NextResponse.next())
   }
 
   const session = await auth()
+
+  // Redirect authenticated users away from auth pages
+  if (isAuthOnly && session?.user?.id) {
+    return addSecurityHeaders(
+      NextResponse.redirect(new URL("/dashboard", request.url))
+    )
+  }
 
   if (!session?.user?.id) {
     if (isProtectedApi) {
       return addSecurityHeaders(
         NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       )
+    }
+    // Allow unauthenticated users to access auth-only pages (login, signup, etc.)
+    if (isAuthOnly) {
+      return addSecurityHeaders(NextResponse.next())
     }
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", pathname)

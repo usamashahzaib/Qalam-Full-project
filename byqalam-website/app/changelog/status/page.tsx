@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { FadeUp } from "@/components/FadeUp"
 
@@ -16,16 +16,16 @@ const SERVICES = [
 const INCIDENTS = [
   {
     date: "April 14, 2025",
-    title: "Post Scheduler delay — resolved",
+    title: "Post Scheduler delay - resolved",
     severity: "Minor",
     severityColor: "bg-yellow-500/20 text-yellow-400",
-    description: "Scheduled posts were delayed by 15–40 minutes for approximately 2 hours. The issue was traced to a third-party queue provider and has been resolved. All affected posts were sent.",
+    description: "Scheduled posts were delayed by 15-40 minutes for approximately 2 hours. The issue was traced to a third-party queue provider and has been resolved. All affected posts were sent.",
     duration: "2h 14m",
     resolved: true,
   },
   {
     date: "March 3, 2025",
-    title: "Analytics data sync delay — resolved",
+    title: "Analytics data sync delay - resolved",
     severity: "Minor",
     severityColor: "bg-yellow-500/20 text-yellow-400",
     description: "Analytics data was not refreshing for some users. The issue was resolved with a database cache flush. No data was lost.",

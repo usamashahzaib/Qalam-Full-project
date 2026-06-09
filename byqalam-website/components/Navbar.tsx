@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
@@ -64,7 +64,7 @@ export function Navbar() {
             <div className="flex items-center justify-center gap-3 px-4 h-10 text-sm text-white font-medium">
               <span>✨</span>
               <span>
-                <strong>NEW —</strong> AI Voice Fingerprint is live
+                <strong>NEW -</strong> AI Voice Fingerprint is live
               </span>
               <Link
                 href="/free-tools"

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
 
@@ -273,7 +273,7 @@ export default function ChatPanel({ initialTopic, onUpdatePost }: ChatPanelProps
     }
   }, [input, isLoading, conversationId, conversationName])
 
-  // Enter sends; Shift+Enter inserts newline (browser default — no override needed)
+  // Enter sends; Shift+Enter inserts newline (browser default - no override needed)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -72,7 +72,7 @@ export default function FreeToolsPage() {
           <FadeUp>
             <span className="chip border-teal/30 text-teal bg-teal-50 mb-5 inline-flex">
               <span className="w-2 h-2 rounded-full bg-gold animate-pulse" />
-              100% Free — No Account Required
+              100% Free - No Account Required
             </span>
             <h1 className="text-5xl sm:text-6xl font-extrabold text-zinc-900 mb-5 leading-tight">
               Free LinkedIn
@@ -80,7 +80,7 @@ export default function FreeToolsPage() {
               <span className="text-gold gold-underline">Growth Tools</span>
             </h1>
             <p className="font-cormorant text-2xl italic text-zinc-500 max-w-2xl leading-relaxed mb-8">
-              Six precision tools to help you write better, profile stronger, and grow faster — completely free, forever.
+              Six precision tools to help you write better, profile stronger, and grow faster - completely free, forever.
             </p>
             <div className="flex flex-wrap gap-3">
               {["No sign-up needed", "Instant results", "AI-powered", "Zero cost"].map((tag) => (
@@ -166,7 +166,7 @@ export default function FreeToolsPage() {
                 <span className="text-gold">Qalam platform</span>
               </h2>
               <p className="font-cormorant text-xl italic text-white/70 mb-8 max-w-lg mx-auto">
-                Unlimited posts, Voice Fingerprint, scheduler, and analytics — starting at $19/month.
+                Unlimited posts, Voice Fingerprint, scheduler, and analytics - starting at $19/month.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>

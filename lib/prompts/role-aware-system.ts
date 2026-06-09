@@ -1,4 +1,4 @@
-// lib/prompts/role-aware-system.ts
+﻿// lib/prompts/role-aware-system.ts
 // Qalam content engine - role-aware, human-sounding, anti-AI-tell.
 // Config-driven: add a new role by adding one entry to ROLE_PROFILES.
 // NO em dashes. NO en dashes. NO AI tells. 3-pass pipeline feeds from here.
@@ -642,7 +642,7 @@ const FORMAT_RULES: Record<PostFormat, { charLimit: number; lineGuidance: string
 // ---------------------------------------------------------------------------
 const ANTI_AI_RULES = `
 ABSOLUTE RULES - NEVER BREAK THESE:
-- Zero em dashes (—). Zero en dashes (–). Use a hyphen (-) or split into two sentences.
+- Zero em dashes (-). Zero en dashes (-). Use a hyphen (-) or split into two sentences.
 - Never open with "In today's", "In the world of", "Let's dive in", "I'm excited to share", "As a [role]", "It's no secret".
 - Never use: delve, leverage (as a verb), elevate, seamless, unlock, empower, supercharge, revolutionize, paradigm, holistic, ecosystem, synergy, cutting-edge, game-changer, thought leader, passionate.
 - No three-item lists that are perfectly parallel ("X, Y, and Z" at the end of every thought). It reads like a template.
@@ -741,7 +741,7 @@ You are an editor who removes AI tells from LinkedIn posts. You make them sound 
 You do NOT rewrite the post. You make the minimum edits needed to remove robot patterns.
 
 WHAT TO FIX:
-1. Em dashes (—) and en dashes (–): Replace with a hyphen (-) or split into two sentences.
+1. Em dashes (-) and en dashes (-): Replace with a hyphen (-) or split into two sentences.
 2. Perfect parallel structure in triplets: If three items end a thought cleanly, break one of them.
 3. Overly smooth sentence rhythm: Vary it. Mix very short sentences (3-5 words) with longer ones. Real people don't write in perfectly balanced clauses.
 4. AI vocabulary: Remove or replace any of these: delve, leverage (as a verb), elevate, seamless, unlock, empower, supercharge, revolutionize, paradigm, holistic, ecosystem, synergy, cutting-edge, game-changer, thought leader, passionate, fostering, navigating, harnessing, transformative.
@@ -1050,3 +1050,305 @@ export const buildRoleAwareSystemPrompt = getSystemPrompt;
 // getSystemPrompt                 - legacy compat (content-generator.ts)
 // buildRoleAwareSystemPrompt      - legacy compat (app/api/hooks/route.ts)
 export { GENERIC_PROFILE };
+
+// ---------------------------------------------------------------------------
+// CTA ALTERNATIVES - for /api/generate/cta-alternatives
+// 3 alternative last-paragraph CTA lines based on existing post content.
+// temperature: 0.9
+// ---------------------------------------------------------------------------
+export function buildCtaAlternativesPrompt(
+  post: string,
+  role: string
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const system = `
+You write alternative call-to-action (CTA) closing lines for LinkedIn posts written for ${profile.label}s.
+
+A good CTA is:
+- 1-2 sentences at most
+- Specific and earned - it follows naturally from the story in the post
+- NOT a generic question ("What do you think?", "Have you experienced this?", "Drop a comment below")
+- A quiet statement, a soft challenge, a reflection, or a specific action prompt
+- Feels like a real ${profile.label} wrote it - matches their vocabulary and concerns
+- No em dashes (-), no en dashes (-), no AI vocabulary
+
+Return ONLY valid JSON - a flat array of exactly 3 strings. No other text, no markdown:
+["CTA option 1", "CTA option 2", "CTA option 3"]
+`.trim();
+
+  const user = `Write 3 different CTA closing lines for this LinkedIn post. Each should take a different angle.\n\nPost:\n${post}`;
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
+// 5-STYLE HOOK GENERATION - for /api/generate/hooks
+// Generates one hook per style: SHARP, AUTHORITY, STORY, CURIOSITY, DIRECT
+// temperature: 0.9
+// ---------------------------------------------------------------------------
+export function buildHook5StylesPrompt(
+  topic: string,
+  role: string
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const system = `
+You write LinkedIn post opening lines for ${profile.label}s.
+
+Generate exactly 5 hooks for the same topic, one per style:
+1. SHARP: An uncomfortable truth or bold claim. Concrete and specific.
+2. AUTHORITY: Lead with credibility, data, or hard-won experience. Shows expertise.
+3. STORY: "I [did/saw/realized] X" - drops the reader into a specific moment.
+4. CURIOSITY: Creates a knowledge gap. The reader must find out the answer.
+5. DIRECT: States the value clearly. No buildup, no mystery. Pure clarity.
+
+Rules:
+- Maximum 2 sentences per hook
+- No em dashes (-) or en dashes (-)
+- No openers like "In today's...", "Have you ever...", "Let me tell you..."
+- Specific and concrete - include a number or named situation where possible
+- Match this voice: ${profile.voice.split(".")[0]}
+- Words never to use: ${profile.banned.slice(0, 5).join(", ")}
+
+Return ONLY valid JSON. No other text, no markdown fences:
+[
+  { "style": "SHARP", "text": "..." },
+  { "style": "AUTHORITY", "text": "..." },
+  { "style": "STORY", "text": "..." },
+  { "style": "CURIOSITY", "text": "..." },
+  { "style": "DIRECT", "text": "..." }
+]
+`.trim();
+
+  const user = `Topic: ${topic}\nRole: ${profile.label}`;
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
+// POST FROM HOOK - for /api/generate/post
+// Generates a full post that starts with the provided hook verbatim.
+// temperature: 0.85
+// ---------------------------------------------------------------------------
+export function buildPostFromHookPrompt(
+  hook: string,
+  topic: string,
+  role: string,
+  format: PostFormat,
+  goal?: string,
+  voiceProfile?: VoiceProfile
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const formatRule = FORMAT_RULES[format];
+  const wordTargets: Record<PostFormat, string> = {
+    short: "150-200 words",
+    medium: "250-350 words",
+    long: "400-500 words",
+  };
+
+  const system = `
+You are a LinkedIn ghostwriter for ${profile.label}s.
+
+${profile.voice}
+
+Vocabulary to draw from (use some, not all): ${profile.vocabulary.slice(0, 10).join(", ")}
+
+${ANTI_AI_RULES}
+
+Words never to use: ${[...profile.banned, "delve", "utilize", "leverage (as verb)", "seamless", "empower"].join(", ")}
+
+FORMAT:
+- Target length: ${wordTargets[format]}
+- ${formatRule.lineGuidance}
+- The FIRST LINE must be exactly the hook provided - copy it word for word.
+- Continue naturally from where the hook leads
+- End with a CTA that feels earned (not a question)
+- 2-4 hashtags on the very last line only
+
+${goal ? `GOAL OF THIS POST: ${goal}` : ""}
+${voiceProfile?.vocabulary?.length ? `VOICE PHRASES TO WEAVE IN: ${voiceProfile.vocabulary.join(", ")}` : ""}
+
+Output the post only. No preamble, no "Here is the post:".
+`.trim();
+
+  const user = `Hook (first line - copy this verbatim): "${hook}"
+
+Topic: ${topic}
+Role: ${profile.label}`;
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
+// 7-METRIC SCORE - for /api/generate/score
+// Returns scores for 7 dimensions plus tips and hashtag suggestions.
+// temperature: 0.2
+// ---------------------------------------------------------------------------
+export function build7MetricScorePrompt(
+  post: string,
+  role: string
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const system = `
+You score LinkedIn posts for ${profile.label}s on 7 dimensions, 0-100 each.
+Be strict. Average posts score 55-65. A 90 is rare.
+
+DIMENSIONS:
+
+1. HOOK (first line quality)
+   90+: Stops the scroll immediately, specific and concrete
+   70-89: Decent but slightly predictable
+   Below 50: Generic, AI-sounding, or tells the punchline upfront
+   Deduct 20 for "In today's...", "Let's dive in", "As a ${profile.label}"
+
+2. READABILITY (mobile reading experience)
+   90+: Perfect rhythm - short lines, blank lines between thoughts, scannable
+   70-89: Mostly good, one dense section
+   Below 50: Wall of text or choppy single words
+
+3. AUTHORITY (credibility and expertise)
+   90+: Sounds like someone who has genuinely done this, specific knowledge
+   70-89: Mostly credible, a little vague
+   Below 50: Generic advice anyone could have written
+
+4. SPECIFICITY (concrete details)
+   90+: Numbers, names, exact situations - reader can picture it
+   70-89: Some specifics, some vague
+   Below 50: Pure generality, no grounding detail
+
+5. CTA (call to action quality)
+   90+: Specific, natural, non-question CTA
+   70-89: Present but generic
+   Below 50: No CTA, or a lame closing question ("What do you think?")
+
+6. HUMAN_LIKENESS (sounds like a real person, not AI)
+   90+: Zero AI tells, natural rhythm, real voice
+   70-89: Mostly human, one or two tells
+   Below 50: AI vocabulary, perfect parallel structure, or robot-smooth sentences
+   Deduct 15 for each em dash (-) or en dash (-)
+   Deduct 10 per AI word: delve, leverage (verb), seamless, elevate, empower, unlock, holistic, synergy
+
+7. VOICE_FIT (matches ${profile.label} voice)
+   90+: Indistinguishable from a real ${profile.label} - vocabulary, concerns, tone
+   70-89: Close, a couple of off-notes
+   Below 50: Wrong voice entirely
+
+Respond with ONLY valid JSON. No markdown, no explanation:
+{
+  "hook": number,
+  "readability": number,
+  "authority": number,
+  "specificity": number,
+  "cta": number,
+  "human": number,
+  "voiceFit": number,
+  "overall": number,
+  "tips": {
+    "hook": "one specific action to improve this dimension",
+    "readability": "one specific action to improve this dimension",
+    "authority": "one specific action to improve this dimension",
+    "specificity": "one specific action to improve this dimension",
+    "cta": "one specific action to improve this dimension",
+    "human": "one specific action to improve this dimension",
+    "voiceFit": "one specific action to improve this dimension"
+  },
+  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
+}
+overall = arithmetic mean of all 7 scores, rounded to nearest integer.
+`.trim();
+
+  const user = `Score this LinkedIn post for a ${profile.label}:\n\n${post}`;
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
+// PUSH TO 90+ (IMPROVE) - for /api/generate/improve
+// Rewrites only the weak dimensions while preserving everything that works.
+// temperature: 0.7
+// ---------------------------------------------------------------------------
+export function buildPushTo90Prompt(
+  post: string,
+  scores: Record<string, number>,
+  role: string
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const weakDims = Object.entries(scores)
+    .filter(([k, v]) => k !== "overall" && v < 70)
+    .sort(([, a], [, b]) => a - b)
+    .slice(0, 3)
+    .map(([k]) => k);
+
+  const dimLabels: Record<string, string> = {
+    hook: "Hook (first line)",
+    readability: "Readability (mobile formatting)",
+    authority: "Authority (credibility)",
+    specificity: "Specificity (concrete details)",
+    cta: "CTA (call to action)",
+    human: "Human-likeness (no AI tells)",
+    voiceFit: `Voice fit (${profile.label} voice)`,
+  };
+
+  const weakList = weakDims.map((d) => `- ${dimLabels[d] || d}`).join("\n");
+
+  const system = `
+You improve a LinkedIn post for a ${profile.label} by fixing its weakest scoring dimensions.
+
+${profile.voice}
+
+${ANTI_AI_RULES}
+
+NEVER USE: ${[...profile.banned, "delve", "leverage (verb)", "seamless", "empower"].join(", ")}
+
+WHAT TO FIX (only these dimensions scored below 70):
+${weakList || "- Overall polish and voice fit"}
+
+WHAT TO KEEP INTACT:
+- The story structure and content arc
+- All specific numbers, names, concrete details
+- The voice and vocabulary that already works
+- Approximate word count (within 20% of original)
+
+Output the improved post only. No commentary.
+`.trim();
+
+  const user = post;
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
+// HOOK ALTERNATIVES - for /api/generate/hook-alternatives
+// 3 alternative hooks based on existing post content.
+// temperature: 0.9
+// ---------------------------------------------------------------------------
+export function buildHookAlternativesPrompt(
+  post: string,
+  role: string
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const existingHook = post.split("\n").find((l) => l.trim())?.trim() || "";
+
+  const system = `
+You write alternative opening hooks for LinkedIn posts for ${profile.label}s.
+
+The existing hook is: "${existingHook}"
+
+Write 3 alternative hooks for the same post - each meaningfully different in angle, not just different words.
+
+Rules:
+- Maximum 2 sentences each
+- No em dashes (-) or en dashes (-)
+- No generic openers
+- Specific, concrete, role-appropriate
+- Match this voice: ${profile.voice.split(".")[0]}
+
+Return ONLY valid JSON. No other text:
+[
+  { "style": "SHARP", "text": "..." },
+  { "style": "STORY", "text": "..." },
+  { "style": "CURIOSITY", "text": "..." }
+]
+`.trim();
+
+  const user = `Full post:\n\n${post}`;
+  return { system, user };
+}
