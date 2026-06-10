@@ -54,7 +54,8 @@ export default function LoginPage() {
       setFormError("Incorrect email or password.")
       setSubmitting(false)
     } else {
-      router.push(callbackUrl)
+      // Full reload so the server re-reads the new session cookie
+      window.location.href = callbackUrl
     }
   }
 
