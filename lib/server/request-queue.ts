@@ -1,14 +1,4 @@
-import { Redis } from "@upstash/redis"
-
-let redis: Redis | null = null
-
-const getRedis = () => {
-  const url = process.env.UPSTASH_REDIS_REST_URL || ""
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || ""
-  if (!url.startsWith("https://") || url.includes("...") || !token || token.includes("...")) return null
-  redis ??= new Redis({ url, token })
-  return redis
-}
+import { getRedis } from "./redis"
 
 interface QueueItem {
   id: string

@@ -75,6 +75,20 @@ function StatCard({
   )
 }
 
+function LockedStatCard({ label, upgradeText }: { label: string; upgradeText: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 border-l-[3px] border-l-zinc-200 bg-white p-5 shadow-sm">
+      <p className="text-sm text-zinc-500">{label}</p>
+      <p className="mt-2 select-none text-3xl font-bold text-zinc-200">--</p>
+      <div className="absolute inset-0 flex items-center justify-center bg-white/85 backdrop-blur-[1px]">
+        <Link href="/pricing" className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600">
+          {upgradeText}
+        </Link>
+      </div>
+    </div>
+  )
+}
+
 function StatCardSkeleton() {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -593,17 +607,21 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
                 value={stats.libraryPosts}
                 accent="zinc"
               />
-              <StatCard
-                label="Avg score"
-                value={stats.avgScore ?? "-"}
-                accent={
-                  stats.avgScore != null && stats.avgScore >= 80
-                    ? "teal"
-                    : stats.avgScore != null && stats.avgScore > 0
-                      ? "amber"
-                      : "zinc"
-                }
-              />
+              {stats.plan === "free" ? (
+                <LockedStatCard label="Avg score" upgradeText="Upgrade to Solo" />
+              ) : (
+                <StatCard
+                  label="Avg score"
+                  value={stats.avgScore ?? "-"}
+                  accent={
+                    stats.avgScore != null && stats.avgScore >= 80
+                      ? "teal"
+                      : stats.avgScore != null && stats.avgScore > 0
+                        ? "amber"
+                        : "zinc"
+                  }
+                />
+              )}
             </>
           )}
         </section>
@@ -635,11 +653,24 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
         />
 
         {/* Usage chart */}
-        <UsageChart
-          usage={usage}
-          error={usageError}
-          onRetry={loadUsage}
-        />
+        {stats && stats.plan === "free" ? (
+          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <h2 className="mb-3 text-base font-bold text-zinc-950">Usage analytics</h2>
+            <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-200 text-center">
+              <p className="text-sm font-semibold text-zinc-700">Track your daily writing activity</p>
+              <Link href="/pricing" className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-teal-600">Upgrade to Solo</Link>
+            </div>
+          </section>
+        ) : (
+          <>
+            <UsageChart usage={usage} error={usageError} onRetry={loadUsage} />
+            {stats && stats.plan === "solo" && (
+              <p className="text-xs text-zinc-400 text-center -mt-4">
+                Upgrade to Pro for advanced analytics and competitor insights. <Link href="/pricing" className="font-semibold text-teal underline">Learn more</Link>
+              </p>
+            )}
+          </>
+        )}
       </div>
     </main>
   )

@@ -18,6 +18,23 @@ const ACCOUNT_ROLES = [
   "Other",
 ]
 
+const INDUSTRY_OPTIONS = [
+  "Technology",
+  "Marketing & Advertising",
+  "Finance & Banking",
+  "Healthcare",
+  "Education",
+  "Consulting",
+  "E-commerce & Retail",
+  "Real Estate",
+  "Media & Entertainment",
+  "HR & Recruitment",
+  "Legal",
+  "Manufacturing",
+  "Non-profit",
+  "Other",
+]
+
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
 const isValidLinkedInUrl = (value: string) => {
   if (!value.trim()) return true
@@ -67,9 +84,10 @@ export default function SettingsPage() {
   const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
   const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
   const [userData, setUserData] = useState<{ email: string; name: string; role: string; authProvider: string } | null>(null)
-  const [accountDraft, setAccountDraft] = useState({ name: "", role: "" })
+  const [accountDraft, setAccountDraft] = useState({ name: "", role: "", industry: "", goals: "" })
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [accountError, setAccountError] = useState<string | null>(null)
+  const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number } } | null>(null)
   const [passwordDraft, setPasswordDraft] = useState({ current: "", new: "", confirm: "" })
   const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -93,8 +111,14 @@ export default function SettingsPage() {
       .then((data) => {
         if (data.user) {
           setUserData(data.user)
-          setAccountDraft({ name: data.user.name || "", role: data.user.role || "" })
+          setAccountDraft((prev) => ({ ...prev, name: data.user.name || "", role: data.user.role || "" }))
         }
+      })
+      .catch(() => {})
+    fetch("/plan/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.drafts) setPlanUsage({ drafts: data.drafts, carousels: data.carousels })
       })
       .catch(() => {})
   }, [])
@@ -126,6 +150,16 @@ export default function SettingsPage() {
       goals: profile.goals.join(", "),
     })
   }, [profile, profileStatus, user?.fullName])
+
+  useEffect(() => {
+    if (accountStatus === "saving") return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAccountDraft((prev) => ({
+      ...prev,
+      industry: profile.industry,
+      goals: profile.goals.join(", "),
+    }))
+  }, [profile, accountStatus])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -197,6 +231,14 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to save account.")
+      await saveProfile({
+        name: profileDraft.name,
+        title: profileDraft.title,
+        linkedinUrl: profileDraft.linkedinUrl,
+        industry: accountDraft.industry.trim(),
+        tone: profileDraft.tone,
+        goals: accountDraft.goals.split(",").map((item) => item.trim()).filter(Boolean),
+      })
       await update()
       setAccountStatus("saved")
       setTimeout(() => setAccountStatus("idle"), 2500)
@@ -321,6 +363,15 @@ export default function SettingsPage() {
             </ul>
           </div>
 
+          {/* Usage */}
+          {planUsage && (
+            <div className="mb-5 rounded-xl border border-zinc-100 bg-zinc-50 p-3 space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">This Month&apos;s Usage</p>
+              <UsageBar label="Posts" used={planUsage.drafts.used} limit={planUsage.drafts.limit} />
+              <UsageBar label="Carousels" used={planUsage.carousels.used} limit={planUsage.carousels.limit} />
+            </div>
+          )}
+
           {/* Plan selection */}
           <p className="mb-2 text-xs font-semibold text-zinc-500">Select a plan</p>
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -395,7 +446,7 @@ export default function SettingsPage() {
 
           <div className="flex flex-wrap gap-3">
             <button onClick={onSaveBilling} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50">Save preference</button>
-            <Link href="/pricing" className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Compare all plans</Link>
+            <Link href="/pricing" className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
           </div>
         </section>
       </div>
@@ -493,6 +544,28 @@ export default function SettingsPage() {
                   <option key={r} value={r}>{r}</option>
                 ))}
               </select>
+            </Field>
+            <Field label="Industry">
+              <select
+                value={accountDraft.industry}
+                onChange={(e) => setAccountDraft((prev) => ({ ...prev, industry: e.target.value }))}
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
+              >
+                <option value="">Select industry…</option>
+                {INDUSTRY_OPTIONS.map((ind) => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Goals">
+              <textarea
+                value={accountDraft.goals}
+                onChange={(e) => setAccountDraft((prev) => ({ ...prev, goals: e.target.value }))}
+                rows={3}
+                placeholder="What are you trying to achieve on LinkedIn?"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none resize-none"
+              />
+              <p className="mt-1 text-xs text-zinc-400">Separate multiple goals with commas.</p>
             </Field>
           </div>
           <button
@@ -671,6 +744,26 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
       <p className="text-xs text-zinc-500">{label}</p>
       <p className="mt-1 truncate text-sm font-semibold text-zinc-900">{value}</p>
+    </div>
+  )
+}
+
+function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between text-xs">
+        <span className="text-zinc-600">{label}</span>
+        <span className={`font-semibold ${pct >= 90 ? "text-red-600" : pct >= 70 ? "text-amber-600" : "text-zinc-700"}`}>
+          {used} / {limit}
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+        <div
+          className={`h-full rounded-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 70 ? "bg-amber-500" : "bg-teal"}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   )
 }

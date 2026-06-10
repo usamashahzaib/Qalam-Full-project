@@ -1,17 +1,8 @@
-import { Redis } from "@upstash/redis"
 import { Ratelimit } from "@upstash/ratelimit"
-import { requireRedisEnv } from "@/lib/server/env"
+import { getRedis } from "@/lib/server/redis"
 
-let redis: Redis | null = null
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
-
-const getRedis = () => {
-  const config = requireRedisEnv()
-  if (!config) return null
-  redis ??= new Redis({ url: config.url, token: config.token })
-  return redis
-}
 
 const getGroqLimiter = () => {
   if (!getRedis()) return null
@@ -61,13 +52,9 @@ export async function cacheAiResponse(
   ttlSeconds = 86400
 ) {
   const r = getRedis()
-  if (!r) {
-    console.log("[Redis] Not configured - skipping cache write")
-    return
-  }
+  if (!r) return
   try {
     await r.setex(`ai_cache:${promptHash}`, ttlSeconds, response)
-    console.log(`[Redis] Cached key ai_cache:${promptHash}`)
   } catch (e) {
     console.error("[Redis Cache Write Error]", (e as Error).message)
   }

@@ -1,5 +1,6 @@
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
+import { callGemini } from "./gemini-client"
 
 // Strips markdown fences, extracts first JSON object/array, returns null on failure
 export function safeParseJson<T = unknown>(raw: string): T | null {
@@ -22,56 +23,12 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ])
 }
 
-async function callGemini(
-  systemPrompt: string,
-  userMessage: string,
-  json = false,
-  timeout = 15000
-) {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error("Gemini API key not configured")
-
-  const response = await withTimeout(
-    fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt + "\n\n" + userMessage }] },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 8192,
-          },
-        }),
-      }
-    ),
-    timeout
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error")
-    throw new Error(`Gemini API failed: ${response.status} - ${errorText}`)
-  }
-
-  const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
-  if (!text) throw new Error("Gemini returned empty response")
-  return text
-}
-
-// Uses plain fetch instead of groq-sdk to avoid serverless connection issues
 async function callGroq(
   systemPrompt: string,
   userMessage: string,
   options: { json?: boolean; temperature?: number; maxTokens?: number } = {},
   timeout = 15000
-) {
+): Promise<string> {
   const { json = false, temperature = 0.7, maxTokens = 2048 } = options
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error("Groq API key not configured")
@@ -99,13 +56,44 @@ async function callGroq(
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "Unknown error")
-    throw new Error(`Groq API failed: ${response.status} - ${errorText}`)
+    throw new Error(`Groq API error: ${response.status} - ${errorText}`)
   }
 
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content || ""
   if (!content) throw new Error("Groq returned empty response")
   return content
+}
+
+type CallOptions = { json: boolean; temperature: number; maxTokens: number }
+
+async function attemptProvider(
+  provider: "groq" | "gemini",
+  systemPrompt: string,
+  userMessage: string,
+  options: CallOptions,
+  timeout: number,
+  userId: string,
+  plan: string
+): Promise<string | null> {
+  const [rateLimit, circuitAvailable] = await Promise.all([
+    checkAiRateLimit(userId, plan, provider),
+    checkCircuit(provider),
+  ])
+
+  if (!circuitAvailable || !rateLimit.allowed) return null
+
+  try {
+    const result = provider === "groq"
+      ? await callGroq(systemPrompt, userMessage, options, timeout)
+      : await callGemini(systemPrompt, userMessage, options, timeout)
+    await recordSuccess(provider)
+    return result
+  } catch (error) {
+    await recordFailure(provider)
+    console.error(`[${provider.toUpperCase()} Error]`, (error as Error).message)
+    return null
+  }
 }
 
 export async function callAi(
@@ -120,6 +108,9 @@ export async function callAi(
     plan?: string
     cache?: boolean
     cacheTtl?: number
+    // "groq" = Groq primary, Gemini fallback (content, scoring, improvements, carousels)
+    // "gemini" = Gemini primary, Groq fallback (hooks, hook alternatives, CTA rewrite)
+    provider?: "groq" | "gemini"
   } = {}
 ) {
   const {
@@ -131,6 +122,7 @@ export async function callAi(
     plan = "free",
     cache = true,
     cacheTtl = 86400,
+    provider = "groq",
   } = options
 
   const promptHash = hashPrompt(systemPrompt, userMessage, { json, temperature, maxTokens })
@@ -138,44 +130,25 @@ export async function callAi(
   if (cache) {
     const cached = await getCachedAiResponse(promptHash)
     if (cached) {
-      console.log(`[AI Cache] Hit for user ${userId}`)
       return cached
     }
   }
 
-  const [groqLimit, groqAvailable] = await Promise.all([
-    checkAiRateLimit(userId, plan, "groq"),
-    checkCircuit("groq"),
-  ])
+  const primary = provider
+  const secondary: "groq" | "gemini" = provider === "groq" ? "gemini" : "groq"
+  const callOptions: CallOptions = { json, temperature, maxTokens }
 
-  if (groqAvailable && groqLimit.allowed) {
-    try {
-      const result = await callGroq(
-        systemPrompt,
-        userMessage,
-        { json, temperature, maxTokens },
-        timeout
-      )
-      await recordSuccess("groq")
-      if (cache) await cacheAiResponse(promptHash, result, cacheTtl)
-      return result
-    } catch (error) {
-      await recordFailure("groq")
-      console.error("[Groq Error]", (error as Error).message)
-    }
+  const primaryResult = await attemptProvider(primary, systemPrompt, userMessage, callOptions, timeout, userId, plan)
+  if (primaryResult !== null) {
+    if (cache) await cacheAiResponse(promptHash, primaryResult, cacheTtl)
+    return primaryResult
   }
 
-  const geminiLimit = await checkAiRateLimit(userId, plan, "gemini")
-  if (!geminiLimit.allowed) {
-    throw new Error("Rate limit exceeded for all AI providers. Please try again shortly.")
+  const secondaryResult = await attemptProvider(secondary, systemPrompt, userMessage, callOptions, timeout, userId, plan)
+  if (secondaryResult !== null) {
+    if (cache) await cacheAiResponse(promptHash, secondaryResult, cacheTtl)
+    return secondaryResult
   }
 
-  try {
-    const result = await callGemini(systemPrompt, userMessage, json, timeout)
-    if (cache) await cacheAiResponse(promptHash, result, cacheTtl)
-    return result
-  } catch (error) {
-    console.error("[Gemini Error]", (error as Error).message)
-    throw new Error("All AI services unavailable. Please try again in a moment.")
-  }
+  throw new Error("All AI services unavailable. Please try again in a moment.")
 }

@@ -1,11 +1,11 @@
 import { Ratelimit } from "@upstash/ratelimit"
-import { Redis } from "@upstash/redis"
 import type { NextRequest } from "next/server"
-import { env } from "@/lib/server/env"
+import { getRedis } from "./redis"
 
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
 type Bucket = { count: number; resetTime: number }
 
+// In-memory store used only when Redis is not configured (dev/CI without Redis)
 const memoryStore = new Map<string, Bucket>()
 const WINDOW_MS = 60_000
 
@@ -18,20 +18,19 @@ setInterval(() => {
 
 const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
 
-let redisClient: Redis | null = null
 let redisLimiters: Record<string, Ratelimit> | null = null
 
-const getRedis = (): { redis: Redis; limiters: Record<string, Ratelimit> } | null => {
-  if (!env.upstashRedisUrl?.startsWith("https://") || !env.upstashRedisToken) return null
-  if (redisClient && redisLimiters) return { redis: redisClient, limiters: redisLimiters }
-  redisClient = new Redis({ url: env.upstashRedisUrl, token: env.upstashRedisToken })
+const getLimiters = (): Record<string, Ratelimit> | null => {
+  const r = getRedis()
+  if (!r) return null
+  if (redisLimiters) return redisLimiters
   redisLimiters = {
-    free: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.free, "1 m") }),
-    solo: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.solo, "1 m") }),
-    pro: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.pro, "1 m") }),
-    agency: new Ratelimit({ redis: redisClient, limiter: Ratelimit.slidingWindow(planLimits.agency, "1 m") }),
+    free: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.free, "1 m") }),
+    solo: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.solo, "1 m") }),
+    pro: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.pro, "1 m") }),
+    agency: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.agency, "1 m") }),
   }
-  return { redis: redisClient, limiters: redisLimiters }
+  return redisLimiters
 }
 
 const memoryFallback = (key: string, limit: number): LimitResult => {
@@ -60,10 +59,10 @@ export async function checkRateLimit(
   const limit = planLimits[planKey]
   const memKey = `ip:${ip}:route:${identifier}`
 
-  try {
-    const store = getRedis()
-    if (store) {
-      const limiter = store.limiters[planKey] ?? store.limiters.free
+  const limiters = getLimiters()
+  if (limiters) {
+    try {
+      const limiter = limiters[planKey] ?? limiters.free
       const result = await limiter.limit(memKey)
       return {
         allowed: result.success,
@@ -71,11 +70,14 @@ export async function checkRateLimit(
         remaining: result.remaining,
         reset: result.reset,
       }
+    } catch {
+      // Redis configured but threw — fail open rather than bypass via memory
+      console.error("[RateLimit] Redis error — allowing request")
+      return { allowed: true, limit, remaining: 1, reset: Date.now() + WINDOW_MS }
     }
-  } catch {
-    // Redis failed - fall through to in-memory
   }
 
+  // Redis not configured — use in-memory (dev mode only)
   return memoryFallback(memKey, limit)
 }
 

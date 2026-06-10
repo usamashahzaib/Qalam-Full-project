@@ -19,9 +19,9 @@ const jakarta = Plus_Jakarta_Sans({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 
-const rootOgTitle = "Qalam | AI LinkedIn Writer with Voice Memory, Scheduling and Publishing"
+const rootOgTitle = "Qalam — AI LinkedIn Writer & Post Generator with Voice Memory"
 const rootOgDescription =
-  "Write LinkedIn posts in your real voice. Qalam stores your drafts, edits, voice profile, scheduling flow, approvals, and LinkedIn publishing in one workspace."
+  "Qalam is the AI writing tool that learns your voice. Write LinkedIn posts that sound like you — not generic AI. Voice memory, drafts, scheduling, and publishing in one workspace."
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
@@ -31,22 +31,41 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "AI LinkedIn writing workspace with voice memory, drafts, scheduling, approvals, hashtags, reply assistance, carousels, and publishing in one system.",
+    "Qalam is the AI writer that learns your voice. Create LinkedIn posts, hooks, and carousels that sound exactly like you — not generic AI output. Voice memory, drafts, scheduling, and publishing in one workspace. Free to start.",
   keywords: [
     "Qalam",
-    "LinkedIn writing tool",
-    "AI LinkedIn post generator",
+    "Qalam AI",
+    "Qalam writer",
+    "Qalam LinkedIn",
+    "AI writer",
+    "AI writing tool",
+    "AI content writer",
+    "LinkedIn AI writer",
+    "LinkedIn post generator",
+    "LinkedIn content creator",
+    "AI LinkedIn posts",
+    "LinkedIn writing assistant",
+    "LinkedIn ghostwriter AI",
+    "voice AI writer",
+    "AI with memory",
+    "personal brand AI tool",
+    "LinkedIn hook generator",
+    "LinkedIn headline optimizer",
+    "LinkedIn carousel maker",
+    "LinkedIn scheduler AI",
+    "founder content tool",
+    "consultant LinkedIn tool",
+    "agency LinkedIn workflow",
+    "HR LinkedIn content",
+    "best AI for LinkedIn",
     "LinkedIn content system",
-    "voice profile writing AI",
+    "AI writing workspace",
+    "content archive software",
+    "brand voice AI",
+    "AI copywriting tool",
     "LinkedIn post writer",
     "LinkedIn scheduler",
     "agency content workflow",
-    "brand voice AI",
-    "content archive software",
-    "AI LinkedIn content creator",
-    "LinkedIn AI assistant",
-    "LinkedIn publishing tool",
-    "best AI tool for LinkedIn",
     "auth",
   ],
   authors: [{ name: SITE_NAME, url: siteUrl }],
@@ -150,7 +169,7 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Qalam is an AI LinkedIn writing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing.",
+        "Qalam is an AI writer and LinkedIn publishing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing. The AI writing tool that learns your voice over time.",
       publisher: { "@id": `${siteUrl}/#organization` },
       offers: PLANS.map((plan) => ({
         "@type": "Offer",

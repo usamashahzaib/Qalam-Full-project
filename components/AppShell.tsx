@@ -28,7 +28,7 @@ const NAV_GROUPS = [
     label: "Workspace",
     links: [
       { href: "/dashboard", label: "Dashboard", icon: GrowthIcon },
-      { href: "/chat", label: "AI Strategist", icon: VoiceIcon },
+      { href: "/chat", label: "AI Strategist", icon: VoiceIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/writer", label: "AI Writer", icon: ComposeIcon },
     ],
   },
@@ -44,7 +44,7 @@ const NAV_GROUPS = [
     label: "Intelligence",
     links: [
       { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Solo" as PlanTier },
-      { href: "/library", label: "Library", icon: LibraryIcon },
+      { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
     ],
@@ -52,7 +52,7 @@ const NAV_GROUPS = [
   {
     label: "Account",
     links: [
-      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency Starter" as PlanTier },
+      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency" as PlanTier },
       { href: "/settings", label: "Settings", icon: ProfileIcon },
     ],
   },
@@ -83,6 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [searchFocused, setSearchFocused] = useState(false)
   const [clients, setClients] = useState<Array<{ id: string; client_name: string }>>([])
   const [switcherOpen, setSwitcherOpen] = useState(false)
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return defaultSectionState()
@@ -94,6 +95,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   })
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
+  const userDropdownRef = useRef<HTMLDivElement>(null)
   const currentPlan = workspace.state.billing.plan
   const hasAgencyAccess = currentPlan.startsWith("Agency")
   const canAddWorkspace = hasAgencyAccess
@@ -139,6 +141,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const handleOutsideClick = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchFocused(false)
       if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) setSwitcherOpen(false)
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) setUserDropdownOpen(false)
     }
     document.addEventListener("mousedown", handleOutsideClick)
     return () => document.removeEventListener("mousedown", handleOutsideClick)
@@ -310,6 +313,58 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href={withClientParam("/settings", activeClientId)} className="flex items-center gap-2 rounded-full border border-dashed border-zinc-300 hover:border-zinc-400 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors"><LinkedInIcon className="h-3 w-3 text-zinc-400" />Connect LinkedIn</Link>
           )}
           <button onClick={handleCreatePost} className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors shadow-sm shadow-teal/10">Create Post</button>
+
+          {/* User avatar dropdown */}
+          <div className="relative" ref={userDropdownRef}>
+            <button
+              onClick={() => setUserDropdownOpen((v) => !v)}
+              aria-label="User menu"
+              aria-expanded={userDropdownOpen}
+              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-zinc-200 bg-zinc-800 text-xs font-bold text-white transition-colors hover:border-teal/50"
+            >
+              {user?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" />
+              ) : (
+                <span>{user?.fullName?.charAt(0) || "U"}</span>
+              )}
+            </button>
+            {userDropdownOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl divide-y divide-zinc-100">
+                <div className="px-4 py-3">
+                  <p className="truncate text-sm font-semibold text-zinc-900">{user?.fullName}</p>
+                  <p className="truncate text-xs text-zinc-500">{user?.email}</p>
+                </div>
+                <div className="py-1">
+                  <Link
+                    href={withClientParam("/settings", activeClientId)}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50"
+                  >
+                    <ProfileIcon className="h-4 w-4 text-zinc-400" />
+                    Profile
+                  </Link>
+                  <Link
+                    href={withClientParam("/settings", activeClientId)}
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-zinc-700 transition-colors hover:bg-zinc-50"
+                  >
+                    <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    Settings
+                  </Link>
+                </div>
+                <div className="py-1">
+                  <button
+                    onClick={() => { setUserDropdownOpen(false); signOut({ callbackUrl: "/" }) }}
+                    className="flex w-full cursor-pointer items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 

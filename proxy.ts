@@ -1,18 +1,54 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { auth } from "@/auth"
+import { getToken } from "next-auth/jwt"
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
 
-type Bucket = { count: number; resetTime: number }
+// ─── Redis rate limiters ─────────────────────────────────────────────────────
+// Lazy-initialized per Edge invocation; state persists in Upstash, not memory.
+// Fail-open when Redis is not configured (env vars missing).
 
-const ipRequestMap = new Map<string, Bucket>()
-const WINDOW_MS = 60_000
-const MAX_REQUESTS = 100
+let _redis: Redis | null = null
+let _generalLimiter: Ratelimit | null = null
+let _authLimiter: Ratelimit | null = null
 
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, bucket] of ipRequestMap) {
-    if (bucket.resetTime < now) ipRequestMap.delete(key)
-  }
-}, WINDOW_MS)
+function proxyRedis(): Redis | null {
+  if (_redis) return _redis
+  const url = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) return null
+  return (_redis = new Redis({ url, token }))
+}
+
+function generalLimiter(): Ratelimit | null {
+  if (_generalLimiter) return _generalLimiter
+  const r = proxyRedis()
+  if (!r) return null
+  return (_generalLimiter = new Ratelimit({
+    redis: r,
+    limiter: Ratelimit.slidingWindow(100, "60 s"),
+    prefix: "rl:proxy",
+  }))
+}
+
+function authLimiter(): Ratelimit | null {
+  if (_authLimiter) return _authLimiter
+  const r = proxyRedis()
+  if (!r) return null
+  return (_authLimiter = new Ratelimit({
+    redis: r,
+    limiter: Ratelimit.slidingWindow(5, "15 m"),
+    prefix: "rl:auth",
+  }))
+}
+
+async function checkRateLimit(ip: string, isAuthRoute: boolean): Promise<boolean> {
+  const limiter = isAuthRoute ? authLimiter() : generalLimiter()
+  if (!limiter) return true // fail-open when Redis not configured
+  const { success } = await limiter.limit(ip)
+  return success
+}
+
+// ─── Route tables ─────────────────────────────────────────────────────────────
 
 const PROTECTED_ROUTES = [
   "/dashboard",
@@ -42,9 +78,19 @@ const PROTECTED_API_ROUTES = [
   "/api/voice",
   "/api/posts",
   "/api/analytics",
+  "/api/competitors",
 ]
 
-const PUBLIC_API_PREFIXES = ["/api/auth", "/api/health", "/api/webhooks", "/api/free-tools", "/api/tools", "/api/geo"]
+const PUBLIC_API_PREFIXES = [
+  "/api/auth",
+  "/api/health",
+  "/api/webhooks",
+  "/api/free-tools",
+  "/api/tools",
+  "/api/geo",
+]
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Frame-Options", "DENY")
@@ -54,18 +100,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const key = `ip:${ip}`
-  const bucket = ipRequestMap.get(key)
-  if (!bucket || bucket.resetTime < now) {
-    ipRequestMap.set(key, { count: 1, resetTime: now + WINDOW_MS })
-    return true
-  }
-  if (bucket.count >= MAX_REQUESTS) return false
-  bucket.count += 1
-  return true
-}
+// ─── Middleware ────────────────────────────────────────────────────────────────
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const ip =
@@ -73,17 +108,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     "unknown"
 
-  if (!checkRateLimit(ip)) {
-    return addSecurityHeaders(
-      NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
-    )
-  }
-
   const { pathname } = request.nextUrl
 
   const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
+  const isAuthRoute = pathname.startsWith("/api/auth") || AUTH_ONLY_ROUTES.some(
+    (r) => pathname === r || pathname.startsWith(`${r}/`)
+  )
+
+  const rateLimitOk = await checkRateLimit(ip, isAuthRoute)
+  if (!rateLimitOk) {
+    return addSecurityHeaders(
+      NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
+    )
+  }
 
   if (isPublicApi) {
     return addSecurityHeaders(NextResponse.next())
@@ -103,22 +142,26 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return addSecurityHeaders(NextResponse.next())
   }
 
-  const session = await auth()
+  // Read JWT directly — Edge-compatible, no Supabase dependency
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  })
+  const userId = token?.id as string | undefined
+  const userEmail = token?.email as string | undefined
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthOnly && session?.user?.id) {
+  if (isAuthOnly && userId) {
     return addSecurityHeaders(
       NextResponse.redirect(new URL("/dashboard", request.url))
     )
   }
 
-  if (!session?.user?.id) {
+  if (!userId) {
     if (isProtectedApi) {
       return addSecurityHeaders(
         NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       )
     }
-    // Allow unauthenticated users to access auth-only pages (login, signup, etc.)
     if (isAuthOnly) {
       return addSecurityHeaders(NextResponse.next())
     }
@@ -128,8 +171,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set("x-user-id", session.user.id)
-  if (session.user.email) requestHeaders.set("x-user-email", session.user.email)
+  requestHeaders.set("x-user-id", userId)
+  if (userEmail) requestHeaders.set("x-user-email", userEmail)
 
   return addSecurityHeaders(
     NextResponse.next({ request: { headers: requestHeaders } })

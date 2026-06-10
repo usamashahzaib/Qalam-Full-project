@@ -35,9 +35,3 @@ export function setSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
   return response
 }
-
-export function logApiRequest(request: NextRequest, requestId: string): void {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
-  const ua = request.headers.get("user-agent")?.substring(0, 50)
-  console.log(`[${requestId}] ${request.method} ${request.nextUrl.pathname} - IP: ${ip} - UA: ${ua}`)
-}

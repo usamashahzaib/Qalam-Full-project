@@ -26,6 +26,7 @@ function badgeClasses(badge: string): string {
   if (badge === "Most popular") return "bg-teal text-white"
   if (badge === "Best value") return "bg-gold text-white"
   if (badge === "Coming Soon") return "bg-zinc-100 text-zinc-600"
+  if (badge === "Current plan") return "bg-emerald-100 text-emerald-700"
   return "bg-zinc-100 text-zinc-600"
 }
 

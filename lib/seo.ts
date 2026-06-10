@@ -21,23 +21,156 @@ export const buildOgImageUrl = (title: string, description: string, tag?: string
   return `${SITE_URL}/og?${params.toString()}`
 }
 
+export const buildBreadcrumbSchema = (items: { name: string; path: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    name: item.name,
+    item: absoluteUrl(item.path),
+  })),
+})
+
+export const buildArticleSchema = ({
+  title,
+  description,
+  url,
+  datePublished,
+  dateModified,
+  image,
+  wordCount,
+}: {
+  title: string
+  description: string
+  url: string
+  datePublished: string
+  dateModified: string
+  image: string
+  wordCount?: number
+}) => ({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: title,
+  description,
+  datePublished,
+  dateModified,
+  image,
+  ...(wordCount ? { wordCount } : {}),
+  author: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/qalam-mark.png`,
+  },
+  publisher: {
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: { "@type": "ImageObject", url: `${SITE_URL}/qalam-mark.png` },
+  },
+  mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  url,
+})
+
+export const buildSoftwareApplicationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: SITE_NAME,
+  url: SITE_URL,
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "Qalam is an AI writer and LinkedIn publishing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing.",
+  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+  offers: {
+    "@type": "Offer",
+    name: "Free Plan",
+    price: "0",
+    priceCurrency: "PKR",
+    availability: "https://schema.org/InStock",
+  },
+})
+
+export const buildOrganizationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${SITE_URL}/#organization`,
+  name: SITE_NAME,
+  url: SITE_URL,
+  logo: `${SITE_URL}/qalam-mark.png`,
+  sameAs: [
+    "https://www.linkedin.com/company/byqalam",
+    "https://www.instagram.com/byyqalam",
+  ],
+})
+
+export const buildWebSiteSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": `${SITE_URL}/#website`,
+  url: SITE_URL,
+  name: SITE_NAME,
+  publisher: { "@id": `${SITE_URL}/#organization` },
+  inLanguage: "en",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: `${SITE_URL}/blog?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+})
+
+export const buildFaqSchema = (faqs: { q: string; a: string }[]) => ({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+})
+
+export const buildHowToSchema = ({
+  name,
+  description,
+  steps,
+}: {
+  name: string
+  description: string
+  steps: { name: string; text: string }[]
+}) => ({
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name,
+  description,
+  step: steps.map((step, index) => ({
+    "@type": "HowToStep",
+    position: index + 1,
+    name: step.name,
+    text: step.text,
+  })),
+})
+
 export const buildPageMetadata = ({
   title,
   description,
   path,
   index = true,
   tag,
+  keywords,
 }: {
   title: string
   description: string
   path: string
   index?: boolean
   tag?: string
+  keywords?: string[]
 }): Metadata => {
   const ogImage = buildOgImageUrl(title, description, tag)
   return {
     title,
     description,
+    keywords,
     alternates: { canonical: absoluteUrl(path) },
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
@@ -68,6 +201,7 @@ export const buildPageMetadata = ({
 
 export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/ai-linkedin-writer", priority: 0.96, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/pricing", priority: 0.95, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/free-tools", priority: 0.9, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/free-tools/hook-generator", priority: 0.88, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
@@ -91,6 +225,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
 
 export const LLM_ROUTES = [
   "/",
+  "/ai-linkedin-writer",
   "/pricing",
   "/demo",
   "/free-tools",

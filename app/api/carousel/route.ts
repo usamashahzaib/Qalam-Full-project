@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { requireAuth } from "@/lib/server/auth-helpers"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit, decrementDraft } from "@/lib/server/plan-limits"
+import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router"
 
 // Future: POST /api/carousel/[id]/export?format=pdf - render slides via headless browser and return PDF blob
@@ -94,8 +94,6 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     if (saveError || !carousel) throw new Error(saveError?.message ?? "carousel_save_failed")
-
-    await decrementDraft(userId)
 
     return NextResponse.json({ id: carousel.id, slides })
   } catch (error) {

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const { system, user: userMsg } = buildHookAlternativesPrompt(content, role)
     const raw = await callAi(system, userMsg, {
       json: true, temperature: 0.9, maxTokens: 500,
-      userId: user.id, plan: user.plan, cache: false,
+      userId: user.id, plan: user.plan, cache: false, provider: "gemini",
     })
 
     const hooks = safeParseJson<Array<{ style: string; text: string }>>(raw) || []

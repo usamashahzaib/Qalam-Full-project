@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/server/workspace";
-import { getPlanStatus } from "@/lib/server/plan-limits";
+import { getPlanStatus } from "@/lib/server/plan-limits-v2";
 
 export async function GET() {
   try {

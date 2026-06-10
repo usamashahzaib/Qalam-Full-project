@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -79,8 +79,18 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 
 export function PricingPageContent({}: PricingPageContentProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null)
+  const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => { if (data.user?.plan) setCurrentPlan(data.user.plan) })
+      .catch(() => {})
+  }, [])
 
   const displayPlans = PLANS.map((plan) => {
+    const isCurrentPlan = currentPlan != null && plan.plan.toLowerCase() === currentPlan.toLowerCase()
     const noteOverride =
       plan.plan === "Free"
         ? "Real free. Not a 7-day trial disguised as a free plan."
@@ -88,13 +98,26 @@ export function PricingPageContent({}: PricingPageContentProps) {
           ? "This is the plan most people upgrade to after their first week."
           : undefined
 
+    const isAnnual = billing === "annual"
+    const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0
+    const price = isAnnual && hasAnnual ? formatPkr(plan.annualPkrPerMonth) : formatPkr(plan.monthlyPkr)
+    const annualSavings = !isAnnual && hasAnnual
+      ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo — ${annualFraming}`
+      : undefined
+    const usdReference = isAnnual && hasAnnual
+      ? `Save ${annualSavingsPercent}% · billed annually`
+      : hasAnnual
+      ? `Save ${annualSavingsPercent}%`
+      : "Free forever"
+
     return {
       ...plan,
       description: plan.description,
       note: noteOverride,
-      price: formatPkr(plan.monthlyPkr),
-      annualSavings: plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0 ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}` : undefined,
-      usdReference: plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0 ? `Save ${annualSavingsPercent}%` : "Free forever",
+      price,
+      annualSavings,
+      usdReference,
+      badge: isCurrentPlan ? "Current plan" : plan.badge,
     }
   })
 
@@ -198,9 +221,35 @@ export function PricingPageContent({}: PricingPageContentProps) {
             </p>
           </FadeUp>
 
+          <div className="mb-8 flex items-center justify-center gap-3">
+            <span className={`text-sm font-semibold transition-colors ${billing === "monthly" ? "text-zinc-900" : "text-zinc-400"}`}>
+              Monthly
+            </span>
+            <button
+              role="switch"
+              aria-checked={billing === "annual"}
+              onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 ${
+                billing === "annual" ? "bg-teal" : "bg-zinc-300"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                  billing === "annual" ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+            <span className={`text-sm font-semibold transition-colors ${billing === "annual" ? "text-zinc-900" : "text-zinc-400"}`}>
+              Annual
+            </span>
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+              {annualFraming}
+            </span>
+          </div>
+
           <AnimatePresence mode="wait">
             <motion.div
-              key="monthly-pricing"
+              key={billing}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}

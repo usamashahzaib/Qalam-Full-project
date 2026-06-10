@@ -7,8 +7,8 @@ export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
 export type PlanName = "free" | "solo" | "pro" | "agency"
 
 const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
-  free: { drafts: 10, carousels: 0, hooks: 10, analyses: 5 },
-  solo: { drafts: 25, carousels: 0, hooks: 25, analyses: 10 },
+  free: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
+  solo: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
   pro: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
   agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
 }

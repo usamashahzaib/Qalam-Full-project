@@ -85,6 +85,7 @@ export default function WriterPage() {
   const { saveDraft, schedulePost, publishPost, workspaceId, billing } = useWorkspace()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
+  const canUseSolo = canAccessPlan(billing.plan, "Solo")
   const canUseCarousel = canAccessPlan(billing.plan, "Pro")
   const currentDraftLimit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
   const carouselLimit = getEffectivePlanLimits(billing.plan, billing.limits).carouselGenerationsPerMonth
@@ -579,9 +580,14 @@ export default function WriterPage() {
           {/* STEP 1 - Inputs */}
           <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
-              <div className="flex items-center gap-2">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">1</span>
-                <h2 className="text-sm font-bold text-zinc-900">Your post details</h2>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">1</span>
+                  <h2 className="text-sm font-bold text-zinc-900">Your post details</h2>
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${canUseProTools ? "border-gold/30 bg-gold/10 text-gold" : canUseSolo ? "border-teal/20 bg-teal/10 text-teal" : "border-zinc-200 bg-zinc-100 text-zinc-500"}`}>
+                  {canUseProTools ? "Voice-Trained AI" : canUseSolo ? "Role-Aware AI" : "Basic AI Writer"}
+                </span>
               </div>
             </div>
 
@@ -1125,13 +1131,15 @@ export default function WriterPage() {
 
             {scores && (
               <div className="border-t border-zinc-100 p-4 space-y-2">
-                <button
-                  onClick={() => void onPushTo90()}
-                  disabled={isImproving || !draftContent.trim() || draftLimitHit || scores.overall >= 90}
-                  className="w-full cursor-pointer rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-45"
-                >
-                  {isImproving ? "Improving..." : scores.overall >= 90 ? "90+ achieved" : draftLimitHit ? "Upgrade for more" : "Push to 90+ (uses 1 draft)"}
-                </button>
+                <LockedFeature feature="Push to 90+" requiredPlan="Pro" className="w-full">
+                  <button
+                    onClick={() => void onPushTo90()}
+                    disabled={isImproving || !draftContent.trim() || draftLimitHit || scores.overall >= 90}
+                    className="w-full cursor-pointer rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-45"
+                  >
+                    {isImproving ? "Improving..." : scores.overall >= 90 ? "90+ achieved" : draftLimitHit ? "Upgrade for more" : "Push to 90+ (uses 1 draft)"}
+                  </button>
+                </LockedFeature>
                 <button
                   onClick={() => void onImproveHook()}
                   disabled={!draftContent.trim() || isGeneratingAlts}

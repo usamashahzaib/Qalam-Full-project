@@ -18,7 +18,8 @@ export async function requireAuth(): Promise<string> {
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false
-  const envList = process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "admin@byqalam.com"
+  const envList = process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS
+  if (!envList) throw new Error("ADMIN_EMAILS env var is not configured")
   const adminEmails = envList.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
   return adminEmails.includes(email.trim().toLowerCase())
 }

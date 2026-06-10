@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const { system, user: userMsg } = buildCtaAlternativesPrompt(content, role)
     const raw = await callAi(system, userMsg, {
       json: true, temperature: 0.9, maxTokens: 400,
-      userId: user.id, plan: user.plan, cache: false,
+      userId: user.id, plan: user.plan, cache: false, provider: "gemini",
     })
 
     const alternatives = safeParseJson<string[]>(raw) || []

@@ -1,16 +1,8 @@
 import { Redis } from "@upstash/redis"
+import { getRedis } from "@/lib/server/redis"
 import { callAi } from "@/lib/server/ai-router"
 
-let redis: Redis | null = null
 let processorInterval: ReturnType<typeof setInterval> | null = null
-
-const getRedis = (): Redis | null => {
-  const url = process.env.UPSTASH_REDIS_REST_URL?.trim() ?? ""
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? ""
-  if (!url.startsWith("https://") || url.includes("...") || !token || token.includes("...")) return null
-  redis ??= new Redis({ url, token })
-  return redis
-}
 
 export interface QueueItem {
   id: string
@@ -139,10 +131,7 @@ export async function getQueueStatus(
 }
 
 export async function scheduleQueueProcessor(): Promise<void> {
-  if (!getRedis()) {
-    console.log("[queue-processor] Redis unavailable - processor not started")
-    return
-  }
+  if (!getRedis()) return
 
   if (processorInterval) return
 
@@ -151,8 +140,6 @@ export async function scheduleQueueProcessor(): Promise<void> {
       console.error("[queue-processor] processQueue error:", err)
     })
   }, 5_000)
-
-  console.log("[queue-processor] Queue processor started")
 }
 
-export { getRedis }
+export { getRedis } from "@/lib/server/redis"

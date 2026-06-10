@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
-import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits"
+import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router"
 import { createClient } from "@supabase/supabase-js"
 
