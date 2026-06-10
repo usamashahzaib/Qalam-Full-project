@@ -89,7 +89,7 @@ export async function ensureSupabaseUser({
   return newUser.id
 }
 
-async function getOrCreateWorkspaceForUser(userId: string) {
+async function getOrCreateWorkspaceForUser(userId: string, ownerEmail?: string) {
   const supabase = createServiceClient()
   const { data: membership } = await supabase
     .from("workspace_members")
@@ -99,20 +99,20 @@ async function getOrCreateWorkspaceForUser(userId: string) {
 
   if (membership) return membership.workspace_id
 
-  // Try the RPC first; fall back to direct inserts if the function isn't deployed
-  const { data: rpcId, error: rpcError } = await supabase.rpc("create_personal_workspace", {
-    p_user_id: userId,
-    p_name: "Personal",
-  })
-  if (!rpcError && rpcId) return rpcId as string
+  // Direct insert - includes owner_email to satisfy legacy NOT NULL constraint
+  const wsPayload: Record<string, string> = { name: "Personal", owner_id: userId }
+  if (ownerEmail) wsPayload.owner_email = ownerEmail
 
-  // Direct fallback: create workspace then membership
   const { data: ws, error: wsError } = await supabase
     .from("workspaces")
-    .insert({ name: "Personal", owner_id: userId })
+    .insert(wsPayload)
     .select("id")
     .single()
-  if (wsError || !ws) return null
+
+  if (wsError || !ws) {
+    console.error("[workspace] insert failed:", wsError?.message, wsError?.details, wsError?.hint)
+    return null
+  }
 
   await supabase
     .from("workspace_members")
@@ -123,11 +123,13 @@ async function getOrCreateWorkspaceForUser(userId: string) {
 
 export async function ensureWorkspaceForUser({
   userId,
+  email,
 }: {
   userId: string
+  email?: string
   firstName?: string
 }): Promise<string> {
-  const workspaceId = await getOrCreateWorkspaceForUser(userId)
+  const workspaceId = await getOrCreateWorkspaceForUser(userId, email)
   if (!workspaceId) {
     throw new Error("failed_to_ensure_workspace")
   }
@@ -219,7 +221,7 @@ export const ensureWorkspaceForEmail = async ({
 }) => {
   const userId = await requireAuth().catch(() => "")
   if (!userId) throw new Error("auth_required")
-  return ensureWorkspaceForUser({ userId, firstName })
+  return ensureWorkspaceForUser({ userId, email, firstName })
 }
 
 export async function getCurrentWorkspace() {
@@ -270,7 +272,7 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
     throw new Error("unauthorized_workspace")
   }
 
-  return ensureWorkspaceForUser({ userId: ctx.supabaseUserId, firstName: ctx.firstName })
+  return ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email, firstName: ctx.firstName })
 }
 
 const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
