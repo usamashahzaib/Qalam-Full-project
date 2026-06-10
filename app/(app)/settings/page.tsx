@@ -48,12 +48,12 @@ const isValidLinkedInUrl = (value: string) => {
 }
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
-  Free: "Starter workspace, 10 drafts/month",
-  Solo: "25 drafts, scheduling, scoring",
-  Pro: "60 drafts, carousels, research",
-  Agency: "5 workspaces, 10 seats",
-  "Agency Starter": "5 workspaces, 10 seats",
-  "Agency Growth": "5 workspaces, 10 seats",
+  Free: "5 posts, 1 carousel/month",
+  Solo: "30 posts, 3 carousels, library, planner",
+  Pro: "60 posts, voice training, analytics, AI Strategist",
+  Agency: "Coming soon - multi-workspace, team seats",
+  "Agency Starter": "Multi-workspace, team seats",
+  "Agency Growth": "Multi-workspace, team seats",
 }
 
 export default function SettingsPage() {

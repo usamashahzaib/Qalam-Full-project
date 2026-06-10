@@ -45,7 +45,7 @@ const NAV_GROUPS = [
     links: [
       { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
-      { href: "/carousels", label: "Carousels", icon: CarouselIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
     ],
   },
@@ -68,6 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession()
   const workspace = useWorkspace()
   const activeClientId = searchParams.get("client")
+  const linkedinConnected = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
   const user = session?.user
     ? {
         email: session.user.email || "",
@@ -75,7 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         firstName: (session.user.name || session.user.email || "User").split(" ")[0],
         imageUrl: session.user.image || null,
         role: "user",
-        linkedinMemberId: null,
+        linkedinMemberId: linkedinConnected ? session.user.email : null,
       }
     : null
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
@@ -86,12 +87,16 @@ export default function WriterPage() {
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
   const canUseSolo = canAccessPlan(billing.plan, "Solo")
-  const canUseCarousel = canAccessPlan(billing.plan, "Pro")
+  const canUseCarousel = true // All plans get carousel access; API enforces monthly limit
   const currentDraftLimit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
   const carouselLimit = getEffectivePlanLimits(billing.plan, billing.limits).carouselGenerationsPerMonth
 
+  // Pre-fill topic from ?topic= query param (e.g. dashboard writing prompts)
+  const searchParams = useSearchParams()
+  const initialTopic = searchParams.get("topic") || ""
+
   // Step 1 inputs
-  const [topic, setTopic] = useState("")
+  const [topic, setTopic] = useState(initialTopic)
   const [role, setRole] = useState<Role>("Founder")
   const [format, setFormat] = useState<FormatKey>("Medium")
   const [goal, setGoal] = useState("")

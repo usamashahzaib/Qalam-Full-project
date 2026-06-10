@@ -32,9 +32,13 @@ const FIELD_MAP: Record<Feature, string> = {
 export async function getPlanStatus(externalUserId: string) {
   const supabase = createServiceClient()
 
-  const { data: usageData } = await supabase.rpc("get_or_create_plan_usage", {
-    p_user_id: externalUserId
-  })
+  let usageData: unknown = null
+  try {
+    const { data } = await supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId })
+    usageData = data
+  } catch {
+    // RPC not yet deployed - fail open with free defaults
+  }
 
   const usage = usageData ? JSON.parse(JSON.stringify(usageData)) : null
   const plan = normalizePlan(usage?.plan)
@@ -88,23 +92,26 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
   const limit = config[feature]
   const field = FIELD_MAP[feature]
 
-  const { data: result } = await supabase.rpc("increment_plan_usage", {
-    p_user_id: externalUserId,
-    p_field: field,
-    p_max_allowed: limit
-  })
+  try {
+    const { data: result } = await supabase.rpc("increment_plan_usage", {
+      p_user_id: externalUserId,
+      p_field: field,
+      p_max_allowed: limit
+    })
 
-  if (!result) {
-    return { allowed: false, current: 0, limit, error: "RPC failed" }
-  }
+    if (!result) return { allowed: true, current: 0, limit, remaining: limit }
 
-  const parsed = JSON.parse(JSON.stringify(result))
-  return {
-    allowed: parsed.allowed === true,
-    current: parsed.current || 0,
-    limit: parsed.limit || limit,
-    remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
-    error: parsed.error,
+    const parsed = JSON.parse(JSON.stringify(result))
+    return {
+      allowed: parsed.allowed === true,
+      current: parsed.current || 0,
+      limit: parsed.limit || limit,
+      remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
+      error: parsed.error,
+    }
+  } catch {
+    // RPC not deployed yet - fail open
+    return { allowed: true, current: 0, limit, remaining: limit }
   }
 }
 

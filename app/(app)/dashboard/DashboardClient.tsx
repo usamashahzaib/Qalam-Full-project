@@ -486,6 +486,73 @@ function UsageChart({
   )
 }
 
+// ─── Writing Prompts ──────────────────────────────────────────────────────────
+
+const ALL_PROMPTS = [
+  "One mistake I made early in my career that I'm glad I made",
+  "The thing nobody tells you when you start in [your field]",
+  "I changed my mind about something I believed for years",
+  "A lesson I learned the hard way that took me too long to accept",
+  "What I wish someone had told me in my first job",
+  "The most underrated skill in my industry right now",
+  "Three things I stopped doing that made me better at my work",
+  "An uncomfortable truth about how most people approach [your field]",
+  "The advice I give new hires that my managers never gave me",
+  "I failed publicly. Here is what happened and what I learned.",
+  "Why I left a job that looked perfect on paper",
+  "The tool or habit that changed how I work",
+  "A conversation that shifted how I think about my career",
+  "What success actually looks like vs what LinkedIn shows",
+  "The skill I thought was soft that turned out to be everything",
+  "How I deal with imposter syndrome (honestly, not inspirationally)",
+  "The thing I do differently from everyone else in my role",
+  "A project that flopped. What went wrong and what I'd change.",
+  "What I learned from the best manager I ever had",
+  "Why I stopped trying to be productive all the time",
+  "The boundary I set at work that changed everything",
+  "What no one talks about in my industry but everyone experiences",
+  "A counterintuitive approach that actually works in my field",
+  "The career move that looked like a step back but wasn't",
+  "I used to think hard work was the answer. I was wrong.",
+  "What AI actually changed about how I do my work",
+  "The question I ask in every interview now and why",
+  "Why I am more selective about what I say yes to",
+  "A small habit that compounded into something significant",
+  "What I tell people when they ask if they should enter my field",
+]
+
+function WritingPromptsCard() {
+  const dayIndex = Math.floor(Date.now() / 86400000)
+  const prompts = Array.from({ length: 4 }, (_, i) => ALL_PROMPTS[(dayIndex + i) % ALL_PROMPTS.length])
+
+  return (
+    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-zinc-950">Today&apos;s writing prompts</h2>
+          <p className="mt-0.5 text-xs text-zinc-400">Fresh ideas every day. Click to write.</p>
+        </div>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {prompts.map((prompt) => (
+          <Link
+            key={prompt}
+            href={`/writer?topic=${encodeURIComponent(prompt)}`}
+            className="group flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 transition-colors hover:border-teal/40 hover:bg-teal/5"
+          >
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </span>
+            <span className="text-sm leading-snug text-zinc-700 group-hover:text-zinc-950">{prompt}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 // ─── Main Client Component ────────────────────────────────────────────────────
 
 export default function DashboardClient({ firstName }: { firstName: string }) {
@@ -625,6 +692,9 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
             </>
           )}
         </section>
+
+        {/* Writing prompts */}
+        <WritingPromptsCard />
 
         {/* Plan + Quick actions */}
         <div className="grid gap-5 lg:grid-cols-[1fr_340px]">

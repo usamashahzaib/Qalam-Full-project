@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const { system, user: userMsg } = buildHook5StylesPrompt(topic, role)
     const raw = await callAi(system, userMsg, {
       json: true, temperature: 0.9, maxTokens: 700,
-      userId: user.id, plan: user.plan, cache: false, provider: "gemini",
+      userId: user.id, plan: user.plan, cache: false,
     })
 
     const hooks = safeParseJson<Array<{ style: string; text: string }>>(raw) || []
