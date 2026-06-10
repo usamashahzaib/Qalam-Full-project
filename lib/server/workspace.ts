@@ -99,11 +99,26 @@ async function getOrCreateWorkspaceForUser(userId: string) {
 
   if (membership) return membership.workspace_id
 
-  const { data: workspaceId } = await supabase.rpc("create_personal_workspace", {
+  // Try the RPC first; fall back to direct inserts if the function isn't deployed
+  const { data: rpcId, error: rpcError } = await supabase.rpc("create_personal_workspace", {
     p_user_id: userId,
     p_name: "Personal",
   })
-  return workspaceId || null
+  if (!rpcError && rpcId) return rpcId as string
+
+  // Direct fallback: create workspace then membership
+  const { data: ws, error: wsError } = await supabase
+    .from("workspaces")
+    .insert({ name: "Personal", owner_id: userId })
+    .select("id")
+    .single()
+  if (wsError || !ws) return null
+
+  await supabase
+    .from("workspace_members")
+    .insert({ workspace_id: ws.id, user_id: userId, role: "owner" })
+
+  return ws.id as string
 }
 
 export async function ensureWorkspaceForUser({
