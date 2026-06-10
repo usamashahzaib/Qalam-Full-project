@@ -90,10 +90,20 @@ export async function POST(request: NextRequest) {
         slide_count: slides.length,
         slides,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       })
       .select()
       .single()
-    if (saveError || !carousel) throw new Error(saveError?.message ?? "carousel_save_failed")
+    if (saveError) {
+      if (saveError.message?.includes("carousels") && saveError.message?.includes("schema cache")) {
+        return NextResponse.json(
+          { error: "Carousel storage not ready. Run the database migration to enable this feature.", slides },
+          { status: 503 }
+        )
+      }
+      throw new Error(saveError.message ?? "carousel_save_failed")
+    }
+    if (!carousel) throw new Error("carousel_save_failed")
 
     return NextResponse.json({ id: carousel.id, slides })
   } catch (error) {
@@ -115,7 +125,12 @@ export async function GET() {
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(50)
-    if (error) throw new Error(error.message)
+    if (error) {
+      if (error.message?.includes("carousels") && error.message?.includes("schema cache")) {
+        return NextResponse.json({ carousels: [], _tableNotReady: true })
+      }
+      throw new Error(error.message)
+    }
     return NextResponse.json({ carousels: data ?? [] })
   } catch (error) {
     const message = error instanceof Error ? error.message : "carousel_fetch_failed"

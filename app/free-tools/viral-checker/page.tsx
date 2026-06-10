@@ -1,27 +1,123 @@
-import type { Metadata } from "next"
-import { ViralCheckerTool } from "@/components/tools/ViralCheckerTool"
-import { SITE_URL } from "@/lib/seo"
+"use client"
 
-export const metadata: Metadata = {
-  title: "LinkedIn Viral Formula Checker - Free Tool | Qalam",
-  description:
-    "Paste any LinkedIn post and get AI analysis of viral potential, weaknesses, and a stronger hook. No account required.",
-  alternates: { canonical: `${SITE_URL}/free-tools/viral-checker` },
-  openGraph: {
-    title: "LinkedIn Viral Formula Checker - Free | Qalam",
-    description:
-      "AI analysis of viral potential, weaknesses, and a stronger hook. No sign-in required.",
-    url: `${SITE_URL}/free-tools/viral-checker`,
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "LinkedIn Viral Formula Checker - Free | Qalam",
-    description:
-      "Instant AI analysis of any LinkedIn post. No account required.",
-  },
+import { useState } from "react"
+import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import { FadeUp } from "@/components/FadeUp"
+
+type ViralResult = {
+  viral_score: number
+  breakdown: Record<string, number>
+  verdict: string
+  specific_feedback: string
+  improved_version: string
 }
 
 export default function ViralCheckerPage() {
-  return <ViralCheckerTool />
+  const [post, setPost] = useState("")
+  const [result, setResult] = useState<ViralResult | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const analyze = async () => {
+    if (!post.trim()) return
+    setLoading(true)
+    setError("")
+    setResult(null)
+    try {
+      const res = await fetch("/api/free-tools/viral-checker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: post }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || "Analysis failed")
+      setResult(data)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-zinc-50 pt-24">
+      <section className="border-b border-zinc-100 bg-white px-6 py-16">
+        <div className="mx-auto max-w-[760px]">
+          <FadeUp>
+            <Link href="/free-tools" className="mb-6 inline-flex text-sm text-zinc-400 hover:text-teal transition-colors">
+              &larr; All Free Tools
+            </Link>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6a2 2 0 0 1 4 0v3h-4Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M13 10v4a4 4 0 0 0 4 4M7 18h12M5 22h14" />
+              </svg>
+            </div>
+            <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">Viral Formula Checker</h1>
+            <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
+              AI analysis of viral potential, specific weaknesses, and a stronger opening.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      <section className="px-6 py-12">
+        <div className="mx-auto max-w-[760px] space-y-6">
+          <FadeUp>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              <label className="mb-2 block text-sm font-semibold text-zinc-800">Paste your LinkedIn post</label>
+              <textarea
+                value={post}
+                onChange={(e) => setPost(e.target.value)}
+                rows={8}
+                placeholder="Paste the post you want to analyze..."
+                className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/30"
+              />
+              <div className="mt-3 flex items-center justify-between">
+                <p className="text-xs text-zinc-400">{post.trim().split(/\s+/).filter(Boolean).length} words</p>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={analyze}
+                  disabled={!post.trim() || loading}
+                  className="rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white disabled:bg-zinc-200 disabled:text-zinc-400"
+                >
+                  {loading ? "Analyzing..." : "Analyze with AI"}
+                </motion.button>
+              </div>
+              {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+            </div>
+          </FadeUp>
+
+          <AnimatePresence>
+            {result && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+              >
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Viral score</p>
+                <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.viral_score}/100</p>
+                <p className="mt-2 text-sm font-semibold text-teal">{result.verdict}</p>
+                <div className="mt-5 grid gap-2 sm:grid-cols-5">
+                  {Object.entries(result.breakdown || {}).map(([key, value]) => (
+                    <div key={key} className="rounded-xl bg-zinc-50 p-3">
+                      <p className="text-[10px] font-bold uppercase text-zinc-400">{key}</p>
+                      <p className="mt-1 text-lg font-bold">{value}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-5 text-sm leading-6 text-zinc-700">{result.specific_feedback}</p>
+                {result.improved_version ? (
+                  <div className="mt-4 rounded-xl bg-teal/5 p-4 text-sm leading-6 text-zinc-800">
+                    {result.improved_version}
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
+    </div>
+  )
 }

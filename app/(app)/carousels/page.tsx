@@ -5,8 +5,9 @@ import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
-type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string; updated_at: string }
+type CarouselProject = { id: string; topic: string; role: string; slide_count: number; created_at: string }
 const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
+const ROLES = ["Founder", "HR", "Marketing", "Consultant", "Sales", "Tech", "Other"] as const
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
 export default function CarouselsPage() {
@@ -18,6 +19,8 @@ export default function CarouselsPage() {
   const [seed, setSeed] = useState("")
   const [selectedPostId, setSelectedPostId] = useState("manual")
   const [theme, setTheme] = useState<string>(THEMES[0])
+  const [role, setRole] = useState<string>(ROLES[0])
+  const [slideCount, setSlideCount] = useState(7)
   const [isGenerating, setIsGenerating] = useState(false)
 
   const carouselSourcePosts = useMemo(() => [...state.posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [state.posts])
@@ -30,6 +33,7 @@ export default function CarouselsPage() {
       const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId))
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to load carousels")
+      if (data._tableNotReady) setError("Carousel database table not set up yet. Contact support to enable this feature.")
       setCarousels(Array.isArray(data.carousels) ? data.carousels : [])
     } catch (e) {
       setError((e as Error).message)
@@ -47,14 +51,17 @@ export default function CarouselsPage() {
     setIsGenerating(true)
     setError(null)
     try {
-      const title = selectedPost?.title || sourceContent.split(/\n/).find(Boolean)?.slice(0, 60) || "LinkedIn Carousel"
-      const res = await fetch(withWorkspaceKey("/api/carousel", workspaceId), {
+      const topic = selectedPost?.title
+        ? `${selectedPost.title}\n\n${selectedPost.content}`.slice(0, 200)
+        : sourceContent.slice(0, 200)
+      const res = await fetch("/api/carousel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId: selectedPost?.id || null, title, content: sourceContent, theme, workspaceKey: workspaceId }),
+        body: JSON.stringify({ topic, role, slideCount, tone: theme }),
       })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.projectId) throw new Error(data.error || "Could not generate carousel")
+      if (!res.ok) throw new Error(data.error || "Could not generate carousel")
+      if (!data.id && !data.slides) throw new Error(data.error || "Could not generate carousel")
       setSeed("")
       setSelectedPostId("manual")
       await fetchCarousels()
@@ -100,11 +107,21 @@ export default function CarouselsPage() {
                 </select>
               </label>
               <label className="block">
+                <span className="mb-1 block text-xs font-medium text-zinc-500">Your role</span>
+                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10">
+                  {ROLES.map((r) => <option key={r}>{r}</option>)}
+                </select>
+              </label>
+              <label className="block">
                 <span className="mb-1 block text-xs font-medium text-zinc-500">Use workspace post</span>
                 <select value={selectedPostId} onChange={(e) => setSelectedPostId(e.target.value)} className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10">
                   <option value="manual">Manual brief</option>
                   {carouselSourcePosts.map((post) => <option key={post.id} value={post.id}>{post.title}</option>)}
                 </select>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-zinc-500">Slides ({slideCount})</span>
+                <input type="range" min={5} max={10} value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} className="mt-2 w-full accent-teal" />
               </label>
             </div>
 
@@ -140,8 +157,8 @@ export default function CarouselsPage() {
               <h3 className="mt-3 text-xl font-bold leading-tight">{theme}</h3>
               <p className="mt-3 text-sm leading-relaxed text-teal-50/85">This theme shapes the first deck draft. You can still refine every slide after generation.</p>
               <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-teal-100">
-                <span>Qalam carousel</span>
-                <span>byqalam.com</span>
+                <span>{slideCount} slides · {role}</span>
+                <span>LinkedIn carousel</span>
               </div>
             </div>
           </section>
@@ -161,20 +178,19 @@ export default function CarouselsPage() {
             {carousels.map((carousel) => (
               <Link key={carousel.id} href={withClientParam(`/carousels/${carousel.id}`, activeClientId)} className="group relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal/40 hover:shadow-md">
                 <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-br from-zinc-950 via-teal-950 to-teal p-4 text-white">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100">Qalam carousel</p>
-                  <p className="mt-5 line-clamp-2 min-h-10 text-base font-bold">{carousel.theme || `Created ${formatDate(carousel.created_at)}`}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100">{carousel.slide_count || 7} slides</p>
+                  <p className="mt-5 line-clamp-2 min-h-10 text-base font-bold">{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                   <div className="mt-5 h-px bg-white/15" />
-                  <p className="mt-2 text-[10px] text-teal-100">byqalam.com</p>
+                  <p className="mt-2 text-[10px] text-teal-100">{carousel.role || "LinkedIn"} · {formatDate(carousel.created_at)}</p>
                 </div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="mb-1 text-xs font-bold uppercase tracking-wider text-zinc-500">Deck</p>
-                    <p className="truncate text-sm font-semibold text-zinc-900 transition-colors group-hover:text-teal">{carousel.theme || `Created ${formatDate(carousel.created_at)}`}</p>
+                    <p className="truncate text-sm font-semibold text-zinc-900 transition-colors group-hover:text-teal">{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                     <p className="mt-1 text-[11px] text-zinc-400">Created {formatDate(carousel.created_at)}</p>
                   </div>
                   <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-semibold text-zinc-500 transition-colors group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-teal">Edit &gt;</span>
                 </div>
-                {carousel.post_id ? <div className="mt-3 border-t border-zinc-100 pt-2.5"><p className="text-[10px] text-zinc-400">Linked post {carousel.post_id.slice(0, 8)}</p></div> : null}
               </Link>
             ))}
           </div>

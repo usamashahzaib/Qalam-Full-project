@@ -12,7 +12,8 @@ const DEMO_HOOKS = [
   "Three months ago I stopped optimizing for impressions. My engagement went up 38%.",
 ]
 
-const DEMO_POST = `I deleted 47 LinkedIn posts last year. Every one beat the content I wrote trying to sound viral.
+const DEMO_POSTS = [
+  `I deleted 47 LinkedIn posts last year. Every one beat the content I wrote trying to sound viral.
 
 Here is what that taught me:
 
@@ -27,7 +28,38 @@ Posts that convert clients usually do three things:
 
 Your LinkedIn presence is a reputation asset. The compounding happens slowly, then all at once.
 
-What is the most genuine post you have published in the last 90 days?`
+What is the most genuine post you have published in the last 90 days?`,
+
+  `Most LinkedIn advice weakens your positioning long before it helps your reach.
+
+I have watched smart people spend six months posting consistently and come out with less authority than when they started.
+
+The problem is not effort. It is the wrong signal.
+
+When you optimize for views, you train yourself to say broad things. Broad things do not build trust. They build noise.
+
+The people I have seen build real pipelines from LinkedIn share one habit: they write for one reader, not for the feed.
+
+If you read your last five posts back, would a single client recognize themselves in the problem you described?
+
+That gap is where most content budgets disappear.`,
+
+  `Three months ago I stopped optimizing for impressions. My engagement went up 38%.
+
+Here is the uncomfortable truth that took me too long to accept:
+
+Impressions measure how many people scrolled past you. Engagement measures how many stopped.
+
+I was writing to be seen. I should have been writing to be understood.
+
+The shift was simple. I stopped asking "will this reach?" and started asking "will the right person read this and think I understand their situation exactly?"
+
+Six weeks later, two inbound conversations. Both from posts I almost did not publish because they felt too specific.
+
+Specificity is not a risk. It is the point.`,
+]
+
+const DEMO_POST = DEMO_POSTS[0]
 
 const DEMO_ARCHIVE = [
   {
@@ -119,19 +151,24 @@ function DemoBanner() {
 function WriterTab({ onStart }: { onStart: () => void }) {
   const [topic, setTopic] = useState("Why I stopped trying to write viral LinkedIn posts")
   const [selectedHook, setSelectedHook] = useState(0)
-  const [draft, setDraft] = useState(DEMO_POST)
+  const [draft, setDraft] = useState(DEMO_POSTS[0])
   const [generating, setGenerating] = useState(false)
+  const [draftIndex, setDraftIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const regenerate = useCallback(async () => {
     setGenerating(true)
     setDraft("")
-    await new Promise((resolve) => setTimeout(resolve, 900))
-    const next = `${DEMO_HOOKS[selectedHook]}\n\n${DEMO_POST.split("\n\n").slice(1).join("\n\n")}`
+    await new Promise((resolve) => setTimeout(resolve, 1100))
+    const nextIndex = (draftIndex + 1) % DEMO_POSTS.length
+    const base = DEMO_POSTS[nextIndex]
+    const body = base.split("\n\n").slice(1).join("\n\n")
+    const next = `${DEMO_HOOKS[selectedHook]}\n\n${body}`
     setDraft(next)
+    setDraftIndex(nextIndex)
     setGenerating(false)
     textareaRef.current?.focus()
-  }, [selectedHook])
+  }, [selectedHook, draftIndex])
 
   return (
     <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
@@ -348,7 +385,7 @@ export default function DemoPage() {
   const handleStart = useCallback(() => openPanel("sign-up"), [openPanel])
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24">
+    <div className="min-h-screen bg-zinc-50 pb-24 pt-16">
       <DemoBanner />
 
       <div className="border-b border-zinc-200 bg-white px-4 py-8 sm:px-6">

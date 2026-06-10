@@ -43,13 +43,45 @@ function useCountUp(end: number, duration = 1400) {
 
 const NICHES = [
   "Founders",
-  "HR Leaders",
+  "HR Directors",
   "SaaS Marketers",
   "Recruiters",
   "Consultants",
   "Agency Owners",
-  "Product Leaders",
-  "Sales Teams",
+  "Product Managers",
+  "Sales Directors",
+  "Investment Bankers",
+  "Financial Analysts",
+  "Software Engineers",
+  "Data Scientists",
+  "UX Designers",
+  "Brand Strategists",
+  "Marketing Directors",
+  "Operations Managers",
+  "Supply Chain Leads",
+  "Legal Counsels",
+  "Management Consultants",
+  "Business Analysts",
+  "Talent Acquisition",
+  "L&D Managers",
+  "PR Professionals",
+  "CFOs",
+  "CTOs",
+  "COOs",
+  "Creative Directors",
+  "Account Managers",
+  "Risk Analysts",
+  "Wealth Managers",
+  "Healthcare Administrators",
+  "Project Managers",
+  "Growth Marketers",
+  "Content Strategists",
+  "Executive Coaches",
+  "Corporate Trainers",
+  "Venture Capitalists",
+  "Policy Advisors",
+  "Procurement Leads",
+  "Research Directors",
 ]
 
 const FEATURES = [
@@ -596,10 +628,10 @@ export default function HomePage() {
         <div className="mx-auto mb-4 max-w-[1200px] px-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Built for professionals who take LinkedIn seriously</p>
         </div>
-        <div className="overflow-hidden">
+        <div className="marquee-fade overflow-hidden">
           <div className="marquee-track">
             {NICHES.concat(NICHES).map((name, i) => (
-              <span key={`${name}-${i}`} className="shrink-0 px-10 text-lg font-semibold text-zinc-500 opacity-60 transition-opacity hover:opacity-100">
+              <span key={`${name}-${i}`} className="marquee-pill shrink-0 mx-2 inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5 text-sm font-semibold tracking-wide text-zinc-600 transition-all hover:border-teal/40 hover:bg-teal/5 hover:text-teal">
                 {name}
               </span>
             ))}
@@ -772,25 +804,8 @@ export default function HomePage() {
             ))}
           </div>
 
-          <FadeUp className="mt-8">
-            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 opacity-80 md:flex-row md:items-center">
-              <div>
-                <span className="chip mb-3 inline-flex border-zinc-300 bg-zinc-100 text-zinc-500">Coming Soon</span>
-                <h3 className="mb-2 text-xl font-bold text-zinc-700">Agency Plan - launching soon</h3>
-                <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
-                  Multi-workspace support, approval workflows, team analytics, and dedicated support for agencies managing multiple clients. Join the waitlist to get early access.
-                </p>
-              </div>
-              <div className="shrink-0">
-                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
-                  Join Waitlist
-                </Link>
-              </div>
-            </div>
-          </FadeUp>
-
           {/* Managed Plans teaser */}
-          <FadeUp className="mt-6">
+          <FadeUp className="mt-8">
             <div className="rounded-2xl border border-gold/30 bg-gold/5 p-8">
               <div className="mb-6 text-center">
                 <span className="chip mb-3 inline-flex border-gold/30 bg-gold/10 text-gold-700">Managed Plans</span>
@@ -816,6 +831,23 @@ export default function HomePage() {
               <div className="mt-5 text-center">
                 <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
                   See Managed Plan details
+                </Link>
+              </div>
+            </div>
+          </FadeUp>
+
+          <FadeUp className="mt-6">
+            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 opacity-80 md:flex-row md:items-center">
+              <div>
+                <span className="chip mb-3 inline-flex border-zinc-300 bg-zinc-100 text-zinc-500">Coming Soon</span>
+                <h3 className="mb-2 text-xl font-bold text-zinc-700">Agency Plan - launching soon</h3>
+                <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
+                  Multi-workspace support, approval workflows, team analytics, and dedicated support for agencies managing multiple clients. Join the waitlist to get early access.
+                </p>
+              </div>
+              <div className="shrink-0">
+                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
+                  Join Waitlist
                 </Link>
               </div>
             </div>
