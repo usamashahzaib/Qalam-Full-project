@@ -28,21 +28,46 @@ const FIELD_MAP: Record<Feature, string> = {
   analyses: "analyses_used",
 }
 
-// Get plan status from plan_usage table
+// Get plan status from plan_usage table, respecting admin overrides
 export async function getPlanStatus(externalUserId: string) {
   const supabase = createServiceClient()
 
-  let usageData: unknown = null
-  try {
-    const { data } = await supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId })
-    usageData = data
-  } catch (error) {
-    throw new Error(`Plan limit check failed: ${(error as Error).message}`)
+  // Parallel: get usage + check admin override
+  const [usageResult, overrideResult] = await Promise.all([
+    supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId }),
+    Promise.resolve(
+      supabase
+        .from("user_overrides")
+        .select("plan_override, draft_limit_override, expires_at")
+        .eq("user_id", externalUserId)
+        .maybeSingle()
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
+  ])
+
+  if (usageResult.error) {
+    throw new Error(`Plan limit check failed: ${usageResult.error.message}`)
   }
 
-  const usage = usageData ? JSON.parse(JSON.stringify(usageData)) : null
-  const plan = normalizePlan(usage?.plan)
-  const config = PLAN_CONFIG[plan]
+  const usage = usageResult.data ? JSON.parse(JSON.stringify(usageResult.data)) : null
+  const override = overrideResult.data
+
+  // Base plan from plan_usage
+  let plan = normalizePlan(usage?.plan)
+
+  // Apply admin plan override if not expired
+  if (
+    override?.plan_override &&
+    (!override.expires_at || new Date(override.expires_at) > new Date())
+  ) {
+    plan = normalizePlan(override.plan_override)
+  }
+
+  const config = { ...PLAN_CONFIG[plan] }
+
+  // Apply custom draft limit override
+  if (typeof override?.draft_limit_override === "number" && override.draft_limit_override >= 0) {
+    config.drafts = override.draft_limit_override
+  }
 
   return {
     plan,

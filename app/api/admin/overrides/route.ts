@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getAuthenticatedSession } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type OverrideInput = {
   userId: string
@@ -61,6 +62,17 @@ export async function POST(request: NextRequest) {
   }
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
   await writeAudit(admin.email, body.targetEmail, "set_override", oldValue, payload)
+
+  // Sync plan_usage.plan so the RPC fast-path reflects the override immediately
+  if (body.planOverride) {
+    try {
+      const supabase = createServiceClient()
+      await supabase
+        .from("plan_usage")
+        .upsert({ user_id: body.userId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" })
+    } catch { /* non-fatal */ }
+  }
+
   return NextResponse.json({ override: rows?.[0] || payload })
 }
 
@@ -87,6 +99,13 @@ export async function PATCH(request: NextRequest) {
   }
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
   await writeAudit(admin.email, body.targetEmail, "reset_to_plan_defaults", oldValue, payload)
+
+  // Reset plan_usage.plan back to free when override is cleared
+  try {
+    const supabase = createServiceClient()
+    await supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId)
+  } catch { /* non-fatal */ }
+
   return NextResponse.json({ override: rows?.[0] || payload })
 }
 
@@ -103,5 +122,12 @@ export async function DELETE(request: NextRequest) {
   const oldValue = await getOldOverride(body.userId)
   await supabaseDelete("user_overrides", `user_id=eq.${encodeURIComponent(body.userId)}`)
   await writeAudit(admin.email, body.targetEmail, "delete_override", oldValue, null)
+
+  // Reset plan_usage.plan to free when override is deleted
+  try {
+    const supabase = createServiceClient()
+    await supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId)
+  } catch { /* non-fatal */ }
+
   return NextResponse.json({ deleted: true })
 }
