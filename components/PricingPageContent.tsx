@@ -5,7 +5,7 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
-import { ArchiveIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
+import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
 import type { ManagedPlan } from "@/lib/pricing"
@@ -44,35 +44,43 @@ type PricingPageContentProps = {
 function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   return (
     <FadeUp delay={index * 0.08}>
-      <div className="relative flex h-full flex-col rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-sm transition-all hover:border-gold/60 hover:shadow-[0_8px_32px_rgba(0,0,0,0.32)]">
-        <span className="mb-3 inline-flex w-fit items-center rounded-full border border-gold/30 bg-zinc-800 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold">
-          Managed
-        </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">{plan.name}</p>
-        <p className="mt-1 text-3xl font-extrabold text-white">
-          {formatPkr(plan.monthlyPrice)}
-          <span className="text-sm font-medium text-zinc-500">/mo</span>
-        </p>
-        <p className="mt-3 text-sm leading-relaxed text-zinc-400">{plan.description}</p>
-        <ul className="mt-4 flex flex-col gap-2.5">
+      <motion.div
+        whileHover={{ scale: 1.02, transition: { duration: 0.22, ease: "easeOut" } }}
+        whileTap={{ scale: 0.995 }}
+        className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
+      >
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-xs font-bold text-white shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
+            Managed
+          </span>
+        </div>
+
+        <div className="mb-6">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal">{plan.name}</p>
+          <div className="mb-1 flex items-end gap-1">
+            <span className="text-5xl font-bold text-zinc-900">{formatPkr(plan.monthlyPrice)}</span>
+            <span className="mb-2 text-sm text-zinc-500">/mo</span>
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{plan.description}</p>
+        </div>
+
+        <ul className="mb-8 flex flex-1 flex-col gap-3">
           {plan.features.map((feature) => (
-            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-300">
-              <svg className="mt-0.5 h-4 w-4 shrink-0 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              {feature}
+            <li key={feature} className="flex items-start gap-2.5">
+              <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+              <span className="text-sm text-zinc-700">{feature}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-auto pt-6">
-          <a
-            href={`mailto:${UPGRADES_EMAIL}`}
-            className="block w-full rounded-xl bg-gold px-4 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-gold-600"
-          >
-            {plan.cta}
-          </a>
-        </div>
-      </div>
+
+        <a
+          href="mailto:hello@byqalam.com?subject=Managed Plan Inquiry"
+          className="w-full rounded-xl bg-teal-50 py-3 text-center text-sm font-semibold text-teal transition-all duration-200 hover:bg-teal hover:text-white"
+        >
+          Get Managed
+        </a>
+      </motion.div>
     </FadeUp>
   )
 }
