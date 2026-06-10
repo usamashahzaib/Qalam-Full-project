@@ -12,12 +12,12 @@ import {
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn AI Tools — Hook Generator, Headline Analyzer & More | Qalam",
+  title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More | Qalam",
   description:
     "Free AI tools for LinkedIn: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required. Built by Qalam, the AI LinkedIn writer.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
-    title: "Free LinkedIn AI Tools — Hook Generator, Headline Analyzer | Qalam",
+    title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
       "Six free AI-powered LinkedIn tools to help you write better posts, optimize your profile, and predict engagement. No sign-in required.",
     url: `${SITE_URL}/free-tools`,
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn AI Tools — Hook Generator, Headline Analyzer | Qalam",
+    title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
       "Hook generator, headline analyzer, profile optimizer, viral checker. No account required. Built by Qalam.",
   },

@@ -71,13 +71,13 @@ export async function checkRateLimit(
         reset: result.reset,
       }
     } catch {
-      // Redis configured but threw — fail open rather than bypass via memory
-      console.error("[RateLimit] Redis error — allowing request")
+      // Redis configured but threw - fail open rather than bypass via memory
+      console.error("[RateLimit] Redis error - allowing request")
       return { allowed: true, limit, remaining: 1, reset: Date.now() + WINDOW_MS }
     }
   }
 
-  // Redis not configured — use in-memory (dev mode only)
+  // Redis not configured - use in-memory (dev mode only)
   return memoryFallback(memKey, limit)
 }
 

@@ -16,7 +16,7 @@ export async function pingRedis(): Promise<{ ok: boolean; latencyMs?: number; er
   if (!client) {
     return {
       ok: false,
-      error: "Redis not configured — set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN",
+      error: "Redis not configured - set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN",
     }
   }
   const start = Date.now()

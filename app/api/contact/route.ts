@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Message must be at least 10 characters." }, { status: 400 })
   }
 
-  // Store in DB — silent if table not yet created
+  // Store in DB - silent if table not yet created
   try {
     await supabaseInsert(
       "contact_submissions",

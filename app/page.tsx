@@ -17,7 +17,7 @@ import {
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
-import { PLANS, formatPkr } from "@/lib/pricing"
+import { PLANS, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 function useCountUp(end: number, duration = 1400) {
@@ -784,6 +784,38 @@ export default function HomePage() {
               <div className="shrink-0">
                 <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
                   Join Waitlist
+                </Link>
+              </div>
+            </div>
+          </FadeUp>
+
+          {/* Managed Plans teaser */}
+          <FadeUp className="mt-6">
+            <div className="rounded-2xl border border-gold/30 bg-gold/5 p-8">
+              <div className="mb-6 text-center">
+                <span className="chip mb-3 inline-flex border-gold/30 bg-gold/10 text-gold-700">Managed Plans</span>
+                <h3 className="mb-2 text-xl font-bold text-zinc-900">Want us to handle it entirely?</h3>
+                <p className="mx-auto max-w-lg text-sm leading-relaxed text-zinc-600">
+                  A dedicated Qalam writer creates and posts on your behalf - 3x/week minimum. You approve before it goes live.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {MANAGED_PLANS.map((plan) => (
+                  <div key={plan.name} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-sm font-bold text-zinc-900">{plan.name}</p>
+                      <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-bold text-white">Managed</span>
+                    </div>
+                    <p className="mb-3 text-2xl font-extrabold text-zinc-900">
+                      {formatPkr(plan.monthlyPrice)}<span className="text-sm font-normal text-zinc-500">/mo</span>
+                    </p>
+                    <p className="text-xs leading-relaxed text-zinc-500">{plan.description}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 text-center">
+                <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
+                  See Managed Plan details
                 </Link>
               </div>
             </div>

@@ -19,9 +19,9 @@ const jakarta = Plus_Jakarta_Sans({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 
-const rootOgTitle = "Qalam — AI LinkedIn Writer & Post Generator with Voice Memory"
+const rootOgTitle = "Qalam - AI LinkedIn Writer & Post Generator with Voice Memory"
 const rootOgDescription =
-  "Qalam is the AI writing tool that learns your voice. Write LinkedIn posts that sound like you — not generic AI. Voice memory, drafts, scheduling, and publishing in one workspace."
+  "Qalam is the AI writing tool that learns your voice. Write LinkedIn posts that sound like you - not generic AI. Voice memory, drafts, scheduling, and publishing in one workspace."
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Qalam is the AI writer that learns your voice. Create LinkedIn posts, hooks, and carousels that sound exactly like you — not generic AI output. Voice memory, drafts, scheduling, and publishing in one workspace. Free to start.",
+    "Qalam is the AI writer that learns your voice. Create LinkedIn posts, hooks, and carousels that sound exactly like you - not generic AI output. Voice memory, drafts, scheduling, and publishing in one workspace. Free to start.",
   keywords: [
     "Qalam",
     "Qalam AI",

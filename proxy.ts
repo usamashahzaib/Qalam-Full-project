@@ -113,7 +113,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
-  const isAuthRoute = pathname.startsWith("/api/auth") || AUTH_ONLY_ROUTES.some(
+  // /api/auth/me is a read-only session check - use general limiter, not strict auth limiter
+  const isAuthRoute = (pathname.startsWith("/api/auth") && pathname !== "/api/auth/me") || AUTH_ONLY_ROUTES.some(
     (r) => pathname === r || pathname.startsWith(`${r}/`)
   )
 
@@ -142,7 +143,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return addSecurityHeaders(NextResponse.next())
   }
 
-  // Read JWT directly — Edge-compatible, no Supabase dependency
+  // Read JWT directly - Edge-compatible, no Supabase dependency
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,

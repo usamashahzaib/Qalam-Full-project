@@ -89,6 +89,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">("selfserve")
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -110,7 +111,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0
     const price = isAnnual && hasAnnual ? formatPkr(plan.annualPkrPerMonth) : formatPkr(plan.monthlyPkr)
     const annualSavings = !isAnnual && hasAnnual
-      ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo — ${annualFraming}`
+      ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}`
       : undefined
     const usdReference = isAnnual && hasAnnual
       ? `Save ${annualSavingsPercent}% · billed annually`
@@ -223,63 +224,133 @@ export function PricingPageContent({}: PricingPageContentProps) {
       {/* Plan cards */}
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
-          <FadeUp className="mb-8 text-center">
-            <p className="text-lg font-medium text-zinc-600">
-              Start free. Stay free if you want. Upgrade when posting becomes the habit you don&apos;t want to lose.
-            </p>
-          </FadeUp>
 
-          <div className="mb-8 flex items-center justify-center gap-3">
-            <span className={`text-sm font-semibold transition-colors ${billing === "monthly" ? "text-zinc-900" : "text-zinc-400"}`}>
-              Monthly
-            </span>
-            <button
-              role="switch"
-              aria-checked={billing === "annual"}
-              onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 ${
-                billing === "annual" ? "bg-teal" : "bg-zinc-300"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                  billing === "annual" ? "translate-x-6" : "translate-x-1"
+          {/* Tab switcher */}
+          <FadeUp className="mb-10 text-center">
+            <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
+              <button
+                onClick={() => setPricingTab("selfserve")}
+                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  pricingTab === "selfserve"
+                    ? "bg-teal text-white shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800"
                 }`}
-              />
-            </button>
-            <span className={`text-sm font-semibold transition-colors ${billing === "annual" ? "text-zinc-900" : "text-zinc-400"}`}>
-              Annual
-            </span>
-            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-              {annualFraming}
-            </span>
-          </div>
+              >
+                Self-serve Plans
+              </button>
+              <button
+                onClick={() => setPricingTab("managed")}
+                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                  pricingTab === "managed"
+                    ? "bg-gold text-white shadow-sm"
+                    : "text-zinc-500 hover:text-zinc-800"
+                }`}
+              >
+                Managed Plans
+              </button>
+            </div>
+          </FadeUp>
 
           <AnimatePresence mode="wait">
-            <motion.div
-              key={billing}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-3"
-            >
-              {displayPlans.map((plan, i) => (
-                <FadeUp key={plan.plan} delay={i * 0.08}>
-                  <PricingCard {...plan} />
+            {pricingTab === "selfserve" ? (
+              <motion.div
+                key="selfserve"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <FadeUp className="mb-8 text-center">
+                  <p className="text-lg font-medium text-zinc-600">
+                    Start free. Stay free if you want. Upgrade when posting becomes the habit you don&apos;t want to lose.
+                  </p>
                 </FadeUp>
-              ))}
-              {MANAGED_PLANS.map((plan, i) => (
-                <ManagedCard key={plan.name} plan={plan} index={i + 4} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
 
-          <FadeUp className="mt-8 text-center">
-            <p className="text-sm text-zinc-400">
-              Agency plans include guided setup. Contact us to start.
-            </p>
-          </FadeUp>
+                <div className="mb-8 flex items-center justify-center gap-3">
+                  <span className={`text-sm font-semibold transition-colors ${billing === "monthly" ? "text-zinc-900" : "text-zinc-400"}`}>
+                    Monthly
+                  </span>
+                  <button
+                    role="switch"
+                    aria-checked={billing === "annual"}
+                    onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 ${
+                      billing === "annual" ? "bg-teal" : "bg-zinc-300"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                        billing === "annual" ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-semibold transition-colors ${billing === "annual" ? "text-zinc-900" : "text-zinc-400"}`}>
+                    Annual
+                  </span>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
+                    {annualFraming}
+                  </span>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={billing}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
+                  >
+                    {displayPlans.map((plan, i) => (
+                      <FadeUp key={plan.plan} delay={i * 0.08}>
+                        <PricingCard {...plan} />
+                      </FadeUp>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="managed"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <FadeUp className="mb-10 text-center">
+                  <p className="mx-auto max-w-2xl text-lg font-medium text-zinc-600">
+                    We do the writing for you. A dedicated Qalam writer creates and posts content on your behalf - you just approve before it goes live.
+                  </p>
+                  <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-zinc-500">
+                    <span className="flex items-center gap-1.5">
+                      <CheckIcon className="h-4 w-4 text-gold" />
+                      Written in your voice
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <CheckIcon className="h-4 w-4 text-gold" />
+                      You approve before posting
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <CheckIcon className="h-4 w-4 text-gold" />
+                      WhatsApp support on Premium
+                    </span>
+                  </div>
+                </FadeUp>
+
+                <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:max-w-[820px] lg:mx-auto">
+                  {MANAGED_PLANS.map((plan, i) => (
+                    <ManagedCard key={plan.name} plan={plan} index={i} />
+                  ))}
+                </div>
+
+                <FadeUp className="mt-8 text-center">
+                  <p className="text-sm text-zinc-400">
+                    Managed plans are handled by the Qalam team. Response within 4 hours.
+                  </p>
+                </FadeUp>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </section>
 
