@@ -113,9 +113,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
-  // /api/auth/me is a read-only session check - use general limiter, not strict auth limiter
-  const isAuthRoute = (pathname.startsWith("/api/auth") && pathname !== "/api/auth/me") || AUTH_ONLY_ROUTES.some(
-    (r) => pathname === r || pathname.startsWith(`${r}/`)
+  // Strict auth limiter applies only to POST submissions on auth pages and /api/auth/signin
+  // GET requests to /login, /signup etc. use the general limiter (page views should not be throttled)
+  const isAuthRoute = request.method === "POST" && (
+    pathname.startsWith("/api/auth/signin") ||
+    pathname.startsWith("/api/auth/callback") ||
+    AUTH_ONLY_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
   )
 
   const rateLimitOk = await checkRateLimit(ip, isAuthRoute)
