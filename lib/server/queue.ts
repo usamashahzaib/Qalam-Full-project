@@ -25,16 +25,37 @@ const getGeminiLimiter = () => {
   return geminiLimiter
 }
 
+// In-process fallback rate limiter when Redis is unavailable (imperfect across instances but functional)
+const _inMemoryBuckets = new Map<string, { count: number; resetAt: number }>()
+function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
+  const now = Date.now()
+  const bucket = _inMemoryBuckets.get(key)
+  if (!bucket || now > bucket.resetAt) {
+    _inMemoryBuckets.set(key, { count: 1, resetAt: now + windowMs })
+    return { allowed: true, limit, remaining: limit - 1, reset: now + windowMs }
+  }
+  bucket.count++
+  const remaining = Math.max(0, limit - bucket.count)
+  return { allowed: bucket.count <= limit, limit, remaining, reset: bucket.resetAt }
+}
+
 export async function checkAiRateLimit(
   userId: string,
   _plan: string,
   provider: "groq" | "gemini"
 ) {
   const r = getRedis()
-  if (!r) return { allowed: false, limit: 0, remaining: 0, reset: Date.now() + 60000 }
+  if (!r) {
+    // No Redis - use in-process fallback (per instance, not global - better than blocking)
+    const limit = provider === "groq" ? 50 : 30
+    return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
+  }
 
   const limiter = provider === "groq" ? getGroqLimiter() : getGeminiLimiter()
-  if (!limiter) return { allowed: false, limit: 0, remaining: 0, reset: Date.now() + 60000 }
+  if (!limiter) {
+    const limit = provider === "groq" ? 50 : 30
+    return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
+  }
 
   const key = `ai_${provider}_${userId}`
   const result = await limiter.limit(key)
