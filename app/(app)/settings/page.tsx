@@ -69,10 +69,11 @@ export default function SettingsPage() {
       }
     : null
   const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
+  const isLinkedInUser = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
   const [profileDraft, setProfileDraft] = useState({
     name: profile.name || user?.fullName || "",
     title: profile.title,
-    linkedinUrl: profile.linkedinUrl,
+    linkedinUrl: profile.linkedinUrl || (isLinkedInUser ? "https://www.linkedin.com/in/" : ""),
     industry: profile.industry,
     tone: profile.tone,
     goals: profile.goals.join(", "),

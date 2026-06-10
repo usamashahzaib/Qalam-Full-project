@@ -49,16 +49,16 @@ async function provisionOAuthUser(
   await supabase.from("workspaces").insert({
     id: workspaceId,
     name: "My Workspace",
+    owner_id: internalId,
+    owner_email: session.user.email || "",
     slug: `workspace-${externalId.slice(0, 8)}`,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   })
-  await supabase.from("memberships").insert({
+  await supabase.from("workspace_members").insert({
     workspace_id: workspaceId,
     user_id: internalId,
     role: "owner",
-    invited_at: new Date().toISOString(),
-    joined_at: new Date().toISOString(),
   })
 
   return { internalId, workspaceId }
@@ -104,9 +104,9 @@ export async function requireAuthApi(request: NextRequest) {
       .maybeSingle()
 
     const { data: membership } = await supabase
-      .from("memberships")
+      .from("workspace_members")
       .select("workspace_id")
-      .eq("user_id", tokenId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -155,7 +155,7 @@ export async function requireAuthApi(request: NextRequest) {
       .maybeSingle()
 
     const { data: membership } = await supabase
-      .from("memberships")
+      .from("workspace_members")
       .select("workspace_id")
       .eq("user_id", internalId)
       .order("created_at", { ascending: false })

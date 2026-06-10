@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
-import { LockedFeature } from "@/components/LockedFeature"
 
 type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string; updated_at: string }
 const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
@@ -67,8 +66,7 @@ export default function CarouselsPage() {
   }
 
   return (
-    <LockedFeature requiredPlan="Pro" feature="Carousel builder">
-      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10 font-jakarta">
+    <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10 font-jakarta">
         <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
           <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full" style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }} />
           <div className="relative flex flex-wrap items-end justify-between gap-4">
@@ -184,6 +182,5 @@ export default function CarouselsPage() {
 
         {!isLoading && carousels.length > 0 ? <p className="mt-6 text-center text-xs text-zinc-400">{carousels.length} carousel{carousels.length !== 1 ? "s" : ""} in this workspace</p> : null}
       </div>
-    </LockedFeature>
   )
 }
