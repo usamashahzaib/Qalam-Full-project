@@ -4,7 +4,6 @@ import Link from "next/link"
 export const metadata: Metadata = {
   title: "Privacy Policy | Qalam",
   description: "Qalam Privacy Policy",
-  robots: { index: false, follow: false },
 }
 
 export default function PrivacyPage() {
@@ -16,7 +15,7 @@ export default function PrivacyPage() {
         </Link>
 
         <h1 className="mb-3 text-4xl font-extrabold text-zinc-900">Privacy Policy</h1>
-        <p className="mb-10 text-sm text-zinc-400">Last updated: June 2025</p>
+        <p className="mb-10 text-sm text-zinc-400">Last updated: June 2026</p>
 
         <div className="prose prose-zinc max-w-none space-y-8 text-zinc-700">
           <section>
@@ -55,7 +54,18 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-zinc-900">8. Contact</h2>
+            <h2 className="text-xl font-bold text-zinc-900">8. Third-Party Data Processors</h2>
+            <p>We use the following sub-processors to operate Qalam. Each receives only the data necessary for their function:</p>
+            <ul className="mt-3 list-disc pl-5 space-y-2">
+              <li><strong>Supabase</strong> - database and authentication. Your account data, posts, and workspace settings are stored on Supabase-hosted infrastructure (AWS, EU or US region).</li>
+              <li><strong>Groq / Google Gemini</strong> - AI content generation. When you generate a post, your topic, role, and writing preferences are sent to one of these providers to produce draft text. Prompts are not used to train their public models per their enterprise terms.</li>
+              <li><strong>Resend</strong> - transactional email. Your email address is shared with Resend to deliver verification, notification, and password-reset emails.</li>
+              <li><strong>Upstash Redis</strong> - rate limiting and caching. Your user ID is used as a rate-limit key; no personal content is stored in Redis.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-bold text-zinc-900">9. Contact</h2>
             <p>For privacy questions, contact us at <a href="mailto:hello@byqalam.com" className="text-teal underline">hello@byqalam.com</a>.</p>
           </section>
         </div>

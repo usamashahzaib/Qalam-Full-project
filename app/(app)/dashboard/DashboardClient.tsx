@@ -604,8 +604,9 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
 
   useEffect(() => {
     loadAll()
-    const timer = setInterval(loadAll, 30_000)
-    return () => clearInterval(timer)
+    const onFocus = () => { if (!document.hidden) loadAll() }
+    document.addEventListener("visibilitychange", onFocus)
+    return () => document.removeEventListener("visibilitychange", onFocus)
   }, [loadAll])
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back"

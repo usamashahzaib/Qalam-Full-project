@@ -1,3 +1,4 @@
+import { createHash } from "crypto"
 import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "@/lib/server/redis"
 
@@ -30,10 +31,10 @@ export async function checkAiRateLimit(
   provider: "groq" | "gemini"
 ) {
   const r = getRedis()
-  if (!r) return { allowed: true, limit: 999, remaining: 999, reset: Date.now() + 60000 }
+  if (!r) return { allowed: false, limit: 0, remaining: 0, reset: Date.now() + 60000 }
 
   const limiter = provider === "groq" ? getGroqLimiter() : getGeminiLimiter()
-  if (!limiter) return { allowed: true, limit: 999, remaining: 999, reset: Date.now() + 60000 }
+  if (!limiter) return { allowed: false, limit: 0, remaining: 0, reset: Date.now() + 60000 }
 
   const key = `ai_${provider}_${userId}`
   const result = await limiter.limit(key)
@@ -72,12 +73,50 @@ export async function getCachedAiResponse(promptHash: string): Promise<string | 
 }
 
 export function hashPrompt(system: string, user: string, options: unknown): string {
-  const str = JSON.stringify({ system, user, options })
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
+  return createHash("sha256")
+    .update(JSON.stringify({ system, user, options }))
+    .digest("hex")
+    .slice(0, 32)
+}
+
+let signupLimiter: Ratelimit | null = null
+let forgotLimiter: Ratelimit | null = null
+
+const getSignupLimiter = () => {
+  if (!getRedis()) return null
+  signupLimiter ??= new Ratelimit({
+    redis: getRedis()!,
+    limiter: Ratelimit.slidingWindow(5, "15 m"),
+    analytics: false,
+  })
+  return signupLimiter
+}
+
+const getForgotLimiter = () => {
+  if (!getRedis()) return null
+  forgotLimiter ??= new Ratelimit({
+    redis: getRedis()!,
+    limiter: Ratelimit.slidingWindow(3, "60 m"),
+    analytics: false,
+  })
+  return forgotLimiter
+}
+
+export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-password") {
+  const r = getRedis()
+  // If Redis is unavailable, fail open for auth — blocking signup is too disruptive
+  if (!r) return { allowed: true, limit: 5, remaining: 5, reset: Date.now() + 60000 }
+
+  const limiter = action === "signup" ? getSignupLimiter() : getForgotLimiter()
+  if (!limiter) return { allowed: true, limit: 5, remaining: 5, reset: Date.now() + 60000 }
+
+  const key = `auth_${action}_${ip}`
+  const result = await limiter.limit(key)
+
+  return {
+    allowed: result.success,
+    limit: result.limit,
+    remaining: result.remaining,
+    reset: result.reset,
   }
-  return `hash_${Math.abs(hash).toString(36)}`
 }

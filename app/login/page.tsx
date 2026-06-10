@@ -26,7 +26,8 @@ function LinkedInIcon({ className }: { className?: string }) {
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const rawCallback = searchParams.get("callbackUrl") || "/dashboard"
+  const callbackUrl = rawCallback.startsWith("/") ? rawCallback : "/dashboard"
   const errorParam = searchParams.get("error")
   const verified = searchParams.get("verified") === "1"
 
@@ -55,7 +56,8 @@ export default function LoginPage() {
       setSubmitting(false)
     } else {
       // Full reload so the server re-reads the new session cookie
-      window.location.href = callbackUrl
+      const safeUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard"
+      window.location.href = safeUrl
     }
   }
 
@@ -138,6 +140,12 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
+            <p className="text-center text-xs text-zinc-400">
+              By signing in you agree to our{" "}
+              <Link href="/legal/terms" className="underline hover:text-zinc-600">Terms</Link>
+              {" "}and{" "}
+              <Link href="/legal/privacy" className="underline hover:text-zinc-600">Privacy Policy</Link>.
+            </p>
             <button
               type="submit"
               disabled={submitting}
@@ -175,12 +183,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <p className="mt-4 text-center text-xs text-zinc-400">
-          By signing in you agree to our{" "}
-          <Link href="/legal/terms" className="underline hover:text-zinc-600">Terms</Link>
-          {" "}and{" "}
-          <Link href="/legal/privacy" className="underline hover:text-zinc-600">Privacy Policy</Link>.
-        </p>
       </div>
     </div>
   )

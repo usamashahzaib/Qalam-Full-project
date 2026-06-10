@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { hashPassword, generateToken, hashToken } from "@/lib/server/password"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp } from "@/lib/server/rate-limit"
+import { checkAuthRateLimit } from "@/lib/server/queue"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -13,23 +14,10 @@ const VALID_ROLES = [
   "Other",
 ]
 
-// In-memory rate limit: 5 signups per IP per 15 min
-const SIGNUP_LIMITS = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const bucket = SIGNUP_LIMITS.get(ip)
-  if (bucket && bucket.resetAt > now) {
-    bucket.count += 1
-    return bucket.count > 5
-  }
-  SIGNUP_LIMITS.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
-  return false
-}
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (isRateLimited(ip)) {
+  const rateLimit = await checkAuthRateLimit(ip, "signup")
+  if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Too many signup attempts. Please wait 15 minutes before trying again." },
       { status: 429 }

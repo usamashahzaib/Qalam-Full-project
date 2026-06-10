@@ -232,9 +232,14 @@ function ApprovalCard({ row, expanded, onToggle }: {
               </p>
             </div>
           )}
-          <p className="text-[10px] text-zinc-400">
-            Review link: <span className="font-mono">/approvals/{row.id}/review</span>
-          </p>
+          <a
+            href={`/approvals/${row.id}/review`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-[10px] font-semibold text-teal underline underline-offset-2 hover:text-teal-700"
+          >
+            Open review link &rarr;
+          </a>
         </div>
       )}
     </div>

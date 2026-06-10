@@ -104,8 +104,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
       plan.plan === "Free"
         ? "Real free. Not a 7-day trial disguised as a free plan."
         : plan.plan === "Solo"
-          ? "This is the plan most people upgrade to after their first week."
-          : undefined
+          ? "Early access - we'll reach out within 24 hours."
+          : plan.plan === "Pro"
+            ? "Early access - we'll reach out within 24 hours."
+            : undefined
 
     const isAnnual = billing === "annual"
     const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0

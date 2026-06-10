@@ -3,28 +3,17 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { generateToken, hashToken } from "@/lib/server/password"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp } from "@/lib/server/rate-limit"
-
-const LIMITS = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const bucket = LIMITS.get(ip)
-  if (bucket && bucket.resetAt > now) {
-    bucket.count += 1
-    return bucket.count > 5
-  }
-  LIMITS.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
-  return false
-}
+import { checkAuthRateLimit } from "@/lib/server/queue"
 
 // Generic success message - never reveal whether an email exists
 const OK = { success: true, message: "If that email is registered, a password reset link is on its way." }
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (isRateLimited(ip)) {
+  const rateLimit = await checkAuthRateLimit(ip, "forgot-password")
+  if (!rateLimit.allowed) {
     return NextResponse.json(
-      { error: "Too many requests. Please wait 15 minutes and try again." },
+      { error: "Too many requests. Please wait 1 hour and try again." },
       { status: 429 }
     )
   }

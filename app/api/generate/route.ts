@@ -1,6 +1,8 @@
 // app/api/generate/route.ts
 // FINAL VERSION - 100% ready. Copy-paste this entire file. No manual changes.
 
+export const maxDuration = 120
+
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
@@ -111,33 +113,39 @@ export async function POST(request: NextRequest) {
 
     // PASS 2: Humanize
     const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-    const humanized = await callAi(humSystem, humUser, {
-      temperature: 0.4, maxTokens: 900,
-      userId: user.id, plan: user.plan, cache: false,
-    })
+    let humanizedContent: string
+    try {
+      humanizedContent = await callAi(humSystem, humUser, {
+        temperature: 0.4, maxTokens: 900,
+        userId: user.id, plan: user.plan, cache: false,
+      })
+    } catch { humanizedContent = rawPost }
 
-    let content = humanized.trim()
+    let content = humanizedContent.trim()
     let score: any = null
 
     // PASS 3: Score + rewrite (paid users only)
     if (qualityCheck && user.plan !== "free") {
-      const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
-      const scoreRaw = await callAi(scoreSystem, scoreUser, {
-        json: true, temperature: 0.2, maxTokens: 400,
-        userId: user.id, plan: user.plan, cache: false,
-      })
-
-      score = parseJson(scoreRaw)
-
-      if (score && score.total_score < 80 && score.fix_instruction) {
-        const { system: rewriteSystem, user: rewriteUser } = buildRewritePrompt(
-          content, score.fix_instruction, score.biggest_weakness, role, voiceProfile || undefined
-        )
-        const rewritten = await callAi(rewriteSystem, rewriteUser, {
-          temperature: 0.7, maxTokens: 900,
+      try {
+        const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
+        const scoreRaw = await callAi(scoreSystem, scoreUser, {
+          json: true, temperature: 0.2, maxTokens: 400,
           userId: user.id, plan: user.plan, cache: false,
         })
-        content = rewritten.trim()
+        score = parseJson(scoreRaw)
+      } catch { score = null }
+
+      if (score && score.total_score < 80 && score.fix_instruction) {
+        try {
+          const { system: rewriteSystem, user: rewriteUser } = buildRewritePrompt(
+            content, score.fix_instruction, score.biggest_weakness, role, voiceProfile || undefined
+          )
+          const rewritten = await callAi(rewriteSystem, rewriteUser, {
+            temperature: 0.7, maxTokens: 900,
+            userId: user.id, plan: user.plan, cache: false,
+          })
+          content = rewritten.trim()
+        } catch { /* keep content as-is */ }
       }
     }
 
@@ -169,13 +177,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate hooks (cached)
-    const { system: hookSystem, user: hookUser } = buildHookVariantsPrompt(topic, role)
-    const hooksRaw = await callAi(hookSystem, hookUser, {
-      json: true, temperature: 0.9, maxTokens: 400,
-      userId: user.id, plan: user.plan, cache: true, cacheTtl: 3600,
-    })
-
-    const hooks = parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []
+    let hooks: Array<{ style: string; hook: string }> = []
+    try {
+      const { system: hookSystem, user: hookUser } = buildHookVariantsPrompt(topic, role)
+      const hooksRaw = await callAi(hookSystem, hookUser, {
+        json: true, temperature: 0.9, maxTokens: 400,
+        userId: user.id, plan: user.plan, cache: true, cacheTtl: 3600,
+      })
+      hooks = parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []
+    } catch { hooks = [] }
 
     return NextResponse.json({
       post: { id: savedPost.id, content, hook, body: bodyText, cta, hashtags, role },

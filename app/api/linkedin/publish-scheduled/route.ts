@@ -34,7 +34,7 @@ const logPublish = async (postId: string, accountId: string | null, status: "suc
     "return=minimal"
   ).catch(() => undefined)
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("Authorization")
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

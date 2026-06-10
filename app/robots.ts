@@ -15,6 +15,7 @@ const PRIVATE_ROUTES = [
   "/settings",
   "/login",
   "/signup",
+  "/admin",
 ]
 
 export default function robots(): MetadataRoute.Robots {

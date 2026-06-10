@@ -10,7 +10,7 @@ import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
  * tokens from the linkedin_credentials table, then polls analytics for each
  * user's published posts.
  */
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
     // Verify cron secret (Vercel injects this header for cron jobs)
     const authHeader = request.headers.get("Authorization")

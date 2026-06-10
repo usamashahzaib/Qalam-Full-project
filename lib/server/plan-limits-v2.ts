@@ -36,8 +36,8 @@ export async function getPlanStatus(externalUserId: string) {
   try {
     const { data } = await supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId })
     usageData = data
-  } catch {
-    // RPC not yet deployed - fail open with free defaults
+  } catch (error) {
+    throw new Error(`Plan limit check failed: ${(error as Error).message}`)
   }
 
   const usage = usageData ? JSON.parse(JSON.stringify(usageData)) : null
@@ -109,9 +109,8 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
       error: parsed.error,
     }
-  } catch {
-    // RPC not deployed yet - fail open
-    return { allowed: true, current: 0, limit, remaining: limit }
+  } catch (error) {
+    throw new Error(`Plan limit check failed: ${(error as Error).message}`)
   }
 }
 

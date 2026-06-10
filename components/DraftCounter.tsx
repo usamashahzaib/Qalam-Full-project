@@ -1,77 +1,65 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import { getEffectivePlanLimits } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
-const usageMonth = () => new Date().toISOString().slice(0, 7)
+// Deprecated no-ops — kept for import compatibility with writer page
+export const getDraftUsageKey = (_workspaceId: string, _month?: string) => ""
+export const readDraftUsage = (_workspaceId: string) => 0
+export const incrementDraftUsage = (_workspaceId: string) => 0
 
-export const getDraftUsageKey = (workspaceId: string, month = usageMonth()) => `qalam-draft-usage:${workspaceId}:${month}`
-
-export const readDraftUsage = (workspaceId: string) => {
-  if (typeof window === "undefined") return 0
-  const raw = localStorage.getItem(getDraftUsageKey(workspaceId))
-  const value = raw ? Number(raw) : 0
-  return Number.isFinite(value) ? value : 0
-}
-
-export const incrementDraftUsage = (workspaceId: string) => {
-  if (typeof window === "undefined") return 0
-  const key = getDraftUsageKey(workspaceId)
-  const next = readDraftUsage(workspaceId) + 1
-  localStorage.setItem(key, String(next))
-  window.dispatchEvent(new CustomEvent("qalam:draft-usage", { detail: { key, value: next } }))
-  return next
+type DraftStatus = {
+  remaining: number | null
+  current: number
+  limit: number | null
 }
 
 export function DraftCounter({ className = "", compact = false }: { className?: string; compact?: boolean }) {
-  const { billing, posts, workspaceId } = useWorkspace()
-  const [localUsed, setLocalUsed] = useState(0)
+  const { billing } = useWorkspace()
+  const [status, setStatus] = useState<DraftStatus | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const limit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
-  const serverUsed = useMemo(() => {
-    const month = usageMonth()
-    return posts.filter((post) => String(post.updatedAt || "").startsWith(month)).length
-  }, [posts])
-  const used = Math.max(localUsed, serverUsed)
-  const cappedUsed = typeof limit === "number" ? Math.min(used, limit) : used
-  const remaining = typeof limit === "number" ? Math.max(0, limit - used) : null
-  const pct = typeof limit === "number" && limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0
+
+  useEffect(() => {
+    fetch("/api/generate")
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => {
+        setStatus({
+          remaining: data.remaining ?? null,
+          current: data.current ?? 0,
+          limit: data.limit ?? null,
+        })
+        if (typeof data.remaining === "number" && data.remaining === 0) setShowUpgrade(true)
+      })
+      .catch(() => { /* silent — skeleton stays */ })
+  }, [])
+
+  if (status === null) {
+    return (
+      <div className={`h-5 w-32 animate-pulse rounded bg-zinc-200 ${className}`} />
+    )
+  }
+
+  const { remaining, current, limit } = status
+  const pct = typeof limit === "number" && limit > 0 ? Math.min(100, Math.round((current / limit) * 100)) : 0
   const remainingPct = typeof limit === "number" && limit > 0 && remaining !== null ? Math.round((remaining / limit) * 100) : 100
   const tone = remainingPct < 20 ? "bg-red-500" : remainingPct <= 50 ? "bg-amber-400" : "bg-teal"
 
-  useEffect(() => {
-    setLocalUsed(readDraftUsage(workspaceId))
-    const sync = () => setLocalUsed(readDraftUsage(workspaceId))
-    const hit = () => setShowUpgrade(true)
-    window.addEventListener("qalam:draft-usage", sync)
-    window.addEventListener("qalam:draft-limit-hit", hit)
-    return () => {
-      window.removeEventListener("qalam:draft-usage", sync)
-      window.removeEventListener("qalam:draft-limit-hit", hit)
-    }
-  }, [workspaceId])
-
-  useEffect(() => {
-    if (typeof limit === "number" && used >= limit) setShowUpgrade(true)
-  }, [limit, used])
-
-  if (limit === "unlimited") return null
+  if (limit === null) return null
 
   if (compact) {
     return (
       <>
-        <div title="Each click = 1 draft. Includes scoring and rewrites." className={`flex items-center justify-end gap-2 text-right text-[11px] font-semibold ${remaining === 0 ? "text-red-600" : "text-zinc-500"} ${className}`}>
+        <div className={`flex items-center justify-end gap-2 text-right text-[11px] font-semibold ${remaining === 0 ? "text-red-600" : "text-zinc-500"} ${className}`}>
           <span>
             {remaining === 0 ? (
               <>
-                0 drafts left. <Link href="/pricing" className="font-bold underline underline-offset-2">Upgrade to Solo for 25 more.</Link>
+                0 drafts left. <Link href="/pricing" className="font-bold underline underline-offset-2">Upgrade to Solo for more.</Link>
               </>
             ) : (
               <>
-                {`${cappedUsed} / ${limit} drafts used`}
+                {`${current} / ${limit} drafts used`}
                 {remaining !== null && remaining < 3 ? <Link href="/pricing" className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
               </>
             )}
@@ -81,7 +69,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
           </span>
         </div>
 
-        {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${cappedUsed}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
+        {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
       </>
     )
   }
@@ -91,7 +79,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
       <div className={`rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ${className}`}>
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Draft usage</p>
-          <p className="text-xs font-semibold text-zinc-700">{cappedUsed} / {limit} drafts used</p>
+          <p className="text-xs font-semibold text-zinc-700">{current} / {limit} drafts used</p>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
           <div className={`h-full rounded-full transition-all ${tone}`} style={{ width: `${pct}%` }} />
@@ -101,7 +89,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
         ) : null}
       </div>
 
-      {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${cappedUsed}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
+      {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
     </>
   )
 }

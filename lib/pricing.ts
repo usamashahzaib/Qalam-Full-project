@@ -67,7 +67,7 @@ export const plans: Plan[] = [
       "Hook Generator",
       "Post Library",
     ],
-    cta: "Start Solo",
+    cta: "Join Waitlist - Solo",
     badge: "Most popular",
   },
   {
@@ -90,7 +90,7 @@ export const plans: Plan[] = [
       "Priority Queue",
       "Analytics",
     ],
-    cta: "Get Pro",
+    cta: "Join Waitlist - Pro",
     badge: "Best value",
   },
   {
@@ -210,7 +210,7 @@ export const PLANS: PricingPlan[] = plans.map((plan) => ({
           : "For teams managing multiple workspaces and approvals.",
   features: plan.features,
   cta: plan.cta,
-  href: plan.comingSoon ? "/contact" : "/login",
+  href: plan.name === "Free" ? "/signup" : "/contact",
   highlighted: plan.name === "Solo",
   badge: plan.badge,
   featureStatus: plan.comingSoon ? "coming_soon" : "live",
