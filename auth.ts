@@ -1,6 +1,5 @@
 import NextAuth, { type NextAuthConfig, type DefaultSession } from "next-auth"
 import LinkedIn from "next-auth/providers/linkedin"
-import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"
 import { createServiceClient } from "@/lib/server/supabase-rest"
@@ -31,11 +30,6 @@ const config: NextAuthConfig = {
       clientId: process.env.LINKEDIN_CLIENT_ID!,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
       authorization: { params: { scope: "openid profile email" } },
-    }),
-
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
 
     Credentials({

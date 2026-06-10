@@ -147,9 +147,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   // Read JWT directly - Edge-compatible, no Supabase dependency
+  // NextAuth v5 uses "authjs.session-token" (not "next-auth.session-token")
+  const isHttps = request.url.startsWith("https://")
+  const cookieName = isHttps ? "__Secure-authjs.session-token" : "authjs.session-token"
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
+    cookieName,
   })
   const userId = token?.id as string | undefined
   const userEmail = token?.email as string | undefined
