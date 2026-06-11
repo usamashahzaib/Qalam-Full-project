@@ -4,7 +4,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PUBLISHED_BLOG_POSTS, UPCOMING_BLOG_POSTS } from "@/lib/marketing-content"
 import { buildOgImageUrl, SITE_URL } from "@/lib/seo"
 
-const blogTitle = "Qalam Blog | LinkedIn Writing, Voice Memory and Publishing Workflows"
+const blogTitle = "Blog - LinkedIn Writing, Voice Memory and Publishing Workflows"
 const blogDescription =
   "Practical articles on LinkedIn writing, voice memory, approvals, publishing workflows, agency operations, and content systems that actually compound."
 

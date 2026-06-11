@@ -3,7 +3,7 @@ import { ProfileOptimizerTool } from "@/components/tools/ProfileOptimizerTool"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "LinkedIn Profile Optimizer - Free Tool | Qalam",
+  title: "LinkedIn Profile Optimizer - Free Tool",
   description:
     "Answer 10 questions about your LinkedIn profile and get an instant score with specific, prioritized improvements. No sign-in required.",
   alternates: { canonical: `${SITE_URL}/free-tools/profile-optimizer` },

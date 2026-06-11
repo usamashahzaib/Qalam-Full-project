@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const ogImage = buildOgImageUrl(post.title, post.description, post.tag)
 
   return {
-    title: `${post.title} | ${SITE_NAME}`,
+    title: post.title,
     description: post.description,
     alternates: { canonical: absoluteUrl(`/blog/${post.slug}`) },
     openGraph: {

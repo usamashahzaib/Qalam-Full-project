@@ -44,11 +44,10 @@ export async function getPlanStatus(externalUserId: string) {
     ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
   ])
 
-  if (usageResult.error) {
-    throw new Error(`Plan limit check failed: ${usageResult.error.message}`)
-  }
-
-  const usage = usageResult.data ? JSON.parse(JSON.stringify(usageResult.data)) : null
+  // If RPC fails (not yet deployed, DB issue), fail open rather than blocking users
+  const usage = (!usageResult.error && usageResult.data)
+    ? JSON.parse(JSON.stringify(usageResult.data))
+    : null
   const override = overrideResult.data
 
   // Base plan from plan_usage
@@ -134,8 +133,9 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
       error: parsed.error,
     }
-  } catch (error) {
-    throw new Error(`Plan limit check failed: ${(error as Error).message}`)
+  } catch {
+    // RPC not deployed or failed - fail open so users are not blocked
+    return { allowed: true, current: 0, limit, remaining: limit }
   }
 }
 

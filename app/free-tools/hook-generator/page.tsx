@@ -3,7 +3,7 @@ import { HookGeneratorTool } from "@/components/tools/HookGeneratorTool"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn Hook Generator - AI-Powered Opening Lines | Qalam",
+  title: "Free LinkedIn Hook Generator - AI-Powered Opening Lines",
   description:
     "Generate 10 proven LinkedIn hook opening lines for any topic in seconds. AI-powered hook generator trained on viral post patterns. No account required. Free to use.",
   alternates: { canonical: `${SITE_URL}/free-tools/hook-generator` },

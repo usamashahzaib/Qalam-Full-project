@@ -1,52 +1,60 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
-type DbCarouselProject = {
-  id: string
-  workspace_id: string
-  post_id: string | null
-  theme: string | null
-  created_at: string
-  updated_at: string
-}
+type DbSlide = { title: string; bullets: string[]; designHint?: string }
 
-type DbCarouselSlide = {
-  id: string
-  carousel_id: string
-  order_index: number
-  title: string | null
-  content: string | null
-  image_url: string | null
-  created_at: string
+function mapSlides(carouselId: string, rawSlides: unknown) {
+  if (!Array.isArray(rawSlides)) return []
+  return rawSlides.map((s: DbSlide, i: number) => ({
+    id: String(i),
+    carousel_id: carouselId,
+    order_index: i,
+    title: s?.title || `Slide ${i + 1}`,
+    content: Array.isArray(s?.bullets) && s.bullets.length
+      ? s.bullets.join("\n")
+      : s?.designHint || null,
+    image_url: null,
+  }))
 }
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
     const { id } = await context.params
 
-    const projects = await supabaseSelect<DbCarouselProject>(
-      "carousel_projects",
-      `id=eq.${id}&workspace_id=eq.${workspaceId}&limit=1`
-    )
-    if (!projects?.length) {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("carousels")
+      .select("id, user_id, topic, role, tone, slide_count, slides, created_at, updated_at")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle()
+
+    if (error) {
+      console.error("[carousel GET]", id, error.message)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+    if (!data) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
 
-    const slides = await supabaseSelect<DbCarouselSlide>(
-      "carousel_slides",
-      `carousel_id=eq.${id}&order=order_index.asc`
-    )
-
-    return NextResponse.json({ project: projects[0], slides: slides || [] })
+    return NextResponse.json({
+      project: {
+        id: data.id,
+        workspace_id: null,
+        post_id: null,
+        theme: data.tone || data.role || null,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      },
+      slides: mapSlides(data.id, data.slides),
+    })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
   }
 }

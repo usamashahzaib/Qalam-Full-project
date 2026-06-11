@@ -87,12 +87,13 @@ export const applyOverrideToLimits = (basePlan: string, override: UserOverrideRo
   if (override?.workspace_limit_override !== null && override?.workspace_limit_override !== undefined) {
     limits.clientWorkspaces = override.workspace_limit_override
   }
-  if (featureFlags.scheduling !== undefined) limits.scheduling = featureFlags.scheduling
-  if (featureFlags.analytics !== undefined) limits.analyticsDepth = featureFlags.analytics ? "full" : "basic"
-  if (featureFlags.carouselBuilder !== undefined) limits.carouselGenerationsPerMonth = featureFlags.carouselBuilder ? 10 : 0
-  if (featureFlags.competitorResearch !== undefined) limits.researchRunsPerMonth = featureFlags.competitorResearch ? 5 : 0
-  if (featureFlags.approvalWorkflow !== undefined) limits.approvals = featureFlags.approvalWorkflow
-  if (featureFlags.exportPdf !== undefined) limits.canExport = featureFlags.exportPdf
+  // Feature flags can only GRANT access, never deny plan-level access
+  if (featureFlags.scheduling === true) limits.scheduling = true
+  if (featureFlags.analytics === true) limits.analyticsDepth = "full"
+  if (featureFlags.carouselBuilder === true && limits.carouselGenerationsPerMonth === 0) limits.carouselGenerationsPerMonth = 10
+  if (featureFlags.competitorResearch === true && limits.researchRunsPerMonth === 0) limits.researchRunsPerMonth = 5
+  if (featureFlags.approvalWorkflow === true) limits.approvals = true
+  if (featureFlags.exportPdf === true) limits.canExport = true
   const createdAt = override?.created_at ? new Date(override.created_at).getTime() : Date.now()
   const complimentaryTrialBanner = Boolean(override?.plan_override && Date.now() - createdAt >= 1000 * 60 * 60 * 24 * 14)
   return { overrideActive: Boolean(override), effectivePlan, limits, featureFlags, override, complimentaryTrialBanner, overridePlan: override?.plan_override || null }

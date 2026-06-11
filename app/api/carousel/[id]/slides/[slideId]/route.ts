@@ -1,53 +1,65 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
-import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { requireAuth } from "@/lib/server/auth-helpers"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
-type DbCarouselSlide = {
-  id: string
-  carousel_id: string
-  order_index: number
-  title: string | null
-  content: string | null
-  image_url: string | null
-}
+type DbSlide = { title: string; bullets: string[]; designHint: string }
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
   try {
-    await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
+    const userId = await requireAuth()
     const { id: carouselId, slideId } = await context.params
+    const slideIndex = parseInt(slideId, 10)
 
-    const projects = await supabaseSelect<{ id: string }>(
-      "carousel_projects",
-      `id=eq.${carouselId}&workspace_id=eq.${workspaceId}&limit=1`
-    )
-    if (!projects?.length) {
+    if (isNaN(slideIndex)) {
+      return NextResponse.json({ error: "Invalid slide id" }, { status: 400 })
+    }
+
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("carousels")
+      .select("slides")
+      .eq("id", carouselId)
+      .eq("user_id", userId)
+      .single()
+
+    if (error || !data) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
 
-    // ── Role check: editor or above to edit slides ──────────────────────
-    await requireRole(request, workspaceId, "editor")
-    // ────────────────────────────────────────────────────────────
+    const slides: DbSlide[] = [...((data as { slides: DbSlide[] }).slides || [])]
+    if (slideIndex >= slides.length) {
+      return NextResponse.json({ error: "Slide not found" }, { status: 404 })
+    }
 
-    const body = await request.json()
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (body.title !== undefined) patch.title = body.title
-    if (body.content !== undefined) patch.content = body.content
+    const body = await request.json() as { title?: string; content?: string }
+    const slide = { ...slides[slideIndex] }
+    if (body.title !== undefined) slide.title = body.title
+    if (body.content !== undefined) {
+      slide.bullets = body.content ? body.content.split("\n").filter(Boolean) : []
+    }
+    slides[slideIndex] = slide
 
-    const rows = await supabasePatch<DbCarouselSlide>(
-      "carousel_slides",
-      `id=eq.${slideId}&carousel_id=eq.${carouselId}`,
-      patch
-    )
+    await supabase
+      .from("carousels")
+      .update({ slides, updated_at: new Date().toISOString() })
+      .eq("id", carouselId)
+      .eq("user_id", userId)
 
-    return NextResponse.json({ slide: rows?.[0] || null })
+    return NextResponse.json({
+      slide: {
+        id: slideId,
+        carousel_id: carouselId,
+        order_index: slideIndex,
+        title: slide.title || null,
+        content: Array.isArray(slide.bullets) ? slide.bullets.join("\n") : null,
+        image_url: null,
+      },
+    })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
   }
 }

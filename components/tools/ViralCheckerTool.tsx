@@ -11,7 +11,13 @@ type ViralResult = {
   breakdown: Record<string, number>
   verdict: string
   specific_feedback: string
-  improved_version: string
+  improved_version: string | Record<string, string>
+}
+
+function extractImprovedVersion(v: string | Record<string, string> | undefined): string {
+  if (!v) return ""
+  if (typeof v === "string") return v
+  return Object.values(v)[0] ?? ""
 }
 
 export function ViralCheckerTool() {
@@ -82,7 +88,7 @@ export function ViralCheckerTool() {
                 ))}
               </div>
               <p className="mt-5 text-sm leading-6 text-zinc-700">{result.specific_feedback}</p>
-              {result.improved_version ? <div className="mt-4 rounded-xl bg-teal/5 p-4 text-sm leading-6 text-zinc-800">{result.improved_version}</div> : null}
+              {extractImprovedVersion(result.improved_version) ? <div className="mt-4 rounded-xl bg-teal/5 p-4 text-sm leading-6 text-zinc-800">{extractImprovedVersion(result.improved_version)}</div> : null}
             </div>
           ) : null}
         </div>

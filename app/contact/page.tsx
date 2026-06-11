@@ -9,7 +9,7 @@ import {
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Contact | Qalam",
+  title: "Contact",
   description: "Public contact routes for support, plan upgrades, agency onboarding, and commercial questions.",
 }
 

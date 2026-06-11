@@ -12,7 +12,7 @@ import {
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More | Qalam",
+  title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More",
   description:
     "Free AI tools for LinkedIn: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required. Built by Qalam, the AI LinkedIn writer.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
@@ -185,14 +185,14 @@ export default function FreeToolsPage() {
               </h2>
               <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
                 Unlimited posts, trained Voice Profile, scheduler, and performance
-                review. Pro starts at $19 per month.
+                review. Pro starts at PKR 1,490/month.
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
-                  href="/login?plan=pro"
+                  href="/login"
                   className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
                 >
-                  Start 7-Day Free Trial
+                  Start free - no card needed
                 </Link>
                 <Link
                   href="/pricing"

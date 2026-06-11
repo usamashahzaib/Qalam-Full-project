@@ -3,7 +3,7 @@ import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 
 export const metadata: Metadata = {
-  title: "Agency Setup | Qalam",
+  title: "Agency Setup",
   description:
     "See how Qalam agency workspaces separate client voice memory, approvals, team roles, and publishing flow.",
 }

@@ -199,6 +199,12 @@ export function Navbar() {
   const { data: session, status } = useSession()
 
   useEffect(() => {
+    if (localStorage.getItem("qalam_announce_dismissed") === "1") {
+      setAnnouncementVisible(false)
+    }
+  }, [])
+
+  useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
@@ -228,7 +234,10 @@ export function Navbar() {
                 See setup <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
-                onClick={() => setAnnouncementVisible(false)}
+                onClick={() => {
+                  localStorage.setItem("qalam_announce_dismissed", "1")
+                  setAnnouncementVisible(false)
+                }}
                 className="absolute right-4 text-lg leading-none text-white/60 transition-colors hover:text-white"
                 aria-label="Dismiss"
               >

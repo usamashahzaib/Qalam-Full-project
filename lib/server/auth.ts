@@ -203,7 +203,7 @@ export function withAuth(handler: (req: NextRequest, user: AuthSession) => Promi
     try {
       const { userId, externalUserId, error, session } = await requireAuthApi(req)
       if (error) return error
-      if (!userId || !externalUserId) {
+      if (!userId || !externalUserId || !session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
       return await handler(req, session)

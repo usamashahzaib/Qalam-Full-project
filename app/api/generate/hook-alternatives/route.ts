@@ -29,11 +29,16 @@ export async function POST(request: NextRequest) {
 
     const { system, user: userMsg } = buildHookAlternativesPrompt(content, role)
     const raw = await callAi(system, userMsg, {
-      json: true, temperature: 0.9, maxTokens: 500,
+      json: false, temperature: 0.9, maxTokens: 500,
       userId: user.id, plan: user.plan, cache: false, provider: "gemini",
     })
 
-    const hooks = safeParseJson<Array<{ style: string; text: string }>>(raw) || []
+    const parsed = safeParseJson<unknown>(raw)
+    const hooks: Array<{ style: string; text: string }> = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray((parsed as { hooks?: unknown })?.hooks)
+        ? (parsed as { hooks: Array<{ style: string; text: string }> }).hooks
+        : []
     if (!hooks.length) {
       return NextResponse.json({ error: "No alternatives generated" }, { status: 502 })
     }

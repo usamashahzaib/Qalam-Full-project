@@ -29,11 +29,16 @@ export async function POST(request: NextRequest) {
 
     const { system, user: userMsg } = buildCtaAlternativesPrompt(content, role)
     const raw = await callAi(system, userMsg, {
-      json: true, temperature: 0.9, maxTokens: 400,
+      json: false, temperature: 0.9, maxTokens: 400,
       userId: user.id, plan: user.plan, cache: false, provider: "gemini",
     })
 
-    const alternatives = safeParseJson<string[]>(raw) || []
+    const parsed = safeParseJson<unknown>(raw)
+    const alternatives: string[] = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray((parsed as { alternatives?: unknown })?.alternatives)
+        ? (parsed as { alternatives: string[] }).alternatives
+        : []
     if (!alternatives.length) {
       return NextResponse.json({ error: "No alternatives generated" }, { status: 502 })
     }

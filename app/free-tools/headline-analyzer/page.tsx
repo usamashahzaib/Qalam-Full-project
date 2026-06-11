@@ -3,7 +3,7 @@ import { HeadlineAnalyzerTool } from "@/components/tools/HeadlineAnalyzerTool"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "LinkedIn Headline Analyzer - Free Tool | Qalam",
+  title: "LinkedIn Headline Analyzer - Free Tool",
   description:
     "Score your LinkedIn headline instantly across 5 proven dimensions: length, power words, specificity, structure, and role clarity. Free, no account required.",
   alternates: { canonical: `${SITE_URL}/free-tools/headline-analyzer` },

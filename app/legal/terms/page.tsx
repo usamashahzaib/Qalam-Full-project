@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Terms of Service | Qalam",
+  title: "Terms of Service",
   description: "Qalam Terms of Service",
   robots: { index: false, follow: false },
 }

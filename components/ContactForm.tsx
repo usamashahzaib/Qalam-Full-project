@@ -4,23 +4,43 @@ import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 type FormState = "idle" | "loading" | "success" | "error"
+type FieldErrors = { name?: string; email?: string; subject?: string; message?: string }
 
 const inputClass =
   "w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-teal/50 focus:bg-white focus:ring-2 focus:ring-teal/10"
 
+const inputErrorClass =
+  "w-full rounded-xl border border-red-300 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-red-400 focus:bg-white focus:ring-2 focus:ring-red-100"
+
 const labelClass = "mb-1.5 block text-sm font-semibold text-zinc-700"
+
+function validateFields(data: Record<string, string>): FieldErrors {
+  const errors: FieldErrors = {}
+  if (!data.name?.trim() || data.name.trim().length < 2) errors.name = "Enter your full name (at least 2 characters)."
+  if (!data.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) errors.email = "Enter a valid email address."
+  if (!data.subject?.trim() || data.subject.trim().length < 3) errors.subject = "Add a subject line (at least 3 characters)."
+  if (!data.message?.trim() || data.message.trim().length < 10) errors.message = "Write a message (at least 10 characters)."
+  return errors
+}
 
 export function ContactForm() {
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
   const formRef = useRef<HTMLFormElement>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setState("loading")
     setError(null)
 
-    const data = Object.fromEntries(new FormData(e.currentTarget))
+    const data = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>
+    const errors = validateFields(data)
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors)
+      return
+    }
+    setFieldErrors({})
+    setState("loading")
 
     try {
       const res = await fetch("/api/contact", {
@@ -81,6 +101,7 @@ export function ContactForm() {
             key="form"
             ref={formRef}
             onSubmit={handleSubmit}
+            noValidate
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -94,13 +115,13 @@ export function ContactForm() {
                   id="contact-name"
                   name="name"
                   type="text"
-                  required
-                  minLength={2}
                   maxLength={100}
                   placeholder="Your full name"
-                  className={inputClass}
+                  className={fieldErrors.name ? inputErrorClass : inputClass}
                   disabled={state === "loading"}
+                  onChange={() => fieldErrors.name && setFieldErrors((p) => ({ ...p, name: undefined }))}
                 />
+                {fieldErrors.name && <p className="mt-1 text-xs text-red-600">{fieldErrors.name}</p>}
               </div>
               <div>
                 <label htmlFor="contact-email" className={labelClass}>Email</label>
@@ -108,12 +129,13 @@ export function ContactForm() {
                   id="contact-email"
                   name="email"
                   type="email"
-                  required
                   maxLength={200}
                   placeholder="you@example.com"
-                  className={inputClass}
+                  className={fieldErrors.email ? inputErrorClass : inputClass}
                   disabled={state === "loading"}
+                  onChange={() => fieldErrors.email && setFieldErrors((p) => ({ ...p, email: undefined }))}
                 />
+                {fieldErrors.email && <p className="mt-1 text-xs text-red-600">{fieldErrors.email}</p>}
               </div>
             </div>
 
@@ -123,13 +145,13 @@ export function ContactForm() {
                 id="contact-subject"
                 name="subject"
                 type="text"
-                required
-                minLength={3}
                 maxLength={200}
                 placeholder="e.g. Upgrade question, Agency onboarding, Bug report"
-                className={inputClass}
+                className={fieldErrors.subject ? inputErrorClass : inputClass}
                 disabled={state === "loading"}
+                onChange={() => fieldErrors.subject && setFieldErrors((p) => ({ ...p, subject: undefined }))}
               />
+              {fieldErrors.subject && <p className="mt-1 text-xs text-red-600">{fieldErrors.subject}</p>}
             </div>
 
             <div>
@@ -137,14 +159,14 @@ export function ContactForm() {
               <textarea
                 id="contact-message"
                 name="message"
-                required
-                minLength={10}
                 maxLength={4000}
                 rows={5}
                 placeholder="Tell us what you need. The more context you give, the faster we can help."
-                className={`${inputClass} resize-y`}
+                className={`${fieldErrors.message ? inputErrorClass : inputClass} resize-y`}
                 disabled={state === "loading"}
+                onChange={() => fieldErrors.message && setFieldErrors((p) => ({ ...p, message: undefined }))}
               />
+              {fieldErrors.message && <p className="mt-1 text-xs text-red-600">{fieldErrors.message}</p>}
             </div>
 
             <AnimatePresence>

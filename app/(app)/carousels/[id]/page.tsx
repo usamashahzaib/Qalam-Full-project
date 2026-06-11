@@ -36,7 +36,8 @@ export default function CarouselEditorPage() {
       setSlides(data.slides || [])
     } catch (e) {
       const msg = (e as Error).message
-      if (msg === "not_found" || msg === "Not Found" || msg.includes("not_found")) {
+      // Only redirect on genuine not-found; show error for anything else
+      if (msg === "not_found" || msg === "not found" || (msg.toLowerCase().includes("not_found") && !msg.includes("column"))) {
         router.replace("/carousels")
         return
       }

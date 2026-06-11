@@ -15,7 +15,7 @@ const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,490"
 const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 7,490"
 
 export const metadata: Metadata = {
-  title: "Pricing | Qalam",
+  title: "Pricing",
   description:
     `Qalam pricing for the Pakistani market. Free plan with ${freeDrafts} - no card, no expiry. Solo at ${soloPrice}/month. Pay via JazzCash, Easypaisa, or bank transfer.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
