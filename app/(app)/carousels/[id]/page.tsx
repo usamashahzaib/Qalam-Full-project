@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { LockedFeature } from "@/components/LockedFeature"
@@ -12,6 +12,7 @@ type CarouselProject = { id: string; workspace_id: string; post_id: string | nul
 
 export default function CarouselEditorPage() {
   const params = useParams()
+  const router = useRouter()
   const id = params?.id as string
   const { state, workspaceId } = useWorkspace()
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
@@ -34,7 +35,12 @@ export default function CarouselEditorPage() {
       setProject(data.project)
       setSlides(data.slides || [])
     } catch (e) {
-      setError((e as Error).message)
+      const msg = (e as Error).message
+      if (msg === "not_found" || msg === "Not Found" || msg.includes("not_found")) {
+        router.replace("/carousels")
+        return
+      }
+      setError(msg)
     } finally {
       setIsLoading(false)
     }

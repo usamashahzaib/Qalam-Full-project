@@ -97,7 +97,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
-  const currentPlan = workspace.state.billing.plan
+  const rawCurrentPlan = workspace.state.billing.plan as string
+  const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
   const hasAgencyAccess = currentPlan.startsWith("Agency")
   const canAddWorkspace = hasAgencyAccess
 
