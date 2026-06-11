@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { MARKETING_LAST_MODIFIED } from "@/lib/marketing-content"
+import { SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
 
 export type PublicRoute = {
   path: string
@@ -201,6 +202,12 @@ export const buildPageMetadata = ({
 
 export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
+  ...SEO_LANDING_ROUTES.map((path) => ({
+    path,
+    priority: 0.91,
+    changeFrequency: "weekly" as const,
+    lastModified: "2026-06-11",
+  })),
   { path: "/ai-linkedin-writer", priority: 0.96, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/pricing", priority: 0.95, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/free-tools", priority: 0.9, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
@@ -218,14 +225,15 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/docs", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/changelog", priority: 0.6, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/status", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/privacy", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/terms", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/legal/privacy", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/legal/terms", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/careers", priority: 0.5, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
 ]
 
 export const LLM_ROUTES = [
   "/",
   "/ai-linkedin-writer",
+  ...SEO_LANDING_ROUTES,
   "/pricing",
   "/demo",
   "/free-tools",

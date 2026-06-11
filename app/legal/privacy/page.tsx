@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { buildPageMetadata } from "@/lib/seo"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Privacy Policy",
-  description: "Qalam Privacy Policy",
-}
+  description: "Qalam privacy policy for AI writing, LinkedIn publishing, voice training, draft storage, cookies, and data deletion.",
+  path: "/legal/privacy",
+  keywords: ["Qalam privacy policy", "AI writing privacy", "LinkedIn publishing privacy", "Qalam data policy"],
+})
 
 export default function PrivacyPage() {
   return (

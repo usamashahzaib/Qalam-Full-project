@@ -7,6 +7,14 @@ import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
 
 type Params = { slug: keyof typeof USE_CASE_PAGES }
 
+const USE_CASE_KEYWORDS: Record<keyof typeof USE_CASE_PAGES, string[]> = {
+  founders: ["LinkedIn AI writer for founders", "founder LinkedIn content", "founder thought leadership", "AI writer for founders"],
+  "marketing-teams": ["AI writer for marketing teams", "LinkedIn content workflow", "brand voice AI", "marketing content system"],
+  "hr-leaders": ["LinkedIn content for HR leaders", "employer brand LinkedIn", "HR thought leadership", "AI writer for HR"],
+  consultants: ["LinkedIn content for consultants", "consultant thought leadership", "AI writer for consultants", "consulting LinkedIn posts"],
+  agencies: ["AI LinkedIn writer for agencies", "LinkedIn ghostwriting agency tool", "agency content workflow", "client LinkedIn approvals"],
+}
+
 export function generateStaticParams() {
   return Object.keys(USE_CASE_PAGES).map((slug) => ({ slug }))
 }
@@ -19,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: page.title,
     description: page.summary,
     path: `/use-cases/${slug}`,
+    keywords: USE_CASE_KEYWORDS[slug],
   })
 }
 

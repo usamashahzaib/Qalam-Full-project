@@ -7,6 +7,14 @@ import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
 
 type Params = { slug: keyof typeof PRODUCT_PAGES }
 
+const PRODUCT_KEYWORDS: Record<keyof typeof PRODUCT_PAGES, string[]> = {
+  "post-writer": ["AI post writer", "LinkedIn post writer", "AI LinkedIn writer", "LinkedIn content generator"],
+  "voice-profile": ["AI voice profile", "brand voice AI", "AI writing memory", "train AI on writing style"],
+  "hook-generator": ["LinkedIn hook generator", "AI hook generator", "LinkedIn opening lines", "post hook generator"],
+  "post-scheduler": ["LinkedIn post scheduler", "LinkedIn content scheduler", "schedule LinkedIn posts", "AI publishing workflow"],
+  "agency-workspaces": ["agency content workflow", "LinkedIn agency tool", "client content approvals", "AI ghostwriting agency"],
+}
+
 export function generateStaticParams() {
   return Object.keys(PRODUCT_PAGES).map((slug) => ({ slug }))
 }
@@ -19,6 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
     title: page.title,
     description: page.summary,
     path: `/product/${slug}`,
+    keywords: PRODUCT_KEYWORDS[slug],
   })
 }
 

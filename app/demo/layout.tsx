@@ -6,7 +6,7 @@ export const metadata: Metadata = buildPageMetadata({
   description:
     "See Qalam in action. Write a LinkedIn post, explore a sample voice profile, and browse a demo archive without signing in.",
   path: "/demo",
-  index: false,
+  keywords: ["Qalam demo", "AI LinkedIn writer demo", "LinkedIn post writer demo", "AI content writer demo"],
 })
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {

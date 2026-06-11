@@ -1,12 +1,21 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
+import { buildPageMetadata } from "@/lib/seo"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Agency Setup",
   description:
-    "See how Qalam agency workspaces separate client voice memory, approvals, team roles, and publishing flow.",
-}
+    "Set up Qalam agency workspaces for LinkedIn ghostwriting, client voice memory, approvals, team roles, and multi-client publishing flow.",
+  path: "/agency-setup",
+  keywords: [
+    "agency LinkedIn workflow",
+    "LinkedIn ghostwriting agency tool",
+    "AI writer for agencies",
+    "client content approvals",
+    "agency content workspace",
+  ],
+})
 
 const pillars = [
   {

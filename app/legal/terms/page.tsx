@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { buildPageMetadata } from "@/lib/seo"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: "Terms of Service",
-  description: "Qalam Terms of Service",
-  robots: { index: false, follow: false },
-}
+  description: "Qalam terms of service for AI LinkedIn writing, content ownership, payments, account use, and publishing responsibilities.",
+  path: "/legal/terms",
+  keywords: ["Qalam terms", "Qalam terms of service", "AI LinkedIn writer terms", "Qalam legal"],
+})
 
 export default function TermsPage() {
   return (
