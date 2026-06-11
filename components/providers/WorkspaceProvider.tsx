@@ -418,9 +418,11 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json().catch(() => ({}))
         if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
         setWorkspaceId(data.workspaceId)
-        if (data.plan && VALID_PLAN_NAMES.includes(data.plan as string)) {
+        const rawPlan = data.plan as string | undefined
+        const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
+        if (normalizedPlan && VALID_PLAN_NAMES.includes(normalizedPlan)) {
           setServerBilling({
-            plan: data.plan as WorkspaceBilling["plan"],
+            plan: normalizedPlan as WorkspaceBilling["plan"],
             overrideActive: Boolean(data.overrideActive),
             complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
             overridePlan: data.overridePlan || null,

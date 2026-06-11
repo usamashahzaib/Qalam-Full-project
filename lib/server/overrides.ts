@@ -73,9 +73,13 @@ export const getUserOverrideByEmail = async (email: string): Promise<UserOverrid
   return null
 }
 
+const toTitleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+
 export const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | null): EffectiveOverrideInfo => {
   const featureFlags = override?.feature_flags || {}
-  const effectivePlan = override?.plan_override || basePlan || "Free"
+  const rawPlan = override?.plan_override || basePlan || "Free"
+  // Normalize to titlecase ("pro" → "Pro") so PLAN_ORDER lookup always works
+  const effectivePlan = toTitleCase(rawPlan)
   const limits = { ...getPlanLimits(effectivePlan) }
   if (override?.draft_limit_override !== null && override?.draft_limit_override !== undefined) {
     limits.aiDraftsPerMonth = override.draft_limit_override

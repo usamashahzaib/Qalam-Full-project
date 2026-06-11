@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
   const oldValue = await getOldOverride(body.userId)
   const payload = {
     user_id: body.userId,
-    plan_override: body.planOverride || null,
+    plan_override: body.planOverride ? body.planOverride.charAt(0).toUpperCase() + body.planOverride.slice(1).toLowerCase() : null,
     draft_limit_override: body.draftLimitOverride ?? null,
     workspace_limit_override: body.workspaceLimitOverride ?? null,
     feature_flags: body.featureFlags || {},
