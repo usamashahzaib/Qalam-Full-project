@@ -106,9 +106,10 @@ export const hasFeatureAccess = (
   feature: string,
   featureFlags?: Record<string, boolean>
 ) => {
+  // Plan level always wins - featureFlags can only GRANT access below plan tier, never DENY it above
+  if (canAccessPlan(plan, requiredPlan)) return true
   const key = featureOverrideKey(feature)
-  if (key && featureFlags?.[key] !== undefined) return featureFlags[key]
-  return canAccessPlan(plan, requiredPlan)
+  return Boolean(key && featureFlags?.[key] === true)
 }
 
 export const formatLimit = (value: number | "unlimited"): string => {
