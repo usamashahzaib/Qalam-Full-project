@@ -409,12 +409,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="qalam-app-canvas pl-0 md:pl-64">
         {workspace.state.billing.planExpired ? (
-          <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900 md:mt-16">
+          <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
             Your plan expired. You are back on Free. <Link href="/pricing" className="underline underline-offset-2">Renew your plan</Link>
           </div>
         ) : null}
         {workspace.state.billing.complimentaryTrialBanner ? (
-          <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900 md:mt-16">
+          <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900">
             You are on a complimentary {workspace.state.billing.overridePlan || workspace.state.billing.plan} trial. <Link href="/pricing" className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}

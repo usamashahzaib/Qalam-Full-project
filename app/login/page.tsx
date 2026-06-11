@@ -71,7 +71,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 py-16">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-28 pb-16 sm:pt-16">
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
@@ -167,11 +167,12 @@ export default function LoginPage() {
             <button
               onClick={() => handleSocial("linkedin")}
               disabled={socialLoading !== null}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#0A66C2]/30 bg-[#0A66C2]/5 px-4 py-2.5 text-sm font-semibold text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#0A66C2]/30 bg-[#0A66C2]/5 px-4 py-3 text-sm font-semibold text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LinkedInIcon className="h-4 w-4 text-[#0A66C2]" />
-              {socialLoading === "linkedin" ? "Redirecting..." : "Continue with LinkedIn"}
+              {socialLoading === "linkedin" ? "Redirecting to LinkedIn..." : "Continue with LinkedIn"}
             </button>
+            <p className="mt-2 text-center text-[11px] text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
           </div>
 
           {/* Sign up link */}

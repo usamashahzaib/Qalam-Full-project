@@ -385,7 +385,7 @@ export default function DemoPage() {
   const handleStart = useCallback(() => openPanel("sign-up"), [openPanel])
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-24 pt-16">
+    <div className="min-h-screen bg-zinc-50 pb-24 pt-28">
       <DemoBanner />
 
       <div className="border-b border-zinc-200 bg-white px-4 py-8 sm:px-6">

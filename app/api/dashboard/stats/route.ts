@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { requireAuth, getAuthenticatedSession } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanByName } from "@/lib/pricing"
 
 export async function GET() {
   try {
     const userId = await requireAuth()
+    const session = await getAuthenticatedSession()
+    const userEmail = session?.user?.email?.trim().toLowerCase() ?? null
     const supabase = createServiceClient()
 
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 
-    const [monthPostsRes, libraryRes, usageRes, publishedRes] = await Promise.allSettled([
+    const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes] = await Promise.allSettled([
       supabase
         .from("posts")
         .select("engagement_score")
@@ -33,6 +35,11 @@ export async function GET() {
         .eq("user_id", userId)
         .eq("status", "published")
         .gte("created_at", monthStart),
+      supabase
+        .from("user_overrides")
+        .select("plan_override, draft_limit_override, expires_at")
+        .eq("user_id", userId)
+        .maybeSingle(),
     ])
 
     const monthPosts =
@@ -43,6 +50,8 @@ export async function GET() {
       usageRes.status === "fulfilled" ? usageRes.value.data : null
     const postsPublished =
       publishedRes.status === "fulfilled" ? (publishedRes.value.count ?? 0) : 0
+    const override =
+      overrideRes.status === "fulfilled" ? overrideRes.value.data : null
 
     const scores = monthPosts
       .map((p: { engagement_score?: number | null }) => p.engagement_score)
@@ -51,10 +60,18 @@ export async function GET() {
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : null
 
-    const planName = usageRow?.plan ?? "free"
+    let planName = usageRow?.plan ?? "free"
+    // Apply admin override if active
+    if (override?.plan_override && (!override.expires_at || new Date(override.expires_at) > new Date())) {
+      planName = override.plan_override
+    }
     const plan = getPlanByName(planName)
     const draftsUsed = usageRow?.ai_drafts_used ?? 0
-    const draftsTotal = plan.draftsPerMonth
+    let draftsTotal = plan.draftsPerMonth
+    if (typeof override?.draft_limit_override === "number" && override.draft_limit_override >= 0 &&
+        (!override.expires_at || new Date(override.expires_at) > new Date())) {
+      draftsTotal = override.draft_limit_override
+    }
     const draftsRemaining =
       draftsTotal != null ? Math.max(0, draftsTotal - draftsUsed) : null
 
