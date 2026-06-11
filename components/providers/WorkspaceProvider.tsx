@@ -88,7 +88,7 @@ type WorkspaceContextValue = {
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
-const BILLING_STORAGE_KEY = "qalam-billing"
+const BILLING_STORAGE_KEY = "qalam-billing-v3"
 const workspaceCacheKey = (clientId: string | null) => `qalam-workspace:${clientId || "personal"}`
 
 const defaultProfile: WorkspaceProfile = {

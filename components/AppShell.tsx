@@ -212,7 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {switcherOpen && (
               <div className="qalam-scrollbar-dark absolute left-4 right-4 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700">
-                <div className="bg-teal/10 px-4 py-3 text-sm font-semibold text-white">{activeClientName}</div>
+                <Link href="/dashboard" onClick={() => setSwitcherOpen(false)} className="block bg-teal/10 px-4 py-3 text-sm font-semibold text-white hover:bg-teal/20 transition-colors">{activeClientName}</Link>
                 <div>
                   {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs font-semibold text-gold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link> : null}
                   {canAddWorkspace ? (
