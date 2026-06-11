@@ -1,7 +1,11 @@
 import Groq from "groq-sdk"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+let _groq: Groq | null = null
+const getGroq = () => {
+  if (!_groq) _groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
+  return _groq
+}
 
 async function callGemini(systemPrompt: string, userMessage: string, json = false): Promise<string> {
   // SECURITY FIX: API key ab URL mein nahi, header mein ja rahi hai
@@ -42,7 +46,7 @@ export async function callAi(
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
-      const completion = await groq.chat.completions.create(
+      const completion = await getGroq().chat.completions.create(
         {
           messages: [
             { role: "system", content: systemPrompt },
