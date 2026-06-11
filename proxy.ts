@@ -25,7 +25,7 @@ function generalLimiter(): Ratelimit | null {
   if (!r) return null
   return (_generalLimiter = new Ratelimit({
     redis: r,
-    limiter: Ratelimit.slidingWindow(100, "60 s"),
+    limiter: Ratelimit.slidingWindow(600, "60 s"),
     prefix: "rl:proxy",
   }))
 }
@@ -113,19 +113,27 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
-  // Strict auth limiter applies only to POST submissions on auth pages and /api/auth/signin
-  // GET requests to /login, /signup etc. use the general limiter (page views should not be throttled)
-  const isAuthRoute = request.method === "POST" && (
-    pathname.startsWith("/api/auth/signin") ||
-    pathname.startsWith("/api/auth/callback") ||
-    AUTH_ONLY_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+
+  // Skip rate limiting entirely for public marketing pages (homepage, pricing, blog, docs, etc.)
+  const isPublicPage = !pathname.startsWith("/api/") && !PROTECTED_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  ) && !AUTH_ONLY_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
-  const rateLimitOk = await checkRateLimit(ip, isAuthRoute)
-  if (!rateLimitOk) {
-    return addSecurityHeaders(
-      NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
+  if (!isPublicPage) {
+    // Strict auth limiter applies only to POST submissions on auth pages and /api/auth/signin
+    const isAuthRoute = request.method === "POST" && (
+      pathname.startsWith("/api/auth/signin") ||
+      pathname.startsWith("/api/auth/callback") ||
+      AUTH_ONLY_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
     )
+    const rateLimitOk = await checkRateLimit(ip, isAuthRoute)
+    if (!rateLimitOk) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
+      )
+    }
   }
 
   if (isPublicApi) {
