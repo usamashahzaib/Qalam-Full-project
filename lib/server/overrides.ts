@@ -46,18 +46,31 @@ export const getUserIdByEmail = async (email: string) => {
 }
 
 export const getUserOverrideByEmail = async (email: string): Promise<UserOverrideRow | null> => {
-  const userId = await getUserIdByEmail(email)
-  if (!userId) return null
-  const rows = await supabaseSelect<UserOverrideRow>(
-    "user_overrides",
-    `user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`
-  ).catch((error) => {
-    if ((error as Error).message === "schema_not_applied") return []
-    throw error
-  })
-  const override = rows?.[0] || null
-  if (override?.expires_at && new Date(override.expires_at).getTime() <= Date.now()) return null
-  return override
+  // Fetch both internal UUID and external_user_id (LinkedIn provider ID) so we can
+  // match whichever one was stored in user_overrides.user_id by the admin panel.
+  const users = await supabaseSelect<{ id: string; external_user_id: string | null }>(
+    "users",
+    `email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=id,external_user_id&limit=1`
+  )
+  const user = users?.[0]
+  if (!user) return null
+
+  const ids = [user.id, user.external_user_id].filter(Boolean) as string[]
+  // Try each ID - overrides can be stored under either the internal UUID or the OAuth provider ID
+  for (const uid of ids) {
+    const rows = await supabaseSelect<UserOverrideRow>(
+      "user_overrides",
+      `user_id=eq.${encodeURIComponent(uid)}&select=*&limit=1`
+    ).catch((error) => {
+      if ((error as Error).message === "schema_not_applied") return []
+      throw error
+    })
+    const override = rows?.[0] || null
+    if (!override) continue
+    if (override.expires_at && new Date(override.expires_at).getTime() <= Date.now()) return null
+    return override
+  }
+  return null
 }
 
 export const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | null): EffectiveOverrideInfo => {

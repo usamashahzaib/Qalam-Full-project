@@ -100,6 +100,7 @@ export default function LoginPage() {
           {formError && (
             <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {formError}
+              <p className="mt-1 text-xs text-red-500">Did you sign up with LinkedIn? Use the button below instead.</p>
             </div>
           )}
 

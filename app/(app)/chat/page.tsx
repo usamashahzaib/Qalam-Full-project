@@ -3,6 +3,37 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
+function renderMarkdown(text: string) {
+  const lines = text.split("\n")
+  const elements: React.ReactNode[] = []
+  let key = 0
+
+  const parseLine = (line: string): React.ReactNode => {
+    // Replace **bold** and *italic*
+    const parts = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>
+      if (part.startsWith("*") && part.endsWith("*")) return <em key={i}>{part.slice(1, -1)}</em>
+      return part
+    })
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (!line.trim()) { elements.push(<br key={key++} />); continue }
+    const numberedMatch = line.match(/^(\d+)\.\s(.+)/)
+    const bulletMatch = line.match(/^[-•]\s(.+)/)
+    if (numberedMatch) {
+      elements.push(<div key={key++} className="flex gap-2"><span className="shrink-0 font-semibold text-zinc-500">{numberedMatch[1]}.</span><span>{parseLine(numberedMatch[2])}</span></div>)
+    } else if (bulletMatch) {
+      elements.push(<div key={key++} className="flex gap-2"><span className="shrink-0 text-teal">-</span><span>{parseLine(bulletMatch[1])}</span></div>)
+    } else {
+      elements.push(<p key={key++} className="leading-relaxed">{parseLine(line)}</p>)
+    }
+  }
+  return <div className="space-y-1 text-sm">{elements}</div>
+}
+
 type Conversation = {
   id: string
   title: string
@@ -329,7 +360,7 @@ export default function ChatWorkspace() {
                       </div>
                     )}
                     <div className={`max-w-[78%] rounded-2xl px-5 py-3.5 ${msg.role === 'user' ? 'bg-zinc-900 text-white shadow-sm' : 'border border-zinc-200 bg-white text-zinc-900 shadow-sm'}`}>
-                      <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
+                      {msg.role === 'assistant' ? renderMarkdown(msg.content) : <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>}
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-2">
                           <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700">
