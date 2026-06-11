@@ -76,7 +76,18 @@ const scoreBarColor = (v: number) =>
 const scoreTextColor = (v: number) =>
   v >= 85 ? "text-emerald-600" : v >= 50 ? "text-amber-600" : "text-red-500"
 const copyText = async (v: string) => {
-  if (v) await navigator.clipboard.writeText(v)
+  if (!v) return
+  try {
+    await navigator.clipboard.writeText(v)
+  } catch {
+    const el = document.createElement("textarea")
+    el.value = v
+    el.style.cssText = "position:fixed;top:-9999px;left:-9999px"
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand("copy")
+    document.body.removeChild(el)
+  }
 }
 const formatVersionTime = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
 

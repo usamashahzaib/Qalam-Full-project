@@ -58,7 +58,7 @@ export function HeadlineAnalyzerTool() {
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <label className="mb-2 block text-sm font-semibold text-zinc-800">Your LinkedIn headline</label>
             <div className="flex gap-3">
-              <input value={headline} onChange={(e) => setHeadline(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void analyze()} className="flex-1 rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/30" />
+              <input type="text" value={headline} onChange={(e) => setHeadline(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void analyze()} placeholder="e.g. Founder & CEO | Helping B2B SaaS teams grow" className="flex-1 rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/30" />
               <motion.button whileTap={{ scale: 0.97 }} onClick={analyze} disabled={!headline.trim() || loading} className="rounded-xl bg-teal px-5 py-3 text-sm font-semibold text-white disabled:bg-zinc-200 disabled:text-zinc-400">{loading ? "Analyzing..." : "Analyze"}</motion.button>
             </div>
             {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}

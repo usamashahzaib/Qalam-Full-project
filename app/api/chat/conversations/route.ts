@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("conversations")
@@ -20,7 +22,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const body = await request.json()
     const title = String(body.title || "New Conversation").trim() || "New Conversation"
     const supabase = createServiceClient()
@@ -38,7 +42,9 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const body = await request.json()
     const conversationId = String(body.conversationId || "")
     const title = String(body.title || "").trim()
@@ -64,7 +70,9 @@ export async function PATCH(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const conversationId = request.nextUrl.searchParams.get("conversationId")
     if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
 

@@ -4,6 +4,10 @@ import { AppMobileNav } from "@/components/AppMobileNav"
 import { AppShell } from "@/components/AppShell"
 
 export const metadata: Metadata = {
+  title: {
+    template: "%s | Qalam",
+    default: "Qalam App",
+  },
   robots: {
     index: false,
     follow: false,

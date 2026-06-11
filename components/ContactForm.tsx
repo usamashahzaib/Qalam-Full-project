@@ -118,6 +118,7 @@ export function ContactForm() {
                   maxLength={100}
                   placeholder="Your full name"
                   className={fieldErrors.name ? inputErrorClass : inputClass}
+                  aria-invalid={fieldErrors.name ? "true" : undefined}
                   disabled={state === "loading"}
                   onChange={() => fieldErrors.name && setFieldErrors((p) => ({ ...p, name: undefined }))}
                 />
@@ -132,6 +133,7 @@ export function ContactForm() {
                   maxLength={200}
                   placeholder="you@example.com"
                   className={fieldErrors.email ? inputErrorClass : inputClass}
+                  aria-invalid={fieldErrors.email ? "true" : undefined}
                   disabled={state === "loading"}
                   onChange={() => fieldErrors.email && setFieldErrors((p) => ({ ...p, email: undefined }))}
                 />

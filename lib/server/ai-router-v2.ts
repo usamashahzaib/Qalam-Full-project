@@ -2,13 +2,51 @@ import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } fr
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { callGemini } from "./gemini-client"
 
-// Strips markdown fences, extracts first JSON object/array, returns null on failure
+// Strips markdown fences and returns the first plausible JSON object/array.
 export function safeParseJson<T = unknown>(raw: string): T | null {
   try {
     const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim()
-    const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/)
-    if (!match) return null
-    return JSON.parse(match[0]) as T
+    try { return JSON.parse(cleaned) as T } catch { /* fall through */ }
+
+    for (let start = 0; start < cleaned.length; start++) {
+      const first = cleaned[start]
+      if (first !== "{" && first !== "[") continue
+
+      const stack = [first === "{" ? "}" : "]"]
+      let inString = false, escaped = false
+
+      for (let i = start + 1; i < cleaned.length; i++) {
+        const char = cleaned[i]
+        if (escaped) {
+          escaped = false
+          continue
+        }
+        if (char === "\\") {
+          escaped = inString
+          continue
+        }
+        if (char === "\"") {
+          inString = !inString
+          continue
+        }
+        if (inString) continue
+
+        if (char === "{" || char === "[") stack.push(char === "{" ? "}" : "]")
+        else if (char === "}" || char === "]") {
+          if (stack.pop() !== char) break
+          if (!stack.length) {
+            try {
+              const parsed = JSON.parse(cleaned.slice(start, i + 1))
+              if (Array.isArray(parsed) && parsed.every((v) => typeof v === "number")) break
+              return parsed as T
+            } catch {
+              break
+            }
+          }
+        }
+      }
+    }
+    return null
   } catch {
     return null
   }

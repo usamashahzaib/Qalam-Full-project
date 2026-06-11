@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
+import { LockedFeature } from "@/components/LockedFeature"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -65,8 +66,13 @@ export default function CalendarPage() {
   const [status, setStatus] = useState<string | null>(null)
   const [publishingId, setPublishingId] = useState<string | null>(null)
   const [monthCursor, setMonthCursor] = useState(() => {
-    const scheduledDate = state.scheduled.find((post) => isIsoDate(post.date))?.date
-    return scheduledDate ? toDate(scheduledDate) : new Date()
+    const now = new Date()
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const futureDateStr = state.scheduled
+      .map((post) => post.date)
+      .filter(isIsoDate)
+      .find((d) => toDate(d) >= thisMonthStart)
+    return futureDateStr ? toDate(futureDateStr) : now
   })
   const [selectedDay, setSelectedDay] = useState(todayIso())
   const [view, setView] = useState<"calendar" | "list">("calendar")
@@ -270,6 +276,7 @@ export default function CalendarPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
+    <LockedFeature feature="Content Planner" requiredPlan="Solo">
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
 
       {/* Header */}
@@ -552,6 +559,7 @@ export default function CalendarPage() {
         </div>
       )}
     </div>
+    </LockedFeature>
   )
 }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
 
@@ -7,8 +7,9 @@ const PER_PAGE = 20
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    const workspaceId = planCheck.workspaceId
 
     const url = new URL(request.url)
     const type = url.searchParams.get("type") || ""

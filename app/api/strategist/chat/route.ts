@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { requireAuth } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { callAi } from "@/lib/server/ai-router"
 
 type ConversationMessage = {
@@ -17,7 +18,9 @@ const supabaseAdmin = () =>
 
 export async function GET(req: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const supabase = supabaseAdmin()
     const conversationId = req.nextUrl.searchParams.get("conversationId")
 
@@ -57,7 +60,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const { message, conversationId, role = "general" } = await req.json()
     const cleanMessage = String(message || "").trim()
     if (!cleanMessage) return NextResponse.json({ error: "Message is required" }, { status: 400 })

@@ -18,6 +18,8 @@ import {
   TeamIcon,
   ProfileIcon,
   LinkedInIcon,
+  BrainIcon,
+  CheckIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
@@ -28,7 +30,7 @@ const NAV_GROUPS = [
     label: "Workspace",
     links: [
       { href: "/dashboard", label: "Dashboard", icon: GrowthIcon },
-      { href: "/chat", label: "AI Strategist", icon: VoiceIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/chat", label: "AI Strategist", icon: BrainIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/writer", label: "AI Writer", icon: ComposeIcon },
     ],
   },
@@ -36,14 +38,14 @@ const NAV_GROUPS = [
     label: "Publishing",
     links: [
       { href: "/calendar", label: "Planner", icon: CalendarIcon, requiredPlan: "Solo" as PlanTier },
-      { href: "/approvals", label: "Approvals", icon: AnalyticsIcon, requiredPlan: "Pro" as PlanTier },
-      { href: "/analytics", label: "Analytics", icon: GrowthIcon, requiredPlan: "Solo" as PlanTier },
+      { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/analytics", label: "Analytics", icon: AnalyticsIcon, requiredPlan: "Solo" as PlanTier },
     ],
   },
   {
     label: "Intelligence",
     links: [
-      { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Solo" as PlanTier },
+      { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
@@ -103,7 +105,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const canAddWorkspace = hasAgencyAccess
 
   useEffect(() => {
-    if (!user) return
+    if (!user || !hasAgencyAccess) return
     let active = true
     fetch("/api/agency/clients")
       .then((res) => res.json())
@@ -125,7 +127,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       active = false
     }
-  }, [user])
+  }, [user, hasAgencyAccess])
 
   const clientWorkspaces = useMemo(() => clients.filter((client, index, list) => {
     const name = client.client_name.trim()

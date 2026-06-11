@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
       userId: user.id, plan: user.plan, cache: false,
     })
 
-    // Prompt returns a JSON array; handle both bare array and {hooks:[...]} wrapping
     const parsed = safeParseJson<unknown>(raw)
     const hooks: Array<{ style: string; text: string }> = Array.isArray(parsed)
       ? parsed

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type DbVoiceProfile = {
@@ -45,7 +46,8 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
     const workspaceId = await resolveWorkspaceId(request)
     const body = await request.json()
     const { name, title, industry, tone, goals, samplePosts, linkedinUrl } = body

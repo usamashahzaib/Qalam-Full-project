@@ -45,28 +45,33 @@ export default function LoginPage() {
     setSubmitting(true)
     setFormError(null)
 
-    const result = await signIn("credentials", {
-      email: email.trim().toLowerCase(),
-      password,
-      redirect: false,
-    })
+    try {
+      const result = await Promise.race([
+        signIn("credentials", {
+          email: email.trim().toLowerCase(),
+          password,
+          redirect: false,
+        }),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("signin_timeout")), 5000)),
+      ])
 
-    if (result?.error) {
-      // Check if this email is an OAuth-only account (no password set)
-      const checkRes = await fetch(`/api/auth/check-provider?email=${encodeURIComponent(email.trim().toLowerCase())}`)
-        .then(r => r.ok ? r.json() : null).catch(() => null)
-      if (checkRes?.provider === "linkedin") {
-        // Auto-redirect to LinkedIn sign-in
-        setSocialLoading("linkedin")
-        await signIn("linkedin", { callbackUrl })
-        return
+      if (result?.error || result?.ok === false) {
+        const checkRes = await fetch(`/api/auth/check-provider?email=${encodeURIComponent(email.trim().toLowerCase())}`)
+          .then(r => r.ok ? r.json() : null).catch(() => null)
+        if (checkRes?.provider === "linkedin") {
+          setSocialLoading("linkedin")
+          await signIn("linkedin", { callbackUrl })
+          return
+        }
+        setFormError("Incorrect email or password.")
+        setSubmitting(false)
+      } else {
+        const safeUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard"
+        window.location.href = safeUrl
       }
+    } catch {
       setFormError("Incorrect email or password.")
       setSubmitting(false)
-    } else {
-      // Full reload so the server re-reads the new session cookie
-      const safeUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard"
-      window.location.href = safeUrl
     }
   }
 
@@ -147,7 +152,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal focus:bg-white focus:ring-2 focus:ring-teal/10"
-                placeholder="••••••••"
+                placeholder="Password"
               />
             </div>
             <p className="text-center text-xs text-zinc-400">

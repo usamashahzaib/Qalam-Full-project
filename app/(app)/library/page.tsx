@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
+import { LockedFeature } from "@/components/LockedFeature"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -153,6 +154,7 @@ export default function LibraryPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
+    <LockedFeature feature="Post Library" requiredPlan="Solo">
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
 
       {/* Header */}
@@ -463,5 +465,6 @@ export default function LibraryPage() {
         </div>
       )}
     </div>
+    </LockedFeature>
   )
 }

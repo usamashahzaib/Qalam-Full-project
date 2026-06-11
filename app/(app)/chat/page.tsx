@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { LockedFeature } from "@/components/LockedFeature"
 
 function renderMarkdown(text: string) {
   const lines = text.split("\n")
@@ -265,6 +266,7 @@ export default function ChatWorkspace() {
   }
 
   return (
+    <LockedFeature feature="AI Strategist" requiredPlan="Pro">
     <div className="mx-auto flex h-[calc(100vh-80px)] max-w-7xl overflow-hidden px-4 py-6 sm:px-6">
       {/* Dark sidebar matches app shell */}
       <div className="flex w-72 flex-col rounded-l-2xl bg-zinc-900">
@@ -425,5 +427,6 @@ export default function ChatWorkspace() {
         )}
       </div>
     </div>
+    </LockedFeature>
   )
 }

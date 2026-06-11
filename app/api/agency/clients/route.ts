@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
+    const planCheck = await requirePlan(request, "Agency")
+    if (!planCheck.ok) return planCheck.response
     const ctx = await getWorkspaceSessionContext()
     const dbUserId = ctx.supabaseUserId
 
@@ -45,7 +46,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAuth()
+    const planCheck = await requirePlan(request, "Agency")
+    if (!planCheck.ok) return planCheck.response
     const ctx = await getWorkspaceSessionContext()
     const dbUserId = ctx.supabaseUserId
 

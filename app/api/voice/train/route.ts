@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { requireAuth } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { callAi } from "@/lib/server/ai-router"
 
 type VoiceSample = {
@@ -68,7 +69,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.supabaseUserId
     const { sampleText } = await req.json()
     const cleanSample = String(sampleText || "").trim()
 

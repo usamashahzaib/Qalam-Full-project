@@ -1,13 +1,15 @@
-import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { NextRequest, NextResponse } from "next/server"
+import { requirePlan } from "@/lib/server/require-plan"
 import { callAi } from "@/lib/server/ai-router"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type HistoryMessage = { role: "user" | "assistant"; content: string }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const userId = planCheck.session.userId
     const body = await request.json()
     const message = String(body.message || "").trim()
     const role = String(body.role || "general")

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -86,17 +87,19 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 }
 
 export function PricingPageContent({}: PricingPageContentProps) {
+  const { status } = useSession()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">("selfserve")
 
   useEffect(() => {
+    if (status !== "authenticated") return
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => { if (data.user?.plan) setCurrentPlan(data.user.plan) })
       .catch(() => {})
-  }, [])
+  }, [status])
 
   const displayPlans = PLANS.map((plan) => {
     const isCurrentPlan = currentPlan != null && plan.plan.toLowerCase() === currentPlan.toLowerCase()
