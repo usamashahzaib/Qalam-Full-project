@@ -539,7 +539,7 @@ export default function HomePage() {
                   href="#before-after"
                   className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
                 >
-                  See it write in your voice ?
+                  See it write in your voice
                 </Link>
               </motion.div>
             </motion.div>

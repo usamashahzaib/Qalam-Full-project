@@ -63,3 +63,11 @@ next-env.d.ts
 
 # Logs
 /logs
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

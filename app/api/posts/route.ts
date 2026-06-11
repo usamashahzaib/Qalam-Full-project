@@ -3,7 +3,6 @@ import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseDelete, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
-import { createClient } from "@supabase/supabase-js"
 
 type DbPost = {
   id: string
@@ -41,22 +40,15 @@ const validateSchedule = (status: string, scheduledTime?: string | null) => {
   return selected.getTime() <= Date.now() ? "scheduled_time_must_be_future" : null
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await requireAuth()
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } }
+    await requireAuth()
+    const workspaceId = await resolveWorkspaceId(request)
+    const posts = await supabaseSelect<DbPost>(
+      "posts",
+      `workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc`
     )
-    const { data: posts, error } = await supabase
-      .from("posts")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-
-    if (error) return NextResponse.json({ error: "Failed to load posts" }, { status: 500 })
-    return NextResponse.json({ posts })
+    return NextResponse.json({ posts: (posts || []).map(toClientPost) })
   } catch (error) {
     const msg = (error as Error).message
     return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })

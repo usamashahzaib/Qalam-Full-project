@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabasePatch, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
+import { supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 type DbVoiceProfile = {
   id: string
@@ -12,22 +12,18 @@ type DbVoiceProfile = {
   tone: string | null
   goals: string[] | null
   sample_posts: string[] | null
+  linkedin_url?: string | null
   updated_at: string
 }
 
-type DbWorkspace = {
-  id: string
-  linkedin_url: string | null
-}
-
-const toClientProfile = (profile?: DbVoiceProfile | null, workspace?: DbWorkspace | null) => ({
+const toClientProfile = (profile?: DbVoiceProfile | null) => ({
   name: profile?.name ?? "",
   title: profile?.title ?? "",
   industry: profile?.industry ?? "",
   tone: profile?.tone ?? "",
   goals: Array.isArray(profile?.goals) ? profile!.goals : [],
   samplePosts: Array.isArray(profile?.sample_posts) ? profile!.sample_posts : [],
-  linkedinUrl: workspace?.linkedin_url ?? "",
+  linkedinUrl: profile?.linkedin_url ?? "",
 })
 
 const isValidLinkedInUrl = (value: string) =>
@@ -37,14 +33,9 @@ export async function GET(request: NextRequest) {
   try {
     await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
-    const [profileRows, workspaceRows] = await Promise.all([
-      supabaseSelect<DbVoiceProfile>("voice_profiles", `workspace_id=eq.${workspaceId}&limit=1`),
-      supabaseSelect<DbWorkspace>("workspaces", `id=eq.${workspaceId}&select=id,linkedin_url&limit=1`),
-    ])
-
+    const profileRows = await supabaseSelect<DbVoiceProfile>("voice_profiles", `workspace_id=eq.${workspaceId}&limit=1`)
     const profileRow = profileRows?.[0] ?? null
-    const workspaceRow = workspaceRows?.[0] ?? null
-    const profile = profileRow || workspaceRow?.linkedin_url ? toClientProfile(profileRow, workspaceRow) : null
+    const profile = profileRow ? toClientProfile(profileRow) : null
     return NextResponse.json({ profile })
   } catch (error) {
     const msg = (error as Error).message
@@ -65,33 +56,33 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
     }
 
-    const [profileRows, workspaceRows] = await Promise.all([
-      supabaseUpsert<DbVoiceProfile>(
+    const payload = {
+      workspace_id: workspaceId,
+      name: name ?? null,
+      title: title ?? null,
+      industry: industry ?? null,
+      tone: tone ?? null,
+      goals: Array.isArray(goals) ? goals.filter(Boolean) : [],
+      sample_posts: Array.isArray(samplePosts) ? samplePosts : [],
+      linkedin_url: trimmedLinkedinUrl || null,
+      updated_at: updatedAt,
+    }
+
+    let profileRows: DbVoiceProfile[] | null = null
+    try {
+      profileRows = await supabaseUpsert<DbVoiceProfile>(
         "voice_profiles",
-        {
-          workspace_id: workspaceId,
-          name: name ?? null,
-          title: title ?? null,
-          industry: industry ?? null,
-          tone: tone ?? null,
-          goals: Array.isArray(goals) ? goals.filter(Boolean) : [],
-          sample_posts: Array.isArray(samplePosts) ? samplePosts : [],
-          updated_at: updatedAt,
-        },
+        payload,
         "workspace_id"
-      ),
-      supabasePatch<DbWorkspace>(
-        "workspaces",
-        `id=eq.${workspaceId}`,
-        {
-          linkedin_url: trimmedLinkedinUrl || null,
-          updated_at: updatedAt,
-        }
-      ),
-    ])
+      )
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes("linkedin_url")) throw error
+      const { linkedin_url: _linkedinUrl, ...fallbackPayload } = payload
+      profileRows = await supabaseUpsert<DbVoiceProfile>("voice_profiles", fallbackPayload, "workspace_id")
+    }
 
     return NextResponse.json({
-      profile: toClientProfile(profileRows?.[0] ?? null, workspaceRows?.[0] ?? null),
+      profile: toClientProfile(profileRows?.[0] ?? null),
     })
   } catch (error) {
     const msg = (error as Error).message

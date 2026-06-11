@@ -55,7 +55,8 @@ export default function BlogPage() {
               <span className="chip mb-6 inline-flex border-teal/30 bg-teal-50 text-teal">Journal</span>
               <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
                 Practical notes on LinkedIn publishing,
-                <span className="text-gold gold-underline"> authority, and workflow.</span>
+                {" "}
+                <span className="text-gold gold-underline">authority, and workflow.</span>
               </h1>
               <p className="mx-auto max-w-2xl text-lg leading-relaxed text-zinc-500">
                 Answer-first articles built to explain how serious operators can publish with more consistency, stronger voice fidelity, and less generic AI output.

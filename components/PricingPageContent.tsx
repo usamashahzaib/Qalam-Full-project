@@ -116,7 +116,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}`
       : undefined
     const usdReference = isAnnual && hasAnnual
-      ? `Save ${annualSavingsPercent}% · billed annually`
+      ? `Save ${annualSavingsPercent}% - billed annually`
       : hasAnnual
       ? `Save ${annualSavingsPercent}%`
       : "Free forever"
@@ -155,7 +155,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
               Every week without a system,
-              <span className="text-gold gold-underline"> someone else builds what you should.</span>
+              {" "}
+              <span className="text-gold gold-underline">someone else builds what you should.</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
               Qalam is what serious LinkedIn professionals use to stay consistent, get better over time, and never start from blank again.

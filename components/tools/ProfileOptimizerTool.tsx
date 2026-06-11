@@ -15,6 +15,8 @@ type Result = {
   keyword_suggestions: string[]
 }
 
+const normalizeScore = (score: number) => Math.round(score <= 1 ? score * 100 : score)
+
 export function ProfileOptimizerTool() {
   const [headline, setHeadline] = useState("")
   const [audience, setAudience] = useState("")
@@ -73,7 +75,7 @@ export function ProfileOptimizerTool() {
           {result ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Profile score</p>
-              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.profile_score}/100</p>
+              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{normalizeScore(result.profile_score)}/100</p>
               <p className="mt-4 text-sm leading-6 text-zinc-700">{result.positioning_diagnosis}</p>
               <div className="mt-5 rounded-xl bg-teal/5 p-4">
                 <p className="text-xs font-bold uppercase text-teal">Headline suggestion</p>

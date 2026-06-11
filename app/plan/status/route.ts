@@ -7,8 +7,9 @@ export async function GET() {
     const userId = await requireAuth();
     const status = await getPlanStatus(userId);
     return NextResponse.json(status);
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "Unauthorized" || message === "auth_required") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Server error" }, { status: 500 });

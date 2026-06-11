@@ -35,8 +35,9 @@ ABOUT SECTION:
 ${parsed.data.about}
 
 OUTPUT JSON:
+Use profile_score as an integer from 0 to 100.
 {
-  "profile_score": number,
+  "profile_score": 0,
   "positioning_diagnosis": "specific diagnosis",
   "optimized_about": "rewritten LinkedIn About section",
   "headline_suggestion": "stronger headline",
@@ -55,8 +56,15 @@ OUTPUT JSON:
     )
 
     const aiJson = safeParseJson(result)
-    if (!aiJson) return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
-    return NextResponse.json(aiJson)
+    if (!aiJson || typeof aiJson !== "object") {
+      return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
+    }
+    const data = aiJson as Record<string, unknown>
+    const rawScore = Number(data.profile_score)
+    data.profile_score = Number.isFinite(rawScore)
+      ? Math.max(0, Math.min(100, Math.round(rawScore <= 1 ? rawScore * 100 : rawScore)))
+      : 0
+    return NextResponse.json(data)
   } catch (error) {
     console.error("[Free Tool Error]", error)
     return NextResponse.json(

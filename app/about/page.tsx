@@ -34,7 +34,8 @@ export default function AboutPage() {
             </span>
             <h1 className="mb-6 text-5xl font-extrabold leading-tight text-white sm:text-6xl">
               A publishing system for people who need
-              <span className="text-gold gold-underline"> authority, not filler.</span>
+              {" "}
+              <span className="text-gold gold-underline">authority, not filler.</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/60">
               Qalam is being built as a serious LinkedIn publishing desk: voice memory, post
