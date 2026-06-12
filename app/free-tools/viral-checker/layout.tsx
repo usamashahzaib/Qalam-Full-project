@@ -2,15 +2,23 @@ import type { Metadata } from "next"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "Viral Formula Checker - Free LinkedIn Post Analyzer",
+  title: "LinkedIn Viral Formula Checker - Free AI Tool | Qalam",
   description:
-    "Paste any LinkedIn post and get an AI viral score, breakdown, and a stronger rewritten hook. Free tool - no account required.",
+    "Analyze any LinkedIn post for viral potential across 5 dimensions: hook quality, specificity, emotion, discussion value, and structure. Get a score + stronger opening. No account required.",
   alternates: { canonical: `${SITE_URL}/free-tools/viral-checker` },
+  keywords: ["LinkedIn viral post checker", "LinkedIn post analyzer", "viral score LinkedIn", "LinkedIn engagement AI tool"],
   openGraph: {
-    title: "Viral Formula Checker - Free LinkedIn Post Analyzer | Qalam",
-    description: "AI viral score, weaknesses, and a stronger hook for any LinkedIn post. Free. No sign-in.",
+    title: "LinkedIn Viral Formula Checker - Free AI Tool | Qalam",
+    description: "Paste any LinkedIn post and get an instant viral score with specific improvement suggestions. No sign-in required.",
     url: `${SITE_URL}/free-tools/viral-checker`,
     type: "website",
+    siteName: "Qalam",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LinkedIn Viral Formula Checker - Free | Qalam",
+    description: "Instant viral potential score for any LinkedIn post. No account required.",
+    site: "@byqalam",
   },
 }
 
