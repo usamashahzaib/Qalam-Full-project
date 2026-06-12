@@ -490,13 +490,13 @@ function UsageChart({
 
 const ALL_PROMPTS = [
   "One mistake I made early in my career that I'm glad I made",
-  "The thing nobody tells you when you start in [your field]",
+  "The thing nobody tells you when you start in your field",
   "I changed my mind about something I believed for years",
   "A lesson I learned the hard way that took me too long to accept",
   "What I wish someone had told me in my first job",
   "The most underrated skill in my industry right now",
   "Three things I stopped doing that made me better at my work",
-  "An uncomfortable truth about how most people approach [your field]",
+  "An uncomfortable truth about how most people approach their field",
   "The advice I give new hires that my managers never gave me",
   "I failed publicly. Here is what happened and what I learned.",
   "Why I left a job that looked perfect on paper",

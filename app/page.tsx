@@ -182,12 +182,12 @@ const FAQ_ITEMS = [
     a: "ChatGPT resets every session. Qalam keeps approved examples, editing history, hook archive, and workspace continuity so each session starts closer to your actual voice instead of from scratch.",
   },
   {
-    q: "Who is Team for today?",
-    a: "Team is the path for internal operators who want shared workflow, publishing controls, and approval access in one workspace.",
+    q: "Who is the Pro plan for?",
+    a: "Pro is for professionals who post consistently and want voice memory, AI quality scoring, competitor research, and analytics in one system. It is the plan for people who treat LinkedIn as a serious channel.",
   },
   {
-    q: "Who is Agency for today?",
-    a: "Agency is the path for multi-client operators who need isolated client workspaces, approval flows, and per-client publishing. Contact us to start.",
+    q: "Is there an Agency plan?",
+    a: "Yes - Agency is for multi-client operators who need isolated client workspaces, approval workflows, and per-client publishing. It is launching soon. Contact us to join the waitlist or set up early access.",
   },
   {
     q: "Does Qalam work for any niche?",

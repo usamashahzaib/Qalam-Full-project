@@ -7,6 +7,7 @@ import { AuthPanelProvider } from "@/components/providers/AuthPanelContext"
 import { AuthSlidePanel } from "@/components/AuthSlidePanel"
 
 const APP_ROUTES = [
+  "/admin",
   "/agency",
   "/analytics",
   "/approvals",
@@ -15,10 +16,14 @@ const APP_ROUTES = [
   "/chat",
   "/competitors",
   "/dashboard",
+  "/forgot-password",
   "/library",
   "/login",
+  "/reset-password",
   "/settings",
   "/signup",
+  "/strategist",
+  "/verify-email",
   "/voice",
   "/write",
   "/writer",

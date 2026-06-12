@@ -586,7 +586,10 @@ export default function SettingsPage() {
               {passwordStatus === "saved" && <span className="text-xs font-semibold text-emerald-600">Updated</span>}
               {passwordStatus === "error" && <span className="text-xs text-red-600">{passwordError}</span>}
             </div>
-            <div className="space-y-3">
+            <form
+              onSubmit={(e) => { e.preventDefault(); onChangePassword() }}
+              className="space-y-3"
+            >
               <Field label="Current password">
                 <input
                   type="password"
@@ -621,19 +624,19 @@ export default function SettingsPage() {
                   placeholder="Re-enter new password"
                 />
               </Field>
-            </div>
-            <button
-              onClick={onChangePassword}
-              disabled={
-                passwordStatus === "saving" ||
-                !passwordDraft.current ||
-                !passwordDraft.new ||
-                !passwordDraft.confirm
-              }
-              className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
-            >
-              {passwordStatus === "saving" ? "Updating..." : "Update password"}
-            </button>
+              <button
+                type="submit"
+                disabled={
+                  passwordStatus === "saving" ||
+                  !passwordDraft.current ||
+                  !passwordDraft.new ||
+                  !passwordDraft.confirm
+                }
+                className="mt-4 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-zinc-800 disabled:opacity-60"
+              >
+                {passwordStatus === "saving" ? "Updating..." : "Update password"}
+              </button>
+            </form>
           </section>
         ) : (
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">

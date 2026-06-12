@@ -150,7 +150,7 @@ export default function CarouselsPage() {
               <p>- Slide 1 frames the tension.</p>
               <p>- Middle slides teach, prove, or sharpen the point.</p>
               <p>- Final slide closes with a takeaway or CTA.</p>
-              <p>- Qalam branding stays subtle inside editor and exports.</p>
+              <p>- Your name and designation appear on every slide - no Qalam watermark.</p>
             </div>
             <div className="mt-5 rounded-2xl bg-gradient-to-br from-zinc-950 via-teal-950 to-teal p-5 text-white">
               <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-teal-100">Preview signal</p>

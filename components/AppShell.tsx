@@ -88,14 +88,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
-    if (typeof window === "undefined") return defaultSectionState()
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(defaultSectionState)
+
+  useEffect(() => {
     try {
-      return { ...defaultSectionState(), ...JSON.parse(localStorage.getItem(sidebarSectionStateKey) || "{}") }
+      const saved = localStorage.getItem(sidebarSectionStateKey)
+      if (saved) setOpenSections((prev) => ({ ...prev, ...JSON.parse(saved) }))
     } catch {
-      return defaultSectionState()
+      // ignore corrupt localStorage
     }
-  })
+  }, [])
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
