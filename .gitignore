@@ -71,3 +71,12 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Tool artifacts
+/.playwright-mcp/
+/.codex/
+*.png
+QALAM_AUDIT_REPORT.md
+
+# Machine-specific
+.claude/settings.local.json
