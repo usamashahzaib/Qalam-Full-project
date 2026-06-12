@@ -43,7 +43,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">5. Payments</h2>
-            <p>Paid plans are activated upon receipt of payment via JazzCash, Easypaisa, or bank transfer. Refunds are not guaranteed but considered on a case-by-case basis. Contact hello@byqalam.com for payment issues.</p>
+            <p>Paid plans are activated upon receipt of payment via JazzCash, Easypaisa, or bank transfer. Refunds are not guaranteed but considered on a case-by-case basis. Contact info@byqalam.com for payment issues.</p>
           </section>
 
           <section>
@@ -58,7 +58,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">8. Contact</h2>
-            <p>For any questions about these terms, contact us at <a href="mailto:hello@byqalam.com" className="text-teal underline">hello@byqalam.com</a>.</p>
+            <p>For any questions about these terms, contact us at <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a>.</p>
           </section>
         </div>
       </div>

@@ -27,7 +27,7 @@ export const env = {
   jazzCashWebhookSecret: read("JAZZCASH_WEBHOOK_SECRET"),
   easyPaisaWebhookSecret: read("EASYPAISA_WEBHOOK_SECRET"),
   resendApiKey: read("RESEND_API_KEY"),
-  transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <support@byqalam.com>",
+  transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
 }
 
 export const requireSupabaseEnv = () => {
@@ -54,7 +54,7 @@ export function requireRedisEnv(): { url: string; token: string } | null {
 }
 
 export const supportEnv = {
-  email: read("APP_SUPPORT_EMAIL") || "support@byqalam.com",
+  email: read("APP_SUPPORT_EMAIL") || "info@byqalam.com",
 }
 
 export const groqApiKey = env.groqApiKey

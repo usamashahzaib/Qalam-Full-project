@@ -53,7 +53,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">7. Data Deletion</h2>
-            <p>You may request deletion of your account and all associated data by emailing <a href="mailto:hello@byqalam.com" className="text-teal underline">hello@byqalam.com</a>. We will process deletion requests within 7 business days.</p>
+            <p>You may request deletion of your account and all associated data by emailing <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a>. We will process deletion requests within 7 business days.</p>
           </section>
 
           <section>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">9. Contact</h2>
-            <p>For privacy questions, contact us at <a href="mailto:hello@byqalam.com" className="text-teal underline">hello@byqalam.com</a>.</p>
+            <p>For privacy questions, contact us at <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a>.</p>
           </section>
         </div>
       </div>

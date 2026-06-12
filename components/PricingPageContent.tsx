@@ -76,7 +76,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
         </ul>
 
         <a
-          href="mailto:hello@byqalam.com?subject=Managed Plan Inquiry"
+          href="mailto:business@byqalam.com?subject=Managed Plan Inquiry"
           className="w-full rounded-xl bg-teal-50 py-3 text-center text-sm font-semibold text-teal transition-all duration-200 hover:bg-teal hover:text-white"
         >
           Get Managed

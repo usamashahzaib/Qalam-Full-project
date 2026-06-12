@@ -1,10 +1,10 @@
 ﻿const readPublic = (key: string): string => process.env[key]?.trim() || ""
 
 export const SUPPORT_EMAIL =
-  readPublic("NEXT_PUBLIC_SUPPORT_EMAIL") || "support@byqalam.com"
+  readPublic("NEXT_PUBLIC_SUPPORT_EMAIL") || "info@byqalam.com"
 
 export const UPGRADES_EMAIL =
-  readPublic("NEXT_PUBLIC_UPGRADES_EMAIL") || readPublic("NEXT_PUBLIC_SUPPORT_EMAIL") || "support@byqalam.com"
+  readPublic("NEXT_PUBLIC_UPGRADES_EMAIL") || "business@byqalam.com"
 
 export const CONTACT_INBOXES = [
   {

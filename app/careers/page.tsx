@@ -30,10 +30,10 @@ export default function CareersPage() {
                 Send a concise note, your role focus, and links to relevant work.
               </p>
               <a
-                href="mailto:careers@byqalam.com"
+                href="mailto:business@byqalam.com"
                 className="inline-flex items-center justify-center rounded-xl bg-teal px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-600"
               >
-                careers@byqalam.com
+                business@byqalam.com
               </a>
             </div>
           </FadeUp>

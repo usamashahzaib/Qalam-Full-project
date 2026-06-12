@@ -666,7 +666,7 @@ export default function SettingsPage() {
           </div>
           <p className="mt-3 text-xs text-zinc-400">
             Billing history will appear here once automated checkout is live. For manual payments, contact{" "}
-            <a href="mailto:support@byqalam.com" className="underline hover:text-zinc-600">support@byqalam.com</a>.
+            <a href="mailto:info@byqalam.com" className="underline hover:text-zinc-600">info@byqalam.com</a>.
           </p>
         </section>
       </div>
