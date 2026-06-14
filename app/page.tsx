@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
+import { LINKEDIN_NICHES } from "@/lib/marketing-content"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -41,48 +42,7 @@ function useCountUp(end: number, duration = 1400) {
   return { count, ref }
 }
 
-const NICHES = [
-  "Founders",
-  "HR Directors",
-  "SaaS Marketers",
-  "Recruiters",
-  "Consultants",
-  "Agency Owners",
-  "Product Managers",
-  "Sales Directors",
-  "Investment Bankers",
-  "Financial Analysts",
-  "Software Engineers",
-  "Data Scientists",
-  "UX Designers",
-  "Brand Strategists",
-  "Marketing Directors",
-  "Operations Managers",
-  "Supply Chain Leads",
-  "Legal Counsels",
-  "Management Consultants",
-  "Business Analysts",
-  "Talent Acquisition",
-  "L&D Managers",
-  "PR Professionals",
-  "CFOs",
-  "CTOs",
-  "COOs",
-  "Creative Directors",
-  "Account Managers",
-  "Risk Analysts",
-  "Wealth Managers",
-  "Healthcare Administrators",
-  "Project Managers",
-  "Growth Marketers",
-  "Content Strategists",
-  "Executive Coaches",
-  "Corporate Trainers",
-  "Venture Capitalists",
-  "Policy Advisors",
-  "Procurement Leads",
-  "Research Directors",
-]
+const NICHES = LINKEDIN_NICHES
 
 const FEATURES = [
   {

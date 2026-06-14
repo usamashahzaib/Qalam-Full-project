@@ -1,0 +1,678 @@
+"use client"
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { incrementDraftUsage, readDraftUsage } from "@/components/DraftCounter"
+import type {
+  WriterRole as Role,
+  PostFormat as FormatKey,
+  HookStyle,
+  HookItem,
+  SlideItem,
+  ScoreData,
+  DraftVersion,
+  StatusMsg,
+} from "@/types/writer"
+
+export type { Role, FormatKey, HookStyle, HookItem, SlideItem, ScoreData, DraftVersion, StatusMsg }
+
+// ─── Helpers (extracted from writer/page.tsx) ─────────────────────────────────
+
+export const todayInput = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
+  return d.toISOString().slice(0, 10)
+}
+
+export const nowTimeInput = () => {
+  const d = new Date()
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset() + 1)
+  return d.toISOString().slice(11, 16)
+}
+
+export const scheduleValidationError = (date: string, time: string): string | null => {
+  if (!date || !time) return "Select date and time"
+  const s = new Date(`${date}T${time}:00`)
+  if (Number.isNaN(s.getTime())) return "Select a valid date and time"
+  return s.getTime() <= Date.now() ? "Choose a future time" : null
+}
+
+export const scoreBarColor = (v: number) =>
+  v >= 85 ? "bg-emerald-500" : v >= 50 ? "bg-amber-400" : "bg-red-400"
+
+export const scoreTextColor = (v: number) =>
+  v >= 85 ? "text-emerald-600" : v >= 50 ? "text-amber-600" : "text-red-500"
+
+export const formatVersionTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+
+export async function copyText(v: string) {
+  if (!v) return
+  try {
+    await navigator.clipboard.writeText(v)
+  } catch {
+    const el = document.createElement("textarea")
+    el.value = v
+    el.style.cssText = "position:fixed;top:-9999px;left:-9999px"
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand("copy")
+    document.body.removeChild(el)
+  }
+}
+
+// ─── Deps injected by the page ────────────────────────────────────────────────
+
+export interface WriterLogicDeps {
+  workspaceId: string
+  billing: { plan: string; limits?: Record<string, unknown>; featureFlags?: Record<string, boolean> }
+  draftLimit: number | "unlimited"
+  carouselLimit: number | "unlimited"
+  saveDraft: (input: { id: string | null; title: string; content: string; type: string }) => Promise<string>
+  schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
+  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string }) => Promise<string>
+  initialTopic?: string
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useWriterLogic({
+  workspaceId,
+  draftLimit,
+  carouselLimit,
+  saveDraft,
+  schedulePost,
+  publishPost,
+  initialTopic = "",
+}: WriterLogicDeps) {
+
+  // ── Step 1 inputs ────────────────────────────────────────────────────────
+  const [topic, setTopic] = useState(initialTopic)
+  const [role, setRole] = useState<Role>("Founder")
+  const [format, setFormat] = useState<FormatKey>("Medium")
+  const [goal, setGoal] = useState("")
+
+  // ── Hook generation ──────────────────────────────────────────────────────
+  const [hooks, setHooks] = useState<HookItem[]>([])
+  const [selectedHook, setSelectedHook] = useState<string | null>(null)
+  const [isGeneratingHooks, setIsGeneratingHooks] = useState(false)
+
+  // ── Draft ────────────────────────────────────────────────────────────────
+  const [draftContent, setDraftContent] = useState("")
+  const [isGeneratingPost, setIsGeneratingPost] = useState(false)
+  const [versions, setVersions] = useState<DraftVersion[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [scheduleDate, setScheduleDate] = useState("")
+  const [scheduleTime, setScheduleTime] = useState("09:00")
+  const [isSaving, setIsSaving] = useState(false)
+
+  // ── Scoring ──────────────────────────────────────────────────────────────
+  const [scores, setScores] = useState<ScoreData | null>(null)
+  const [isScoring, setIsScoring] = useState(false)
+  const [isImproving, setIsImproving] = useState(false)
+
+  // ── Hook alternatives panel ──────────────────────────────────────────────
+  const [hookAltOpen, setHookAltOpen] = useState(false)
+  const [hookAlts, setHookAlts] = useState<HookItem[]>([])
+  const [isGeneratingAlts, setIsGeneratingAlts] = useState(false)
+
+  // ── Comment replies ──────────────────────────────────────────────────────
+  const [repliesOpen, setRepliesOpen] = useState(false)
+  const [commentInput, setCommentInput] = useState("")
+  const [replies, setReplies] = useState<{ style: string; text: string }[]>([])
+  const [isGeneratingReplies, setIsGeneratingReplies] = useState(false)
+
+  // ── Publish / scheduling ─────────────────────────────────────────────────
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [upgradeModal, setUpgradeModal] = useState(false)
+  const [upgradeProModal, setUpgradeProModal] = useState(false)
+
+  // ── CTA rewrite panel ────────────────────────────────────────────────────
+  const [ctaAltOpen, setCtaAltOpen] = useState(false)
+  const [ctaAlts, setCtaAlts] = useState<string[]>([])
+  const [isGeneratingCtaAlts, setIsGeneratingCtaAlts] = useState(false)
+
+  // ── Versions dropdown ────────────────────────────────────────────────────
+  const [versionsOpen, setVersionsOpen] = useState(false)
+  const [deleteConfirmIdx, setDeleteConfirmIdx] = useState<number | null>(null)
+  const versionsRef = useRef<HTMLDivElement>(null)
+
+  // ── Carousel mode ────────────────────────────────────────────────────────
+  const [slides, setSlides] = useState<SlideItem[]>([])
+  const [isGeneratingSlides, setIsGeneratingSlides] = useState(false)
+  const [localCarouselUsage, setLocalCarouselUsage] = useState(0)
+
+  // ── Approval ─────────────────────────────────────────────────────────────
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false)
+
+  // ── Research notes ───────────────────────────────────────────────────────
+  const [researchNotes, setResearchNotes] = useState<{
+    hookPattern?: string; hookType?: string; engagementFactors?: string[]; framework?: string; improvements?: string[]
+  } | null>(null)
+  const [researchNotesOpen, setResearchNotesOpen] = useState(true)
+
+  // ── Status ───────────────────────────────────────────────────────────────
+  const [status, setStatus] = useState<StatusMsg | null>(null)
+  const [localDraftUsage, setLocalDraftUsage] = useState(0)
+
+  // ── Effects ──────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    setLocalDraftUsage(readDraftUsage(workspaceId))
+    const sync = () => setLocalDraftUsage(readDraftUsage(workspaceId))
+    window.addEventListener("qalam:draft-usage", sync)
+    return () => window.removeEventListener("qalam:draft-usage", sync)
+  }, [workspaceId])
+
+  useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then((r) => r.json())
+      .then((d: { carouselsUsed?: number }) => {
+        if (typeof d.carouselsUsed === "number") setLocalCarouselUsage(d.carouselsUsed)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("competitorInsights")
+      if (raw) {
+        setResearchNotes(JSON.parse(raw) as typeof researchNotes)
+        sessionStorage.removeItem("competitorInsights")
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!versionsOpen) return
+    const handler = (e: MouseEvent) => {
+      if (versionsRef.current && !versionsRef.current.contains(e.target as Node)) setVersionsOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [versionsOpen])
+
+  // ── Derived ──────────────────────────────────────────────────────────────
+
+  const wordCount = useMemo(
+    () => (draftContent.trim() ? draftContent.trim().split(/\s+/).length : 0),
+    [draftContent]
+  )
+
+  const currentVersionIdx = useMemo(() => {
+    if (!draftContent || !versions.length) return null
+    for (let i = versions.length - 1; i >= 0; i--) {
+      if (versions[i].content === draftContent) return i
+    }
+    return null
+  }, [draftContent, versions])
+
+  const resolveTitle = useCallback(
+    () => draftContent.trim().split("\n")[0]?.slice(0, 80) || "Untitled post",
+    [draftContent]
+  )
+
+  const draftHookLine = useMemo(
+    () => draftContent.split("\n").find((l) => l.trim())?.trim() || "",
+    [draftContent]
+  )
+
+  const draftLimitHit = typeof draftLimit === "number" && localDraftUsage >= draftLimit
+
+  // ── Status helper ─────────────────────────────────────────────────────────
+
+  const statusTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const showStatus = useCallback((text: string, type: StatusMsg["type"] = "info", autoDismiss = true) => {
+    clearTimeout(statusTimer.current)
+    setStatus({ text, type })
+    if (autoDismiss) statusTimer.current = setTimeout(() => setStatus(null), 4000)
+  }, [])
+
+  // ── Draft credit helpers ──────────────────────────────────────────────────
+
+  const checkDraftCredit = useCallback(() => {
+    if (draftLimitHit) { showStatus("Draft limit reached. Upgrade to Solo for more.", "error"); return false }
+    return true
+  }, [draftLimitHit, showStatus])
+
+  const useDraftCredit = useCallback((n = 1) => {
+    for (let i = 0; i < n; i++) incrementDraftUsage(workspaceId)
+    setLocalDraftUsage(readDraftUsage(workspaceId))
+  }, [workspaceId])
+
+  // ── Auto-score ────────────────────────────────────────────────────────────
+
+  const autoScore = useCallback(async (content: string) => {
+    if (!content.trim() || isScoring) return
+    setIsScoring(true)
+    try {
+      const res = await fetch("/api/generate/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content, role }),
+      })
+      const data = await res.json().catch(() => null) as ScoreData | null
+      if (res.ok && data) {
+        setScores(data)
+        showStatus("Draft scored.", "success")
+      }
+    } finally {
+      setIsScoring(false)
+    }
+  }, [isScoring, role, showStatus])
+
+  // Debounced re-score on edit (3 second delay)
+  const scoreDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => {
+    if (!draftContent.trim()) return
+    clearTimeout(scoreDebounce.current)
+    scoreDebounce.current = setTimeout(() => void autoScore(draftContent), 3000)
+    return () => clearTimeout(scoreDebounce.current)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftContent])
+
+  // ── Step 1: Generate hooks ────────────────────────────────────────────────
+
+  const onGenerateHooks = async () => {
+    if (!topic.trim()) { showStatus("Enter a topic first", "error"); return }
+    if (!checkDraftCredit()) return
+
+    setIsGeneratingHooks(true)
+    setHooks([])
+    setSelectedHook(null)
+    setDraftContent("")
+    setScores(null)
+    setHookAltOpen(false)
+
+    try {
+      const res = await fetch("/api/generate/hooks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), role, goal: goal.trim() }),
+      })
+      const data = await res.json().catch(() => ({})) as { hooks?: HookItem[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Failed to generate hooks")
+      const items = (data.hooks || []).slice(0, 5) as HookItem[]
+      if (!items.length) throw new Error("No hooks returned")
+      setHooks(items)
+      useDraftCredit(1)
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+    } finally {
+      setIsGeneratingHooks(false)
+    }
+  }
+
+  // ── Step 2: Generate full post from hook ──────────────────────────────────
+
+  const onGeneratePost = async (hookOverride?: string) => {
+    const hookText = hookOverride || selectedHook
+    if (!hookText) { showStatus("Select a hook first", "error"); return }
+    if (!checkDraftCredit()) return
+
+    setIsGeneratingPost(true)
+    setDraftContent("")
+    setScores(null)
+    setHookAltOpen(false)
+    showStatus("Generating post from your hook...", "info", false)
+
+    try {
+      const res = await fetch("/api/generate/post", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), hook: hookText, role, format, goal: goal.trim() }),
+      })
+      const data = await res.json().catch(() => ({})) as { content?: string; error?: string }
+      if (!res.ok) throw new Error(data.error || "Post generation failed")
+      const content = sanitizeGeneratedText(data.content || "")
+      if (!content) throw new Error("AI returned an empty draft")
+      setDraftContent(content)
+      setVersions((p) => [...p, { content, timestamp: new Date().toISOString() }])
+      setEditingId(null)
+      useDraftCredit(1)
+      showStatus("Draft ready. Scoring...", "info", false)
+      void autoScore(content)
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+    } finally {
+      setIsGeneratingPost(false)
+    }
+  }
+
+  const onRegenerate = async () => {
+    if (!selectedHook) { showStatus("No hook selected", "error"); return }
+    await onGeneratePost(selectedHook)
+  }
+
+  // ── Push to 90+ ───────────────────────────────────────────────────────────
+
+  const onPushTo90 = async () => {
+    if (!draftContent.trim()) { showStatus("No draft to improve", "error"); return }
+    if (!checkDraftCredit()) return
+    setIsImproving(true)
+    showStatus("Improving draft toward 90+...", "info", false)
+    try {
+      const res = await fetch("/api/generate/improve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: draftContent, role, scores: scores || {} }),
+      })
+      const data = await res.json().catch(() => ({})) as { content?: string; scores?: ScoreData; error?: string }
+      if (!res.ok) throw new Error(data.error || "Improvement failed")
+      const improved = sanitizeGeneratedText(data.content || "")
+      if (!improved) throw new Error("Returned empty content")
+      setDraftContent(improved)
+      setVersions((p) => [...p, { content: improved, timestamp: new Date().toISOString() }])
+      if (data.scores) setScores(data.scores as ScoreData)
+      useDraftCredit(1)
+      showStatus("Draft improved. Check new scores.", "success")
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+    } finally {
+      setIsImproving(false)
+    }
+  }
+
+  // ── Hook alternatives ─────────────────────────────────────────────────────
+
+  const onImproveHook = async () => {
+    if (!draftContent.trim()) return
+    if (hookAltOpen) { setHookAltOpen(false); return }
+    setIsGeneratingAlts(true)
+    setHookAltOpen(true)
+    setHookAlts([])
+    try {
+      const res = await fetch("/api/generate/hook-alternatives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: draftContent, role }),
+      })
+      const data = await res.json().catch(() => ({})) as { hooks?: HookItem[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Failed to generate alternatives")
+      setHookAlts((data.hooks || []).slice(0, 3) as HookItem[])
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+      setHookAltOpen(false)
+    } finally {
+      setIsGeneratingAlts(false)
+    }
+  }
+
+  const applyHookAlt = (altText: string) => {
+    setSelectedHook(altText)
+    setHookAltOpen(false)
+    void onGeneratePost(altText)
+  }
+
+  // ── Save draft ────────────────────────────────────────────────────────────
+
+  const onSaveDraft = async () => {
+    if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
+    setIsSaving(true)
+    try {
+      const id = await saveDraft({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post" })
+      setEditingId(id)
+      showStatus("Draft saved", "success")
+    } catch (e) {
+      showStatus("Save failed: " + (e as Error).message, "error")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // ── Schedule ──────────────────────────────────────────────────────────────
+
+  const onSchedule = async () => {
+    if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
+    const err = scheduleValidationError(scheduleDate, scheduleTime)
+    if (err) { showStatus(err, "error"); return }
+    try {
+      const id = await schedulePost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", date: scheduleDate, time: scheduleTime })
+      setEditingId(id)
+      showStatus(`Scheduled for ${scheduleDate} at ${scheduleTime}`, "success")
+      setScheduleModalOpen(false)
+    } catch (e) {
+      showStatus("Schedule failed: " + (e as Error).message, "error")
+    }
+  }
+
+  // ── Publish ───────────────────────────────────────────────────────────────
+
+  const onPublish = async () => {
+    if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
+    setIsPublishing(true)
+    try {
+      const id = await publishPost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", publishedAt: new Date().toISOString() })
+      setEditingId(id)
+      showStatus("Published successfully", "success")
+    } catch (e) {
+      showStatus((e as Error).message || "Publish failed", "error")
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  // ── Comment replies ───────────────────────────────────────────────────────
+
+  const onGenerateReplies = async () => {
+    if (!commentInput.trim()) return
+    setIsGeneratingReplies(true)
+    try {
+      const res = await fetch("/api/generate/replies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originalPost: draftContent, comments: commentInput, role }),
+      })
+      const data = await res.json().catch(() => ({})) as { replies?: Array<{ style: string; reply: string }>; error?: string }
+      if (!res.ok) throw new Error(data.error || "Failed to generate replies")
+      setReplies((data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply })))
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+    } finally {
+      setIsGeneratingReplies(false)
+    }
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  const onExportText = async () => {
+    await copyText(draftContent)
+    showStatus("Copied to clipboard", "success")
+  }
+
+  const onExportPdf = () => {
+    const win = window.open("", "_blank")
+    if (!win) { showStatus("Allow pop-ups to export PDF", "error"); return }
+    const escaped = draftContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${resolveTitle().slice(0, 60)}</title><style>body{font-family:Georgia,serif;max-width:680px;margin:60px auto;line-height:1.8;color:#18181b;font-size:16px}pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0}@media print{body{margin:20px}}</style></head><body><pre>${escaped}</pre><script>window.onload=function(){window.print()}<\/script></body></html>`)
+    win.document.close()
+  }
+
+  // ── CTA rewrite ───────────────────────────────────────────────────────────
+
+  const onRewriteCta = async () => {
+    if (!draftContent.trim()) return
+    if (ctaAltOpen) { setCtaAltOpen(false); return }
+    if (!checkDraftCredit()) return
+    setIsGeneratingCtaAlts(true)
+    setCtaAltOpen(true)
+    setCtaAlts([])
+    try {
+      const res = await fetch("/api/generate/cta-alternatives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: draftContent, role }),
+      })
+      const data = await res.json().catch(() => ({})) as { alternatives?: string[]; error?: string }
+      if (!res.ok) throw new Error(data.error || "Failed to generate CTA alternatives")
+      setCtaAlts((data.alternatives || []).slice(0, 3))
+      useDraftCredit(1)
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+      setCtaAltOpen(false)
+    } finally {
+      setIsGeneratingCtaAlts(false)
+    }
+  }
+
+  const applyCtaAlt = (altText: string) => {
+    setDraftContent((prev) => {
+      const blocks = prev.trimEnd().split(/\n\n+/)
+      if (!blocks.length) return prev
+      const last = blocks[blocks.length - 1].trim()
+      const idx = last.startsWith("#") && blocks.length > 1 ? blocks.length - 2 : blocks.length - 1
+      blocks[idx] = altText
+      return blocks.join("\n\n")
+    })
+    setCtaAltOpen(false)
+    showStatus("CTA replaced.", "success")
+  }
+
+  // ── Version management ────────────────────────────────────────────────────
+
+  const loadVersion = (idx: number) => {
+    setDraftContent(versions[idx].content)
+    setScores(null)
+    setVersionsOpen(false)
+  }
+
+  const deleteVersion = (idx: number) => {
+    setVersions((prev) => prev.filter((_, i) => i !== idx))
+    setDeleteConfirmIdx(null)
+  }
+
+  // ── Carousel generation ───────────────────────────────────────────────────
+
+  const onGenerateCarousel = async () => {
+    if (!topic.trim()) { showStatus("Enter a topic first", "error"); return }
+    if (typeof carouselLimit === "number" && localCarouselUsage >= carouselLimit) {
+      showStatus("Carousel limit reached. Upgrade your plan.", "error")
+      return
+    }
+
+    setIsGeneratingSlides(true)
+    setSlides([])
+    showStatus("Generating carousel slides...", "info", false)
+
+    try {
+      const res = await fetch("/api/generate/carousel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: topic.trim(), role }),
+      })
+      const data = await res.json().catch(() => ({})) as { slides?: SlideItem[]; error?: string }
+      if (!res.ok) {
+        if (res.status === 403) throw new Error(data.error || "Carousel limit reached")
+        throw new Error(data.error || "Carousel generation failed")
+      }
+      const items = data.slides || []
+      if (!items.length) throw new Error("No slides returned")
+      setSlides(items)
+      setLocalCarouselUsage((n) => n + 1)
+      showStatus("Carousel ready.", "success")
+    } catch (e) {
+      showStatus((e as Error).message, "error")
+    } finally {
+      setIsGeneratingSlides(false)
+    }
+  }
+
+  const onSaveCarousel = async () => {
+    if (!slides.length) return
+    setIsSaving(true)
+    try {
+      const title = slides[0]?.title || "Untitled carousel"
+      const content = JSON.stringify(slides)
+      const id = await saveDraft({ id: editingId, title, content, type: "LinkedIn - Carousel" })
+      setEditingId(id)
+      showStatus("Carousel saved", "success")
+    } catch (e) {
+      showStatus("Save failed: " + (e as Error).message, "error")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // ── Return all state + handlers ───────────────────────────────────────────
+
+  return {
+    // Inputs
+    topic, setTopic,
+    role, setRole,
+    format, setFormat,
+    goal, setGoal,
+
+    // Hook generation
+    hooks, selectedHook, setSelectedHook,
+    isGeneratingHooks,
+
+    // Draft
+    draftContent, setDraftContent,
+    isGeneratingPost,
+    versions, editingId,
+    scheduleDate, setScheduleDate,
+    scheduleTime, setScheduleTime,
+    isSaving,
+
+    // Scoring
+    scores, isScoring, isImproving,
+
+    // Hook alternatives
+    hookAltOpen, hookAlts, isGeneratingAlts,
+
+    // Replies
+    repliesOpen, setRepliesOpen,
+    commentInput, setCommentInput,
+    replies, isGeneratingReplies,
+
+    // Publish
+    scheduleModalOpen, setScheduleModalOpen,
+    isPublishing,
+    upgradeModal, setUpgradeModal,
+    upgradeProModal, setUpgradeProModal,
+
+    // CTA
+    ctaAltOpen, ctaAlts, isGeneratingCtaAlts,
+
+    // Versions
+    versionsOpen, setVersionsOpen,
+    deleteConfirmIdx, setDeleteConfirmIdx,
+    versionsRef,
+
+    // Carousel
+    slides, setSlides,
+    isGeneratingSlides,
+    localCarouselUsage,
+
+    // Hook alt panel setter
+    setHookAltOpen,
+
+    // CTA panel setter
+    setCtaAltOpen,
+
+    // Approval
+    approvalModalOpen, setApprovalModalOpen,
+
+    // Research notes
+    researchNotes, setResearchNotes, researchNotesOpen, setResearchNotesOpen,
+
+    // Status
+    status, showStatus,
+    localDraftUsage,
+
+    // Derived
+    wordCount, currentVersionIdx, draftHookLine, draftLimitHit, resolveTitle,
+
+    // Handlers
+    onGenerateHooks, onGeneratePost, onRegenerate,
+    onPushTo90, onImproveHook, applyHookAlt,
+    onSaveDraft, onSchedule, onPublish,
+    onGenerateReplies,
+    onExportText, onExportPdf,
+    onRewriteCta, applyCtaAlt,
+    loadVersion, deleteVersion,
+    onGenerateCarousel, onSaveCarousel,
+  }
+}

@@ -1,9 +1,8 @@
 // app/api/generate/route.ts
-// FINAL VERSION - 100% ready. Copy-paste this entire file. No manual changes.
-
 export const maxDuration = 120
 
 import { NextRequest, NextResponse } from "next/server"
+import { log } from "@/lib/server/logging"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi } from "@/lib/server/ai-router-v2"
@@ -67,9 +66,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const reqId = crypto.randomUUID()
   return withAuth(async (req, user) => {
+    log.info("generate.post.start", { reqId, userId: user.id })
     let body: any
     try { body = await req.json() } catch {
+      log.warn("generate.post.invalid_body", { reqId })
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
 
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
     }).select("id").single()
 
     if (saveError || !savedPost) {
-      console.error("[Save Error]", saveError)
+      log.error("generate.post.save_failed", { reqId, userId: user.id, error: saveError?.message })
       return NextResponse.json({ error: "Failed to save post" }, { status: 500 })
     }
 
@@ -187,6 +189,7 @@ export async function POST(request: NextRequest) {
       hooks = parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []
     } catch { hooks = [] }
 
+    log.info("generate.post.done", { reqId, userId: user.id, postId: savedPost.id, plan: user.plan })
     return NextResponse.json({
       post: { id: savedPost.id, content, hook, body: bodyText, cta, hashtags, role },
       score,

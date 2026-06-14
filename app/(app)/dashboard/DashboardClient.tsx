@@ -1,35 +1,8 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Stats = {
-  postsThisMonth: number
-  draftsRemaining: number | null
-  draftsUsed: number
-  draftsTotal: number | null
-  libraryPosts: number
-  avgScore: number | null
-  plan: string
-  carouselsUsed: number
-  postsPublished: number
-  resetDate: string
-}
-
-type Post = {
-  id: string
-  title: string
-  date: string
-  score: number | null
-  status: string
-}
-
-type UsageDay = {
-  day: number
-  draftsUsed: number
-}
+import { useDashboardMetrics } from "@/lib/hooks/useDashboardMetrics"
+import type { DashboardStats as Stats, DashboardPost as Post, UsageDay } from "@/lib/hooks/useDashboardMetrics"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -556,58 +529,15 @@ function WritingPromptsCard() {
 // ─── Main Client Component ────────────────────────────────────────────────────
 
 export default function DashboardClient({ firstName }: { firstName: string }) {
-  const [stats, setStats] = useState<Stats | null>(null)
-  const [statsError, setStatsError] = useState(false)
-  const [posts, setPosts] = useState<Post[] | null>(null)
-  const [postsError, setPostsError] = useState(false)
-  const [usage, setUsage] = useState<UsageDay[] | null>(null)
-  const [usageError, setUsageError] = useState(false)
-
-  const loadStats = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/stats")
-      if (!res.ok) throw new Error("failed")
-      setStats(await res.json())
-      setStatsError(false)
-    } catch {
-      setStatsError(true)
-    }
-  }, [])
-
-  const loadPosts = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/recent-posts")
-      if (!res.ok) throw new Error("failed")
-      setPosts(await res.json())
-      setPostsError(false)
-    } catch {
-      setPostsError(true)
-    }
-  }, [])
-
-  const loadUsage = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/usage")
-      if (!res.ok) throw new Error("failed")
-      setUsage(await res.json())
-      setUsageError(false)
-    } catch {
-      setUsageError(true)
-    }
-  }, [])
-
-  const loadAll = useCallback(() => {
-    loadStats()
-    loadPosts()
-    loadUsage()
-  }, [loadStats, loadPosts, loadUsage])
-
-  useEffect(() => {
-    loadAll()
-    const onFocus = () => { if (!document.hidden) loadAll() }
-    document.addEventListener("visibilitychange", onFocus)
-    return () => document.removeEventListener("visibilitychange", onFocus)
-  }, [loadAll])
+  const {
+    stats, statsError,
+    posts, postsError,
+    usage, usageError,
+    reload: loadAll,
+    reloadStats: loadStats,
+    reloadPosts: loadPosts,
+    reloadUsage: loadUsage,
+  } = useDashboardMetrics()
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back"
 

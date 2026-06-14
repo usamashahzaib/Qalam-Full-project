@@ -8,44 +8,11 @@ import { useWorkspace, type WorkspaceBilling } from "@/components/providers/Work
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
-
-const ACCOUNT_ROLES = [
-  "HR Professional",
-  "Marketing Professional",
-  "Founder / Entrepreneur",
-  "Consultant",
-  "Content Creator",
-  "Other",
-]
-
-const INDUSTRY_OPTIONS = [
-  "Technology",
-  "Marketing & Advertising",
-  "Finance & Banking",
-  "Healthcare",
-  "Education",
-  "Consulting",
-  "E-commerce & Retail",
-  "Real Estate",
-  "Media & Entertainment",
-  "HR & Recruitment",
-  "Legal",
-  "Manufacturing",
-  "Non-profit",
-  "Other",
-]
+import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
+import { isValidLinkedInUrl } from "@/lib/validation"
+import { useProfileForm } from "@/lib/hooks/useProfileForm"
 
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
-const isValidLinkedInUrl = (value: string) => {
-  if (!value.trim()) return true
-  try {
-    const url = new URL(value.trim())
-    const host = url.hostname.replace(/^www\./, "")
-    return host === "linkedin.com" && /^\/(in|company)\/[A-Za-z0-9-_%]+\/?$/.test(url.pathname)
-  } catch {
-    return false
-  }
-}
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "5 posts, 1 carousel/month",
@@ -70,17 +37,14 @@ export default function SettingsPage() {
     : null
   const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
   const isLinkedInUser = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
-  const [profileDraft, setProfileDraft] = useState({
-    name: profile.name || user?.fullName || "",
-    title: profile.title,
-    linkedinUrl: profile.linkedinUrl || (isLinkedInUser ? "https://www.linkedin.com/in/" : ""),
-    industry: profile.industry,
-    tone: profile.tone,
-    goals: profile.goals.join(", "),
-  })
+  const {
+    draft: profileDraft,
+    setDraft: setProfileDraft,
+    status: profileStatus,
+    error: profileError,
+    onSave: onSaveProfile,
+  } = useProfileForm({ profile, userName: user?.fullName || "", saveProfile })
   const [billingDraft, setBillingDraft] = useState<WorkspaceBilling>(billing)
-  const [profileStatus, setProfileStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
-  const [profileError, setProfileError] = useState<string | null>(null)
   const [disconnecting, setDisconnecting] = useState(false)
   const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
   const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
@@ -140,19 +104,6 @@ export default function SettingsPage() {
   }, [user?.linkedinMemberId])
 
   useEffect(() => {
-    if (profileStatus === "saving") return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setProfileDraft({
-      name: profile.name || user?.fullName || "",
-      title: profile.title,
-      linkedinUrl: profile.linkedinUrl,
-      industry: profile.industry,
-      tone: profile.tone,
-      goals: profile.goals.join(", "),
-    })
-  }, [profile, profileStatus, user?.fullName])
-
-  useEffect(() => {
     if (accountStatus === "saving") return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setAccountDraft((prev) => ({
@@ -166,27 +117,6 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBillingDraft(billing)
   }, [billing])
-
-  const onSaveProfile = async () => {
-    setProfileStatus("saving")
-    setProfileError(null)
-    try {
-      if (!isValidLinkedInUrl(profileDraft.linkedinUrl)) throw new Error("Enter a valid LinkedIn profile or company URL.")
-      await saveProfile({
-        name: profileDraft.name.trim(),
-        title: profileDraft.title.trim(),
-        linkedinUrl: profileDraft.linkedinUrl.trim(),
-        industry: profileDraft.industry.trim(),
-        tone: profileDraft.tone.trim(),
-        goals: profileDraft.goals.split(",").map((item) => item.trim()).filter(Boolean),
-      })
-      setProfileStatus("saved")
-      setTimeout(() => setProfileStatus("idle"), 2500)
-    } catch (e) {
-      setProfileStatus("error")
-      setProfileError((e as Error).message || "Save failed")
-    }
-  }
 
   const onSaveBilling = () => saveBilling(billingDraft)
 

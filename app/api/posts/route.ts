@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { log } from "@/lib/server/logging"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
@@ -41,22 +42,28 @@ const validateSchedule = (status: string, scheduledTime?: string | null) => {
 }
 
 export async function GET(request: NextRequest) {
+  const reqId = crypto.randomUUID()
   try {
+    log.info("posts.get.start", { reqId })
     await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const posts = await supabaseSelect<DbPost>(
       "posts",
       `workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc`
     )
+    log.info("posts.get.done", { reqId, count: posts?.length ?? 0 })
     return NextResponse.json({ posts: (posts || []).map(toClientPost) })
   } catch (error) {
     const msg = (error as Error).message
+    log.error("posts.get.error", { reqId, error: msg })
     return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
   }
 }
 
 export async function POST(request: NextRequest) {
+  const reqId = crypto.randomUUID()
   try {
+    log.info("posts.post.start", { reqId })
     const userId = await requireAuth()
 
     const workspaceId = await resolveWorkspaceId(request)
@@ -92,6 +99,7 @@ export async function POST(request: NextRequest) {
     })
     if (error || !postId) throw new Error(error?.message || "post_create_failed")
 
+    log.info("posts.post.done", { reqId, postId })
     return NextResponse.json({
       post: {
         id: postId,
@@ -108,11 +116,13 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
   } catch (error) {
     const msg = (error as Error).message
+    log.error("posts.post.error", { reqId, error: msg })
     return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
   }
 }
 
 export async function PATCH(request: NextRequest) {
+  const reqId = crypto.randomUUID()
   try {
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
@@ -142,14 +152,17 @@ export async function PATCH(request: NextRequest) {
     if (externalPostUrn !== undefined) patch.external_post_urn = externalPostUrn
 
     const rows = await supabasePatch<DbPost>("posts", `id=eq.${id}&workspace_id=eq.${workspaceId}`, patch)
+    log.info("posts.patch.done", { reqId, id })
     return NextResponse.json({ post: rows?.[0] ? toClientPost(rows[0]) : null })
   } catch (error) {
     const msg = (error as Error).message
+    log.error("posts.patch.error", { reqId, error: msg })
     return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
   }
 }
 
 export async function DELETE(request: NextRequest) {
+  const reqId = crypto.randomUUID()
   try {
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
@@ -164,9 +177,11 @@ export async function DELETE(request: NextRequest) {
     }
 
     await supabaseDelete("posts", `id=eq.${id}`)
+    log.info("posts.delete.done", { reqId, id })
     return NextResponse.json({ deleted: true })
   } catch (error) {
     const msg = (error as Error).message
+    log.error("posts.delete.error", { reqId, error: msg })
     return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
   }
 }
