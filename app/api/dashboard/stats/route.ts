@@ -14,7 +14,7 @@ export async function GET() {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 
-    const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes] = await Promise.allSettled([
+    const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes, usersPlanRes] = await Promise.allSettled([
       supabase
         .from("posts")
         .select("engagement_score")
@@ -40,6 +40,12 @@ export async function GET() {
         .select("plan_override, draft_limit_override, expires_at")
         .eq("user_id", userId)
         .maybeSingle(),
+      // users.plan is updated by payment webhook and is the authoritative source
+      supabase
+        .from("users")
+        .select("plan")
+        .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+        .maybeSingle(),
     ])
 
     const monthPosts =
@@ -52,6 +58,8 @@ export async function GET() {
       publishedRes.status === "fulfilled" ? (publishedRes.value.count ?? 0) : 0
     const override =
       overrideRes.status === "fulfilled" ? overrideRes.value.data : null
+    const usersPlanRow =
+      usersPlanRes.status === "fulfilled" ? (usersPlanRes.value as { data: { plan?: string | null } | null }).data : null
 
     const scores = monthPosts
       .map((p: { engagement_score?: number | null }) => p.engagement_score)
@@ -60,7 +68,13 @@ export async function GET() {
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : null
 
+    const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
     let planName = usageRow?.plan ?? "free"
+    // Elevate to users.plan if it's higher (payment webhook updates users.plan authoritatively)
+    const usersPlanNorm = (usersPlanRow?.plan ?? "").toLowerCase()
+    if ((PLAN_PRIORITY[usersPlanNorm] ?? 0) > (PLAN_PRIORITY[planName.toLowerCase()] ?? 0)) {
+      planName = usersPlanRow!.plan!
+    }
     // Apply admin override if active
     if (override?.plan_override && (!override.expires_at || new Date(override.expires_at) > new Date())) {
       planName = override.plan_override

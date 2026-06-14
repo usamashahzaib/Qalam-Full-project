@@ -13,6 +13,8 @@ const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
   agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
 }
 
+const PLAN_PRIORITY: Record<PlanName, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
+
 const normalizePlan = (plan?: string | null): PlanName => {
   const value = String(plan || "").toLowerCase()
   if (value.includes("agency")) return "agency"
@@ -32,8 +34,8 @@ const FIELD_MAP: Record<Feature, string> = {
 export async function getPlanStatus(externalUserId: string) {
   const supabase = createServiceClient()
 
-  // Parallel: get usage + check admin override
-  const [usageResult, overrideResult] = await Promise.all([
+  // Parallel: get usage + check admin override + check users.plan (payment source of truth)
+  const [usageResult, overrideResult, usersResult] = await Promise.all([
     supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId }),
     Promise.resolve(
       supabase
@@ -42,6 +44,14 @@ export async function getPlanStatus(externalUserId: string) {
         .eq("user_id", externalUserId)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
+    // users.plan is updated by payment webhook - use as authoritative source
+    Promise.resolve(
+      supabase
+        .from("users")
+        .select("plan")
+        .or(`id.eq.${externalUserId},external_user_id.eq.${externalUserId}`)
+        .maybeSingle()
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null } | null }>,
   ])
 
   // If RPC fails (not yet deployed, DB issue), fail open rather than blocking users
@@ -49,9 +59,17 @@ export async function getPlanStatus(externalUserId: string) {
     ? JSON.parse(JSON.stringify(usageResult.data))
     : null
   const override = overrideResult.data
+  const usersPlan = normalizePlan(usersResult.data?.plan)
 
   // Base plan from plan_usage
   let plan = normalizePlan(usage?.plan)
+
+  // Elevate to users.plan if it's higher (payment webhook updates users.plan but not plan_usage)
+  if ((PLAN_PRIORITY[usersPlan] ?? 0) > (PLAN_PRIORITY[plan] ?? 0)) {
+    plan = usersPlan
+    // Sync plan_usage.plan to stay current (best-effort, non-blocking)
+    void supabase.from("plan_usage").update({ plan }).eq("user_id", externalUserId)
+  }
 
   // Apply admin plan override if not expired
   if (

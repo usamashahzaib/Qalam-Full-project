@@ -192,6 +192,12 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     updated_at: new Date().toISOString(),
   })
 
+  // Sync plan_usage so generation limits reflect the new plan immediately
+  await supabasePatch("plan_usage", `user_id=eq.${encodeURIComponent(user.id)}`, {
+    plan: payment.planName.toLowerCase(),
+    updated_at: new Date().toISOString(),
+  }).catch(() => undefined)
+
   await sendTransactionalEmail({
     to: user.email,
     subject: `Qalam ${payment.planName} activated`,

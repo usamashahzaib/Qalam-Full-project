@@ -192,6 +192,15 @@ export default function WriterPage() {
   }, [workspaceId])
 
   useEffect(() => {
+    fetch("/api/dashboard/stats")
+      .then((r) => r.json())
+      .then((d: { carouselsUsed?: number }) => {
+        if (typeof d.carouselsUsed === "number") setLocalCarouselUsage(d.carouselsUsed)
+      })
+      .catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
     try {
       const raw = sessionStorage.getItem("competitorInsights")
       if (raw) { setResearchNotes(JSON.parse(raw) as typeof researchNotes); sessionStorage.removeItem("competitorInsights") }
@@ -451,13 +460,16 @@ export default function WriterPage() {
     if (!commentInput.trim()) return
     setIsGeneratingReplies(true)
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("/api/generate/replies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "comment-replies", originalPost: draftContent, comments: commentInput, profile: {} }),
+        body: JSON.stringify({ originalPost: draftContent, comments: commentInput, role }),
       })
-      const data = await res.json().catch(() => ({})) as { replies?: Array<{ style: string; reply: string }> }
+      const data = await res.json().catch(() => ({})) as { replies?: Array<{ style: string; reply: string }>; error?: string }
+      if (!res.ok) throw new Error(data.error || "Failed to generate replies")
       setReplies((data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply })))
+    } catch (e) {
+      showStatus((e as Error).message, "error")
     } finally {
       setIsGeneratingReplies(false)
     }
@@ -1479,7 +1491,7 @@ function WriterApprovalModal({ draftContent, draftTitle, postId, onClose, onSent
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 px-4">
       <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl">
         <h2 className="text-base font-bold text-zinc-900">Send for approval</h2>
-        <p className="mt-1 text-sm text-zinc-500">The reviewer will get an email link to approve or request changes.</p>
+        <p className="mt-1 text-sm text-zinc-500">Share this draft with a colleague, manager, or client before it goes live. They will receive an email with a private link to review the post and either approve it or send back feedback - no Qalam account required.</p>
         <div className="mt-4 space-y-3">
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">

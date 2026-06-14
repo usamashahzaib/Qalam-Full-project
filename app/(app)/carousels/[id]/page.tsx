@@ -183,7 +183,7 @@ export default function CarouselEditorPage() {
                   {currentSlide.title ? <h3 className="mb-3 text-xl font-bold leading-snug">{currentSlide.title}</h3> : null}
                   <p className="text-sm leading-relaxed text-zinc-300">{currentSlide.content}</p>
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-zinc-400"><span>{activeSlide + 1} / {slides.length}</span><span>Qalam - byqalam.com</span></div>
+                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-zinc-400"><span>{activeSlide + 1} / {slides.length}</span><span>{project?.theme || "LinkedIn carousel"}</span></div>
               </div>
 
               <div className="space-y-4">

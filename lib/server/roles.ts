@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 export type WorkspaceRole = "owner" | "admin" | "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer" | "member"
@@ -28,12 +28,17 @@ export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRo
 }
 
 export const resolveWorkspaceMembership = async (
-  request: NextRequest,
+  _request: NextRequest,
   workspaceId: string
 ): Promise<{ userId: string; role: WorkspaceRole }> => {
-  const userId = await requireAuth().catch(() => {
+  // Use supabaseUserId (internal UUID) — requireAuth() returns the session token ID
+  // which is the LinkedIn external ID for OAuth users, but workspace_members stores
+  // the internal Supabase UUID. Using getWorkspaceSessionContext().supabaseUserId
+  // ensures consistent lookups for both credentials and OAuth users.
+  const ctx = await getWorkspaceSessionContext().catch(() => {
     throw new Error("auth_required")
   })
+  const userId = ctx.supabaseUserId
 
   const memberships = await supabaseSelect<MembershipRow>(
     "workspace_members",

@@ -285,6 +285,45 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
   return ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email, firstName: ctx.firstName })
 }
 
+const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
+
+const higherPlan = (a: string, b: string) => {
+  const normA = a.toLowerCase()
+  const normB = b.toLowerCase()
+  return (PLAN_PRIORITY[normB] ?? 0) > (PLAN_PRIORITY[normA] ?? 0) ? b : a
+}
+
+const toTitleCasePlan = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+
+const fetchUsersPlanByMemberId = async (memberId: string): Promise<string | null> => {
+  try {
+    const users = await supabaseSelect<{ plan: string | null; external_user_id: string | null }>(
+      "users",
+      `id=eq.${encodeURIComponent(memberId)}&select=plan,external_user_id&limit=1`
+    )
+    const user = users?.[0]
+    if (!user) return null
+
+    // users.plan is updated on payment - use it if it's above free
+    const userPlan = user.plan?.toLowerCase()
+    if (userPlan && userPlan !== "free") return toTitleCasePlan(userPlan)
+
+    // Fall back to plan_usage - try both internal and external user IDs
+    const idsToTry = [memberId, user.external_user_id].filter(Boolean) as string[]
+    for (const uid of idsToTry) {
+      const usage = await supabaseSelect<{ plan: string }>(
+        "plan_usage",
+        `user_id=eq.${encodeURIComponent(uid)}&select=plan&limit=1`
+      ).catch(() => null)
+      const usagePlan = usage?.[0]?.plan?.toLowerCase()
+      if (usagePlan && usagePlan !== "free") return toTitleCasePlan(usagePlan)
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
 const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
   try {
     const workspaces = await supabaseSelect<{ organization_id: string }>(
@@ -292,7 +331,18 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
       `id=eq.${encodeURIComponent(workspaceId)}&select=organization_id&limit=1`
     )
     const orgId = workspaces?.[0]?.organization_id
-    if (!orgId) return { plan: "Free", status: "active", expiresAt: null }
+
+    if (!orgId) {
+      // Personal workspace - read plan from workspace member's user record
+      const members = await supabaseSelect<{ user_id: string }>(
+        "workspace_members",
+        `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=user_id&limit=1`
+      ).catch(() => null)
+      const memberId = members?.[0]?.user_id
+      const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
+      return { plan: userPlan ?? "Free", status: "active", expiresAt: null }
+    }
+
     const orgs = await supabaseSelect<{ plan: string; subscription_status: string; plan_expires_at: string | null }>(
       "organizations",
       `id=eq.${encodeURIComponent(orgId)}&select=plan,subscription_status,plan_expires_at&limit=1`
@@ -313,8 +363,19 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
         planExpired: true,
       }
     }
+
+    // Take the higher of org plan vs user's direct plan record (handles sync lag)
+    const orgPlan = org.plan || "Free"
+    const members = await supabaseSelect<{ user_id: string }>(
+      "workspace_members",
+      `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=user_id&limit=1`
+    ).catch(() => null)
+    const memberId = members?.[0]?.user_id
+    const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
+    const effectivePlan = userPlan ? higherPlan(orgPlan, userPlan) : orgPlan
+
     return {
-      plan: org.plan || "Free",
+      plan: effectivePlan,
       status: org.subscription_status || "active",
       expiresAt: org.plan_expires_at ?? null,
       planExpired: false,
