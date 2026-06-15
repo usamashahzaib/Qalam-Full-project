@@ -106,7 +106,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const userDropdownRef = useRef<HTMLDivElement>(null)
   const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
-  const hasAgencyAccess = currentPlan.startsWith("Agency")
+  // Memoize so useAgency's effect dep stays stable during billing re-renders.
+  const hasAgencyAccess = useMemo(() => currentPlan.startsWith("Agency"), [currentPlan])
   const canAddWorkspace = hasAgencyAccess
 
   const { clientWorkspaces } = useAgency({ isAgencyPlan: hasAgencyAccess })
