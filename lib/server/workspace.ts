@@ -387,3 +387,35 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
 
 export const fetchWorkspacePlan = async (workspaceId: string, email?: string | null) =>
   applyUserOverrides(await fetchBaseWorkspacePlan(workspaceId), email)
+
+// Resolves the authoritative effective plan for a user+workspace by reconciling
+// the workspace-level subscription plan with any admin-set user override.
+// Uses both the email-based override lookup AND the external-ID-based plan_usage
+// lookup so the two override storage paths can never diverge.
+export async function resolveEffectivePlan(
+  workspaceId: string,
+  email: string | null,
+  externalUserId?: string | null,
+): Promise<ReturnType<typeof applyUserOverrides> extends Promise<infer T> ? T : never> {
+  const wsInfo = await fetchWorkspacePlan(workspaceId, email)
+
+  // If override is already active from the email path, nothing more to do.
+  if (wsInfo.overrideActive) return wsInfo
+
+  // Cross-check via plan_usage path (used by generation routes) in case the
+  // override was stored under a different user ID than what email lookup found.
+  if (externalUserId) {
+    try {
+      const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
+      const planStatus = await getPlanStatus(externalUserId)
+      const resolved = higherPlan(wsInfo.plan, planStatus.plan)
+      if (resolved !== wsInfo.plan) {
+        return { ...wsInfo, plan: resolved }
+      }
+    } catch {
+      // Fall through — workspace plan is the safe default.
+    }
+  }
+
+  return wsInfo
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
-import { getWorkspaceSessionContext, resolveWorkspaceId, fetchWorkspacePlan } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext, resolveWorkspaceId, resolveEffectivePlan } from "@/lib/server/workspace"
 
 const toStatus = (message: string) => {
   switch (message) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     await requireAuth()
     const ctx = await getWorkspaceSessionContext()
     const workspaceId = await resolveWorkspaceId(request)
-    const planInfo = await fetchWorkspacePlan(workspaceId, ctx.email)
+    const planInfo = await resolveEffectivePlan(workspaceId, ctx.email, ctx.userId)
     return NextResponse.json({ workspaceId, ...planInfo })
   } catch (error) {
     const message = (error as Error).message || "server_error"
