@@ -46,7 +46,12 @@ export async function generatePostFromHook(
 ): Promise<Result<GeneratePostFromHookOutput>> {
   const { topic, hook, role: rawRole, format: rawFormat, goal, userId, workspaceId, plan } = input
 
-  const limit = await checkPlanLimit(userId, "drafts")
+  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  try {
+    limit = await checkPlanLimit(userId, "drafts")
+  } catch {
+    return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again." })
+  }
   if (!limit.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
