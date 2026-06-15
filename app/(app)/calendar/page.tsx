@@ -1,24 +1,16 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
-import { shareToLinkedIn } from "@/lib/api/client"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { LockedFeature } from "@/components/LockedFeature"
+import { useCalendarLogic } from "@/lib/hooks/useCalendarLogic"
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers (render-only, no state) ─────────────────────────────────────────
 
 const monthLabel = (date: Date) => date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
 const toDate = (value: string) => new Date(`${value}T00:00:00`)
-const isIsoDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
-const todayIso = () => {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 10)
-}
-const isPastDay = (value: string) => isIsoDate(value) && value < todayIso()
 
 const goToWriter = (router: ReturnType<typeof useRouter>, clientId?: string | null, post?: WorkspacePost, date?: string) => {
   if (post) persistWriterIntent(post, date || null)
@@ -26,13 +18,7 @@ const goToWriter = (router: ReturnType<typeof useRouter>, clientId?: string | nu
   router.push(withClientParam("/writer", clientId))
 }
 
-const normalizeLinkedInUrn = (value: string) => {
-  const urn = value.trim()
-  if (!urn) return ""
-  return urn.startsWith("urn:") ? urn : `urn:li:share:${urn}`
-}
-
-const formatDateLabel = (iso: string) =>
+const formatDateLabel = (iso: string, isIsoDate: (v: string) => boolean) =>
   isIsoDate(iso) ? toDate(iso).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" }) : "Selected day"
 
 const formatDateTime = (iso: string | null) => {
@@ -59,221 +45,33 @@ function StatusBadge({ status }: { status: string }) {
 export default function CalendarPage() {
   const router = useRouter()
   const { data: session } = useSession()
-  const user = session?.user ? { linkedinMemberId: session.user.email || null } : null
   const { state, publishPost, createJob, workspaceId, refreshPosts } = useWorkspace()
   const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+  const linkedinMemberId = session?.user?.email || null
 
-  const [status, setStatus] = useState<string | null>(null)
-  const [publishingId, setPublishingId] = useState<string | null>(null)
-  const [monthCursor, setMonthCursor] = useState(() => {
-    const now = new Date()
-    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
-    const futureDateStr = state.scheduled
-      .map((post) => post.date)
-      .filter(isIsoDate)
-      .find((d) => toDate(d) >= thisMonthStart)
-    return futureDateStr ? toDate(futureDateStr) : now
+  const cal = useCalendarLogic({
+    scheduled: state.scheduled,
+    drafts: state.drafts,
+    published: state.published,
+    workspaceId,
+    linkedinMemberId,
+    publishPost,
+    createJob,
+    refreshPosts,
   })
-  const [selectedDay, setSelectedDay] = useState(todayIso())
-  const [view, setView] = useState<"calendar" | "list">("calendar")
-  const [draggingPost, setDraggingPost] = useState<WorkspacePost | null>(null)
-  const [dragOverDay, setDragOverDay] = useState<string | null>(null)
-  const [rescheduling, setRescheduling] = useState(false)
-  const DRAG_POST_KEY = "qalam-drag-post-id"
-  const dragPostRef = useRef<WorkspacePost | null>(null)
 
-  const today = todayIso()
-
-  // ─── Data maps ───────────────────────────────────────────────────────────
-
-  const scheduledByDay = useMemo(() => {
-    const map = new Map<string, WorkspacePost[]>()
-    state.scheduled.filter((post) => isIsoDate(post.date)).forEach((post) => {
-      const bucket = map.get(post.date) || []
-      bucket.push(post)
-      map.set(post.date, bucket)
-    })
-    return map
-  }, [state.scheduled])
-
-  const draftByDay = useMemo(() => {
-    const map = new Map<string, WorkspacePost[]>()
-    state.drafts.filter((post) => isIsoDate(post.date)).forEach((post) => {
-      const bucket = map.get(post.date) || []
-      bucket.push(post)
-      map.set(post.date, bucket)
-    })
-    return map
-  }, [state.drafts])
-
-  const publishedByDay = useMemo(() => {
-    const map = new Map<string, WorkspacePost[]>()
-    state.published.filter((post) => isIsoDate(post.date)).forEach((post) => {
-      const bucket = map.get(post.date) || []
-      bucket.push(post)
-      map.set(post.date, bucket)
-    })
-    return map
-  }, [state.published])
-
-  const effectiveSelectedDay = useMemo(() => {
-    const inCurrentMonth = selectedDay && isIsoDate(selectedDay) &&
-      toDate(selectedDay).getMonth() === monthCursor.getMonth() &&
-      toDate(selectedDay).getFullYear() === monthCursor.getFullYear()
-    if (inCurrentMonth) return selectedDay
-    return state.scheduled.find((post) =>
-      isIsoDate(post.date) &&
-      toDate(post.date).getMonth() === monthCursor.getMonth() &&
-      toDate(post.date).getFullYear() === monthCursor.getFullYear()
-    )?.date || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10)
-  }, [monthCursor, selectedDay, state.scheduled])
-
-  const monthGrid = useMemo(() => {
-    const start = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1)
-    const firstWeekday = (start.getDay() + 6) % 7
-    const cursor = new Date(start)
-    cursor.setDate(cursor.getDate() - firstWeekday)
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = new Date(cursor)
-      date.setDate(cursor.getDate() + index)
-      const iso = date.toISOString().slice(0, 10)
-      return {
-        iso,
-        day: date.getDate(),
-        inMonth: date.getMonth() === monthCursor.getMonth(),
-        scheduled: scheduledByDay.get(iso) || [],
-        drafts: draftByDay.get(iso) || [],
-        published: publishedByDay.get(iso) || [],
-      }
-    })
-  }, [draftByDay, monthCursor, publishedByDay, scheduledByDay])
-
-  const dayItems = useMemo(() => ({
-    scheduled: scheduledByDay.get(effectiveSelectedDay) || [],
-    drafts: draftByDay.get(effectiveSelectedDay) || [],
-    published: publishedByDay.get(effectiveSelectedDay) || [],
-  }), [draftByDay, effectiveSelectedDay, publishedByDay, scheduledByDay])
-
-  const selectedMonthScheduled = useMemo(
-    () => state.scheduled.filter((post) =>
-      isIsoDate(post.date) &&
-      toDate(post.date).getMonth() === monthCursor.getMonth() &&
-      toDate(post.date).getFullYear() === monthCursor.getFullYear()
-    ),
-    [monthCursor, state.scheduled]
-  )
-
-  const allScheduledSorted = useMemo(
-    () => [...state.scheduled].sort((a, b) => (a.scheduledTime || a.date).localeCompare(b.scheduledTime || b.date)),
-    [state.scheduled]
-  )
-
-  // ─── Actions ─────────────────────────────────────────────────────────────
-
-  const onPublishNow = async (post: WorkspacePost) => {
-    if (!user?.linkedinMemberId) { setStatus("Connect LinkedIn in settings first"); return }
-    setPublishingId(post.id)
-    setStatus(`Publishing ${post.title}...`)
-    try {
-      const result = await shareToLinkedIn({ content: post.content, postId: post.id, workspaceKey: workspaceId })
-      const postUrn = normalizeLinkedInUrn(result.postUrn || "") || null
-      await publishPost({ id: post.id, title: post.title, content: post.content, type: post.type, publishedAt: new Date().toISOString(), externalPostUrn: postUrn })
-      if (post.type.toLowerCase().includes("carousel")) {
-        await createJob({ type: "carousel_generation", status: "queued", title: "Carousel asset generation", payload: { postId: post.id, postUrn, title: post.title } }).catch(() => undefined)
-      }
-      setStatus(`Published: ${post.title}`)
-    } catch (error) {
-      setStatus((error as Error).message || "LinkedIn publish failed")
-    } finally {
-      setPublishingId(null)
-    }
-  }
-
-  const onReschedule = async (postId: string, newDate: string) => {
-    setRescheduling(true)
-    try {
-      const res = await fetch("/api/posts/reschedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, date: newDate, workspaceKey: workspaceId }),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.error || "Reschedule failed")
-      }
-      await refreshPosts()
-      setStatus(`Rescheduled to ${newDate}`)
-      setTimeout(() => setStatus(null), 3000)
-    } catch (e) {
-      setStatus((e as Error).message)
-    } finally {
-      setRescheduling(false)
-    }
-  }
-
-  const onUnschedule = async (postId: string) => {
-    try {
-      const res = await fetch("/api/posts/unschedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, workspaceKey: workspaceId }),
-      })
-      if (!res.ok) throw new Error("Unschedule failed")
-      await refreshPosts()
-      setStatus("Post moved back to drafts")
-      setTimeout(() => setStatus(null), 3000)
-    } catch (e) {
-      setStatus((e as Error).message)
-    }
-  }
-
-  // ─── Drag-to-reschedule ───────────────────────────────────────────────────
-
-  const onDragStart = (e: React.DragEvent, post: WorkspacePost) => {
-    e.dataTransfer.setData(DRAG_POST_KEY, post.id)
-    e.dataTransfer.effectAllowed = "move"
-    dragPostRef.current = post
-    setDraggingPost(post)
-  }
-
-  const onDragEnd = () => {
-    setDraggingPost(null)
-    setDragOverDay(null)
-    dragPostRef.current = null
-  }
-
-  const onDragOver = (e: React.DragEvent, iso: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-    setDragOverDay(iso)
-  }
-
-  const onDragLeave = () => setDragOverDay(null)
-
-  const onDrop = async (e: React.DragEvent, targetDate: string) => {
-    e.preventDefault()
-    setDragOverDay(null)
-    const postId = e.dataTransfer.getData(DRAG_POST_KEY)
-    const post = dragPostRef.current
-    if (!postId || !post) return
-    if (post.date === targetDate) return
-    setDraggingPost(null)
-    dragPostRef.current = null
-    await onReschedule(postId, targetDate)
-  }
-
-  const shiftMonth = (delta: number) => {
-    const next = new Date(monthCursor)
-    next.setMonth(next.getMonth() + delta)
-    setMonthCursor(next)
-  }
-
-  const goToToday = () => {
-    setMonthCursor(new Date())
-    setSelectedDay(today)
-  }
-
-  // ─── Render ───────────────────────────────────────────────────────────────
+  const {
+    today, status, publishingId, rescheduling,
+    monthCursor, selectedDay, setSelectedDay,
+    view, setView,
+    draggingPost, dragOverDay,
+    monthGrid, dayItems, selectedMonthScheduled, allScheduledSorted,
+    effectiveSelectedDay,
+    onPublishNow, onReschedule, onUnschedule,
+    onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
+    shiftMonth, goToToday,
+    isIsoDate, isPastDay,
+  } = cal
 
   return (
     <LockedFeature feature="Content Planner" requiredPlan="Solo">
@@ -418,7 +216,7 @@ export default function CalendarPage() {
             <div className="rounded-2xl border border-zinc-200 bg-white p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h2 className="text-sm font-semibold text-zinc-900">{formatDateLabel(effectiveSelectedDay)}</h2>
+                  <h2 className="text-sm font-semibold text-zinc-900">{formatDateLabel(effectiveSelectedDay, isIsoDate)}</h2>
                   <p className="text-xs text-zinc-500">Posts for this day</p>
                 </div>
                 <button
@@ -439,7 +237,7 @@ export default function CalendarPage() {
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 publishingId={publishingId}
-                canPublish={Boolean(user?.linkedinMemberId)}
+                canPublish={Boolean(linkedinMemberId)}
                 draggingId={draggingPost?.id || null}
               />
               <PlannerBlock

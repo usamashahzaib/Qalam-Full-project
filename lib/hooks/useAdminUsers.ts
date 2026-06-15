@@ -1,0 +1,203 @@
+"use client"
+
+import { useCallback, useMemo, useState } from "react"
+import type {
+  AdminUser,
+  AuditLogEntry as AuditRow,
+  AdminStats as Stats,
+  CircuitState,
+  RecentUser,
+} from "@/types/admin"
+
+const FEATURES = [
+  ["scheduling", "Scheduling"],
+  ["voiceProfiles", "Voice Profiles"],
+  ["analytics", "Analytics"],
+  ["carouselBuilder", "Carousel Builder"],
+  ["competitorResearch", "Competitor Research"],
+  ["approvalWorkflow", "Approval Workflow"],
+  ["exportPdf", "Export PDF"],
+  ["whiteLabel", "White Label"],
+] as const
+
+export { FEATURES }
+
+export const emptyFlags = () =>
+  Object.fromEntries(FEATURES.map(([key]) => [key, false])) as Record<string, boolean>
+
+export interface AdminFormState {
+  planOverride: string
+  draftLimitOverride: string
+  workspaceLimitOverride: string
+  featureFlags: Record<string, boolean>
+  notes: string
+  expiresAt: string
+}
+
+export function useAdminUsers(adminEmail: string) {
+  const [query, setQuery] = useState("")
+  const [adminKey, setAdminKey] = useState("")
+  const [unlocked, setUnlocked] = useState(false)
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [auditLog, setAuditLog] = useState<AuditRow[]>([])
+  const [selected, setSelected] = useState<AdminUser | null>(null)
+  const [status, setStatus] = useState<{ text: string; type: "ok" | "err" } | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [circuits, setCircuits] = useState<CircuitState | null>(null)
+  const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
+  const [selfId, setSelfId] = useState<string | null>(null)
+  const [resettingCircuits, setResettingCircuits] = useState(false)
+
+  const [form, setForm] = useState<AdminFormState>({
+    planOverride: "",
+    draftLimitOverride: "",
+    workspaceLimitOverride: "",
+    featureFlags: emptyFlags(),
+    notes: "",
+    expiresAt: "",
+  })
+
+  const headers = useMemo(() => ({ "x-admin-key": adminKey }), [adminKey])
+
+  const load = useCallback(async (q = query) => {
+    if (!adminKey.trim()) throw new Error("Admin key required")
+    setLoading(true)
+    const [usersRes, statsRes] = await Promise.all([
+      fetch(`/api/admin/users?q=${encodeURIComponent(q)}`, { headers: { "x-admin-key": adminKey } }),
+      fetch("/api/admin/stats", { headers: { "x-admin-key": adminKey } }),
+    ])
+    const usersData = await usersRes.json().catch(() => ({})) as { users?: AdminUser[]; auditLog?: AuditRow[]; error?: string }
+    const statsData = await statsRes.json().catch(() => ({})) as { stats?: Stats; recentUsers?: RecentUser[]; circuits?: CircuitState; selfId?: string; error?: string }
+    if (!usersRes.ok) throw new Error(usersData.error || "Admin data unavailable")
+    setUsers(usersData.users || [])
+    setAuditLog(usersData.auditLog || [])
+    if (statsData.stats) setStats(statsData.stats)
+    if (statsData.circuits) setCircuits(statsData.circuits)
+    if (statsData.recentUsers) setRecentUsers(statsData.recentUsers)
+    if (statsData.selfId) setSelfId(statsData.selfId)
+    setLoading(false)
+  }, [adminKey, query])
+
+  const setMsg = (text: string, type: "ok" | "err" = "ok") => {
+    setStatus({ text, type })
+    if (type === "ok") setTimeout(() => setStatus(null), 4000)
+  }
+
+  const unlock = async () => {
+    setStatus({ text: "Checking admin key...", type: "ok" })
+    try {
+      await load("")
+      setUnlocked(true)
+      setStatus(null)
+    } catch (error) {
+      setUnlocked(false)
+      setStatus({ text: (error as Error).message, type: "err" })
+      setLoading(false)
+    }
+  }
+
+  const selectUser = (user: AdminUser) => {
+    setSelected(user)
+    const flags = { ...emptyFlags(), ...(user.override?.feature_flags || {}) }
+    setForm({
+      planOverride: user.override?.plan_override || "",
+      draftLimitOverride: user.override?.draft_limit_override == null ? "" : String(user.override.draft_limit_override),
+      workspaceLimitOverride: user.override?.workspace_limit_override == null ? "" : String(user.override.workspace_limit_override),
+      featureFlags: flags,
+      notes: user.override?.notes || "",
+      expiresAt: user.override?.expires_at ? user.override.expires_at.slice(0, 10) : "",
+    })
+  }
+
+  const mutate = async (method: "POST" | "PATCH" | "DELETE") => {
+    if (!selected) return
+    setMsg(method === "DELETE" ? "Deleting..." : method === "PATCH" ? "Resetting..." : "Applying...")
+    const body = method === "POST"
+      ? {
+          userId: selected.externalId,
+          targetEmail: selected.email,
+          planOverride: form.planOverride || null,
+          draftLimitOverride: form.draftLimitOverride === "" ? null : Number(form.draftLimitOverride),
+          workspaceLimitOverride: form.workspaceLimitOverride === "" ? null : Number(form.workspaceLimitOverride),
+          featureFlags: form.featureFlags,
+          notes: form.notes || null,
+          expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59`).toISOString() : null,
+        }
+      : { userId: selected.externalId, targetEmail: selected.email }
+    const res = await fetch("/api/admin/overrides", {
+      method,
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    if (!res.ok) { setMsg(data.error || "Override update failed", "err"); return }
+    await load(query)
+    setMsg(method === "DELETE" ? "Override deleted" : method === "PATCH" ? "Override reset" : "Override applied")
+  }
+
+  const giveSelfPro = async () => {
+    if (!selfId) { setMsg("Could not determine your user ID", "err"); return }
+    setMsg("Giving you Pro...")
+    const res = await fetch("/api/admin/overrides", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify({
+        userId: selfId,
+        targetEmail: adminEmail,
+        planOverride: "Pro",
+        draftLimitOverride: 9999,
+        workspaceLimitOverride: null,
+        featureFlags: Object.fromEntries(FEATURES.map(([k]) => [k, true])),
+        notes: "Admin self-assign",
+        expiresAt: null,
+      }),
+    })
+    if (res.ok) {
+      await load(query)
+      setMsg("You now have Pro with all features unlocked")
+    } else {
+      const d = await res.json().catch(() => ({})) as { error?: string }
+      setMsg(d.error || "Failed", "err")
+    }
+  }
+
+  const resetCircuits = async () => {
+    setResettingCircuits(true)
+    const res = await fetch("/api/admin/reset-circuits", {
+      method: "POST",
+      headers: { "x-admin-key": adminKey },
+    })
+    const d = await res.json().catch(() => ({})) as { message?: string; error?: string }
+    setMsg(d.message || d.error || "Done")
+    const statsRes = await fetch("/api/admin/stats", { headers: { "x-admin-key": adminKey } })
+    const sd = await statsRes.json().catch(() => ({})) as { circuits?: CircuitState }
+    if (sd.circuits) setCircuits(sd.circuits)
+    setResettingCircuits(false)
+  }
+
+  const activeOverride = useMemo(() => Boolean(selected?.override), [selected])
+
+  return {
+    query, setQuery,
+    adminKey, setAdminKey,
+    unlocked,
+    users, auditLog,
+    selected,
+    status,
+    loading,
+    stats, circuits, recentUsers,
+    resettingCircuits,
+    form, setForm,
+    headers,
+    activeOverride,
+    load,
+    unlock,
+    selectUser,
+    setMsg,
+    mutate,
+    giveSelfPro,
+    resetCircuits,
+    FEATURES,
+  }
+}

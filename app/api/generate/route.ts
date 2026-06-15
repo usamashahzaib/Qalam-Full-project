@@ -5,16 +5,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { log } from "@/lib/server/logging"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { callAi } from "@/lib/server/ai-router-v2"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import {
-  buildGeneratePrompt,
-  buildHumanizePrompt,
-  buildScorePrompt,
-  buildRewritePrompt,
-  buildHookVariantsPrompt,
-} from "@/lib/prompts/role-aware-system"
+import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
+import { generatePost } from "@/lib/use-cases/generate-post"
+import { errorToStatus } from "@/lib/errors"
 
 const generateSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
@@ -35,22 +29,6 @@ const patchSchema = z.object({
   confirmOnly: z.boolean().optional(),
 })
 
-function splitPost(text: string) {
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean)
-  const hashtagLine = lines.findLast(l => /^#\w/.test(l)) || ""
-  const hook = lines[0] || ""
-  const bodyLines = lines.filter(l => l !== hook && l !== hashtagLine)
-  const cta = bodyLines.at(-1) || ""
-  const body = bodyLines.slice(0, -1).join("\n\n")
-  return { hook, body, cta, hashtags: hashtagLine }
-}
-
-function parseJson<T>(raw: string): T | null {
-  try {
-    const cleaned = raw.replace(/```json\n?/gi, "").replace(/```\n?/g, "").trim()
-    return JSON.parse(cleaned) as T
-  } catch { return null }
-}
 
 export async function GET() {
   return withAuth(async (_req, user) => {
@@ -69,7 +47,7 @@ export async function POST(request: NextRequest) {
   const reqId = crypto.randomUUID()
   return withAuth(async (req, user) => {
     log.info("generate.post.start", { reqId, userId: user.id })
-    let body: any
+    let body: unknown
     try { body = await req.json() } catch {
       log.warn("generate.post.invalid_body", { reqId })
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -80,122 +58,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { topic, role, format, goal, qualityCheck } = parsed.data
-
-    const limit = await checkPlanLimit(user.id, "drafts")
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: "Draft limit reached. Upgrade your plan.", remaining: 0 },
-        { status: 403 }
-      )
-    }
-
-    const supabase = createServiceClient()
-
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
 
-    const { data: voiceProfile } = await supabase
-      .from("voice_profiles")
-      .select("*")
-      .eq("workspace_id", user.workspaceId)
-      .limit(1)
-      .single()
-
-    // PASS 1: Generate raw post
-    const { system: genSystem, user: genUser } = buildGeneratePrompt(
-      role, topic, format, goal, voiceProfile || undefined
-    )
-
-    const rawPost = await callAi(genSystem, genUser, {
-      temperature: 0.85, maxTokens: 900,
-      userId: user.id, plan: user.plan, cache: false,
+    const result = await generatePost({
+      ...parsed.data,
+      userId: user.id,
+      workspaceId: user.workspaceId,
+      plan: user.plan,
+      reqId,
     })
 
-    // PASS 2: Humanize
-    const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-    let humanizedContent: string
-    try {
-      humanizedContent = await callAi(humSystem, humUser, {
-        temperature: 0.4, maxTokens: 900,
-        userId: user.id, plan: user.plan, cache: false,
-      })
-    } catch { humanizedContent = rawPost }
-
-    let content = humanizedContent.trim()
-    let score: any = null
-
-    // PASS 3: Score + rewrite (paid users only)
-    if (qualityCheck && user.plan !== "free") {
-      try {
-        const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
-        const scoreRaw = await callAi(scoreSystem, scoreUser, {
-          json: true, temperature: 0.2, maxTokens: 400,
-          userId: user.id, plan: user.plan, cache: false,
-        })
-        score = parseJson(scoreRaw)
-      } catch { score = null }
-
-      if (score && score.total_score < 80 && score.fix_instruction) {
-        try {
-          const { system: rewriteSystem, user: rewriteUser } = buildRewritePrompt(
-            content, score.fix_instruction, score.biggest_weakness, role, voiceProfile || undefined
-          )
-          const rewritten = await callAi(rewriteSystem, rewriteUser, {
-            temperature: 0.7, maxTokens: 900,
-            userId: user.id, plan: user.plan, cache: false,
-          })
-          content = rewritten.trim()
-        } catch { /* keep content as-is */ }
-      }
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error.userMessage || result.error.message }, { status: errorToStatus(result.error.code) })
     }
 
-    // Atomically increment usage
-    const usageResult = await incrementUsage(user.id, "drafts")
-    if (!usageResult.allowed) {
-      return NextResponse.json(
-        { error: usageResult.error || "Usage limit exceeded" },
-        { status: 403 }
-      )
-    }
-
-    const { hook, body: bodyText, cta, hashtags } = splitPost(content)
-
-    const { data: savedPost, error: saveError } = await supabase.from("posts").insert({
-      workspace_id: user.workspaceId,
-      content,
-      role,
-      format,
-      score: score?.total_score || null,
-      hook,
-      status: "draft",
-      created_at: new Date().toISOString(),
-    }).select("id").single()
-
-    if (saveError || !savedPost) {
-      log.error("generate.post.save_failed", { reqId, userId: user.id, error: saveError?.message })
-      return NextResponse.json({ error: "Failed to save post" }, { status: 500 })
-    }
-
-    // Generate hooks (cached)
-    let hooks: Array<{ style: string; hook: string }> = []
-    try {
-      const { system: hookSystem, user: hookUser } = buildHookVariantsPrompt(topic, role)
-      const hooksRaw = await callAi(hookSystem, hookUser, {
-        json: true, temperature: 0.9, maxTokens: 400,
-        userId: user.id, plan: user.plan, cache: true, cacheTtl: 3600,
-      })
-      hooks = parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []
-    } catch { hooks = [] }
-
-    log.info("generate.post.done", { reqId, userId: user.id, postId: savedPost.id, plan: user.plan })
-    return NextResponse.json({
-      post: { id: savedPost.id, content, hook, body: bodyText, cta, hashtags, role },
-      score,
-      hooks: hooks.slice(0, 3),
-      usage: { remaining: usageResult.remaining },
-    })
+    log.info("generate.post.done", { reqId, userId: user.id, postId: result.data.post.id, plan: user.plan })
+    return NextResponse.json(result.data)
   })(request)
 }
 
