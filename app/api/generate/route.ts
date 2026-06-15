@@ -66,6 +66,7 @@ export async function POST(request: NextRequest) {
     const result = await generatePost({
       ...parsed.data,
       userId: user.externalId,
+      authorId: user.id,
       workspaceId: user.workspaceId,
       plan: user.plan,
       reqId,

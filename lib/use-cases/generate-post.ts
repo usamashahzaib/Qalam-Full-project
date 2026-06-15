@@ -13,6 +13,7 @@ import {
   buildRewritePrompt,
   buildHookVariantsPrompt,
 } from "@/lib/prompts/role-aware-system"
+import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,7 +23,10 @@ export interface GeneratePostInput {
   format: "short" | "medium" | "long"
   goal?: string
   qualityCheck?: boolean
+  /** External OAuth sub / plan_usage key - for checkPlanLimit and AI routing */
   userId: string
+  /** Internal Supabase UUID - for DB foreign-key operations */
+  authorId: string
   workspaceId: string
   plan: string
   reqId?: string
@@ -59,7 +63,7 @@ function parseJson<T>(raw: string): T | null {
 // ─── Use case ─────────────────────────────────────────────────────────────────
 
 export async function generatePost(input: GeneratePostInput): Promise<Result<GeneratePostOutput>> {
-  const { topic, role, format, goal, qualityCheck = true, userId, workspaceId, plan, reqId } = input
+  const { topic, role, format, goal, qualityCheck = true, userId, authorId, workspaceId, plan, reqId } = input
 
   const limit = await checkPlanLimit(userId, "drafts")
   if (!limit.allowed) {
@@ -116,21 +120,21 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
 
   const { hook, body, cta, hashtags } = splitPost(content)
 
-  const { data: savedPost, error: saveError } = await supabase
-    .from("posts")
-    .insert({
-      workspace_id: workspaceId,
-      content, role, format,
-      score: (score?.total_score as number) || null,
-      hook,
+  const postRepo = new SupabasePostRepository()
+  let savedPostId: string
+  try {
+    const savedPost = await postRepo.create({
+      userId: authorId,
+      workspaceId,
+      authorId,
+      title: topic,
+      content,
+      type: role,
       status: "draft",
-      created_at: new Date().toISOString(),
     })
-    .select("id")
-    .single()
-
-  if (saveError || !savedPost) {
-    log.error("generate-post.save_failed", { reqId, userId, error: saveError?.message })
+    savedPostId = savedPost.id
+  } catch (saveError) {
+    log.error("generate-post.save_failed", { reqId, userId, error: (saveError as Error).message })
     return err({ code: "INTERNAL_ERROR", message: "Failed to save post" })
   }
 
@@ -143,7 +147,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   } catch { hooks = [] }
 
   return ok({
-    post: { id: savedPost.id, content, hook, body, cta, hashtags, role },
+    post: { id: savedPostId, content, hook, body, cta, hashtags, role },
     score,
     hooks,
     usage: { remaining: usageResult.remaining },
