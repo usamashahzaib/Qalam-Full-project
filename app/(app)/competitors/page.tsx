@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan } from "@/lib/entitlements"
+import { getPlanByName } from "@/lib/pricing"
 import { LockedFeature } from "@/components/LockedFeature"
 
 type HookStructure = { pattern: string; length: string; type: string }
@@ -40,7 +41,7 @@ export default function CompetitorsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [runsUsed, setRunsUsed] = useState(0)
-  const [limit] = useState(5)
+  const limit = getPlanByName(billing.plan).researchPerMonth
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [status, setStatus] = useState<StatusMsg | null>(null)
