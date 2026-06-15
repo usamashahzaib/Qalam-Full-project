@@ -1,3 +1,5 @@
+import type { PlanTier } from "@/types/domain"
+
 export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
 
 export type Plan = {
@@ -281,4 +283,45 @@ export const formatPkr = (amount: number | null | undefined): string => {
   if (amount == null) return "Contact Us"
   if (amount === 0) return "Free"
   return `PKR ${amount.toLocaleString("en-PK")}`
+}
+
+// ─── Single source of truth for plan enforcement ──────────────────────────────
+
+export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
+
+export type PlanFeatureFlags = {
+  linkedinPublish: boolean
+  scheduling: boolean
+  approvals: boolean
+  canExport: boolean
+  analyticsDepth: "basic" | "full"
+  voiceTraining: boolean
+  competitorResearch: boolean
+  clientWorkspaces: number
+  seats: number
+  researchRuns: number
+}
+
+export type PlanEnforcement = {
+  limits: Record<Feature, number>
+  flags: PlanFeatureFlags
+}
+
+export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
+  Free: {
+    limits: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
+    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0 },
+  },
+  Solo: {
+    limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0 },
+  },
+  Pro: {
+    limits: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 0, seats: 1, researchRuns: 5 },
+  },
+  Agency: {
+    limits: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 3, seats: 5, researchRuns: 5 },
+  },
 }

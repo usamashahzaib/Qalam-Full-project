@@ -1,4 +1,5 @@
-import type { PlanName as PlanTier } from "@/lib/pricing"
+import type { PlanTier } from "@/types/domain"
+import { PLAN_CONFIG } from "@/lib/pricing"
 export type { PlanTier }
 
 export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency"]
@@ -31,55 +32,27 @@ export type PlanLimits = {
   analyticsDepth: "basic" | "full"
 }
 
+const derivePlanLimits = (tier: PlanTier): PlanLimits => {
+  const { limits, flags } = PLAN_CONFIG[tier]
+  return {
+    aiDraftsPerMonth: limits.drafts,
+    carouselGenerationsPerMonth: limits.carousels,
+    researchRunsPerMonth: flags.researchRuns,
+    clientWorkspaces: flags.clientWorkspaces,
+    seats: flags.seats,
+    linkedinPublish: flags.linkedinPublish,
+    scheduling: flags.scheduling,
+    approvals: flags.approvals,
+    canExport: flags.canExport,
+    analyticsDepth: flags.analyticsDepth,
+  }
+}
+
 export const PLAN_LIMITS: Record<PlanTier, PlanLimits> = {
-  Free: {
-    aiDraftsPerMonth: 5,
-    carouselGenerationsPerMonth: 1,
-    researchRunsPerMonth: 0,
-    clientWorkspaces: 0,
-    seats: 1,
-    linkedinPublish: false,
-    scheduling: false,
-    approvals: false,
-    canExport: false,
-    analyticsDepth: "basic",
-  },
-  Solo: {
-    aiDraftsPerMonth: 30,
-    carouselGenerationsPerMonth: 3,
-    researchRunsPerMonth: 0,
-    clientWorkspaces: 0,
-    seats: 1,
-    linkedinPublish: true,
-    scheduling: true,
-    approvals: false,
-    canExport: false,
-    analyticsDepth: "full",
-  },
-  Pro: {
-    aiDraftsPerMonth: 60,
-    carouselGenerationsPerMonth: 10,
-    researchRunsPerMonth: 5,
-    clientWorkspaces: 0,
-    seats: 1,
-    linkedinPublish: true,
-    scheduling: true,
-    approvals: true,
-    canExport: true,
-    analyticsDepth: "full",
-  },
-  Agency: {
-    aiDraftsPerMonth: "unlimited",
-    carouselGenerationsPerMonth: 10,
-    researchRunsPerMonth: 5,
-    clientWorkspaces: 3,
-    seats: 5,
-    linkedinPublish: true,
-    scheduling: true,
-    approvals: true,
-    canExport: true,
-    analyticsDepth: "full",
-  },
+  Free: derivePlanLimits("Free"),
+  Solo: derivePlanLimits("Solo"),
+  Pro: derivePlanLimits("Pro"),
+  Agency: derivePlanLimits("Agency"),
 }
 
 export const getPlanLimits = (plan: string): PlanLimits =>

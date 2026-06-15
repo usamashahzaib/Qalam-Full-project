@@ -1,4 +1,6 @@
-import type { PlanName } from "@/lib/pricing"
+import type { PlanTier } from "@/types/domain"
+import type { Feature } from "@/lib/pricing"
+export type { Feature }
 
 // ─── Post ─────────────────────────────────────────────────────────────────────
 
@@ -101,12 +103,10 @@ export interface IVoiceProfileRepository {
 
 // ─── Plan usage ───────────────────────────────────────────────────────────────
 
-export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
-
 export type FeatureUsage = { used: number; limit: number; remaining: number }
 
 export type PlanStatus = {
-  plan: PlanName
+  plan: PlanTier
   drafts: FeatureUsage
   carousels: FeatureUsage
   hooks: FeatureUsage
@@ -125,7 +125,7 @@ export type IncrementResult = {
 export interface IPlanUsageRepository {
   getUsage(userId: string): Promise<PlanStatus>
   incrementUsage(userId: string, feature: Feature): Promise<IncrementResult>
-  getLimits(plan: PlanName): Record<Feature, number>
+  getLimits(plan: PlanTier): Record<Feature, number>
   getDailyActivity(userId: string, monthStart: string): Promise<{ created_at: string }[]>
 }
 

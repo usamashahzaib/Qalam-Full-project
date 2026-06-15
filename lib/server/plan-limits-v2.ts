@@ -1,21 +1,17 @@
 // lib/server/plan-limits-v2.ts
-// CORRECTED - uses your actual plan_usage table and increment_plan_usage RPC
+// Infrastructure: Supabase RPC calls for plan usage tracking.
+// Enforcement limits are sourced from lib/pricing.ts (single source of truth).
 
 import { createServiceClient } from "./supabase-rest"
-import type { PlanName } from "@/lib/pricing"
+import { PLAN_CONFIG } from "@/lib/pricing"
+import type { Feature } from "@/lib/pricing"
+import type { PlanTier } from "@/types/domain"
 
-export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
+export type { Feature }
 
-const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
-  Free: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
-  Solo: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
-  Pro: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
-  Agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
-}
+const PLAN_PRIORITY: Record<PlanTier, number> = { Free: 0, Solo: 1, Pro: 2, Agency: 3 }
 
-const PLAN_PRIORITY: Record<PlanName, number> = { Free: 0, Solo: 1, Pro: 2, Agency: 3 }
-
-const normalizePlan = (plan?: string | null): PlanName => {
+const normalizePlan = (plan?: string | null): PlanTier => {
   const value = String(plan || "").toLowerCase()
   if (value.includes("agency")) return "Agency"
   if (value.includes("pro")) return "Pro"
@@ -79,7 +75,7 @@ export async function getPlanStatus(externalUserId: string) {
     plan = normalizePlan(override.plan_override)
   }
 
-  const config = { ...PLAN_CONFIG[plan] }
+  const config = { ...PLAN_CONFIG[plan].limits }
 
   // Apply custom draft limit override
   if (typeof override?.draft_limit_override === "number" && override.draft_limit_override >= 0) {
@@ -130,7 +126,7 @@ export async function checkPlanLimit(externalUserId: string, feature: Feature) {
 export async function incrementUsage(externalUserId: string, feature: Feature) {
   const supabase = createServiceClient()
   const plan = (await checkPlanLimit(externalUserId, feature)).plan
-  const config = PLAN_CONFIG[plan]
+  const config = PLAN_CONFIG[plan].limits
   const limit = config[feature]
   const field = FIELD_MAP[feature]
 
@@ -160,7 +156,7 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
 // Check if a feature is allowed by plan name
 export function isFeatureAllowed(plan: string, feature: string): boolean {
   const normalized = normalizePlan(plan)
-  const config = PLAN_CONFIG[normalized]
+  const config = PLAN_CONFIG[normalized].limits
 
   if (feature === "carousel" || feature === "carousel_standard" || feature === "carousels") return config.carousels > 0
   if (feature === "voice" || feature === "voiceProfile") return normalized !== "Free"
