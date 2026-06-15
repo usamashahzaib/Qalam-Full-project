@@ -3,7 +3,7 @@ import { z } from "zod"
 import { requireAuth } from "@/lib/server/auth-helpers"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
-import { callAi } from "@/lib/server/ai-router"
+import { callAi } from "@/lib/server/ai-router-v2"
 
 // Future: POST /api/carousel/[id]/export?format=pdf - render slides via headless browser and return PDF blob
 

@@ -19,8 +19,6 @@ const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Solo: "30 posts, 3 carousels, library, planner",
   Pro: "60 posts, voice training, analytics, AI Strategist",
   Agency: "Coming soon - multi-workspace, team seats",
-  "Agency Starter": "Multi-workspace, team seats",
-  "Agency Growth": "Multi-workspace, team seats",
 }
 
 export default function SettingsPage() {

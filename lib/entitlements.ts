@@ -1,4 +1,5 @@
-export type PlanTier = "Free" | "Solo" | "Pro" | "Agency"
+import type { PlanName as PlanTier } from "@/lib/pricing"
+export type { PlanTier }
 
 export const PLAN_ORDER: PlanTier[] = ["Free", "Solo", "Pro", "Agency"]
 

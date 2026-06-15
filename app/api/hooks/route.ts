@@ -1,6 +1,6 @@
 import { requireAuth } from "@/lib/server/workspace"
 import { NextResponse } from "next/server"
-import { callAi } from "@/lib/server/ai-router"
+import { callAi } from "@/lib/server/ai-router-v2"
 import { buildRoleAwareSystemPrompt } from "@/lib/prompts/role-aware-system"
 
 export async function POST(request: Request) {

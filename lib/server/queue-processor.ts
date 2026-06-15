@@ -1,6 +1,6 @@
 import { Redis } from "@upstash/redis"
 import { getRedis } from "@/lib/server/redis"
-import { callAi } from "@/lib/server/ai-router"
+import { callAi } from "@/lib/server/ai-router-v2"
 
 let processorInterval: ReturnType<typeof setInterval> | null = null
 

@@ -6,32 +6,15 @@ import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 import { cleanErrorMessage } from "@/lib/content-guard"
 import { VALID_PLAN_NAMES, type PlanLimits } from "@/lib/entitlements"
+import type { PlanName } from "@/lib/pricing"
+import type { WorkspaceProfile, WorkspacePost } from "@/types/domain"
+
+export type { WorkspaceProfile, WorkspacePost }
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
-export type WorkspacePost = {
-  id: string
-  title: string
-  content: string
-  type: string
-  status: PostStatus
-  date: string
-  scheduledTime: string | null
-  externalPostUrn: string | null
-  updatedAt: string
-}
-
-export type WorkspaceProfile = {
-  name: string
-  title: string
-  linkedinUrl: string
-  industry: string
-  goals: string[]
-  tone: string
-}
-
 export type WorkspaceBilling = {
-  plan: "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"
+  plan: PlanName
   billingCycle: "monthly" | "annual"
   checkoutReady: boolean
   overrideActive?: boolean

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
-import { callAi } from "@/lib/server/ai-router"
+import { callAi } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type HistoryMessage = { role: "user" | "assistant"; content: string }

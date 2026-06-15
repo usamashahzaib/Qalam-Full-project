@@ -1,7 +1,32 @@
+import type { PlanName as PlanTier } from "@/lib/pricing"
+export type { PlanTier }
+
+export type WorkspaceProfile = {
+  name: string
+  title: string
+  linkedinUrl: string
+  industry: string
+  goals: string[]
+  tone: string
+}
+
 export type PostStatus = "draft" | "scheduled" | "published" | "archived"
+
+export type WorkspacePostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
+
+export type WorkspacePost = {
+  id: string
+  title: string
+  content: string
+  type: string
+  status: WorkspacePostStatus
+  date: string
+  scheduledTime: string | null
+  externalPostUrn: string | null
+  updatedAt: string
+}
 export type ToneMode = "witty" | "professional" | "bold" | "storytelling" | "direct"
 export type TeamRole = "owner" | "editor" | "reviewer"
-export type PlanTier = "free" | "pro" | "team" | "agency"
 
 export interface VoiceProfile {
   id: string

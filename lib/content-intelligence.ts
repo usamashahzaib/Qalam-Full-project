@@ -1,4 +1,4 @@
-import type { WorkspaceProfile } from "@/components/providers/WorkspaceProvider"
+import type { WorkspaceProfile } from "@/types/domain"
 
 export type ScoreCard = {
   label: string

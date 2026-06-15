@@ -5,10 +5,7 @@ import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
-// Deprecated no-ops — kept for import compatibility with writer page
-export const getDraftUsageKey = (_workspaceId: string, _month?: string) => ""
-export const readDraftUsage = (_workspaceId: string) => 0
-export const incrementDraftUsage = (_workspaceId: string) => 0
+export { getDraftUsageKey, readDraftUsage, incrementDraftUsage } from "@/lib/usage-tracking"
 
 type DraftStatus = {
   remaining: number | null

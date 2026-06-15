@@ -2,34 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { requireAuth } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
-import { callAi } from "@/lib/server/ai-router"
+import { trainVoiceProfile } from "@/lib/use-cases/train-voice-profile"
+import type { VoiceSampleAnalysis } from "@/lib/use-cases/train-voice-profile"
 
 type VoiceSample = {
   text: string
-  analysis: VoiceAnalysis
+  analysis: VoiceSampleAnalysis
   added_at: string
-}
-
-type VoiceAnalysis = {
-  tone: string
-  sentence_structure: string
-  vocabulary_level: string
-  emotional_temperature: string
-  distinctive_phrases: string[]
-  formatting_habits: string
-  perspective: string
-  hook_style: string
-  cta_style: string
-}
-
-type VoiceFingerprint = {
-  signature_phrases: string[]
-  typical_sentence_length: string
-  emotional_range: string
-  argument_structure: string
-  unique_verbal_tics: string[]
-  confidence_level: string
-  storytelling_approach: string
 }
 
 const supabaseAdmin = () =>
@@ -38,12 +17,6 @@ const supabaseAdmin = () =>
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } }
   )
-
-const parseJson = <T>(raw: string): T => {
-  const text = raw.trim()
-  const match = text.match(/\{[\s\S]*\}/)
-  return JSON.parse(match ? match[0] : text) as T
-}
 
 export async function GET() {
   try {
@@ -79,27 +52,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Sample must be at least 50 characters" }, { status: 400 })
     }
 
-    const analysisPrompt = `Analyze this LinkedIn post sample and extract voice characteristics.
-
-SAMPLE:
-${cleanSample}
-
-OUTPUT JSON:
-{
-  "tone": "specific tone description (not just 'professional')",
-  "sentence_structure": "how sentences are built",
-  "vocabulary_level": "technical/simple/mixed",
-  "emotional_temperature": "warm/cold/neutral/excited",
-  "distinctive_phrases": ["phrase 1", "phrase 2"],
-  "formatting_habits": "how they use line breaks, emojis, lists",
-  "perspective": "first person / second person / third person",
-  "hook_style": "how they open posts",
-  "cta_style": "how they close posts"
-}`
-    const analysis = parseJson<VoiceAnalysis>(
-      await callAi("Return strict JSON only.", analysisPrompt, { json: true, temperature: 0.3, timeout: 15000 })
-    )
-
     const supabase = supabaseAdmin()
     const { data: existing } = await supabase
       .from("voice_profiles")
@@ -107,30 +59,23 @@ OUTPUT JSON:
       .eq("user_id", userId)
       .maybeSingle()
 
-    const samples = Array.isArray(existing?.sample_posts) ? existing.sample_posts as VoiceSample[] : []
-    const updatedSamples = [
-      ...samples.slice(-19),
+    const prevSamples = Array.isArray(existing?.sample_posts) ? (existing.sample_posts as VoiceSample[]) : []
+    const prevTexts = prevSamples.slice(-19).map((s) => s.text)
+    const allPostTexts = [...prevTexts, cleanSample]
+
+    const result = await trainVoiceProfile({ examplePosts: allPostTexts })
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error.userMessage ?? result.error.message },
+        { status: result.error.code === "AI_UNAVAILABLE" ? 503 : 400 }
+      )
+    }
+
+    const { analysis, fingerprint } = result.data.characteristics
+    const updatedSamples: VoiceSample[] = [
+      ...prevSamples.slice(-19),
       { text: cleanSample, analysis, added_at: new Date().toISOString() },
     ]
-
-    const fingerprintPrompt = `Based on these ${updatedSamples.length} writing samples, create a unified voice fingerprint.
-
-SAMPLES:
-${updatedSamples.map((s, i) => `Sample ${i + 1}: ${s.text.substring(0, 200)}...`).join("\n")}
-
-OUTPUT JSON:
-{
-  "signature_phrases": ["phrase 1", "phrase 2"],
-  "typical_sentence_length": "short/medium/long/mixed",
-  "emotional_range": "what emotions they convey",
-  "argument_structure": "how they build arguments",
-  "unique_verbal_tics": ["tic 1", "tic 2"],
-  "confidence_level": "humble/assertive/aggressive/mixed",
-  "storytelling_approach": "personal/anecdotal/data-driven"
-}`
-    const fingerprint = parseJson<VoiceFingerprint>(
-      await callAi("Return strict JSON only.", fingerprintPrompt, { json: true, temperature: 0.3, timeout: 15000 })
-    )
 
     const { error } = await supabase.rpc("save_voice_training_sample", {
       p_user_id: userId,

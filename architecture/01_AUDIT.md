@@ -1,4 +1,4 @@
-# Phase 1 — Forensic Audit: Qalam (byqalam-website)
+# Phase 1 — Forensic Audit: Qalam (byqalam-website) — UPDATED POST-MIGRATION STEPS 0-16
 
 > **Stack:** Next.js 16.2.4 · React 19 · TypeScript · Tailwind CSS v4 · NextAuth v5-beta · Supabase REST · Upstash Redis · Groq + Gemini
 
@@ -536,3 +536,274 @@ These are well-designed and should NOT be touched in migration:
 | Zod validation on API routes | Most API routes | Input validation at system boundary |
 | JWT strategy (not DB sessions) | `auth.ts` | Scales horizontally without session store |
 | `requireAuthApi` + `withAuth` wrappers | `lib/server/auth.ts` | Consistent auth enforcement pattern |
+
+---
+
+---
+
+# CURRENT-STATE AUDIT — After Migration Steps 0–16
+**Conducted:** 2026-06-15 (post-commit `e3ee939`)
+
+The codebase has been through 16 migration steps since the original audit above was written. This section captures the true current state, what was fixed, what remains broken, and what net-new violations appeared.
+
+---
+
+## Migration Progress Summary
+
+| Steps | Commit | What Changed |
+|-------|--------|-------------|
+| 0–8 | `37a498c` | Result<T> errors, structured logging, domain types, constants/validation, useWriterLogic, modal sub-components, useProfileForm, useDashboardMetrics |
+| 8–13 | `1b2ab4c` | Additional architectural extraction (details below) |
+| 14–16 | `e3ee939` | Further refactoring |
+
+### What Got Fixed (Verified Against Current State)
+
+| Original Sin | Status | Evidence |
+|-------------|--------|----------|
+| `writer/page.tsx` was 1544 lines | **FIXED** | Now 998 lines — logic extracted to `useWriterLogic.ts` |
+| `lib/prompts/role-aware-system.ts` was 1354 lines | **FIXED** | Now 746 lines — role profiles extracted to `role-profiles.ts` |
+| No `Result<T>` error type | **FIXED** | `lib/errors.ts` clean Result<T>/QalamError pattern |
+| No structured logging | **FIXED** | `lib/server/logging.ts` exists, used in routes |
+| No use cases | **PARTIALLY FIXED** | 2 use cases exist: `generate-post.ts` + `run-approval.ts` |
+| No hooks extracted | **FIXED** | `useWriterLogic.ts`, `useDashboardMetrics.ts`, `useProfileForm.ts`, `useAdminUsers.ts`, `useCalendarLogic.ts`, `useApprovalQueue.ts` |
+| Writer modals inline | **FIXED** | `WriterScheduleModal.tsx`, `WriterDeleteConfirm.tsx` extracted |
+| `DashboardClient.tsx` at 748 lines | **FIXED** | Now 678 lines — metrics extracted to `useDashboardMetrics.ts` |
+
+---
+
+## Current Architectural Violations (As Of 2026-06-15)
+
+### ACTIVE SIN #1: Four Conflicting Plan Tier Definitions
+**Blast radius: 10/10 — unchanged from original audit**
+
+```typescript
+// types/domain.ts:4
+PlanTier = "free" | "pro" | "team" | "agency"   // "team" does not exist as a product
+
+// lib/entitlements.ts:1
+PlanTier = "Free" | "Solo" | "Pro" | "Agency"    // Title-case, "Solo" not in domain.ts
+
+// lib/server/plan-limits-v2.ts:6
+PlanName = "free" | "solo" | "pro" | "agency"    // lowercase, different variable name
+
+// components/providers/WorkspaceProvider.tsx:37
+plan: "Free" | "Solo" | "Pro" | "Agency" | "Agency Starter" | "Agency Growth"   // 6 variants
+```
+
+`PLAN_CONFIG` in `plan-limits-v2.ts` (server enforced) and `PLAN_LIMITS` in `entitlements.ts` (client displayed) are **separate objects** that must be kept manually in sync. This is the highest-priority sin remaining.
+
+**Files:** `types/domain.ts:4`, `lib/entitlements.ts:1-10`, `lib/server/plan-limits-v2.ts:6-14`, `components/providers/WorkspaceProvider.tsx:37`
+
+---
+
+### ACTIVE SIN #2: `WorkspaceProvider.tsx` — God Context (491 lines)
+**Blast radius: 9/10 — unchanged**
+
+Still does: workspace resolution, auth redirect, billing persistence (localStorage), post CRUD, profile CRUD, event tracking, job management, loading/error UI rendering. Six separate domains in one React context.
+
+Notable: `billing` state is persisted to `localStorage` (`BILLING_STORAGE_KEY = "qalam-billing-v3"` at line 91). This means billing plan shown in the UI is cached and can be stale. Server billing comes from `/api/workspace` on mount and is merged in. Race condition possible between cached plan and actual plan.
+
+**File:** `components/providers/WorkspaceProvider.tsx:1-492`
+
+---
+
+### ACTIVE SIN #3: `useWriterLogic.ts` Imports from `components/`
+**Blast radius: 8/10**
+
+```typescript
+// lib/hooks/useWriterLogic.ts:5-6
+import { incrementDraftUsage, readDraftUsage } from "@/components/DraftCounter"
+```
+
+Library code depends on a UI component's internal implementation. Draft usage is tracked TWICE — via this localStorage counter AND via `incrementUsage()` in the API route, which persists to Supabase. These can drift.
+
+**File:** `lib/hooks/useWriterLogic.ts:5-6`, `lib/hooks/useWriterLogic.ts:241-243`
+
+---
+
+### ACTIVE SIN #4: `lib/content-intelligence.ts` Imports from `components/`
+**Blast radius: 7/10 — Dependency Rule violation**
+
+```typescript
+// lib/content-intelligence.ts:1
+import type { WorkspaceProfile } from "@/components/providers/WorkspaceProvider"
+```
+
+Domain service imports from a React provider. Makes this file untestable without React. `WorkspaceProfile` should be in `types/domain.ts`.
+
+**File:** `lib/content-intelligence.ts:1`
+
+---
+
+### ACTIVE SIN #5: Two Parallel AI Routers
+**Blast radius: 7/10**
+
+- `lib/server/ai-router.ts` (v1) — DEPRECATED, still imported by:
+  - `lib/voice-analyzer.ts:1`
+  - `lib/server/content-generator.ts:6` (itself deprecated)
+- `lib/server/ai-router-v2.ts` (v2) — current
+
+Circuit breaker behavior, Groq model name, Gemini fallback, rate limiting — all changes must be applied twice or they diverge. Voice analysis uses a different AI router than post generation.
+
+**Files:** `lib/voice-analyzer.ts:1`, `lib/server/content-generator.ts:6`
+
+---
+
+### ACTIVE SIN #6: `lib/server/plan-limits-v2.ts` — Domain + Infrastructure Fused
+**Blast radius: 6/10**
+
+Single file contains:
+- `PLAN_CONFIG` (domain data: limits per plan) — lines 9-14
+- `normalizePlan()` (domain function) — lines 18-24
+- `isFeatureAllowed()` (domain rule) — lines 161-172
+- `getPlanStatus()` (3 parallel Supabase queries) — lines 34-113
+- `incrementUsage()` (Supabase RPC) — lines 130-158
+
+A product decision ("Pro gets 80 drafts") requires touching the same file as an infrastructure change ("RPC was renamed"). One reason to change = one file. This violates that.
+
+**File:** `lib/server/plan-limits-v2.ts:1-172`
+
+---
+
+### ACTIVE SIN #7: `lib/server/content-generator.ts` — Deprecated Parallel Universe (465 lines)
+**Blast radius: 6/10**
+
+Three explicitly `@deprecated` exports at lines 414-465: `scoreContent`, `qualityControlDraft`, `generateHooks`. This file imports `ai-router` v1. It runs in parallel with `lib/use-cases/generate-post.ts` (the correct pattern). Any developer who finds this file first gets the wrong mental model. It should be deleted after verifying no active imports.
+
+**File:** `lib/server/content-generator.ts:414-465`
+
+---
+
+### ACTIVE SIN #8: 13 Missing Use Cases
+**Blast radius: 6/10 — domain logic still inline in routes**
+
+Only 2 of ~15 domain operations have been extracted to use cases:
+- `lib/use-cases/generate-post.ts` ✅
+- `lib/use-cases/run-approval.ts` ✅
+
+These operations still have domain logic inline in API routes:
+- GenerateHooks (`/api/generate/hooks/route.ts` — contains `ROLE_MAP` domain mapping)
+- ScorePost (`/api/generate/score/route.ts`)
+- ImprovePost (`/api/generate/improve/route.ts`)
+- TrainVoiceProfile (`/api/voice/train/route.ts`)
+- PublishToLinkedIn (`/api/linkedin/share/route.ts`)
+- SchedulePost (`/api/posts/route.ts`)
+- AnalyzeCompetitor (`/api/competitors/analyze/route.ts`)
+- GenerateCarousel (`/api/carousel/generate/route.ts`)
+- ExportPost PDF (`/api/carousel/[id]/pdf/route.ts`)
+- GetDashboardMetrics (`/api/dashboard/stats/route.ts`)
+- ManageWorkspace (`/api/workspace/route.ts`)
+- AdminOverrideUser (`/api/admin/overrides/route.ts`)
+- GenerateReplies (`/api/generate/replies/route.ts`)
+
+**Files:** All API routes listed above
+
+---
+
+### ACTIVE SIN #9: `app/api/generate/route.ts` PATCH Handler — Inline Authorization
+**Blast radius: 5/10**
+
+```typescript
+// app/api/generate/route.ts:106-115
+const { data: membership } = await supabase
+  .from("memberships")
+  .select("id")
+  .eq("workspace_id", post.workspace_id)
+  .eq("user_id", user.internalId)
+  .single()
+
+if (!membership) {
+  return NextResponse.json({ error: "Not authorized" }, { status: 403 })
+}
+```
+
+Authorization policy ("does user belong to this workspace?") inline in HTTP handler. Should be in a repository or domain service.
+
+**File:** `app/api/generate/route.ts:82-130`
+
+---
+
+### ACTIVE SIN #10: `useWriterLogic.ts` Makes Inline Fetch Calls
+**Blast radius: 5/10**
+
+The hook directly calls `fetch("/api/generate/score", ...)`, `fetch("/api/generate/hooks", ...)`, `fetch("/api/generate/post", ...)` etc. with hardcoded URL strings. If an API route is renamed or moved, the hook silently breaks. No abstraction layer between hook and HTTP.
+
+**Files:** `lib/hooks/useWriterLogic.ts` — multiple fetch calls with string literals
+
+---
+
+## Current File Sizes (Verified 2026-06-15)
+
+| File | Lines | Status vs Original |
+|------|-------|--------------------|
+| `app/(app)/writer/page.tsx` | 998 | Was 1544 — IMPROVED ✅ |
+| `lib/prompts/role-aware-system.ts` | 746 | Was 1354 — IMPROVED ✅ |
+| `lib/prompts/role-profiles.ts` | 616 | New file (extracted) ✅ |
+| `lib/hooks/useWriterLogic.ts` | 678 | New file (extracted) — but has SIN #3 |
+| `app/(app)/dashboard/DashboardClient.tsx` | 678 | Was 748 — slightly improved |
+| `app/(app)/settings/page.tsx` | 703 | Was 773 — slightly improved |
+| `app/(app)/calendar/page.tsx` | 443 | Was 645 — IMPROVED ✅ |
+| `app/admin/AdminDashboard.tsx` | 448 | Was 618 — IMPROVED ✅ |
+| `components/providers/WorkspaceProvider.tsx` | 491 | Unchanged — GOD OBJECT |
+| `lib/server/content-generator.ts` | 465 | DEPRECATED — should be killed |
+| `lib/server/workspace.ts` | 389 | Unchanged |
+| `lib/server/auth.ts` | 226 | Unchanged |
+
+---
+
+## What Is Clean — Do Not Regress
+
+| File | Why It's Good |
+|------|--------------|
+| `lib/errors.ts` | Result<T>/QalamError, zero framework imports |
+| `lib/use-cases/generate-post.ts` | Correct pattern: `server-only`, Result<T>, use case boundary |
+| `lib/use-cases/run-approval.ts` | Correct pattern, clean |
+| `lib/server/circuit-breaker.ts` | Single responsibility, Redis abstraction |
+| `lib/server/ai-router-v2.ts` | Clean provider routing, properly isolated |
+| `lib/server/gemini-client.ts` | Clean infrastructure adapter |
+| `lib/server/email.ts` | Clean infrastructure adapter |
+| `lib/server/queue.ts` | Clean Redis caching + rate limit |
+| `lib/prompts/role-profiles.ts` | Pure data, zero imports — textbook domain data |
+| `app/api/approvals/route.ts` | Thin HTTP wrapper, fully delegates to use case |
+| `app/api/generate/route.ts` POST | Thin HTTP wrapper, delegates to use case |
+| `types/writer.ts` | Clean presentation-layer types |
+| `lib/validation.ts` | Input validation schemas at system boundary |
+| `lib/server/logging.ts` | Structured logging, cross-cutting concern |
+
+---
+
+## Dependency Rule Violations (Active)
+
+The Dependency Rule states: inner layers cannot import from outer layers.
+
+```
+Domain → (nothing)
+Infrastructure → Domain
+Application → Domain + Infrastructure
+Presentation → Application + (never Domain or Infrastructure directly)
+```
+
+| Violation | File | Illegal Import |
+|-----------|------|---------------|
+| lib → components | `lib/content-intelligence.ts:1` | `WorkspaceProfile` from `components/providers/WorkspaceProvider` |
+| hooks → components | `lib/hooks/useWriterLogic.ts:5` | `incrementDraftUsage`, `readDraftUsage` from `components/DraftCounter` |
+| domain types circular | `types/domain.ts:4` | `PlanTier` includes "team" which does not exist in any live plan definition |
+
+---
+
+## Priority Order for Remaining Migration
+
+Ordered by: (blast radius × coupling × frequency of change)
+
+1. **Unify plan tier definitions** — Single source of truth for plan names, limits, and feature flags. Kill `types/domain.ts` PlanTier, merge `lib/entitlements.ts` and `lib/server/plan-limits-v2.ts` into `domain/workspace/PlanRules.ts`.
+
+2. **Fix Dependency Rule violations** — Move `WorkspaceProfile` type out of `WorkspaceProvider.tsx` into `types/domain.ts`. Fix `useWriterLogic.ts` import of `DraftCounter`.
+
+3. **Kill the deprecated parallel universe** — Delete `lib/server/content-generator.ts` and `lib/server/ai-router.ts` after confirming zero active imports. Fix `lib/voice-analyzer.ts` to import `ai-router-v2`.
+
+4. **Extract the 13 missing use cases** — Highest ROI: `GenerateHooks`, `ScorePost`, `TrainVoiceProfile`, `AnalyzeCompetitor`.
+
+5. **Split `WorkspaceProvider.tsx`** — Separate into: workspace resolver hook, billing context, post repository, profile repository.
+
+6. **Add repository interfaces** — `IPostRepository`, `IVoiceProfileRepository`, `IPlanUsageRepository` — allowing infrastructure swap without touching application code.
+

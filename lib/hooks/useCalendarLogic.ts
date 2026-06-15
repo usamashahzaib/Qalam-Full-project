@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { shareToLinkedIn } from "@/lib/api/client"
-import type { WorkspacePost } from "@/components/providers/WorkspaceProvider"
+import type { WorkspacePost } from "@/types/domain"
 
 // ─── Helpers (kept local - calendar-specific) ─────────────────────────────────
 

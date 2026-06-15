@@ -2,25 +2,25 @@
 // CORRECTED - uses your actual plan_usage table and increment_plan_usage RPC
 
 import { createServiceClient } from "./supabase-rest"
+import type { PlanName } from "@/lib/pricing"
 
 export type Feature = "drafts" | "carousels" | "hooks" | "analyses"
-export type PlanName = "free" | "solo" | "pro" | "agency"
 
 const PLAN_CONFIG: Record<PlanName, Record<Feature, number>> = {
-  free: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
-  solo: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
-  pro: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
-  agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
+  Free: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
+  Solo: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
+  Pro: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
+  Agency: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
 }
 
-const PLAN_PRIORITY: Record<PlanName, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
+const PLAN_PRIORITY: Record<PlanName, number> = { Free: 0, Solo: 1, Pro: 2, Agency: 3 }
 
 const normalizePlan = (plan?: string | null): PlanName => {
   const value = String(plan || "").toLowerCase()
-  if (value.includes("agency")) return "agency"
-  if (value.includes("pro")) return "pro"
-  if (value.includes("solo")) return "solo"
-  return "free"
+  if (value.includes("agency")) return "Agency"
+  if (value.includes("pro")) return "Pro"
+  if (value.includes("solo")) return "Solo"
+  return "Free"
 }
 
 const FIELD_MAP: Record<Feature, string> = {
@@ -163,10 +163,10 @@ export function isFeatureAllowed(plan: string, feature: string): boolean {
   const config = PLAN_CONFIG[normalized]
 
   if (feature === "carousel" || feature === "carousel_standard" || feature === "carousels") return config.carousels > 0
-  if (feature === "voice" || feature === "voiceProfile") return normalized !== "free"
-  if (feature === "research" || feature === "competitorResearch") return normalized !== "free"
-  if (feature === "approvalWorkflow" || feature === "teamSeats") return normalized === "agency"
-  if (feature === "basic_analytics") return normalized !== "free"
+  if (feature === "voice" || feature === "voiceProfile") return normalized !== "Free"
+  if (feature === "research" || feature === "competitorResearch") return normalized !== "Free"
+  if (feature === "approvalWorkflow" || feature === "teamSeats") return normalized === "Agency"
+  if (feature === "basic_analytics") return normalized !== "Free"
 
-  return normalized !== "free"
+  return normalized !== "Free"
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { isValidLinkedInUrl } from "@/lib/validation"
-import type { WorkspaceProfile } from "@/components/providers/WorkspaceProvider"
+import type { WorkspaceProfile } from "@/types/domain"
 
 interface ProfileFormDeps {
   profile: WorkspaceProfile

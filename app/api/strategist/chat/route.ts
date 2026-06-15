@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { requireAuth } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
-import { callAi } from "@/lib/server/ai-router"
+import { callAi } from "@/lib/server/ai-router-v2"
 
 type ConversationMessage = {
   role: "user" | "assistant"

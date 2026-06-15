@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
-import { incrementDraftUsage, readDraftUsage } from "@/components/DraftCounter"
+import { incrementDraftUsage, readDraftUsage } from "@/lib/usage-tracking"
 import type {
   WriterRole as Role,
   PostFormat as FormatKey,
