@@ -1,10 +1,5 @@
 import "server-only"
-import {
-  createServiceClient,
-  supabaseSelect,
-  supabasePatch,
-  supabaseDelete,
-} from "@/lib/server/supabase-rest"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import type {
   IPostRepository,
   DbPost,
@@ -17,32 +12,39 @@ const toClientPost = (post: DbPost): ClientPost => ({
   id: post.id,
   title: post.title,
   content: post.content ?? "",
-  type: post.type,
+  type: post.type ?? (post as DbPost & { metadata?: { type?: string } }).metadata?.type ?? "linkedin",
   status: post.status,
-  date: (post.scheduled_time || post.published_at || post.created_at || "").slice(0, 10),
-  scheduledTime: post.scheduled_time,
-  externalPostUrn: post.external_post_urn,
+  date: (post.scheduled_time || (post as DbPost & { scheduled_for?: string | null }).scheduled_for || post.published_at || post.created_at || "").slice(0, 10),
+  scheduledTime: post.scheduled_time ?? (post as DbPost & { scheduled_for?: string | null }).scheduled_for ?? null,
+  externalPostUrn: post.external_post_urn ?? (post as DbPost & { linkedin_post_id?: string | null }).linkedin_post_id ?? null,
   updatedAt: post.updated_at,
   createdAt: post.created_at,
 })
 
 const DB_STATUSES = new Set(["draft", "published", "scheduled", "archived"])
 
+const POST_COLUMNS = "id,workspace_id,author_id,title,content,type,status,scheduled_time,published_at,external_post_urn,created_at,updated_at"
+
 export class SupabasePostRepository implements IPostRepository {
   async list(workspaceId: string): Promise<ClientPost[]> {
-    const posts = await supabaseSelect<DbPost>(
-      "posts",
-      `workspace_id=eq.${encodeURIComponent(workspaceId)}&order=created_at.desc`
-    )
-    return (posts || []).map(toClientPost)
+    const { data, error } = await createServiceClient()
+      .from("posts")
+      .select(POST_COLUMNS)
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+    if (error) throw new Error(error.message)
+    return (data ?? []).map(toClientPost)
   }
 
   async get(id: string, workspaceId: string): Promise<DbPost | null> {
-    const rows = await supabaseSelect<DbPost>(
-      "posts",
-      `id=eq.${id}&workspace_id=eq.${workspaceId}&limit=1`
-    )
-    return rows?.[0] ?? null
+    const { data, error } = await createServiceClient()
+      .from("posts")
+      .select(POST_COLUMNS)
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data as DbPost | null
   }
 
   async create(params: CreatePostParams): Promise<ClientPost> {
@@ -51,24 +53,27 @@ export class SupabasePostRepository implements IPostRepository {
       title, content, type, status,
       scheduledTime, publishedAt, externalPostUrn,
     } = params
-    const supabase = createServiceClient()
-    const { data: postId, error } = await supabase.rpc("create_post_with_version", {
-      p_user_id: userId,
-      p_workspace_id: workspaceId,
-      p_title: title,
-      p_content: content ?? "",
-      p_hook: null,
-      p_cta: null,
-      p_role_profile: null,
-      p_topic: title,
-      p_engagement_score: null,
-      p_metadata: { type, scheduledTime, publishedAt, externalPostUrn, status, authorId },
-      p_status: DB_STATUSES.has(status) ? status : "draft",
-    })
-    if (error || !postId) throw new Error(error?.message || "post_create_failed")
     const now = new Date().toISOString()
+    const { data: post, error } = await createServiceClient()
+      .from("posts")
+      .insert({
+        user_id: userId,
+        workspace_id: workspaceId,
+        title,
+        content: content ?? "",
+        status: DB_STATUSES.has(status) ? status : "draft",
+        scheduled_for: scheduledTime ?? null,
+        published_at: publishedAt ?? null,
+        linkedin_post_id: externalPostUrn ?? null,
+        metadata: { type, authorId },
+        created_at: now,
+        updated_at: now,
+      })
+      .select("id")
+      .single()
+    if (error || !post) throw new Error(error?.message || "post_create_failed")
     return {
-      id: postId as string,
+      id: post.id as string,
       title,
       content: content ?? "",
       type,
@@ -90,16 +95,24 @@ export class SupabasePostRepository implements IPostRepository {
     if (patch.scheduledTime !== undefined) dbPatch.scheduled_time = patch.scheduledTime
     if (patch.publishedAt !== undefined) dbPatch.published_at = patch.publishedAt
     if (patch.externalPostUrn !== undefined) dbPatch.external_post_urn = patch.externalPostUrn
-    const rows = await supabasePatch<DbPost>(
-      "posts",
-      `id=eq.${id}&workspace_id=eq.${workspaceId}`,
-      dbPatch
-    )
-    return rows?.[0] ? toClientPost(rows[0]) : null
+    const { data, error } = await createServiceClient()
+      .from("posts")
+      .update(dbPatch)
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+      .select(POST_COLUMNS)
+    if (error) throw new Error(error.message)
+    const row = data?.[0] as DbPost | undefined
+    return row ? toClientPost(row) : null
   }
 
   async delete(id: string, workspaceId: string): Promise<void> {
-    await supabaseDelete("posts", `id=eq.${id}&workspace_id=eq.${workspaceId}`)
+    const { error } = await createServiceClient()
+      .from("posts")
+      .delete()
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+    if (error) throw new Error(error.message)
   }
 
   async duplicate(
@@ -108,30 +121,32 @@ export class SupabasePostRepository implements IPostRepository {
     userId: string,
     authorId: string
   ): Promise<ClientPost> {
-    const rows = await supabaseSelect<DbPost>(
-      "posts",
-      `id=eq.${postId}&workspace_id=eq.${workspaceId}&limit=1`
-    )
-    if (!rows?.length) throw new Error("not_found")
-    const original = rows[0]
-    const supabase = createServiceClient()
-    const { data: newId, error } = await supabase.rpc("create_post_with_version", {
-      p_user_id: userId,
-      p_workspace_id: workspaceId,
-      p_title: `${original.title} (copy)`,
-      p_content: original.content ?? "",
-      p_hook: null,
-      p_cta: null,
-      p_role_profile: null,
-      p_topic: original.title,
-      p_engagement_score: null,
-      p_metadata: { type: original.type, authorId },
-      p_status: "draft",
-    })
-    if (error || !newId) throw new Error(error?.message || "duplicate_failed")
+    const { data: rows, error: fetchErr } = await createServiceClient()
+      .from("posts")
+      .select(POST_COLUMNS)
+      .eq("id", postId)
+      .eq("workspace_id", workspaceId)
+      .limit(1)
+    if (fetchErr || !rows?.length) throw new Error(fetchErr?.message || "not_found")
+    const original = rows[0] as DbPost
     const now = new Date().toISOString()
+    const { data: post, error } = await createServiceClient()
+      .from("posts")
+      .insert({
+        user_id: userId,
+        workspace_id: workspaceId,
+        title: `${original.title} (copy)`,
+        content: original.content ?? "",
+        status: "draft",
+        metadata: { type: original.type ?? "linkedin", authorId },
+        created_at: now,
+        updated_at: now,
+      })
+      .select("id")
+      .single()
+    if (error || !post) throw new Error(error?.message || "duplicate_failed")
     return {
-      id: newId as string,
+      id: post.id as string,
       title: `${original.title} (copy)`,
       content: original.content ?? "",
       type: original.type,
