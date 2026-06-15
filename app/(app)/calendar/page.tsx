@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
+import { usePosts } from "@/lib/hooks/usePosts"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useCalendarLogic } from "@/lib/hooks/useCalendarLogic"
@@ -45,14 +46,14 @@ function StatusBadge({ status }: { status: string }) {
 export default function CalendarPage() {
   const router = useRouter()
   const { data: session } = useSession()
-  const { state, publishPost, createJob, workspaceId, refreshPosts } = useWorkspace()
-  const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+  const { workspaceId, activeClientId } = useWorkspace()
+  const { scheduled, drafts, published, publishPost, createJob, refreshPosts } = usePosts()
   const linkedinMemberId = session?.user?.email || null
 
   const cal = useCalendarLogic({
-    scheduled: state.scheduled,
-    drafts: state.drafts,
-    published: state.published,
+    scheduled,
+    drafts,
+    published,
     workspaceId,
     linkedinMemberId,
     publishPost,
@@ -111,9 +112,9 @@ export default function CalendarPage() {
 
       {/* Stats */}
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="Scheduled" value={String(state.scheduled.length)} />
-        <Stat label="Drafts" value={String(state.drafts.length)} />
-        <Stat label="Published" value={String(state.published.length)} />
+        <Stat label="Scheduled" value={String(scheduled.length)} />
+        <Stat label="Drafts" value={String(drafts.length)} />
+        <Stat label="Published" value={String(published.length)} />
         <Stat label="This month" value={String(selectedMonthScheduled.length)} />
       </div>
 

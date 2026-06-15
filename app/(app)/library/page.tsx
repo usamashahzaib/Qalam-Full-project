@@ -2,7 +2,9 @@
 
 import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { usePosts } from "@/lib/hooks/usePosts"
+import type { WorkspacePost } from "@/types/domain"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { LockedFeature } from "@/components/LockedFeature"
 
@@ -55,8 +57,8 @@ function LibrarySkeleton() {
 
 export default function LibraryPage() {
   const router = useRouter()
-  const { posts, deletePost, refreshPosts, workspaceId, state, isLoadingPosts } = useWorkspace()
-  const activeClientId = state.agency?.activeClientId ?? null
+  const { workspaceId, activeClientId } = useWorkspace()
+  const { posts, deletePost, refreshPosts, isLoadingPosts } = usePosts()
 
   // Filters
   const [filterType, setFilterType] = useState<FilterType>("all")

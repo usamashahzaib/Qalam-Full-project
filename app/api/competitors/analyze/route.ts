@@ -1,8 +1,10 @@
-﻿import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
 import { analyzeCompetitor } from "@/lib/use-cases/analyze-competitor"
 import { errorToStatus } from "@/lib/errors"
+import { SupabaseCompetitorRepository } from "@/lib/repositories/supabase/SupabaseCompetitorRepository"
+
+const competitorRepo = new SupabaseCompetitorRepository()
 
 const MONTHLY_LIMIT = 5
 
@@ -17,15 +19,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Competitor research requires Pro plan." }, { status: 403 })
     }
 
-    const supabase = createServiceClient()
-
-    const { data: usage } = await supabase
-      .from("plan_usage")
-      .select("competitor_runs_used")
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    const runsUsed = (usage as { competitor_runs_used?: number } | null)?.competitor_runs_used ?? 0
+    const runsUsed = await competitorRepo.getRunsUsed(user.id)
 
     if (runsUsed >= MONTHLY_LIMIT) {
       return NextResponse.json(
@@ -45,25 +39,16 @@ export async function POST(request: NextRequest) {
     const result = await analyzeCompetitor({ postText, userId: user.id, plan: user.plan })
 
     if (!result.ok) {
-      return NextResponse.json({ error: result.error.userMessage ?? result.error.message }, { status: errorToStatus(result.error.code) })
+      return NextResponse.json(
+        { error: result.error.userMessage ?? result.error.message },
+        { status: errorToStatus(result.error.code) }
+      )
     }
 
     const analysis = result.data
 
-    await supabase.from("competitor_analyses").insert({
-      user_id: user.id,
-      post_text: postText.slice(0, 2000),
-      post_url: postUrl || null,
-      hook_structure: analysis.hookStructure,
-      engagement_factors: analysis.engagementFactors,
-      content_pattern: analysis.contentPattern,
-      improvements: analysis.improvements,
-    })
-
-    await supabase
-      .from("plan_usage")
-      .update({ competitor_runs_used: runsUsed + 1 })
-      .eq("user_id", user.id)
+    await competitorRepo.saveAnalysis(user.id, postText, postUrl || null, analysis)
+    await competitorRepo.incrementRunsUsed(user.id, runsUsed)
 
     return NextResponse.json({ analysis, runsUsed: runsUsed + 1, limit: MONTHLY_LIMIT })
   })(request)

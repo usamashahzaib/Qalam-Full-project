@@ -4,7 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
+import { usePosts } from "@/lib/hooks/usePosts"
+import { useAgency } from "@/lib/hooks/useAgency"
+import type { WorkspacePost } from "@/types/domain"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import {
   GrowthIcon,
@@ -68,7 +71,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { data: session } = useSession()
-  const workspace = useWorkspace()
+  const { billing } = useBilling()
+  const { posts } = usePosts()
   const activeClientId = searchParams.get("client")
   const linkedinConnected = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
   const user = session?.user
@@ -84,7 +88,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const [searchQuery, setSearchQuery] = useState("")
   const [searchFocused, setSearchFocused] = useState(false)
-  const [clients, setClients] = useState<Array<{ id: string; client_name: string }>>([])
   const [switcherOpen, setSwitcherOpen] = useState(false)
   const [userDropdownOpen, setUserDropdownOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
@@ -101,40 +104,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
-  const rawCurrentPlan = workspace.state.billing.plan as string
+  const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
   const hasAgencyAccess = currentPlan.startsWith("Agency")
   const canAddWorkspace = hasAgencyAccess
 
-  useEffect(() => {
-    if (!user || !hasAgencyAccess) return
-    let active = true
-    fetch("/api/agency/clients")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!active) return
-        const seen = new Set<string>()
-        setClients(Array.isArray(data.clients) ? data.clients.filter((client: { id?: string; client_name?: string }) => {
-          const name = client.client_name?.trim()
-          const key = name?.toLowerCase()
-          if (!name || name === "Personal Workspace" || !key || seen.has(key)) return false
-          seen.add(key)
-          return true
-        }) : [])
-      })
-      .catch(() => {
-        if (!active) return
-        setClients([])
-      })
-    return () => {
-      active = false
-    }
-  }, [user, hasAgencyAccess])
-
-  const clientWorkspaces = useMemo(() => clients.filter((client, index, list) => {
-    const name = client.client_name.trim()
-    return name !== "Personal Workspace" && list.findIndex((item) => item.id === client.id || item.client_name.trim().toLowerCase() === name.toLowerCase()) === index
-  }), [clients])
+  const { clientWorkspaces } = useAgency({ isAgencyPlan: hasAgencyAccess })
   const showManageClientList = hasAgencyAccess && clientWorkspaces.length > 0
 
   const activeClientName = useMemo(() => {
@@ -164,10 +139,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
     if (!query) return []
-    return workspace.state.posts
+    return posts
       .filter((post) => [post.title, post.content, post.type].some((value) => String(value).toLowerCase().includes(query)))
       .slice(0, 5)
-  }, [searchQuery, workspace.state.posts])
+  }, [searchQuery, posts])
 
   const handleOpenPost = (post: WorkspacePost) => {
     persistWriterIntent(post, /^\d{4}-\d{2}-\d{2}$/.test(post.date) ? post.date : null)
@@ -249,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
-                    const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, workspace.state.billing.featureFlags)
+                    const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
                     if (isLocked && link.requiredPlan) {
                       return (
                         <div key={link.href} className={`rounded-xl py-2 pl-3 pr-3 text-sm font-medium ${active ? "border-l-2 border-teal-600 bg-teal-50/50 text-zinc-900" : "text-zinc-400"}`}>
@@ -289,7 +264,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {user?.linkedinMemberId && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#0A66C2] border-2 border-zinc-900 flex items-center justify-center"><LinkedInIcon className="h-1.5 w-1.5 text-white" /></span>}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 text-[9px] font-bold text-gold uppercase tracking-wider">{workspace.state.billing.plan}</span>{workspace.state.billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-200">Admin</span> : null}</div>
+              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 text-[9px] font-bold text-gold uppercase tracking-wider">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-200">Admin</span> : null}</div>
               <p className="text-xs text-zinc-500 truncate mt-1">{user?.email}</p>
             </div>
           </div>
@@ -413,14 +388,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="qalam-app-canvas pl-0 md:pl-64">
-        {workspace.state.billing.planExpired ? (
+        {billing.planExpired ? (
           <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
             Your plan expired. You are back on Free. <Link href="/pricing" className="underline underline-offset-2">Renew your plan</Link>
           </div>
         ) : null}
-        {workspace.state.billing.complimentaryTrialBanner ? (
+        {billing.complimentaryTrialBanner ? (
           <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900">
-            You are on a complimentary {workspace.state.billing.overridePlan || workspace.state.billing.plan} trial. <Link href="/pricing" className="underline underline-offset-2">Upgrade to keep these features</Link>
+            You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href="/pricing" className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}
         <div className="relative z-10 animate-fade-in">{children}</div>

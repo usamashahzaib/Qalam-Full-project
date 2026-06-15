@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
@@ -15,7 +15,7 @@ type LockedFeatureProps = {
 }
 
 export function LockedFeature({ feature, requiredPlan, children, className = "", buttonClassName = "", tooltip }: LockedFeatureProps) {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   const [showUpgrade, setShowUpgrade] = useState(false)
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
 

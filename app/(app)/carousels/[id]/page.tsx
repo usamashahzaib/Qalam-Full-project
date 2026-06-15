@@ -14,8 +14,7 @@ export default function CarouselEditorPage() {
   const params = useParams()
   const router = useRouter()
   const id = params?.id as string
-  const { state, workspaceId } = useWorkspace()
-  const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+  const { workspaceId, activeClientId } = useWorkspace()
   const [project, setProject] = useState<CarouselProject | null>(null)
   const [slides, setSlides] = useState<Slide[]>([])
   const [isLoading, setIsLoading] = useState(true)

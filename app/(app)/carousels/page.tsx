@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { usePosts } from "@/lib/hooks/usePosts"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type CarouselProject = { id: string; topic: string; role: string; slide_count: number; created_at: string }
@@ -11,8 +12,8 @@ const ROLES = ["Founder", "HR", "Marketing", "Consultant", "Sales", "Tech", "Oth
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
 export default function CarouselsPage() {
-  const { state, workspaceId } = useWorkspace()
-  const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+  const { workspaceId, activeClientId } = useWorkspace()
+  const { posts } = usePosts()
   const [carousels, setCarousels] = useState<CarouselProject[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +24,7 @@ export default function CarouselsPage() {
   const [slideCount, setSlideCount] = useState(7)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const carouselSourcePosts = useMemo(() => [...state.posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [state.posts])
+  const carouselSourcePosts = useMemo(() => [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [posts])
   const selectedPost = selectedPostId === "manual" ? null : carouselSourcePosts.find((post) => post.id === selectedPostId) || null
 
   const fetchCarousels = useCallback(async () => {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
 import type { PlanTier, PlanLimits } from "@/lib/entitlements"
 
@@ -12,13 +12,13 @@ export type UsePlanReturn = {
 }
 
 export const usePlan = (): UsePlanReturn => {
-  const { state } = useWorkspace()
-  const plan = state.billing?.plan ?? "Free"
-  const isLoading = !state.billing?.plan
+  const { billing } = useBilling()
+  const plan = billing.plan ?? "Free"
+  const isLoading = !billing.plan
 
   return {
     plan,
-    limits: getEffectivePlanLimits(plan, state.billing?.limits),
+    limits: getEffectivePlanLimits(plan, billing.limits),
     isLoading,
     canAccess: (requiredPlan: PlanTier) => canAccessPlan(plan, requiredPlan),
   }

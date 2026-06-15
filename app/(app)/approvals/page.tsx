@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useApprovalQueue } from "@/lib/hooks/useApprovalQueue"
 import type { ApprovalRow } from "@/lib/hooks/useApprovalQueue"
@@ -17,7 +17,7 @@ const formatDate = (iso: string) => {
 }
 
 export default function ApprovalsPage() {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   const {
     isLoading, sendModalOpen, setSendModalOpen,
     expandedId, toggleExpanded, status,

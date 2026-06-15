@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
 export { getDraftUsageKey, readDraftUsage, incrementDraftUsage } from "@/lib/usage-tracking"
@@ -14,7 +14,7 @@ type DraftStatus = {
 }
 
 export function DraftCounter({ className = "", compact = false }: { className?: string; compact?: boolean }) {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   const [status, setStatus] = useState<DraftStatus | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
 

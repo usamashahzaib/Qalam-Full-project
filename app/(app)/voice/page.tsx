@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan } from "@/lib/entitlements"
 import { LockedFeature } from "@/components/LockedFeature"
 
@@ -29,7 +29,7 @@ type VoiceProfile = {
 type StatusMsg = { text: string; type: "info" | "error" | "success" }
 
 export default function VoicePage() {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   const canUseVoice = canAccessPlan(billing.plan, "Pro")
 
   const [profile, setProfile] = useState<VoiceProfile>({

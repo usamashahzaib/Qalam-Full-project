@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
+import { usePosts } from "@/lib/hooks/usePosts"
 import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
 import { DraftCounter } from "@/components/DraftCounter"
 import { LockedFeature } from "@/components/LockedFeature"
@@ -47,7 +49,9 @@ const SCORE_LABELS: Array<{ key: keyof Omit<ScoreData, "overall" | "tips" | "has
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function WriterPage() {
-  const { saveDraft, schedulePost, publishPost, workspaceId, billing } = useWorkspace()
+  const { workspaceId } = useWorkspace()
+  const { billing } = useBilling()
+  const { saveDraft, schedulePost, publishPost } = usePosts()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
   const canUseSolo = canAccessPlan(billing.plan, "Solo")

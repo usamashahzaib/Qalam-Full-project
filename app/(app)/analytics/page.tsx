@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { usePosts } from "@/lib/hooks/usePosts"
+import { useProfile } from "@/lib/hooks/useProfile"
 import { LockedFeature } from "@/components/LockedFeature"
 import { analyzeContent } from "@/lib/content-intelligence"
 import { withClientParam } from "@/lib/workspace-navigation"
@@ -19,8 +21,9 @@ const isoDay = (iso: string) => { try { return new Date(iso).toISOString().slice
 const parsePostDate = (s: string) => { try { const d = new Date(s); return isNaN(d.getTime()) ? null : d } catch { return null } }
 
 export default function AnalyticsPage() {
-  const { state, loadEvents, loadJobs } = useWorkspace()
-  const activeClientId = (state as { agency?: { activeClientId?: string | null } }).agency?.activeClientId || null
+  const { activeClientId } = useWorkspace()
+  const { posts, drafts, scheduled, published, loadEvents, loadJobs } = usePosts()
+  const { profile } = useProfile()
   const [events, setEvents] = useState<RawEvent[]>([])
   const [jobs, setJobs] = useState<RawJob[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,11 +45,11 @@ export default function AnalyticsPage() {
   }, [loadEvents, loadJobs])
 
   const analytics = useMemo(() => {
-    const analyses = state.posts.map((post) => ({
+    const analyses = posts.map((post) => ({
       post,
-      analysis: analyzeContent({ title: post.title, content: post.content, type: post.type, profile: state.profile }),
+      analysis: analyzeContent({ title: post.title, content: post.content, type: post.type, profile: profile }),
     }))
-    const earliestIso = [events[events.length - 1]?.created_at, ...state.posts.map((post) => post.scheduledTime || post.date)].filter(Boolean)[0]
+    const earliestIso = [events[events.length - 1]?.created_at, ...posts.map((post) => post.scheduledTime || post.date)].filter(Boolean)[0]
     const earliestDate = earliestIso ? new Date(String(earliestIso)) : null
     const allTimeDays = earliestDate ? Math.max(14, Math.ceil((analyticsNow - earliestDate.getTime()) / 86400000) + 1) : 14
     const selectedDays = rangeDays === "all" ? allTimeDays : rangeDays
@@ -54,18 +57,18 @@ export default function AnalyticsPage() {
     if (allTimeDays > 365) rangeOptions.push({ label: "All time", value: "all" })
 
     const byStatus = {
-      draft: state.drafts.length,
-      scheduled: state.scheduled.length,
-      published: state.published.length,
-      total: state.posts.length,
+      draft: drafts.length,
+      scheduled: scheduled.length,
+      published: published.length,
+      total: posts.length,
     }
 
     const typeMap: Record<string, number> = {}
-    for (const post of state.posts) typeMap[post.type || "Unknown"] = (typeMap[post.type || "Unknown"] || 0) + 1
+    for (const post of posts) typeMap[post.type || "Unknown"] = (typeMap[post.type || "Unknown"] || 0) + 1
     const typeRows = Object.entries(typeMap).sort((a, b) => b[1] - a[1])
 
     const grid = Array.from({ length: 7 }, () => new Array<number>(4).fill(0))
-    for (const post of [...state.scheduled, ...state.published]) {
+    for (const post of [...scheduled, ...published]) {
       const date = parsePostDate(post.date)
       if (!date) continue
       const di = dayIndex(date)
@@ -86,8 +89,8 @@ export default function AnalyticsPage() {
       if (slot) slot.count++
     }
 
-    const pendingApproval = state.posts.filter((post) => post.status === "pending_approval").length
-    const rejected = state.posts.filter((post) => post.status === "rejected").length
+    const pendingApproval = posts.filter((post) => post.status === "pending_approval").length
+    const rejected = posts.filter((post) => post.status === "rejected").length
     const scoreBuckets = { weak: 0, needsPolish: 0, solid: 0, strong: 0 }
     const dimensionSums: Record<string, number> = {}
     for (const item of analyses) {
@@ -131,9 +134,9 @@ export default function AnalyticsPage() {
       carouselCount: jobs.filter((job) => job.job_type === "carousel_generation").length,
       reviewPressure,
     }
-  }, [analyticsNow, events, jobs, rangeDays, state])
+  }, [analyticsNow, drafts, events, jobs, posts, profile, published, rangeDays, scheduled])
 
-  const hasData = state.posts.length > 0 || events.length > 0
+  const hasData = posts.length > 0 || events.length > 0
 
   return (
     <LockedFeature feature="Analytics dashboard" requiredPlan="Solo">

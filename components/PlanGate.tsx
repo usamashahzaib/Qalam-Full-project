@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan, getPlanSummary, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
@@ -62,7 +62,7 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
 }
 
 export function PlanGate({ requiredPlan, feature, description, children }: PlanGateProps) {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
   return (
     <LockedState
@@ -75,6 +75,6 @@ export function PlanGate({ requiredPlan, feature, description, children }: PlanG
 }
 
 export function usePlanAccess(requiredPlan: PlanTier) {
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   return canAccessPlan(billing.plan, requiredPlan)
 }

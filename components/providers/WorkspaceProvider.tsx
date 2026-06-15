@@ -1,367 +1,50 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
-import { cleanErrorMessage } from "@/lib/content-guard"
-import { VALID_PLAN_NAMES, type PlanLimits } from "@/lib/entitlements"
-import type { PlanName } from "@/lib/pricing"
-import type { WorkspaceProfile, WorkspacePost } from "@/types/domain"
+import { VALID_PLAN_NAMES } from "@/lib/entitlements"
+import { BillingProvider, type WorkspaceBilling } from "@/lib/hooks/useBilling"
+import { PostsProvider } from "@/lib/hooks/usePosts"
+import { ProfileProvider } from "@/lib/hooks/useProfile"
 
-export type { WorkspaceProfile, WorkspacePost }
-
-export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
-
-export type WorkspaceBilling = {
-  plan: PlanName
-  billingCycle: "monthly" | "annual"
-  checkoutReady: boolean
-  overrideActive?: boolean
-  complimentaryTrialBanner?: boolean
-  overridePlan?: string | null
-  planExpired?: boolean
-  limits?: PlanLimits
-  featureFlags?: Record<string, boolean>
-}
-
-type LegacyWorkspaceState = {
-  posts: WorkspacePost[]
-  drafts: WorkspacePost[]
-  scheduled: WorkspacePost[]
-  published: WorkspacePost[]
-  profile: WorkspaceProfile
-  billing: WorkspaceBilling
-  agency: {
-    activeClientId: string | null
-    clients: Record<string, unknown>[]
-    teamMembers: Record<string, unknown>[]
-  }
-  competitors: Record<string, unknown>[]
-}
+// Re-export types consumed by existing import sites
+export type { WorkspaceBilling } from "@/lib/hooks/useBilling"
+export type { WorkspaceProfile, WorkspacePost } from "@/types/domain"
+export type { PostStatus } from "@/lib/hooks/usePosts"
 
 type WorkspaceContextValue = {
   workspaceId: string
-  posts: WorkspacePost[]
-  drafts: WorkspacePost[]
-  scheduled: WorkspacePost[]
-  published: WorkspacePost[]
-  isLoadingPosts: boolean
-  postsError: string | null
-  profile: WorkspaceProfile
-  isLoadingProfile: boolean
-  billing: WorkspaceBilling
-  state: LegacyWorkspaceState
-  remoteHydrated: boolean
-  remoteError: string | null
-  saveDraft: (input: { id?: string | null; title: string; content: string; type: string }) => Promise<string>
-  schedulePost: (input: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
-  publishPost: (input: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
-  deletePost: (id: string) => Promise<void>
-  saveProfile: (input: WorkspaceProfile) => Promise<void>
-  saveBilling: (input: Partial<WorkspaceBilling>) => void
-  saveAgency: (input: Partial<LegacyWorkspaceState["agency"]>) => void
-  setWorkspaceState: (updater: LegacyWorkspaceState | ((prev: LegacyWorkspaceState) => LegacyWorkspaceState)) => void
-  loadEvents: (limit?: number) => Promise<unknown[]>
-  trackEvent: (type: string, payload?: Record<string, unknown>) => Promise<void>
-  loadJobs: (type?: string, limit?: number) => Promise<unknown[]>
-  createJob: (input: { type?: string; title?: string; payload?: Record<string, unknown>; status?: string }) => Promise<unknown>
-  deleteJob: (id: string) => Promise<void>
-  refreshPosts: () => Promise<void>
+  activeClientId: string | null
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
-const BILLING_STORAGE_KEY = "qalam-billing-v3"
+
 const workspaceCacheKey = (clientId: string | null) => `qalam-workspace:${clientId || "personal"}`
 
-const defaultProfile: WorkspaceProfile = {
-  name: "",
-  title: "",
-  linkedinUrl: "",
-  industry: "",
-  goals: [],
-  tone: "",
-}
-
-const defaultBilling: WorkspaceBilling = {
-  plan: "Free",
-  billingCycle: "monthly",
-  checkoutReady: false,
-}
-
-const deriveBuckets = (posts: WorkspacePost[]) => ({
-  drafts: posts.filter((post) => post.status === "draft"),
-  scheduled: posts.filter((post) => post.status === "scheduled"),
-  published: posts.filter((post) => post.status === "published"),
-})
-
-const friendlyPostError = (message?: string) => {
-  if (message === "scheduled_time_must_be_future") return "Choose a future time. Past dates and current minutes are locked."
-  if (message === "scheduled_time_required") return "Select date and time"
-  if (message === "invalid_scheduled_time") return "Select a valid date and time"
-  return cleanErrorMessage(message)
-}
-
-function WorkspaceProviderInner({ children, workspaceId, activeClientId, serverBilling }: { children: React.ReactNode; workspaceId: string; activeClientId: string | null; serverBilling: Partial<WorkspaceBilling> | null }) {
-  const [posts, setPosts] = useState<WorkspacePost[]>([])
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true)
-  const [postsError, setPostsError] = useState<string | null>(null)
-  const [profile, setProfile] = useState<WorkspaceProfile>(defaultProfile)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-  const [billing, setBilling] = useState<WorkspaceBilling>(() => {
-    if (typeof window === "undefined") return defaultBilling
-    try {
-      const raw = localStorage.getItem(BILLING_STORAGE_KEY)
-      if (!raw) return defaultBilling
-      const stored = JSON.parse(raw) as Partial<WorkspaceBilling>
-      // Migrate old plan names from previous schema
-      if (stored.plan === ("Team" as string)) stored.plan = "Agency"
-      return { ...defaultBilling, ...stored }
-    } catch {
-      return defaultBilling
-    }
-  })
-
-  const trackEvent = useCallback(async (type: string, payload: Record<string, unknown> = {}) => {
-    await fetch("/api/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceKey: workspaceId, type, payload, createdAt: new Date().toISOString() }),
-    }).catch(() => undefined)
-  }, [workspaceId])
-
-  const fetchPosts = useCallback(async () => {
-    setIsLoadingPosts(true)
-    setPostsError(null)
-    try {
-      const res = await fetch(`/api/posts?workspaceKey=${encodeURIComponent(workspaceId)}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to load posts")
-      setPosts(Array.isArray(data.posts) ? data.posts : [])
-    } catch (error) {
-      setPostsError((error as Error).message)
-    } finally {
-      setIsLoadingPosts(false)
-    }
-  }, [workspaceId])
-
-  const fetchProfile = useCallback(async () => {
-    setIsLoadingProfile(true)
-    try {
-      const res = await fetch(`/api/voice-profile?workspaceKey=${encodeURIComponent(workspaceId)}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to load profile")
-      setProfile(data.profile ? { ...defaultProfile, ...data.profile } : defaultProfile)
-    } catch {
-      setProfile(defaultProfile)
-    } finally {
-      setIsLoadingProfile(false)
-    }
-  }, [workspaceId])
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchPosts()
-    fetchProfile()
-  }, [fetchPosts, fetchProfile])
-
-  useEffect(() => {
-    if (!serverBilling?.plan) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setBilling((prev) => ({ ...prev, ...serverBilling }))
-  }, [serverBilling])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(BILLING_STORAGE_KEY, JSON.stringify(billing))
-    } catch {
-      // ignore local billing persistence failure
-    }
-  }, [billing])
-
-  const saveDraft = useCallback(async ({ id, title, content, type }: { id?: string | null; title: string; content: string; type: string }) => {
-    const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled draft"
-    if (id) {
-      const res = await fetch(`/api/posts?id=${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", workspaceKey: workspaceId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to update draft")
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
-      await trackEvent("draft_saved", { postId: id, source: "writer" })
-      return id
-    }
-
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", workspaceKey: workspaceId }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || "Failed to create draft")
-    if (data.post) setPosts((prev) => [data.post, ...prev])
-    await trackEvent("draft_saved", { postId: data.post?.id ?? null, source: "writer" })
-    return data.post?.id ?? ""
-  }, [trackEvent, workspaceId])
-
-  const schedulePost = useCallback(async ({ id, title, content, type, date, time }: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => {
-    const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
-    const scheduledTime = date && time ? `${date}T${time}:00` : null
-    if (id) {
-      const res = await fetch(`/api/posts?id=${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
-      await trackEvent("post_scheduled", { postId: id, scheduledTime })
-      return id
-    }
-
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
-    if (data.post) setPosts((prev) => [data.post, ...prev])
-    await trackEvent("post_scheduled", { postId: data.post?.id ?? null, scheduledTime })
-    return data.post?.id ?? ""
-  }, [trackEvent, workspaceId])
-
-  const publishPost = useCallback(async ({ id, title, content, type, publishedAt, externalPostUrn }: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => {
-    const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
-    if (id) {
-      const res = await fetch(`/api/posts?id=${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, workspaceKey: workspaceId }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to update post")
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
-      await trackEvent("post_published", { postId: id, publishedAt, externalPostUrn: externalPostUrn ?? null })
-      return id
-    }
-
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, workspaceKey: workspaceId }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || "Failed to create published post")
-    if (data.post) setPosts((prev) => [data.post, ...prev])
-    await trackEvent("post_published", { postId: data.post?.id ?? null, publishedAt, externalPostUrn: externalPostUrn ?? null })
-    return data.post?.id ?? ""
-  }, [trackEvent, workspaceId])
-
-  const deletePost = useCallback(async (id: string) => {
-    const res = await fetch(`/api/posts?id=${id}&workspaceKey=${encodeURIComponent(workspaceId)}`, { method: "DELETE" })
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}))
-      throw new Error(data.error || "Failed to delete post")
-    }
-    setPosts((prev) => prev.filter((post) => post.id !== id))
-  }, [workspaceId])
-
-  const saveProfile = useCallback(async (input: WorkspaceProfile) => {
-    const res = await fetch("/api/voice-profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...input, workspaceKey: workspaceId }),
-    })
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || "Failed to save profile")
-    setProfile(data.profile ? { ...defaultProfile, ...data.profile } : input)
-  }, [workspaceId])
-
-  const saveBilling = useCallback((input: Partial<WorkspaceBilling>) => {
-    setBilling((prev) => ({ ...prev, ...input }))
-  }, [])
-
-  const saveAgency = useCallback(() => {}, [])
-  const setWorkspaceState = useCallback(() => {}, [])
-
-  const loadEvents = useCallback(async (limit = 100) => {
-    const res = await fetch(`/api/events?limit=${limit}&workspaceKey=${encodeURIComponent(workspaceId)}`)
-    const data = await res.json()
-    return Array.isArray(data.events) ? data.events : []
-  }, [workspaceId])
-
-  const loadJobs = useCallback(async (type = "", limit = 100) => {
-    const res = await fetch(`/api/jobs?type=${encodeURIComponent(type)}&limit=${limit}&workspaceKey=${encodeURIComponent(workspaceId)}`)
-    const data = await res.json()
-    return Array.isArray(data.jobs) ? data.jobs : []
-  }, [workspaceId])
-
-  const createJob = useCallback(async ({ type, title, payload = {}, status = "completed" }: { type?: string; title?: string; payload?: Record<string, unknown>; status?: string }) => {
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceKey: workspaceId, type, title, status, payload, createdAt: new Date().toISOString() }),
-    })
-    const data = await res.json()
-    return data.job
-  }, [workspaceId])
-
-  const deleteJob = useCallback(async (id: string) => {
-    await fetch(`/api/jobs?id=${id}&workspaceKey=${encodeURIComponent(workspaceId)}`, { method: "DELETE" })
-  }, [workspaceId])
-
-  const refreshPosts = useCallback(async () => {
-    await fetchPosts()
-  }, [fetchPosts])
-
-  const buckets = useMemo(() => deriveBuckets(posts), [posts])
-
-  const state = useMemo<LegacyWorkspaceState>(() => ({
-    posts,
-    drafts: buckets.drafts,
-    scheduled: buckets.scheduled,
-    published: buckets.published,
-    profile,
-    billing,
-    agency: { activeClientId, clients: [], teamMembers: [] },
-    competitors: [],
-  }), [activeClientId, billing, buckets.drafts, buckets.published, buckets.scheduled, posts, profile])
-
-  const value = useMemo<WorkspaceContextValue>(() => ({
-    workspaceId,
-    posts,
-    drafts: buckets.drafts,
-    scheduled: buckets.scheduled,
-    published: buckets.published,
-    isLoadingPosts,
-    postsError,
-    profile,
-    isLoadingProfile,
-    billing,
-    state,
-    remoteHydrated: !isLoadingPosts,
-    remoteError: postsError,
-    saveDraft,
-    schedulePost,
-    publishPost,
-    deletePost,
-    saveProfile,
-    saveBilling,
-    saveAgency,
-    setWorkspaceState,
-    loadEvents,
-    trackEvent,
-    loadJobs,
-    createJob,
-    deleteJob,
-    refreshPosts,
-  }), [billing, buckets.drafts, buckets.published, buckets.scheduled, createJob, deleteJob, deletePost, isLoadingPosts, isLoadingProfile, loadEvents, loadJobs, posts, postsError, profile, publishPost, refreshPosts, saveAgency, saveBilling, saveDraft, saveProfile, schedulePost, setWorkspaceState, state, trackEvent, workspaceId])
-
-  return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>
+function WorkspaceProviderInner({
+  children,
+  workspaceId,
+  activeClientId,
+  serverBilling,
+}: {
+  children: React.ReactNode
+  workspaceId: string
+  activeClientId: string | null
+  serverBilling: Partial<WorkspaceBilling> | null
+}) {
+  return (
+    <WorkspaceContext.Provider value={{ workspaceId, activeClientId }}>
+      <BillingProvider serverBilling={serverBilling}>
+        <PostsProvider workspaceId={workspaceId}>
+          <ProfileProvider workspaceId={workspaceId}>
+            {children}
+          </ProfileProvider>
+        </PostsProvider>
+      </BillingProvider>
+    </WorkspaceContext.Provider>
+  )
 }
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
@@ -383,7 +66,6 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     if (status !== "authenticated" || !session?.user?.email) {
       const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
       router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setWorkspaceId(null)
       setResolveError("auth_required")
       setIsResolving(false)
@@ -467,8 +149,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     </WorkspaceProviderInner>
   )
 }
-export const useWorkspace = () => {
-  const context = useContext(WorkspaceContext)
-  if (!context) throw new Error("useWorkspace must be used within WorkspaceProvider")
-  return context
+
+export function useWorkspace() {
+  const ctx = useContext(WorkspaceContext)
+  if (!ctx) throw new Error("useWorkspace must be used within WorkspaceProvider")
+  return ctx
 }

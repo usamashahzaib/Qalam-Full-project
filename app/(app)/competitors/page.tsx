@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan } from "@/lib/entitlements"
 import { LockedFeature } from "@/components/LockedFeature"
 
@@ -32,7 +32,7 @@ const formatDate = (iso: string) => {
 
 export default function CompetitorsPage() {
   const router = useRouter()
-  const { billing } = useWorkspace()
+  const { billing } = useBilling()
   const canUse = canAccessPlan(billing.plan, "Pro")
 
   const [postText, setPostText] = useState("")

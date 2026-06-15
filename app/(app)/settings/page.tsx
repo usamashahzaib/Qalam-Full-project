@@ -4,7 +4,9 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
-import { useWorkspace, type WorkspaceBilling } from "@/components/providers/WorkspaceProvider"
+import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
+import { useProfile } from "@/lib/hooks/useProfile"
+import { usePosts } from "@/lib/hooks/usePosts"
 import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
@@ -33,7 +35,9 @@ export default function SettingsPage() {
         linkedinTokenExpiresAt: null,
       }
     : null
-  const { profile, billing, saveProfile, saveBilling, posts, drafts, scheduled, isLoadingProfile, postsError } = useWorkspace()
+  const { billing, saveBilling } = useBilling()
+  const { profile, saveProfile, isLoadingProfile } = useProfile()
+  const { posts, drafts, scheduled, postsError } = usePosts()
   const isLinkedInUser = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
   const {
     draft: profileDraft,

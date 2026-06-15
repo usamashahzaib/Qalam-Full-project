@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { usePosts } from "@/lib/hooks/usePosts"
 import { LockedFeature } from "@/components/LockedFeature"
 
 function renderMarkdown(text: string) {
@@ -49,8 +50,9 @@ type Message = {
 }
 
 export default function ChatWorkspace() {
-  const { state, saveDraft } = useWorkspace()
-  const workspaceId = (state as { agency?: { activeClientId?: string | null } })?.agency?.activeClientId || ""
+  const { activeClientId } = useWorkspace()
+  const { saveDraft } = usePosts()
+  const workspaceId = activeClientId || ""
   const workspaceQuery = useMemo(
     () => (workspaceId ? `?workspaceKey=${encodeURIComponent(workspaceId)}` : ""),
     [workspaceId]
