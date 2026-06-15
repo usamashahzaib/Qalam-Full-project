@@ -8,6 +8,7 @@ import { VALID_PLAN_NAMES } from "@/lib/entitlements"
 import { BillingProvider, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { PostsProvider } from "@/lib/hooks/usePosts"
 import { ProfileProvider } from "@/lib/hooks/useProfile"
+import type { PlanTier } from "@/types/domain"
 
 // Re-export types consumed by existing import sites
 export type { WorkspaceBilling } from "@/lib/hooks/useBilling"
@@ -87,7 +88,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
         if (normalizedPlan && VALID_PLAN_NAMES.includes(normalizedPlan)) {
           setServerBilling({
-            plan: normalizedPlan as WorkspaceBilling["plan"],
+            plan: normalizedPlan as WorkspaceBilling["plan"] & PlanTier,
             overrideActive: Boolean(data.overrideActive),
             complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
             overridePlan: data.overridePlan || null,

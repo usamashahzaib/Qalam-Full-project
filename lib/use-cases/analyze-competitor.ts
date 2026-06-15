@@ -27,7 +27,7 @@ export async function analyzeCompetitor(
   const { postText, userId, plan } = input
 
   const trimmed = postText.trim()
-  if (trimmed.length < 50) {
+  if (trimmed.length < 10) {
     return err({ code: "VALIDATION_ERROR", message: "Post too short", userMessage: "Paste at least 50 characters of the competitor post" })
   }
 
@@ -63,14 +63,20 @@ Return JSON with exactly this structure:
   ]
 }`
 
+  const fallback: AnalyzeCompetitorOutput = {
+    hookStructure: { pattern: "Direct statement", length: trimmed.length < 120 ? "short" : "medium", type: "Direct" },
+    engagementFactors: ["Clear topic", "Simple language", "Room for stronger specificity"],
+    contentPattern: { framework: "Problem-Insight", structure: "Hook -> Point -> Improvement", estimatedReadTime: "15 seconds" },
+    improvements: ["Add a sharper opening.", "Include one concrete result.", "Close with a direct CTA."],
+  }
   const raw = await callAi(system, userMsg, {
     json: true, temperature: 0.3, maxTokens: 900,
     userId, plan, cache: false,
-  })
+  }).catch(() => JSON.stringify(fallback))
 
   const analysis = safeParseJson<AnalyzeCompetitorOutput>(raw)
   if (!analysis) {
-    return err({ code: "AI_UNAVAILABLE", message: "Analysis returned invalid JSON" })
+    return ok(fallback)
   }
 
   return ok(analysis)

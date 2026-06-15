@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   const { error: insertErr } = await supabase.from("users").insert({
     id: userId,
     email,
-    name,
+    full_name: name,
     password_hash: passwordHash,
     auth_provider: "email",
     email_verified: false,
@@ -103,6 +103,8 @@ export async function POST(req: NextRequest) {
     await supabase.from("workspaces").insert({
       id: workspaceId,
       name: `${name}'s Workspace`,
+      owner_id: userId,
+      owner_email: email,
       slug: `workspace-${userId.slice(0, 8)}`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -110,12 +112,10 @@ export async function POST(req: NextRequest) {
   } catch { /* ignore */ }
 
   try {
-    await supabase.from("memberships").insert({
+    await supabase.from("workspace_members").insert({
       workspace_id: workspaceId,
       user_id: userId,
       role: "owner",
-      invited_at: new Date().toISOString(),
-      joined_at: new Date().toISOString(),
     })
   } catch { /* ignore */ }
 

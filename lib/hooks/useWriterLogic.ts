@@ -6,6 +6,11 @@ import {
   generatePost as apiGeneratePost,
   improvePost as apiImprovePost,
   scorePost as apiScorePost,
+  generateHookAlternatives as apiGenerateHookAlts,
+  generateReplies as apiGenerateReplies,
+  generateCtaAlternatives as apiGenerateCtaAlts,
+  generateCarousel as apiGenerateCarousel,
+  API_PATHS,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { incrementDraftUsage, readDraftUsage } from "@/lib/usage-tracking"
@@ -172,7 +177,7 @@ export function useWriterLogic({
   }, [workspaceId])
 
   useEffect(() => {
-    fetch("/api/dashboard/stats")
+    fetch(API_PATHS.dashboardStats)
       .then((r) => r.json())
       .then((d: { carouselsUsed?: number }) => {
         if (typeof d.carouselsUsed === "number") setLocalCarouselUsage(d.carouselsUsed)
@@ -365,13 +370,7 @@ export function useWriterLogic({
     setHookAltOpen(true)
     setHookAlts([])
     try {
-      const res = await fetch("/api/generate/hook-alternatives", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draftContent, role }),
-      })
-      const data = await res.json().catch(() => ({})) as { hooks?: HookItem[]; error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to generate alternatives")
+      const data = await apiGenerateHookAlts({ content: draftContent, role })
       setHookAlts((data.hooks || []).slice(0, 3) as HookItem[])
     } catch (e) {
       showStatus((e as Error).message, "error")
@@ -441,13 +440,7 @@ export function useWriterLogic({
     if (!commentInput.trim()) return
     setIsGeneratingReplies(true)
     try {
-      const res = await fetch("/api/generate/replies", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ originalPost: draftContent, comments: commentInput, role }),
-      })
-      const data = await res.json().catch(() => ({})) as { replies?: Array<{ style: string; reply: string }>; error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to generate replies")
+      const data = await apiGenerateReplies({ originalPost: draftContent, comments: commentInput, role })
       setReplies((data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply })))
     } catch (e) {
       showStatus((e as Error).message, "error")
@@ -481,13 +474,7 @@ export function useWriterLogic({
     setCtaAltOpen(true)
     setCtaAlts([])
     try {
-      const res = await fetch("/api/generate/cta-alternatives", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draftContent, role }),
-      })
-      const data = await res.json().catch(() => ({})) as { alternatives?: string[]; error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to generate CTA alternatives")
+      const data = await apiGenerateCtaAlts({ content: draftContent, role })
       setCtaAlts((data.alternatives || []).slice(0, 3))
       useDraftCredit(1)
     } catch (e) {
@@ -538,16 +525,7 @@ export function useWriterLogic({
     showStatus("Generating carousel slides...", "info", false)
 
     try {
-      const res = await fetch("/api/generate/carousel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim(), role }),
-      })
-      const data = await res.json().catch(() => ({})) as { slides?: SlideItem[]; error?: string }
-      if (!res.ok) {
-        if (res.status === 403) throw new Error(data.error || "Carousel limit reached")
-        throw new Error(data.error || "Carousel generation failed")
-      }
+      const data = await apiGenerateCarousel({ topic: topic.trim(), role })
       const items = data.slides || []
       if (!items.length) throw new Error("No slides returned")
       setSlides(items)

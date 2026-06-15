@@ -26,7 +26,7 @@ export async function canAccessWorkspace(userId: string, workspaceId: string): P
 
   try {
     const { data, error } = await createServiceClient()
-      .from("memberships")
+      .from("workspace_members")
       .select("id")
       .eq("user_id", userId)
       .eq("workspace_id", workspaceId)

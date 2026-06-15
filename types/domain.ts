@@ -1,5 +1,4 @@
-import type { PlanName as PlanTier } from "@/lib/pricing"
-export type { PlanTier }
+export type PlanTier = "Free" | "Solo" | "Pro" | "Agency"
 
 export type WorkspaceProfile = {
   name: string

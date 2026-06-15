@@ -162,6 +162,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     req: request,
     secret: process.env.AUTH_SECRET,
     cookieName,
+  }) ?? await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    cookieName: isHttps ? "authjs.session-token" : "__Secure-authjs.session-token",
   })
   const userId = token?.id as string | undefined
   const userEmail = token?.email as string | undefined

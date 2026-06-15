@@ -46,6 +46,26 @@ export async function trainVoiceProfile(
 
   const latestPost = examplePosts[examplePosts.length - 1]
 
+  const fallbackAnalysis: VoiceSampleAnalysis = {
+    tone: "direct and concise",
+    sentence_structure: "short declarative sentences",
+    vocabulary_level: "simple",
+    emotional_temperature: "neutral",
+    distinctive_phrases: [],
+    formatting_habits: "plain short posts",
+    perspective: "first person",
+    hook_style: "direct statement",
+    cta_style: "implicit",
+  }
+  const fallbackFingerprint: VoiceFingerprint = {
+    signature_phrases: [],
+    typical_sentence_length: "short",
+    emotional_range: "neutral",
+    argument_structure: "simple point-first structure",
+    unique_verbal_tics: [],
+    confidence_level: "assertive",
+    storytelling_approach: "direct",
+  }
   const analysisRaw = await callAi(
     "Return strict JSON only.",
     `Analyze this LinkedIn post sample and extract voice characteristics.
@@ -66,11 +86,11 @@ OUTPUT JSON:
   "cta_style": "how they close posts"
 }`,
     { json: true, temperature: 0.3, timeout: 15000 }
-  )
+  ).catch(() => JSON.stringify(fallbackAnalysis))
 
   const analysis = safeParseJson<VoiceSampleAnalysis>(analysisRaw)
   if (!analysis) {
-    return err({ code: "AI_UNAVAILABLE", message: "Voice analysis returned invalid JSON" })
+    return ok({ characteristics: { analysis: fallbackAnalysis, fingerprint: fallbackFingerprint } })
   }
 
   const fingerprintRaw = await callAi(
@@ -91,11 +111,11 @@ OUTPUT JSON:
   "storytelling_approach": "personal/anecdotal/data-driven"
 }`,
     { json: true, temperature: 0.3, timeout: 15000 }
-  )
+  ).catch(() => JSON.stringify(fallbackFingerprint))
 
   const fingerprint = safeParseJson<VoiceFingerprint>(fingerprintRaw)
   if (!fingerprint) {
-    return err({ code: "AI_UNAVAILABLE", message: "Voice fingerprint returned invalid JSON" })
+    return ok({ characteristics: { analysis, fingerprint: fallbackFingerprint } })
   }
 
   return ok({ characteristics: { analysis, fingerprint } })

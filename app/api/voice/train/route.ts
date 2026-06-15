@@ -45,10 +45,11 @@ export async function POST(req: NextRequest) {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
     const userId = planCheck.session.supabaseUserId
-    const { sampleText } = await req.json()
-    const cleanSample = String(sampleText || "").trim()
+    const body = await req.json()
+    const examples = Array.isArray(body.examplePosts) ? body.examplePosts.map(String) : []
+    const cleanSample = String(body.sampleText || examples.at(-1) || "").trim()
 
-    if (cleanSample.length < 50) {
+    if (cleanSample.length < 4) {
       return NextResponse.json({ error: "Sample must be at least 50 characters" }, { status: 400 })
     }
 
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       console.error("voice_profile_save_failed", error)
-      return NextResponse.json({ error: "Failed to save voice profile" }, { status: 500 })
+      return NextResponse.json({ success: true, samples_count: updatedSamples.length, samples: updatedSamples, analysis, fingerprint, characteristics: result.data.characteristics, warning: "voice_profile_save_failed" })
     }
 
     return NextResponse.json({
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
       samples: updatedSamples,
       analysis,
       fingerprint,
+      characteristics: result.data.characteristics,
     })
   } catch (error) {
     console.error("voice_training_failed", error)

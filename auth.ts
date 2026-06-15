@@ -46,7 +46,7 @@ const config: NextAuthConfig = {
           const supabase = createServiceClient()
           const { data: user } = await supabase
             .from("users")
-            .select("id, email, name, password_hash, email_verified")
+            .select("id, email, full_name, password_hash, email_verified")
             .eq("email", email)
             .maybeSingle()
 
@@ -55,7 +55,7 @@ const config: NextAuthConfig = {
           const valid = verifyPassword(password, user.password_hash)
           if (!valid) return null
 
-          return { id: user.id, email: user.email, name: user.name ?? "" }
+          return { id: user.id, email: user.email, name: user.full_name ?? "" }
         } catch {
           return null
         }

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await scorePost({
-      content: String(body.content || ""),
+      content: String(body.content || body.postContent || ""),
       role: String(body.role || ""),
       userId: user.id,
       plan: user.plan,
@@ -25,6 +25,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { scores, overall, tips, hashtags } = result.data
-    return NextResponse.json({ ...scores, overall, tips, hashtags })
+    return NextResponse.json({ scores: { ...scores, overall }, overall, tips, hashtags })
   })(request)
 }

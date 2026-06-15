@@ -42,9 +42,9 @@ export async function POST(request: NextRequest) {
     const ctx = await getWorkspaceSessionContext()
 
     const body = await request.json()
-    const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body
-    if (!title || !type) {
-      return NextResponse.json({ error: "title and type are required" }, { status: 400 })
+    const { title, content, type = "linkedin", status, scheduledTime, publishedAt, externalPostUrn } = body
+    if (!title) {
+      return NextResponse.json({ error: "title is required" }, { status: 400 })
     }
 
     const safeStatus = VALID_STATUSES.includes(status) ? status : "draft"
