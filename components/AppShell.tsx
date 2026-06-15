@@ -183,7 +183,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="px-4 py-4" ref={switcherRef}>
-            <button onClick={() => setSwitcherOpen((value) => !value)} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
+            <button onClick={() => setSwitcherOpen(!switcherOpen)} aria-expanded={switcherOpen} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase font-bold tracking-wider text-teal-100/70">Active Workspace</p>
                 <p className="text-sm font-semibold text-white truncate mt-1">{activeClientName}</p>
