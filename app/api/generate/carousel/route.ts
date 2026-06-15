@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     }
 
-    const limit = await checkPlanLimit(user.id, "carousels")
+    const limit = await checkPlanLimit(user.externalId, "carousels")
     if (!limit.allowed) {
       return NextResponse.json(
         { error: "Carousel limit reached. Upgrade to Pro for carousels.", remaining: 0, plan: limit.plan },
@@ -78,7 +78,7 @@ Return JSON:
       visual_suggestion: String(s.visual_suggestion || "").trim(),
     }))
 
-    const usage = await incrementUsage(user.id, "carousels")
+    const usage = await incrementUsage(user.externalId, "carousels")
 
     return NextResponse.json({ slides, remaining: usage.remaining })
   })(request)

@@ -16,7 +16,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
 
-    const parsed = BodySchema.safeParse(body)
+    const raw = body as Record<string, unknown>
+    const parsed = BodySchema.safeParse({
+      topic: raw.topic ?? raw.content,
+      role: raw.role ?? raw.style,
+    })
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
@@ -24,7 +28,7 @@ export async function POST(request: NextRequest) {
     const result = await generateHooks({
       topic: parsed.data.topic,
       role: parsed.data.role,
-      userId: user.id,
+      userId: user.externalId,
       plan: user.plan,
     })
 

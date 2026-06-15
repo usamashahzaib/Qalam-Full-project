@@ -4,8 +4,10 @@
 // to add log.info for their success paths.
 
 export type AuthSession = {
+  /** Internal Supabase UUID - use for all DB foreign-key operations */
   id: string
-  internalId: string
+  /** OAuth provider sub / credentials lookup key - use for plan_usage queries */
+  externalId: string
   email: string | undefined | null
   name: string | undefined | null
   plan: string
@@ -29,8 +31,8 @@ async function provisionOAuthUser(
     id: internalId,
     external_user_id: externalId,
     email: session.user.email || "",
-    name: session.user.name || "",
-    avatar_url: session.user.image || "",
+    full_name: session.user.name || "",
+    image_url: session.user.image || "",
     auth_provider: "oauth",
     email_verified: true,
     created_at: new Date().toISOString(),
@@ -87,7 +89,7 @@ export async function requireAuthApi(request: NextRequest) {
   if (provider === "credentials") {
     const { data: user } = await supabase
       .from("users")
-      .select("id, email, name, avatar_url")
+      .select("id, email, full_name, image_url")
       .eq("id", tokenId)
       .maybeSingle()
 
@@ -119,13 +121,13 @@ export async function requireAuthApi(request: NextRequest) {
       externalUserId: tokenId,
       error: null,
       session: {
-        id: tokenId,
-        internalId: user.id,
+        id: user.id,
+        externalId: tokenId,  // for credentials, externalId === internalId (token.id is the UUID)
         email: user.email || session.user.email,
-        name: user.name || session.user.name,
+        name: user.full_name || session.user.name,
         plan: planUsage?.plan || "free",
         workspaceId: membership?.workspace_id ?? null,
-        avatarUrl: user.avatar_url || session.user.image,
+        avatarUrl: user.image_url || session.user.image,
         provider: "credentials",
       },
     }
@@ -136,7 +138,7 @@ export async function requireAuthApi(request: NextRequest) {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id, external_user_id, email, name, avatar_url")
+    .select("id, external_user_id, email, full_name, image_url")
     .eq("external_user_id", externalId)
     .maybeSingle()
 
@@ -172,13 +174,13 @@ export async function requireAuthApi(request: NextRequest) {
       externalUserId: externalId,
       error: null,
       session: {
-        id: externalId,
-        internalId,
+        id: internalId,
+        externalId,
         email: user.email || session.user.email,
-        name: user.name || session.user.name,
+        name: user.full_name || session.user.name,
         plan: planUsage?.plan || "free",
         workspaceId,
-        avatarUrl: user.avatar_url || session.user.image,
+        avatarUrl: user.image_url || session.user.image,
         provider,
       },
     }
@@ -189,8 +191,8 @@ export async function requireAuthApi(request: NextRequest) {
     externalUserId: externalId,
     error: null,
     session: {
-      id: externalId,
-      internalId,
+      id: internalId,
+      externalId,
       email: session.user.email,
       name: session.user.name,
       plan: "free",

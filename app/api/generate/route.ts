@@ -13,13 +13,13 @@ import { canAccessPost } from "@/lib/domain/services/authorization"
 
 const generateSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
-  role: z.enum([
+  role: z.preprocess((v) => String(v || "").toLowerCase(), z.enum([
     "ai_engineer", "ceo", "hr", "sales", "designer",
     "consultant", "founder", "developer", "director",
     "marketer", "product_manager", "recruiter", "content_creator", "freelancer"
-  ]),
+  ])),
   tone: z.string().max(50).optional(),
-  format: z.enum(["short", "medium", "long"]).default("medium"),
+  format: z.preprocess((v) => String(v || "medium").toLowerCase(), z.enum(["short", "medium", "long"])).default("medium"),
   goal: z.string().max(500, "Goal too long").optional(),
   qualityCheck: z.boolean().default(true),
 })
@@ -33,7 +33,7 @@ const patchSchema = z.object({
 
 export async function GET() {
   return withAuth(async (_req, user) => {
-    const status = await checkPlanLimit(user.id, "drafts")
+    const status = await checkPlanLimit(user.externalId, "drafts")
     return NextResponse.json({
       allowed: status.allowed,
       current: status.current,
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const result = await generatePost({
       ...parsed.data,
-      userId: user.id,
+      userId: user.externalId,
       workspaceId: user.workspaceId,
       plan: user.plan,
       reqId,
@@ -104,7 +104,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    const access = await canAccessPost(user.internalId, parsed.data.id)
+    const access = await canAccessPost(user.id, parsed.data.id)
 
     if (!access.ok) {
       return NextResponse.json({ error: access.error.userMessage || access.error.message }, { status: errorToStatus(access.error.code) })
