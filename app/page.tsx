@@ -533,7 +533,7 @@ export default function HomePage() {
         </div>
         <div className="marquee-fade overflow-hidden">
           <div className="marquee-track">
-            {NICHES.concat(NICHES).map((name, i) => (
+            {NICHES.map((name, i) => (
               <span key={`${name}-${i}`} className="marquee-pill shrink-0 mx-2 inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5 text-sm font-semibold tracking-wide text-zinc-600 transition-all hover:border-teal/40 hover:bg-teal/5 hover:text-teal">
                 {name}
               </span>
