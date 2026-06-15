@@ -9,6 +9,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
 import { generatePost } from "@/lib/use-cases/generate-post"
 import { errorToStatus } from "@/lib/errors"
+import { canAccessPost } from "@/lib/domain/services/authorization"
 
 const generateSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
@@ -103,14 +104,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 })
     }
 
-    const { data: membership } = await supabase
-      .from("memberships")
-      .select("id")
-      .eq("workspace_id", post.workspace_id)
-      .eq("user_id", user.internalId)
-      .single()
+    const access = await canAccessPost(user.internalId, parsed.data.id)
 
-    if (!membership) {
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error.userMessage || access.error.message }, { status: errorToStatus(access.error.code) })
+    }
+
+    if (!access.data) {
       return NextResponse.json({ error: "Not authorized" }, { status: 403 })
     }
 

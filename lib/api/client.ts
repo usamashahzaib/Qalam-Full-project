@@ -1,3 +1,10 @@
+import type { HookItem, PostFormat, ScoreData, WriterRole } from "@/types/writer"
+import type { WorkspacePost } from "@/types/domain"
+
+type ApiErrorBody = { error?: string; message?: string }
+type PostType = "LinkedIn - Text post" | "LinkedIn - Carousel" | string
+type PostStatus = "draft" | "scheduled" | "published"
+
 export type WorkspaceEventInput = {
   id?: string
   workspaceKey?: string
@@ -16,13 +23,36 @@ export type WorkspaceJobInput = {
   createdAt?: string
 }
 
-const asJson = async <T>(response: Response): Promise<T> => {
-  const text = await response.text()
-  const data = (text ? JSON.parse(text) : null) as T & { error?: string; message?: string }
-  if (!response.ok) {
-    throw new Error(data?.error || data?.message || `request_failed_${response.status}`)
+export class ApiClientError extends Error {
+  constructor(message: string, readonly status: number, readonly body: unknown) {
+    super(message)
+    this.name = "ApiClientError"
   }
-  return data
+}
+
+const readJson = async <T>(res: Response): Promise<T> => {
+  const body = await res.json().catch(() => null)
+  if (res.ok) return body as T
+  const msg = (body as ApiErrorBody | null)?.error || (body as ApiErrorBody | null)?.message || res.statusText || "Request failed"
+  throw new ApiClientError(msg, res.status, body)
+}
+
+const postJson = async <TOut, TIn extends Record<string, unknown>>(url: string, data: TIn) => {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+  return readJson<TOut>(res)
+}
+
+const patchJson = async <TOut, TIn extends Record<string, unknown>>(url: string, data: TIn) => {
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  })
+  return readJson<TOut>(res)
 }
 
 const requestJson = <T>(path: string, options: RequestInit = {}) =>
@@ -32,35 +62,151 @@ const requestJson = <T>(path: string, options: RequestInit = {}) =>
       ...(options.headers || {}),
     },
     ...options,
-  }).then(asJson<T>)
+  }).then(readJson<T>)
 
 const withWorkspaceKey = (path: string, workspaceKey?: string) =>
   workspaceKey ? `${path}${path.includes("?") ? "&" : "?"}workspaceKey=${encodeURIComponent(workspaceKey)}` : path
 
-export const loadWorkspaceSnapshot = (workspaceKey?: string) =>
-  requestJson<{ state: Record<string, unknown> | null; updatedAt: string | null }>(
-    withWorkspaceKey("/api/workspace", workspaceKey)
-  )
+const resolvedTitle = (title: string | undefined, content: string, fallback = "Untitled post") =>
+  title || content.trim().split("\n")[0]?.slice(0, 80) || fallback
+
+const scheduledAt = (date?: string, time?: string, scheduledTime?: string) =>
+  scheduledTime || (date && time ? `${date}T${time}:00` : null)
+
+export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string }
+export type GenerateHooksOutput = { hooks: HookItem[] }
+
+export type GeneratePostInput = {
+  topic: string
+  hook: string
+  role?: WriterRole | string
+  format?: PostFormat | string
+  goal?: string
+}
+export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number }
+
+export type ScorePostInput = { content: string; role?: WriterRole | string }
+export type ScorePostOutput = ScoreData
+
+export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown> }
+export type ImprovePostOutput = { content: string; scores?: ScoreData; remaining?: number }
+
+export type SaveDraftInput = {
+  title?: string
+  content: string
+  type: PostType
+  workspaceKey?: string
+}
+export type SaveDraftOutput = { post: WorkspacePost }
+
+export type SchedulePostInput = SaveDraftInput & {
+  id?: string | null
+  date?: string
+  time?: string
+  scheduledTime?: string
+}
+export type SchedulePostOutput = { post?: WorkspacePost; success?: boolean }
+
+export type PublishPostInput = SaveDraftInput & {
+  id?: string | null
+  publishedAt?: string
+  externalPostUrn?: string | null
+}
+export type PublishPostOutput = { post?: WorkspacePost; success?: boolean; externalPostUrn?: string }
+
+export type ExportPostInput = { id: string; format?: "pdf" | "text" }
+export type ExportPostOutput = { content: string }
+export type ShareToLinkedInInput = { content: string; postId?: string | null; workspaceKey?: string; media?: { id?: string; title?: string } | null }
+export type ShareToLinkedInOutput = { shared: boolean; postUrn: string | null }
+export type WorkspaceSnapshotOutput = { state: Record<string, unknown>; workspaceId?: string; plan?: string; [key: string]: unknown }
+
+export const generateHooks = (data: GenerateHooksInput) =>
+  postJson<GenerateHooksOutput, GenerateHooksInput>("/api/generate/hooks", data)
+
+export const generatePost = (data: GeneratePostInput) =>
+  postJson<GeneratePostOutput, GeneratePostInput>("/api/generate/post", data)
+
+export const scorePost = (data: ScorePostInput) =>
+  postJson<ScorePostOutput, ScorePostInput>("/api/generate/score", data)
+
+export const improvePost = (data: ImprovePostInput) =>
+  postJson<ImprovePostOutput, ImprovePostInput>("/api/generate/improve", data)
+
+export const saveDraft = (data: SaveDraftInput) =>
+  postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", {
+    ...data,
+    title: resolvedTitle(data.title, data.content, "Untitled draft"),
+    status: "draft" satisfies PostStatus,
+  })
+
+export const schedulePost = async (data: SchedulePostInput) => {
+  const scheduledTime = scheduledAt(data.date, data.time, data.scheduledTime)
+  const body = {
+    ...data,
+    title: resolvedTitle(data.title, data.content),
+    status: "scheduled" satisfies PostStatus,
+    scheduledTime,
+  }
+  if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
+  try {
+    return await postJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts/${data.id}/schedule`, body)
+  } catch (e) {
+    if (e instanceof ApiClientError && [404, 405].includes(e.status)) {
+      return patchJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
+    }
+    throw e
+  }
+}
+
+export const publishPost = async (data: PublishPostInput) => {
+  const body = {
+    ...data,
+    title: resolvedTitle(data.title, data.content),
+    status: "published" satisfies PostStatus,
+    publishedAt: data.publishedAt || new Date().toISOString(),
+    externalPostUrn: data.externalPostUrn ?? null,
+  }
+  if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
+  try {
+    return await postJson<PublishPostOutput, Record<string, unknown>>(`/api/posts/${data.id}/publish`, body)
+  } catch (e) {
+    if (e instanceof ApiClientError && [404, 405].includes(e.status)) {
+      return patchJson<PublishPostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
+    }
+    throw e
+  }
+}
+
+export const exportPost = ({ id, ...data }: ExportPostInput) =>
+  postJson<ExportPostOutput, Record<string, unknown>>(`/api/export/${id}`, data)
+
+export const shareToLinkedIn = (data: ShareToLinkedInInput) =>
+  postJson<ShareToLinkedInOutput, Record<string, unknown>>("/api/linkedin/share", data)
+
+export const loadWorkspaceSnapshot = async (workspaceKey?: string) => {
+  const qs = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
+  const res = await fetch(`/api/workspace${qs}`)
+  const data = await readJson<Omit<WorkspaceSnapshotOutput, "state"> & { state?: Record<string, unknown> }>(res)
+  return { ...data, state: data.state || {} }
+}
 
 export const saveWorkspaceSnapshot = (state: Record<string, unknown>, workspaceKey?: string) =>
-  requestJson<{ saved: boolean; row: unknown }>("/api/workspace", {
+  fetch("/api/workspace", {
     method: "PUT",
-    body: JSON.stringify({ workspaceKey, state }),
-  })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state, workspaceKey }),
+  }).then(readJson)
 
 export const trackWorkspaceEvent = (
   type: string,
   payload: Record<string, unknown> = {},
   workspaceKey?: string
 ) =>
-  requestJson<{ saved: boolean; event: unknown }>("/api/events", {
-    method: "POST",
-    body: JSON.stringify({
-      workspaceKey,
-      type,
-      payload,
-      createdAt: new Date().toISOString(),
-    }),
+  postJson<{ saved: boolean; event: unknown }, Record<string, unknown>>("/api/events", {
+    workspaceKey,
+    type,
+    payload,
+    createdAt: new Date().toISOString(),
   })
 
 export const fetchWorkspaceEvents = (limit = 100, workspaceKey?: string) =>
@@ -78,16 +224,13 @@ export const createWorkspaceJob = ({
   status = "completed",
   workspaceKey,
 }: WorkspaceJobInput) =>
-  requestJson<{ saved: boolean; job: unknown }>("/api/jobs", {
-    method: "POST",
-    body: JSON.stringify({
-      workspaceKey,
-      type,
-      title,
-      status,
-      payload,
-      createdAt: new Date().toISOString(),
-    }),
+  postJson<{ saved: boolean; job: unknown }, Record<string, unknown>>("/api/jobs", {
+    workspaceKey,
+    type,
+    title,
+    status,
+    payload,
+    createdAt: new Date().toISOString(),
   })
 
 export const analyzeCompetitorPaste = ({
@@ -103,29 +246,10 @@ export const analyzeCompetitorPaste = ({
   sourceText?: string
   workspaceKey?: string
 }) =>
-  requestJson<{ analysis: unknown; job: unknown }>("/api/competitors/analyze", {
-    method: "POST",
-    body: JSON.stringify({
-      workspaceKey,
-      profileId,
-      profileName,
-      platform,
-      sourceText,
-    }),
-  })
-
-export const shareToLinkedIn = ({
-  content,
-  media,
-  postId,
-  workspaceKey,
-}: {
-  content: string
-  media?: { id?: string; title?: string }
-  postId?: string | null
-  workspaceKey?: string
-}) =>
-  requestJson<{ shared: boolean; postUrn: string | null }>("/api/linkedin/share", {
-    method: "POST",
-    body: JSON.stringify({ content, media, postId, workspaceKey }),
+  postJson<{ analysis: unknown; job: unknown }, Record<string, unknown>>("/api/competitors/analyze", {
+    workspaceKey,
+    profileId,
+    profileName,
+    platform,
+    sourceText,
   })

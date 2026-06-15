@@ -1,6 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  generateHooks as apiGenerateHooks,
+  generatePost as apiGeneratePost,
+  improvePost as apiImprovePost,
+  scorePost as apiScorePost,
+} from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { incrementDraftUsage, readDraftUsage } from "@/lib/usage-tracking"
 import type {
@@ -248,16 +254,9 @@ export function useWriterLogic({
     if (!content.trim() || isScoring) return
     setIsScoring(true)
     try {
-      const res = await fetch("/api/generate/score", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, role }),
-      })
-      const data = await res.json().catch(() => null) as ScoreData | null
-      if (res.ok && data) {
-        setScores(data)
-        showStatus("Draft scored.", "success")
-      }
+      const data = await apiScorePost({ content, role })
+      setScores(data)
+      showStatus("Draft scored.", "success")
     } finally {
       setIsScoring(false)
     }
@@ -287,14 +286,8 @@ export function useWriterLogic({
     setHookAltOpen(false)
 
     try {
-      const res = await fetch("/api/generate/hooks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim(), role, goal: goal.trim() }),
-      })
-      const data = await res.json().catch(() => ({})) as { hooks?: HookItem[]; error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to generate hooks")
-      const items = (data.hooks || []).slice(0, 5) as HookItem[]
+      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: goal.trim() })
+      const items = data.hooks.slice(0, 5)
       if (!items.length) throw new Error("No hooks returned")
       setHooks(items)
       useDraftCredit(1)
@@ -319,14 +312,8 @@ export function useWriterLogic({
     showStatus("Generating post from your hook...", "info", false)
 
     try {
-      const res = await fetch("/api/generate/post", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: topic.trim(), hook: hookText, role, format, goal: goal.trim() }),
-      })
-      const data = await res.json().catch(() => ({})) as { content?: string; error?: string }
-      if (!res.ok) throw new Error(data.error || "Post generation failed")
-      const content = sanitizeGeneratedText(data.content || "")
+      const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, role, format, goal: goal.trim() })
+      const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
       setDraftContent(content)
       setVersions((p) => [...p, { content, timestamp: new Date().toISOString() }])
@@ -354,18 +341,12 @@ export function useWriterLogic({
     setIsImproving(true)
     showStatus("Improving draft toward 90+...", "info", false)
     try {
-      const res = await fetch("/api/generate/improve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: draftContent, role, scores: scores || {} }),
-      })
-      const data = await res.json().catch(() => ({})) as { content?: string; scores?: ScoreData; error?: string }
-      if (!res.ok) throw new Error(data.error || "Improvement failed")
-      const improved = sanitizeGeneratedText(data.content || "")
+      const data = await apiImprovePost({ content: draftContent, role, scores: scores || {} })
+      const improved = sanitizeGeneratedText(data.content)
       if (!improved) throw new Error("Returned empty content")
       setDraftContent(improved)
       setVersions((p) => [...p, { content: improved, timestamp: new Date().toISOString() }])
-      if (data.scores) setScores(data.scores as ScoreData)
+      if (data.scores) setScores(data.scores)
       useDraftCredit(1)
       showStatus("Draft improved. Check new scores.", "success")
     } catch (e) {
