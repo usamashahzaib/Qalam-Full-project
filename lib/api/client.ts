@@ -1,4 +1,4 @@
-import type { HookItem, PostFormat, ScoreData, WriterRole } from "@/types/writer"
+import type { HookItem, PostFormat, ScoreData, WriterRole, SlideItem } from "@/types/writer"
 import type { WorkspacePost } from "@/types/domain"
 
 type ApiErrorBody = { error?: string; message?: string }
@@ -33,7 +33,10 @@ export class ApiClientError extends Error {
 const readJson = async <T>(res: Response): Promise<T> => {
   const body = await res.json().catch(() => null)
   if (res.ok) return body as T
-  const msg = (body as ApiErrorBody | null)?.error || (body as ApiErrorBody | null)?.message || res.statusText || "Request failed"
+  const serverMsg = (body as ApiErrorBody | null)?.error || (body as ApiErrorBody | null)?.message
+  const msg = res.status >= 500
+    ? (serverMsg || "Something went wrong on our end. Please try again in a moment.")
+    : (serverMsg || res.statusText || "Request failed")
   throw new ApiClientError(msg, res.status, body)
 }
 
@@ -66,6 +69,14 @@ const requestJson = <T>(path: string, options: RequestInit = {}) =>
 
 const withWorkspaceKey = (path: string, workspaceKey?: string) =>
   workspaceKey ? `${path}${path.includes("?") ? "&" : "?"}workspaceKey=${encodeURIComponent(workspaceKey)}` : path
+
+export const API_PATHS = {
+  dashboardStats: "/api/dashboard/stats",
+  hookAlternatives: "/api/generate/hook-alternatives",
+  replies: "/api/generate/replies",
+  ctaAlternatives: "/api/generate/cta-alternatives",
+  carouselGenerate: "/api/generate/carousel",
+}
 
 const resolvedTitle = (title: string | undefined, content: string, fallback = "Untitled post") =>
   title || content.trim().split("\n")[0]?.slice(0, 80) || fallback
@@ -253,3 +264,39 @@ export const analyzeCompetitorPaste = ({
     platform,
     sourceText,
   })
+
+export type HookAlternativesInput = { content: string; role?: string }
+export type HookAlternativesOutput = { hooks: HookItem[] }
+
+export type GenerateRepliesInput = { originalPost: string; comments: string; role?: string }
+export type GenerateRepliesOutput = { replies: Array<{ style: string; reply: string }> }
+
+export type CtaAlternativesInput = { content: string; role?: string }
+export type CtaAlternativesOutput = { alternatives: string[] }
+
+export type CarouselInput = { topic: string; role?: string }
+export type CarouselOutput = { slides: SlideItem[] }
+
+export const generateHookAlternatives = (data: HookAlternativesInput) =>
+  postJson<HookAlternativesOutput, Record<string, unknown>>(API_PATHS.hookAlternatives, data)
+
+export const generateReplies = (data: GenerateRepliesInput) =>
+  postJson<GenerateRepliesOutput, Record<string, unknown>>(API_PATHS.replies, data)
+
+export const generateCtaAlternatives = (data: CtaAlternativesInput) =>
+  postJson<CtaAlternativesOutput, Record<string, unknown>>(API_PATHS.ctaAlternatives, data)
+
+export const generateCarousel = (data: CarouselInput) =>
+  postJson<CarouselOutput, Record<string, unknown>>(API_PATHS.carouselGenerate, data)
+
+export const trainVoice = (data: { examplePosts?: string[]; sampleText?: string }) =>
+  postJson<{ characteristics: unknown }, Record<string, unknown>>("/api/voice/train", data)
+
+export const fetchDashboardStats = () =>
+  requestJson<Record<string, unknown>>(API_PATHS.dashboardStats)
+
+export const fetchDashboardRecentPosts = () =>
+  requestJson<{ posts?: WorkspacePost[] } | WorkspacePost[]>("/api/dashboard/recent-posts")
+
+export const fetchWorkspace = (workspaceKey?: string) =>
+  requestJson<Record<string, unknown>>(withWorkspaceKey("/api/workspace", workspaceKey))
