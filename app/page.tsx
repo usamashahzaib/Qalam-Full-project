@@ -447,13 +447,9 @@ export default function HomePage() {
               </motion.div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["Your drafts are private - no one reads your content.", "Pay how you want - JazzCash, Easypaisa, or card.", "Free plan is real - 5 posts/month. No card. No expiry."].map((item) => (
-                <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
-                  <CheckIcon className="h-4 w-4 text-gold" />
-                  {item}
-                </span>
-              ))}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-zinc-600">
+              <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
+              <span>Your drafts are private - no one reads your content. Pay how you want - JazzCash, Easypaisa, or card. Free plan is real - 5 posts a month. No card. No expiry.</span>
             </motion.div>
           </div>
 
