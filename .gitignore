@@ -78,5 +78,11 @@ node_modules/
 *.png
 QALAM_AUDIT_REPORT.md
 
-# Machine-specific
+# Backup files
+*.bak
+*.old
+*.backup
+
+# Machine-specific AI tool configs
+.abacusai/
 .claude/settings.local.json
