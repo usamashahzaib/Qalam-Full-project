@@ -131,6 +131,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       price,
       annualSavings,
       usdReference,
+      cta: plan.plan === "Solo" ? "Start Solo" : plan.plan === "Pro" ? "Start Pro" : plan.cta,
       badge: isCurrentPlan ? "Current plan" : plan.badge,
     }
   })
