@@ -448,7 +448,7 @@ export default function HomePage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["Your drafts are private - no one reads your content.", "Pay how you want - JazzCash, Easypaisa, or card.", "Free plan is real - 10 drafts. No card. No expiry."].map((item) => (
+              {["Your drafts are private - no one reads your content.", "Pay how you want - JazzCash, Easypaisa, or card.", "Free plan is real - 5 posts/month. No card. No expiry."].map((item) => (
                 <span key={item} className="flex items-center gap-2 text-sm text-zinc-600">
                   <CheckIcon className="h-4 w-4 text-gold" />
                   {item}
@@ -470,7 +470,7 @@ export default function HomePage() {
             {[
               "Your drafts are private - No one at Qalam reads your content. Ever.",
               "Pay how you want - JazzCash, Easypaisa, or card. All work.",
-              "Free plan is real - 10 drafts a month. No card. No expiry. No trick.",
+              "Free plan is real - 5 posts a month. No card. No expiry. No trick.",
             ].map((block) => (
               <div key={block} className="rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-5 text-center text-sm font-medium text-zinc-700 shadow-sm">
                 {block}
@@ -775,7 +775,7 @@ export default function HomePage() {
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
               <Link href="/login" className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
-                Start free - 10 drafts, no card
+                Start free - 5 posts, no card
               </Link>
             </motion.div>
             <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/35 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">

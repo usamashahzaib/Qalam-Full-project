@@ -79,7 +79,7 @@ const faqSchema = buildFaqSchema([
   },
   {
     q: "Is there a free AI LinkedIn writer?",
-    a: "Qalam offers a free plan with 10 drafts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
+    a: "Qalam offers a free plan with 5 posts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
   },
 ])
 
@@ -198,7 +198,7 @@ export default function AiLinkedInWriterPage() {
                     href="/login"
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal px-8 py-4 text-lg font-bold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
                   >
-                    Start free - 10 drafts, no card
+                    Start free - 5 posts, no card
                   </Link>
                   <Link
                     href="/free-tools/hook-generator"
@@ -448,7 +448,7 @@ export default function AiLinkedInWriterPage() {
                 },
                 {
                   q: "Is there a free AI LinkedIn writer?",
-                  a: "Qalam offers a free plan with 10 drafts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
+                  a: "Qalam offers a free plan with 5 posts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
                 },
               ].map((faq, i) => (
                 <FadeUp key={i} delay={i * 0.04}>
@@ -477,7 +477,7 @@ export default function AiLinkedInWriterPage() {
                   href="/login"
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
                 >
-                  Start free - 10 drafts
+                  Start free - 5 posts
                 </Link>
                 <Link
                   href="/pricing"
