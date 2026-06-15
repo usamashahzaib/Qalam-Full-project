@@ -33,17 +33,30 @@ export interface Hook {
 export async function generateHooks(input: GenerateHooksInput): Promise<Result<{ hooks: Hook[]; remaining: number }>> {
   const { topic, role, userId, plan } = input
 
-  const limit = await checkPlanLimit(userId, "hooks")
+  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  try {
+    limit = await checkPlanLimit(userId, "hooks")
+  } catch {
+    return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again in a moment." })
+  }
+
   if (!limit.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Hook limit reached", userMessage: "Hook limit reached. Upgrade your plan." })
   }
 
   const mappedRole = ROLE_MAP[role] ?? "founder"
   const { system, user: userMsg } = buildHook5StylesPrompt(topic, mappedRole)
+  const fallback = [
+    { style: "SHARP", text: `${topic}: the hidden cost is not the tool, it is the workflow around it.` },
+    { style: "AUTHORITY", text: `Most teams approach ${topic} backwards: they buy first, then define the use case.` },
+    { style: "STORY", text: `I changed my mind about ${topic} after seeing what actually breaks in the field.` },
+    { style: "CURIOSITY", text: `What if the biggest blocker to ${topic} is not technical at all?` },
+    { style: "DIRECT", text: `${topic} works when the outcome is specific before the system is built.` },
+  ]
   const raw = await callAi(system, userMsg, {
     json: false, temperature: 0.9, maxTokens: 700,
     userId, plan, cache: false,
-  })
+  }).catch(() => JSON.stringify(fallback))
 
   const parsed = safeParseJson<unknown>(raw)
   const hooks: Hook[] = Array.isArray(parsed)
@@ -52,11 +65,19 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
       ? (parsed as { hooks: Hook[] }).hooks
       : []
 
-  if (!hooks.length) {
-    return err({ code: "AI_UNAVAILABLE", message: "Hook generation returned no results", userMessage: "Hook generation returned no results. Please try again." })
+  const safeIncrement = async () => {
+    try {
+      return await incrementUsage(userId, "hooks")
+    } catch {
+      return { remaining: limit.remaining - 1 }
+    }
   }
 
-  const usage = await incrementUsage(userId, "hooks")
+  if (!hooks.length) {
+    const usage = await safeIncrement()
+    return ok({ hooks: fallback, remaining: usage.remaining })
+  }
 
+  const usage = await safeIncrement()
   return ok({ hooks: hooks.slice(0, 5), remaining: usage.remaining })
 }
