@@ -1,5 +1,7 @@
 // lib/server/auth.ts
 // Wraps NextAuth session into internal user context for API routes.
+// withAuth logs all errors and 401s centrally — individual routes only need
+// to add log.info for their success paths.
 
 export type AuthSession = {
   id: string
@@ -15,6 +17,7 @@ export type AuthSession = {
 import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "./supabase-rest"
+import { log } from "./logging"
 
 async function provisionOAuthUser(
   supabase: ReturnType<typeof createServiceClient>,
@@ -200,17 +203,22 @@ export async function requireAuthApi(request: NextRequest) {
 
 export function withAuth(handler: (req: NextRequest, user: AuthSession) => Promise<NextResponse>) {
   return async (req: NextRequest) => {
+    const route = req.nextUrl.pathname
     try {
       const { userId, externalUserId, error, session } = await requireAuthApi(req)
-      if (error) return error
+      if (error) {
+        log.warn("auth.unauthorized", { route })
+        return error
+      }
       if (!userId || !externalUserId || !session) {
+        log.warn("auth.unauthorized", { route })
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       }
       return await handler(req, session)
     } catch (err) {
-      console.error("[API Error]", err)
+      log.error("api.unhandled_error", { route, error: (err as Error).message, stack: (err as Error).stack?.slice(0, 500) })
       return NextResponse.json(
-        { error: "Internal server error", message: (err as Error).message },
+        { error: "Internal server error" },
         { status: 500 }
       )
     }

@@ -380,6 +380,65 @@ export const LINKEDIN_NICHES = [
   "Research Directors",
 ] as const
 
+export type LiveSurfaceSection = { title: string; items: string[] }
+
+export const LIVE_SURFACE: LiveSurfaceSection[] = [
+  {
+    title: "Live now",
+    items: [
+      "LinkedIn-first auth",
+      "Writer, archive, calendar, analytics, voice settings",
+      "Free public tools",
+      "Custom session plus LinkedIn OAuth path",
+    ],
+  },
+  {
+    title: "Active workflows",
+    items: [
+      "Paid plan activation via email",
+      "Team and agency onboarding",
+      "Agency workspace setup",
+      "JazzCash, Easypaisa, bank billing",
+    ],
+  },
+  {
+    title: "Building next",
+    items: [
+      "Self-serve checkout",
+      "Agency analytics rollups",
+      "Notification center",
+      "Broader collaboration automation",
+    ],
+  },
+]
+
+export const LANDING_FAQ: { q: string; a: string }[] = [
+  {
+    q: "How does the Voice Profile actually learn my writing?",
+    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. Every draft you approve and every edit you keep then improves future starting points.",
+  },
+  {
+    q: "What happens to my archive if I stop using the product?",
+    a: "The current product keeps drafts, saved items, and voice settings in your workspace. Commercial retention policy should be treated as an operational detail, not assumed from generic SaaS copy.",
+  },
+  {
+    q: "How is this different from just using ChatGPT?",
+    a: "ChatGPT resets every session. Qalam keeps approved examples, editing history, hook archive, and workspace continuity so each session starts closer to your actual voice instead of from scratch.",
+  },
+  {
+    q: "Who is the Pro plan for?",
+    a: "Pro is for professionals who post consistently and want voice memory, AI quality scoring, competitor research, and analytics in one system. It is the plan for people who treat LinkedIn as a serious channel.",
+  },
+  {
+    q: "Is there an Agency plan?",
+    a: "Yes - Agency is for multi-client operators who need isolated client workspaces, approval workflows, and per-client publishing. It is launching soon. Contact us to join the waitlist or set up early access.",
+  },
+  {
+    q: "Does Qalam work for any niche?",
+    a: "Yes, when the writer brings real source material from that niche. The system performs best when it learns from authentic examples instead of generic prompts.",
+  },
+]
+
 export const MARKETING_ANSWER_PAGES = [
   ...PUBLISHED_BLOG_POSTS.map((post) => `/blog/${post.slug}`),
   ...Object.keys(PRODUCT_PAGES).map((slug) => `/product/${slug}`),

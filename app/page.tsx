@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
-import { LINKEDIN_NICHES } from "@/lib/marketing-content"
+import { LINKEDIN_NICHES, LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -95,63 +95,6 @@ const HOW_IT_WORKS = [
     title: "Your Archive Compounds",
     desc: "Drafts, versions, hooks, and results stay attached, so the system becomes more useful the longer it is used.",
     icon: GrowthIcon,
-  },
-]
-
-const LIVE_SURFACE = [
-  {
-    title: "Live now",
-    items: [
-      "LinkedIn-first auth",
-      "Writer, archive, calendar, analytics, voice settings",
-      "Free public tools",
-      "Custom session plus LinkedIn OAuth path",
-    ],
-  },
-  {
-    title: "Active workflows",
-    items: [
-      "Paid plan activation via email",
-      "Team and agency onboarding",
-      "Agency workspace setup",
-      "JazzCash, Easypaisa, bank billing",
-    ],
-  },
-  {
-    title: "Building next",
-    items: [
-      "Self-serve checkout",
-      "Agency analytics rollups",
-      "Notification center",
-      "Broader collaboration automation",
-    ],
-  },
-]
-
-const FAQ_ITEMS = [
-  {
-    q: "How does the Voice Profile actually learn my writing?",
-    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. Every draft you approve and every edit you keep then improves future starting points.",
-  },
-  {
-    q: "What happens to my archive if I stop using the product?",
-    a: "The current product keeps drafts, saved items, and voice settings in your workspace. Commercial retention policy should be treated as an operational detail, not assumed from generic SaaS copy.",
-  },
-  {
-    q: "How is this different from just using ChatGPT?",
-    a: "ChatGPT resets every session. Qalam keeps approved examples, editing history, hook archive, and workspace continuity so each session starts closer to your actual voice instead of from scratch.",
-  },
-  {
-    q: "Who is the Pro plan for?",
-    a: "Pro is for professionals who post consistently and want voice memory, AI quality scoring, competitor research, and analytics in one system. It is the plan for people who treat LinkedIn as a serious channel.",
-  },
-  {
-    q: "Is there an Agency plan?",
-    a: "Yes - Agency is for multi-client operators who need isolated client workspaces, approval workflows, and per-client publishing. It is launching soon. Contact us to join the waitlist or set up early access.",
-  },
-  {
-    q: "Does Qalam work for any niche?",
-    a: "Yes, when the writer brings real source material from that niche. The system performs best when it learns from authentic examples instead of generic prompts.",
   },
 ]
 
@@ -364,7 +307,7 @@ function FAQSection() {
         </FadeUp>
 
         <div className="flex flex-col gap-3">
-          {FAQ_ITEMS.map((item, i) => (
+          {LANDING_FAQ.map((item, i) => (
             <FadeUp key={item.q} delay={i * 0.05}>
               <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-colors hover:border-teal/30">
                 <button className="flex w-full items-center justify-between px-6 py-4 text-left" onClick={() => setOpen(open === i ? null : i)}>
@@ -402,7 +345,7 @@ function FAQSection() {
 const homepageFaqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: FAQ_ITEMS.map((item) => ({
+  mainEntity: LANDING_FAQ.map((item) => ({
     "@type": "Question",
     name: item.q,
     acceptedAnswer: { "@type": "Answer", text: item.a },

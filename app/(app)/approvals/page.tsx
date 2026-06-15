@@ -1,24 +1,10 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
-import { canAccessPlan } from "@/lib/entitlements"
 import { LockedFeature } from "@/components/LockedFeature"
-
-type ApprovalRow = {
-  id: string
-  post_id: string | null
-  reviewer_email: string
-  post_title: string
-  post_content: string
-  status: "pending" | "approved" | "rejected"
-  message: string | null
-  comment: string | null
-  created_at: string
-  updated_at: string
-}
-
-type StatusMsg = { text: string; type: "info" | "error" | "success" }
+import { useApprovalQueue } from "@/lib/hooks/useApprovalQueue"
+import type { ApprovalRow } from "@/lib/hooks/useApprovalQueue"
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   pending: { label: "Awaiting review", badge: "bg-amber-50 text-amber-700 border border-amber-200" },
@@ -32,34 +18,12 @@ const formatDate = (iso: string) => {
 
 export default function ApprovalsPage() {
   const { billing } = useWorkspace()
-  const canUse = canAccessPlan(billing.plan, "Pro")
-
-  const [approvals, setApprovals] = useState<ApprovalRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [sendModalOpen, setSendModalOpen] = useState(false)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [status, setStatus] = useState<StatusMsg | null>(null)
-
-  const showStatus = useCallback((text: string, type: StatusMsg["type"]) => {
-    setStatus({ text, type })
-    if (type !== "error") setTimeout(() => setStatus(null), 4000)
-  }, [])
-
-  const fetchApprovals = useCallback(async () => {
-    if (!canUse) { setIsLoading(false); return }
-    setIsLoading(true)
-    try {
-      const res = await fetch("/api/approvals")
-      const data = await res.json() as { approvals?: ApprovalRow[] }
-      setApprovals(data.approvals || [])
-    } catch { /* silent */ }
-    finally { setIsLoading(false) }
-  }, [canUse])
-
-  useEffect(() => { void fetchApprovals() }, [fetchApprovals])
-
-  const pending = approvals.filter((a) => a.status === "pending")
-  const resolved = approvals.filter((a) => a.status !== "pending")
+  const {
+    isLoading, sendModalOpen, setSendModalOpen,
+    expandedId, toggleExpanded, status,
+    showStatus, fetchApprovals, addApproval,
+    pending, resolved, approvals,
+  } = useApprovalQueue(billing.plan)
 
   return (
     <LockedFeature requiredPlan="Pro" feature="Approval workflow">
@@ -132,7 +96,7 @@ export default function ApprovalsPage() {
                       key={row.id}
                       row={row}
                       expanded={expandedId === row.id}
-                      onToggle={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                      onToggle={() => toggleExpanded(row.id)}
                     />
                   ))}
                 </div>
@@ -151,7 +115,7 @@ export default function ApprovalsPage() {
                       key={row.id}
                       row={row}
                       expanded={expandedId === row.id}
-                      onToggle={() => setExpandedId(expandedId === row.id ? null : row.id)}
+                      onToggle={() => toggleExpanded(row.id)}
                     />
                   ))}
                 </div>
@@ -164,7 +128,7 @@ export default function ApprovalsPage() {
           <SendApprovalModal
             onClose={() => setSendModalOpen(false)}
             onSent={(row) => {
-              setApprovals((prev) => [row, ...prev])
+              addApproval(row)
               showStatus(`Approval request sent to ${row.reviewer_email}`, "success")
             }}
             onError={(msg) => showStatus(msg, "error")}
