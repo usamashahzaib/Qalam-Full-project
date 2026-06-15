@@ -709,10 +709,10 @@ export default function HomePage() {
 
           {/* Managed Plans teaser */}
           <FadeUp className="mt-8">
-            <div className="rounded-2xl border border-gold/30 bg-gold/5 p-8">
+            <div className="rounded-2xl border-2 border-gold/40 bg-gold/10 p-8 shadow-[0_18px_48px_rgba(201,135,31,0.14)]">
               <div className="mb-6 text-center">
-                <span className="chip mb-3 inline-flex border-gold/30 bg-gold/10 text-gold-700">Managed Plans</span>
-                <h3 className="mb-2 text-xl font-bold text-zinc-900">Want us to handle it entirely?</h3>
+                <span className="chip mb-3 inline-flex border-gold/40 bg-white text-gold-700">Done-for-you</span>
+                <h3 className="mb-2 text-3xl font-extrabold text-zinc-900">Managed Plans</h3>
                 <p className="mx-auto max-w-lg text-sm leading-relaxed text-zinc-600">
                   A dedicated Qalam writer creates and posts on your behalf - 3x/week minimum. You approve before it goes live.
                 </p>
