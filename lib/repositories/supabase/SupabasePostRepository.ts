@@ -148,7 +148,7 @@ export class SupabasePostRepository implements IPostRepository {
       id: post.id as string,
       title: `${original.title} (copy)`,
       content: original.content ?? "",
-      type: original.type,
+      type: original.type ?? "linkedin",
       status: "draft",
       date: now.slice(0, 10),
       scheduledTime: null,
