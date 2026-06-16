@@ -161,7 +161,8 @@ export function isFeatureAllowed(plan: string, feature: string): boolean {
   if (feature === "carousel" || feature === "carousel_standard" || feature === "carousels") return config.carousels > 0
   if (feature === "voice" || feature === "voiceProfile") return normalized !== "Free"
   if (feature === "research" || feature === "competitorResearch") return normalized !== "Free"
-  if (feature === "approvalWorkflow" || feature === "teamSeats") return normalized === "Agency"
+  if (feature === "teamSeats") return normalized === "Agency"
+  if (feature === "approvalWorkflow") return normalized === "Pro" || normalized === "Agency"
   if (feature === "basic_analytics") return normalized !== "Free"
 
   return normalized !== "Free"

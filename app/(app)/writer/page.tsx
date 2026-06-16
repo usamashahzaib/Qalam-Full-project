@@ -212,7 +212,7 @@ export default function WriterPage() {
                     disabled={isGeneratingHooks || !topic.trim() || draftLimitHit}
                     className="w-full cursor-pointer rounded-xl bg-teal py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isGeneratingHooks ? "Generating hooks..." : draftLimitHit ? "Draft limit reached - Upgrade to Solo" : "Generate Hooks"}
+                    {isGeneratingHooks ? "Generating hooks..." : draftLimitHit ? `Draft limit reached - Upgrade to ${billing.plan === "Free" ? "Solo" : billing.plan === "Solo" ? "Pro" : "a higher plan"}` : "Generate Hooks"}
                   </button>
                   <DraftCounter compact className="mt-2" />
                 </>

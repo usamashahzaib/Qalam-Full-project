@@ -175,7 +175,8 @@ export function isFeatureAllowed(plan: string, feature: string): boolean {
   if (feature === "carousel" || feature === "carousel_standard") return (current.carouselsPerMonth ?? 0) > 0
   if (feature === "voice" || feature === "voiceProfile") return current.voiceProfiles > 0
   if (feature === "research" || feature === "competitorResearch") return current.researchPerMonth > 0
-  if (feature === "approvalWorkflow" || feature === "teamSeats") return current.name === "Agency"
+  if (feature === "teamSeats") return current.name === "Agency"
+  if (feature === "approvalWorkflow") return current.name === "Pro" || current.name === "Agency"
   if (feature === "basic_analytics") return current.name === "Solo" || current.name === "Pro" || current.name === "Agency"
   return current.name !== "Free"
 }

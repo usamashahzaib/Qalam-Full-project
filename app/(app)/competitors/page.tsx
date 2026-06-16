@@ -37,7 +37,6 @@ export default function CompetitorsPage() {
   const canUse = canAccessPlan(billing.plan, "Pro")
 
   const [postText, setPostText] = useState("")
-  const [postUrl, setPostUrl] = useState("")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [runsUsed, setRunsUsed] = useState(0)
@@ -77,7 +76,7 @@ export default function CompetitorsPage() {
       const res = await fetch("/api/competitors/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText: postText.trim(), postUrl: postUrl.trim() }),
+        body: JSON.stringify({ postText: postText.trim() }),
       })
       const data = await res.json() as { analysis?: Analysis; runsUsed?: number; limit?: number; error?: string }
       if (!res.ok) throw new Error(data.error || "Analysis failed")
@@ -119,7 +118,6 @@ export default function CompetitorsPage() {
       improvements: item.improvements,
     })
     setPostText(item.post_text)
-    setPostUrl(item.post_url || "")
   }
 
   const blurredAnalysis: Analysis = {
@@ -166,18 +164,6 @@ export default function CompetitorsPage() {
                 />
                 <p className="mt-1 text-xs text-zinc-400">{postText.length} characters</p>
               </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-                  Post URL <span className="font-normal normal-case text-zinc-400">(optional)</span>
-                </label>
-                <input
-                  value={postUrl}
-                  onChange={(e) => setPostUrl(e.target.value)}
-                  placeholder="https://linkedin.com/posts/..."
-                  className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-                />
-              </div>
-
               {canUse && (
                 <p className="text-xs text-zinc-400">
                   {runsUsed} of {limit} runs used this month

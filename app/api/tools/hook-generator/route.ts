@@ -40,13 +40,13 @@ Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Ho
         timeout: 25000,
         userId: `free_${ip}`,
         plan: "free",
-        cache: true,
-        cacheTtl: 3600,
+        cache: false,
       }
     )
 
     let hooks: string[] = []
-    const match = raw.match(/\[[\s\S]*\]/)
+    const rawStr = String(raw || "")
+    const match = rawStr.match(/\[[\s\S]*\]/)
     if (match) {
       const parsed2 = JSON.parse(match[0])
       if (Array.isArray(parsed2) && parsed2.length > 0) {
@@ -55,7 +55,7 @@ Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Ho
     }
 
     if (hooks.length === 0) {
-      hooks = raw
+      hooks = rawStr
         .split("\n")
         .map((line: string) => line.replace(/^\d+\.\s*/, "").replace(/^["']|["']$/g, "").trim())
         .filter((line: string) => line.length > 10)

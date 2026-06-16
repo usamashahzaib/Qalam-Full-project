@@ -76,17 +76,32 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     return err({ code: "AI_UNAVAILABLE", message: "Scoring returned invalid JSON" })
   }
 
+  const rawScores = {
+    hook: parsed.hook,
+    readability: parsed.readability,
+    authority: parsed.authority,
+    specificity: parsed.specificity,
+    cta: parsed.cta,
+    human: parsed.human,
+    voiceFit: parsed.voiceFit,
+  }
+  const rawOverall = parsed.overall ?? Math.round(Object.values(rawScores).reduce((a, b) => a + b, 0) / 7)
+
+  // AI sometimes returns 0-10 scale despite prompt saying 0-100 — normalize
+  const isZeroToTen = rawOverall < 15 && Object.values(rawScores).every((v) => v <= 10)
+  const m = isZeroToTen ? 10 : 1
+
   return ok({
     scores: {
-      hook: parsed.hook,
-      readability: parsed.readability,
-      authority: parsed.authority,
-      specificity: parsed.specificity,
-      cta: parsed.cta,
-      human: parsed.human,
-      voiceFit: parsed.voiceFit,
+      hook: Math.round(rawScores.hook * m),
+      readability: Math.round(rawScores.readability * m),
+      authority: Math.round(rawScores.authority * m),
+      specificity: Math.round(rawScores.specificity * m),
+      cta: Math.round(rawScores.cta * m),
+      human: Math.round(rawScores.human * m),
+      voiceFit: Math.round(rawScores.voiceFit * m),
     },
-    overall: parsed.overall,
+    overall: Math.round(rawOverall * m),
     tips: parsed.tips ?? {},
     hashtags: parsed.hashtags ?? [],
   })

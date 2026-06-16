@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useBilling } from "@/lib/hooks/useBilling"
+import { getPlanLimits } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
+import type { PlanTier } from "@/lib/entitlements"
 
 export { getDraftUsageKey, readDraftUsage, incrementDraftUsage } from "@/lib/usage-tracking"
 
@@ -12,6 +14,8 @@ type DraftStatus = {
   current: number
   limit: number | null
 }
+
+const NEXT_PLAN: Record<string, PlanTier> = { Free: "Solo", Solo: "Pro", Pro: "Agency", Agency: "Agency" }
 
 export function DraftCounter({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   const { billing } = useBilling()
@@ -22,14 +26,21 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
     fetch("/api/generate")
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((data) => {
-        setStatus({
-          remaining: data.remaining ?? null,
-          current: data.current ?? 0,
-          limit: data.limit ?? null,
-        })
-        if (typeof data.remaining === "number" && data.remaining === 0) setShowUpgrade(true)
+        // Server may return Free limits due to plan-detection lag;
+        // if billing.plan says higher, trust billing.plan for the limit display.
+        const billingLimit = getPlanLimits(billing.plan).aiDraftsPerMonth
+        const serverLimit = data.limit ?? null
+        const effectiveLimit = (
+          typeof billingLimit === "number" && typeof serverLimit === "number" && billingLimit > serverLimit
+        ) ? billingLimit : serverLimit
+
+        const current = data.current ?? 0
+        const remaining = typeof effectiveLimit === "number" ? Math.max(0, effectiveLimit - current) : null
+        setStatus({ remaining, current, limit: effectiveLimit })
+        if (typeof remaining === "number" && remaining === 0) setShowUpgrade(true)
       })
       .catch(() => { /* silent — skeleton stays */ })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (status === null) {
@@ -42,6 +53,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
   const pct = typeof limit === "number" && limit > 0 ? Math.min(100, Math.round((current / limit) * 100)) : 0
   const remainingPct = typeof limit === "number" && limit > 0 && remaining !== null ? Math.round((remaining / limit) * 100) : 100
   const tone = remainingPct < 20 ? "bg-red-500" : remainingPct <= 50 ? "bg-amber-400" : "bg-teal"
+  const nextPlan = NEXT_PLAN[billing.plan] ?? "Solo"
 
   if (limit === null) return null
 
@@ -52,12 +64,12 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
           <span>
             {remaining === 0 ? (
               <>
-                0 drafts left. <Link href="/pricing" className="font-bold underline underline-offset-2">Upgrade to Solo for more.</Link>
+                0 drafts left.{billing.plan === "Agency" ? null : <Link href="/pricing" className="ml-1 font-bold underline underline-offset-2">Upgrade to {nextPlan} for more.</Link>}
               </>
             ) : (
               <>
                 {`${current} / ${limit} drafts used`}
-                {remaining !== null && remaining < 3 ? <Link href="/pricing" className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
+                {remaining !== null && remaining < 3 && billing.plan !== "Agency" ? <Link href="/pricing" className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
               </>
             )}
           </span>
@@ -66,7 +78,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
           </span>
         </div>
 
-        {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
+        {showUpgrade && billing.plan !== "Agency" ? <UpgradeModal currentPlan={billing.plan} requiredPlan={nextPlan} usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
       </>
     )
   }
@@ -86,7 +98,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
         ) : null}
       </div>
 
-      {showUpgrade ? <UpgradeModal currentPlan={billing.plan} requiredPlan="Solo" usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
+      {showUpgrade && billing.plan !== "Agency" ? <UpgradeModal currentPlan={billing.plan} requiredPlan={nextPlan} usageLabel={`${current}/${limit} drafts used`} reason="draft limit reached" onClose={() => setShowUpgrade(false)} /> : null}
     </>
   )
 }
