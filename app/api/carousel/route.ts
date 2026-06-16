@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { requireAuth } from "@/lib/server/auth-helpers"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
+import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 
 // Future: POST /api/carousel/[id]/export?format=pdf - render slides via headless browser and return PDF blob
@@ -105,7 +105,8 @@ export async function POST(request: NextRequest) {
     }
     if (!carousel) throw new Error("carousel_save_failed")
 
-    return NextResponse.json({ id: carousel.id, slides })
+    const usage = await incrementUsage(userId, "carousels")
+    return NextResponse.json({ id: carousel.id, slides, remaining: usage.remaining })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "Invalid carousel input", issues: error.issues }, { status: 400 })

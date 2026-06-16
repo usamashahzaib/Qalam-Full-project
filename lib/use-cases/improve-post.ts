@@ -63,7 +63,18 @@ export async function improvePost(
     userId, plan, cache: false,
   }).catch(() => "{}")
 
-  const newScores = safeParseJson<Record<string, unknown>>(scoreRaw) || {}
+  const rawScores = safeParseJson<Record<string, number>>(scoreRaw) || {}
+  const scoreKeys = ["hook", "readability", "authority", "specificity", "cta", "human", "voiceFit"]
+  const vals = scoreKeys.map((k) => rawScores[k] ?? 0)
+  const rawOverall = rawScores.overall ?? (vals.reduce((a, b) => a + b, 0) / Math.max(1, vals.filter((v) => v > 0).length))
+  const isZeroToTen = rawOverall < 15 && vals.every((v) => v <= 10)
+  const m = isZeroToTen ? 10 : 1
+  const newScores: Record<string, unknown> = {
+    ...Object.fromEntries(scoreKeys.map((k) => [k, Math.round((rawScores[k] ?? 0) * m)])),
+    overall: Math.round(rawOverall * m),
+    tips: rawScores.tips ?? {},
+    hashtags: rawScores.hashtags ?? [],
+  }
   const usage = await incrementUsage(userId, "drafts")
 
   return ok({

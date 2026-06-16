@@ -58,3 +58,26 @@ export async function GET(
     return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const userId = await requireAuth()
+    const { id } = await context.params
+
+    const supabase = createServiceClient()
+    const { error } = await supabase
+      .from("carousels")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", userId)
+
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    const msg = (error as Error).message
+    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
+  }
+}

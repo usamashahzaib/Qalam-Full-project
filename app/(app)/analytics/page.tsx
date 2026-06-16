@@ -10,7 +10,7 @@ import { analyzeContent } from "@/lib/content-intelligence"
 import { withClientParam } from "@/lib/workspace-navigation"
 
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
-type RawJob = { job_type?: string; status?: string; title?: string; created_at?: string }
+type RawJob = { type?: string; status?: string; title?: string; created_at?: string }
 type RangeOption = { label: string; value: number | "all" }
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
@@ -26,16 +26,23 @@ export default function AnalyticsPage() {
   const { profile } = useProfile()
   const [events, setEvents] = useState<RawEvent[]>([])
   const [jobs, setJobs] = useState<RawJob[]>([])
+  const [carouselDbCount, setCarouselDbCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [rangeDays, setRangeDays] = useState<number | "all">(30)
   const [analyticsNow] = useState(() => Date.now())
 
   useEffect(() => {
     let active = true
-    Promise.all([loadEvents(500), loadJobs("", 200)]).then(([ev, jb]) => {
+    Promise.all([
+      loadEvents(500),
+      loadJobs("", 200),
+      fetch("/api/carousel").then((r) => r.json()).catch(() => ({ carousels: [] })),
+    ]).then(([ev, jb, carouselRes]) => {
       if (!active) return
       setEvents(Array.isArray(ev) ? (ev as RawEvent[]) : [])
       setJobs(Array.isArray(jb) ? (jb as RawJob[]) : [])
+      const carousels = (carouselRes as { carousels?: unknown[] }).carousels
+      setCarouselDbCount(Array.isArray(carousels) ? carousels.length : 0)
     }).catch(() => {
       if (!active) return
       setEvents([])
@@ -131,12 +138,12 @@ export default function AnalyticsPage() {
       publishEvents: events.filter((event) => event.event_type === "post_published").length,
       scheduleEvents: events.filter((event) => event.event_type === "post_scheduled").length,
       draftEvents: events.filter((event) => event.event_type === "draft_saved").length,
-      carouselCount: jobs.filter((job) => job.job_type === "carousel_generation").length,
+      carouselCount: carouselDbCount,
       reviewPressure,
     }
-  }, [analyticsNow, drafts, events, jobs, posts, profile, published, rangeDays, scheduled])
+  }, [analyticsNow, carouselDbCount, drafts, events, jobs, posts, profile, published, rangeDays, scheduled])
 
-  const hasData = posts.length > 0 || events.length > 0
+  const hasData = posts.length > 0 || events.length > 0 || carouselDbCount > 0
 
   return (
     <LockedFeature feature="Analytics dashboard" requiredPlan="Solo">

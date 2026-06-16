@@ -24,6 +24,7 @@ export default function CarouselEditorPage() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [savingSlide, setSavingSlide] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<Record<string, string>>({})
+  const [deletingSlide, setDeletingSlide] = useState(false)
   const [selectedTheme, setSelectedTheme] = useState<CarouselTheme>(
     () => CAROUSEL_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ?? CAROUSEL_THEMES[0]
   )
@@ -75,6 +76,24 @@ export default function CarouselEditorPage() {
       setSaveStatus((prev) => ({ ...prev, [slide.id]: `error: ${(e as Error).message}` }))
     } finally {
       setSavingSlide(null)
+    }
+  }
+
+  const deleteSlide = async (slide: Slide) => {
+    if (slides.length <= 2) { setError("Cannot delete - minimum 2 slides required"); return }
+    if (!window.confirm(`Delete slide ${slide.order_index + 1}? This cannot be undone.`)) return
+    setDeletingSlide(true)
+    try {
+      const res = await fetch(`/api/carousel/${id}/slides/${slide.id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Delete failed")
+      const next = slides.filter((s) => s.id !== slide.id).map((s, i) => ({ ...s, id: String(i), order_index: i }))
+      setSlides(next)
+      setActiveSlide((prev) => Math.min(prev, next.length - 1))
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setDeletingSlide(false)
     }
   }
 
@@ -189,7 +208,12 @@ export default function CarouselEditorPage() {
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-zinc-700">Slide {activeSlide + 1} of {slides.length}</h2>
-                <button onClick={() => saveSlide(currentSlide)} disabled={savingSlide === currentSlide.id} className="rounded-xl bg-teal px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">{savingSlide === currentSlide.id ? "Saving..." : "Save slide"}</button>
+                <div className="flex items-center gap-2">
+                  {slides.length > 2 ? (
+                    <button onClick={() => void deleteSlide(currentSlide)} disabled={deletingSlide} className="rounded-xl border border-red-200 px-3 py-1.5 text-xs font-bold text-red-500 transition-colors hover:bg-red-50 disabled:opacity-50">{deletingSlide ? "Deleting..." : "Delete slide"}</button>
+                  ) : null}
+                  <button onClick={() => saveSlide(currentSlide)} disabled={savingSlide === currentSlide.id} className="rounded-xl bg-teal px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">{savingSlide === currentSlide.id ? "Saving..." : "Save slide"}</button>
+                </div>
               </div>
 
               <div
