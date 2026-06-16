@@ -7,14 +7,17 @@ export type { Feature }
 export type DbPost = {
   id: string
   workspace_id: string
-  author_id: string | null
+  user_id: string | null
   title: string
   content: string | null
-  type: string
+  type?: string
   status: string
-  scheduled_time: string | null
+  scheduled_for?: string | null
+  scheduled_time?: string | null
   published_at: string | null
-  external_post_urn: string | null
+  linkedin_post_id?: string | null
+  external_post_urn?: string | null
+  metadata?: { type?: string; authorId?: string } | null
   created_at: string
   updated_at: string
 }

@@ -23,7 +23,7 @@ const toClientPost = (post: DbPost): ClientPost => ({
 
 const DB_STATUSES = new Set(["draft", "published", "scheduled", "archived"])
 
-const POST_COLUMNS = "id,workspace_id,author_id,title,content,type,status,scheduled_time,published_at,external_post_urn,created_at,updated_at"
+const POST_COLUMNS = "id,workspace_id,user_id,title,content,status,scheduled_for,published_at,linkedin_post_id,metadata,created_at,updated_at"
 
 export class SupabasePostRepository implements IPostRepository {
   async list(workspaceId: string): Promise<ClientPost[]> {
@@ -90,11 +90,10 @@ export class SupabasePostRepository implements IPostRepository {
     const dbPatch: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (patch.title !== undefined) dbPatch.title = patch.title
     if (patch.content !== undefined) dbPatch.content = patch.content
-    if (patch.type !== undefined) dbPatch.type = patch.type
     if (patch.status !== undefined) dbPatch.status = patch.status
-    if (patch.scheduledTime !== undefined) dbPatch.scheduled_time = patch.scheduledTime
+    if (patch.scheduledTime !== undefined) dbPatch.scheduled_for = patch.scheduledTime
     if (patch.publishedAt !== undefined) dbPatch.published_at = patch.publishedAt
-    if (patch.externalPostUrn !== undefined) dbPatch.external_post_urn = patch.externalPostUrn
+    if (patch.externalPostUrn !== undefined) dbPatch.linkedin_post_id = patch.externalPostUrn
     const { data, error } = await createServiceClient()
       .from("posts")
       .update(dbPatch)

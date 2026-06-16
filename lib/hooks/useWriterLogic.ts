@@ -197,6 +197,20 @@ export function useWriterLogic({
   }, [])
 
   useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("writerLoad")
+      if (raw) {
+        sessionStorage.removeItem("writerLoad")
+        const post = JSON.parse(raw) as { id?: string; title?: string; content?: string }
+        if (post.content) setDraftContent(post.content)
+        if (post.title) setTopic(post.title)
+        if (post.id) setEditingId(post.id)
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
     if (!versionsOpen) return
     const handler = (e: MouseEvent) => {
       if (versionsRef.current && !versionsRef.current.contains(e.target as Node)) setVersionsOpen(false)
@@ -426,7 +440,9 @@ export function useWriterLogic({
     try {
       const id = await publishPost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", publishedAt: new Date().toISOString() })
       setEditingId(id)
-      showStatus("Published successfully", "success")
+      try { await navigator.clipboard.writeText(draftContent) } catch {}
+      window.open("https://www.linkedin.com/feed/", "_blank", "noopener,noreferrer")
+      showStatus("Post copied! Paste on LinkedIn to publish.", "success")
     } catch (e) {
       showStatus((e as Error).message || "Publish failed", "error")
     } finally {

@@ -43,46 +43,65 @@ type PricingPageContentProps = {
 }
 
 function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
+  const isPremium = plan.monthlyPrice >= 5000
+
   return (
-    <FadeUp delay={index * 0.08}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.08 }}
+    >
       <motion.div
         whileHover={{ scale: 1.02, transition: { duration: 0.22, ease: "easeOut" } }}
         whileTap={{ scale: 0.995 }}
-        className="relative flex flex-col rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
+        className={`relative flex flex-col rounded-2xl border p-8 shadow-md transition-all duration-300 ${
+          isPremium
+            ? "border-gold/40 bg-gradient-to-br from-amber-50 to-white hover:shadow-[0_12px_40px_rgba(180,83,9,0.18)]"
+            : "border-zinc-200 bg-white hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
+        }`}
       >
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-gold px-3 py-1 text-xs font-bold text-white shadow-sm">
+        {/* Managed badge */}
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold text-white shadow-md ${isPremium ? "bg-gradient-to-r from-gold to-amber-500" : "bg-gold"}`}>
             <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
-            Managed
+            {isPremium ? "Premium Managed" : "Managed"}
           </span>
         </div>
 
-        <div className="mb-6">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal">{plan.name}</p>
-          <div className="mb-1 flex items-end gap-1">
-            <span className="text-5xl font-bold text-zinc-900">{formatPkr(plan.monthlyPrice)}</span>
-            <span className="mb-2 text-sm text-zinc-500">/mo</span>
+        <div className="mb-6 pt-2">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
+          <div className="mb-2 flex items-end gap-1.5">
+            <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
+              {formatPkr(plan.monthlyPrice)}
+            </span>
+            <span className="mb-2 text-sm font-medium text-zinc-500">/mo</span>
           </div>
+          <p className="text-xs font-semibold text-gold">{plan.postsPerMonth} posts/month</p>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{plan.description}</p>
         </div>
 
         <ul className="mb-8 flex flex-1 flex-col gap-3">
           {plan.features.map((feature) => (
             <li key={feature} className="flex items-start gap-2.5">
-              <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+              <CheckIcon className={`mt-0.5 h-4 w-4 shrink-0 ${isPremium ? "text-gold" : "text-teal"}`} />
               <span className="text-sm text-zinc-700">{feature}</span>
             </li>
           ))}
         </ul>
 
         <a
-          href="mailto:business@byqalam.com?subject=Managed Plan Inquiry"
-          className="w-full rounded-xl bg-teal-50 py-3 text-center text-sm font-semibold text-teal transition-all duration-200 hover:bg-teal hover:text-white"
+          href={`mailto:business@byqalam.com?subject=${encodeURIComponent(`${plan.name} Inquiry`)}`}
+          className={`w-full rounded-xl py-3.5 text-center text-sm font-bold transition-all duration-200 ${
+            isPremium
+              ? "bg-gold text-white shadow-sm hover:bg-amber-600"
+              : "bg-teal-50 text-teal hover:bg-teal hover:text-white"
+          }`}
         >
-          Get Managed
+          {isPremium ? "Apply for Premium" : "Get Managed"}
         </a>
+        <p className="mt-3 text-center text-[10px] text-zinc-400">Response within 4 hours</p>
       </motion.div>
-    </FadeUp>
+    </motion.div>
   )
 }
 
@@ -131,7 +150,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       price,
       annualSavings,
       usdReference,
-      cta: plan.plan === "Solo" ? "Start Solo" : plan.plan === "Pro" ? "Start Pro" : plan.cta,
+      cta: plan.cta,
       badge: isCurrentPlan ? "Current plan" : plan.badge,
     }
   })
@@ -309,9 +328,14 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
                   >
                     {displayPlans.map((plan, i) => (
-                      <FadeUp key={plan.plan} delay={i * 0.08}>
+                      <motion.div
+                        key={plan.plan}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, ease: "easeOut", delay: i * 0.07 }}
+                      >
                         <PricingCard {...plan} />
-                      </FadeUp>
+                      </motion.div>
                     ))}
                   </motion.div>
                 </AnimatePresence>

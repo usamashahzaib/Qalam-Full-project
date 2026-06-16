@@ -54,10 +54,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const clientParam = searchParams.get("client")
-  const [workspaceId, setWorkspaceId] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null
-    return sessionStorage.getItem(workspaceCacheKey(clientParam))
-  })
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [serverBilling, setServerBilling] = useState<Partial<WorkspaceBilling> | null>(null)
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)

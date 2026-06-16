@@ -73,16 +73,27 @@ export async function generatePostFromHook(
   const { system: genSystem, user: genUser } = buildPostFromHookPrompt(
     hook, topic, role, format, goal || undefined, voiceProfile as never
   )
-  const rawPost = await callAi(genSystem, genUser, {
-    temperature: 0.85, maxTokens: 1000,
-    userId, plan, cache: false,
-  })
 
-  const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-  const humanized = await callAi(humSystem, humUser, {
-    temperature: 0.4, maxTokens: 1000,
-    userId, plan, cache: false,
-  })
+  let rawPost: string
+  try {
+    rawPost = await callAi(genSystem, genUser, {
+      temperature: 0.85, maxTokens: 1000,
+      userId, plan, cache: false,
+    })
+  } catch {
+    return err({ code: "INTERNAL_ERROR", message: "Post generation failed", userMessage: "Post generation failed. Please try again in a moment." })
+  }
+
+  let humanized: string
+  try {
+    const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
+    humanized = await callAi(humSystem, humUser, {
+      temperature: 0.4, maxTokens: 1000,
+      userId, plan, cache: false,
+    })
+  } catch {
+    humanized = rawPost
+  }
 
   const content = humanized.trim()
   const usage = await incrementUsage(userId, "drafts")

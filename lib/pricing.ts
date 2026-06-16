@@ -69,7 +69,7 @@ export const plans: Plan[] = [
       "Hook Generator",
       "Post Library",
     ],
-    cta: "Join Waitlist - Solo",
+    cta: "Start Solo",
     badge: "Most popular",
   },
   {
@@ -92,7 +92,7 @@ export const plans: Plan[] = [
       "Priority Queue",
       "Analytics",
     ],
-    cta: "Join Waitlist - Pro",
+    cta: "Start Pro",
     badge: "Best value",
   },
   {

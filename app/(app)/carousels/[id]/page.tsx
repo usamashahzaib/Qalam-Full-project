@@ -6,6 +6,8 @@ import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { LockedFeature } from "@/components/LockedFeature"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
+import { CAROUSEL_THEMES, DEFAULT_THEME_ID } from "@/lib/carousel-themes"
+import type { CarouselTheme } from "@/types/carousel"
 
 type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
 type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string }
@@ -22,6 +24,9 @@ export default function CarouselEditorPage() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [savingSlide, setSavingSlide] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<Record<string, string>>({})
+  const [selectedTheme, setSelectedTheme] = useState<CarouselTheme>(
+    () => CAROUSEL_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ?? CAROUSEL_THEMES[0]
+  )
 
   const fetchCarousel = useCallback(async () => {
     if (!id) return
@@ -140,12 +145,23 @@ export default function CarouselEditorPage() {
           <h1 className="text-2xl font-bold text-zinc-900">Carousel Editor</h1>
           <p className="mt-0.5 text-sm text-zinc-500">{slides.length} slides - {project?.theme || "LinkedIn carousel"}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-zinc-500 whitespace-nowrap">Theme</label>
+            <select
+              value={selectedTheme.id}
+              onChange={(e) => setSelectedTheme(CAROUSEL_THEMES.find((t) => t.id === e.target.value) ?? CAROUSEL_THEMES[0])}
+              className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-2 focus:ring-teal/10"
+            >
+              {CAROUSEL_THEMES.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as text</button>
           <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
             <button onClick={exportAsPdf} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as PDF</button>
           </LockedFeature>
-          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-400">PNG export comes next</span>
         </div>
       </div>
 
@@ -176,13 +192,19 @@ export default function CarouselEditorPage() {
                 <button onClick={() => saveSlide(currentSlide)} disabled={savingSlide === currentSlide.id} className="rounded-xl bg-teal px-4 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">{savingSlide === currentSlide.id ? "Saving..." : "Save slide"}</button>
               </div>
 
-              <div className="mb-6 flex min-h-[200px] flex-col justify-between rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 p-8 text-white shadow-lg">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Slide {activeSlide + 1}</div>
+              <div
+                className="mb-6 flex min-h-[200px] flex-col justify-between rounded-2xl p-8 shadow-lg"
+                style={{ background: selectedTheme.gradient ?? selectedTheme.colors.background, color: selectedTheme.colors.text }}
+              >
+                <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: selectedTheme.colors.accent }}>{selectedTheme.name} - Slide {activeSlide + 1}</div>
                 <div>
-                  {currentSlide.title ? <h3 className="mb-3 text-xl font-bold leading-snug">{currentSlide.title}</h3> : null}
-                  <p className="text-sm leading-relaxed text-zinc-300">{currentSlide.content}</p>
+                  {currentSlide.title ? <h3 className="mb-3 text-xl font-bold leading-snug" style={{ color: selectedTheme.colors.text }}>{currentSlide.title}</h3> : null}
+                  <p className="text-sm leading-relaxed" style={{ color: selectedTheme.colors.textMuted }}>{currentSlide.content}</p>
                 </div>
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-zinc-400"><span>{activeSlide + 1} / {slides.length}</span><span>{project?.theme || "LinkedIn carousel"}</span></div>
+                <div className="mt-4 flex items-center justify-between border-t pt-3 text-[10px]" style={{ borderColor: `${selectedTheme.colors.accent}33`, color: selectedTheme.colors.textMuted }}>
+                  <span>{activeSlide + 1} / {slides.length}</span>
+                  <span>{project?.theme || "LinkedIn carousel"}</span>
+                </div>
               </div>
 
               <div className="space-y-4">

@@ -49,14 +49,19 @@ Return JSON:
   "ctaStyle": "question | direct | soft"
 }`
 
-    const raw = await callAi(system, userMsg, {
-      json: true, temperature: 0.3, maxTokens: 600,
-      userId: user.id, plan: user.plan, cache: false,
-    })
+    let raw: string
+    try {
+      raw = await callAi(system, userMsg, {
+        json: true, temperature: 0.3, maxTokens: 600,
+        userId: user.id, plan: user.plan, cache: false,
+      })
+    } catch {
+      return NextResponse.json({ error: "Voice analysis failed. Please try again." }, { status: 503 })
+    }
 
     const characteristics = safeParseJson<Characteristics>(raw)
     if (!characteristics) {
-      return NextResponse.json({ error: "Voice analysis failed to parse" }, { status: 502 })
+      return NextResponse.json({ error: "Voice analysis returned an unexpected response. Please try again." }, { status: 500 })
     }
 
     return NextResponse.json({ characteristics })

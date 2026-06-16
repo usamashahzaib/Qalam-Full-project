@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     const msg = (error as Error).message
     log.error("posts.get.error", { reqId, error: msg })
-    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
   }
 }
 

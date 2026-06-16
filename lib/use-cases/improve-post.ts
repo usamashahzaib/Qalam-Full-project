@@ -39,7 +39,12 @@ export async function improvePost(
     return err({ code: "VALIDATION_ERROR", message: "Content is required", userMessage: "Content too short to improve." })
   }
 
-  const limit = await checkPlanLimit(userId, "drafts")
+  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  try {
+    limit = await checkPlanLimit(userId, "drafts")
+  } catch {
+    return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again." })
+  }
   if (!limit.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }

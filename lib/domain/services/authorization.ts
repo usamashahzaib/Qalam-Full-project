@@ -25,14 +25,28 @@ export async function canAccessWorkspace(userId: string, workspaceId: string): P
   if (!userId || !workspaceId) return err({ code: "VALIDATION_ERROR", message: "userId and workspaceId are required" })
 
   try {
-    const { data, error } = await createServiceClient()
+    const supabase = createServiceClient()
+
+    const { data: member, error } = await supabase
       .from("workspace_members")
       .select("id")
       .eq("user_id", userId)
       .eq("workspace_id", workspaceId)
       .maybeSingle()
 
-    return error ? err({ code: "INTERNAL_ERROR", message: error.message }) : ok(Boolean(data))
+    if (error) return err({ code: "INTERNAL_ERROR", message: error.message })
+    if (member) return ok(true)
+
+    // Fallback: workspace_members row may be missing for the owner if provisioning raced.
+    // Check workspaces.owner_id directly so owners are never falsely denied.
+    const { data: owned } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("id", workspaceId)
+      .eq("owner_id", userId)
+      .maybeSingle()
+
+    return ok(Boolean(owned))
   } catch (cause) {
     return err({ code: "INTERNAL_ERROR", message: "Failed to check workspace access", cause })
   }
