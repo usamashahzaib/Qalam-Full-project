@@ -175,7 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f5f0] font-jakarta">
+    <div className="app-shell min-h-screen font-jakarta">
       <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 w-64 flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 text-zinc-300">
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-16 shrink-0 items-center border-b border-zinc-800 px-6">
@@ -388,7 +388,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
       </header>
 
-      <main className="qalam-app-canvas pl-0 md:pl-64">
+      <main className="qalam-app-canvas app-content pl-0 md:pl-64">
         {billing.planExpired ? (
           <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
             Your plan expired. You are back on Free. <Link href="/pricing" className="underline underline-offset-2">Renew your plan</Link>
@@ -399,7 +399,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href="/pricing" className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}
-        <div className="relative z-10 animate-fade-in">{children}</div>
+        <div className="app-content animate-fade-in">{children}</div>
       </main>
       {upgradePrompt ? <UpgradeModal currentPlan={currentPlan} requiredPlan={upgradePrompt.plan} reason={upgradePrompt.reason} onClose={() => setUpgradePrompt(null)} /> : null}
     </div>
