@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient()
     const { data: rows } = await supabase
       .from("approvals")
-      .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
+      .select("id, post_id, reviewer_email, post_title, post_content, status, message, comments, created_at, updated_at")
       .eq("requester_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50)

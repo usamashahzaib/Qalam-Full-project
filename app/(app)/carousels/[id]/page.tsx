@@ -25,6 +25,7 @@ export default function CarouselEditorPage() {
   const [savingSlide, setSavingSlide] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<Record<string, string>>({})
   const [deletingSlide, setDeletingSlide] = useState(false)
+  const [pdfStatus, setPdfStatus] = useState<"idle" | "loading" | "error">("idle")
   const [selectedTheme, setSelectedTheme] = useState<CarouselTheme>(
     () => CAROUSEL_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ?? CAROUSEL_THEMES[0]
   )
@@ -109,42 +110,26 @@ export default function CarouselEditorPage() {
     URL.revokeObjectURL(url)
   }
 
-  const exportAsPdf = () => {
+  const exportAsPdf = async () => {
     if (!slides.length) return
-    const esc = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    const html = slides.map((slide, index) => `
-      <section class="page">
-        <div class="deck-meta">
-          <div><strong>Qalam Carousel</strong> - byqalam.com</div>
-          <div>Slide ${index + 1} / ${slides.length}</div>
-        </div>
-        <div class="slide-shell">
-          <div class="slide-kicker">Slide ${index + 1}</div>
-          <h1>${esc(slide.title || `Slide ${index + 1}`)}</h1>
-          <p>${esc(slide.content || "").replace(/\n/g, "<br/>")}</p>
-          <div class="slide-footer">
-            <span>${project?.theme || "LinkedIn carousel"}</span>
-            <span>Qalam - byqalam.com</span>
-            <span>${new Date(project?.created_at || Date.now()).toLocaleDateString("en-US")}</span>
-          </div>
-        </div>
-      </section>
-    `).join("")
-    const popup = window.open("", "_blank", "width=900,height=700")
-    if (!popup) return
-    popup.document.write(`<!doctype html><html><head><title>Carousel ${id.slice(0, 8)}</title><style>
-      @page{size:A4 landscape;margin:12mm;}
-      *{box-sizing:border-box}
-      body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f5f6;color:#101828}
-      .page{page-break-after:always;min-height:100vh;padding:18px 0}
-      .deck-meta{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px;color:#475467;font-size:12px}
-      .slide-shell{min-height:175mm;border-radius:28px;padding:34px 36px;background:linear-gradient(135deg,#0f172a,#111827 55%,#134e4a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 70px rgba(15,23,42,.18)}
-      .slide-kicker{font-size:11px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#99f6e4}
-      h1{margin:18px 0 18px;font-size:32px;line-height:1.12;max-width:80%}
-      p{margin:0;font-size:18px;line-height:1.7;max-width:78%;color:#d1fae5}
-      .slide-footer{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:28px;padding-top:18px;border-top:1px solid rgba(255,255,255,.14);font-size:12px;color:#a7f3d0}
-    </style></head><body>${html}<script>window.onload=()=>window.print()</script></body></html>`)
-    popup.document.close()
+    setPdfStatus("loading")
+    try {
+      const res = await fetch(`/api/carousel/${id}/pdf`, { method: "POST" })
+      if (!res.ok) {
+        setPdfStatus("error")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `carousel-${id.slice(0, 8)}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+      setPdfStatus("idle")
+    } catch {
+      setPdfStatus("error")
+    }
   }
 
   if (isLoading) return <div className="mx-auto max-w-5xl px-6 py-10"><div className="space-y-4"><div className="h-8 w-48 animate-pulse rounded-lg bg-zinc-200" /><div className="grid grid-cols-3 gap-4">{[1, 2, 3].map((i) => <div key={i} className="h-48 animate-pulse rounded-2xl bg-zinc-100" />)}</div></div></div>
@@ -179,7 +164,13 @@ export default function CarouselEditorPage() {
           </div>
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as text</button>
           <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
-            <button onClick={exportAsPdf} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">Export as PDF</button>
+            <button
+              onClick={() => void exportAsPdf()}
+              disabled={pdfStatus === "loading"}
+              className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+            >
+              {pdfStatus === "loading" ? "Generating..." : pdfStatus === "error" ? "PDF failed - retry" : "Export as PDF"}
+            </button>
           </LockedFeature>
         </div>
       </div>

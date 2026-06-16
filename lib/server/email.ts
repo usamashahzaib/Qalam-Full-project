@@ -6,13 +6,13 @@ type EmailInput = {
   text: string
 }
 
-export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput) => {
+export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput): Promise<{ ok: boolean; error?: string }> => {
   const recipient = to.trim().toLowerCase()
-  if (!recipient) return
+  if (!recipient) return { ok: false, error: "no_recipient" }
 
   if (!env.resendApiKey) {
     console.info("email_skipped", { to: recipient, subject })
-    return
+    return { ok: false, error: "no_api_key" }
   }
 
   const res = await fetch("https://api.resend.com/emails", {
@@ -31,7 +31,11 @@ export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput) 
   })
 
   if (!res.ok) {
-    const message = await res.text().catch(() => "")
+    const body = await res.json().catch(() => ({ message: "unknown" })) as { message?: string }
+    const message = body.message || "send_failed"
     console.error("email_send_failed", { to: recipient, subject, message })
+    return { ok: false, error: message }
   }
+
+  return { ok: true }
 }

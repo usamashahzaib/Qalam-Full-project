@@ -63,7 +63,9 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     .single()
 
   if (error || !approval) {
-    return err({ code: "INTERNAL_ERROR", message: "Failed to create approval request" })
+    console.error("approval_insert_failed", { message: error?.message, code: error?.code })
+    const detail = error?.message?.includes("column") ? "Run migration 0026_fix_approvals_schema.sql in Supabase SQL Editor." : (error?.message ?? "DB error")
+    return err({ code: "INTERNAL_ERROR", message: "Approval DB not ready", userMessage: detail })
   }
 
   const reviewUrl = `${env.frontendOrigin}/approvals/${approval.id}/review`
