@@ -76,9 +76,10 @@ function StatCardSkeleton() {
 function PlanCard({ stats }: { stats: Stats }) {
   const { plan, draftsUsed, draftsTotal, draftsRemaining, postsPublished, carouselsUsed, resetDate } =
     stats
+  const planNorm = plan.toLowerCase()
   const planLabel = capitalize(plan)
-  const isFree = plan === "free"
-  const isAgency = plan === "agency"
+  const isFree = planNorm === "free"
+  const isAgency = planNorm === "agency"
 
   const pct =
     draftsTotal && draftsTotal > 0
@@ -132,12 +133,19 @@ function PlanCard({ stats }: { stats: Stats }) {
         </span>
       </div>
 
-      {!isAgency && (
-        <Link
-          href="/pricing"
-          className="mt-4 block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600"
-        >
-          Upgrade plan
+      {isFree && (
+        <Link href="/pricing" className="mt-4 block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600">
+          Upgrade to Solo
+        </Link>
+      )}
+      {planNorm === "solo" && (
+        <Link href="/pricing" className="mt-4 block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600">
+          Upgrade to Pro
+        </Link>
+      )}
+      {planNorm === "pro" && (
+        <Link href="/pricing" className="mt-4 block w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-center text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50">
+          Upgrade to Agency
         </Link>
       )}
     </div>
@@ -542,7 +550,7 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back"
 
   return (
-    <main className="min-h-screen bg-zinc-50 px-4 py-8 md:px-8">
+    <main className="min-h-screen px-4 py-8 md:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
         <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -605,12 +613,12 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
                 value={stats.libraryPosts}
                 accent="zinc"
               />
-              {stats.plan === "free" ? (
+              {stats.plan.toLowerCase() === "free" ? (
                 <LockedStatCard label="Avg score" upgradeText="Upgrade to Solo" />
               ) : (
                 <StatCard
                   label="Avg score"
-                  value={stats.avgScore ?? "-"}
+                  value={stats.avgScore != null ? stats.avgScore : "—"}
                   accent={
                     stats.avgScore != null && stats.avgScore >= 80
                       ? "teal"
@@ -654,7 +662,7 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
         />
 
         {/* Usage chart */}
-        {stats && stats.plan === "free" ? (
+        {stats && stats.plan.toLowerCase() === "free" ? (
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <h2 className="mb-3 text-base font-bold text-zinc-950">Usage analytics</h2>
             <div className="flex h-40 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-200 text-center">
@@ -665,7 +673,7 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
         ) : (
           <>
             <UsageChart usage={usage} error={usageError} onRetry={loadUsage} />
-            {stats && stats.plan === "solo" && (
+            {stats && stats.plan.toLowerCase() === "solo" && (
               <p className="text-xs text-zinc-400 text-center -mt-4">
                 Upgrade to Pro for advanced analytics and competitor insights. <Link href="/pricing" className="font-semibold text-teal underline">Learn more</Link>
               </p>
