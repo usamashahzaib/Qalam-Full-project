@@ -339,7 +339,7 @@ export function useWriterLogic({
       if (!content) throw new Error("AI returned an empty draft")
       skipDebounceScore.current = true
       setDraftContent(content)
-      setVersions((p) => [...p, { content, timestamp: new Date().toISOString() }])
+      setVersions((p) => [...p.slice(-19), { content, timestamp: new Date().toISOString() }])
       setEditingId(null)
       useDraftCredit(1)
       showStatus("Draft ready. Scoring...", "info", false)
@@ -370,7 +370,7 @@ export function useWriterLogic({
       if (!improved) throw new Error("Returned empty content")
       skipDebounceScore.current = true
       setDraftContent(improved)
-      setVersions((p) => [...p, { content: improved, timestamp: new Date().toISOString() }])
+      setVersions((p) => [...p.slice(-19), { content: improved, timestamp: new Date().toISOString() }])
       if (data.scores) setScores(data.scores)
       useDraftCredit(1)
       showStatus("Draft improved. Check new scores.", "success")
