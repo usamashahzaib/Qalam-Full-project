@@ -192,11 +192,13 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     updated_at: new Date().toISOString(),
   })
 
-  // Sync plan_usage so generation limits reflect the new plan immediately
-  await supabasePatch("plan_usage", `user_id=eq.${encodeURIComponent(user.id)}`, {
+  // Sync plan_usage so generation limits reflect the new plan immediately.
+  // Use upsert so a missing row is created rather than silently skipped.
+  await supabaseUpsert("plan_usage", {
+    user_id: user.id,
     plan: payment.planName.toLowerCase(),
     updated_at: new Date().toISOString(),
-  }).catch(() => undefined)
+  }, "user_id")
 
   await sendTransactionalEmail({
     to: user.email,
