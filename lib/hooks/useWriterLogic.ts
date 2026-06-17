@@ -83,6 +83,7 @@ export interface WriterLogicDeps {
   schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
   publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string }) => Promise<string>
   initialTopic?: string
+  initialFormat?: FormatKey
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -95,12 +96,13 @@ export function useWriterLogic({
   schedulePost,
   publishPost,
   initialTopic = "",
+  initialFormat,
 }: WriterLogicDeps) {
 
   // ── Step 1 inputs ────────────────────────────────────────────────────────
   const [topic, setTopic] = useState(initialTopic)
   const [role, setRole] = useState<Role>("Founder")
-  const [format, setFormat] = useState<FormatKey>("Medium")
+  const [format, setFormat] = useState<FormatKey>(initialFormat ?? "Medium")
   const [goal, setGoal] = useState("")
 
   // ── Hook generation ──────────────────────────────────────────────────────
@@ -173,17 +175,11 @@ export function useWriterLogic({
   // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    setLocalDraftUsage(readDraftUsage(workspaceId))
-    const sync = () => setLocalDraftUsage(readDraftUsage(workspaceId))
-    window.addEventListener("qalam:draft-usage", sync)
-    return () => window.removeEventListener("qalam:draft-usage", sync)
-  }, [workspaceId])
-
-  useEffect(() => {
     fetch(API_PATHS.dashboardStats)
       .then((r) => r.json())
-      .then((d: { carouselsUsed?: number }) => {
+      .then((d: { carouselsUsed?: number; draftsUsed?: number }) => {
         if (typeof d.carouselsUsed === "number") setLocalCarouselUsage(d.carouselsUsed)
+        if (typeof d.draftsUsed === "number") setLocalDraftUsage(d.draftsUsed)
       })
       .catch(() => undefined)
   }, [])
@@ -266,10 +262,9 @@ export function useWriterLogic({
   }, [draftLimitHit, showStatus])
 
   const useDraftCredit = useCallback((n = 1) => {
-    for (let i = 0; i < n; i++) incrementDraftUsage(workspaceId)
-    setLocalDraftUsage(readDraftUsage(workspaceId))
+    setLocalDraftUsage((prev) => prev + n)
     window.dispatchEvent(new Event("qalam:draft-consumed"))
-  }, [workspaceId])
+  }, [])
 
   // ── Auto-score ────────────────────────────────────────────────────────────
 
