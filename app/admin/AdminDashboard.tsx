@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useAdminUsers, FEATURES, emptyFlags } from "@/lib/hooks/useAdminUsers"
 import { formatPlanDate } from "@/lib/plan-expiry"
 import type {
@@ -69,9 +70,14 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             <h1 className="text-2xl font-bold tracking-tight">Qalam Admin</h1>
             <p className="mt-0.5 text-sm text-zinc-500">{adminEmail}</p>
           </div>
-          <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">
-            Admin access
-          </span>
+          <div className="flex items-center gap-2">
+            <Link href="/admin/migrations" className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+              DB Migrations
+            </Link>
+            <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">
+              Admin access
+            </span>
+          </div>
         </div>
 
         {/* Unlock form */}

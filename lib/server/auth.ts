@@ -36,44 +36,83 @@ async function provisionOAuthUser(
 
   if (error || !data) {
     log.error("auth.provision_rpc_failed", { externalId, error: error?.message })
-    // Fall back to sequential inserts so sign-in never hard-fails
-    const internalId = crypto.randomUUID()
-    const newUser = {
-      id: internalId,
-      external_user_id: externalId,
-      email: session.user.email || "",
-      full_name: session.user.name || "",
-      image_url: session.user.image || "",
-      auth_provider: "oauth",
-      email_verified: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+
+    // Check if user already exists (returning user + RPC temporarily unavailable)
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .or(`external_user_id.eq.${externalId},email.eq.${session.user.email || ""}`)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingUser?.id) {
+      // Returning user - just get their workspace
+      const { data: membership } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", existingUser.id)
+        .limit(1)
+        .maybeSingle()
+      // Ensure external_user_id is linked
+      await supabase.from("users").update({ external_user_id: externalId, updated_at: new Date().toISOString() }).eq("id", existingUser.id)
+      return { internalId: existingUser.id, workspaceId: membership?.workspace_id ?? null }
     }
-    await supabase.from("users").insert(newUser)
-    await supabase.from("plan_usage").insert({
-      user_id: internalId,
-      plan: "free",
-      ai_drafts_used: 0,
-      carousels_used: 0,
-      hooks_used: 0,
-      analyses_used: 0,
-    })
+
+    // New user — sequential inserts with upsert semantics
+    const internalId = crypto.randomUUID()
+    const { data: upsertedUser } = await supabase
+      .from("users")
+      .upsert(
+        {
+          id: internalId,
+          external_user_id: externalId,
+          email: session.user.email || "",
+          full_name: session.user.name || "",
+          image_url: session.user.image || "",
+          auth_provider: "oauth",
+          email_verified: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "email", ignoreDuplicates: false }
+      )
+      .select("id")
+      .single()
+
+    const resolvedInternalId = upsertedUser?.id ?? internalId
+    await supabase.from("plan_usage").upsert(
+      { user_id: resolvedInternalId, plan: "free", ai_drafts_used: 0, carousels_used: 0, hooks_used: 0, analyses_used: 0 },
+      { onConflict: "user_id", ignoreDuplicates: true }
+    )
+
+    // Check if workspace already exists for this user before creating
+    const { data: existingMembership } = await supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", resolvedInternalId)
+      .limit(1)
+      .maybeSingle()
+
+    if (existingMembership?.workspace_id) {
+      return { internalId: resolvedInternalId, workspaceId: existingMembership.workspace_id }
+    }
+
     const workspaceId = crypto.randomUUID()
+    const slug = `ws-${resolvedInternalId.slice(0, 8)}-${Date.now().toString(36)}`
     await supabase.from("workspaces").insert({
       id: workspaceId,
       name: "My Workspace",
-      owner_id: internalId,
+      owner_id: resolvedInternalId,
       owner_email: session.user.email || "",
-      slug: `workspace-${externalId.slice(0, 8)}`,
+      slug,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    await supabase.from("workspace_members").insert({
-      workspace_id: workspaceId,
-      user_id: internalId,
-      role: "owner",
-    })
-    return { internalId, workspaceId }
+    await supabase.from("workspace_members").upsert(
+      { workspace_id: workspaceId, user_id: resolvedInternalId, role: "owner" },
+      { onConflict: "workspace_id,user_id", ignoreDuplicates: true }
+    )
+    return { internalId: resolvedInternalId, workspaceId }
   }
 
   const result = data as { user_id: string; workspace_id: string | null }
