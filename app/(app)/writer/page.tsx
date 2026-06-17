@@ -217,6 +217,11 @@ export default function WriterPage() {
                   <DraftCounter compact className="mt-2" />
                 </>
               )}
+              {status && !step2Visible && !step3Visible && !slidesVisible && (
+                <p className={`mt-2 text-xs font-medium ${status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-zinc-500"}`}>
+                  {status.text}
+                </p>
+              )}
             </div>
           </section>
 

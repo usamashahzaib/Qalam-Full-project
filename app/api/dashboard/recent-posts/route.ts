@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 export async function GET() {
   try {
-    const userId = await requireAuth()
+    const ctx = await getWorkspaceSessionContext()
+    const supabaseUserId = ctx.supabaseUserId
     const supabase = createServiceClient()
 
     const { data, error } = await supabase
       .from("posts")
       .select("id,title,content,engagement_score,status,created_at")
-      .eq("user_id", userId)
+      .eq("user_id", supabaseUserId)
       .order("created_at", { ascending: false })
       .limit(5)
 

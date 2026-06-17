@@ -167,6 +167,9 @@ export function useWriterLogic({
   const [status, setStatus] = useState<StatusMsg | null>(null)
   const [localDraftUsage, setLocalDraftUsage] = useState(0)
 
+  // Prevents debounce from re-scoring when content was just set by a generation action
+  const skipDebounceScore = useRef(false)
+
   // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -281,10 +284,12 @@ export function useWriterLogic({
     }
   }, [isScoring, role, showStatus])
 
-  // Debounced re-score on edit (3 second delay)
+  // Debounced re-score on manual edits (3 second delay)
+  // Skipped when content was just set programmatically by onGeneratePost / onPushTo90
   const scoreDebounce = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => {
     if (!draftContent.trim()) return
+    if (skipDebounceScore.current) { skipDebounceScore.current = false; return }
     clearTimeout(scoreDebounce.current)
     scoreDebounce.current = setTimeout(() => void autoScore(draftContent), 3000)
     return () => clearTimeout(scoreDebounce.current)
@@ -334,6 +339,7 @@ export function useWriterLogic({
       const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, role, format, goal: goal.trim() })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
+      skipDebounceScore.current = true
       setDraftContent(content)
       setVersions((p) => [...p, { content, timestamp: new Date().toISOString() }])
       setEditingId(null)
@@ -363,6 +369,7 @@ export function useWriterLogic({
       const data = await apiImprovePost({ content: draftContent, role, scores: scores || {} })
       const improved = sanitizeGeneratedText(data.content)
       if (!improved) throw new Error("Returned empty content")
+      skipDebounceScore.current = true
       setDraftContent(improved)
       setVersions((p) => [...p, { content: improved, timestamp: new Date().toISOString() }])
       if (data.scores) setScores(data.scores)
