@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { usePosts } from "@/lib/hooks/usePosts"
@@ -12,6 +12,18 @@ import { withClientParam } from "@/lib/workspace-navigation"
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
 type RawJob = { type?: string; status?: string; title?: string; created_at?: string }
 type RangeOption = { label: string; value: number | "all" }
+
+type Snapshot = {
+  id: string
+  post_id: string | null
+  impressions: number
+  reactions: number
+  comments: number
+  reposts: number
+  follower_delta: number
+  notes: string | null
+  captured_at: string
+}
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const
 const TIME_LABELS = ["Morning", "Midday", "Afternoon", "Evening"] as const
@@ -30,6 +42,10 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [rangeDays, setRangeDays] = useState<number | "all">(30)
   const [analyticsNow] = useState(() => Date.now())
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([])
+  const [snapshotForm, setSnapshotForm] = useState({ impressions: "", reactions: "", comments: "", reposts: "", followerDelta: "", notes: "" })
+  const [snapshotSaving, setSnapshotSaving] = useState(false)
+  const [snapshotMsg, setSnapshotMsg] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -37,12 +53,15 @@ export default function AnalyticsPage() {
       loadEvents(500),
       loadJobs("", 200),
       fetch("/api/carousel").then((r) => r.json()).catch(() => ({ carousels: [] })),
-    ]).then(([ev, jb, carouselRes]) => {
+      fetch("/api/analytics?limit=20").then((r) => r.json()).catch(() => ({ snapshots: [] })),
+    ]).then(([ev, jb, carouselRes, analyticsRes]) => {
       if (!active) return
       setEvents(Array.isArray(ev) ? (ev as RawEvent[]) : [])
       setJobs(Array.isArray(jb) ? (jb as RawJob[]) : [])
       const carousels = (carouselRes as { carousels?: unknown[] }).carousels
       setCarouselDbCount(Array.isArray(carousels) ? carousels.length : 0)
+      const snaps = (analyticsRes as { snapshots?: Snapshot[] }).snapshots
+      setSnapshots(Array.isArray(snaps) ? snaps : [])
     }).catch(() => {
       if (!active) return
       setEvents([])
@@ -144,6 +163,34 @@ export default function AnalyticsPage() {
   }, [analyticsNow, carouselDbCount, drafts, events, jobs, posts, profile, published, rangeDays, scheduled])
 
   const hasData = posts.length > 0 || events.length > 0 || carouselDbCount > 0
+
+  const saveSnapshot = useCallback(async () => {
+    setSnapshotSaving(true)
+    setSnapshotMsg(null)
+    try {
+      const res = await fetch("/api/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          impressions: Number(snapshotForm.impressions) || 0,
+          reactions: Number(snapshotForm.reactions) || 0,
+          comments: Number(snapshotForm.comments) || 0,
+          reposts: Number(snapshotForm.reposts) || 0,
+          followerDelta: Number(snapshotForm.followerDelta) || 0,
+          notes: snapshotForm.notes.trim() || undefined,
+        }),
+      })
+      const data = await res.json() as { snapshot?: Snapshot; error?: string }
+      if (!res.ok) throw new Error(data.error || "Save failed")
+      setSnapshots((prev) => [data.snapshot!, ...prev].slice(0, 20))
+      setSnapshotForm({ impressions: "", reactions: "", comments: "", reposts: "", followerDelta: "", notes: "" })
+      setSnapshotMsg("Snapshot saved.")
+    } catch (e) {
+      setSnapshotMsg((e as Error).message)
+    } finally {
+      setSnapshotSaving(false)
+    }
+  }, [snapshotForm])
 
   return (
     <LockedFeature feature="Analytics dashboard" requiredPlan="Solo">
@@ -253,6 +300,76 @@ export default function AnalyticsPage() {
                     <div className="mt-2 h-1 rounded-full bg-zinc-200"><div className={`h-full rounded-full transition-all ${bucket.bar}`} style={{ width: `${analytics.byStatus.total ? (bucket.count / analytics.byStatus.total) * 100 : 0}%` }} /></div>
                   </div>
                 ))}
+              </div>
+            )}
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6">
+            <div className="mb-5">
+              <h2 className="text-base font-bold text-zinc-900">LinkedIn Stats</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Manually log impressions and engagement from LinkedIn Analytics for each post.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-5">
+              {(["impressions", "reactions", "comments", "reposts", "followerDelta"] as const).map((field) => (
+                <div key={field}>
+                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+                    {field === "followerDelta" ? "Follower change" : field.charAt(0).toUpperCase() + field.slice(1)}
+                  </label>
+                  <input
+                    type="number"
+                    min={field === "followerDelta" ? undefined : "0"}
+                    value={snapshotForm[field]}
+                    onChange={(e) => setSnapshotForm((f) => ({ ...f, [field]: e.target.value }))}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3">
+              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-zinc-400">Notes (optional)</label>
+              <input
+                type="text"
+                value={snapshotForm.notes}
+                onChange={(e) => setSnapshotForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="e.g. Product announcement post, boosted"
+                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white"
+              />
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={() => void saveSnapshot()}
+                disabled={snapshotSaving}
+                className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-600 disabled:opacity-50"
+              >
+                {snapshotSaving ? "Saving..." : "Save snapshot"}
+              </button>
+              {snapshotMsg && <p className="text-xs text-zinc-500">{snapshotMsg}</p>}
+            </div>
+            {snapshots.length > 0 && (
+              <div className="mt-6 overflow-x-auto rounded-xl border border-zinc-200">
+                <table className="w-full text-left text-xs text-zinc-700">
+                  <thead className="bg-zinc-50">
+                    <tr>
+                      {["Date", "Impressions", "Reactions", "Comments", "Reposts", "Followers", "Notes"].map((h) => (
+                        <th key={h} className="px-3 py-2 font-bold uppercase tracking-wide text-zinc-500">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {snapshots.map((snap) => (
+                      <tr key={snap.id} className="hover:bg-zinc-50">
+                        <td className="px-3 py-2 whitespace-nowrap">{new Date(snap.captured_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" })}</td>
+                        <td className="px-3 py-2 font-semibold text-teal">{snap.impressions.toLocaleString()}</td>
+                        <td className="px-3 py-2">{snap.reactions.toLocaleString()}</td>
+                        <td className="px-3 py-2">{snap.comments.toLocaleString()}</td>
+                        <td className="px-3 py-2">{snap.reposts.toLocaleString()}</td>
+                        <td className={`px-3 py-2 font-semibold ${snap.follower_delta > 0 ? "text-teal" : snap.follower_delta < 0 ? "text-red-500" : "text-zinc-400"}`}>{snap.follower_delta > 0 ? `+${snap.follower_delta}` : snap.follower_delta}</td>
+                        <td className="px-3 py-2 text-zinc-400 max-w-[160px] truncate">{snap.notes || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>

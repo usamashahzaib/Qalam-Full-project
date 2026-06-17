@@ -28,6 +28,7 @@ export const env = {
   easyPaisaWebhookSecret: read("EASYPAISA_WEBHOOK_SECRET"),
   resendApiKey: read("RESEND_API_KEY"),
   transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
+  cronSecret: read("CRON_SECRET"),
 }
 
 export const requireSupabaseEnv = () => {
@@ -51,6 +52,11 @@ export function requireAuthEnv(): void {
 export function requireRedisEnv(): { url: string; token: string } | null {
   if (!env.upstashRedisUrl || !env.upstashRedisToken) return null
   return { url: env.upstashRedisUrl, token: env.upstashRedisToken }
+}
+
+export function requireCronEnv(): string {
+  if (!env.cronSecret) throw new Error("CRON_SECRET is required for cron endpoints")
+  return env.cronSecret
 }
 
 export const supportEnv = {

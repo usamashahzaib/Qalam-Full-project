@@ -103,7 +103,11 @@ Sentence length: ${voiceProfile.sentenceLength ?? "not specified"}
 Formatting: ${voiceProfile.formatting ?? "not specified"}
 Emoji usage: ${voiceProfile.emojiUsage ?? "none"}
 Their vocabulary and phrases to weave in: ${(voiceProfile.vocabulary ?? []).join(", ")}
-Patterns they use: ${(voiceProfile.patterns ?? []).join(", ")}`
+Patterns they use: ${(voiceProfile.patterns ?? []).join(", ")}${
+  voiceProfile.examples?.length
+    ? `\n\nEXAMPLE POSTS WRITTEN BY THIS PERSON (study the rhythm, structure, and voice - do NOT copy content):\n${voiceProfile.examples.map((ex, i) => `--- Example ${i + 1} ---\n${ex}`).join("\n\n")}`
+    : ""
+}`
     : ""
 }
 
@@ -416,7 +420,10 @@ Writing rules:
 
   if (voiceProfile) {
     prompt += `\n\nVoice guidance:
-Write in a ${voiceProfile.tone ?? "natural"} tone. Use ${voiceProfile.sentenceLength ?? "varied"} sentences. Format with ${voiceProfile.formatting ?? "short paragraphs"}. Signature phrases: ${(voiceProfile.vocabulary ?? []).join(", ") || "none provided"}.`;
+Write in a ${voiceProfile.tone ?? "natural"} tone. Use ${voiceProfile.sentenceLength ?? "varied"} sentences. Format with ${voiceProfile.formatting ?? "short paragraphs"}. Signature phrases: ${(voiceProfile.vocabulary ?? []).join(", ") || "none provided"}.`
+    if (voiceProfile.examples?.length) {
+      prompt += `\n\nExample posts from this person (mirror their rhythm and voice, not the content):\n${voiceProfile.examples.map((ex, i) => `[${i + 1}] ${ex}`).join("\n\n")}`
+    }
   }
 
   if (goal) {

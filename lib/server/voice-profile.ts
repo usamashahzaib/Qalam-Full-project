@@ -1,6 +1,7 @@
 import "server-only"
 
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { retrieveVoiceExamples } from "@/lib/server/embeddings"
 import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 type VoiceRow = {
@@ -44,13 +45,21 @@ export const toPromptVoiceProfile = (row?: VoiceRow | null): VoiceProfile | unde
     : undefined
 }
 
-export const getWorkspaceVoiceProfile = async (workspaceId?: string | null) => {
+export const getWorkspaceVoiceProfile = async (workspaceId?: string | null): Promise<VoiceProfile | undefined> => {
   if (!workspaceId) return undefined
-  const { data } = await createServiceClient()
-    .from("voice_profiles")
-    .select("tone, brand_tone, characteristics, voice_fingerprint, sample_posts")
-    .eq("workspace_id", workspaceId)
-    .limit(1)
-    .maybeSingle()
-  return toPromptVoiceProfile(data)
+  const [profileResult, examples] = await Promise.all([
+    createServiceClient()
+      .from("voice_profiles")
+      .select("tone, brand_tone, characteristics, voice_fingerprint, sample_posts")
+      .eq("workspace_id", workspaceId)
+      .limit(1)
+      .maybeSingle(),
+    retrieveVoiceExamples(workspaceId, undefined, 3).catch(() => [] as string[]),
+  ])
+  const base = toPromptVoiceProfile(profileResult.data)
+  if (!base && !examples.length) return undefined
+  return {
+    ...(base ?? { tone: "", sentenceLength: "", vocabulary: [], patterns: [], formatting: "" }),
+    examples: examples.length ? examples : undefined,
+  }
 }

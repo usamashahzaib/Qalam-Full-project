@@ -12,6 +12,7 @@ export interface VoiceProfile {
   hashtagUsage?: string;
   vocabulary?: string[];
   patterns?: string[];
+  examples?: string[];
 }
 
 export interface RoleProfile {

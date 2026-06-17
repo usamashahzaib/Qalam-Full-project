@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { storeVoiceExamples } from "@/lib/server/embeddings"
 
 export async function POST(request: NextRequest) {
   const planCheck = await requirePlan(request, "Pro")
@@ -41,6 +42,13 @@ export async function POST(request: NextRequest) {
   if (error) {
     console.error("voice_save_failed", error)
     return NextResponse.json({ error: "Failed to save voice profile" }, { status: 500 })
+  }
+
+  // Fire-and-forget: chunk + store examples for RAG retrieval
+  const examplePostsText = profile.example_posts || ""
+  if (examplePostsText && planCheck.workspaceId && planCheck.session.supabaseUserId) {
+    storeVoiceExamples(planCheck.workspaceId, planCheck.session.supabaseUserId, examplePostsText)
+      .catch((err) => console.error("voice_examples_store_failed", err))
   }
 
   return NextResponse.json({ success: true })

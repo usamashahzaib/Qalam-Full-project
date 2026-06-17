@@ -77,6 +77,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/health",
   "/api/webhooks",
   "/api/payments/webhook",
+  "/api/cron",
   "/api/free-tools",
   "/api/tools",
   "/api/geo",

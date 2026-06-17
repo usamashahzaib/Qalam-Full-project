@@ -5,6 +5,7 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
+import { env } from "@/lib/server/env"
 
 type DuePost = {
   id: string
@@ -19,7 +20,7 @@ type DuePost = {
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!env.cronSecret || authHeader !== `Bearer ${env.cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
