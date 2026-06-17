@@ -12,23 +12,27 @@ export async function GET(req: NextRequest) {
 
   const tokenHash = hashToken(token)
   const supabase = createServiceClient()
+  const now = new Date().toISOString()
 
   const { data: record } = await supabase
     .from("email_verifications")
-    .select("id, user_id, expires_at, used")
+    .update({ used: true })
     .eq("token_hash", tokenHash)
+    .eq("used", false)
+    .gt("expires_at", now)
+    .select("id, user_id")
     .maybeSingle()
 
-  if (!record || record.used || new Date(record.expires_at) < new Date()) {
+  if (!record) {
     return NextResponse.redirect(new URL("/login?error=invalid_token", origin))
   }
 
-  await supabase
+  const { error } = await supabase
     .from("users")
     .update({ email_verified: true, updated_at: new Date().toISOString() })
     .eq("id", record.user_id)
 
-  await supabase.from("email_verifications").update({ used: true }).eq("id", record.id)
+  if (error) return NextResponse.redirect(new URL("/login?error=server_error", origin))
 
   return NextResponse.redirect(new URL("/login?verified=1", origin))
 }

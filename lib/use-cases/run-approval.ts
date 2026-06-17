@@ -3,6 +3,7 @@ import "server-only"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { env } from "@/lib/server/env"
+import { generateToken, hashToken } from "@/lib/server/password"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 
@@ -47,6 +48,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
   }
 
   const supabase = createServiceClient()
+  const reviewToken = generateToken()
 
   const { data: approval, error } = await supabase
     .from("approvals")
@@ -58,6 +60,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       post_content: postContent,
       status: "pending",
       message: message || null,
+      review_token_hash: hashToken(reviewToken),
     })
     .select("id, post_title, status, created_at")
     .single()
@@ -68,7 +71,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     return err({ code: "INTERNAL_ERROR", message: "Approval DB not ready", userMessage: detail })
   }
 
-  const reviewUrl = `${env.frontendOrigin}/approvals/${approval.id}/review`
+  const reviewUrl = `${env.frontendOrigin}/approvals/${approval.id}/review?token=${encodeURIComponent(reviewToken)}`
   const requesterName = userName || userEmail || "Someone"
   const title = postTitle || "Untitled post"
 

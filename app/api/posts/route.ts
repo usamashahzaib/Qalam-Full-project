@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
 
     const post = await postRepo.create({
-      userId,
+      userId: ctx.supabaseUserId,
       workspaceId,
       authorId: ctx.supabaseUserId,
       title,

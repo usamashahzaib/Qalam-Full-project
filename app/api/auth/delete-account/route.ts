@@ -3,18 +3,20 @@ import { requireAuthApi } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 export async function DELETE(req: NextRequest) {
-  const { userId, error } = await requireAuthApi(req)
+  const { userId, externalUserId, error } = await requireAuthApi(req)
   if (error) return error
 
   const supabase = createServiceClient()
+  const userIds = Array.from(new Set([userId, externalUserId].filter(Boolean))) as string[]
 
   // Delete associated data (best effort, CASCADE handles some)
   await Promise.allSettled([
-    supabase.from("plan_usage").delete().eq("user_id", userId!),
-    supabase.from("posts").delete().eq("user_id", userId!),
-    supabase.from("memberships").delete().eq("user_id", userId!),
-    supabase.from("password_resets").delete().eq("user_id", userId!),
-    supabase.from("email_verifications").delete().eq("user_id", userId!),
+    supabase.from("plan_usage").delete().in("user_id", userIds),
+    supabase.from("posts").delete().in("user_id", userIds),
+    supabase.from("memberships").delete().in("user_id", userIds),
+    supabase.from("workspace_members").delete().in("user_id", userIds),
+    supabase.from("password_resets").delete().in("user_id", userIds),
+    supabase.from("email_verifications").delete().in("user_id", userIds),
   ])
 
   const { error: deleteErr } = await supabase

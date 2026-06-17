@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import { QalamLogo } from "@/components/QalamLogo"
 
 type ApprovalData = {
@@ -18,7 +18,9 @@ type Stage = "loading" | "error" | "review" | "done"
 
 export default function ReviewPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const id = String(params.id)
+  const token = searchParams.get("token") || ""
 
   const [approval, setApproval] = useState<ApprovalData | null>(null)
   const [stage, setStage] = useState<Stage>("loading")
@@ -28,7 +30,7 @@ export default function ReviewPage() {
   const [decision, setDecision] = useState<"approved" | "rejected" | null>(null)
 
   useEffect(() => {
-    fetch(`/api/approvals/${id}/review`)
+    fetch(`/api/approvals/${id}/review?token=${encodeURIComponent(token)}`)
       .then((r) => r.json())
       .then((data: { approval?: ApprovalData; error?: string }) => {
         if (!data.approval) { setErrorMsg(data.error || "Not found"); setStage("error"); return }
@@ -41,12 +43,12 @@ export default function ReviewPage() {
         }
       })
       .catch(() => { setErrorMsg("Failed to load review request."); setStage("error") })
-  }, [id])
+  }, [id, token])
 
   const handleDecision = async (action: "approve" | "reject") => {
     setIsSubmitting(true)
     try {
-      const res = await fetch(`/api/approvals/${id}/${action}`, {
+      const res = await fetch(`/api/approvals/${id}/${action}?token=${encodeURIComponent(token)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ comment: comment.trim() }),

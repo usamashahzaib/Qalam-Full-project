@@ -54,6 +54,7 @@ const config: NextAuthConfig = {
 
           const valid = verifyPassword(password, user.password_hash)
           if (!valid) return null
+          if (!user.email_verified) return null
 
           return { id: user.id, email: user.email, name: user.full_name ?? "" }
         } catch {

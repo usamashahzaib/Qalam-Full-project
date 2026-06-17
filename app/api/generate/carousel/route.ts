@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { incrementUsage, checkPlanLimit } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "HR leader",
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     }
 
-    const limit = await checkPlanLimit(user.externalId, "carousels")
-    if (!limit.allowed) {
+    const usage = await incrementUsage(user.externalId, "carousels")
+    if (!usage.allowed) {
       return NextResponse.json(
-        { error: "Carousel limit reached. Upgrade to Pro for carousels.", remaining: 0, plan: limit.plan },
+        { error: "Carousel limit reached. Upgrade to Pro for carousels.", remaining: 0 },
         { status: 403 }
       )
     }
@@ -77,8 +77,6 @@ Return JSON:
       body: String(s.body || "").trim(),
       visual_suggestion: String(s.visual_suggestion || "").trim(),
     }))
-
-    const usage = await incrementUsage(user.externalId, "carousels")
 
     return NextResponse.json({ slides, remaining: usage.remaining })
   })(request)

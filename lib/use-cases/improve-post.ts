@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { buildPushTo90Prompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
@@ -39,13 +39,13 @@ export async function improvePost(
     return err({ code: "VALIDATION_ERROR", message: "Content is required", userMessage: "Content too short to improve." })
   }
 
-  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  let usage: Awaited<ReturnType<typeof incrementUsage>>
   try {
-    limit = await checkPlanLimit(userId, "drafts")
+    usage = await incrementUsage(userId, "drafts")
   } catch {
     return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again." })
   }
-  if (!limit.allowed) {
+  if (!usage.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
@@ -91,8 +91,6 @@ export async function improvePost(
     tips: rawScores.tips ?? {},
     hashtags: rawScores.hashtags ?? [],
   }
-
-  const usage = await incrementUsage(userId, "drafts")
 
   return ok({
     content: improved.trim(),

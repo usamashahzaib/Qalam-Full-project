@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/auth"
-import { requireAuth } from "@/lib/server/auth-helpers"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": process.env.FRONTEND_ORIGIN || "*",
@@ -21,34 +20,17 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders })
 }
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await requireAuth()
-    const session = await auth()
-    const email = session?.user?.email || ""
-    const supabase = createServiceClient()
-
-    const { data: user } = await supabase.from("users").select("email").eq("id", userId).single()
-    const ownerEmail = String(user?.email || email).trim().toLowerCase()
-
-    const { data: account } = await supabase
-      .from("publishing_accounts")
-      .select("access_token, expires_at, provider_account_id")
-      .eq("provider", "linkedin")
-      .or(`user_id.eq.${userId},owner_email.eq.${ownerEmail}`)
-      .maybeSingle()
-
-    let accessToken = account?.access_token || ""
-    if (!accessToken && ownerEmail) {
-      const { data: legacy } = await supabase
-        .from("linkedin_credentials")
-        .select("access_token, token_expires_at, member_id")
-        .eq("owner_email", ownerEmail)
-        .maybeSingle()
-      accessToken = legacy?.access_token || ""
-    }
+    const ctx = await getWorkspaceSessionContext()
+    const workspaceId = await resolveWorkspaceId(request)
+    const account = await getLinkedInPublishingAccount(workspaceId)
+    const legacy = account ? null : await getLinkedInToken(ctx.email)
+    const accessToken = account?.access_token || legacy?.access_token || ""
+    const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacy?.token_expires_at || null
 
     if (!accessToken) return NextResponse.json({ connected: false, error: "LinkedIn token not found" }, { status: 404, headers: corsHeaders })
+    if (expiresAt && expiresAt < Date.now()) return NextResponse.json({ error: "LinkedIn token expired" }, { status: 401, headers: corsHeaders })
 
     const res = await fetch("https://api.linkedin.com/v2/me", {
       headers: {
@@ -64,7 +46,7 @@ export async function GET(_request: NextRequest) {
     const profile = (await res.json()) as LinkedInMe
     return NextResponse.json(
       {
-        id: profile.id || account?.provider_account_id || null,
+        id: profile.id || account?.provider_account_id || legacy?.member_id || null,
         firstName: profile.localizedFirstName || "",
         lastName: profile.localizedLastName || "",
         headline: "",
@@ -75,6 +57,6 @@ export async function GET(_request: NextRequest) {
     )
   } catch (error) {
     const message = error instanceof Error ? error.message : "profile_failed"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500, headers: corsHeaders })
+    return NextResponse.json({ error: message }, { status: (message === "Unauthorized" || message === "auth_required") ? 401 : 500, headers: corsHeaders })
   }
 }

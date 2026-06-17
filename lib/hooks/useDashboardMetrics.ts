@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 export type DashboardStats = {
   postsThisMonth: number
@@ -35,51 +35,74 @@ export function useDashboardMetrics() {
   const [postsError, setPostsError] = useState(false)
   const [usage, setUsage] = useState<UsageDay[] | null>(null)
   const [usageError, setUsageError] = useState(false)
+  const statsSeq = useRef(0)
+  const postsSeq = useRef(0)
+  const usageSeq = useRef(0)
 
-  const loadStats = useCallback(async () => {
+  const loadStatsRequest = useCallback(async (signal?: AbortSignal) => {
+    const seq = ++statsSeq.current
     try {
-      const res = await fetch("/api/dashboard/stats")
+      const res = await fetch("/api/dashboard/stats", { signal })
       if (!res.ok) throw new Error("failed")
-      setStats(await res.json() as DashboardStats)
+      const next = await res.json() as DashboardStats
+      if (seq !== statsSeq.current) return
+      setStats(next)
       setStatsError(false)
-    } catch {
+    } catch (error) {
+      if ((error as Error).name === "AbortError" || seq !== statsSeq.current) return
       setStatsError(true)
     }
   }, [])
 
-  const loadPosts = useCallback(async () => {
+  const loadPostsRequest = useCallback(async (signal?: AbortSignal) => {
+    const seq = ++postsSeq.current
     try {
-      const res = await fetch("/api/dashboard/recent-posts")
+      const res = await fetch("/api/dashboard/recent-posts", { signal })
       if (!res.ok) throw new Error("failed")
-      setPosts(await res.json() as DashboardPost[])
+      const next = await res.json() as DashboardPost[]
+      if (seq !== postsSeq.current) return
+      setPosts(next)
       setPostsError(false)
-    } catch {
+    } catch (error) {
+      if ((error as Error).name === "AbortError" || seq !== postsSeq.current) return
       setPostsError(true)
     }
   }, [])
 
-  const loadUsage = useCallback(async () => {
+  const loadUsageRequest = useCallback(async (signal?: AbortSignal) => {
+    const seq = ++usageSeq.current
     try {
-      const res = await fetch("/api/dashboard/usage")
+      const res = await fetch("/api/dashboard/usage", { signal })
       if (!res.ok) throw new Error("failed")
-      setUsage(await res.json() as UsageDay[])
+      const next = await res.json() as UsageDay[]
+      if (seq !== usageSeq.current) return
+      setUsage(next)
       setUsageError(false)
-    } catch {
+    } catch (error) {
+      if ((error as Error).name === "AbortError" || seq !== usageSeq.current) return
       setUsageError(true)
     }
   }, [])
 
-  const loadAll = useCallback(() => {
-    loadStats()
-    loadPosts()
-    loadUsage()
-  }, [loadStats, loadPosts, loadUsage])
+  const loadStats = useCallback(() => { void loadStatsRequest() }, [loadStatsRequest])
+  const loadPosts = useCallback(() => { void loadPostsRequest() }, [loadPostsRequest])
+  const loadUsage = useCallback(() => { void loadUsageRequest() }, [loadUsageRequest])
+
+  const loadAll = useCallback((signal?: AbortSignal) => {
+    loadStatsRequest(signal)
+    loadPostsRequest(signal)
+    loadUsageRequest(signal)
+  }, [loadStatsRequest, loadPostsRequest, loadUsageRequest])
 
   useEffect(() => {
-    loadAll()
+    const controller = new AbortController()
+    loadAll(controller.signal)
     const onVisibility = () => { if (!document.hidden) loadAll() }
     document.addEventListener("visibilitychange", onVisibility)
-    return () => document.removeEventListener("visibilitychange", onVisibility)
+    return () => {
+      controller.abort()
+      document.removeEventListener("visibilitychange", onVisibility)
+    }
   }, [loadAll])
 
   return {

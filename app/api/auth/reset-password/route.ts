@@ -22,29 +22,29 @@ export async function POST(req: NextRequest) {
 
   const tokenHash = hashToken(token)
   const supabase = createServiceClient()
+  const now = new Date().toISOString()
 
-  const { data: record } = await supabase
+  const { data: record, error: tokenErr } = await supabase
     .from("password_resets")
-    .select("id, user_id, expires_at, used")
+    .update({ used: true })
     .eq("token_hash", tokenHash)
+    .eq("used", false)
+    .gt("expires_at", now)
+    .select("id, user_id")
     .maybeSingle()
 
-  if (!record) {
+  if (tokenErr || !record) {
     return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 })
   }
-  if (record.used) {
-    return NextResponse.json({ error: "This reset link has already been used." }, { status: 400 })
-  }
-  if (new Date(record.expires_at) < new Date()) {
-    return NextResponse.json({ error: "This reset link has expired. Request a new one." }, { status: 400 })
-  }
 
-  await supabase
+  const { error: updateErr } = await supabase
     .from("users")
     .update({ password_hash: hashPassword(password), updated_at: new Date().toISOString() })
     .eq("id", record.user_id)
 
-  await supabase.from("password_resets").update({ used: true }).eq("id", record.id)
+  if (updateErr) {
+    return NextResponse.json({ error: "Could not update password." }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true, message: "Password updated. You can now sign in." })
 }

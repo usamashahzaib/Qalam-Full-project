@@ -27,8 +27,23 @@ const headers = (prefer = "") => ({
   ...(prefer ? { Prefer: prefer } : {}),
 })
 
+const withTimeout = (init: RequestInit = {}, ms = 15000): { init: RequestInit; cleanup: () => void } => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), ms)
+  const abort = () => controller.abort()
+  init.signal?.addEventListener("abort", abort, { once: true })
+  return {
+    init: { ...init, signal: controller.signal },
+    cleanup: () => {
+      clearTimeout(timer)
+      init.signal?.removeEventListener("abort", abort)
+    },
+  }
+}
+
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<RestResponse<T>> => {
-  const response = await fetch(url, init)
+  const timed = withTimeout(init)
+  const response = await fetch(url, timed.init).finally(timed.cleanup)
   const text = await response.text()
   const payload = parseBody<T>(text)
   if (!response.ok) {
@@ -118,7 +133,7 @@ export const supabasePatch = async <T>(
 export const supabaseDelete = async (table: string, query: string) => {
   requireSupabaseEnv()
   const url = `${env.supabaseUrl}/rest/v1/${table}?${query}`
-  await fetch(url, {
+  await fetchJson<null>(url, {
     method: "DELETE",
     headers: headers("return=minimal"),
     cache: "no-store",

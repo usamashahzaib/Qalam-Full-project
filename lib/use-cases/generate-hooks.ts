@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import { buildHook5StylesPrompt } from "@/lib/prompts/role-aware-system"
@@ -33,14 +33,14 @@ export interface Hook {
 export async function generateHooks(input: GenerateHooksInput): Promise<Result<{ hooks: Hook[]; remaining: number }>> {
   const { topic, role, userId, plan } = input
 
-  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  let usage: Awaited<ReturnType<typeof incrementUsage>>
   try {
-    limit = await checkPlanLimit(userId, "hooks")
+    usage = await incrementUsage(userId, "hooks")
   } catch {
     return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again in a moment." })
   }
 
-  if (!limit.allowed) {
+  if (!usage.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Hook limit reached", userMessage: "Hook limit reached. Upgrade your plan." })
   }
 
@@ -65,19 +65,9 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
       ? (parsed as { hooks: Hook[] }).hooks
       : []
 
-  const safeIncrement = async () => {
-    try {
-      return await incrementUsage(userId, "hooks")
-    } catch {
-      return { remaining: limit.remaining - 1 }
-    }
-  }
-
   if (!hooks.length) {
-    const usage = await safeIncrement()
     return ok({ hooks: fallback, remaining: usage.remaining })
   }
 
-  const usage = await safeIncrement()
   return ok({ hooks: hooks.slice(0, 5), remaining: usage.remaining })
 }

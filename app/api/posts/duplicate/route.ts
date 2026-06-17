@@ -7,7 +7,7 @@ const postRepo = new SupabasePostRepository()
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await requireAuth()
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     const ctx = await getWorkspaceSessionContext()
 
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const postId = String(body.postId || "").trim()
     if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 })
 
-    const post = await postRepo.duplicate(postId, workspaceId, userId, ctx.supabaseUserId)
+    const post = await postRepo.duplicate(postId, workspaceId, ctx.supabaseUserId, ctx.supabaseUserId)
     return NextResponse.json({ post }, { status: 201 })
   } catch (error) {
     const msg = (error as Error).message

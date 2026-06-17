@@ -40,22 +40,42 @@ export async function getPlanStatus(externalUserId: string) {
         .eq("user_id", externalUserId)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
-    // users.plan is updated by payment webhook - use as authoritative source
+    // users.plan + plan_expires_at are updated by payment webhook - authoritative source
     Promise.resolve(
       supabase
         .from("users")
-        .select("plan")
+        .select("plan,plan_expires_at")
         .or(`id.eq.${externalUserId},external_user_id.eq.${externalUserId}`)
         .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null } | null }>,
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null } | null }>,
   ])
 
-  // If RPC fails (not yet deployed, DB issue), fail open rather than blocking users
-  const usage = (!usageResult.error && usageResult.data)
+  // Try RPC result first; fall back to direct table query if RPC is unavailable
+  let usage = (!usageResult.error && usageResult.data)
     ? JSON.parse(JSON.stringify(usageResult.data))
     : null
+
+  if (!usage) {
+    const { data: directRow } = await supabase
+      .from("plan_usage")
+      .select("*")
+      .eq("user_id", externalUserId)
+      .maybeSingle()
+    if (directRow) {
+      usage = directRow
+    } else {
+      // Row missing entirely - create it so future increments work
+      const { data: newRow } = await supabase
+        .from("plan_usage")
+        .upsert({ user_id: externalUserId, plan: "free" }, { onConflict: "user_id" })
+        .select("*")
+        .maybeSingle()
+      usage = newRow
+    }
+  }
   const override = overrideResult.data
   const usersPlan = normalizePlan(usersResult.data?.plan)
+  const planExpiresAt = usersResult.data?.plan_expires_at ?? null
 
   // Base plan from plan_usage
   let plan = normalizePlan(usage?.plan)
@@ -65,6 +85,11 @@ export async function getPlanStatus(externalUserId: string) {
     plan = usersPlan
     // Sync plan_usage.plan to stay current (best-effort, non-blocking)
     void supabase.from("plan_usage").update({ plan }).eq("user_id", externalUserId)
+  }
+
+  // Downgrade to Free if subscription has expired
+  if (plan !== "Free" && planExpiresAt && new Date(planExpiresAt) < new Date()) {
+    plan = "Free"
   }
 
   // Apply admin plan override if not expired
@@ -105,6 +130,7 @@ export async function getPlanStatus(externalUserId: string) {
       remaining: Math.max(0, config.analyses - (usage?.analyses_used || 0))
     },
     cycleEnd: usage?.cycle_end,
+    planExpiresAt,
   }
 }
 
@@ -137,7 +163,7 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       p_max_allowed: limit
     })
 
-    if (!result) return { allowed: true, current: 0, limit, remaining: limit }
+    if (!result) throw new Error("rpc_returned_null")
 
     const parsed = JSON.parse(JSON.stringify(result))
     return {
@@ -148,8 +174,30 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       error: parsed.error,
     }
   } catch {
-    // RPC not deployed or failed - fail open so users are not blocked
-    return { allowed: true, current: 0, limit, remaining: limit }
+    // RPC not deployed or failed - fall back to direct non-atomic update
+    try {
+      const { data: row } = await supabase
+        .from("plan_usage")
+        .select(field)
+        .eq("user_id", externalUserId)
+        .maybeSingle()
+      const currentVal: number = (row as Record<string, number> | null)?.[field] ?? 0
+      if (currentVal >= limit) {
+        return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
+      }
+      await supabase
+        .from("plan_usage")
+        .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
+        .eq("user_id", externalUserId)
+      return {
+        allowed: true,
+        current: currentVal + 1,
+        limit,
+        remaining: Math.max(0, limit - (currentVal + 1)),
+      }
+    } catch {
+      return { allowed: false, current: 0, limit, remaining: 0, error: "usage_update_failed" }
+    }
   }
 }
 

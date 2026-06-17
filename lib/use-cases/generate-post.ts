@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
@@ -65,8 +65,8 @@ function parseJson<T>(raw: string): T | null {
 export async function generatePost(input: GeneratePostInput): Promise<Result<GeneratePostOutput>> {
   const { topic, role, format, goal, qualityCheck = true, userId, authorId, workspaceId, plan, reqId } = input
 
-  const limit = await checkPlanLimit(userId, "drafts")
-  if (!limit.allowed) {
+  const usageResult = await incrementUsage(userId, "drafts")
+  if (!usageResult.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
@@ -110,12 +110,6 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
         content = (await callAi(rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim()
       } catch { /* keep current content */ }
     }
-  }
-
-  // Atomically increment usage
-  const usageResult = await incrementUsage(userId, "drafts")
-  if (!usageResult.allowed) {
-    return err({ code: "PLAN_LIMIT_EXCEEDED", message: usageResult.error || "Usage limit exceeded" })
   }
 
   const { hook, body, cta, hashtags } = splitPost(content)

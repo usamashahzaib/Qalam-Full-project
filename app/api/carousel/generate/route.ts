@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
-import { checkPlanLimit, getPlanStatus } from "@/lib/server/plan-limits-v2"
+import { getPlanStatus, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { createClient } from "@supabase/supabase-js"
 
@@ -51,8 +51,11 @@ export async function POST(req: NextRequest) {
 
     if (!safeTopic) return NextResponse.json({ error: "Topic is required" }, { status: 400 })
 
-    const { allowed, current, limit, remaining, plan } = await checkPlanLimit(userId, "carousels")
-    if (!allowed) return NextResponse.json({ error: "Carousel limit reached", current, limit }, { status: 403 })
+    const planStatus = await getPlanStatus(userId)
+    const usage = await incrementUsage(userId, "carousels")
+    if (!usage.allowed) {
+      return NextResponse.json({ error: "Carousel limit reached", current: usage.current, limit: usage.limit }, { status: 403 })
+    }
 
     const prompt = `Create a ${count}-slide LinkedIn carousel about "${safeTopic}" for a ${safeRole.replace("_", " ")} audience.
 
@@ -96,7 +99,7 @@ Rules:
       return NextResponse.json({ error: "Failed to save carousel project" }, { status: 500 })
     }
 
-    return NextResponse.json({ projectId, slides, usage: { allowed, current, limit, remaining, plan } })
+    return NextResponse.json({ projectId, slides, usage: { ...usage, plan: planStatus.plan } })
   } catch (error) {
     const message = (error as Error).message || "Failed to generate carousel"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
