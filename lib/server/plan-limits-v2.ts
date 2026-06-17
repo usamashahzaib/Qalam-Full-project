@@ -148,8 +148,10 @@ export async function checkPlanLimit(externalUserId: string, feature: Feature) {
   }
 }
 
-// Atomically increment usage using your existing RPC
-export async function incrementUsage(externalUserId: string, feature: Feature) {
+// Atomically increment usage using your existing RPC.
+// internalUserId is the Supabase UUID; used as a fallback lookup key when
+// the plan_usage row was created under the internal UUID instead of the external OAuth sub.
+export async function incrementUsage(externalUserId: string, feature: Feature, internalUserId?: string) {
   const supabase = createServiceClient()
   const plan = (await checkPlanLimit(externalUserId, feature)).plan
   const config = PLAN_CONFIG[plan].limits
@@ -174,13 +176,23 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       error: parsed.error,
     }
   } catch {
-    // RPC not deployed or failed - fall back to optimistic-concurrency update
+    // RPC not deployed or failed - fall back to optimistic-concurrency update.
+    // Try the external user ID first; fall back to the internal UUID if no row found.
     try {
-      const { data: row } = await supabase
+      let { data: row } = await supabase
         .from("plan_usage")
         .select(field)
         .eq("user_id", externalUserId)
         .maybeSingle()
+      const resolvedUserId = row ? externalUserId : (internalUserId ?? externalUserId)
+      if (!row && internalUserId) {
+        const fallback = await supabase
+          .from("plan_usage")
+          .select(field)
+          .eq("user_id", internalUserId)
+          .maybeSingle()
+        row = fallback.data
+      }
       const currentVal: number = (row as Record<string, number> | null)?.[field] ?? 0
       if (currentVal >= limit) {
         return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
@@ -190,7 +202,7 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       const { data: updated } = await supabase
         .from("plan_usage")
         .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
-        .eq("user_id", externalUserId)
+        .eq("user_id", resolvedUserId)
         .eq(field, currentVal)
         .select(field)
         .maybeSingle()
