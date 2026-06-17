@@ -43,7 +43,15 @@ export const nowTimeInput = () => {
 
 export const scheduleValidationError = (date: string, time: string): string | null => {
   if (!date || !time) return "Select date and time"
-  const s = new Date(`${date}T${time}:00`)
+  // Append local timezone offset so the browser constructs the correct UTC timestamp.
+  // Without the offset, `new Date("2026-07-09T09:00:00")` is ambiguous (parsed as local
+  // on some engines, UTC on others), causing posts to publish at the wrong time.
+  const offsetMinutes = new Date().getTimezoneOffset()
+  const sign = offsetMinutes <= 0 ? "+" : "-"
+  const abs = Math.abs(offsetMinutes)
+  const hh = String(Math.floor(abs / 60)).padStart(2, "0")
+  const mm = String(abs % 60).padStart(2, "0")
+  const s = new Date(`${date}T${time}:00${sign}${hh}:${mm}`)
   if (Number.isNaN(s.getTime())) return "Select a valid date and time"
   return s.getTime() <= Date.now() ? "Choose a future time" : null
 }
