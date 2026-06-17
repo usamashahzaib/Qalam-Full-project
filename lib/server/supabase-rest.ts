@@ -124,6 +124,9 @@ export const supabasePatch = async <T>(
     body,
     cache: "no-store",
   })
+  if (!data || (Array.isArray(data) && data.length === 0)) {
+    console.warn(`[supabasePatch] No rows updated in '${table}' with filter '${query}'`)
+  }
   return data
 }
 

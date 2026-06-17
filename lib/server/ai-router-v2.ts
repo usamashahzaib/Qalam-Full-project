@@ -46,8 +46,10 @@ export function safeParseJson<T = unknown>(raw: string): T | null {
         }
       }
     }
+    console.warn("[safeParseJson] Could not extract JSON from AI response", { preview: raw.slice(0, 120) })
     return null
-  } catch {
+  } catch (err) {
+    console.warn("[safeParseJson] Unexpected parse error", err)
     return null
   }
 }
