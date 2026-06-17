@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
+import { hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
 import {
   buildGeneratePrompt,
   buildHumanizePrompt,
@@ -93,6 +94,12 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     content = (await callAi(humSystem, humUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
   } catch {
     content = rawPost.trim()
+  }
+
+  // Sanitize and flag AI slop before scoring
+  content = sanitizeGeneratedText(content)
+  if (hasAiSlop(content)) {
+    log.warn("generate-post.ai_slop_detected", { reqId, userId, preview: content.slice(0, 80) })
   }
 
   // Pass 3: Score + rewrite (paid plans only)

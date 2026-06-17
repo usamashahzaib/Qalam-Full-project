@@ -28,17 +28,17 @@ export async function GET(request: Request) {
 
     for (const cred of credentials) {
       try {
-        // Find the user's workspace and published posts with external URNs
-        const workspaces = await supabaseSelect<{ id: string }>(
+        // Find the user's workspace by owner_id (internal UUID or external OAuth sub)
+        const workspaces = await supabaseSelect<{ id: string; key: string }>(
           "workspaces",
-          `owner_email=eq.${encodeURIComponent(cred.owner_email)}&limit=1`
+          `owner_id=eq.${encodeURIComponent(cred.user_id)}&limit=1&select=id,key`
         )
-        const workspaceId = workspaces?.[0]?.id
-        if (!workspaceId) continue
+        const workspace = workspaces?.[0]
+        if (!workspace) continue
 
         const posts = await supabaseSelect<{ id: string; external_urn: string }>(
           "posts",
-          `workspace_id=eq.${workspaceId}&external_urn=not.is.null&status=eq.published&select=id,external_urn`
+          `workspace_id=eq.${workspace.id}&external_urn=not.is.null&status=eq.published&select=id,external_urn`
         )
         if (!posts || posts.length === 0) continue
 
@@ -47,18 +47,18 @@ export async function GET(request: Request) {
           try {
             const stats = await pollLinkedInAnalytics(cred.access_token, post.external_urn)
             await supabaseInsert("workspace_events", {
-              workspace_key: cred.owner_email,
+              workspace_key: workspace.key,
               event_type: "linkedin_analytics_polled",
               payload: { postUrn: post.external_urn, postId: post.id, ...stats },
               created_at: new Date().toISOString(),
             })
-            allResults.push({ email: cred.owner_email, urn: post.external_urn, status: "success", stats })
+            allResults.push({ email: cred.user_id, urn: post.external_urn, status: "success", stats })
           } catch (err) {
-            allResults.push({ email: cred.owner_email, urn: post.external_urn, status: "error", message: (err as Error).message })
+            allResults.push({ email: cred.user_id, urn: post.external_urn, status: "error", message: (err as Error).message })
           }
         }
       } catch (err) {
-        allResults.push({ email: cred.owner_email, urn: "workspace-level", status: "error", message: (err as Error).message })
+        allResults.push({ email: cred.user_id, urn: "workspace-level", status: "error", message: (err as Error).message })
       }
     }
 

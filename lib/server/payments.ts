@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
-import { supabaseInsert, supabasePatch, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
+import { supabaseInsert, supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa"
@@ -178,27 +178,22 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
 
   const paidOrganizationId = organizationId as string
 
-  await supabasePatch("organizations", `id=eq.${encodeURIComponent(paidOrganizationId)}`, {
-    plan: payment.planName,
-    subscription_status: "active",
-    plan_expires_at: expiresAt,
-    customer_id: payment.transactionId,
-    updated_at: new Date().toISOString(),
+  // Atomically update organizations, users, and plan_usage in a single
+  // Postgres transaction via RPC. If any step fails the whole operation
+  // rolls back, preventing the partial-update window that three sequential
+  // REST calls would create.
+  const supabase = createServiceClient()
+  const { error: rpcError } = await supabase.rpc("activate_plan", {
+    p_user_id: user.id,
+    p_organization_id: paidOrganizationId,
+    p_plan_name: payment.planName,
+    p_expires_at: expiresAt,
+    p_customer_id: payment.transactionId,
   })
-
-  await supabasePatch("users", `id=eq.${encodeURIComponent(user.id)}`, {
-    plan: payment.planName,
-    plan_expires_at: expiresAt,
-    updated_at: new Date().toISOString(),
-  })
-
-  // Sync plan_usage so generation limits reflect the new plan immediately.
-  // Use upsert so a missing row is created rather than silently skipped.
-  await supabaseUpsert("plan_usage", {
-    user_id: user.id,
-    plan: payment.planName.toLowerCase(),
-    updated_at: new Date().toISOString(),
-  }, "user_id")
+  if (rpcError) {
+    console.error("[payments] activate_plan RPC failed:", rpcError)
+    throw new Error(`activate_plan_failed: ${rpcError.message}`)
+  }
 
   await sendTransactionalEmail({
     to: user.email,

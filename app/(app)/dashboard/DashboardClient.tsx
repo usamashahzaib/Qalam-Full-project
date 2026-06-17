@@ -74,7 +74,7 @@ function StatCardSkeleton() {
 // ─── Plan Card ────────────────────────────────────────────────────────────────
 
 function PlanCard({ stats }: { stats: Stats }) {
-  const { plan, draftsUsed, draftsTotal, draftsRemaining, postsPublished, carouselsUsed, resetDate } =
+  const { plan, draftsUsed, draftsTotal, draftsRemaining, postsPublished, carouselsUsed, resetDate, planExpiresAt } =
     stats
   const planNorm = plan.toLowerCase()
   const planLabel = capitalize(plan)
@@ -85,6 +85,12 @@ function PlanCard({ stats }: { stats: Stats }) {
     draftsTotal && draftsTotal > 0
       ? Math.min(100, (draftsUsed / draftsTotal) * 100)
       : 0
+
+  const expiryLabel = isFree
+    ? `Resets ${fmtResetDate(resetDate)}`
+    : planExpiresAt
+      ? `Expires ${fmtResetDate(planExpiresAt)}`
+      : `Renews ${fmtResetDate(resetDate)}`
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
@@ -103,7 +109,7 @@ function PlanCard({ stats }: { stats: Stats }) {
       </div>
 
       <p className="mt-1 text-sm text-zinc-500">
-        Resets {fmtResetDate(resetDate)}
+        {expiryLabel}
       </p>
 
       {/* Progress bar */}
@@ -503,7 +509,8 @@ const ALL_PROMPTS = [
 ]
 
 function WritingPromptsCard() {
-  const dayIndex = Math.floor(Date.now() / 86400000)
+  const now = new Date()
+  const dayIndex = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()
   const prompts = Array.from({ length: 4 }, (_, i) => ALL_PROMPTS[(dayIndex + i) % ALL_PROMPTS.length])
 
   return (

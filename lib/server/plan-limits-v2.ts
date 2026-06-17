@@ -27,17 +27,17 @@ const FIELD_MAP: Record<Feature, string> = {
 }
 
 // Get plan status from plan_usage table, respecting admin overrides
-export async function getPlanStatus(externalUserId: string) {
+export async function getPlanStatus(userId: string) {
   const supabase = createServiceClient()
 
   // Parallel: get usage + check admin override + check users.plan (payment source of truth)
   const [usageResult, overrideResult, usersResult] = await Promise.all([
-    supabase.rpc("get_or_create_plan_usage", { p_user_id: externalUserId }),
+    supabase.rpc("get_or_create_plan_usage", { p_user_id: userId }),
     Promise.resolve(
       supabase
         .from("user_overrides")
         .select("plan_override, draft_limit_override, expires_at")
-        .eq("user_id", externalUserId)
+        .eq("user_id", userId)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
     // users.plan + plan_expires_at are updated by payment webhook - authoritative source
@@ -45,7 +45,7 @@ export async function getPlanStatus(externalUserId: string) {
       supabase
         .from("users")
         .select("plan,plan_expires_at")
-        .or(`id.eq.${externalUserId},external_user_id.eq.${externalUserId}`)
+        .eq("id", userId)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null } | null }>,
   ])
@@ -59,7 +59,7 @@ export async function getPlanStatus(externalUserId: string) {
     const { data: directRow } = await supabase
       .from("plan_usage")
       .select("*")
-      .eq("user_id", externalUserId)
+      .eq("user_id", userId)
       .maybeSingle()
     if (directRow) {
       usage = directRow
@@ -67,7 +67,7 @@ export async function getPlanStatus(externalUserId: string) {
       // Row missing entirely - create it so future increments work
       const { data: newRow } = await supabase
         .from("plan_usage")
-        .upsert({ user_id: externalUserId, plan: "free" }, { onConflict: "user_id" })
+        .upsert({ user_id: userId, plan: "free" }, { onConflict: "user_id" })
         .select("*")
         .maybeSingle()
       usage = newRow
@@ -77,15 +77,8 @@ export async function getPlanStatus(externalUserId: string) {
   const usersPlan = normalizePlan(usersResult.data?.plan)
   const planExpiresAt = usersResult.data?.plan_expires_at ?? null
 
-  // Base plan from plan_usage
-  let plan = normalizePlan(usage?.plan)
-
-  // Elevate to users.plan if it's higher (payment webhook updates users.plan but not plan_usage)
-  if ((PLAN_PRIORITY[usersPlan] ?? 0) > (PLAN_PRIORITY[plan] ?? 0)) {
-    plan = usersPlan
-    // Sync plan_usage.plan to stay current (best-effort, non-blocking)
-    void supabase.from("plan_usage").update({ plan }).eq("user_id", externalUserId)
-  }
+  // Base plan directly from users table (payment webhook source of truth)
+  let plan = usersPlan
 
   // Downgrade to Free if subscription has expired
   if (plan !== "Free" && planExpiresAt && new Date(planExpiresAt) < new Date()) {
@@ -135,8 +128,8 @@ export async function getPlanStatus(externalUserId: string) {
 }
 
 // Check if user can use a feature
-export async function checkPlanLimit(externalUserId: string, feature: Feature) {
-  const status = await getPlanStatus(externalUserId)
+export async function checkPlanLimit(userId: string, feature: Feature) {
+  const status = await getPlanStatus(userId)
   const featureData = status[feature]
 
   return {
@@ -151,16 +144,16 @@ export async function checkPlanLimit(externalUserId: string, feature: Feature) {
 // Atomically increment usage using your existing RPC.
 // internalUserId is the Supabase UUID; used as a fallback lookup key when
 // the plan_usage row was created under the internal UUID instead of the external OAuth sub.
-export async function incrementUsage(externalUserId: string, feature: Feature, internalUserId?: string) {
+export async function incrementUsage(userId: string, feature: Feature, internalUserId?: string) {
   const supabase = createServiceClient()
-  const plan = (await checkPlanLimit(externalUserId, feature)).plan
+  const plan = (await checkPlanLimit(userId, feature)).plan
   const config = PLAN_CONFIG[plan].limits
   const limit = config[feature]
   const field = FIELD_MAP[feature]
 
   try {
     const { data: result } = await supabase.rpc("increment_plan_usage", {
-      p_user_id: externalUserId,
+      p_user_id: userId,
       p_field: field,
       p_max_allowed: limit
     })
@@ -177,22 +170,12 @@ export async function incrementUsage(externalUserId: string, feature: Feature, i
     }
   } catch {
     // RPC not deployed or failed - fall back to optimistic-concurrency update.
-    // Try the external user ID first; fall back to the internal UUID if no row found.
     try {
-      let { data: row } = await supabase
+      const { data: row } = await supabase
         .from("plan_usage")
         .select(field)
-        .eq("user_id", externalUserId)
+        .eq("user_id", userId)
         .maybeSingle()
-      const resolvedUserId = row ? externalUserId : (internalUserId ?? externalUserId)
-      if (!row && internalUserId) {
-        const fallback = await supabase
-          .from("plan_usage")
-          .select(field)
-          .eq("user_id", internalUserId)
-          .maybeSingle()
-        row = fallback.data
-      }
       const currentVal: number = (row as Record<string, number> | null)?.[field] ?? 0
       if (currentVal >= limit) {
         return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
@@ -202,7 +185,7 @@ export async function incrementUsage(externalUserId: string, feature: Feature, i
       const { data: updated } = await supabase
         .from("plan_usage")
         .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
-        .eq("user_id", resolvedUserId)
+        .eq("user_id", userId)
         .eq(field, currentVal)
         .select(field)
         .maybeSingle()

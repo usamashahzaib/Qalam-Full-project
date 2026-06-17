@@ -13,19 +13,25 @@ export function useAutosave(
 
   useEffect(() => {
     if (!value) return
-    
-    const timer = setTimeout(() => {
-      onSaveRef.current(value)
+    let mounted = true
+
+    const timer = setTimeout(async () => {
+      if (!mounted) return
+      await onSaveRef.current(value)
+      if (!mounted) return
       try {
         localStorage.setItem(`qalam_autosave_${key}`, JSON.stringify({
           content: value,
           savedAt: new Date().toISOString()
         }))
-      } catch (e) {
+      } catch {
         // ignore
       }
     }, delay)
 
-    return () => clearTimeout(timer)
+    return () => {
+      mounted = false
+      clearTimeout(timer)
+    }
   }, [value, key, delay])
 }

@@ -15,7 +15,7 @@ export function detectBot(request: NextRequest): { isBot: boolean; reason?: stri
 export function validateApiKey(request: NextRequest): boolean {
   const path = request.nextUrl.pathname
   if (path.startsWith("/api/admin")) return request.headers.get("x-admin-key") === process.env.ADMIN_API_KEY
-  if (path.startsWith("/api/webhooks")) return Boolean(request.headers.get("stripe-signature") || request.headers.get("x-webhook-signature"))
+  if (path.startsWith("/api/payments/webhook") || path.startsWith("/api/webhooks")) return Boolean(request.headers.get("stripe-signature") || request.headers.get("x-webhook-signature"))
   return true
 }
 

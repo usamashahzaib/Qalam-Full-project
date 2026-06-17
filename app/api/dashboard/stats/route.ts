@@ -22,7 +22,6 @@ export async function GET() {
 
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const resetDate = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 
     const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes, usersPlanRes] = await Promise.allSettled([
       supabase
@@ -52,10 +51,10 @@ export async function GET() {
         .or(`user_id.eq.${supabaseUserId},user_id.eq.${tokenUserId}`)
         .limit(1)
         .maybeSingle(),
-      // users.plan is updated by payment webhook and is the authoritative source
+      // users.plan + plan_expires_at are updated by payment webhook - authoritative source
       supabase
         .from("users")
-        .select("plan")
+        .select("plan,plan_expires_at")
         .or(`id.eq.${supabaseUserId},external_user_id.eq.${tokenUserId}`)
         .maybeSingle(),
     ])
@@ -71,7 +70,8 @@ export async function GET() {
     const override =
       overrideRes.status === "fulfilled" ? overrideRes.value.data : null
     const usersPlanRow =
-      usersPlanRes.status === "fulfilled" ? (usersPlanRes.value as { data: { plan?: string | null } | null }).data : null
+      usersPlanRes.status === "fulfilled" ? (usersPlanRes.value as { data: { plan?: string | null; plan_expires_at?: string | null } | null }).data : null
+    const planExpiresAt = usersPlanRow?.plan_expires_at ?? null
 
     const scores = monthPosts
       .map((p: { engagement_score?: number | null }) => p.engagement_score)
@@ -87,19 +87,30 @@ export async function GET() {
     if ((PLAN_PRIORITY[usersPlanNorm] ?? 0) > (PLAN_PRIORITY[planName.toLowerCase()] ?? 0)) {
       planName = usersPlanRow!.plan!
     }
+    // Downgrade to Free if subscription has expired
+    if (planName.toLowerCase() !== "free" && planExpiresAt && new Date(planExpiresAt) < now) {
+      planName = "free"
+    }
     // Apply admin override if active
-    if (override?.plan_override && (!override.expires_at || new Date(override.expires_at) > new Date())) {
+    if (override?.plan_override && (!override.expires_at || new Date(override.expires_at) > now)) {
       planName = override.plan_override
     }
     const plan = getPlanByName(planName)
     const draftsUsed = usageRow?.ai_drafts_used ?? 0
     let draftsTotal = plan.draftsPerMonth
     if (typeof override?.draft_limit_override === "number" && override.draft_limit_override >= 0 &&
-        (!override.expires_at || new Date(override.expires_at) > new Date())) {
+        (!override.expires_at || new Date(override.expires_at) > now)) {
       draftsTotal = override.draft_limit_override
     }
     const draftsRemaining =
       draftsTotal != null ? Math.max(0, draftsTotal - draftsUsed) : null
+
+    // For paid plans use the real expiry/renewal date; for Free use start of next month
+    const resetDate = (planName.toLowerCase() !== "free" && planExpiresAt)
+      ? planExpiresAt
+      : new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+
+    const isFree = planName.toLowerCase() === "free"
 
     return NextResponse.json({
       postsThisMonth: monthPosts.length,
@@ -107,11 +118,12 @@ export async function GET() {
       draftsUsed,
       draftsTotal,
       libraryPosts: libraryCount,
-      avgScore,
+      avgScore: isFree ? null : avgScore,
       plan: planName,
       carouselsUsed: usageRow?.carousels_used ?? 0,
       postsPublished,
       resetDate,
+      planExpiresAt,
     })
   } catch (err) {
     const msg = (err as Error).message
