@@ -122,10 +122,13 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   return extracted
 }
 
-const addDays = (days: number) => {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date.toISOString()
+const addMonths = (months: number) => {
+  const now = new Date()
+  const day = now.getDate()
+  now.setDate(1)
+  now.setMonth(now.getMonth() + months)
+  now.setDate(Math.min(day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()))
+  return now.toISOString()
 }
 
 const getUser = async (payment: VerifiedPayment) => {
@@ -152,7 +155,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   const organizationId = await getPrimaryOrganizationId(user.id)
   if (payment.status === "paid" && !organizationId) throw new Error("payment_organization_not_found")
 
-  const expiresAt = payment.status === "paid" ? addDays(payment.billingCycle === "annual" ? 365 : 30) : null
+  const expiresAt = payment.status === "paid" ? addMonths(1) : null
   await supabaseUpsert("payments", {
     provider: payment.provider,
     transaction_id: payment.transactionId,
@@ -194,6 +197,11 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     console.error("[payments] activate_plan RPC failed:", rpcError)
     throw new Error(`activate_plan_failed: ${rpcError.message}`)
   }
+
+  await supabase
+    .from("plan_usage")
+    .update({ cycle_start: new Date().toISOString(), cycle_end: expiresAt, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id)
 
   await sendTransactionalEmail({
     to: user.email,

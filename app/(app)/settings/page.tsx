@@ -13,6 +13,7 @@ import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
 import { isValidLinkedInUrl } from "@/lib/validation"
 import { useProfileForm } from "@/lib/hooks/useProfileForm"
+import { formatPlanDate } from "@/lib/plan-expiry"
 
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
 
@@ -54,7 +55,7 @@ export default function SettingsPage() {
   const [accountDraft, setAccountDraft] = useState({ name: "", role: "", industry: "", goals: "" })
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [accountError, setAccountError] = useState<string | null>(null)
-  const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number } } | null>(null)
+  const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number }; planExpiresAt?: string | null } | null>(null)
   const [passwordDraft, setPasswordDraft] = useState({ current: "", new: "", confirm: "" })
   const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -85,7 +86,7 @@ export default function SettingsPage() {
     fetch("/plan/status")
       .then((res) => res.json())
       .then((data) => {
-        if (data.drafts) setPlanUsage({ drafts: data.drafts, carousels: data.carousels })
+        if (data.drafts) setPlanUsage({ drafts: data.drafts, carousels: data.carousels, planExpiresAt: data.planExpiresAt })
       })
       .catch(() => {})
   }, [])
@@ -282,6 +283,9 @@ export default function SettingsPage() {
               {billing.overrideActive ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Override active</span> : null}
             </div>
           </div>
+          <p className="mb-5 text-xs font-semibold text-zinc-500">
+            {billing.plan === "Free" ? "No expiry" : `Expires ${formatPlanDate(planUsage?.planExpiresAt)}`}
+          </p>
 
           {/* Current plan summary */}
           <div className="mb-5 rounded-xl border border-zinc-100 bg-zinc-50 p-3">

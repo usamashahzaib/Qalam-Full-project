@@ -14,6 +14,7 @@ export interface AdminUser {
   email: string
   linkedInId: string
   currentPlan: string
+  planExpiresAt?: string | null
   draftsUsed: number
   workspaces: number
   override: AdminOverride | null

@@ -13,6 +13,13 @@ type Client = {
   plan: string
   role?: string
   created_at?: string
+  planExpiresAt?: string | null
+}
+
+const fmtDate = (iso?: string | null) => {
+  if (!iso) return "-"
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime()) ? "-" : date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 }
 
 export default function AgencyDashboard() {
@@ -123,6 +130,7 @@ export default function AgencyDashboard() {
                           {active ? <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Active</span> : null}
                         </div>
                         <p className="text-xs text-zinc-500">{client.plan} Plan{client.role ? ` - ${client.role.replaceAll("_", " ")}` : ""}</p>
+                        <p className="mt-0.5 text-[10px] font-medium text-zinc-400">Expires {fmtDate(client.planExpiresAt)}</p>
                       </div>
                       </div>
                       <div className="flex items-center gap-3">

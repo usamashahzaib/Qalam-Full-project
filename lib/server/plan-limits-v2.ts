@@ -4,6 +4,7 @@
 
 import { createServiceClient } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
+import { resolvePlanExpiry } from "@/lib/plan-expiry"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 
@@ -31,7 +32,7 @@ export async function getPlanStatus(userId: string) {
   const supabase = createServiceClient()
 
   // Parallel: get usage + check admin override + check users.plan (payment source of truth)
-  const [usageResult, overrideResult, usersResult] = await Promise.all([
+  const [usageResult, overrideResult, usersResult, paymentResult] = await Promise.all([
     supabase.rpc("get_or_create_plan_usage", { p_user_id: userId }),
     Promise.resolve(
       supabase
@@ -44,10 +45,20 @@ export async function getPlanStatus(userId: string) {
     Promise.resolve(
       supabase
         .from("users")
-        .select("plan,plan_expires_at")
-        .eq("id", userId)
+        .select("plan,plan_expires_at,created_at")
+        .or(`id.eq.${userId},external_user_id.eq.${userId}`)
         .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null } | null }>,
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null; created_at?: string | null } | null }>,
+    Promise.resolve(
+      supabase
+        .from("payments")
+        .select("created_at,processed_at")
+        .eq("user_id", userId)
+        .eq("status", "paid")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).catch(() => ({ data: null })) as Promise<{ data: { created_at?: string | null; processed_at?: string | null } | null }>,
   ])
 
   // Try RPC result first; fall back to direct table query if RPC is unavailable
@@ -75,7 +86,8 @@ export async function getPlanStatus(userId: string) {
   }
   const override = overrideResult.data
   const usersPlan = normalizePlan(usersResult.data?.plan)
-  const planExpiresAt = usersResult.data?.plan_expires_at ?? null
+  const boughtAt = paymentResult.data?.processed_at || paymentResult.data?.created_at || usage?.cycle_start || usersResult.data?.created_at || null
+  const planExpiresAt = resolvePlanExpiry(usersResult.data?.plan_expires_at || usage?.cycle_end, boughtAt)
 
   // Base plan directly from users table (payment webhook source of truth)
   let plan = usersPlan

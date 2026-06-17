@@ -3,6 +3,7 @@ import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
+import { resolvePlanExpiry } from "@/lib/plan-expiry"
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
           plan: "Standard",
           role: wsRole,
           created_at: ws.created_at,
+          planExpiresAt: resolvePlanExpiry(null, ws.created_at),
         }
       })
 
@@ -86,6 +88,7 @@ export async function POST(request: NextRequest) {
           plan: "Standard",
           role: "admin",
           created_at: ws.created_at,
+          planExpiresAt: resolvePlanExpiry(null, ws.created_at),
         }
       : null
 

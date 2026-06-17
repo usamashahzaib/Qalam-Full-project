@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { requireAuth, getAuthenticatedSession, ensureSupabaseUser } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanByName } from "@/lib/pricing"
+import { resolvePlanExpiry } from "@/lib/plan-expiry"
 
 export async function GET() {
   try {
@@ -23,7 +24,7 @@ export async function GET() {
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes, usersPlanRes] = await Promise.allSettled([
+    const [monthPostsRes, libraryRes, usageRes, publishedRes, overrideRes, usersPlanRes, paymentRes] = await Promise.allSettled([
       supabase
         .from("posts")
         .select("engagement_score")
@@ -35,7 +36,7 @@ export async function GET() {
         .eq("user_id", supabaseUserId),
       supabase
         .from("plan_usage")
-        .select("plan,ai_drafts_used,carousels_used")
+        .select("plan,ai_drafts_used,carousels_used,cycle_start,cycle_end")
         .or(`user_id.eq.${supabaseUserId},user_id.eq.${tokenUserId}`)
         .limit(1)
         .maybeSingle(),
@@ -54,8 +55,16 @@ export async function GET() {
       // users.plan + plan_expires_at are updated by payment webhook - authoritative source
       supabase
         .from("users")
-        .select("plan,plan_expires_at")
+        .select("plan,plan_expires_at,created_at")
         .or(`id.eq.${supabaseUserId},external_user_id.eq.${tokenUserId}`)
+        .maybeSingle(),
+      supabase
+        .from("payments")
+        .select("created_at,processed_at")
+        .eq("user_id", supabaseUserId)
+        .eq("status", "paid")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ])
 
@@ -70,8 +79,11 @@ export async function GET() {
     const override =
       overrideRes.status === "fulfilled" ? overrideRes.value.data : null
     const usersPlanRow =
-      usersPlanRes.status === "fulfilled" ? (usersPlanRes.value as { data: { plan?: string | null; plan_expires_at?: string | null } | null }).data : null
-    const planExpiresAt = usersPlanRow?.plan_expires_at ?? null
+      usersPlanRes.status === "fulfilled" ? (usersPlanRes.value as { data: { plan?: string | null; plan_expires_at?: string | null; created_at?: string | null } | null }).data : null
+    const paymentRow =
+      paymentRes.status === "fulfilled" ? (paymentRes.value as { data: { created_at?: string | null; processed_at?: string | null } | null }).data : null
+    const boughtAt = paymentRow?.processed_at || paymentRow?.created_at || usageRow?.cycle_start || usersPlanRow?.created_at || null
+    const planExpiresAt = resolvePlanExpiry(usersPlanRow?.plan_expires_at || usageRow?.cycle_end, boughtAt)
 
     const scores = monthPosts
       .map((p: { engagement_score?: number | null }) => p.engagement_score)

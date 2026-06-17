@@ -1,6 +1,7 @@
 "use client"
 
 import { useAdminUsers, FEATURES, emptyFlags } from "@/lib/hooks/useAdminUsers"
+import { formatPlanDate } from "@/lib/plan-expiry"
 import type {
   AdminOverride as Override,
   AdminUser,
@@ -269,6 +270,9 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                               <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${planColor[user.currentPlan] || "bg-zinc-100 text-zinc-700"}`}>
                                 {user.currentPlan}
                               </span>
+                              <p className="mt-1 text-[10px] text-zinc-400">
+                                {user.currentPlan === "Free" ? "No expiry" : `Expires ${formatPlanDate(user.planExpiresAt)}`}
+                              </p>
                             </td>
                             <td className="px-4 py-3 text-zinc-700">{user.draftsUsed}</td>
                             <td className="px-4 py-3 text-zinc-700">{user.workspaces}</td>
@@ -293,6 +297,9 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                         <p className="text-xs text-zinc-500">{selected.email}</p>
                         <p className="mt-1 text-xs text-zinc-400">
                           Current plan: <span className="font-bold text-zinc-700">{selected.currentPlan}</span>
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-400">
+                          {selected.currentPlan === "Free" ? "No expiry" : `Expires ${formatPlanDate(selected.planExpiresAt)}`}
                         </p>
                         {activeOverride && (
                           <span className="mt-1.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
