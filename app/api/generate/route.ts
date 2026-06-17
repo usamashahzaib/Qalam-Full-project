@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   return withAuth(async (req, user) => {
-    let body: any
+    let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
