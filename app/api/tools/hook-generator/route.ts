@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { callAi } from "@/lib/server/ai-router-v2"
+import { getClientIp, checkRateLimit } from "@/lib/server/rate-limit"
 
 const schema = z.object({
   topic: z.string().min(3).max(300),
@@ -8,6 +9,12 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rateLimit = await checkRateLimit("free-tools-hooks", "free", ip)
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 })
+    }
+
     const body = await request.json().catch(() => ({}))
     const parsed = schema.safeParse(body)
     if (!parsed.success) {
@@ -16,8 +23,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
     const systemPrompt = `You are an elite LinkedIn content strategist specializing in high-performing hooks.
 Generate exactly 5 powerful LinkedIn post opening lines (hooks) for the given topic.

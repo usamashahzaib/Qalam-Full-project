@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
+import { getClientIp, checkRateLimit } from "@/lib/server/rate-limit"
 
 const schema = z.object({
   about: z.string().min(10).max(3000),
@@ -10,6 +11,12 @@ const schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req)
+    const rateLimit = await checkRateLimit("free-tools-profile", "free", ip)
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const parsed = schema.safeParse(body)
     if (!parsed.success) {
@@ -18,8 +25,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
-
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
 
     const result = await callAi(
       "Return strict JSON only.",
