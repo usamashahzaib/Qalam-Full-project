@@ -174,7 +174,7 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       error: parsed.error,
     }
   } catch {
-    // RPC not deployed or failed - fall back to direct non-atomic update
+    // RPC not deployed or failed - fall back to optimistic-concurrency update
     try {
       const { data: row } = await supabase
         .from("plan_usage")
@@ -185,10 +185,18 @@ export async function incrementUsage(externalUserId: string, feature: Feature) {
       if (currentVal >= limit) {
         return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
       }
-      await supabase
+      // Conditional update: only succeeds if the field value hasn't changed since we read it,
+      // preventing concurrent requests from both incrementing past the limit.
+      const { data: updated } = await supabase
         .from("plan_usage")
         .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
         .eq("user_id", externalUserId)
+        .eq(field, currentVal)
+        .select(field)
+        .maybeSingle()
+      if (!updated) {
+        return { allowed: false, current: currentVal, limit, remaining: 0, error: "concurrent_update" }
+      }
       return {
         allowed: true,
         current: currentVal + 1,
