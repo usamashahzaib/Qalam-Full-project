@@ -8,11 +8,9 @@ import type { WorkspacePost } from "@/types/domain"
 
 const isIsoDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value)
 const toDate = (value: string) => new Date(`${value}T00:00:00`)
-const todayIso = () => {
-  const d = new Date()
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset())
-  return d.toISOString().slice(0, 10)
-}
+const toLocalIso = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const todayIso = () => toLocalIso(new Date())
 const normalizeLinkedInUrn = (value: string) => {
   const urn = value.trim()
   if (!urn) return ""
@@ -105,7 +103,7 @@ export function useCalendarLogic({
       isIsoDate(post.date) &&
       toDate(post.date).getMonth() === monthCursor.getMonth() &&
       toDate(post.date).getFullYear() === monthCursor.getFullYear()
-    )?.date || new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1).toISOString().slice(0, 10)
+    )?.date || toLocalIso(new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1))
   }, [monthCursor, selectedDay, scheduled])
 
   const monthGrid = useMemo(() => {
@@ -116,7 +114,7 @@ export function useCalendarLogic({
     return Array.from({ length: 42 }, (_, index) => {
       const date = new Date(cursor)
       date.setDate(cursor.getDate() + index)
-      const iso = date.toISOString().slice(0, 10)
+      const iso = toLocalIso(date)
       return {
         iso,
         day: date.getDate(),

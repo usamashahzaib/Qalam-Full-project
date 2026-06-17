@@ -8,6 +8,45 @@ import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type CarouselProject = { id: string; topic: string; role: string; slide_count: number; created_at: string }
 const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
+
+const THEME_META: Record<string, { gradient: string; accent: string; text: string; muted: string; tagline: string; structure: string[] }> = {
+  "Authority Playbook": {
+    gradient: "linear-gradient(135deg, #0d1117 0%, #0d4a45 60%, #0f766e 100%)",
+    accent: "#5eead4", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Position as the definitive expert",
+    structure: ["Hook: The tension only experts see", "Framework: Your core model", "Case: Proof it works", "Counterpoint: What others get wrong", "Principle: The key insight", "Tool: Practical application", "CTA: Where to go deeper"],
+  },
+  "Executive Brief": {
+    gradient: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)",
+    accent: "#93c5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Crisp, data-backed leadership voice",
+    structure: ["Problem: Business-critical tension", "Data: The number that changes things", "Analysis: What it means", "Decision: What leaders should do", "Risk: What you're trading off", "Upside: Why it's worth it", "Signal: Watch for this outcome"],
+  },
+  "Contrarian Breakdown": {
+    gradient: "linear-gradient(135deg, #18181b 0%, #3f1818 50%, #7f1d1d 100%)",
+    accent: "#fca5a5", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Challenge the conventional wisdom",
+    structure: ["Provocation: The popular belief", "Reveal: Why it's wrong", "Evidence: The actual data", "Mechanism: How it really works", "Example: A case study", "Nuance: When it does apply", "Conclusion: The harder truth"],
+  },
+  "People Strategy": {
+    gradient: "linear-gradient(135deg, #2d1b69 0%, #7c3aed 100%)",
+    accent: "#c4b5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Org design, talent, and leadership",
+    structure: ["Challenge: The team problem", "Pattern: What high performers do", "Signal: How to spot it early", "Structure: The system that works", "Mistake: What managers get wrong", "Build: The practical step", "CTA: Share with your team"],
+  },
+  "Growth Memo": {
+    gradient: "linear-gradient(135deg, #064e3b 0%, #059669 100%)",
+    accent: "#6ee7b7", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Metrics, loops, and distribution",
+    structure: ["Metric: The number to care about", "Benchmark: How you stack up", "Driver: What moves it", "Lever: The high-impact action", "Test: What to validate first", "Scale: How to compound it", "Outcome: What good looks like"],
+  },
+  "Hiring Deep Dive": {
+    gradient: "linear-gradient(135deg, #78350f 0%, #d97706 100%)",
+    accent: "#fbbf24", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
+    tagline: "Attract, assess, and close top talent",
+    structure: ["Gap: The role you actually need", "Signal: How great candidates think", "Screen: What to look for first", "Interview: The question that reveals it", "Red flag: What to walk away from", "Offer: How to close them", "Onboard: The first-week setup"],
+  },
+}
 const ROLES = ["Founder", "HR", "Marketing", "Consultant", "Sales", "Tech", "Other"] as const
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
@@ -163,21 +202,46 @@ export default function CarouselsPage() {
           </section>
 
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-bold text-zinc-900">Deck standards</h2>
-            <div className="mt-3 space-y-2 text-sm text-zinc-600">
-              <p>- Slide 1 frames the tension.</p>
-              <p>- Middle slides teach, prove, or sharpen the point.</p>
-              <p>- Final slide closes with a takeaway or CTA.</p>
-              <p>- Your name and designation appear on every slide - no Qalam watermark.</p>
-            </div>
-            <div className="mt-5 rounded-2xl bg-gradient-to-br from-zinc-950 via-teal-950 to-teal p-5 text-white">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-teal-100">Preview signal</p>
-              <h3 className="mt-3 text-xl font-bold leading-tight">{theme}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-teal-50/85">This theme shapes the first deck draft. You can still refine every slide after generation.</p>
-              <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] text-teal-100">
-                <span>{slideCount} slides · {role}</span>
-                <span>LinkedIn carousel</span>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-zinc-900">Deck preview</h2>
+                <p className="mt-0.5 text-[11px] text-zinc-400">{THEME_META[theme]?.tagline ?? "AI-structured LinkedIn carousel"}</p>
               </div>
+              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-bold text-zinc-500">{slideCount} slides</span>
+            </div>
+
+            {/* Slide 1 preview card */}
+            <div className="relative mb-4 overflow-hidden rounded-2xl p-5 text-white" style={{ background: THEME_META[theme]?.gradient ?? "linear-gradient(135deg,#0d1117,#0d4a45)" }}>
+              {/* Slide track dots */}
+              <div className="absolute right-4 top-4 flex flex-col gap-1">
+                {Array.from({ length: Math.min(slideCount, 6) }, (_, i) => (
+                  <div key={i} className="h-5 w-1 rounded-full" style={{ background: i === 0 ? (THEME_META[theme]?.accent ?? "#5eead4") : "rgba(255,255,255,0.2)" }} />
+                ))}
+              </div>
+              <div className="pr-6">
+                <p className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: THEME_META[theme]?.accent ?? "#5eead4" }}>Slide 1 · {role}</p>
+                <h3 className="mt-3 text-base font-bold leading-snug" style={{ color: THEME_META[theme]?.text ?? "#fff" }}>
+                  {seed ? (seed.split(" ").slice(0, 10).join(" ") + (seed.split(" ").length > 10 ? "..." : "")) : `Hook slide · ${theme}`}
+                </h3>
+                <p className="mt-2 text-[11px] leading-relaxed" style={{ color: THEME_META[theme]?.muted ?? "rgba(255,255,255,0.6)" }}>
+                  {THEME_META[theme]?.structure[0] ?? "Opening tension that stops the scroll"}
+                </p>
+                <div className="mt-4 flex items-center justify-between border-t pt-2.5 text-[9px]" style={{ borderColor: "rgba(255,255,255,0.12)", color: THEME_META[theme]?.muted ?? "rgba(255,255,255,0.5)" }}>
+                  <span>1 / {slideCount}</span>
+                  <span>LinkedIn carousel</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Slide structure */}
+            <div className="space-y-1.5">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Deck structure</p>
+              {(THEME_META[theme]?.structure ?? ["Hook", "Framework", "Proof", "Insight", "Application", "CTA"]).slice(0, slideCount).map((item, i) => (
+                <div key={i} className="flex items-center gap-2.5">
+                  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[9px] font-bold tabular-nums text-zinc-500">{i + 1}</span>
+                  <span className="text-[11px] leading-tight text-zinc-600">{item}</span>
+                </div>
+              ))}
             </div>
           </section>
         </div>
