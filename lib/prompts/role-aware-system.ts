@@ -654,7 +654,7 @@ overall = arithmetic mean of all 7 scores, rounded to nearest integer.
 
 // ---------------------------------------------------------------------------
 // PUSH TO 90+ (IMPROVE) - for /api/generate/improve
-// Rewrites only the weak dimensions while preserving everything that works.
+// Aggressively rewrites ALL 7 dimensions to guarantee 90+ scores.
 // temperature: 0.7
 // ---------------------------------------------------------------------------
 export function buildPushTo90Prompt(
@@ -664,43 +664,44 @@ export function buildPushTo90Prompt(
 ): { system: string; user: string } {
   const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
 
-  const weakDims = Object.entries(scores)
-    .filter(([k, v]) => k !== "overall" && v < 70)
-    .sort(([, a], [, b]) => a - b)
-    .slice(0, 3)
-    .map(([k]) => k);
-
-  const dimLabels: Record<string, string> = {
-    hook: "Hook (first line)",
-    readability: "Readability (mobile formatting)",
-    authority: "Authority (credibility)",
-    specificity: "Specificity (concrete details)",
-    cta: "CTA (call to action)",
-    human: "Human-likeness (no AI tells)",
-    voiceFit: `Voice fit (${profile.label} voice)`,
-  };
-
-  const weakList = weakDims.map((d) => `- ${dimLabels[d] || d}`).join("\n");
+  const dimScores = Object.entries(scores)
+    .filter(([k]) => k !== "overall" && k !== "tips" && k !== "hashtags")
+    .map(([k, v]) => `${k}: ${v}/100`)
+    .join(", ");
 
   const system = `
-You improve a LinkedIn post for a ${profile.label} by fixing its weakest scoring dimensions.
+You are rewriting a LinkedIn post for a ${profile.label} so it scores 90+ on EVERY single quality dimension.
 
 ${profile.voice}
 
 ${ANTI_AI_RULES}
 
-NEVER USE: ${[...profile.banned, "delve", "leverage (verb)", "seamless", "empower"].join(", ")}
+BANNED WORDS (remove every instance): ${[...profile.banned, "delve", "leverage (verb)", "seamless", "empower", "unlock", "holistic", "synergy"].join(", ")}
 
-WHAT TO FIX (only these dimensions scored below 70):
-${weakList || "- Overall polish and voice fit"}
+CURRENT SCORES: ${dimScores || "not yet scored"}
+TARGET: ALL 7 dimensions must reach 90+. Be aggressive. Do not hold back.
 
-WHAT TO KEEP INTACT:
-- The story structure and content arc
-- All specific numbers, names, concrete details
-- The voice and vocabulary that already works
-- Approximate word count (within 20% of original)
+WHAT 90+ REQUIRES ON EACH DIMENSION:
 
-Output the improved post only. No commentary.
+1. HOOK - first line must stop the scroll immediately. Start with a surprising number, a bold claim, or a real challenge. Never "In today's...", "Let's talk about", "As a ${profile.label}".
+
+2. READABILITY - short lines, blank lines between every thought, mobile-first. One idea per line. No wall of text longer than 2 sentences.
+
+3. AUTHORITY - sound like someone who has genuinely lived this. Drop generic advice; use insider language, specific situations, earned perspective.
+
+4. SPECIFICITY - every claim needs a number, a name, a timeline, or an exact situation. The reader must picture a real scene.
+
+5. CTA - end with a specific, natural call to action that invites real engagement. Not "What do you think?" or rhetorical questions.
+
+6. HUMAN-LIKENESS - zero AI tells. Natural rhythm. Real conversational voice. No em dashes (-), no en dashes (-), no perfect parallel structure.
+
+7. VOICE FIT - indistinguishable from a real ${profile.label}. Their vocabulary, their concerns, their tone.
+
+KEEP:
+- All specific numbers, names, and facts from the original
+- The core story and content arc
+
+Output the rewritten post ONLY. No commentary. No labels.
 `.trim();
 
   const user = post;

@@ -128,8 +128,11 @@ async function attemptProvider(
     await recordSuccess(provider)
     return result
   } catch (error) {
-    await recordFailure(provider)
-    console.error(`[${provider.toUpperCase()} Error]`, (error as Error).message)
+    const msg = (error as Error).message || ""
+    // Auth/config errors are permanent misconfigurations, not transient failures — don't trip circuit
+    const isConfigError = /not configured|API key|401|403|expired|API_KEY_INVALID/i.test(msg)
+    if (!isConfigError) await recordFailure(provider)
+    console.error(`[${provider.toUpperCase()} Error]`, msg)
     return null
   }
 }

@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     const systemPrompt = `Create a LinkedIn carousel outline. Each slide has a title and 1-2 bullet points. Total slides: ${body.slideCount}. Topic: ${body.topic}. Role: ${body.role}. Return JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
     const userMessage = body.tone ? `Tone: ${body.tone}` : "Tone: practical and sharp"
 
-    const result = await callAi(systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000 })
+    const result = await callAi(systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId, plan: limit.plan })
 
     let slides = parseSlides(result, body.slideCount)
     if (slides.length < 5) {

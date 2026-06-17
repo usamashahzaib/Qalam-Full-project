@@ -790,10 +790,12 @@ export default function WriterPage() {
                   {replies.length > 0 && (
                     <div className="mt-3 space-y-2">
                       {replies.map((r, i) => (
-                        <div key={i} className="flex items-start gap-2.5 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-                          <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-500">{r.style}</span>
-                          <p className="flex-1 text-xs leading-relaxed text-zinc-700">{r.text}</p>
-                          <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal hover:text-teal-700">Copy</button>
+                        <div key={i} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-3">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-500">{r.style}</span>
+                            <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal hover:text-teal-700">Copy</button>
+                          </div>
+                          <p className="w-full break-words text-xs leading-relaxed text-zinc-700">{r.text}</p>
                         </div>
                       ))}
                     </div>

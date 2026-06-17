@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { getPlanLimits } from "@/lib/entitlements"
@@ -22,7 +22,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
   const [status, setStatus] = useState<DraftStatus | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
-  useEffect(() => {
+  const fetchStatus = useCallback(() => {
     fetch("/api/generate")
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((data) => {
@@ -40,8 +40,13 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
         if (typeof remaining === "number" && remaining === 0) setShowUpgrade(true)
       })
       .catch(() => { /* silent — skeleton stays */ })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [billing.plan])
+
+  useEffect(() => {
+    fetchStatus()
+    window.addEventListener("qalam:draft-consumed", fetchStatus)
+    return () => window.removeEventListener("qalam:draft-consumed", fetchStatus)
+  }, [fetchStatus])
 
   if (status === null) {
     return (

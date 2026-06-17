@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const { system, user: userMsg } = buildCtaAlternativesPrompt(content, role)
     const raw = await callAi(system, userMsg, {
-      json: false, temperature: 0.9, maxTokens: 400,
+      json: true, temperature: 0.9, maxTokens: 400,
       userId: user.id, plan: user.plan, cache: false, provider: "gemini",
     })
 

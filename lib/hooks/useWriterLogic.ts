@@ -268,6 +268,7 @@ export function useWriterLogic({
   const useDraftCredit = useCallback((n = 1) => {
     for (let i = 0; i < n; i++) incrementDraftUsage(workspaceId)
     setLocalDraftUsage(readDraftUsage(workspaceId))
+    window.dispatchEvent(new Event("qalam:draft-consumed"))
   }, [workspaceId])
 
   // ── Auto-score ────────────────────────────────────────────────────────────
