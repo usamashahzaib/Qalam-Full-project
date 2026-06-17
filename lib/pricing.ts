@@ -28,8 +28,8 @@ export type ManagedPlan = {
   cta: string
 }
 
-export const annualFraming = "4 months free"
-export const annualSavingsPercent = 33
+export const annualFraming = "5 months free"
+export const annualSavingsPercent = 42
 
 export const plans: Plan[] = [
   {
