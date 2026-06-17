@@ -209,7 +209,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     loadJobs,
     createJob,
     deleteJob,
-  }), [buckets.drafts, buckets.published, buckets.scheduled, createJob, deleteJob, deletePost, isLoadingPosts, loadEvents, loadJobs, posts, postsError, publishPost, refreshPosts, saveDraft, schedulePost, trackEvent])
+  }), [buckets, createJob, deleteJob, deletePost, isLoadingPosts, loadEvents, loadJobs, posts, postsError, publishPost, refreshPosts, saveDraft, schedulePost, trackEvent])
 
   return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>
 }
