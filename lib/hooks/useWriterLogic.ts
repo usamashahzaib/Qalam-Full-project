@@ -295,6 +295,7 @@ export function useWriterLogic({
   // ── Step 1: Generate hooks ────────────────────────────────────────────────
 
   const onGenerateHooks = async () => {
+    if (isGeneratingHooks) return
     if (!topic.trim()) { showStatus("Enter a topic first", "error"); return }
     if (!checkDraftCredit()) return
 
@@ -321,6 +322,7 @@ export function useWriterLogic({
   // ── Step 2: Generate full post from hook ──────────────────────────────────
 
   const onGeneratePost = async (hookOverride?: string) => {
+    if (isGeneratingPost) return
     const hookText = hookOverride || selectedHook
     if (!hookText) { showStatus("Select a hook first", "error"); return }
     if (!checkDraftCredit()) return
@@ -357,6 +359,7 @@ export function useWriterLogic({
   // ── Push to 90+ ───────────────────────────────────────────────────────────
 
   const onPushTo90 = async () => {
+    if (isImproving) return
     if (!draftContent.trim()) { showStatus("No draft to improve", "error"); return }
     if (!checkDraftCredit()) return
     setIsImproving(true)
