@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
 
   const params = new URL(request.url).searchParams
   const q = (params.get("search") || params.get("q") || "").trim().toLowerCase()
-  const users = await supabaseSelect<UserRow>("users", "select=id,email,full_name,image_url,external_user_id&order=email.asc&limit=100").catch(() => [])
+  const page = Math.max(1, parseInt(params.get("page") || "1", 10))
+  const pageSize = Math.min(25, Math.max(1, parseInt(params.get("limit") || "25", 10)))
+  const offset = (page - 1) * pageSize
+  const users = await supabaseSelect<UserRow>("users", `select=id,email,full_name,image_url,external_user_id&order=email.asc&limit=${pageSize}&offset=${offset}`).catch(() => [])
   const filtered = q
     ? users.filter((user) => [user.email, user.full_name, user.id].some((value) => String(value || "").toLowerCase().includes(q)))
     : users
@@ -67,5 +70,5 @@ export async function GET(request: NextRequest) {
     "select=id,admin_email,target_user_email,action,old_value,new_value,created_at&order=created_at.desc&limit=50"
   ).catch(() => [])
 
-  return NextResponse.json({ users: enriched, auditLog })
+  return NextResponse.json({ users: enriched, auditLog, page, pageSize })
 }
