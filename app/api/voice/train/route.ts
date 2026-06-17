@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const examples = Array.isArray(body.examplePosts) ? body.examplePosts.map(String) : []
     const cleanSample = String(body.sampleText || examples.at(-1) || "").trim()
 
-    if (cleanSample.length < 4) {
+    if (cleanSample.length < 50) {
       return NextResponse.json({ error: "Sample must be at least 50 characters" }, { status: 400 })
     }
 
