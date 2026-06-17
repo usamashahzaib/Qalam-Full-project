@@ -242,6 +242,15 @@ export function useCalendarLogic({
     await onReschedule(postId, targetDate)
   }
 
+  const selectDay = (iso: string) => {
+    if (!isIsoDate(iso) || iso < today) return
+    const next = toDate(iso)
+    setSelectedDay(iso)
+    if (next.getMonth() !== monthCursor.getMonth() || next.getFullYear() !== monthCursor.getFullYear()) {
+      setMonthCursor(new Date(next.getFullYear(), next.getMonth(), 1))
+    }
+  }
+
   const shiftMonth = (delta: number) => {
     const next = new Date(monthCursor)
     next.setMonth(next.getMonth() + delta)
@@ -268,6 +277,7 @@ export function useCalendarLogic({
     onPublishNow,
     onReschedule,
     onUnschedule,
+    selectDay,
     onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
     shiftMonth,
     goToToday,

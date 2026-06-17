@@ -63,12 +63,13 @@ export default function CalendarPage() {
 
   const {
     today, status, publishingId, rescheduling,
-    monthCursor, selectedDay, setSelectedDay,
+    monthCursor,
     view, setView,
     draggingPost, dragOverDay,
     monthGrid, dayItems, selectedMonthScheduled, allScheduledSorted,
     effectiveSelectedDay,
-    onPublishNow, onReschedule, onUnschedule,
+    onPublishNow, onUnschedule,
+    selectDay,
     onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
     shiftMonth, goToToday,
     isIsoDate, isPastDay,
@@ -153,22 +154,26 @@ export default function CalendarPage() {
                   const isSelected = day.iso === effectiveSelectedDay
                   const isToday = day.iso === today
                   const isDragOver = day.iso === dragOverDay
+                  const isPast = isPastDay(day.iso)
                   const hasContent = day.scheduled.length + day.drafts.length + day.published.length > 0
                   return (
                     <button
                       key={day.iso}
-                      onClick={() => setSelectedDay(day.iso)}
-                      onDragOver={(e) => onDragOver(e, day.iso)}
+                      onClick={() => selectDay(day.iso)}
+                      disabled={isPast}
+                      onDragOver={(e) => !isPast && onDragOver(e, day.iso)}
                       onDragLeave={onDragLeave}
-                      onDrop={(e) => void onDrop(e, day.iso)}
-                      className={`relative min-h-[80px] cursor-pointer rounded-xl border p-1.5 text-left transition-all ${
+                      onDrop={(e) => !isPast && void onDrop(e, day.iso)}
+                      className={`relative min-h-[80px] rounded-xl border p-1.5 text-left transition-all disabled:cursor-not-allowed ${
                         isDragOver
                           ? "border-teal bg-teal/10 ring-2 ring-teal/30"
-                          : isSelected
+                        : isSelected
                           ? "border-teal bg-teal/5"
-                          : day.inMonth
-                          ? "border-zinc-200 bg-white hover:bg-zinc-50/80"
-                          : "border-zinc-100 bg-zinc-50 opacity-50"
+                          : isPast
+                          ? "border-zinc-100 bg-zinc-50 opacity-45"
+                        : day.inMonth
+                          ? "cursor-pointer border-zinc-200 bg-white hover:bg-zinc-50/80"
+                          : "cursor-pointer border-zinc-100 bg-zinc-50 opacity-70 hover:bg-zinc-100"
                       }`}
                     >
                       <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold ${
