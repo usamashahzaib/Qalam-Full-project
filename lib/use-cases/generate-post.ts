@@ -65,7 +65,7 @@ function parseJson<T>(raw: string): T | null {
 export async function generatePost(input: GeneratePostInput): Promise<Result<GeneratePostOutput>> {
   const { topic, role, format, goal, qualityCheck = true, userId, authorId, workspaceId, plan, reqId } = input
 
-  const usageResult = await incrementUsage(userId, "drafts", authorId)
+  const usageResult = await incrementUsage(userId, "drafts")
   if (!usageResult.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
@@ -123,7 +123,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
       authorId,
       title: topic,
       content,
-      type: role,
+      type: "linkedin-text",
       status: "draft",
     })
     savedPostId = savedPost.id

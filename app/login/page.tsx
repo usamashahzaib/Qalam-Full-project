@@ -67,7 +67,7 @@ export default function LoginPage() {
         setSubmitting(false)
       } else {
         const safeUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard"
-        window.location.href = safeUrl
+        router.push(safeUrl)
       }
     } catch {
       setFormError("Incorrect email or password.")
