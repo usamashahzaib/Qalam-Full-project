@@ -325,10 +325,11 @@ END $$;
 --
 -- Adds an embedding column to voice_profiles for semantic RAG retrieval.
 -- Gracefully skips vector column creation if pgvector extension is not enabled.
--- To enable pgvector: Supabase Dashboard â†’ Database â†’ Extensions â†’ vector â†’ Enable
+-- To enable pgvector: Supabase Dashboard → Database → Extensions → vector → Enable
 --
 -- After enabling pgvector, re-run this migration or run ALTER TABLE manually:
 --   ALTER TABLE public.voice_profiles ADD COLUMN IF NOT EXISTS embedding vector(768);
+--   ALTER TABLE public.voice_examples  ADD COLUMN IF NOT EXISTS embedding vector(768);
 
 DO $$
 BEGIN
@@ -338,47 +339,49 @@ BEGIN
     ALTER TABLE public.voice_profiles
       ADD COLUMN IF NOT EXISTS embedding vector(768);
 
-    -- Index for fast cosine similarity search
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_indexes
-      WHERE tablename = 'voice_profiles'
-        AND indexname = 'idx_voice_profiles_embedding'
-    ) THEN
-      CREATE INDEX idx_voice_profiles_embedding
-        ON public.voice_profiles
-        USING ivfflat (embedding vector_cosine_ops)
-        WITH (lists = 10);
-    END IF;
-
-    RAISE NOTICE 'pgvector: voice_profiles.embedding column and index created';
+    RAISE NOTICE 'pgvector: voice_profiles.embedding column created';
   ELSE
-    RAISE NOTICE 'pgvector extension not enabled â€” skipping voice_profiles.embedding column. Enable it in Supabase Dashboard â†’ Extensions â†’ vector';
+    RAISE NOTICE 'pgvector not enabled — skipping voice_profiles.embedding. Enable in Supabase Dashboard → Extensions → vector';
   END IF;
 END $$;
 
 -- Store example posts as individual chunks for retrieval
--- (text fallback â€” works without pgvector)
+-- (text only — vector column added separately after pgvector is enabled)
 CREATE TABLE IF NOT EXISTS public.voice_examples (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  workspace_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  user_id     UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  content     TEXT NOT NULL CHECK (char_length(content) >= 10),
-  embedding   vector(768), -- nullable: populated only when pgvector is enabled
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+  id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id UUID        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  user_id      UUID        NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content      TEXT        NOT NULL CHECK (char_length(content) >= 10),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- embedding column added only when pgvector is available
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+    ALTER TABLE public.voice_examples
+      ADD COLUMN IF NOT EXISTS embedding vector(768);
+    RAISE NOTICE 'pgvector: voice_examples.embedding column created';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_voice_examples_workspace
   ON public.voice_examples (workspace_id);
 
--- RLS: workspace members can read their own examples
+-- RLS
 ALTER TABLE public.voice_examples ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "voice_examples_service_all"
-  ON public.voice_examples
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+DO $$
+BEGIN
+  CREATE POLICY "voice_examples_service_all"
+    ON public.voice_examples
+    FOR ALL
+    TO service_role
+    USING (true)
+    WITH CHECK (true);
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
 
 
 -- ========================================
@@ -403,7 +406,7 @@ DROP TABLE IF EXISTS public.memberships CASCADE;
 DROP TABLE IF EXISTS public.user_workspace CASCADE;
 
 -- ----------------------------------------------------------------
--- 3. plan_usage.user_id â€” add UUID FK column alongside the TEXT column
+-- 3. plan_usage.user_id — add UUID FK column alongside the TEXT column
 --    We cannot simply change TEXT -> UUID without a data migration,
 --    so we add a new UUID column, backfill it, and enforce FK there.
 --    Application code already uses internal UUIDs for plan_usage inserts.
@@ -443,6 +446,5 @@ CREATE INDEX IF NOT EXISTS idx_workspace_members_user_id
 
 CREATE INDEX IF NOT EXISTS idx_workspace_members_workspace_id
   ON public.workspace_members (workspace_id);
-
 
 
