@@ -57,7 +57,8 @@ const config: NextAuthConfig = {
           if (!user.email_verified) return null
 
           return { id: user.id, email: user.email, name: user.full_name ?? "" }
-        } catch {
+        } catch (err) {
+          console.error("[auth] authorize failed", err)
           return null
         }
       },
