@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb, type RGB } from "pdf-lib"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { CAROUSEL_THEMES, DEFAULT_THEME_ID, type CarouselThemeId, type CarouselTheme } from "@/lib/carousel-design"
 
@@ -309,11 +309,10 @@ function drawCtaSlide(
 }
 
 export async function POST(
-  req: Request,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const userId = await requireAuth()
+  return withAuth(async (req, user) => {
     const { id } = await context.params
 
     const body = await req.json().catch(() => ({}))
@@ -325,7 +324,7 @@ export async function POST(
       .from("carousels")
       .select("id, topic, role, tone, slides, created_at")
       .eq("id", id)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -361,8 +360,5 @@ export async function POST(
         "Content-Length": String(pdfBytes.byteLength),
       },
     })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to generate PDF"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }

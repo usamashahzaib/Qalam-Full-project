@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint?: string }
@@ -19,11 +19,10 @@ function mapSlides(carouselId: string, rawSlides: unknown) {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const userId = await requireAuth()
+  return withAuth(async (_req, user) => {
     const { id } = await context.params
 
     const supabase = createServiceClient()
@@ -31,7 +30,7 @@ export async function GET(
       .from("carousels")
       .select("id, user_id, topic, role, tone, slide_count, slides, created_at, updated_at")
       .eq("id", id)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .maybeSingle()
 
     if (error) {
@@ -53,18 +52,14 @@ export async function GET(
       },
       slides: mapSlides(data.id, data.slides),
     })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  try {
-    const userId = await requireAuth()
+  return withAuth(async (_req, user) => {
     const { id } = await context.params
 
     const supabase = createServiceClient()
@@ -72,12 +67,9 @@ export async function DELETE(
       .from("carousels")
       .delete()
       .eq("id", id)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }

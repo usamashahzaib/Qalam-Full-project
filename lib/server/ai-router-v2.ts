@@ -1,6 +1,7 @@
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { callGemini } from "./gemini-client"
+import { createServiceClient } from "./supabase-rest"
 
 // Strips markdown fences and returns the first plausible JSON object/array.
 export function safeParseJson<T = unknown>(raw: string): T | null {
@@ -63,15 +64,66 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ])
 }
 
+// Estimated cost per 1M tokens (USD)
+const COST_PER_M: Record<string, { input: number; output: number }> = {
+  "llama-3.1-8b-instant": { input: 0.05, output: 0.08 },
+  "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
+  "gemini-2.5-flash": { input: 0.075, output: 0.30 },
+  "gemini-1.5-flash": { input: 0.075, output: 0.30 },
+}
+
+function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
+  const rates = COST_PER_M[model] ?? { input: 0.10, output: 0.20 }
+  return (tokensIn / 1_000_000) * rates.input + (tokensOut / 1_000_000) * rates.output
+}
+
+// Fire-and-forget: log AI usage to DB for cost monitoring.
+// Never throws — cost tracking must never block a generation request.
+async function logAiUsage(
+  userId: string,
+  provider: "groq" | "gemini",
+  model: string,
+  tokensIn: number,
+  tokensOut: number,
+): Promise<void> {
+  if (userId === "anonymous") return
+  try {
+    const supabase = createServiceClient()
+    // Resolve internal UUID if caller passed external OAuth sub
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("id")
+      .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+      .maybeSingle()
+    const internalId = userRow?.id
+    if (!internalId) return
+
+    await supabase.from("ai_usage").insert({
+      user_id: internalId,
+      provider,
+      model,
+      tokens_in: tokensIn,
+      tokens_out: tokensOut,
+      estimated_cost_usd: estimateCost(model, tokensIn, tokensOut),
+    })
+  } catch {
+    // Intentionally swallowed — never surface cost tracking errors to users.
+  }
+}
+
+type AiResponse = { content: string; tokensIn: number; tokensOut: number; model: string }
+
 async function callGroq(
   systemPrompt: string,
   userMessage: string,
   options: { json?: boolean; temperature?: number; maxTokens?: number } = {},
   timeout = 15000
-): Promise<string> {
+): Promise<AiResponse> {
   const { json = false, temperature = 0.7, maxTokens = 2048 } = options
   const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) throw new Error("Groq API key not configured")
+
+  const model = "llama-3.1-8b-instant"
 
   const response = await withTimeout(
     fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -81,7 +133,7 @@ async function callGroq(
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
@@ -102,7 +154,42 @@ async function callGroq(
   const data = await response.json()
   const content = data.choices?.[0]?.message?.content || ""
   if (!content) throw new Error("Groq returned empty response")
-  return content
+
+  return {
+    content,
+    tokensIn: data.usage?.prompt_tokens ?? 0,
+    tokensOut: data.usage?.completion_tokens ?? 0,
+    model,
+  }
+}
+
+// Monthly cost caps (USD) per plan
+const MONTHLY_COST_CAP: Record<string, number> = {
+  Free: 0.10,
+  Solo: 0.50,
+  Pro: 2.00,
+  Agency: 10.00,
+}
+
+async function isOverCostCap(userId: string, plan: string): Promise<boolean> {
+  if (userId === "anonymous") return false
+  try {
+    const supabase = createServiceClient()
+    const { data: userRow } = await supabase
+      .from("users")
+      .select("id")
+      .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+      .maybeSingle()
+    if (!userRow?.id) return false
+
+    const { data } = await supabase.rpc("get_monthly_ai_cost", { p_user_id: userRow.id })
+    const spent = typeof data === "number" ? data : 0
+    const planKey = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
+    const cap = MONTHLY_COST_CAP[planKey] ?? MONTHLY_COST_CAP.Free
+    return spent >= cap
+  } catch {
+    return false
+  }
 }
 
 type CallOptions = { json: boolean; temperature: number; maxTokens: number }
@@ -124,14 +211,24 @@ async function attemptProvider(
   if (!circuitAvailable || !rateLimit.allowed) return null
 
   try {
-    const result = provider === "groq"
-      ? await callGroq(systemPrompt, userMessage, options, timeout)
-      : await callGemini(systemPrompt, userMessage, options, timeout)
+    let result: AiResponse | null = null
+
+    if (provider === "groq") {
+      result = await callGroq(systemPrompt, userMessage, options, timeout)
+    } else {
+      // callGemini returns string; wrap to normalise
+      const raw = await callGemini(systemPrompt, userMessage, options, timeout)
+      const tokensIn = Math.ceil((systemPrompt.length + userMessage.length) / 4)
+      const tokensOut = Math.ceil(raw.length / 4)
+      result = { content: raw, tokensIn, tokensOut, model: "gemini-2.5-flash" }
+    }
+
     await recordSuccess(provider)
-    return result
+    // Fire-and-forget cost log — never await
+    logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
+    return result.content
   } catch (error) {
     const msg = (error as Error).message || ""
-    // Auth/config errors are permanent misconfigurations, not transient failures — don't trip circuit
     const isConfigError = /not configured|API key|401|403|expired|API_KEY_INVALID/i.test(msg)
     if (!isConfigError) await recordFailure(provider)
     console.error(`[${provider.toUpperCase()} Error]`, msg)
@@ -151,8 +248,6 @@ export async function callAi(
     plan?: string
     cache?: boolean
     cacheTtl?: number
-    // "groq" = Groq primary, Gemini fallback (content, scoring, improvements, carousels)
-    // "gemini" = Gemini primary, Groq fallback (hooks, hook alternatives, CTA rewrite)
     provider?: "groq" | "gemini"
   } = {}
 ) {
@@ -172,9 +267,12 @@ export async function callAi(
 
   if (cache) {
     const cached = await getCachedAiResponse(promptHash)
-    if (cached) {
-      return cached
-    }
+    if (cached) return cached
+  }
+
+  // Check monthly cost cap before spending tokens
+  if (await isOverCostCap(userId, plan)) {
+    throw new Error("monthly_ai_cap_reached")
   }
 
   const primary = provider

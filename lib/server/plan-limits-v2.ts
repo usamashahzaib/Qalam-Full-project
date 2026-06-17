@@ -27,6 +27,11 @@ const FIELD_MAP: Record<Feature, string> = {
   analyses: "analyses_used",
 }
 
+// Single canonical plan resolver — call this everywhere instead of any local higherPlan logic.
+export async function getCanonicalPlan(userId: string): Promise<string> {
+  return (await getPlanStatus(userId)).plan
+}
+
 // Get plan status from plan_usage table, respecting admin overrides
 export async function getPlanStatus(userId: string) {
   const supabase = createServiceClient()
@@ -181,38 +186,41 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
       error: parsed.error,
     }
   } catch {
-    // RPC not deployed or failed - fall back to optimistic-concurrency update.
-    try {
-      const { data: row } = await supabase
-        .from("plan_usage")
-        .select(field)
-        .eq("user_id", userId)
-        .maybeSingle()
-      const currentVal: number = (row as Record<string, number> | null)?.[field] ?? 0
-      if (currentVal >= limit) {
-        return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
+    // RPC not deployed or failed - fall back to optimistic-concurrency CAS with retry.
+    const MAX_ATTEMPTS = 3
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const { data: row } = await supabase
+          .from("plan_usage")
+          .select(field)
+          .eq("user_id", userId)
+          .maybeSingle()
+        const currentVal: number = (row as Record<string, number> | null)?.[field] ?? 0
+        if (currentVal >= limit) {
+          return { allowed: false, current: currentVal, limit, remaining: 0, error: "limit_exceeded" }
+        }
+        // Conditional update: only succeeds if the field value hasn't changed since we read it.
+        const { data: updated } = await supabase
+          .from("plan_usage")
+          .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
+          .eq("user_id", userId)
+          .eq(field, currentVal)
+          .select(field)
+          .maybeSingle()
+        if (updated) {
+          return {
+            allowed: true,
+            current: currentVal + 1,
+            limit,
+            remaining: Math.max(0, limit - (currentVal + 1)),
+          }
+        }
+        // Another request modified the row between our read and write — retry.
+      } catch {
+        return { allowed: false, current: 0, limit, remaining: 0, error: "usage_update_failed" }
       }
-      // Conditional update: only succeeds if the field value hasn't changed since we read it,
-      // preventing concurrent requests from both incrementing past the limit.
-      const { data: updated } = await supabase
-        .from("plan_usage")
-        .update({ [field]: currentVal + 1, updated_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .eq(field, currentVal)
-        .select(field)
-        .maybeSingle()
-      if (!updated) {
-        return { allowed: false, current: currentVal, limit, remaining: 0, error: "concurrent_update" }
-      }
-      return {
-        allowed: true,
-        current: currentVal + 1,
-        limit,
-        remaining: Math.max(0, limit - (currentVal + 1)),
-      }
-    } catch {
-      return { allowed: false, current: 0, limit, remaining: 0, error: "usage_update_failed" }
     }
+    return { allowed: false, current: 0, limit, remaining: 0, error: "concurrent_update" }
   }
 }
 

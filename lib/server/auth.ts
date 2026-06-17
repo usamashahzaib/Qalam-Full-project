@@ -20,95 +20,64 @@ import { auth } from "@/auth"
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "./supabase-rest"
 import { log } from "./logging"
-
-const PLAN_PRI: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
-const higherPlan = (a: string, b: string) =>
-  (PLAN_PRI[b.toLowerCase()] ?? 0) > (PLAN_PRI[a.toLowerCase()] ?? 0) ? b : a
-
-async function resolveEffectivePlan(
-  supabase: ReturnType<typeof createServiceClient>,
-  internalId: string,
-  externalId?: string,
-): Promise<string> {
-  const userIds = [...new Set([internalId, externalId].filter(Boolean) as string[])]
-  const [userPlanResult, overrideResult] = await Promise.all([
-    Promise.resolve(supabase.from("users").select("plan").eq("id", internalId).maybeSingle()).catch(() => ({ data: null })),
-    Promise.resolve(
-      supabase
-        .from("user_overrides")
-        .select("plan_override, expires_at")
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; expires_at?: string | null } | null }>,
-  ])
-
-  let plan = (userPlanResult as { data: { plan?: string } | null }).data?.plan || "free"
-
-  const { data: usageRows } = await supabase
-    .from("plan_usage")
-    .select("plan")
-    .in("user_id", userIds)
-  for (const row of usageRows ?? []) plan = higherPlan(plan, row.plan || "free")
-
-  const overrideRow = overrideResult.data
-  if (
-    overrideRow?.plan_override &&
-    (!overrideRow.expires_at || new Date(overrideRow.expires_at) > new Date())
-  ) {
-    plan = higherPlan(plan, overrideRow.plan_override)
-  }
-
-  return plan
-}
+import { getPlanStatus } from "./plan-limits-v2"
 
 async function provisionOAuthUser(
   supabase: ReturnType<typeof createServiceClient>,
   externalId: string,
   session: { user: { email?: string | null; name?: string | null; image?: string | null } }
-) {
-  const internalId = crypto.randomUUID()
-  const newUser = {
-    id: internalId,
-    external_user_id: externalId,
-    email: session.user.email || "",
-    full_name: session.user.name || "",
-    image_url: session.user.image || "",
-    auth_provider: "oauth",
-    email_verified: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+): Promise<{ internalId: string; workspaceId: string | null }> {
+  const { data, error } = await supabase.rpc("provision_oauth_user", {
+    p_external_id: externalId,
+    p_email: session.user.email || "",
+    p_full_name: session.user.name || "",
+    p_image_url: session.user.image || "",
+  })
+
+  if (error || !data) {
+    log.error("auth.provision_rpc_failed", { externalId, error: error?.message })
+    // Fall back to sequential inserts so sign-in never hard-fails
+    const internalId = crypto.randomUUID()
+    const newUser = {
+      id: internalId,
+      external_user_id: externalId,
+      email: session.user.email || "",
+      full_name: session.user.name || "",
+      image_url: session.user.image || "",
+      auth_provider: "oauth",
+      email_verified: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    await supabase.from("users").insert(newUser)
+    await supabase.from("plan_usage").insert({
+      user_id: internalId,
+      plan: "free",
+      ai_drafts_used: 0,
+      carousels_used: 0,
+      hooks_used: 0,
+      analyses_used: 0,
+    })
+    const workspaceId = crypto.randomUUID()
+    await supabase.from("workspaces").insert({
+      id: workspaceId,
+      name: "My Workspace",
+      owner_id: internalId,
+      owner_email: session.user.email || "",
+      slug: `workspace-${externalId.slice(0, 8)}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    await supabase.from("workspace_members").insert({
+      workspace_id: workspaceId,
+      user_id: internalId,
+      role: "owner",
+    })
+    return { internalId, workspaceId }
   }
 
-  await supabase.from("users").insert(newUser)
-
-  await supabase.from("plan_usage").insert({
-    user_id: internalId,
-    plan: "free",
-    ai_drafts_used: 0,
-    carousels_used: 0,
-    hooks_used: 0,
-    analyses_used: 0,
-  })
-
-  const workspaceId = crypto.randomUUID()
-  await supabase.from("workspaces").insert({
-    id: workspaceId,
-    name: "My Workspace",
-    owner_id: internalId,
-    owner_email: session.user.email || "",
-    slug: `workspace-${externalId.slice(0, 8)}`,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  })
-  await supabase.from("workspace_members").insert({
-    workspace_id: workspaceId,
-    user_id: internalId,
-    role: "owner",
-  })
-
-  return { internalId, workspaceId }
+  const result = data as { user_id: string; workspace_id: string | null }
+  return { internalId: result.user_id, workspaceId: result.workspace_id }
 }
 
 export async function requireAuthApi(request: NextRequest) {
@@ -144,8 +113,8 @@ export async function requireAuthApi(request: NextRequest) {
       }
     }
 
-    const [plan, membership] = await Promise.all([
-      resolveEffectivePlan(supabase, tokenId),
+    const [planStatus, membership] = await Promise.all([
+      getPlanStatus(tokenId),
       supabase
         .from("workspace_members")
         .select("workspace_id")
@@ -164,15 +133,15 @@ export async function requireAuthApi(request: NextRequest) {
         externalId: tokenId,
         email: user.email || session.user.email,
         name: user.full_name || session.user.name,
-        plan,
+        plan: planStatus.plan,
         workspaceId: membership.data?.workspace_id ?? null,
         avatarUrl: user.image_url || session.user.image,
         provider: "credentials",
-      },
+      } satisfies AuthSession,
     }
   }
 
-  // ── OAuth user (LinkedIn / Google): tokenId is the provider's user ID ────────
+  // ── OAuth user (LinkedIn): tokenId is the provider's user ID ─────────────────
   const externalId = tokenId
 
   const { data: user } = await supabase
@@ -185,26 +154,12 @@ export async function requireAuthApi(request: NextRequest) {
   let workspaceId: string | null = null
 
   if (!user) {
-    // First sign-in via OAuth - auto-provision
+    // First sign-in — provision atomically via RPC
     const provisioned = await provisionOAuthUser(supabase, externalId, session)
     internalId = provisioned.internalId
     workspaceId = provisioned.workspaceId
-  } else {
-    internalId = user.id
 
-    const [plan, membership] = await Promise.all([
-      resolveEffectivePlan(supabase, internalId, externalId),
-      supabase
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", internalId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ])
-
-    workspaceId = membership.data?.workspace_id ?? null
-
+    const planStatus = await getPlanStatus(internalId)
     return {
       userId: internalId,
       externalUserId: externalId,
@@ -212,15 +167,30 @@ export async function requireAuthApi(request: NextRequest) {
       session: {
         id: internalId,
         externalId,
-        email: user.email || session.user.email,
-        name: user.full_name || session.user.name,
-        plan,
+        email: session.user.email,
+        name: session.user.name,
+        plan: planStatus.plan,
         workspaceId,
-        avatarUrl: user.image_url || session.user.image,
+        avatarUrl: session.user.image,
         provider,
-      },
+      } satisfies AuthSession,
     }
   }
+
+  internalId = user.id
+
+  const [planStatus, membership] = await Promise.all([
+    getPlanStatus(internalId),
+    supabase
+      .from("workspace_members")
+      .select("workspace_id")
+      .eq("user_id", internalId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  workspaceId = membership.data?.workspace_id ?? null
 
   return {
     userId: internalId,
@@ -229,13 +199,13 @@ export async function requireAuthApi(request: NextRequest) {
     session: {
       id: internalId,
       externalId,
-      email: session.user.email,
-      name: session.user.name,
-      plan: "free",
+      email: user.email || session.user.email,
+      name: user.full_name || session.user.name,
+      plan: planStatus.plan,
       workspaceId,
-      avatarUrl: session.user.image,
+      avatarUrl: user.image_url || session.user.image,
       provider,
-    },
+    } satisfies AuthSession,
   }
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 
 const isProOrAbove = (plan: string) => {
   const p = plan.toLowerCase()
@@ -33,7 +34,6 @@ export async function POST(request: NextRequest) {
     }
 
     const system = `You are a voice analysis expert for LinkedIn content. Return only valid JSON. No markdown.`
-
     const userMsg = `Analyze the writing voice from these LinkedIn post examples and extract characteristics.
 
 POSTS:
@@ -64,6 +64,33 @@ Return JSON:
       return NextResponse.json({ error: "Voice analysis returned an unexpected response. Please try again." }, { status: 500 })
     }
 
-    return NextResponse.json({ characteristics })
+    // Persist to voice_profiles so generation routes pick it up automatically
+    if (user.workspaceId) {
+      const supabase = createServiceClient()
+      const { data: existing } = await supabase
+        .from("voice_profiles")
+        .select("id")
+        .eq("workspace_id", user.workspaceId)
+        .limit(1)
+        .maybeSingle()
+
+      const profilePayload = {
+        user_id: user.id,
+        workspace_id: user.workspaceId,
+        characteristics,
+        tone: characteristics.tone,
+        brand_tone: characteristics.tone,
+        example_posts: examplePosts.slice(0, 5000),
+        updated_at: new Date().toISOString(),
+      }
+
+      if (existing?.id) {
+        await supabase.from("voice_profiles").update(profilePayload).eq("id", existing.id)
+      } else {
+        await supabase.from("voice_profiles").insert(profilePayload)
+      }
+    }
+
+    return NextResponse.json({ characteristics, saved: Boolean(user.workspaceId) })
   })(request)
 }

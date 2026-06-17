@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { requireAuthWithUser } from "@/lib/server/auth-helpers"
+import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
-
-// Future: POST /api/carousel/[id]/export?format=pdf - render slides via headless browser and return PDF blob
 
 const schema = z.object({
   topic: z.string().min(3).max(200),
@@ -42,9 +40,7 @@ function parseSlides(raw: string, count: number): Slide[] {
 
 function enforceSlideStructure(slides: Slide[], topic: string): Slide[] {
   if (slides.length === 0) return slides
-  // Slide 1: title slide
   slides[0] = { ...slides[0], designHint: slides[0].designHint || "title-slide", title: slides[0].title || topic }
-  // Slide N: CTA slide
   const last = slides.length - 1
   slides[last] = {
     ...slides[last],
@@ -56,12 +52,18 @@ function enforceSlideStructure(slides: Slide[], topic: string): Slide[] {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = schema.parse(await request.json())
-    const authUser = await requireAuthWithUser()
-    const userId = authUser.userId
+  return withAuth(async (req, user) => {
+    let body: unknown
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
 
-    const limit = await checkPlanLimit(userId, "carousels")
+    const parsed = schema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid carousel input", issues: parsed.error.issues }, { status: 400 })
+    }
+
+    const limit = await checkPlanLimit(user.id, "carousels")
     if (!limit.allowed) {
       return NextResponse.json(
         { error: "Carousel limit reached", current: limit.current, limit: limit.limit },
@@ -69,25 +71,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemPrompt = `Create a LinkedIn carousel outline. Each slide has a title and 1-2 bullet points. Total slides: ${body.slideCount}. Topic: ${body.topic}. Role: ${body.role}. Return JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
-    const userMessage = body.tone ? `Tone: ${body.tone}` : "Tone: practical and sharp"
+    const systemPrompt = `Create a LinkedIn carousel outline. Each slide has a title and 1-2 bullet points. Total slides: ${parsed.data.slideCount}. Topic: ${parsed.data.topic}. Role: ${parsed.data.role}. Return JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
+    const userMessage = parsed.data.tone ? `Tone: ${parsed.data.tone}` : "Tone: practical and sharp"
 
-    const result = await callAi(systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId, plan: limit.plan })
+    const result = await callAi(systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId: user.id, plan: limit.plan })
 
-    let slides = parseSlides(result, body.slideCount)
+    let slides = parseSlides(result, parsed.data.slideCount)
     if (slides.length < 5) {
       return NextResponse.json({ error: "AI returned too few slides" }, { status: 502 })
     }
-    slides = enforceSlideStructure(slides, body.topic)
+    slides = enforceSlideStructure(slides, parsed.data.topic)
 
     const supabase = createServiceClient()
     const { data: carousel, error: saveError } = await supabase
       .from("carousels")
       .insert({
-        user_id: userId,
-        topic: body.topic,
-        role: body.role,
-        tone: body.tone ?? null,
+        user_id: user.id,
+        topic: parsed.data.topic,
+        role: parsed.data.role,
+        tone: parsed.data.tone ?? null,
         slide_count: slides.length,
         slides,
         created_at: new Date().toISOString(),
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
       })
       .select()
       .single()
+
     if (saveError) {
       if (saveError.message?.includes("carousels") && saveError.message?.includes("schema cache")) {
         return NextResponse.json(
@@ -106,28 +109,21 @@ export async function POST(request: NextRequest) {
     }
     if (!carousel) throw new Error("carousel_save_failed")
 
-    const usage = await incrementUsage(userId, "carousels")
+    const usage = await incrementUsage(user.id, "carousels")
     return NextResponse.json({ id: carousel.id, slides, remaining: usage.remaining })
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid carousel input", issues: error.issues }, { status: 400 })
-    }
-    const message = error instanceof Error ? error.message : "carousel_generation_failed"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }
 
-export async function GET() {
-  try {
-    const authUser = await requireAuthWithUser()
-    const userId = authUser.userId
+export async function GET(request: NextRequest) {
+  return withAuth(async (_req, user) => {
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
       .select("id, topic, role, slide_count, created_at")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50)
+
     if (error) {
       if (error.message?.includes("carousels") && error.message?.includes("schema cache")) {
         return NextResponse.json({ carousels: [], _tableNotReady: true })
@@ -135,8 +131,5 @@ export async function GET() {
       throw new Error(error.message)
     }
     return NextResponse.json({ carousels: data ?? [] })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "carousel_fetch_failed"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint: string }
@@ -8,8 +8,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
-  try {
-    const userId = await requireAuth()
+  return withAuth(async (req, user) => {
     const { id: carouselId, slideId } = await context.params
     const slideIndex = parseInt(slideId, 10)
 
@@ -22,7 +21,7 @@ export async function PATCH(
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single()
 
     if (error || !data) {
@@ -34,7 +33,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Slide not found" }, { status: 404 })
     }
 
-    const body = await request.json() as { title?: string; content?: string }
+    const body = await req.json() as { title?: string; content?: string }
     const slide = { ...slides[slideIndex] }
     if (body.title !== undefined) slide.title = body.title
     if (body.content !== undefined) {
@@ -46,7 +45,7 @@ export async function PATCH(
       .from("carousels")
       .update({ slides, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
 
     return NextResponse.json({
       slide: {
@@ -58,18 +57,14 @@ export async function PATCH(
         image_url: null,
       },
     })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
-  try {
-    const userId = await requireAuth()
+  return withAuth(async (_req, user) => {
     const { id: carouselId, slideId } = await context.params
     const slideIndex = parseInt(slideId, 10)
 
@@ -82,7 +77,7 @@ export async function DELETE(
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .single()
 
     if (error || !data) {
@@ -103,11 +98,8 @@ export async function DELETE(
       .from("carousels")
       .update({ slides: updated, slide_count: updated.length, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
 
     return NextResponse.json({ ok: true, slideCount: updated.length })
-  } catch (error) {
-    const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: msg === "Unauthorized" ? 401 : 500 })
-  }
+  })(request)
 }

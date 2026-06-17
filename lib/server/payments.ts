@@ -20,7 +20,7 @@ export type VerifiedPayment = {
 }
 
 type UserRow = { id: string; email: string }
-type MembershipRow = { organization_id: string }
+type WorkspaceRow = { id: string; organization_id: string | null }
 
 const PLAN_NAMES = new Set(["Free", "Solo", "Pro", "Agency"])
 
@@ -141,21 +141,35 @@ const getUser = async (payment: VerifiedPayment) => {
   return byEmail[0] || null
 }
 
-const getPrimaryOrganizationId = async (userId: string) => {
-  const memberships = await supabaseSelect<MembershipRow>(
-    "memberships",
-    `user_id=eq.${encodeURIComponent(userId)}&select=organization_id&limit=1`
-  )
-  return memberships?.[0]?.organization_id || null
+// Resolve org via the user's primary workspace (workspace_members -> workspaces -> organization_id).
+// Returns null for personal-workspace users who have no linked org — that is fine;
+// activate_plan handles a null org_id gracefully.
+const getOrganizationId = async (userId: string): Promise<string | null> => {
+  try {
+    const rows = await supabaseSelect<{ workspace_id: string }>(
+      "workspace_members",
+      `user_id=eq.${encodeURIComponent(userId)}&select=workspace_id&limit=1`
+    )
+    const workspaceId = rows?.[0]?.workspace_id
+    if (!workspaceId) return null
+
+    const wsRows = await supabaseSelect<WorkspaceRow>(
+      "workspaces",
+      `id=eq.${encodeURIComponent(workspaceId)}&select=id,organization_id&limit=1`
+    )
+    return wsRows?.[0]?.organization_id ?? null
+  } catch {
+    return null
+  }
 }
 
 export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   const user = await getUser(payment)
   if (!user) throw new Error("payment_user_not_found")
-  const organizationId = await getPrimaryOrganizationId(user.id)
-  if (payment.status === "paid" && !organizationId) throw new Error("payment_organization_not_found")
 
+  const organizationId = await getOrganizationId(user.id)
   const expiresAt = payment.status === "paid" ? addMonths(1) : null
+
   await supabaseUpsert("payments", {
     provider: payment.provider,
     transaction_id: payment.transactionId,
@@ -175,39 +189,39 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
       to: user.email,
       subject: "Qalam payment failed",
       text: `Your payment for ${payment.planName} did not complete. Your plan was not changed.`,
-    })
-  return { updated: false, user, organizationId }
+    }).catch(() => undefined)
+    return { updated: false, user, organizationId }
   }
 
-  const paidOrganizationId = organizationId as string
-
-  // Atomically update organizations, users, and plan_usage in a single
-  // Postgres transaction via RPC. If any step fails the whole operation
-  // rolls back, preventing the partial-update window that three sequential
-  // REST calls would create.
   const supabase = createServiceClient()
+
+  // Atomic plan activation — parameter names match the 0031 migration RPC
   const { error: rpcError } = await supabase.rpc("activate_plan", {
     p_user_id: user.id,
-    p_organization_id: paidOrganizationId,
+    p_organization_id: organizationId,   // nullable; RPC skips org update when null
     p_plan_name: payment.planName,
     p_expires_at: expiresAt,
     p_customer_id: payment.transactionId,
   })
+
   if (rpcError) {
     console.error("[payments] activate_plan RPC failed:", rpcError)
     throw new Error(`activate_plan_failed: ${rpcError.message}`)
   }
 
+  // Sync cycle dates on plan_usage (best-effort; plan itself is already set by the RPC)
   await supabase
     .from("plan_usage")
     .update({ cycle_start: new Date().toISOString(), cycle_end: expiresAt, updated_at: new Date().toISOString() })
     .eq("user_id", user.id)
+    .then(undefined, (err: unknown) => console.error("[payments] plan_usage cycle sync failed:", err))
 
-  await sendTransactionalEmail({
+  // Fire-and-forget confirmation email — never block the payment response on this
+  sendTransactionalEmail({
     to: user.email,
     subject: `Qalam ${payment.planName} activated`,
     text: `Your ${payment.planName} plan is active until ${expiresAt ? new Date(expiresAt).toDateString() : "your billing renewal"}.`,
-  })
+  }).catch(() => undefined)
 
   return { updated: true, user, organizationId, expiresAt }
 }

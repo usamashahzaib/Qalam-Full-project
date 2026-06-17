@@ -71,22 +71,26 @@ export async function ensureSupabaseUser({
     return userByEmail.id
   }
 
-  const { data: newUser, error } = await supabase
+  // UPSERT on email to eliminate the check-then-insert race condition
+  const { data: upserted, error } = await supabase
     .from("users")
-    .insert({
-      email,
-      external_user_id: userId,
-      full_name: fullName,
-      image_url: imageUrl,
-      plan: "Free",
-    })
+    .upsert(
+      {
+        email,
+        external_user_id: userId,
+        full_name: fullName,
+        image_url: imageUrl,
+        plan: "Free",
+      },
+      { onConflict: "email", ignoreDuplicates: false }
+    )
     .select("id")
     .single()
 
-  if (error || !newUser) {
+  if (error || !upserted) {
     throw new Error("failed_to_ensure_user")
   }
-  return newUser.id
+  return upserted.id
 }
 
 async function getOrCreateWorkspaceForUser(userId: string, ownerEmail?: string) {
@@ -386,32 +390,26 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
 export const fetchWorkspacePlan = async (workspaceId: string, email?: string | null) =>
   applyUserOverrides(await fetchBaseWorkspacePlan(workspaceId), email)
 
-// Resolves the authoritative effective plan for a user+workspace by reconciling
-// the workspace-level subscription plan with any admin-set user override.
-// Uses both the email-based override lookup AND the external-ID-based plan_usage
-// lookup so the two override storage paths can never diverge.
+// Resolves the authoritative effective plan.  Delegates final authority to
+// getCanonicalPlan() (plan_usage / users.plan / overrides) so there is
+// exactly one code path for plan resolution across the entire app.
 export async function resolveEffectivePlan(
   workspaceId: string,
   email: string | null,
-  externalUserId?: string | null,
+  internalUserId?: string | null,
 ): Promise<ReturnType<typeof applyUserOverrides> extends Promise<infer T> ? T : never> {
   const wsInfo = await fetchWorkspacePlan(workspaceId, email)
-
-  // If override is already active from the email path, nothing more to do.
   if (wsInfo.overrideActive) return wsInfo
 
-  // Cross-check via plan_usage path (used by generation routes) in case the
-  // override was stored under a different user ID than what email lookup found.
-  if (externalUserId) {
+  if (internalUserId) {
     try {
-      const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
-      const planStatus = await getPlanStatus(externalUserId)
-      const resolved = higherPlan(wsInfo.plan, planStatus.plan)
-      if (resolved !== wsInfo.plan) {
-        return { ...wsInfo, plan: resolved }
+      const { getCanonicalPlan } = await import("@/lib/server/plan-limits-v2")
+      const canonical = await getCanonicalPlan(internalUserId)
+      if ((PLAN_PRIORITY[canonical.toLowerCase()] ?? 0) > (PLAN_PRIORITY[wsInfo.plan.toLowerCase()] ?? 0)) {
+        return { ...wsInfo, plan: canonical }
       }
     } catch {
-      // Fall through — workspace plan is the safe default.
+      // Fall through to workspace plan.
     }
   }
 

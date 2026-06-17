@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { withAuth } from "@/lib/server/auth"
+import { isAdminEmail } from "@/lib/server/workspace"
 import { getRedis } from "@/lib/server/redis"
-import { isAdmin } from "@/lib/server/auth-helpers"
 
-export async function POST() {
-  try {
-    const admin = await isAdmin()
-    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+export async function POST(request: NextRequest) {
+  return withAuth(async (_req, user) => {
+    if (!isAdminEmail(user.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const redis = getRedis()
     if (!redis) return NextResponse.json({ message: "Redis not configured, circuits not applicable" })
@@ -16,15 +16,12 @@ export async function POST() {
     ])
 
     return NextResponse.json({ message: "Circuit breakers reset. AI services will retry on next request." })
-  } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
-  }
+  })(request)
 }
 
-export async function GET() {
-  try {
-    const admin = await isAdmin()
-    if (!admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+export async function GET(request: NextRequest) {
+  return withAuth(async (_req, user) => {
+    if (!isAdminEmail(user.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
     const redis = getRedis()
     if (!redis) return NextResponse.json({ groq: "no-redis", gemini: "no-redis" })
@@ -35,7 +32,5 @@ export async function GET() {
     ])
 
     return NextResponse.json({ groq: groq || "closed", gemini: gemini || "closed" })
-  } catch (err) {
-    return NextResponse.json({ error: (err as Error).message }, { status: 500 })
-  }
+  })(request)
 }

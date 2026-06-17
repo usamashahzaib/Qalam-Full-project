@@ -131,6 +131,48 @@ export const supabasePatch = async <T>(
 }
 
 /**
+ * Workspace-scoped client.
+ *
+ * Every query builder returned by .from() automatically injects
+ * workspace_id = workspaceId so a missed filter can never leak
+ * cross-tenant data.  Use .raw() to escape scoping for tables that
+ * have no workspace_id column.
+ */
+export function createScopedClient(workspaceId: string) {
+  const supabase = createServiceClient()
+
+  function from(table: string) {
+    return {
+      /** SELECT — workspace_id filter is the first constraint; caller can chain more */
+      select: (columns = "*") =>
+        supabase.from(table).select(columns).eq("workspace_id", workspaceId),
+
+      /** INSERT — forces workspace_id onto every row */
+      insert: (data: Record<string, unknown> | Record<string, unknown>[]) => {
+        const rows = (Array.isArray(data) ? data : [data]).map((r) => ({
+          ...r,
+          workspace_id: workspaceId,
+        }))
+        return supabase.from(table).insert(rows)
+      },
+
+      /** UPDATE — forces workspace_id WHERE clause */
+      update: (data: Record<string, unknown>) =>
+        supabase.from(table).update(data).eq("workspace_id", workspaceId),
+
+      /** DELETE — forces workspace_id WHERE clause */
+      delete: () =>
+        supabase.from(table).delete().eq("workspace_id", workspaceId),
+
+      /** Escape hatch: unscoped builder for joins / tables without workspace_id */
+      raw: supabase.from(table),
+    }
+  }
+
+  return { from }
+}
+
+/**
  * DELETE rows matching the given query filter.
  */
 export const supabaseDelete = async (table: string, query: string) => {
