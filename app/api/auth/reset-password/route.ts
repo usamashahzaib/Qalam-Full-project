@@ -24,19 +24,20 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient()
   const now = new Date().toISOString()
 
+  // 1. Verify token is valid without consuming it yet
   const { data: record, error: tokenErr } = await supabase
     .from("password_resets")
-    .update({ used: true })
+    .select("id, user_id")
     .eq("token_hash", tokenHash)
     .eq("used", false)
     .gt("expires_at", now)
-    .select("id, user_id")
     .maybeSingle()
 
   if (tokenErr || !record) {
     return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 })
   }
 
+  // 2. Update password first
   const { error: updateErr } = await supabase
     .from("users")
     .update({ password_hash: hashPassword(password), updated_at: new Date().toISOString() })
@@ -45,6 +46,12 @@ export async function POST(req: NextRequest) {
   if (updateErr) {
     return NextResponse.json({ error: "Could not update password." }, { status: 500 })
   }
+
+  // 3. Only mark token used after password was successfully changed
+  await supabase
+    .from("password_resets")
+    .update({ used: true })
+    .eq("id", record.id)
 
   return NextResponse.json({ success: true, message: "Password updated. You can now sign in." })
 }
