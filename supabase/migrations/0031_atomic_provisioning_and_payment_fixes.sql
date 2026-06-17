@@ -84,7 +84,12 @@ $$;
 -- 3. activate_plan: fix param names + null-safe org update
 --    payments.ts passes: p_user_id, p_organization_id, p_plan_name,
 --                        p_expires_at, p_customer_id
+-- PostgreSQL 42P13: cannot rename parameters via CREATE OR REPLACE.
+-- Drop old signature (had p_org_id) before recreating with p_organization_id.
 -- ----------------------------------------------------------------
+DROP FUNCTION IF EXISTS public.activate_plan(uuid, uuid, text, timestamp with time zone, text);
+DROP FUNCTION IF EXISTS public.activate_plan(uuid, uuid, text, timestamptz, text);
+
 CREATE OR REPLACE FUNCTION public.activate_plan(
   p_user_id        UUID,
   p_organization_id UUID,       -- nullable; personal workspace users have no org
