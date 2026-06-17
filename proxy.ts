@@ -72,19 +72,11 @@ const PROTECTED_ROUTES = [
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
 
-const PROTECTED_API_ROUTES = [
-  "/api/generate",
-  "/api/carousel",
-  "/api/voice",
-  "/api/posts",
-  "/api/analytics",
-  "/api/competitors",
-]
-
 const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
   "/api/webhooks",
+  "/api/payments/webhook",
   "/api/free-tools",
   "/api/tools",
   "/api/geo",
@@ -143,14 +135,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isProtectedRoute = PROTECTED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
-  const isProtectedApi = PROTECTED_API_ROUTES.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
-  )
   const isAuthOnly = AUTH_ONLY_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
-  if (!isProtectedRoute && !isProtectedApi && !isAuthOnly) {
+  // Public marketing pages pass through without auth check
+  const isApiRoute = pathname.startsWith("/api/")
+  if (!isProtectedRoute && !isAuthOnly && !isApiRoute) {
     return addSecurityHeaders(NextResponse.next())
   }
 
@@ -177,7 +168,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   if (!userId) {
-    if (isProtectedApi) {
+    // All API routes not in PUBLIC_API_PREFIXES require authentication
+    if (isApiRoute) {
       return addSecurityHeaders(
         NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       )
