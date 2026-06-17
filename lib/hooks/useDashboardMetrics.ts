@@ -13,6 +13,7 @@ export type DashboardStats = {
   carouselsUsed: number
   postsPublished: number
   resetDate: string
+  planExpiresAt?: string | null
 }
 
 export type DashboardPost = {
@@ -38,6 +39,7 @@ export function useDashboardMetrics() {
   const statsSeq = useRef(0)
   const postsSeq = useRef(0)
   const usageSeq = useRef(0)
+  const lastFetchTime = useRef(0)
 
   const loadStatsRequest = useCallback(async (signal?: AbortSignal) => {
     const seq = ++statsSeq.current
@@ -89,6 +91,7 @@ export function useDashboardMetrics() {
   const loadUsage = useCallback(() => { void loadUsageRequest() }, [loadUsageRequest])
 
   const loadAll = useCallback((signal?: AbortSignal) => {
+    lastFetchTime.current = Date.now()
     loadStatsRequest(signal)
     loadPostsRequest(signal)
     loadUsageRequest(signal)
@@ -97,7 +100,9 @@ export function useDashboardMetrics() {
   useEffect(() => {
     const controller = new AbortController()
     loadAll(controller.signal)
-    const onVisibility = () => { if (!document.hidden) loadAll() }
+    const onVisibility = () => {
+      if (!document.hidden && Date.now() - lastFetchTime.current > 60_000) loadAll()
+    }
     document.addEventListener("visibilitychange", onVisibility)
     return () => {
       controller.abort()
