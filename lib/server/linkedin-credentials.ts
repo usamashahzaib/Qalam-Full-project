@@ -1,4 +1,41 @@
+import crypto from "node:crypto"
 import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+
+const ALGORITHM = "aes-256-gcm"
+
+function getEncryptionKey(): Buffer | null {
+  const keyHex = process.env.LINKEDIN_TOKEN_ENCRYPTION_KEY || ""
+  if (keyHex.length !== 64) return null
+  return Buffer.from(keyHex, "hex")
+}
+
+function encryptToken(token: string): string {
+  const key = getEncryptionKey()
+  if (!key) return token
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+  const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()])
+  const authTag = cipher.getAuthTag()
+  return `enc:${iv.toString("hex")}:${authTag.toString("hex")}:${encrypted.toString("hex")}`
+}
+
+function decryptToken(stored: string): string {
+  if (!stored.startsWith("enc:")) return stored
+  const key = getEncryptionKey()
+  if (!key) return stored
+  const parts = stored.split(":")
+  if (parts.length !== 4) return stored
+  try {
+    const iv = Buffer.from(parts[1], "hex")
+    const authTag = Buffer.from(parts[2], "hex")
+    const ciphertext = Buffer.from(parts[3], "hex")
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
+    decipher.setAuthTag(authTag)
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8")
+  } catch {
+    return stored
+  }
+}
 
 type LinkedInCredential = {
   owner_email: string
@@ -34,7 +71,7 @@ export const storeLinkedInToken = async ({
     "linkedin_credentials",
     {
       owner_email: ownerEmail.trim().toLowerCase(),
-      access_token: accessToken,
+      access_token: encryptToken(accessToken),
       member_id: memberId,
       token_expires_at: tokenExpiresAt,
       updated_at: new Date().toISOString(),
@@ -63,7 +100,7 @@ export const storeLinkedInPublishingAccount = async ({
     workspace_id: workspaceId,
     provider: "linkedin",
     provider_account_id: memberId || workspaceId,
-    access_token: accessToken,
+    access_token: encryptToken(accessToken),
     refresh_token: null,
     expires_at: tokenExpiresAt ? new Date(tokenExpiresAt).toISOString() : null,
     updated_at: new Date().toISOString(),
@@ -92,7 +129,12 @@ export const getLinkedInPublishingAccount = async (workspaceId: string): Promise
       "publishing_accounts",
       `workspace_id=eq.${workspaceId}&provider=eq.linkedin&limit=1`
     )
-    return rows?.[0] || null
+    const row = rows?.[0]
+    if (!row) return null
+    return {
+      ...row,
+      access_token: row.access_token ? decryptToken(row.access_token) : null,
+    }
   } catch {
     return null
   }
@@ -108,7 +150,9 @@ export const getLinkedInToken = async (ownerEmail: string): Promise<LinkedInCred
       "linkedin_credentials",
       `owner_email=eq.${encodeURIComponent(ownerEmail.trim().toLowerCase())}&limit=1`
     )
-    return rows?.[0] || null
+    const row = rows?.[0]
+    if (!row) return null
+    return { ...row, access_token: decryptToken(row.access_token) }
   } catch {
     return null
   }
