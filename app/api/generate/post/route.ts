@@ -13,13 +13,16 @@ export async function POST(request: NextRequest) {
 
     const topic = String(body.topic || "").trim()
     const hook = String(body.hook || "").trim()
+    const originalContent = String(body.originalContent || "").trim()
+    const hasOriginalDraft = originalContent.length >= 20
 
-    if (!topic || topic.length < 3) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
+    if (!hasOriginalDraft && (!topic || topic.length < 3)) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     if (!hook) return NextResponse.json({ error: "A hook is required" }, { status: 400 })
 
     const result = await generatePostFromHook({
       topic,
       hook,
+      originalContent: originalContent || undefined,
       role: String(body.role || ""),
       format: String(body.format || ""),
       goal: String(body.goal || "").trim() || undefined,

@@ -24,6 +24,18 @@ export interface RunApprovalInput {
 export interface RunApprovalOutput {
   approvalId: string
   postTitle: string
+  approval: {
+    id: string
+    post_id: string | null
+    reviewer_email: string
+    post_title: string
+    post_content: string
+    status: string
+    message: string | null
+    comments?: string | null
+    created_at: string
+    updated_at?: string | null
+  }
 }
 
 const isProOrAbove = (plan: string) => {
@@ -62,7 +74,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       message: message || null,
       review_token_hash: hashToken(reviewToken),
     })
-    .select("id, post_title, status, created_at")
+    .select("id, post_id, reviewer_email, post_title, post_content, status, message, comments, created_at, updated_at")
     .single()
 
   if (error || !approval) {
@@ -75,7 +87,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
   const requesterName = userName || userEmail || "Someone"
   const title = postTitle || "Untitled post"
 
-  await sendTransactionalEmail({
+  const sent = await sendTransactionalEmail({
     to: reviewerEmail,
     subject: `Review request: "${title}"`,
     text: [
@@ -94,6 +106,16 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       "You can approve or request changes at the link above.",
     ].filter((l) => l !== undefined).join("\n"),
   })
+  if (!sent.ok) {
+    await supabase.from("approvals").delete().eq("id", approval.id)
+    return err({
+      code: "INTERNAL_ERROR",
+      message: `Approval email failed: ${sent.error || "unknown"}`,
+      userMessage: sent.error === "no_api_key"
+        ? "Email is not configured. Set RESEND_API_KEY to send approval requests."
+        : "Approval request could not be emailed. Check transactional email settings.",
+    })
+  }
 
-  return ok({ approvalId: approval.id as string, postTitle: title })
+  return ok({ approvalId: approval.id as string, postTitle: title, approval })
 }

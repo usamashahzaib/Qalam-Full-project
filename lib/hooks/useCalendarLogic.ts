@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react"
 import { shareToLinkedIn } from "@/lib/api/client"
+import { openLinkedInComposer } from "@/lib/linkedin-compose"
 import type { WorkspacePost } from "@/types/domain"
 
 // ─── Helpers (kept local - calendar-specific) ─────────────────────────────────
@@ -154,6 +155,7 @@ export function useCalendarLogic({
     setStatus(`Publishing ${post.title}...`)
     try {
       const result = await shareToLinkedIn({ content: post.content, postId: post.id, workspaceKey: workspaceId })
+      if (!result.postUrn) throw new Error("LinkedIn did not confirm the post.")
       const postUrn = normalizeLinkedInUrn(result.postUrn || "") || null
       await publishPost({ id: post.id, title: post.title, content: post.content, type: post.type, publishedAt: new Date().toISOString(), externalPostUrn: postUrn })
       if (post.type.toLowerCase().includes("carousel")) {
@@ -161,7 +163,8 @@ export function useCalendarLogic({
       }
       setStatus(`Published: ${post.title}`)
     } catch (error) {
-      setStatus((error as Error).message || "LinkedIn publish failed")
+      await openLinkedInComposer(post.content)
+      setStatus(`${(error as Error).message || "LinkedIn publish failed"} Text copied; LinkedIn composer opened.`)
     } finally {
       setPublishingId(null)
     }

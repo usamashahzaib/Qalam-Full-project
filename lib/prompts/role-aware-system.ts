@@ -569,6 +569,43 @@ Role: ${profile.label}`;
   return { system, user };
 }
 
+export function buildPostWithReplacedHookPrompt(
+  hook: string,
+  post: string,
+  role: string,
+  goal?: string,
+  voiceProfile?: VoiceProfile
+): { system: string; user: string } {
+  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const system = `
+You are editing an existing LinkedIn post for a ${profile.label}.
+
+${profile.voice}
+
+${ANTI_AI_RULES}
+
+TASK:
+- Replace the opening hook only.
+- The FIRST LINE must be exactly the new hook - copy it word for word.
+- Preserve the existing post's body, meaning, examples, CTA, hashtags, and length.
+- Lightly adjust only the first 1-2 body lines if needed so the new hook connects naturally.
+- Do not invent new facts, numbers, client stories, or outcomes.
+- Do not turn this into a new post.
+
+${goal ? `GOAL OF THIS POST: ${goal}` : ""}
+${voiceProfile?.vocabulary?.length ? `VOICE PHRASES TO KEEP NATURAL: ${voiceProfile.vocabulary.join(", ")}` : ""}
+
+Output the revised post only. No commentary. No labels.
+`.trim();
+
+  const user = `New hook (first line - copy this verbatim): "${hook}"
+
+Existing post:
+${post}`;
+  return { system, user };
+}
+
 // ---------------------------------------------------------------------------
 // 7-METRIC SCORE - for /api/generate/score
 // Returns scores for 7 dimensions plus tips and hashtag suggestions.
@@ -672,7 +709,7 @@ overall = arithmetic mean of all 7 scores, rounded to nearest integer.
 // ---------------------------------------------------------------------------
 export function buildPushTo90Prompt(
   post: string,
-  scores: Record<string, number>,
+  scores: Record<string, unknown>,
   role: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
@@ -680,6 +717,7 @@ export function buildPushTo90Prompt(
 
   const dimScores = Object.entries(scores)
     .filter(([k]) => k !== "overall" && k !== "tips" && k !== "hashtags")
+    .filter(([, v]) => typeof v === "number")
     .map(([k, v]) => `${k}: ${v}/100`)
     .join(", ");
 

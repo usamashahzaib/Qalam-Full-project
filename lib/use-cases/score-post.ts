@@ -2,10 +2,10 @@ import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { gateScores } from "@/lib/content-score-gate"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
-import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "hr",
@@ -39,11 +39,12 @@ export interface ScorePostInput {
   role?: string
   userId: string
   internalUserId?: string
+  workspaceId?: string | null
   plan: string
 }
 
 export async function scorePost(input: ScorePostInput): Promise<Result<ScorePostOutput>> {
-  const { content, role: rawRole = "", userId, internalUserId, plan } = input
+  const { content, role: rawRole = "", userId, workspaceId, plan } = input
 
   const trimmed = content.trim()
   if (!trimmed || trimmed.length < 4) {
@@ -52,30 +53,8 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
 
   const role = ROLE_MAP[rawRole] || "founder"
 
-  let voiceProfile: VoiceProfile | undefined
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  if (isProOrAbove && internalUserId) {
-    try {
-      const { data } = await createServiceClient()
-        .from("voice_profiles")
-        .select("brand_tone, characteristics")
-        .eq("user_id", internalUserId)
-        .limit(1)
-        .maybeSingle()
-      if (data) {
-        const chars = data.characteristics as {
-          tone?: string; sentenceLength?: string
-          commonPhrases?: string[]; transitions?: string[]
-        } | null
-        voiceProfile = {
-          tone: chars?.tone || String(data.brand_tone || ""),
-          sentenceLength: chars?.sentenceLength,
-          vocabulary: chars?.commonPhrases || [],
-          patterns: chars?.transitions || [],
-        }
-      }
-    } catch { /* ignore - voice profile is optional */ }
-  }
+  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined
 
   const { system, user } = build7MetricScorePrompt(trimmed, role, voiceProfile)
 
@@ -87,11 +66,25 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     })
   } catch {
     const base = Math.max(45, Math.min(72, trimmed.length * 3))
-    return ok({
-      scores: { hook: base, readability: base, authority: base - 5, specificity: base - 8, cta: base - 10, human: base, voiceFit: base - 6 },
+    const gated = gateScores(trimmed, {
+      hook: base, readability: base, authority: base - 5, specificity: base - 8, cta: base - 10, human: base, voiceFit: base - 6,
       overall: base - 4,
       tips: { specificity: "Add a concrete example or result.", cta: "End with a clear next step." },
       hashtags: [],
+    })
+    return ok({
+      scores: {
+        hook: gated.hook,
+        readability: gated.readability,
+        authority: gated.authority,
+        specificity: gated.specificity,
+        cta: gated.cta,
+        human: gated.human,
+        voiceFit: gated.voiceFit,
+      },
+      overall: gated.overall,
+      tips: gated.tips ?? {},
+      hashtags: gated.hashtags ?? [],
     })
   }
 
@@ -119,19 +112,31 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
   // AI sometimes returns 0-10 scale despite prompt saying 0-100 — normalize
   const isZeroToTen = rawOverall < 15 && Object.values(rawScores).every((v) => v <= 10)
   const m = isZeroToTen ? 10 : 1
+  const gated = gateScores(trimmed, {
+    hook: rawScores.hook * m,
+    readability: rawScores.readability * m,
+    authority: rawScores.authority * m,
+    specificity: rawScores.specificity * m,
+    cta: rawScores.cta * m,
+    human: rawScores.human * m,
+    voiceFit: rawScores.voiceFit * m,
+    overall: rawOverall * m,
+    tips: parsed.tips ?? {},
+    hashtags: parsed.hashtags ?? [],
+  })
 
   return ok({
     scores: {
-      hook: Math.round(rawScores.hook * m),
-      readability: Math.round(rawScores.readability * m),
-      authority: Math.round(rawScores.authority * m),
-      specificity: Math.round(rawScores.specificity * m),
-      cta: Math.round(rawScores.cta * m),
-      human: Math.round(rawScores.human * m),
-      voiceFit: Math.round(rawScores.voiceFit * m),
+      hook: gated.hook,
+      readability: gated.readability,
+      authority: gated.authority,
+      specificity: gated.specificity,
+      cta: gated.cta,
+      human: gated.human,
+      voiceFit: gated.voiceFit,
     },
-    overall: Math.round(rawOverall * m),
-    tips: parsed.tips ?? {},
-    hashtags: parsed.hashtags ?? [],
+    overall: gated.overall,
+    tips: gated.tips ?? {},
+    hashtags: gated.hashtags ?? [],
   })
 }

@@ -14,6 +14,7 @@ import {
   API_PATHS,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { openLinkedInComposer } from "@/lib/linkedin-compose"
 import { incrementDraftUsage, readDraftUsage } from "@/lib/usage-tracking"
 import type {
   WriterRole as Role,
@@ -330,20 +331,21 @@ export function useWriterLogic({
 
   // ── Step 2: Generate full post from hook ──────────────────────────────────
 
-  const onGeneratePost = async (hookOverride?: string) => {
+  const onGeneratePost = async (hookOverride?: string, originalContent?: string) => {
     if (isGeneratingPost) return
     const hookText = hookOverride || selectedHook
+    const isReplacingHook = Boolean(originalContent?.trim())
     if (!hookText) { showStatus("Select a hook first", "error"); return }
     if (!checkDraftCredit()) return
 
     setIsGeneratingPost(true)
-    setDraftContent("")
+    if (!isReplacingHook) setDraftContent("")
     setScores(null)
     setHookAltOpen(false)
-    showStatus("Generating post from your hook...", "info", false)
+    showStatus(isReplacingHook ? "Replacing hook..." : "Generating post from your hook...", "info", false)
 
     try {
-      const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, role, format, goal: goal.trim() })
+      const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, originalContent, role, format, goal: goal.trim() })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
       skipDebounceScore.current = true
@@ -412,7 +414,7 @@ export function useWriterLogic({
   const applyHookAlt = (altText: string) => {
     setSelectedHook(altText)
     setHookAltOpen(false)
-    void onGeneratePost(altText)
+    void onGeneratePost(altText, draftContent)
   }
 
   // ── Save draft ────────────────────────────────────────────────────────────
@@ -454,6 +456,7 @@ export function useWriterLogic({
     setIsPublishing(true)
     try {
       const shared = await shareToLinkedIn({ content: draftContent, postId: editingId, workspaceKey: workspaceId })
+      if (!shared.postUrn) throw new Error("LinkedIn did not confirm the post.")
       const id = await publishPost({
         id: editingId,
         title: resolveTitle(),
@@ -465,7 +468,8 @@ export function useWriterLogic({
       setEditingId(id)
       showStatus("Published to LinkedIn.", "success")
     } catch (e) {
-      showStatus((e as Error).message || "Publish failed", "error")
+      await openLinkedInComposer(draftContent)
+      showStatus(`${(e as Error).message || "Publish failed"} Text copied; LinkedIn composer opened.`, "error")
     } finally {
       setIsPublishing(false)
     }

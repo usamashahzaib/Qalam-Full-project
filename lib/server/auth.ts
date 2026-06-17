@@ -28,14 +28,16 @@ const higherPlan = (a: string, b: string) =>
 async function resolveEffectivePlan(
   supabase: ReturnType<typeof createServiceClient>,
   internalId: string,
+  externalId?: string,
 ): Promise<string> {
+  const userIds = [...new Set([internalId, externalId].filter(Boolean) as string[])]
   const [userPlanResult, overrideResult] = await Promise.all([
     Promise.resolve(supabase.from("users").select("plan").eq("id", internalId).maybeSingle()).catch(() => ({ data: null })),
     Promise.resolve(
       supabase
         .from("user_overrides")
         .select("plan_override, expires_at")
-        .eq("user_id", internalId)
+        .in("user_id", userIds)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
@@ -43,6 +45,12 @@ async function resolveEffectivePlan(
   ])
 
   let plan = (userPlanResult as { data: { plan?: string } | null }).data?.plan || "free"
+
+  const { data: usageRows } = await supabase
+    .from("plan_usage")
+    .select("plan")
+    .in("user_id", userIds)
+  for (const row of usageRows ?? []) plan = higherPlan(plan, row.plan || "free")
 
   const overrideRow = overrideResult.data
   if (
@@ -185,7 +193,7 @@ export async function requireAuthApi(request: NextRequest) {
     internalId = user.id
 
     const [plan, membership] = await Promise.all([
-      resolveEffectivePlan(supabase, internalId),
+      resolveEffectivePlan(supabase, internalId, externalId),
       supabase
         .from("workspace_members")
         .select("workspace_id")

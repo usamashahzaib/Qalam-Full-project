@@ -90,6 +90,7 @@ export type GenerateHooksOutput = { hooks: HookItem[] }
 export type GeneratePostInput = {
   topic: string
   hook: string
+  originalContent?: string
   role?: WriterRole | string
   format?: PostFormat | string
   goal?: string

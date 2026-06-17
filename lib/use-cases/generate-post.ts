@@ -2,7 +2,7 @@ import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage } from "@/lib/server/plan-limits-v2"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
@@ -71,14 +71,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
-  const supabase = createServiceClient()
-
-  const { data: voiceProfile } = await supabase
-    .from("voice_profiles")
-    .select("*")
-    .eq("workspace_id", workspaceId)
-    .limit(1)
-    .single()
+  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined)
 
   // Pass 1: Generate raw post
   const { system: genSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)

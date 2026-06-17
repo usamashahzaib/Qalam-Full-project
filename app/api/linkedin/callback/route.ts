@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 
-const redirectToSettings = (request: NextRequest, status: "connected" | "error") =>
+const redirectToSettings = (request: NextRequest, status: "success" | "error") =>
   NextResponse.redirect(new URL(`/settings?linkedin=${status}`, request.nextUrl.origin))
 
 export async function GET(request: NextRequest) {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt })
     await storeLinkedInPublishingAccount({ workspaceId, accessToken, memberId, tokenExpiresAt: expiresAt })
 
-    const response = redirectToSettings(request, "connected")
+    const response = redirectToSettings(request, "success")
     response.cookies.delete("linkedin_oauth_state")
     return response
   } catch {

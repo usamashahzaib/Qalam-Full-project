@@ -1,5 +1,5 @@
 import "server-only"
-import { supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
+import { supabaseSelect, createServiceClient } from "@/lib/server/supabase-rest"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import type {
   IVoiceProfileRepository,
@@ -15,19 +15,30 @@ type DbVoiceProfile = {
   title: string | null
   industry: string | null
   tone: string | null
-  goals: string[] | null
-  sample_posts: string[] | null
+  goals: string[] | string | null
+  sample_posts: unknown
+  example_posts?: string | null
+  brand_tone?: string | null
+  characteristics?: unknown
+  voice_fingerprint?: unknown
   linkedin_url?: string | null
   updated_at: string
 }
+
+const textArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.map((item) => typeof item === "string" ? item : typeof item === "object" && item && "text" in item ? String((item as { text?: unknown }).text || "") : "").filter(Boolean)
+    : typeof value === "string" && value.trim()
+      ? value.split(/\n{2,}|---/).map((item) => item.trim()).filter(Boolean)
+      : []
 
 const toClientProfile = (row?: DbVoiceProfile | null): VoiceProfileData => ({
   name: row?.name ?? "",
   title: row?.title ?? "",
   industry: row?.industry ?? "",
-  tone: row?.tone ?? "",
-  goals: Array.isArray(row?.goals) ? row!.goals : [],
-  samplePosts: Array.isArray(row?.sample_posts) ? row!.sample_posts : [],
+  tone: row?.tone ?? row?.brand_tone ?? "",
+  goals: textArray(row?.goals),
+  samplePosts: textArray(row?.sample_posts).length ? textArray(row?.sample_posts) : textArray(row?.example_posts),
   linkedinUrl: row?.linkedin_url ?? "",
 })
 
@@ -52,15 +63,26 @@ export class SupabaseVoiceProfileRepository implements IVoiceProfileRepository {
       linkedin_url: data.linkedinUrl?.trim() || null,
       updated_at: new Date().toISOString(),
     }
-    let rows: DbVoiceProfile[] | null = null
-    try {
-      rows = await supabaseUpsert<DbVoiceProfile>("voice_profiles", payload, "workspace_id")
-    } catch (error) {
-      if (!(error instanceof Error) || !error.message.includes("linkedin_url")) throw error
-      const { linkedin_url: _lnUrl, ...fallback } = payload
-      rows = await supabaseUpsert<DbVoiceProfile>("voice_profiles", fallback, "workspace_id")
-    }
-    return toClientProfile(rows?.[0] ?? null)
+    const supabase = createServiceClient()
+    const { data: existing } = await supabase
+      .from("voice_profiles")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .limit(1)
+      .maybeSingle()
+    const query = existing?.id
+      ? supabase.from("voice_profiles").update(payload).eq("id", existing.id)
+      : supabase.from("voice_profiles").insert(payload)
+    const { data: rows, error } = await query.select().limit(1)
+    if (!error) return toClientProfile(rows?.[0] ?? null)
+    if (!error.message.includes("linkedin_url")) throw new Error(error.message)
+
+    const { linkedin_url: _lnUrl, ...fallback } = payload
+    const retry = existing?.id
+      ? await supabase.from("voice_profiles").update(fallback).eq("id", existing.id).select().limit(1)
+      : await supabase.from("voice_profiles").insert(fallback).select().limit(1)
+    if (retry.error) throw new Error(retry.error.message)
+    return toClientProfile(retry.data?.[0] ?? null)
   }
 
   async analyze(examplePosts: string, userId: string, plan: string): Promise<VoiceAnalysis> {

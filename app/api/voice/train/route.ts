@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { requireAuth } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import { trainVoiceProfile } from "@/lib/use-cases/train-voice-profile"
 import type { VoiceSampleAnalysis } from "@/lib/use-cases/train-voice-profile"
 
@@ -11,23 +10,67 @@ type VoiceSample = {
   added_at: string
 }
 
-const supabaseAdmin = () =>
-  createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  )
+const getProfile = async (workspaceId: string, userId: string) => {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from("voice_profiles")
+    .select("id, sample_posts, voice_fingerprint")
+    .eq("workspace_id", workspaceId)
+    .limit(1)
+    .maybeSingle()
+  if (data) return data
 
-export async function GET() {
+  const fallback = await supabase
+    .from("voice_profiles")
+    .select("id, sample_posts, voice_fingerprint")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle()
+  return fallback.data
+}
+
+const saveProfile = async (
+  userId: string,
+  workspaceId: string,
+  samples: VoiceSample[],
+  fingerprint: unknown,
+  analysis: unknown,
+  sampleText: string
+) => {
+  const supabase = createServiceClient()
+  const row = await getProfile(workspaceId, userId)
+  const payload = {
+    user_id: userId,
+    workspace_id: workspaceId,
+    sample_posts: samples,
+    voice_fingerprint: fingerprint || {},
+    characteristics: analysis || {},
+    updated_at: new Date().toISOString(),
+  }
+
+  const result = row?.id
+    ? await supabase.from("voice_profiles").update(payload).eq("id", row.id)
+    : await supabase.from("voice_profiles").insert(payload)
+
+  if (result.error) return result.error
   try {
-    const userId = await requireAuth()
-    const { data, error } = await supabaseAdmin()
-      .from("voice_profiles")
-      .select("sample_posts, voice_fingerprint")
-      .eq("user_id", userId)
-      .maybeSingle()
+    await supabase.from("voice_training_logs").insert({
+      user_id: userId,
+      sample_text: sampleText,
+      ai_analysis: analysis || {},
+    })
+  } catch {
+    // Training history is non-critical.
+  }
+  return null
+}
 
-    if (error) throw new Error(error.message)
+export async function GET(request: NextRequest) {
+  try {
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+
+    const data = await getProfile(planCheck.workspaceId, planCheck.session.supabaseUserId)
     const samples = Array.isArray(data?.sample_posts) ? data.sample_posts : []
     return NextResponse.json({
       samples,
@@ -53,12 +96,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Sample must be at least 50 characters" }, { status: 400 })
     }
 
-    const supabase = supabaseAdmin()
-    const { data: existing } = await supabase
-      .from("voice_profiles")
-      .select("sample_posts")
-      .eq("user_id", userId)
-      .maybeSingle()
+    const existing = await getProfile(planCheck.workspaceId, userId)
 
     const prevSamples = Array.isArray(existing?.sample_posts) ? (existing.sample_posts as VoiceSample[]) : []
     const prevTexts = prevSamples.slice(-19).map((s) => s.text)
@@ -78,13 +116,7 @@ export async function POST(req: NextRequest) {
       { text: cleanSample, analysis, added_at: new Date().toISOString() },
     ]
 
-    const { error } = await supabase.rpc("save_voice_training_sample", {
-      p_user_id: userId,
-      p_samples: updatedSamples,
-      p_fingerprint: fingerprint,
-      p_sample_text: cleanSample,
-      p_analysis: analysis,
-    })
+    const error = await saveProfile(userId, planCheck.workspaceId, updatedSamples, fingerprint, analysis, cleanSample)
 
     if (error) {
       console.error("voice_profile_save_failed", error)
@@ -106,12 +138,26 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
-    const userId = await requireAuth()
-    const supabase = supabaseAdmin()
-    const { error } = await supabase.rpc("clear_voice_training_samples", { p_user_id: userId })
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const supabase = createServiceClient()
+    const row = await getProfile(planCheck.workspaceId, planCheck.session.supabaseUserId)
+    const { error } = row?.id
+      ? await supabase
+          .from("voice_profiles")
+          .update({ sample_posts: [], voice_fingerprint: {}, characteristics: {}, workspace_id: planCheck.workspaceId, updated_at: new Date().toISOString() })
+          .eq("id", row.id)
+      : await supabase
+          .from("voice_profiles")
+          .insert({ user_id: planCheck.session.supabaseUserId, workspace_id: planCheck.workspaceId, sample_posts: [], voice_fingerprint: {}, characteristics: {} })
     if (error) throw new Error(error.message)
+    try {
+      await supabase.from("voice_training_logs").delete().eq("user_id", planCheck.session.supabaseUserId)
+    } catch {
+      // Training history is non-critical.
+    }
     return NextResponse.json({ success: true, samples_count: 0, samples: [], fingerprint: {} })
   } catch (error) {
     const message = (error as Error).message || "Failed to clear voice profile"

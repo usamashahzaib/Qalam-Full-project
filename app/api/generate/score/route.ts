@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
       role: String(body.role || ""),
       userId: user.externalId,
       internalUserId: user.id,
+      workspaceId: user.workspaceId,
       plan: user.plan,
     })
 
@@ -37,6 +38,6 @@ export async function POST(request: NextRequest) {
     await incrementUsage(user.externalId, "analyses", user.id).catch(() => undefined)
 
     const { scores, overall, tips, hashtags } = result.data
-    return NextResponse.json({ scores: { ...scores, overall }, overall, tips, hashtags })
+    return NextResponse.json({ ...scores, overall, tips, hashtags })
   })(request)
 }

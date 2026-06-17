@@ -4,6 +4,11 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { runApproval } from "@/lib/use-cases/run-approval"
 import { errorToStatus } from "@/lib/errors"
 
+const toApprovalRow = <T extends { comments?: unknown }>(row: T) => ({
+  ...row,
+  comment: row.comments ?? null,
+})
+
 export async function GET(request: NextRequest) {
   return withAuth(async (_req, user) => {
     const supabase = createServiceClient()
@@ -13,7 +18,7 @@ export async function GET(request: NextRequest) {
       .eq("requester_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50)
-    return NextResponse.json({ approvals: rows || [] })
+    return NextResponse.json({ approvals: (rows || []).map((row) => toApprovalRow(row)) })
   })(request)
 }
 
@@ -40,6 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error.userMessage || result.error.message }, { status: errorToStatus(result.error.code) })
     }
 
-    return NextResponse.json({ approvalId: result.data.approvalId, postTitle: result.data.postTitle }, { status: 201 })
+    return NextResponse.json({ approval: toApprovalRow(result.data.approval) }, { status: 201 })
   })(request)
 }

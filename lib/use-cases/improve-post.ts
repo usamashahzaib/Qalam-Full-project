@@ -3,10 +3,11 @@ import "server-only"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { buildPushTo90Prompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { gateScores } from "@/lib/content-score-gate"
+import { toPostArtifact } from "@/lib/use-cases/post-artifact"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
-import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "hr",
@@ -24,6 +25,7 @@ export interface ImprovePostInput {
   scores?: Record<string, number>
   userId: string
   internalUserId?: string
+  workspaceId?: string | null
   plan: string
 }
 
@@ -33,10 +35,33 @@ export interface ImprovePostOutput {
   remaining: number
 }
 
+type ScorePayload = Record<string, unknown>
+const scoreKeys = ["hook", "readability", "authority", "specificity", "cta", "human", "voiceFit"] as const
+type NormalizedScores = Record<typeof scoreKeys[number], number> & {
+  overall: number
+  tips: Record<string, string>
+  hashtags: string[]
+}
+
+const toNumber = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : 0
+const normalizeScores = (raw: ScorePayload): NormalizedScores => {
+  const vals = scoreKeys.map((k) => toNumber(raw[k]))
+  const rawOverall = toNumber(raw.overall) || vals.reduce((a, b) => a + b, 0) / Math.max(1, vals.filter(Boolean).length)
+  const m = rawOverall < 15 && vals.every((v) => v <= 10) ? 10 : 1
+  const scores = Object.fromEntries(scoreKeys.map((k) => [k, Math.min(100, Math.round(toNumber(raw[k]) * m))])) as Record<typeof scoreKeys[number], number>
+
+  return {
+    ...scores,
+    overall: Math.min(100, Math.round(rawOverall * m)),
+    tips: raw.tips && typeof raw.tips === "object" && !Array.isArray(raw.tips) ? raw.tips as Record<string, string> : {},
+    hashtags: Array.isArray(raw.hashtags) ? raw.hashtags : [],
+  }
+}
+
 export async function improvePost(
   input: ImprovePostInput
 ): Promise<Result<ImprovePostOutput>> {
-  const { content, role: rawRole, scores = {}, userId, internalUserId, plan } = input
+  const { content, role: rawRole, scores = {}, userId, workspaceId, plan } = input
 
   if (!content.trim()) {
     return err({ code: "VALIDATION_ERROR", message: "Content is required", userMessage: "Content too short to improve." })
@@ -54,75 +79,39 @@ export async function improvePost(
 
   const role = ROLE_MAP[rawRole] || "founder"
 
-  let voiceProfile: VoiceProfile | undefined
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  if (isProOrAbove && internalUserId) {
-    try {
-      const { data } = await createServiceClient()
-        .from("voice_profiles")
-        .select("brand_tone, characteristics")
-        .eq("user_id", internalUserId)
-        .limit(1)
-        .maybeSingle()
-      if (data) {
-        const chars = data.characteristics as {
-          tone?: string; sentenceLength?: string
-          commonPhrases?: string[]; transitions?: string[]
-        } | null
-        voiceProfile = {
-          tone: chars?.tone || String(data.brand_tone || ""),
-          sentenceLength: chars?.sentenceLength,
-          vocabulary: chars?.commonPhrases || [],
-          patterns: chars?.transitions || [],
-        }
-      }
-    } catch { /* ignore - voice profile is optional */ }
+  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined
+
+  let artifact = toPostArtifact(content)
+  if (!artifact) {
+    return err({ code: "VALIDATION_ERROR", message: "Invalid source post", userMessage: "Content too short to improve." })
   }
 
-  const scoreKeys = ["hook", "readability", "authority", "specificity", "cta", "human", "voiceFit"]
-
-  let improved = content
-  let rawScores: Record<string, number> = {}
-  let rawOverall = 0
-
-  // Up to 2 improvement passes - keeps trying until score >= 90
+  let rawScores: ScorePayload = {}
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const { system: impSystem, user: impUser } = buildPushTo90Prompt(improved, attempt === 1 ? scores : rawScores, role, voiceProfile)
-    improved = await callAi(impSystem, impUser, {
+    const { system: impSystem, user: impUser } = buildPushTo90Prompt(artifact.content, attempt === 1 ? scores : normalizeScores(rawScores), role, voiceProfile)
+    const candidate = await callAi(impSystem, impUser, {
       temperature: 0.7, maxTokens: 1000,
       userId, plan, cache: false,
-    }).catch(() => improved)
+    }).catch(() => "")
 
-    const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(improved.trim(), role, voiceProfile)
+    const next = toPostArtifact(candidate)
+    if (!next) continue
+    artifact = next
+
+    const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(artifact.content, role, voiceProfile)
     const scoreRaw = await callAi(scoreSystem, scoreUser, {
       json: true, temperature: 0.2, maxTokens: 600,
       userId, plan, cache: false,
     }).catch(() => "{}")
 
-    rawScores = safeParseJson<Record<string, number>>(scoreRaw) || {}
-    const vals = scoreKeys.map((k) => rawScores[k] ?? 0)
-    rawOverall = rawScores.overall ?? (vals.reduce((a, b) => a + b, 0) / Math.max(1, vals.filter((v) => v > 0).length))
-
-    const isZeroToTen = rawOverall < 15 && vals.every((v) => v <= 10)
-    if (isZeroToTen) { rawOverall = rawOverall * 10; rawScores = Object.fromEntries(scoreKeys.map((k) => [k, (rawScores[k] ?? 0) * 10])) }
-
-    if (rawOverall >= 90) break
-  }
-
-  // Guarantee: Push to 90+ always delivers >= 90
-  const isZeroToTenFinal = rawOverall < 15 && scoreKeys.every((k) => (rawScores[k] ?? 0) <= 10)
-  const m = isZeroToTenFinal ? 10 : 1
-  const guaranteedOverall = Math.max(90, Math.round(rawOverall * m))
-  const newScores: Record<string, unknown> = {
-    ...Object.fromEntries(scoreKeys.map((k) => [k, Math.min(100, Math.round((rawScores[k] ?? 0) * m))])),
-    overall: guaranteedOverall,
-    tips: rawScores.tips ?? {},
-    hashtags: rawScores.hashtags ?? [],
+    rawScores = safeParseJson<ScorePayload>(scoreRaw) || {}
+    if (gateScores(artifact.content, normalizeScores(rawScores)).overall >= 90) break
   }
 
   return ok({
-    content: improved.trim(),
-    scores: newScores,
+    content: artifact.content,
+    scores: gateScores(artifact.content, normalizeScores(rawScores)),
     remaining: usage.remaining,
   })
 }

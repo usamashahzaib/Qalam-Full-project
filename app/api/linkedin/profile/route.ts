@@ -44,12 +44,17 @@ export async function GET(request: NextRequest) {
     if (!res.ok) return NextResponse.json({ error: "LinkedIn profile fetch failed" }, { status: 502, headers: corsHeaders })
 
     const profile = (await res.json()) as LinkedInMe
+    const firstName = profile.localizedFirstName || ""
+    const lastName = profile.localizedLastName || ""
     return NextResponse.json(
       {
+        connected: true,
         id: profile.id || account?.provider_account_id || legacy?.member_id || null,
-        firstName: profile.localizedFirstName || "",
-        lastName: profile.localizedLastName || "",
+        firstName,
+        lastName,
+        name: `${firstName} ${lastName}`.trim() || "LinkedIn Account",
         headline: "",
+        avatar: profile.profilePicture?.displayImage || null,
         profilePicture: profile.profilePicture?.displayImage || null,
         vanityName: profile.vanityName || null,
       },

@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       scores: (body.scores || {}) as Record<string, number>,
       userId: user.id,
       internalUserId: user.id,
+      workspaceId: user.workspaceId,
       plan: user.plan,
     })
 

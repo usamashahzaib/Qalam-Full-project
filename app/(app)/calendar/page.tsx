@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useWorkspace, type WorkspacePost } from "@/components/providers/WorkspaceProvider"
@@ -48,14 +49,22 @@ export default function CalendarPage() {
   const { data: session } = useSession()
   const { workspaceId, activeClientId } = useWorkspace()
   const { scheduled, drafts, published, publishPost, createJob, refreshPosts } = usePosts()
-  const linkedinMemberId = session?.user?.email || null
+  const [linkedinConnected, setLinkedinConnected] = useState(false)
+
+  useEffect(() => {
+    if (!session?.user?.email) return
+    fetch("/api/linkedin/profile")
+      .then((res) => res.json())
+      .then((data) => setLinkedinConnected(Boolean(data.connected)))
+      .catch(() => setLinkedinConnected(false))
+  }, [session?.user?.email])
 
   const cal = useCalendarLogic({
     scheduled,
     drafts,
     published,
     workspaceId,
-    linkedinMemberId,
+    linkedinMemberId: linkedinConnected ? session?.user?.email || null : null,
     publishPost,
     createJob,
     refreshPosts,
@@ -243,7 +252,7 @@ export default function CalendarPage() {
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 publishingId={publishingId}
-                canPublish={Boolean(linkedinMemberId)}
+                canPublish={linkedinConnected}
                 draggingId={draggingPost?.id || null}
               />
               <PlannerBlock

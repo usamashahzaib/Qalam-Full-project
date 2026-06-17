@@ -32,7 +32,7 @@ export default function SettingsPage() {
         email: session.user.email || "",
         fullName: session.user.name || session.user.email || "",
         imageUrl: session.user.image || null,
-        linkedinMemberId: session.user.email || null,
+        linkedinMemberId: null,
         linkedinTokenExpiresAt: null,
       }
     : null
@@ -66,8 +66,8 @@ export default function SettingsPage() {
   useEffect(() => {
     const linkedin = searchParams.get("linkedin")
     if (!linkedin) return
-    setLinkedinStatus(linkedin === "success" ? "LinkedIn connected successfully." : "LinkedIn connection failed. Contact us to enable LinkedIn publishing.")
-    if (linkedin === "success") {
+    setLinkedinStatus(linkedin === "success" || linkedin === "connected" ? "LinkedIn connected successfully." : "LinkedIn connection failed. Contact us to enable LinkedIn publishing.")
+    if (linkedin === "success" || linkedin === "connected") {
       update().catch(() => undefined)
     }
     window.history.replaceState({}, "", "/settings")
@@ -92,19 +92,13 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    if (!user?.linkedinMemberId) {
-      setLinkedinProfile(null)
-      return
-    }
     fetch("/api/linkedin/profile")
       .then((res) => res.json())
       .then((data) => {
-        if (data.connected) {
-          setLinkedinProfile(data)
-        }
+        setLinkedinProfile(data.connected ? data : null)
       })
-      .catch(() => {})
-  }, [user?.linkedinMemberId])
+      .catch(() => setLinkedinProfile(null))
+  }, [user?.email])
 
   useEffect(() => {
     if (accountStatus === "saving") return
@@ -128,6 +122,7 @@ export default function SettingsPage() {
     setDisconnecting(true)
     try {
       await fetch("/api/linkedin/token", { method: "DELETE" })
+      setLinkedinProfile(null)
     } finally {
       setDisconnecting(false)
     }
@@ -233,6 +228,7 @@ export default function SettingsPage() {
   const isUpgrade = billingDraft.plan !== billing.plan
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
   const planSummary = getPlanSummary(billing.plan)
+  const isLinkedInConnected = Boolean(linkedinProfile)
 
   const mailHref = upgradesMailUrl(billingDraft.plan, user?.email || "")
 
@@ -400,7 +396,7 @@ export default function SettingsPage() {
           <div className="mt-4 rounded-2xl border border-zinc-200 p-5 bg-zinc-50/50">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                {user?.linkedinMemberId && linkedinProfile?.avatar ? (
+                {isLinkedInConnected && linkedinProfile?.avatar ? (
                   <img src={linkedinProfile.avatar} alt="LinkedIn Avatar" className="h-10 w-10 rounded-full object-cover ring-2 ring-[#0A66C2]/20" />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A66C2]/15 text-[#0A66C2]">
@@ -408,8 +404,8 @@ export default function SettingsPage() {
                   </div>
                 )}
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-900">{user?.linkedinMemberId ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
-                  <p className="text-xs text-zinc-500">{user?.linkedinMemberId ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
+                  <h3 className="text-sm font-bold text-zinc-900">{isLinkedInConnected ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
+                  <p className="text-xs text-zinc-500">{isLinkedInConnected ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
                   {user?.linkedinTokenExpiresAt && (
                     <p className="mt-1 text-[10px] text-zinc-400">
                       Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
@@ -417,7 +413,7 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
-              {user?.linkedinMemberId ? (
+              {isLinkedInConnected ? (
                 <div className="flex items-center gap-2">
                   <span className="rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-700">Connected</span>
                   <button onClick={onDisconnectLinkedIn} disabled={disconnecting} className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-100 disabled:opacity-50 cursor-pointer">{disconnecting ? "Disconnecting..." : "Disconnect"}</button>

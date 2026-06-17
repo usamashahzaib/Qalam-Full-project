@@ -34,10 +34,12 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
     body: JSON.stringify(createSharePayload(payload)),
     cache: "no-store",
   })
+  const postUrn = post.headers.get("x-restli-id")
+  if (!postUrn) throw new Error("linkedin_publish_unconfirmed")
 
   return {
     shared: true,
-    postUrn: post.headers.get("x-restli-id") || null,
+    postUrn,
   }
 }
 

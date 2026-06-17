@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { useBilling } from "@/lib/hooks/useBilling"
@@ -49,6 +49,7 @@ const SCORE_LABELS: Array<{ key: keyof Omit<ScoreData, "overall" | "tips" | "has
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function WriterPage() {
+  const draftRef = useRef<HTMLTextAreaElement>(null)
   const { workspaceId } = useWorkspace()
   const { billing } = useBilling()
   const { saveDraft, schedulePost, publishPost } = usePosts()
@@ -105,6 +106,13 @@ export default function WriterPage() {
   const step2Visible = !isCarouselMode && (hooks.length > 0 || isGeneratingHooks)
   const step3Visible = !isCarouselMode && draftContent.trim().length > 0
   const slidesVisible = isCarouselMode && (slides.length > 0 || isGeneratingSlides)
+
+  useEffect(() => {
+    const el = draftRef.current
+    if (!el || !step3Visible) return
+    el.style.height = "auto"
+    el.style.height = `${el.scrollHeight}px`
+  }, [draftContent, step3Visible])
 
   return (
     <>
@@ -518,12 +526,9 @@ export default function WriterPage() {
               {/* Draft textarea */}
               <div className="relative">
                 <textarea
+                  ref={draftRef}
                   value={draftContent}
-                  onChange={(e) => {
-                    setDraftContent(e.target.value)
-                    e.target.style.height = "auto"
-                    e.target.style.height = `${e.target.scrollHeight}px`
-                  }}
+                  onChange={(e) => setDraftContent(e.target.value)}
                   placeholder="Your post content..."
                   className="min-h-[360px] w-full resize-none bg-transparent px-5 py-5 text-base leading-[1.8] text-zinc-900 outline-none"
                   style={{ overflow: "hidden" }}
