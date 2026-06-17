@@ -75,8 +75,13 @@ node_modules/
 # Tool artifacts
 /.playwright-mcp/
 /.codex/
+/.codex-api-start.*
 *.png
 QALAM_AUDIT_REPORT.md
+tsconfig.tsbuildinfo
+dev-server.log
+next-dev-*.log
+next-start-*.log
 
 # Backup files
 *.bak
