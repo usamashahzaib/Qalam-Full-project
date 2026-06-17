@@ -47,7 +47,12 @@ const memoryFallback = (key: string, limit: number): LimitResult => {
 }
 
 export function getClientIp(request: NextRequest): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+  // x-real-ip is set by trusted reverse proxies (Vercel, nginx) and cannot be injected by clients
+  const realIp = request.headers.get("x-real-ip")?.trim()
+  if (realIp) return realIp
+  // Fall back to x-forwarded-for first entry (set by the outermost trusted proxy on Vercel)
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  return forwarded || "unknown"
 }
 
 export async function checkRateLimit(
