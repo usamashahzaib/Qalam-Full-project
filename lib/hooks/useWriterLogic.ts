@@ -10,6 +10,7 @@ import {
   generateReplies as apiGenerateReplies,
   generateCtaAlternatives as apiGenerateCtaAlts,
   generateCarousel as apiGenerateCarousel,
+  shareToLinkedIn,
   API_PATHS,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
@@ -89,7 +90,7 @@ export interface WriterLogicDeps {
   carouselLimit: number | "unlimited"
   saveDraft: (input: { id: string | null; title: string; content: string; type: string }) => Promise<string>
   schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
-  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string }) => Promise<string>
+  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
   initialTopic?: string
   initialFormat?: FormatKey
 }
@@ -452,11 +453,17 @@ export function useWriterLogic({
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
     setIsPublishing(true)
     try {
-      const id = await publishPost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", publishedAt: new Date().toISOString() })
+      const shared = await shareToLinkedIn({ content: draftContent, postId: editingId, workspaceKey: workspaceId })
+      const id = await publishPost({
+        id: editingId,
+        title: resolveTitle(),
+        content: draftContent,
+        type: "LinkedIn - Text post",
+        publishedAt: new Date().toISOString(),
+        externalPostUrn: shared.postUrn,
+      })
       setEditingId(id)
-      try { await navigator.clipboard.writeText(draftContent) } catch {}
-      window.open("https://www.linkedin.com/feed/", "_blank", "noopener,noreferrer")
-      showStatus("Post copied! Paste on LinkedIn to publish.", "success")
+      showStatus("Published to LinkedIn.", "success")
     } catch (e) {
       showStatus((e as Error).message || "Publish failed", "error")
     } finally {
