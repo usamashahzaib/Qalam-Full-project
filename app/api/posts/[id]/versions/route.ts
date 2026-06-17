@@ -35,6 +35,8 @@ export async function GET(
       .order("version_number", { ascending: false })
       .limit(50)
 
+    // Graceful degradation: post_versions table may not exist yet (migration pending)
+    if (error?.code === "42P01") return NextResponse.json({ versions: [], pending_migration: true })
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ versions: versions ?? [] })
   })(request)

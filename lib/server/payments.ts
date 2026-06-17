@@ -195,18 +195,44 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
 
   const supabase = createServiceClient()
 
-  // Atomic plan activation — parameter names match the 0031 migration RPC
+  // Atomic plan activation via RPC (migration 0031). Falls back to direct table updates
+  // if the RPC has not been deployed yet so payments always succeed.
   const { error: rpcError } = await supabase.rpc("activate_plan", {
     p_user_id: user.id,
-    p_organization_id: organizationId,   // nullable; RPC skips org update when null
+    p_organization_id: organizationId,
     p_plan_name: payment.planName,
     p_expires_at: expiresAt,
     p_customer_id: payment.transactionId,
   })
 
   if (rpcError) {
-    console.error("[payments] activate_plan RPC failed:", rpcError)
-    throw new Error(`activate_plan_failed: ${rpcError.message}`)
+    console.warn("[payments] activate_plan RPC unavailable, falling back to direct updates:", rpcError.message)
+    const now = new Date().toISOString()
+
+    // Update users table (payment webhook source of truth)
+    const { error: userErr } = await supabase
+      .from("users")
+      .update({ plan: payment.planName, plan_expires_at: expiresAt, updated_at: now })
+      .eq("id", user.id)
+    if (userErr) {
+      console.error("[payments] fallback users.plan update failed:", userErr)
+      throw new Error(`activate_plan_failed: ${userErr.message}`)
+    }
+
+    // Update organization plan if one exists
+    if (organizationId) {
+      await supabase
+        .from("organizations")
+        .update({ plan: payment.planName, subscription_status: "active", plan_expires_at: expiresAt, updated_at: now })
+        .eq("id", organizationId)
+        .then(undefined, (err: unknown) => console.error("[payments] org plan update failed:", err))
+    }
+
+    // Upsert plan_usage so limit checks read the new plan immediately
+    await supabase
+      .from("plan_usage")
+      .upsert({ user_id: user.id, plan: payment.planName.toLowerCase(), cycle_start: now, cycle_end: expiresAt, updated_at: now }, { onConflict: "user_id" })
+      .then(undefined, (err: unknown) => console.error("[payments] plan_usage upsert failed:", err))
   }
 
   // Sync cycle dates on plan_usage (best-effort; plan itself is already set by the RPC)

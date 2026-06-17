@@ -98,7 +98,7 @@ async function logAiUsage(
     const internalId = userRow?.id
     if (!internalId) return
 
-    await supabase.from("ai_usage").insert({
+    const { error: insertErr } = await supabase.from("ai_usage").insert({
       user_id: internalId,
       provider,
       model,
@@ -106,6 +106,10 @@ async function logAiUsage(
       tokens_out: tokensOut,
       estimated_cost_usd: estimateCost(model, tokensIn, tokensOut),
     })
+    // 42P01 = ai_usage table doesn't exist yet (migration pending) — silent degradation
+    if (insertErr && insertErr.code !== "42P01") {
+      console.warn("[ai_usage] insert failed:", insertErr.message)
+    }
   } catch {
     // Intentionally swallowed — never surface cost tracking errors to users.
   }

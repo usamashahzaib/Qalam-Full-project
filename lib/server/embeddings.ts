@@ -40,7 +40,7 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
 
 // Upserts chunked voice examples into voice_examples table.
 // Embeddings are generated and stored when pgvector + Gemini are available.
-// Falls back to storing text-only chunks when either is unavailable.
+// Falls back silently when voice_examples table doesn't exist yet (migration pending).
 export async function storeVoiceExamples(
   workspaceId: string,
   userId: string,
@@ -52,7 +52,9 @@ export async function storeVoiceExamples(
   const supabase = createServiceClient()
 
   // Remove old examples for this workspace before inserting new ones
-  await supabase.from("voice_examples").delete().eq("workspace_id", workspaceId)
+  const { error: delErr } = await supabase.from("voice_examples").delete().eq("workspace_id", workspaceId)
+  // 42P01 = table doesn't exist (migration pending) — skip silently
+  if (delErr?.code === "42P01") return
 
   const rows = await Promise.all(
     chunks.map(async (content) => {
@@ -67,17 +69,19 @@ export async function storeVoiceExamples(
 }
 
 // Retrieves the top-N most relevant voice examples for a given query.
-// Uses pgvector cosine similarity when available; falls back to returning all examples.
+// Falls back to empty array when voice_examples table doesn't exist yet (migration pending).
 export async function retrieveVoiceExamples(
   workspaceId: string,
   _query?: string,
   topN = 3,
 ): Promise<string[]> {
   const supabase = createServiceClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("voice_examples")
     .select("content")
     .eq("workspace_id", workspaceId)
     .limit(topN)
+  // 42P01 = table doesn't exist yet — degrade to empty (profile characteristics still used)
+  if (error?.code === "42P01") return []
   return (data ?? []).map((row: { content: string }) => row.content)
 }

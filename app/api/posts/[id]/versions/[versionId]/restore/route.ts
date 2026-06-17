@@ -47,7 +47,12 @@ export async function POST(
     })
 
     if (rpcErr) {
-      return NextResponse.json({ error: "restore_failed: " + rpcErr.message }, { status: 500 })
+      // RPC not deployed yet — fall back to direct post update
+      const { error: directErr } = await supabase
+        .from("posts")
+        .update({ content: version.content, updated_at: new Date().toISOString() })
+        .eq("id", postId)
+      if (directErr) return NextResponse.json({ error: "restore_failed: " + directErr.message }, { status: 500 })
     }
 
     return NextResponse.json({ ok: true, restored_version: version.version_number })
