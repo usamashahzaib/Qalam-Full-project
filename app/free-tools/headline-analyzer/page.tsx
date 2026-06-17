@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+﻿import type { Metadata } from "next"
 import { HeadlineAnalyzerTool } from "@/components/tools/HeadlineAnalyzerTool"
 import { SITE_URL } from "@/lib/seo"
 
@@ -62,7 +62,7 @@ export default function HeadlineAnalyzerPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(headlineAnalyzerSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(headlineAnalyzerSchema).replace(/</g, "\\u003c") }}
       />
       <HeadlineAnalyzerTool />
     </>

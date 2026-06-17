@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+﻿import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { PUBLISHED_BLOG_POSTS, UPCOMING_BLOG_POSTS } from "@/lib/marketing-content"
@@ -47,7 +47,7 @@ const blogIndexSchema = {
 export default function BlogPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogIndexSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(blogIndexSchema).replace(/</g, "\\u003c") }} />
       <div className="min-h-screen bg-zinc-50 pt-24">
         <section className="border-b border-zinc-100 bg-white px-6 py-20">
           <div className="mx-auto max-w-[920px] text-center">

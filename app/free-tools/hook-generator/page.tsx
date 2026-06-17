@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+﻿import type { Metadata } from "next"
 import { HookGeneratorTool } from "@/components/tools/HookGeneratorTool"
 import { SITE_URL } from "@/lib/seo"
 
@@ -56,7 +56,7 @@ export default function HookGeneratorPage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(hookGeneratorSchema) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(hookGeneratorSchema).replace(/</g, "\\u003c") }}
       />
       <HookGeneratorTool />
     </>
