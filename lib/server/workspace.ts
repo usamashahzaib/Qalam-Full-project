@@ -175,12 +175,10 @@ export const requireAdminPage = async () => {
   try {
     isAdmin = isAdminEmail(email)
   } catch {
-    // ADMIN_EMAILS not configured - return session email so admin page can show helpful message
-    return { email: email || "", userId, adminEmailsNotConfigured: true }
+    notFound()
   }
   if (!isAdmin) {
-    // Return email so admin page can show "add this email to ADMIN_EMAILS"
-    return { email: email || "", userId, notAdmin: true }
+    notFound()
   }
   return { email: email || "", userId }
 }

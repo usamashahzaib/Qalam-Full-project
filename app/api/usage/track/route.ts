@@ -14,5 +14,6 @@ export async function GET(request: NextRequest) {
     hooks: status.hooks,
     analyses: status.analyses,
     cycleEnd: status.cycleEnd,
+    planExpiresAt: status.planExpiresAt,
   })
 }

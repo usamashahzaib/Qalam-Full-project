@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
-import { requireAuth } from "@/lib/server/auth-helpers"
+import { requireAuthWithUser } from "@/lib/server/auth-helpers"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
@@ -58,7 +58,8 @@ function enforceSlideStructure(slides: Slide[], topic: string): Slide[] {
 export async function POST(request: NextRequest) {
   try {
     const body = schema.parse(await request.json())
-    const userId = await requireAuth()
+    const authUser = await requireAuthWithUser()
+    const userId = authUser.userId
 
     const limit = await checkPlanLimit(userId, "carousels")
     if (!limit.allowed) {
@@ -118,7 +119,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const userId = await requireAuth()
+    const authUser = await requireAuthWithUser()
+    const userId = authUser.userId
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")

@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     }
 
-    const usage = await incrementUsage(user.externalId, "carousels")
+    const usage = await incrementUsage(user.id, "carousels")
     if (!usage.allowed) {
       return NextResponse.json(
         { error: "Carousel limit reached. Upgrade to Pro for carousels.", remaining: 0 },

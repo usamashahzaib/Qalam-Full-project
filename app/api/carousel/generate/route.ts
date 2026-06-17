@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { getPlanStatus, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { createClient } from "@supabase/supabase-js"
@@ -26,7 +26,8 @@ const parseSlides = (raw: string, slideCount: number) => {
 
 export async function GET() {
   try {
-    const userId = await requireAuth()
+    const ctx = await getWorkspaceSessionContext()
+    const userId = ctx.supabaseUserId
     const status = await getPlanStatus(userId)
     return NextResponse.json({
       allowed: true,
@@ -43,7 +44,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await requireAuth()
+    const ctx = await getWorkspaceSessionContext()
+    const userId = ctx.supabaseUserId
     const { topic, role = "founder", slideCount = 5 } = await req.json()
     const safeTopic = String(topic || "").trim()
     const safeRole = String(role || "founder").trim()

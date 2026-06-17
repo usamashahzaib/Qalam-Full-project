@@ -11,7 +11,9 @@ function getEncryptionKey(): Buffer | null {
 
 function encryptToken(token: string): string {
   const key = getEncryptionKey()
-  if (!key) return token
+  if (!key) {
+    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured — cannot encrypt token")
+  }
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
   const encrypted = Buffer.concat([cipher.update(token, "utf8"), cipher.final()])
@@ -20,11 +22,18 @@ function encryptToken(token: string): string {
 }
 
 function decryptToken(stored: string): string {
-  if (!stored.startsWith("enc:")) return stored
+  if (!stored.startsWith("enc:")) {
+    console.warn("[security] Unencrypted LinkedIn token detected — migrate immediately")
+    return stored
+  }
   const key = getEncryptionKey()
-  if (!key) return stored
+  if (!key) {
+    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured — cannot decrypt token")
+  }
   const parts = stored.split(":")
-  if (parts.length !== 4) return stored
+  if (parts.length !== 4) {
+    throw new Error("Invalid token format")
+  }
   try {
     const iv = Buffer.from(parts[1], "hex")
     const authTag = Buffer.from(parts[2], "hex")
@@ -32,13 +41,13 @@ function decryptToken(stored: string): string {
     const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
     decipher.setAuthTag(authTag)
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8")
-  } catch {
-    return stored
+  } catch (err) {
+    throw new Error(`Token decryption failed — key mismatch or corrupt data: ${(err as Error).message}`)
   }
 }
 
 type LinkedInCredential = {
-  owner_email: string
+  user_id: string
   access_token: string
   member_id: string | null
   token_expires_at: number | null
@@ -57,12 +66,12 @@ type PublishingAccount = {
 }
 
 export const storeLinkedInToken = async ({
-  ownerEmail,
+  userId,
   accessToken,
   memberId,
   tokenExpiresAt,
 }: {
-  ownerEmail: string
+  userId: string
   accessToken: string
   memberId: string | null
   tokenExpiresAt: number | null
@@ -70,7 +79,7 @@ export const storeLinkedInToken = async ({
   await supabaseInsert(
     "linkedin_credentials",
     {
-      owner_email: ownerEmail.trim().toLowerCase(),
+      user_id: userId,
       access_token: encryptToken(accessToken),
       member_id: memberId,
       token_expires_at: tokenExpiresAt,
@@ -144,11 +153,11 @@ export const deleteLinkedInPublishingAccount = async (workspaceId: string) => {
   await supabaseDelete("publishing_accounts", `workspace_id=eq.${workspaceId}&provider=eq.linkedin`)
 }
 
-export const getLinkedInToken = async (ownerEmail: string): Promise<LinkedInCredential | null> => {
+export const getLinkedInToken = async (userId: string): Promise<LinkedInCredential | null> => {
   try {
     const rows = await supabaseSelect<LinkedInCredential>(
       "linkedin_credentials",
-      `owner_email=eq.${encodeURIComponent(ownerEmail.trim().toLowerCase())}&limit=1`
+      `user_id=eq.${encodeURIComponent(userId)}&limit=1`
     )
     const row = rows?.[0]
     if (!row) return null
@@ -158,10 +167,10 @@ export const getLinkedInToken = async (ownerEmail: string): Promise<LinkedInCred
   }
 }
 
-export const deleteLinkedInToken = async (ownerEmail: string) => {
+export const deleteLinkedInToken = async (userId: string) => {
   await supabaseDelete(
     "linkedin_credentials",
-    `owner_email=eq.${encodeURIComponent(ownerEmail.trim().toLowerCase())}`
+    `user_id=eq.${encodeURIComponent(userId)}`
   )
 }
 
@@ -170,7 +179,7 @@ export const getAllLinkedInTokens = async (): Promise<LinkedInCredential[]> => {
     const now = Date.now()
     const rows = await supabaseSelect<LinkedInCredential>(
       "linkedin_credentials",
-      `token_expires_at=gt.${now}&select=owner_email,access_token,member_id,token_expires_at`
+      `token_expires_at=gt.${now}&select=user_id,access_token,member_id,token_expires_at`
     )
     return rows || []
   } catch {

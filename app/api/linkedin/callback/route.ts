@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     const memberId = profile.id || null
     const expiresAt = tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : null
 
-    await storeLinkedInToken({ ownerEmail: ctx.email, accessToken, memberId, tokenExpiresAt: expiresAt })
+    await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt })
     await storeLinkedInPublishingAccount({ workspaceId, accessToken, memberId, tokenExpiresAt: expiresAt })
 
     const response = redirectToSettings(request, "connected")

@@ -6,7 +6,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { buildPostFromHookPrompt, buildHumanizePrompt } from "@/lib/prompts/role-aware-system"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
-import type { PostFormat } from "@/lib/prompts/role-aware-system"
+import type { PostFormat, VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 export const ROLE_MAP: Record<string, string> = {
   HR: "hr",
@@ -31,6 +31,7 @@ export interface GeneratePostFromHookInput {
   format: string
   goal?: string
   userId: string
+  internalUserId: string
   workspaceId: string | null
   plan: string
 }
@@ -44,7 +45,7 @@ export interface GeneratePostFromHookOutput {
 export async function generatePostFromHook(
   input: GeneratePostFromHookInput
 ): Promise<Result<GeneratePostFromHookOutput>> {
-  const { topic, hook, role: rawRole, format: rawFormat, goal, userId, workspaceId, plan } = input
+  const { topic, hook, role: rawRole, format: rawFormat, goal, userId, internalUserId, plan } = input
 
   let limit: Awaited<ReturnType<typeof checkPlanLimit>>
   try {
@@ -59,19 +60,33 @@ export async function generatePostFromHook(
   const role = ROLE_MAP[rawRole] || "founder"
   const format: PostFormat = FORMAT_MAP[rawFormat] || "medium"
 
-  let voiceProfile: Record<string, unknown> | undefined
-  if (workspaceId) {
-    const { data } = await createServiceClient()
-      .from("voice_profiles")
-      .select("*")
-      .eq("workspace_id", workspaceId)
-      .limit(1)
-      .maybeSingle()
-    if (data) voiceProfile = data as Record<string, unknown>
+  let voiceProfile: VoiceProfile | undefined
+  const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
+  if (isProOrAbove && internalUserId) {
+    try {
+      const { data } = await createServiceClient()
+        .from("voice_profiles")
+        .select("brand_tone, characteristics")
+        .eq("user_id", internalUserId)
+        .limit(1)
+        .maybeSingle()
+      if (data) {
+        const chars = data.characteristics as {
+          tone?: string; sentenceLength?: string
+          commonPhrases?: string[]; transitions?: string[]
+        } | null
+        voiceProfile = {
+          tone: chars?.tone || String(data.brand_tone || ""),
+          sentenceLength: chars?.sentenceLength,
+          vocabulary: chars?.commonPhrases || [],
+          patterns: chars?.transitions || [],
+        }
+      }
+    } catch { /* ignore - voice profile is optional */ }
   }
 
   const { system: genSystem, user: genUser } = buildPostFromHookPrompt(
-    hook, topic, role, format, goal || undefined, voiceProfile as never
+    hook, topic, role, format, goal || undefined, voiceProfile
   )
 
   let rawPost: string

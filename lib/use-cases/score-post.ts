@@ -2,8 +2,10 @@ import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
+import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "hr",
@@ -36,11 +38,12 @@ export interface ScorePostInput {
   content: string
   role?: string
   userId: string
+  internalUserId?: string
   plan: string
 }
 
 export async function scorePost(input: ScorePostInput): Promise<Result<ScorePostOutput>> {
-  const { content, role: rawRole = "", userId, plan } = input
+  const { content, role: rawRole = "", userId, internalUserId, plan } = input
 
   const trimmed = content.trim()
   if (!trimmed || trimmed.length < 4) {
@@ -48,7 +51,33 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
   }
 
   const role = ROLE_MAP[rawRole] || "founder"
-  const { system, user } = build7MetricScorePrompt(trimmed, role)
+
+  let voiceProfile: VoiceProfile | undefined
+  const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
+  if (isProOrAbove && internalUserId) {
+    try {
+      const { data } = await createServiceClient()
+        .from("voice_profiles")
+        .select("brand_tone, characteristics")
+        .eq("user_id", internalUserId)
+        .limit(1)
+        .maybeSingle()
+      if (data) {
+        const chars = data.characteristics as {
+          tone?: string; sentenceLength?: string
+          commonPhrases?: string[]; transitions?: string[]
+        } | null
+        voiceProfile = {
+          tone: chars?.tone || String(data.brand_tone || ""),
+          sentenceLength: chars?.sentenceLength,
+          vocabulary: chars?.commonPhrases || [],
+          patterns: chars?.transitions || [],
+        }
+      }
+    } catch { /* ignore - voice profile is optional */ }
+  }
+
+  const { system, user } = build7MetricScorePrompt(trimmed, role, voiceProfile)
 
   let raw = ""
   try {

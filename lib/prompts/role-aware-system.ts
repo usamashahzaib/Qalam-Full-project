@@ -576,9 +576,25 @@ Role: ${profile.label}`;
 // ---------------------------------------------------------------------------
 export function build7MetricScorePrompt(
   post: string,
-  role: string
+  role: string,
+  voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+
+  const voiceFitDimension = voiceProfile?.tone || voiceProfile?.vocabulary?.length
+    ? `7. VOICE_FIT (matches the author's trained personal voice)
+   Trained voice profile:
+   - Tone: ${voiceProfile.tone || "not specified"}
+   - Sentence length: ${voiceProfile.sentenceLength || "not specified"}
+   - Signature phrases: ${(voiceProfile.vocabulary || []).join(", ") || "none"}
+   - Patterns: ${(voiceProfile.patterns || []).join(", ") || "none"}
+   90+: Post clearly reflects this trained voice in tone, rhythm, and signature phrases
+   70-89: Mostly matches but some sections feel off-brand
+   Below 50: Voice doesn't match the profile at all`
+    : `7. VOICE_FIT (matches ${profile.label} role voice)
+   90+: Indistinguishable from a real ${profile.label} - vocabulary, concerns, tone
+   70-89: Close, a couple of off-notes
+   Below 50: Wrong voice entirely`;
 
   const system = `
 You score LinkedIn posts for ${profile.label}s on 7 dimensions, 0-100 each.
@@ -619,10 +635,7 @@ DIMENSIONS:
    Deduct 15 for each em dash (-) or en dash (-)
    Deduct 10 per AI word: delve, leverage (verb), seamless, elevate, empower, unlock, holistic, synergy
 
-7. VOICE_FIT (matches ${profile.label} voice)
-   90+: Indistinguishable from a real ${profile.label} - vocabulary, concerns, tone
-   70-89: Close, a couple of off-notes
-   Below 50: Wrong voice entirely
+${voiceFitDimension}
 
 Respond with ONLY valid JSON. No markdown, no explanation:
 {
@@ -660,7 +673,8 @@ overall = arithmetic mean of all 7 scores, rounded to nearest integer.
 export function buildPushTo90Prompt(
   post: string,
   scores: Record<string, number>,
-  role: string
+  role: string,
+  voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
 
@@ -695,7 +709,9 @@ WHAT 90+ REQUIRES ON EACH DIMENSION:
 
 6. HUMAN-LIKENESS - zero AI tells. Natural rhythm. Real conversational voice. No em dashes (-), no en dashes (-), no perfect parallel structure.
 
-7. VOICE FIT - indistinguishable from a real ${profile.label}. Their vocabulary, their concerns, their tone.
+7. VOICE FIT - ${voiceProfile?.tone || voiceProfile?.vocabulary?.length
+    ? `Write in the author's trained voice: tone "${voiceProfile!.tone || "not specified"}", sentence length "${voiceProfile!.sentenceLength || "not specified"}". Weave in these signature phrases where natural: ${(voiceProfile!.vocabulary || []).join(", ") || "none"}.`
+    : `indistinguishable from a real ${profile.label}. Their vocabulary, their concerns, their tone.`}
 
 KEEP:
 - All specific numbers, names, and facts from the original

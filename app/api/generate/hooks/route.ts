@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const result = await generateHooks({
       topic: parsed.data.topic,
       role: parsed.data.role,
-      userId: user.externalId,
+      userId: user.id,
       plan: user.plan,
     })
 

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
+export const maxDuration = 60
+
 type ScheduledPost = {
   id: string
   workspace_id: string

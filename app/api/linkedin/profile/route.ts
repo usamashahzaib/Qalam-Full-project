@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     const ctx = await getWorkspaceSessionContext()
     const workspaceId = await resolveWorkspaceId(request)
     const account = await getLinkedInPublishingAccount(workspaceId)
-    const legacy = account ? null : await getLinkedInToken(ctx.email)
+    const legacy = account ? null : await getLinkedInToken(ctx.supabaseUserId)
     const accessToken = account?.access_token || legacy?.access_token || ""
     const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacy?.token_expires_at || null
 

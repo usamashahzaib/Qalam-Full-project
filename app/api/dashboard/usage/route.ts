@@ -7,12 +7,11 @@ const usageRepo = new SupabasePlanUsageRepository()
 export async function GET() {
   try {
     const ctx = await getWorkspaceSessionContext()
-    const supabaseUserId = ctx.supabaseUserId
 
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    const rows = await usageRepo.getDailyActivity(supabaseUserId, monthStart)
+    const rows = await usageRepo.getDailyActivity(ctx.userId, monthStart)
 
     const today = now.getDate()
     const usage = Array.from({ length: today }, (_, i) => i + 1).map((day) => ({

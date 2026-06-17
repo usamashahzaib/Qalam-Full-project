@@ -235,7 +235,7 @@ create table public.notifications (
 -- LinkedIn Credentials (server-side token store)
 create table public.linkedin_credentials (
     id uuid primary key default uuid_generate_v4(),
-    owner_email text unique not null,
+    user_id uuid references public.users(id) on delete cascade unique not null,
     access_token text not null,
     member_id text,
     token_expires_at bigint,
@@ -325,7 +325,7 @@ create policy "posts_workspace_members" on public.posts
 
 -- linkedin_credentials: users can only see their own
 create policy "linkedin_creds_own" on public.linkedin_credentials
-  for all using (owner_email = current_setting('request.jwt.claims', true)::jsonb->>'email');
+  for all using (user_id = auth.uid());
 
 -- voice_profiles: workspace members can read
 create policy "voice_profile_members" on public.voice_profiles

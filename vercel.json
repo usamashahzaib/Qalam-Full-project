@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/linkedin/publish-scheduled",
-      "schedule": "0 9 * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/linkedin/sync-analytics",

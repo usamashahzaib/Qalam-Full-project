@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/workspace";
+import { getWorkspaceSessionContext } from "@/lib/server/workspace";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(
@@ -7,7 +7,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await requireAuth();
+    const ctx = await getWorkspaceSessionContext();
+    const userId = ctx.supabaseUserId;
     const { id } = await params;
 
     const supabase = createClient(

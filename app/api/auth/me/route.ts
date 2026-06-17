@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient()
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, full_name, role, auth_provider, email_verified, image_url")
+    .select("id, email, full_name, role, auth_provider, email_verified, image_url, plan_expires_at")
     .eq("id", userId!)
     .maybeSingle()
 
@@ -25,6 +25,8 @@ export async function GET(req: NextRequest) {
     .eq("user_id", externalUserId!)
     .maybeSingle()
 
+  const planExpiresAt = (user as { plan_expires_at?: string | null }).plan_expires_at ?? null
+
   log.info("auth.me.ok", { userId, plan: planUsage?.plan ?? "free" })
   return NextResponse.json({
     user: {
@@ -37,6 +39,7 @@ export async function GET(req: NextRequest) {
       avatarUrl: user.image_url,
       plan: planUsage?.plan ?? "free",
       planCycleEnd: planUsage?.cycle_end ?? null,
+      planExpiresAt,
     },
   })
 }

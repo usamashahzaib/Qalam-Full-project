@@ -21,6 +21,40 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "./supabase-rest"
 import { log } from "./logging"
 
+const PLAN_PRI: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
+const higherPlan = (a: string, b: string) =>
+  (PLAN_PRI[b.toLowerCase()] ?? 0) > (PLAN_PRI[a.toLowerCase()] ?? 0) ? b : a
+
+async function resolveEffectivePlan(
+  supabase: ReturnType<typeof createServiceClient>,
+  internalId: string,
+): Promise<string> {
+  const [userPlanResult, overrideResult] = await Promise.all([
+    Promise.resolve(supabase.from("users").select("plan").eq("id", internalId).maybeSingle()).catch(() => ({ data: null })),
+    Promise.resolve(
+      supabase
+        .from("user_overrides")
+        .select("plan_override, expires_at")
+        .eq("user_id", internalId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; expires_at?: string | null } | null }>,
+  ])
+
+  let plan = (userPlanResult as { data: { plan?: string } | null }).data?.plan || "free"
+
+  const overrideRow = overrideResult.data
+  if (
+    overrideRow?.plan_override &&
+    (!overrideRow.expires_at || new Date(overrideRow.expires_at) > new Date())
+  ) {
+    plan = higherPlan(plan, overrideRow.plan_override)
+  }
+
+  return plan
+}
+
 async function provisionOAuthUser(
   supabase: ReturnType<typeof createServiceClient>,
   externalId: string,
@@ -42,7 +76,7 @@ async function provisionOAuthUser(
   await supabase.from("users").insert(newUser)
 
   await supabase.from("plan_usage").insert({
-    user_id: externalId,
+    user_id: internalId,
     plan: "free",
     ai_drafts_used: 0,
     carousels_used: 0,
@@ -102,19 +136,16 @@ export async function requireAuthApi(request: NextRequest) {
       }
     }
 
-    const { data: planUsage } = await supabase
-      .from("plan_usage")
-      .select("plan, ai_drafts_used, carousels_used, hooks_used, analyses_used, cycle_end")
-      .eq("user_id", tokenId)
-      .maybeSingle()
-
-    const { data: membership } = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const [plan, membership] = await Promise.all([
+      resolveEffectivePlan(supabase, tokenId),
+      supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
 
     return {
       userId: user.id,
@@ -122,11 +153,11 @@ export async function requireAuthApi(request: NextRequest) {
       error: null,
       session: {
         id: user.id,
-        externalId: tokenId,  // for credentials, externalId === internalId (token.id is the UUID)
+        externalId: tokenId,
         email: user.email || session.user.email,
         name: user.full_name || session.user.name,
-        plan: planUsage?.plan || "free",
-        workspaceId: membership?.workspace_id ?? null,
+        plan,
+        workspaceId: membership.data?.workspace_id ?? null,
         avatarUrl: user.image_url || session.user.image,
         provider: "credentials",
       },
@@ -153,21 +184,18 @@ export async function requireAuthApi(request: NextRequest) {
   } else {
     internalId = user.id
 
-    const { data: planUsage } = await supabase
-      .from("plan_usage")
-      .select("plan, ai_drafts_used, carousels_used, hooks_used, analyses_used, cycle_end")
-      .eq("user_id", externalId)
-      .maybeSingle()
+    const [plan, membership] = await Promise.all([
+      resolveEffectivePlan(supabase, internalId),
+      supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", internalId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ])
 
-    const { data: membership } = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", internalId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    workspaceId = membership?.workspace_id ?? null
+    workspaceId = membership.data?.workspace_id ?? null
 
     return {
       userId: internalId,
@@ -178,7 +206,7 @@ export async function requireAuthApi(request: NextRequest) {
         externalId,
         email: user.email || session.user.email,
         name: user.full_name || session.user.name,
-        plan: planUsage?.plan || "free",
+        plan,
         workspaceId,
         avatarUrl: user.image_url || session.user.image,
         provider,

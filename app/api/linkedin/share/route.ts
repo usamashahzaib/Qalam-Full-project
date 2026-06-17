@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const account = await getLinkedInPublishingAccount(workspaceId)
-  const legacyCred = account ? null : await getLinkedInToken(ctx.email)
+  const legacyCred = account ? null : await getLinkedInToken(ctx.supabaseUserId)
   const accessToken = account?.access_token || legacyCred?.access_token || null
   const authorId = account?.provider_account_id || legacyCred?.member_id || null
   const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacyCred?.token_expires_at || null

@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
       content: String(body.content || "").trim(),
       role: String(body.role || ""),
       scores: (body.scores || {}) as Record<string, number>,
-      userId: user.externalId,
+      userId: user.id,
+      internalUserId: user.id,
       plan: user.plan,
     })
 

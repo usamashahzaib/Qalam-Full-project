@@ -126,10 +126,15 @@ const getForgotLimiter = () => {
 export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-password") {
   const r = getRedis()
   // If Redis is unavailable, fail open for auth — blocking signup is too disruptive
-  if (!r) return { allowed: true, limit: 5, remaining: 5, reset: Date.now() + 60000 }
+  if (!r) {
+    // Fail closed on auth rate limiting by falling back to a conservative in-memory limiter
+    return inMemoryRateLimit(`auth_${action}_${ip}`, 3, 60_000)
+  }
 
   const limiter = action === "signup" ? getSignupLimiter() : getForgotLimiter()
-  if (!limiter) return { allowed: true, limit: 5, remaining: 5, reset: Date.now() + 60000 }
+  if (!limiter) {
+    return inMemoryRateLimit(`auth_${action}_${ip}`, 3, 60_000)
+  }
 
   const key = `auth_${action}_${ip}`
   const result = await limiter.limit(key)

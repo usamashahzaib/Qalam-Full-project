@@ -33,7 +33,7 @@ const patchSchema = z.object({
 
 export async function GET() {
   return withAuth(async (_req, user) => {
-    const status = await checkPlanLimit(user.externalId, "drafts")
+    const status = await checkPlanLimit(user.id, "drafts")
     return NextResponse.json({
       allowed: status.allowed,
       current: status.current,
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     const result = await generatePost({
       ...parsed.data,
-      userId: user.externalId,
+      userId: user.id,
       authorId: user.id,
       workspaceId: user.workspaceId,
       plan: user.plan,
@@ -93,12 +93,17 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
+    if (!user.workspaceId) {
+      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
+    }
+
     const supabase = createServiceClient()
 
     const { data: post } = await supabase
       .from("posts")
       .select("id, workspace_id")
       .eq("id", parsed.data.id)
+      .eq("workspace_id", user.workspaceId)
       .single()
 
     if (!post) {
@@ -116,14 +121,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (parsed.data.confirmOnly) {
-      const { data: fullPost } = await supabase.from("posts").select("*").eq("id", parsed.data.id).single()
+      const { data: fullPost } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("id", parsed.data.id)
+        .eq("workspace_id", user.workspaceId)
+        .single()
       return NextResponse.json({ post: fullPost })
     }
 
     const { data: updated } = await supabase.from("posts").update({
       content: parsed.data.content,
       updated_at: new Date().toISOString(),
-    }).eq("id", parsed.data.id).select().single()
+    }).eq("id", parsed.data.id).eq("workspace_id", user.workspaceId).select().single()
 
     if (!updated) return NextResponse.json({ error: "Failed to update" }, { status: 500 })
     return NextResponse.json({ post: updated })

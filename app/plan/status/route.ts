@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/server/workspace";
+import { getWorkspaceSessionContext } from "@/lib/server/workspace";
 import { getPlanStatus } from "@/lib/server/plan-limits-v2";
 
 export async function GET() {
   try {
-    const userId = await requireAuth();
+    const ctx = await getWorkspaceSessionContext();
+    const userId = ctx.supabaseUserId;
     const status = await getPlanStatus(userId);
     return NextResponse.json(status);
   } catch (error: unknown) {

@@ -3,8 +3,10 @@ import "server-only"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { buildPushTo90Prompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
+import { createServiceClient } from "@/lib/server/supabase-rest"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
+import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "hr",
@@ -21,6 +23,7 @@ export interface ImprovePostInput {
   role: string
   scores?: Record<string, number>
   userId: string
+  internalUserId?: string
   plan: string
 }
 
@@ -33,7 +36,7 @@ export interface ImprovePostOutput {
 export async function improvePost(
   input: ImprovePostInput
 ): Promise<Result<ImprovePostOutput>> {
-  const { content, role: rawRole, scores = {}, userId, plan } = input
+  const { content, role: rawRole, scores = {}, userId, internalUserId, plan } = input
 
   if (!content.trim()) {
     return err({ code: "VALIDATION_ERROR", message: "Content is required", userMessage: "Content too short to improve." })
@@ -51,6 +54,31 @@ export async function improvePost(
 
   const role = ROLE_MAP[rawRole] || "founder"
 
+  let voiceProfile: VoiceProfile | undefined
+  const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
+  if (isProOrAbove && internalUserId) {
+    try {
+      const { data } = await createServiceClient()
+        .from("voice_profiles")
+        .select("brand_tone, characteristics")
+        .eq("user_id", internalUserId)
+        .limit(1)
+        .maybeSingle()
+      if (data) {
+        const chars = data.characteristics as {
+          tone?: string; sentenceLength?: string
+          commonPhrases?: string[]; transitions?: string[]
+        } | null
+        voiceProfile = {
+          tone: chars?.tone || String(data.brand_tone || ""),
+          sentenceLength: chars?.sentenceLength,
+          vocabulary: chars?.commonPhrases || [],
+          patterns: chars?.transitions || [],
+        }
+      }
+    } catch { /* ignore - voice profile is optional */ }
+  }
+
   const scoreKeys = ["hook", "readability", "authority", "specificity", "cta", "human", "voiceFit"]
 
   let improved = content
@@ -59,13 +87,13 @@ export async function improvePost(
 
   // Up to 2 improvement passes - keeps trying until score >= 90
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const { system: impSystem, user: impUser } = buildPushTo90Prompt(improved, attempt === 1 ? scores : rawScores, role)
+    const { system: impSystem, user: impUser } = buildPushTo90Prompt(improved, attempt === 1 ? scores : rawScores, role, voiceProfile)
     improved = await callAi(impSystem, impUser, {
       temperature: 0.7, maxTokens: 1000,
       userId, plan, cache: false,
     }).catch(() => improved)
 
-    const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(improved.trim(), role)
+    const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(improved.trim(), role, voiceProfile)
     const scoreRaw = await callAi(scoreSystem, scoreUser, {
       json: true, temperature: 0.2, maxTokens: 600,
       userId, plan, cache: false,

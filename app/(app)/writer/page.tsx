@@ -61,6 +61,7 @@ export default function WriterPage() {
 
   const searchParams = useSearchParams()
   const initialTopic = searchParams.get("topic") || ""
+  const initialFormat: FormatKey = searchParams.get("mode") === "carousel" ? "Carousel" : "Medium"
 
   const w = useWriterLogic({
     workspaceId,
@@ -71,6 +72,7 @@ export default function WriterPage() {
     schedulePost,
     publishPost,
     initialTopic,
+    initialFormat,
   })
 
   const {
