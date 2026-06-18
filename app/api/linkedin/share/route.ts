@@ -19,6 +19,9 @@ export async function POST(request: NextRequest) {
   if (!body.content?.trim()) {
     return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
   }
+  if (body.content.length > 3000) {
+    return NextResponse.json({ error: "Post exceeds LinkedIn's 3000 character limit." }, { status: 400 })
+  }
 
   let workspaceId: string
   try {

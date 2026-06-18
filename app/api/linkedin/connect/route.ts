@@ -2,7 +2,7 @@ import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": process.env.FRONTEND_ORIGIN || "*",
+  "Access-Control-Allow-Origin": process.env.FRONTEND_ORIGIN ?? "https://byqalam.com",
   "Access-Control-Allow-Methods": "GET,OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type,Authorization",
 }

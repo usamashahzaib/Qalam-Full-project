@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     : users
   const userIds = filtered.map((user) => user.id)
   const memberships = userIds.length
-    ? await supabaseSelect<MembershipRow>("memberships", `user_id=in.(${userIds.join(",")})&select=user_id,workspace_id`).catch(() => [])
+    ? await supabaseSelect<MembershipRow>("workspace_members", `user_id=in.(${userIds.join(",")})&select=user_id,workspace_id`).catch(() => [])
     : []
   const overrides = userIds.length
     ? await supabaseSelect<OverrideRow>("user_overrides", `user_id=in.(${userIds.join(",")})&select=user_id,plan_override,draft_limit_override,workspace_limit_override,feature_flags,notes,expires_at`).catch(() => [])
