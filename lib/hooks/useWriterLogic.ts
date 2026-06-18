@@ -212,10 +212,26 @@ export function useWriterLogic({
       const raw = sessionStorage.getItem("writerLoad")
       if (raw) {
         sessionStorage.removeItem("writerLoad")
-        const post = JSON.parse(raw) as { id?: string; title?: string; content?: string }
-        if (post.content) setDraftContent(post.content)
+        const post = JSON.parse(raw) as { id?: string; title?: string; content?: string; type?: string }
         if (post.title) setTopic(post.title)
         if (post.id) setEditingId(post.id)
+        if (post.content) {
+          const isCarousel = post.type?.toLowerCase().includes("carousel") || /^\s*\[/.test(post.content)
+          if (isCarousel) {
+            try {
+              const parsed = JSON.parse(post.content) as SlideItem[]
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setSlides(parsed)
+              } else {
+                setDraftContent(post.content)
+              }
+            } catch {
+              setDraftContent(post.content)
+            }
+          } else {
+            setDraftContent(post.content)
+          }
+        }
       }
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -293,7 +309,7 @@ export function useWriterLogic({
       showStatus("Draft scored.", "success")
     } catch (e) {
       if ((e as Error).name === "AbortError") return
-      throw e
+      // Silently ignore scoring errors (quota exceeded, network, etc) so existing scores are preserved
     } finally {
       setIsScoring(false)
     }

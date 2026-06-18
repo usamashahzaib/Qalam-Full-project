@@ -14,7 +14,7 @@ export const resolvePlanExpiry = (
   storedExpiry?: string | null,
   boughtAt?: string | null,
   months = 1
-) => addMonthsIso(boughtAt, months) || storedExpiry || null
+) => storedExpiry || addMonthsIso(boughtAt, months) || null
 
 export const formatPlanDate = (iso?: string | null) => {
   if (!iso) return "-"

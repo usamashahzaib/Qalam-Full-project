@@ -301,16 +301,19 @@ const toTitleCasePlan = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).to
 
 const fetchUsersPlanByMemberId = async (memberId: string): Promise<string | null> => {
   try {
-    const users = await supabaseSelect<{ plan: string | null; external_user_id: string | null }>(
+    const users = await supabaseSelect<{ plan: string | null; external_user_id: string | null; plan_expires_at: string | null }>(
       "users",
-      `id=eq.${encodeURIComponent(memberId)}&select=plan,external_user_id&limit=1`
+      `id=eq.${encodeURIComponent(memberId)}&select=plan,external_user_id,plan_expires_at&limit=1`
     )
     const user = users?.[0]
     if (!user) return null
 
-    // users.plan is updated on payment - use it if it's above free
+    // users.plan is updated on payment - use it if it's above free and not expired
     const userPlan = user.plan?.toLowerCase()
-    if (userPlan && userPlan !== "free") return toTitleCasePlan(userPlan)
+    if (userPlan && userPlan !== "free") {
+      const expired = user.plan_expires_at && new Date(user.plan_expires_at) < new Date()
+      if (!expired) return toTitleCasePlan(userPlan)
+    }
 
     // Fall back to plan_usage - try both internal and external user IDs
     const idsToTry = [memberId, user.external_user_id].filter(Boolean) as string[]

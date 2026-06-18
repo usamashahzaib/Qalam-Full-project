@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       role: String(body.role || ""),
       format: String(body.format || ""),
       goal: String(body.goal || "").trim() || undefined,
-      userId: user.externalId,
+      userId: user.id,
       internalUserId: user.id,
       workspaceId: user.workspaceId,
       plan: user.plan,

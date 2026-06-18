@@ -92,13 +92,17 @@ export async function getPlanStatus(userId: string) {
   const override = overrideResult.data
   const usersPlan = normalizePlan(usersResult.data?.plan)
   const boughtAt = paymentResult.data?.processed_at || paymentResult.data?.created_at || usage?.cycle_start || usersResult.data?.created_at || null
-  const planExpiresAt = resolvePlanExpiry(usersResult.data?.plan_expires_at || usage?.cycle_end, boughtAt)
+  // Use the stored plan_expires_at from users table as the authoritative expiry.
+  // resolvePlanExpiry is only a display fallback — never let a computed date override the stored one.
+  const storedExpiresAt = usersResult.data?.plan_expires_at ?? null
+  const planExpiresAt = resolvePlanExpiry(storedExpiresAt || usage?.cycle_end, boughtAt)
 
   // Base plan directly from users table (payment webhook source of truth)
   let plan = usersPlan
 
-  // Downgrade to Free if subscription has expired
-  if (plan !== "Free" && planExpiresAt && new Date(planExpiresAt) < new Date()) {
+  // Downgrade to Free ONLY when plan_expires_at is explicitly stored in the DB and has passed.
+  // If plan_expires_at is null (e.g. admin-set plan, no stored expiry), leave plan intact.
+  if (plan !== "Free" && storedExpiresAt && new Date(storedExpiresAt) < new Date()) {
     plan = "Free"
   }
 

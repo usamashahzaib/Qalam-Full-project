@@ -31,7 +31,7 @@ export interface ImprovePostInput {
 
 export interface ImprovePostOutput {
   content: string
-  scores: Record<string, unknown>
+  scores: Record<string, unknown> | null
   remaining: number
 }
 
@@ -88,6 +88,7 @@ export async function improvePost(
   }
 
   let rawScores: ScorePayload = {}
+  let scoringSucceeded = false
   for (let attempt = 1; attempt <= 2; attempt++) {
     const { system: impSystem, user: impUser } = buildPushTo90Prompt(artifact.content, attempt === 1 ? scores : normalizeScores(rawScores), role, voiceProfile)
     const candidate = await callAi(impSystem, impUser, {
@@ -95,9 +96,11 @@ export async function improvePost(
       userId, plan, cache: false,
     }).catch(() => "")
 
-    const next = toPostArtifact(candidate)
-    if (!next) continue
-    artifact = next
+    // Relaxed validation: accept any non-empty, non-JSON text (don't require 80+ words)
+    const trimmed = candidate.trim()
+    const isValidCandidate = trimmed.length > 30 && !/^\s*[{\[]/.test(trimmed)
+    if (!isValidCandidate) continue
+    artifact = { content: trimmed, wordCount: trimmed.split(/\s+/).filter(Boolean).length }
 
     const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(artifact.content, role, voiceProfile)
     const scoreRaw = await callAi(scoreSystem, scoreUser, {
@@ -106,12 +109,13 @@ export async function improvePost(
     }).catch(() => "{}")
 
     rawScores = safeParseJson<ScorePayload>(scoreRaw) || {}
+    scoringSucceeded = Object.values(normalizeScores(rawScores)).some((v) => typeof v === "number" && v > 0)
     if (gateScores(artifact.content, normalizeScores(rawScores)).overall >= 90) break
   }
 
   return ok({
     content: artifact.content,
-    scores: gateScores(artifact.content, normalizeScores(rawScores)),
+    scores: scoringSucceeded ? gateScores(artifact.content, normalizeScores(rawScores)) : null,
     remaining: usage.remaining,
   })
 }

@@ -378,6 +378,19 @@ export default function CalendarPage() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+const getContentPreview = (post: WorkspacePost): string => {
+  if (post.type?.toLowerCase().includes("carousel")) {
+    try {
+      const slides = JSON.parse(post.content) as { title?: string; body?: string }[]
+      if (Array.isArray(slides) && slides.length > 0) {
+        const firstTitle = slides[0].title || slides[0].body?.slice(0, 40) || "Untitled slide"
+        return `Carousel - ${slides.length} slides: ${firstTitle}`
+      }
+    } catch { /* fall through */ }
+  }
+  return post.content?.slice(0, 80) || ""
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -424,7 +437,7 @@ function PlannerBlock({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
-                <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-400">{post.content?.slice(0, 80)}</p>
+                <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-400">{getContentPreview(post)}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
                 <button onClick={() => onEdit(post)} className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[10px] font-semibold text-zinc-600 hover:bg-zinc-50">
