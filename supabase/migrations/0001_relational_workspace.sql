@@ -1,4 +1,13 @@
--- Supabase Migration: 0001_relational_workspace.sql
+-- ================================================================
+-- DEPRECATED — DO NOT RUN
+-- 0001_relational_workspace.sql
+-- ================================================================
+-- This file uses an old schema (owner_email TEXT UNIQUE NOT NULL on
+-- workspaces, old posts shape). It CONFLICTS with schema_final.sql
+-- and all migrations from 0010 onward.
+-- Superseded by: schema_final.sql
+-- ================================================================
+-- Original description:
 -- This migration normalizes the workspace_snapshots JSON blob into highly scalable relational tables.
 -- It prevents split-brain sync issues (CRDT architecture) and database row-lock bottlenecks.
 

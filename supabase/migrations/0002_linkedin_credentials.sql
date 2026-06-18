@@ -1,4 +1,13 @@
--- Supabase Migration: 0002_linkedin_credentials.sql
+-- ================================================================
+-- DEPRECATED — DO NOT RUN
+-- 0002_linkedin_credentials.sql
+-- ================================================================
+-- This file creates linkedin_credentials with owner_email TEXT as PK.
+-- schema_final.sql creates it correctly with user_id UUID FK UNIQUE.
+-- Running this file would create an incompatible schema.
+-- Superseded by: schema_final.sql
+-- ================================================================
+-- Original description:
 -- Moves LinkedIn access tokens from the session cookie to server-side storage.
 -- This fixes: (a) raw token in cookie security concern, (b) cron architecture (no cookies in server-to-server calls).
 

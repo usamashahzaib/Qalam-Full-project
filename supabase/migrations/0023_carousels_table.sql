@@ -15,10 +15,10 @@ CREATE TABLE IF NOT EXISTS carousels (
 
 ALTER TABLE carousels ENABLE ROW LEVEL SECURITY;
 
--- Service role bypasses RLS; user-facing reads are gated by user_id
-CREATE POLICY "Service role full access" ON carousels
-  FOR ALL USING (true)
-  WITH CHECK (true);
+-- Users see and modify only their own carousels
+CREATE POLICY "carousels_own" ON carousels
+  FOR ALL USING (user_id = auth.uid()::text)
+  WITH CHECK (user_id = auth.uid()::text);
 
 CREATE INDEX IF NOT EXISTS idx_carousels_user_id ON carousels(user_id);
 CREATE INDEX IF NOT EXISTS idx_carousels_created_at ON carousels(created_at DESC);

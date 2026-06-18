@@ -36,6 +36,10 @@ CREATE INDEX IF NOT EXISTS approvals_requester_id_idx ON approvals (requester_id
 ALTER TABLE competitor_analyses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE approvals ENABLE ROW LEVEL SECURITY;
 
--- Service role bypasses RLS; these policies cover future anon/authenticated access
-CREATE POLICY "service_competitor_all" ON competitor_analyses FOR ALL USING (true);
-CREATE POLICY "service_approvals_all" ON approvals FOR ALL USING (true);
+-- Users see only their own competitor analyses
+CREATE POLICY "competitor_analyses_own" ON competitor_analyses
+  FOR ALL USING (user_id = auth.uid()::text);
+
+-- Users see only their own approval requests
+CREATE POLICY "approvals_requester_own" ON approvals
+  FOR ALL USING (requester_id = auth.uid()::text);

@@ -224,17 +224,5 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
   }
 }
 
-// Check if a feature is allowed by plan name
-export function isFeatureAllowed(plan: string, feature: string): boolean {
-  const normalized = normalizePlan(plan)
-  const config = PLAN_CONFIG[normalized].limits
-
-  if (feature === "carousel" || feature === "carousel_standard" || feature === "carousels") return config.carousels > 0
-  if (feature === "voice" || feature === "voiceProfile") return normalized !== "Free"
-  if (feature === "research" || feature === "competitorResearch") return normalized !== "Free"
-  if (feature === "teamSeats") return normalized === "Agency"
-  if (feature === "approvalWorkflow") return normalized === "Pro" || normalized === "Agency"
-  if (feature === "basic_analytics") return normalized !== "Free"
-
-  return normalized !== "Free"
-}
+// Single source of truth for feature gating — delegates to lib/pricing.ts.
+export { isFeatureAllowed } from "@/lib/pricing"

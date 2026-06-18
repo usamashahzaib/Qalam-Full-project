@@ -168,7 +168,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   if (!user) throw new Error("payment_user_not_found")
 
   const organizationId = await getOrganizationId(user.id)
-  const expiresAt = payment.status === "paid" ? addMonths(1) : null
+  const expiresAt = payment.status === "paid" ? addMonths(payment.billingCycle === "annual" ? 12 : 1) : null
 
   await supabaseUpsert("payments", {
     provider: payment.provider,
