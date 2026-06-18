@@ -35,6 +35,7 @@ html, body {
     radial-gradient(circle at 30% 40%, rgba(200, 190, 180, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 70% 60%, rgba(180, 200, 190, 0.1) 0%, transparent 40%);
   animation: breathe 8s ease-in-out infinite;
+  will-change: opacity;
   pointer-events: none;
   z-index: 0;
 }

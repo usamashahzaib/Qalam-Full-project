@@ -105,7 +105,6 @@ export const plans: Plan[] = [
     researchPerMonth: 0,
     voiceProfiles: 5,
     workspaces: 5,
-    comingSoon: true,
     annualSavingsLabel: "",
     features: [
       "60 posts x 5 workspaces",
