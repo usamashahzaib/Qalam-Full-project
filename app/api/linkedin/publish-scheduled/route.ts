@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { shareToLinkedIn } from "@/lib/server/linkedin"
+import { getLinkedInPublishingAccount } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 
 export const maxDuration = 60
@@ -10,14 +11,6 @@ type ScheduledPost = {
   content: string | null
   status: string
   scheduled_time: string | null
-}
-
-type PublishingAccount = {
-  id: string
-  workspace_id: string
-  provider_account_id: string | null
-  access_token: string | null
-  expires_at: string | null
 }
 
 const markPost = async (postId: string, patch: Record<string, unknown>) =>
@@ -52,16 +45,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ processed: 0, published: 0, failed: 0, results: [] })
     }
 
-    const accountRows = await supabaseSelect<PublishingAccount>(
-      "publishing_accounts",
-      `provider=eq.linkedin&workspace_id=in.(${duePosts.map(post => post.workspace_id).join(",")})&select=id,workspace_id,provider_account_id,access_token,expires_at`
+    // Fetch and decrypt publishing accounts per unique workspace.
+    // Must use getLinkedInPublishingAccount (not raw supabaseSelect) so tokens are decrypted.
+    const uniqueWorkspaceIds = [...new Set(duePosts.map(p => p.workspace_id))]
+    const accountEntries = await Promise.all(
+      uniqueWorkspaceIds.map(async (wsId) => [wsId, await getLinkedInPublishingAccount(wsId)] as const)
     )
-    const accountsByWorkspace = new Map((accountRows || []).map(account => [account.workspace_id, account]))
+    const accountsByWorkspace = new Map(accountEntries.filter(([, acct]) => acct !== null))
     const results: Array<{ postId: string; status: "published" | "failed"; reason?: string; postUrn?: string | null }> = []
 
     for (const post of duePosts) {
       const content = post.content?.trim()
-      const account = accountsByWorkspace.get(post.workspace_id)
+      const account = accountsByWorkspace.get(post.workspace_id) ?? null
 
       if (!content) {
         await markPost(post.id, { status: "failed" })

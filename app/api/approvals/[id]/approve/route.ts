@@ -27,7 +27,7 @@ export async function POST(
   if (!approval) {
     return NextResponse.json({ error: "Approval request not found" }, { status: 404 })
   }
-  if (approval.review_token_hash && hashToken(token) !== approval.review_token_hash) {
+  if (!approval.review_token_hash || hashToken(token) !== approval.review_token_hash) {
     return NextResponse.json({ error: "Approval request not found" }, { status: 404 })
   }
 

@@ -11,7 +11,7 @@ export async function DELETE(request: NextRequest) {
     const workspaceId = await resolveWorkspaceId(request)
     await Promise.all([
       deleteLinkedInPublishingAccount(workspaceId).catch(() => undefined),
-      deleteLinkedInToken(ctx.email).catch(() => undefined),
+      deleteLinkedInToken(ctx.supabaseUserId).catch(() => undefined),
     ])
     return NextResponse.json({ disconnected: true })
   } catch (error) {

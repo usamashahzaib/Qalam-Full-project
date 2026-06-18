@@ -181,7 +181,8 @@ export const getAllLinkedInTokens = async (): Promise<LinkedInCredential[]> => {
       "linkedin_credentials",
       `token_expires_at=gt.${now}&select=user_id,access_token,member_id,token_expires_at`
     )
-    return rows || []
+    if (!rows) return []
+    return rows.map(row => ({ ...row, access_token: decryptToken(row.access_token) }))
   } catch {
     return []
   }

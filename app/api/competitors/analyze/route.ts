@@ -19,15 +19,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Competitor research requires Pro plan." }, { status: 403 })
     }
 
-    const runsUsed = await competitorRepo.getRunsUsed(user.id)
-
-    if (runsUsed >= MONTHLY_LIMIT) {
-      return NextResponse.json(
-        { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: MONTHLY_LIMIT },
-        { status: 429 }
-      )
-    }
-
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -36,9 +27,26 @@ export async function POST(request: NextRequest) {
     const postText = String(body.postText || "").trim()
     const postUrl = String(body.postUrl || "").trim()
 
+    if (!postText) {
+      return NextResponse.json({ error: "Post text is required for analysis." }, { status: 400 })
+    }
+
+    // Atomic check+increment prevents TOCTOU race where concurrent requests
+    // both pass a separate read+check and exceed the monthly quota.
+    const allowed = await competitorRepo.atomicIncrementIfAllowed(user.id, MONTHLY_LIMIT)
+    if (!allowed) {
+      const runsUsed = await competitorRepo.getRunsUsed(user.id)
+      return NextResponse.json(
+        { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: MONTHLY_LIMIT },
+        { status: 429 }
+      )
+    }
+
     const result = await analyzeCompetitor({ postText, userId: user.id, plan: user.plan })
 
     if (!result.ok) {
+      // Roll back the increment on AI failure so the user doesn't lose a run
+      await competitorRepo.incrementRunsUsed(user.id, Math.max(0, await competitorRepo.getRunsUsed(user.id) - 1)).catch(() => undefined)
       return NextResponse.json(
         { error: result.error.userMessage ?? result.error.message },
         { status: errorToStatus(result.error.code) }
@@ -46,10 +54,10 @@ export async function POST(request: NextRequest) {
     }
 
     const analysis = result.data
+    const runsUsed = await competitorRepo.getRunsUsed(user.id)
 
     await competitorRepo.saveAnalysis(user.id, postText, postUrl || null, analysis)
-    await competitorRepo.incrementRunsUsed(user.id, runsUsed)
 
-    return NextResponse.json({ analysis, runsUsed: runsUsed + 1, limit: MONTHLY_LIMIT })
+    return NextResponse.json({ analysis, runsUsed, limit: MONTHLY_LIMIT })
   })(request)
 }

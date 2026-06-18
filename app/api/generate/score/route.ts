@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { scorePost } from "@/lib/use-cases/score-post"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { errorToStatus } from "@/lib/errors"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planStatus = await checkPlanLimit(user.externalId, "analyses")
-    if (!planStatus.allowed) {
+    // Atomic check+increment using internal UUID — prevents TOCTOU bypass and wrong-ID ghost rows.
+    const usage = await incrementUsage(user.id, "analyses")
+    if (!usage.allowed) {
       return NextResponse.json(
         { error: "You have reached your scoring limit for this billing period." },
         { status: 429 }
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const result = await scorePost({
       content: String(body.content || body.postContent || ""),
       role: String(body.role || ""),
-      userId: user.externalId,
+      userId: user.id,
       internalUserId: user.id,
       workspaceId: user.workspaceId,
       plan: user.plan,
@@ -34,8 +35,6 @@ export async function POST(request: NextRequest) {
         { status: errorToStatus(result.error.code) }
       )
     }
-
-    await incrementUsage(user.externalId, "analyses", user.id).catch(() => undefined)
 
     const { scores, overall, tips, hashtags } = result.data
     return NextResponse.json({ ...scores, overall, tips, hashtags })

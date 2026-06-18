@@ -161,5 +161,6 @@ export interface ICompetitorRepository {
   ): Promise<void>
   listAnalyses(userId: string, limit?: number): Promise<CompetitorAnalysisRecord[]>
   getRunsUsed(userId: string): Promise<number>
+  atomicIncrementIfAllowed(userId: string, limit: number): Promise<boolean>
   incrementRunsUsed(userId: string, currentCount: number): Promise<void>
 }
