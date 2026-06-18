@@ -10,7 +10,7 @@ import type { PlanTier } from "@/types/domain"
 
 export type { Feature }
 
-const PLAN_PRIORITY: Record<PlanTier, number> = { Free: 0, Solo: 1, Pro: 2, Agency: 3 }
+export const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
 
 const normalizePlan = (plan?: string | null): PlanTier => {
   const value = String(plan || "").toLowerCase()

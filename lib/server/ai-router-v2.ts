@@ -152,7 +152,8 @@ async function callGroq(
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => "Unknown error")
-    throw new Error(`Groq API error: ${response.status} - ${errorText}`)
+    console.error(`[ai-router] Groq API error: ${response.status} - ${errorText}`)
+    throw new Error("AI generation failed. Please try again.")
   }
 
   const data = await response.json()

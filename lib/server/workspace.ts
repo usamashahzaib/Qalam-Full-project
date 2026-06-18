@@ -4,6 +4,7 @@ import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
 import { auth } from "@/auth"
+import { PLAN_PRIORITY } from "@/lib/server/plan-limits-v2"
 
 export async function getAuthenticatedSession() {
   return await auth()
@@ -286,8 +287,6 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
 
   return ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email, firstName: ctx.firstName })
 }
-
-const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
 
 const higherPlan = (a: string, b: string) => {
   const normA = a.toLowerCase()

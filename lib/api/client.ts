@@ -40,11 +40,12 @@ const readJson = async <T>(res: Response): Promise<T> => {
   throw new ApiClientError(msg, res.status, body)
 }
 
-const postJson = async <TOut, TIn extends Record<string, unknown>>(url: string, data: TIn) => {
+const postJson = async <TOut, TIn extends Record<string, unknown>>(url: string, data: TIn, signal?: AbortSignal) => {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+    signal,
   })
   return readJson<TOut>(res)
 }
@@ -138,8 +139,8 @@ export const generateHooks = (data: GenerateHooksInput) =>
 export const generatePost = (data: GeneratePostInput) =>
   postJson<GeneratePostOutput, GeneratePostInput>("/api/generate/post", data)
 
-export const scorePost = (data: ScorePostInput) =>
-  postJson<ScorePostOutput, ScorePostInput>("/api/generate/score", data)
+export const scorePost = (data: ScorePostInput, signal?: AbortSignal) =>
+  postJson<ScorePostOutput, ScorePostInput>("/api/generate/score", data, signal)
 
 export const improvePost = (data: ImprovePostInput) =>
   postJson<ImprovePostOutput, ImprovePostInput>("/api/generate/improve", data)

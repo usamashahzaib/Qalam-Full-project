@@ -181,6 +181,8 @@ export function useWriterLogic({
 
   // Prevents debounce from re-scoring when content was just set by a generation action
   const skipDebounceScore = useRef(false)
+  // Holds the AbortController for the currently in-flight score request
+  const scoreAbortRef = useRef<AbortController | null>(null)
 
   // ── Effects ──────────────────────────────────────────────────────────────
 
@@ -280,11 +282,18 @@ export function useWriterLogic({
 
   const autoScore = useCallback(async (content: string) => {
     if (!content.trim() || isScoring) return
+    // Cancel any in-flight score request before starting a new one
+    scoreAbortRef.current?.abort()
+    const controller = new AbortController()
+    scoreAbortRef.current = controller
     setIsScoring(true)
     try {
-      const data = await apiScorePost({ content, role })
+      const data = await apiScorePost({ content, role }, controller.signal)
       setScores(data)
       showStatus("Draft scored.", "success")
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return
+      throw e
     } finally {
       setIsScoring(false)
     }
