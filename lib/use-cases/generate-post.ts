@@ -16,6 +16,8 @@ import {
 } from "@/lib/prompts/role-aware-system"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 
+const LINKEDIN_MAX_POST_CHARS = 3000
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface GeneratePostInput {
@@ -110,6 +112,10 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
         content = (await callAi(rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim()
       } catch { /* keep current content */ }
     }
+  }
+
+  if (content.length > LINKEDIN_MAX_POST_CHARS) {
+    return err({ code: "VALIDATION_ERROR", message: "linkedin_content_too_long", userMessage: "Post exceeds LinkedIn's 3000 character limit." })
   }
 
   const { hook, body, cta, hashtags } = splitPost(content)

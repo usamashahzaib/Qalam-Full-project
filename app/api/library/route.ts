@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient()
     let query = supabase
       .from("posts")
-      .select("id, title, content, type, status, scheduled_time, published_at, created_at, updated_at", { count: "exact" })
+      .select("id, title, content, status, scheduled_for, published_at, metadata, created_at, updated_at", { count: "exact" })
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
 
@@ -57,10 +57,10 @@ export async function GET(request: NextRequest) {
       id: p.id,
       title: p.title,
       content: (p.content || "").slice(0, 200),
-      type: p.type,
+      type: p.metadata?.type || "linkedin",
       status: p.status,
-      date: (p.scheduled_time || p.published_at || p.created_at || "").slice(0, 10),
-      scheduledTime: p.scheduled_time,
+      date: (p.scheduled_for || p.published_at || p.created_at || "").slice(0, 10),
+      scheduledTime: p.scheduled_for,
       updatedAt: p.updated_at,
       createdAt: p.created_at,
     }))

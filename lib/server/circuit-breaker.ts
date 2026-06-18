@@ -1,55 +1,37 @@
 import { getRedis } from "./redis"
 
 const FAILURE_THRESHOLD = 5
-const RESET_TIMEOUT = 60000
+const FAILURE_WINDOW_SECONDS = 60
+const OPEN_SECONDS = 300
 
 type CircuitState = {
   failures: number
-  lastFailure: number
-  state: string
+  state: "closed" | "open"
 }
 
 export async function checkCircuit(service: string): Promise<boolean> {
-  const activeRedis = getRedis()
-  if (!activeRedis) return true
-
-  const key = `circuit:${service}`
-  const state = await activeRedis.get<CircuitState>(key)
-
-  if (!state || state.state === "closed") return true
-  if (state.state === "open") {
-    if (Date.now() - state.lastFailure > RESET_TIMEOUT) {
-      await activeRedis.set(key, { failures: 0, lastFailure: 0, state: "half-open" })
-      return true
-    }
-    return false
-  }
-  return true
+  const redis = getRedis()
+  if (!redis) return true
+  const state = await redis.get<CircuitState>(`circuit:${service}:state`)
+  return state?.state !== "open"
 }
 
 export async function recordFailure(service: string) {
-  const activeRedis = getRedis()
-  if (!activeRedis) return
+  const redis = getRedis()
+  if (!redis) return
 
-  const key = `circuit:${service}`
-  const state = (await activeRedis.get<CircuitState>(key)) || {
-    failures: 0,
-    lastFailure: 0,
-    state: "closed",
+  const countKey = `circuit:${service}:failures`
+  const stateKey = `circuit:${service}:state`
+  const failures = await redis.incr(countKey)
+  if (failures === 1) await redis.expire(countKey, FAILURE_WINDOW_SECONDS)
+  if (failures >= FAILURE_THRESHOLD) {
+    await redis.set(stateKey, { failures, state: "open" }, { ex: OPEN_SECONDS })
   }
-
-  const newFailures = state.failures + 1
-  await activeRedis.set(key, {
-    failures: newFailures,
-    lastFailure: Date.now(),
-    state: newFailures >= FAILURE_THRESHOLD ? "open" : "closed",
-  })
 }
 
 export async function recordSuccess(service: string) {
-  const activeRedis = getRedis()
-  if (!activeRedis) return
-
-  const key = `circuit:${service}`
-  await activeRedis.set(key, { failures: 0, lastFailure: 0, state: "closed" })
+  const redis = getRedis()
+  if (!redis) return
+  await redis.del(`circuit:${service}:failures`)
+  await redis.del(`circuit:${service}:state`)
 }

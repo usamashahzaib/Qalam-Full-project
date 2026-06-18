@@ -11,6 +11,8 @@ import { generatePost } from "@/lib/use-cases/generate-post"
 import { errorToStatus } from "@/lib/errors"
 import { canAccessPost } from "@/lib/domain/services/authorization"
 
+const LINKEDIN_MAX_POST_CHARS = 3000
+
 const generateSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
   role: z.preprocess((v) => String(v || "").toLowerCase(), z.enum([
@@ -26,7 +28,7 @@ const generateSchema = z.object({
 
 const patchSchema = z.object({
   id: z.string().uuid("Invalid post ID"),
-  content: z.string().max(5000, "Content too long").optional(),
+  content: z.string().max(LINKEDIN_MAX_POST_CHARS, "Post exceeds LinkedIn's 3000 character limit.").optional(),
   confirmOnly: z.boolean().optional(),
 })
 
@@ -74,6 +76,10 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       return NextResponse.json({ error: result.error.userMessage || result.error.message }, { status: errorToStatus(result.error.code) })
+    }
+
+    if (result.data.post.content.length > LINKEDIN_MAX_POST_CHARS) {
+      return NextResponse.json({ error: "Generated post exceeds LinkedIn's 3000 character limit." }, { status: 502 })
     }
 
     log.info("generate.post.done", { reqId, userId: user.id, postId: result.data.post.id, plan: user.plan })
