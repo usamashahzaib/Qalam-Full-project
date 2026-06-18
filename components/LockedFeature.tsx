@@ -18,6 +18,7 @@ export function LockedFeature({ feature, requiredPlan, children, className = "",
   const { billing } = useBilling()
   const [showUpgrade, setShowUpgrade] = useState(false)
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
+  const label = feature === "Voice Training" && requiredPlan === "Pro" ? "Upgrade to Pro for more voice training" : `Unlock in ${requiredPlan}`
 
   return (
     <>
@@ -29,7 +30,7 @@ export function LockedFeature({ feature, requiredPlan, children, className = "",
             className={`rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 ${buttonClassName}`}
             title={tooltip}
           >
-            Unlock in {requiredPlan}
+            {label}
           </button>
         </div>
       </div>

@@ -68,7 +68,7 @@ const saveProfile = async (
 export async function GET(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
-    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.ok) return NextResponse.json({ error: "upgrade_required", upgradeCta: "Upgrade to Pro for more voice training", requiredPlan: "Pro" }, { status: 403 })
 
     const data = await getProfile(planCheck.workspaceId, planCheck.session.supabaseUserId)
     const samples = Array.isArray(data?.sample_posts) ? data.sample_posts : []
@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const planCheck = await requirePlan(req, "Pro")
-    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.ok) return NextResponse.json({ error: "upgrade_required", upgradeCta: "Upgrade to Pro for more voice training", requiredPlan: "Pro" }, { status: 403 })
     const userId = planCheck.session.supabaseUserId
     const body = await req.json()
     const examples = Array.isArray(body.examplePosts) ? body.examplePosts.map(String) : []
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
-    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.ok) return NextResponse.json({ error: "upgrade_required", upgradeCta: "Upgrade to Pro for more voice training", requiredPlan: "Pro" }, { status: 403 })
     const supabase = createServiceClient()
     const row = await getProfile(planCheck.workspaceId, planCheck.session.supabaseUserId)
     const { error } = row?.id
