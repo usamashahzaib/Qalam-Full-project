@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
-import { shareToLinkedIn } from "@/lib/server/linkedin"
+import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
 import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   if (!body.content?.trim()) {
     return NextResponse.json({ error: "share_payload_invalid" }, { status: 400 })
   }
-  if (body.content.length > 3000) {
+  if (body.content.length > LINKEDIN_MAX_POST_CHARS) {
     return NextResponse.json({ error: "Post exceeds LinkedIn's 3000 character limit." }, { status: 400 })
   }
 
@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
         "return=minimal"
       ).catch(() => undefined)
     }
-    return NextResponse.json({ error: publishError }, { status: 502 })
+    const status = error instanceof LinkedInApiError ? error.status : 502
+    return NextResponse.json({ error: publishError }, { status })
   }
 
   if (body.postId && shared.postUrn) {

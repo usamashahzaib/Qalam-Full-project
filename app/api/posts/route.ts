@@ -88,7 +88,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json()
     const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body
     const nextStatus = status !== undefined && VALID_STATUSES.includes(status) ? status : existing.status
-    const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing.scheduled_time
+    const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing.scheduled_for
     const scheduleError = validateSchedule(nextStatus, nextScheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
 

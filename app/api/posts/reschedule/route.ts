@@ -3,7 +3,7 @@ import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
 
-type DbPost = { id: string; scheduled_time: string | null; status: string; workspace_id: string }
+type DbPost = { id: string; scheduled_for: string | null; status: string; workspace_id: string }
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
     if (!rows?.length) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
     const existing = rows[0]
-    const existingTime = existing.scheduled_time?.slice(11, 16) || "09:00"
+    const existingTime = existing.scheduled_for?.slice(11, 16) || "09:00"
     const newScheduledTime = `${date}T${existingTime}:00`
 
     const updated = await supabasePatch<DbPost>("posts", `id=eq.${postId}&workspace_id=eq.${workspaceId}`, {
-      scheduled_time: newScheduledTime,
+      scheduled_for: newScheduledTime,
       status: "scheduled",
       updated_at: new Date().toISOString(),
     })

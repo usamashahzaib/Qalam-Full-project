@@ -1,8 +1,8 @@
 import { env } from "@/lib/server/env"
-import { fetchJson } from "@/lib/server/supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "@/lib/server/circuit-breaker"
 
 const CIRCUIT_KEY = "linkedin"
+export const LINKEDIN_MAX_POST_CHARS = 3000
 const USER_AGENT = "Qalam/1.0 (+https://byqalam.com)"
 
 type LinkedInPostPayload = {
@@ -10,6 +10,34 @@ type LinkedInPostPayload = {
   authorId: string
   content: string
   media?: { id?: string; title?: string } | null
+}
+
+export class LinkedInApiError extends Error {
+  status: number
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = "LinkedInApiError"
+    this.status = status
+  }
+}
+
+const assertLinkedInLength = (content: string) => {
+  if (content.length > LINKEDIN_MAX_POST_CHARS) {
+    throw new LinkedInApiError("linkedin_content_too_long", 400)
+  }
+}
+
+const linkedInHeaders = (accessToken: string, json = false) => ({
+  Authorization: `Bearer ${accessToken}`,
+  "X-Restli-Protocol-Version": "2.0.0",
+  "Linkedin-Version": env.linkedInVersion,
+  "User-Agent": USER_AGENT,
+  ...(json ? { "Content-Type": "application/json" } : {}),
+})
+
+const parseLinkedInError = async (response: Response) => {
+  const body = await response.json().catch(() => ({})) as { message?: string; error?: string }
+  return body.message || body.error || response.statusText || "linkedin_request_failed"
 }
 
 const createSharePayload = ({ authorId, content, media }: LinkedInPostPayload) => ({
@@ -27,23 +55,19 @@ const createSharePayload = ({ authorId, content, media }: LinkedInPostPayload) =
 })
 
 export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
-  const circuitOpen = !(await checkCircuit(CIRCUIT_KEY))
-  if (circuitOpen) throw new Error("linkedin_circuit_open")
+  assertLinkedInLength(payload.content)
+  if (!(await checkCircuit(CIRCUIT_KEY))) throw new Error("linkedin_circuit_open")
 
   try {
-    const post = await fetchJson<unknown>("https://api.linkedin.com/rest/posts", {
+    const response = await fetch("https://api.linkedin.com/rest/posts", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${payload.accessToken}`,
-        "X-Restli-Protocol-Version": "2.0.0",
-        "Linkedin-Version": env.linkedInVersion,
-        "Content-Type": "application/json",
-        "User-Agent": USER_AGENT,
-      },
+      headers: linkedInHeaders(payload.accessToken, true),
       body: JSON.stringify(createSharePayload(payload)),
       cache: "no-store",
     })
-    const postUrn = post.headers.get("x-restli-id")
+
+    if (!response.ok) throw new LinkedInApiError(await parseLinkedInError(response), response.status)
+    const postUrn = response.headers.get("x-restli-id")
     if (!postUrn) throw new Error("linkedin_publish_unconfirmed")
 
     await recordSuccess(CIRCUIT_KEY)
@@ -55,31 +79,27 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
 }
 
 export const pollLinkedInAnalytics = async (accessToken: string, postUrn: string) => {
-  // Use the posts statistics endpoint which works for both personal and organization posts
   const url = `https://api.linkedin.com/rest/posts/${encodeURIComponent(postUrn)}?fields=lifecycleState,totalShareStatistics`
 
-  const circuitOpen = !(await checkCircuit(CIRCUIT_KEY))
-  if (circuitOpen) {
+  if (!(await checkCircuit(CIRCUIT_KEY))) {
     console.warn("LinkedIn circuit open, skipping analytics poll")
     return { impressions: 0, engagementRate: 0 }
   }
 
   try {
-    const response = await fetchJson<{ totalShareStatistics?: { impressionCount?: number; engagementRate?: number } }>(url, {
+    const response = await fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "X-Restli-Protocol-Version": "2.0.0",
-        "Linkedin-Version": env.linkedInVersion,
-        "User-Agent": USER_AGENT,
-      },
+      headers: linkedInHeaders(accessToken),
       cache: "no-store",
     })
 
+    if (!response.ok) throw new LinkedInApiError("linkedin_analytics_failed", response.status)
+    const data = await response.json() as { totalShareStatistics?: { impressionCount?: number; engagementRate?: number } }
+
     await recordSuccess(CIRCUIT_KEY)
     return {
-      impressions: response.data?.totalShareStatistics?.impressionCount || 0,
-      engagementRate: response.data?.totalShareStatistics?.engagementRate || 0,
+      impressions: data.totalShareStatistics?.impressionCount || 0,
+      engagementRate: data.totalShareStatistics?.engagementRate || 0,
     }
   } catch (e) {
     await recordFailure(CIRCUIT_KEY)

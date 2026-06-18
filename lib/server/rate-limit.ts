@@ -8,13 +8,7 @@ type Bucket = { count: number; resetTime: number }
 // In-memory store used only when Redis is not configured (dev/CI without Redis)
 const memoryStore = new Map<string, Bucket>()
 const WINDOW_MS = 60_000
-
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, bucket] of memoryStore) {
-    if (bucket.resetTime < now) memoryStore.delete(key)
-  }
-}, WINDOW_MS)
+let lastMemoryCleanup = 0
 
 const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
 
@@ -35,6 +29,12 @@ const getLimiters = (): Record<string, Ratelimit> | null => {
 
 const memoryFallback = (key: string, limit: number): LimitResult => {
   const now = Date.now()
+  if (now - lastMemoryCleanup > WINDOW_MS) {
+    lastMemoryCleanup = now
+    for (const [bucketKey, bucket] of memoryStore) {
+      if (bucket.resetTime < now) memoryStore.delete(bucketKey)
+    }
+  }
   const existing = memoryStore.get(key)
   if (existing && existing.resetTime > now) {
     existing.count += 1
@@ -76,9 +76,9 @@ export async function checkRateLimit(
         reset: result.reset,
       }
     } catch {
-      // Redis configured but threw - fail open rather than bypass via memory
-      console.error("[RateLimit] Redis error - allowing request")
-      return { allowed: true, limit, remaining: 1, reset: Date.now() + WINDOW_MS }
+      // Redis configured but threw — fall back to in-memory rather than failing open.
+      console.error("[RateLimit] Redis error - falling back to in-memory limiter")
+      return memoryFallback(memKey, limit)
     }
   }
 

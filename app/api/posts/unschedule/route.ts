@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!rows?.length) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
     await supabasePatch("posts", `id=eq.${postId}&workspace_id=eq.${workspaceId}`, {
-      scheduled_time: null,
+      scheduled_for: null,
       status: "draft",
       updated_at: new Date().toISOString(),
     })

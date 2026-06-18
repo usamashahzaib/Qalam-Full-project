@@ -22,7 +22,7 @@ export async function schedulePost(input: SchedulePostInput): Promise<Result<Sch
   try {
     const { data, error } = await createServiceClient()
       .from("posts")
-      .update({ status: "scheduled", scheduled_time: scheduled.toISOString(), updated_at: new Date().toISOString() })
+      .update({ status: "scheduled", scheduled_for: scheduled.toISOString(), updated_at: new Date().toISOString() })
       .eq("id", postId)
       .eq("user_id", userId)
       .select("id")

@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 
-const redirectToSettings = (request: NextRequest, status: "success" | "error") =>
-  NextResponse.redirect(new URL(`/settings?linkedin=${status}`, request.nextUrl.origin))
+const redirectToSettings = (request: NextRequest, status: "success" | "error", message?: string) => {
+  const url = new URL(`/settings?linkedin=${status}`, request.nextUrl.origin)
+  if (message) url.searchParams.set("message", message)
+  return NextResponse.redirect(url)
+}
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
@@ -59,8 +62,10 @@ export async function GET(request: NextRequest) {
     const response = redirectToSettings(request, "success")
     response.cookies.delete("linkedin_oauth_state")
     return response
-  } catch {
-    const response = redirectToSettings(request, "error")
+  } catch (error) {
+    const message = (error as Error).message || "linkedin_connect_failed"
+    console.error("[linkedin/callback] failed:", message)
+    const response = redirectToSettings(request, "error", message)
     response.cookies.delete("linkedin_oauth_state")
     return response
   }

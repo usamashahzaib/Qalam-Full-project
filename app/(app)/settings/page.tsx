@@ -66,7 +66,8 @@ export default function SettingsPage() {
   useEffect(() => {
     const linkedin = searchParams.get("linkedin")
     if (!linkedin) return
-    setLinkedinStatus(linkedin === "success" || linkedin === "connected" ? "LinkedIn connected successfully." : "LinkedIn connection failed. Contact us to enable LinkedIn publishing.")
+    const message = searchParams.get("message")
+    setLinkedinStatus(linkedin === "success" || linkedin === "connected" ? "LinkedIn connected successfully." : `LinkedIn connection failed: ${message || "unknown_error"}`)
     if (linkedin === "success" || linkedin === "connected") {
       update().catch(() => undefined)
     }

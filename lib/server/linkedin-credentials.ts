@@ -24,7 +24,7 @@ function encryptToken(token: string): string {
 function decryptToken(stored: string): string {
   if (!stored.startsWith("enc:")) {
     console.warn("[security] Unencrypted LinkedIn token detected — migrate immediately")
-    return stored
+    throw new Error("LinkedIn token is unencrypted; refusing plaintext token")
   }
   const key = getEncryptionKey()
   if (!key) {
@@ -177,12 +177,18 @@ export const deleteLinkedInToken = async (userId: string) => {
 export const getAllLinkedInTokens = async (): Promise<LinkedInCredential[]> => {
   try {
     const now = Date.now()
-    const rows = await supabaseSelect<LinkedInCredential>(
-      "linkedin_credentials",
-      `token_expires_at=gt.${now}&select=user_id,access_token,member_id,token_expires_at`
-    )
-    if (!rows) return []
-    return rows.map(row => ({ ...row, access_token: decryptToken(row.access_token) }))
+    const pageSize = 100
+    const tokens: LinkedInCredential[] = []
+    for (let offset = 0; ; offset += pageSize) {
+      const rows = await supabaseSelect<LinkedInCredential>(
+        "linkedin_credentials",
+        `token_expires_at=gt.${now}&select=user_id,access_token,member_id,token_expires_at&order=updated_at.asc&limit=${pageSize}&offset=${offset}`
+      )
+      if (!rows?.length) break
+      tokens.push(...rows.map(row => ({ ...row, access_token: decryptToken(row.access_token) })))
+      if (rows.length < pageSize) break
+    }
+    return tokens
   } catch {
     return []
   }

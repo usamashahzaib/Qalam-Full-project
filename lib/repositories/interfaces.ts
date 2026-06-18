@@ -13,7 +13,6 @@ export type DbPost = {
   type?: string
   status: string
   scheduled_for?: string | null
-  scheduled_time?: string | null
   published_at: string | null
   linkedin_post_id?: string | null
   external_post_urn?: string | null
