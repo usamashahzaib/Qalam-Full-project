@@ -78,6 +78,8 @@ const PUBLIC_API_PREFIXES = [
   "/api/webhooks",
   "/api/payments/webhook",
   "/api/cron",
+  "/api/linkedin/publish-scheduled",
+  "/api/linkedin/sync-analytics",
   "/api/free-tools",
   "/api/tools",
   "/api/geo",
