@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { log } from "@/lib/server/logging"
 import { requireAuth, resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 
@@ -50,6 +51,13 @@ export async function POST(request: NextRequest) {
     const safeStatus = VALID_STATUSES.includes(status) ? status : "draft"
     const scheduleError = validateSchedule(safeStatus, scheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
+    if (safeStatus === "scheduled") {
+      const planCheck = await requirePlan(request, "Solo")
+      if (!planCheck.ok) return planCheck.response
+      if (!planCheck.limits.scheduling) {
+        return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
+      }
+    }
 
     const post = await postRepo.create({
       userId: ctx.supabaseUserId,
@@ -91,6 +99,12 @@ export async function PATCH(request: NextRequest) {
     const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing.scheduled_for
     const scheduleError = validateSchedule(nextStatus, nextScheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
+    const wantsScheduling = nextStatus === "scheduled"
+    if (wantsScheduling) {
+      const planCheck = await requirePlan(request, "Solo")
+      if (!planCheck.ok) return planCheck.response
+      if (!planCheck.limits.scheduling) return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
+    }
 
     const patch: Record<string, unknown> = {}
     if (title !== undefined) patch.title = title

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requirePlan } from "@/lib/server/require-plan"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
 
@@ -9,6 +10,9 @@ export async function POST(request: NextRequest) {
   try {
     await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.limits.scheduling) return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
 
     const body = await request.json()
     const postId = String(body.postId || "").trim()
@@ -24,6 +28,9 @@ export async function POST(request: NextRequest) {
     const existing = rows[0]
     const existingTime = existing.scheduled_for?.slice(11, 16) || "09:00"
     const newScheduledTime = `${date}T${existingTime}:00`
+    if (new Date(newScheduledTime).getTime() <= Date.now()) {
+      return NextResponse.json({ error: "scheduled_time_must_be_future" }, { status: 400 })
+    }
 
     const updated = await supabasePatch<DbPost>("posts", `id=eq.${postId}&workspace_id=eq.${workspaceId}`, {
       scheduled_for: newScheduledTime,
