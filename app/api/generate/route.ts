@@ -6,7 +6,7 @@ import { log } from "@/lib/server/logging"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
+import { checkPlanLimit, requirePlan } from "@/lib/server/plan-limits-v2"
 import { generatePost } from "@/lib/use-cases/generate-post"
 import { errorToStatus } from "@/lib/errors"
 import { canAccessPost } from "@/lib/domain/services/authorization"
@@ -33,8 +33,11 @@ const patchSchema = z.object({
 })
 
 
-export async function GET() {
-  return withAuth(async (_req, user) => {
+export async function GET(request: NextRequest) {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const status = await checkPlanLimit(user.id, "drafts")
     return NextResponse.json({
       allowed: status.allowed,
@@ -43,12 +46,15 @@ export async function GET() {
       remaining: status.remaining,
       plan: status.plan,
     })
-  })(new NextRequest("http://localhost"))
+  })(request)
 }
 
 export async function POST(request: NextRequest) {
   const reqId = crypto.randomUUID()
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     log.info("generate.post.start", { reqId, userId: user.id })
     let body: unknown
     try { body = await req.json() } catch {
@@ -70,7 +76,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       authorId: user.id,
       workspaceId: user.workspaceId,
-      plan: user.plan,
+      plan: planCheck.plan,
       reqId,
     })
 
@@ -82,7 +88,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Generated post exceeds LinkedIn's 3000 character limit." }, { status: 502 })
     }
 
-    log.info("generate.post.done", { reqId, userId: user.id, postId: result.data.post.id, plan: user.plan })
+    log.info("generate.post.done", { reqId, userId: user.id, postId: result.data.post.id, plan: planCheck.plan })
     return NextResponse.json(result.data)
   })(request)
 }

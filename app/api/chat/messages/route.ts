@@ -9,7 +9,7 @@ type DbMessage = { id: string; role: "user" | "assistant"; content: string; crea
 export async function GET(request: NextRequest) {
   try {
     const userId = await requireAuth()
-    const planCheck = await requirePlan(request, "Free")
+    const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
 
     const conversationId = request.nextUrl.searchParams.get("conversationId")
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAuth()
-    const planCheck = await requirePlan(request, "Free")
+    const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
 
     const { conversationId, content } = await request.json()

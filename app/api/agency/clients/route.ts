@@ -63,6 +63,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
 
+    const limit = planCheck.limits.clientWorkspaces
+    const clientCount = Math.max(0, (memberships || []).filter((m) => m.workspace_id).length - 1)
+    if (limit !== "unlimited" && clientCount >= limit) {
+      return NextResponse.json(
+        { error: "workspace_limit_reached", featureName: "clientWorkspaces", limit, current: clientCount },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     if (!body.clientName) return NextResponse.json({ error: "missing_fields" }, { status: 400 })
 

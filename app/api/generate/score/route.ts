@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { scorePost } from "@/lib/use-cases/score-post"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { errorToStatus } from "@/lib/errors"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
+
     // Atomic check+increment using internal UUID — prevents TOCTOU bypass and wrong-ID ghost rows.
     const usage = await incrementUsage(user.id, "analyses")
     if (!usage.allowed) {
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       internalUserId: user.id,
       workspaceId: user.workspaceId,
-      plan: user.plan,
+      plan: planCheck.plan,
     })
 
     if (!result.ok) {

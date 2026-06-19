@@ -69,7 +69,7 @@ Return JSON:
 
     const raw = await callAi("carousel-outline",system, userMsg, {
       json: true, temperature: 0.8, maxTokens: 1200,
-      userId: user.id, plan: user.plan, cache: false,
+      userId: user.id, plan: planCheck.plan, cache: false,
     })
 
     const parsed = safeParseJson<{ slides: Slide[] }>(raw)

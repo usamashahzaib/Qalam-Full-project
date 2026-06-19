@@ -24,13 +24,16 @@ const parseSlides = (raw: string, slideCount: number) => {
   }))
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const ctx = await getWorkspaceSessionContext()
     const userId = ctx.supabaseUserId
     const status = await getPlanStatus(userId)
     return NextResponse.json({
-      allowed: true,
+      allowed: status.carousels.remaining > 0,
       current: status.carousels.used,
       limit: status.carousels.limit,
       remaining: status.carousels.remaining,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { requirePlan } from "@/lib/server/require-plan"
 
 type Job = {
   id: string
@@ -17,6 +18,9 @@ type Job = {
 export async function GET(request: NextRequest) {
   try {
     await requireAuth()
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const workspaceId = await resolveWorkspaceId(request)
     const type = request.nextUrl.searchParams.get("type")
     const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") || 100), 500)
@@ -52,6 +56,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const body = (await request.json()) as {
       id?: string
       workspaceKey?: string
@@ -81,6 +88,9 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     await requireAuth()
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const workspaceId = await resolveWorkspaceId(request)
     const url = new URL(request.url)
     const id = url.searchParams.get("id")

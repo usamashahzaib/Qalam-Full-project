@@ -120,7 +120,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (_req, user) => {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withAuth(async (_req, user) => {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: postId } = await context.params
     const supabase = createServiceClient()
 

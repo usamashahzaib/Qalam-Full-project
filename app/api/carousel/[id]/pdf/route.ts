@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb, type RGB } from "pdf-lib"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { CAROUSEL_THEMES, DEFAULT_THEME_ID, type CarouselThemeId, type CarouselTheme } from "@/lib/carousel-design"
 
@@ -313,6 +314,12 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.limits.canExport) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "export" }, { status: 403 })
+    }
+
     const { id } = await context.params
 
     const body = await req.json().catch(() => ({}))

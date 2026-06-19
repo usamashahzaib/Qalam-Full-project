@@ -1,58 +1,32 @@
-import { requireAuth } from "@/lib/server/workspace"
-import { NextResponse } from "next/server"
-import { callAi } from "@/lib/server/ai-router-v2"
-import { buildRoleAwareSystemPrompt } from "@/lib/prompts/role-aware-system"
+import { NextRequest, NextResponse } from "next/server"
+import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
+import { generateHooks } from "@/lib/use-cases/generate-hooks"
+import { errorToStatus } from "@/lib/errors"
 
-export async function POST(request: Request) {
-  const userId = await requireAuth()
+export async function POST(request: NextRequest) {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
 
-  const body = await request.json()
-  const topic = String(body.topic || body.content || "").trim()
-  const role = body.role || "ceo-founder"
+    const body = await req.json()
+    const topic = String(body.topic || body.content || "").trim()
+    if (!topic) return NextResponse.json({ error: "topic_required" }, { status: 400 })
 
-  if (!topic) {
-    return NextResponse.json({ error: "topic_required" }, { status: 400 })
-  }
+    const result = await generateHooks({
+      topic,
+      role: String(body.role || body.style || ""),
+      userId: user.id,
+      plan: planCheck.plan,
+    })
 
-  const systemPrompt = `${buildRoleAwareSystemPrompt(role)}
-
-Your ONLY job is to generate 5 opening hooks (first 1-2 sentences) for a LinkedIn post about the given topic.
-
-RULES FOR HOOKS:
-1. Each hook must be under 25 words.
-2. Use specific numbers, surprising claims, or direct questions.
-3. Never start with "In today's world..." or "As we navigate..."
-4. Each hook should feel like it was written by a real person, not AI.
-5. Hooks should be contrarian, vulnerable, or data-driven.
-
-Return ONLY a JSON array of 5 hooks. Each hook is a string.`
-
-  const userPrompt = `Generate 5 hooks for a LinkedIn post about: ${topic}`
-
-  try {
-    const result = await callAi("hook-generation",systemPrompt, userPrompt, { json: true, temperature: 0.9, timeout: 15000 })
-
-    try {
-      const parsed = JSON.parse(result)
-      const hooks = Array.isArray(parsed)
-        ? parsed.map((hook) => String(hook).trim()).filter(Boolean)
-        : Array.isArray(parsed.hooks)
-          ? parsed.hooks.map((hook: unknown) => String(hook).trim()).filter(Boolean)
-          : []
-      if (hooks.length) {
-        return NextResponse.json({ hooks: hooks.slice(0, 5) })
-      }
-    } catch {
-      // fall through to line extraction
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error.userMessage ?? result.error.message },
+        { status: errorToStatus(result.error.code) }
+      )
     }
 
-    const lines = result
-      .split("\n")
-      .map((line) => line.replace(/^\d+[\).\s-]+/, "").replace(/^["']|["']$/g, "").trim())
-      .filter((line) => line && !line.includes("[") && !line.includes("]"))
-
-    return NextResponse.json({ hooks: lines.slice(0, 5) })
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "hook_generation_failed" }, { status: 502 })
-  }
+    return NextResponse.json(result.data)
+  })(request)
 }

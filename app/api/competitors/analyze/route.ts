@@ -1,23 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { analyzeCompetitor } from "@/lib/use-cases/analyze-competitor"
 import { errorToStatus } from "@/lib/errors"
 import { SupabaseCompetitorRepository } from "@/lib/repositories/supabase/SupabaseCompetitorRepository"
 
 const competitorRepo = new SupabaseCompetitorRepository()
 
-const MONTHLY_LIMIT = 5
-
-const isProOrAbove = (plan: string) => {
-  const p = plan.toLowerCase()
-  return p === "pro" || p === "agency" || p.startsWith("agency")
-}
-
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    if (!isProOrAbove(user.plan)) {
-      return NextResponse.json({ error: "Competitor research requires Pro plan." }, { status: 403 })
-    }
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+    const monthlyLimit = planCheck.limits.researchRunsPerMonth
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
@@ -33,16 +27,16 @@ export async function POST(request: NextRequest) {
 
     // Atomic check+increment prevents TOCTOU race where concurrent requests
     // both pass a separate read+check and exceed the monthly quota.
-    const allowed = await competitorRepo.atomicIncrementIfAllowed(user.id, MONTHLY_LIMIT)
+    const allowed = monthlyLimit === "unlimited" || await competitorRepo.atomicIncrementIfAllowed(user.id, monthlyLimit)
     if (!allowed) {
       const runsUsed = await competitorRepo.getRunsUsed(user.id)
       return NextResponse.json(
-        { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: MONTHLY_LIMIT },
+        { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: monthlyLimit },
         { status: 429 }
       )
     }
 
-    const result = await analyzeCompetitor({ postText, userId: user.id, plan: user.plan })
+    const result = await analyzeCompetitor({ postText, userId: user.id, plan: planCheck.plan })
 
     if (!result.ok) {
       // Roll back the increment on AI failure so the user doesn't lose a run
@@ -59,6 +53,6 @@ export async function POST(request: NextRequest) {
 
     await competitorRepo.saveAnalysis(user.id, postText, postUrl || null, analysis)
 
-    return NextResponse.json({ analysis, runsUsed, limit: MONTHLY_LIMIT })
+    return NextResponse.json({ analysis, runsUsed, limit: monthlyLimit })
   })(request)
 }

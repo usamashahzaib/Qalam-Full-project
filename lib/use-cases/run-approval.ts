@@ -18,7 +18,6 @@ export interface RunApprovalInput {
   userId: string
   userEmail: string
   userName?: string | null
-  plan: string
 }
 
 export interface RunApprovalOutput {
@@ -38,19 +37,10 @@ export interface RunApprovalOutput {
   }
 }
 
-const isProOrAbove = (plan: string) => {
-  const p = plan.toLowerCase()
-  return p === "pro" || p === "agency" || p.startsWith("agency")
-}
-
 // ─── Use case ─────────────────────────────────────────────────────────────────
 
 export async function runApproval(input: RunApprovalInput): Promise<Result<RunApprovalOutput>> {
-  const { reviewerEmail, postContent, postTitle, message, postId, userId, userEmail, userName, plan } = input
-
-  if (!isProOrAbove(plan)) {
-    return err({ code: "FORBIDDEN", message: "Approval workflow requires Pro plan.", userMessage: "Approval workflow requires Pro plan." })
-  }
+  const { reviewerEmail, postContent, postTitle, message, postId, userId, userEmail, userName } = input
 
   if (!reviewerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reviewerEmail)) {
     return err({ code: "VALIDATION_ERROR", message: "Valid reviewer email is required" })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 
@@ -14,6 +15,9 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Agency")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: workspaceId } = await context.params
     const supabase = createServiceClient()
 
@@ -85,6 +89,18 @@ export async function POST(
 
     if (existing) {
       return NextResponse.json({ error: "already_a_member", currentRole: existing.role }, { status: 409 })
+    }
+
+    const { count } = await supabase
+      .from("workspace_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("workspace_id", workspaceId)
+    const seats = planCheck.limits.seats
+    if (seats !== "unlimited" && (count ?? 0) >= seats) {
+      return NextResponse.json(
+        { error: "seat_limit_reached", featureName: "seats", limit: seats, current: count ?? 0 },
+        { status: 403 }
+      )
     }
 
     // Add to workspace
