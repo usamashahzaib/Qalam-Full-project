@@ -9,6 +9,7 @@ import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 
 export type { Feature }
+export { requirePlan } from "./require-plan"
 
 export const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
 
@@ -189,7 +190,8 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
       remaining: Math.max(0, (parsed.limit || limit) - (parsed.current || 0)),
       error: parsed.error,
     }
-  } catch {
+  } catch (err) {
+    console.error("plan_usage_rpc_failed", { userId, feature, error: err instanceof Error ? err.message : String(err) })
     // RPC not deployed or failed - fall back to optimistic-concurrency CAS with retry.
     const MAX_ATTEMPTS = 3
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {

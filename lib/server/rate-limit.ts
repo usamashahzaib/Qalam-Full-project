@@ -1,56 +1,73 @@
-import { Ratelimit } from "@upstash/ratelimit"
 import type { NextRequest } from "next/server"
 import { getRedis } from "./redis"
 
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
-type Bucket = { count: number; resetTime: number }
+type Bucket = { tokens: number; lastRefill: number }
 
-// In-memory store used only when Redis is not configured (dev/CI without Redis)
 const memoryStore = new Map<string, Bucket>()
-const WINDOW_MS = 60_000
-let lastMemoryCleanup = 0
-
 const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
 
-let redisLimiters: Record<string, Ratelimit> | null = null
+export class TokenBucket {
+  constructor(
+    public capacity: number,
+    public refillRate: number,
+    public windowMs: number = 60_000
+  ) {}
 
-const getLimiters = (): Record<string, Ratelimit> | null => {
-  const r = getRedis()
-  if (!r) return null
-  if (redisLimiters) return redisLimiters
-  redisLimiters = {
-    free: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.free, "1 m") }),
-    solo: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.solo, "1 m") }),
-    pro: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.pro, "1 m") }),
-    agency: new Ratelimit({ redis: r, limiter: Ratelimit.slidingWindow(planLimits.agency, "1 m") }),
-  }
-  return redisLimiters
-}
+  async tryConsume(key: string, tokens: number = 1): Promise<boolean> {
+    const redis = getRedis()
+    const now = Date.now()
 
-const memoryFallback = (key: string, limit: number): LimitResult => {
-  const now = Date.now()
-  if (now - lastMemoryCleanup > WINDOW_MS) {
-    lastMemoryCleanup = now
-    for (const [bucketKey, bucket] of memoryStore) {
-      if (bucket.resetTime < now) memoryStore.delete(bucketKey)
+    if (redis) {
+      const redisKey = `ratelimit:${key}`
+      const data = await redis.get<Bucket>(redisKey)
+      let bucketTokens = data?.tokens ?? this.capacity
+      const lastRefill = data?.lastRefill ?? now
+      const elapsed = now - lastRefill
+      const tokensToAdd = (elapsed / this.windowMs) * this.capacity
+      bucketTokens = Math.min(this.capacity, bucketTokens + tokensToAdd)
+
+      if (bucketTokens >= tokens) {
+        bucketTokens -= tokens
+        await redis.set(redisKey, { tokens: bucketTokens, lastRefill: now }, { ex: Math.ceil(this.windowMs / 1000) * 2 })
+        return true
+      }
+      await redis.set(redisKey, { tokens: bucketTokens, lastRefill: now }, { ex: Math.ceil(this.windowMs / 1000) * 2 })
+      return false
     }
+
+    if (process.env.NODE_ENV === "production") {
+      console.warn("[rate-limit] Redis unavailable, using in-memory fallback")
+    }
+    return this._tryConsumeMemory(key, tokens, now)
   }
-  const existing = memoryStore.get(key)
-  if (existing && existing.resetTime > now) {
-    existing.count += 1
-    const allowed = existing.count <= limit
-    return { allowed, limit, remaining: Math.max(0, limit - existing.count), reset: existing.resetTime }
+
+  async getState(key: string): Promise<Bucket> {
+    const redis = getRedis()
+    const state = redis ? await redis.get<Bucket>(`ratelimit:${key}`) : memoryStore.get(key)
+    return state ?? { tokens: this.capacity, lastRefill: Date.now() }
   }
-  const resetTime = now + WINDOW_MS
-  memoryStore.set(key, { count: 1, resetTime })
-  return { allowed: true, limit, remaining: limit - 1, reset: resetTime }
+
+  private _tryConsumeMemory(key: string, tokens: number, now: number): boolean {
+    const data = memoryStore.get(key)
+    let bucketTokens = data?.tokens ?? this.capacity
+    const lastRefill = data?.lastRefill ?? now
+    const elapsed = now - lastRefill
+    const tokensToAdd = (elapsed / this.windowMs) * this.capacity
+    bucketTokens = Math.min(this.capacity, bucketTokens + tokensToAdd)
+
+    if (bucketTokens >= tokens) {
+      memoryStore.set(key, { tokens: bucketTokens - tokens, lastRefill: now })
+      return true
+    }
+    memoryStore.set(key, { tokens: bucketTokens, lastRefill: now })
+    return false
+  }
 }
 
 export function getClientIp(request: NextRequest): string {
-  // x-real-ip is set by trusted reverse proxies (Vercel, nginx) and cannot be injected by clients
   const realIp = request.headers.get("x-real-ip")?.trim()
   if (realIp) return realIp
-  // Fall back to x-forwarded-for first entry (set by the outermost trusted proxy on Vercel)
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
   return forwarded || "unknown"
 }
@@ -62,33 +79,20 @@ export async function checkRateLimit(
 ): Promise<LimitResult> {
   const planKey = planLimits[plan.toLowerCase()] !== undefined ? plan.toLowerCase() : "free"
   const limit = planLimits[planKey]
-  const memKey = `ip:${ip}:route:${identifier}`
-
-  const limiters = getLimiters()
-  if (limiters) {
-    try {
-      const limiter = limiters[planKey] ?? limiters.free
-      const result = await limiter.limit(memKey)
-      return {
-        allowed: result.success,
-        limit: result.limit,
-        remaining: result.remaining,
-        reset: result.reset,
-      }
-    } catch {
-      // Redis configured but threw — fall back to in-memory rather than failing open.
-      console.error("[RateLimit] Redis error - falling back to in-memory limiter")
-      return memoryFallback(memKey, limit)
-    }
+  const key = `ip:${ip}:route:${identifier}`
+  const bucket = new TokenBucket(limit, limit)
+  const allowed = await bucket.tryConsume(key)
+  const state = await bucket.getState(key)
+  return {
+    allowed,
+    limit,
+    remaining: Math.max(0, Math.floor(state.tokens)),
+    reset: state.lastRefill + bucket.windowMs,
   }
-
-  // Redis not configured - use in-memory (dev mode only)
-  return memoryFallback(memKey, limit)
 }
 
 export async function checkBotDetection(ip: string, userAgent: string | null): Promise<boolean> {
-  if (!userAgent || !userAgent.trim()) return true
-  const botPattern =
-    /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i
-  return botPattern.test(userAgent)
+  void ip
+  if (!userAgent?.trim()) return true
+  return /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i.test(userAgent)
 }

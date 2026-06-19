@@ -12,7 +12,13 @@ type ShareRequestBody = {
 }
 
 export async function POST(request: NextRequest) {
-    const userId = await requireAuth()
+  const userId = await requireAuth()
+  const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+  const planCheck = await requirePlan(request, "Pro")
+  if (!planCheck.ok) return planCheck.response
+  if (!planCheck.limits.linkedinPublish) {
+    return NextResponse.json({ error: "upgrade_required", requiredFeature: "linkedinPublish" }, { status: 403 })
+  }
 
   const ctx = await getWorkspaceSessionContext()
   const body = (await request.json()) as ShareRequestBody

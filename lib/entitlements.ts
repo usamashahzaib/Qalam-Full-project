@@ -30,6 +30,7 @@ export type PlanLimits = {
   approvals: boolean
   canExport: boolean
   analyticsDepth: "basic" | "full"
+  voiceTraining: boolean
 }
 
 const derivePlanLimits = (tier: PlanTier): PlanLimits => {
@@ -45,6 +46,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
     approvals: flags.approvals,
     canExport: flags.canExport,
     analyticsDepth: flags.analyticsDepth,
+    voiceTraining: flags.voiceTraining,
   }
 }
 

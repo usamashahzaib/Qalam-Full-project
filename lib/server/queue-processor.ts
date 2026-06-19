@@ -25,7 +25,20 @@ async function storeItem(r: Redis, item: QueueItem): Promise<void> {
   await r.set(`queue:item:${item.id}`, JSON.stringify(item), { ex: ITEM_TTL_SECONDS })
 }
 
+async function assertQueueEntitlement(item: QueueItem) {
+  const { getPlanStatus } = await import("./plan-limits-v2")
+  const { PLAN_LIMITS } = await import("@/lib/entitlements")
+  const freshStatus = await getPlanStatus(item.userId)
+  const freshLimits = PLAN_LIMITS[freshStatus.plan as keyof typeof PLAN_LIMITS]
+  const carouselAllowed = freshLimits?.carouselGenerationsPerMonth === "unlimited" || (freshLimits?.carouselGenerationsPerMonth ?? 0) > 0
+  if ((item.type === "voice" && !freshLimits?.voiceTraining) || (item.type === "carousel" && !carouselAllowed)) {
+    throw new Error("plan_downgraded_queue_blocked")
+  }
+}
+
 async function handleItem(item: QueueItem): Promise<unknown> {
+  await assertQueueEntitlement(item)
+
   if (item.type === "generate") {
     const topic = String(item.payload.topic ?? "")
     const role = String(item.payload.role ?? "founder")

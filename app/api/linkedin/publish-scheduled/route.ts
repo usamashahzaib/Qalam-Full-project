@@ -110,6 +110,7 @@ export async function GET(request: Request) {
     const accountsByWorkspace = new Map(accountEntries.filter(([, acct]) => acct !== null))
     const usersById = new Map((users || []).map(user => [user.id, user]))
     const results: Array<{ postId: string; status: "published" | "failed" | "skipped"; reason?: string; postUrn?: string | null }> = []
+    const redis = getRedis()
 
     for (const post of duePosts) {
       const lock = await acquirePublishLock(post.id)
@@ -119,6 +120,25 @@ export async function GET(request: Request) {
       }
 
       try {
+        // PLAN GATE: verify user still has scheduling + publish rights
+        const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
+        const { PLAN_LIMITS } = await import("@/lib/entitlements")
+        const status = await getPlanStatus(post.user_id)
+        const limits = PLAN_LIMITS[status.plan as keyof typeof PLAN_LIMITS]
+        if (!limits?.scheduling || !limits?.linkedinPublish) {
+          await markFailed(post, "plan_downgraded")
+          results.push({ postId: post.id, status: "failed", reason: "plan_downgraded" })
+          continue
+        }
+
+        // Per-account rate limit: max 1 publish per 15 minutes per workspace
+        const rateKey = `rate:linkedin:${post.workspace_id}`
+        const lastPublish = await redis?.get<string>(rateKey)
+        if (lastPublish && Date.now() - Number(lastPublish) < 15 * 60 * 1000) {
+          results.push({ postId: post.id, status: "skipped", reason: "account_publish_cooldown" })
+          continue
+        }
+
         const content = post.content?.trim()
         const account = accountsByWorkspace.get(post.workspace_id) ?? null
         const user = usersById.get(post.user_id)
@@ -168,6 +188,7 @@ export async function GET(request: Request) {
             metadata: { ...(post.metadata || {}), last_publish_error: null },
           })
           await logPublish(post.id, account.id, "success", null, { postUrn: shared.postUrn })
+          await redis?.set(rateKey, String(Date.now()), { ex: 900 })
           results.push({ postId: post.id, status: "published", postUrn: shared.postUrn })
         } catch (error) {
           const reason = errorReason(error)

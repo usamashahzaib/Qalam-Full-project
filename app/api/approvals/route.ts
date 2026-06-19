@@ -11,6 +11,10 @@ const toApprovalRow = <T extends { comments?: unknown }>(row: T) => ({
 
 export async function GET(request: NextRequest) {
   return withAuth(async (_req, user) => {
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(_req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+
     const supabase = createServiceClient()
     const { data: rows } = await supabase
       .from("approvals")

@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       // Roll back the increment on AI failure so the user doesn't lose a run
-      await competitorRepo.incrementRunsUsed(user.id, Math.max(0, await competitorRepo.getRunsUsed(user.id) - 1)).catch(() => undefined)
+      const currentRuns = await competitorRepo.getRunsUsed(user.id)
+      await competitorRepo.setRunsUsed(user.id, Math.max(0, currentRuns - 1)).catch(() => undefined)
       return NextResponse.json(
         { error: result.error.userMessage ?? result.error.message },
         { status: errorToStatus(result.error.code) }

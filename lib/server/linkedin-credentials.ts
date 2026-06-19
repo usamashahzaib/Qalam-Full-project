@@ -144,8 +144,9 @@ export const getLinkedInPublishingAccount = async (workspaceId: string): Promise
       ...row,
       access_token: row.access_token ? decryptToken(row.access_token) : null,
     }
-  } catch {
-    return null
+  } catch (err) {
+    console.error("linkedin_publishing_account_load_failed", { workspaceId, error: err instanceof Error ? err.message : String(err) })
+    throw err
   }
 }
 
@@ -162,8 +163,9 @@ export const getLinkedInToken = async (userId: string): Promise<LinkedInCredenti
     const row = rows?.[0]
     if (!row) return null
     return { ...row, access_token: decryptToken(row.access_token) }
-  } catch {
-    return null
+  } catch (err) {
+    console.error("linkedin_token_load_failed", { userId, error: err instanceof Error ? err.message : String(err) })
+    throw err
   }
 }
 

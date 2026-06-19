@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (String(planCheck.limits.analyticsDepth) === "none") {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
+    }
 
     const url = new URL(req.url)
     const postId = url.searchParams.get("postId")
@@ -46,6 +52,12 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
+    }
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (String(planCheck.limits.analyticsDepth) === "none") {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
 
     let body: unknown

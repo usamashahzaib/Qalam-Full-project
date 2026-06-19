@@ -79,11 +79,15 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
     return false
   }
 
-  async incrementRunsUsed(userId: string, currentCount: number): Promise<void> {
+  async setRunsUsed(userId: string, count: number): Promise<void> {
     const supabase = createServiceClient()
     await supabase
       .from("plan_usage")
-      .update({ competitor_runs_used: currentCount + 1 })
+      .update({ competitor_runs_used: Math.max(0, count) })
       .eq("user_id", userId)
+  }
+
+  async incrementRunsUsed(userId: string, currentCount: number): Promise<void> {
+    await this.setRunsUsed(userId, currentCount + 1)
   }
 }

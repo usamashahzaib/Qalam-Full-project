@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
-import { requirePlan } from "@/lib/server/require-plan"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
 
@@ -9,10 +8,14 @@ type DbPost = { id: string; scheduled_for: string | null; status: string; worksp
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
-    const workspaceId = await resolveWorkspaceId(request)
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
     const planCheck = await requirePlan(request, "Solo")
     if (!planCheck.ok) return planCheck.response
-    if (!planCheck.limits.scheduling) return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
+    if (!planCheck.limits.scheduling) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
+    }
+
+    const workspaceId = await resolveWorkspaceId(request)
 
     const body = await request.json()
     const postId = String(body.postId || "").trim()

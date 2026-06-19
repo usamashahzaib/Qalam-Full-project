@@ -71,6 +71,17 @@ export async function GET(request: NextRequest) {
       continue
     }
 
+    // PLAN GATE: skip if user downgraded and no longer has scheduling
+    const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
+    const { PLAN_LIMITS } = await import("@/lib/entitlements")
+    const userPlanStatus = await getPlanStatus(post.user_id)
+    const userLimits = PLAN_LIMITS[userPlanStatus.plan as keyof typeof PLAN_LIMITS]
+    if (!userLimits?.scheduling) {
+      await supabase.from("posts").update({ status: "draft", updated_at: now }).eq("id", post.id)
+      autoPublishSkipped++
+      continue
+    }
+
     const email = Array.isArray(post.users) ? post.users[0]?.email : (post.users as { email?: string } | null)?.email
     if (!email) continue
 
