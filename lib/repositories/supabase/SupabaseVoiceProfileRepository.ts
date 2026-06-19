@@ -101,7 +101,7 @@ Return JSON:
   "transitions": ["transition 1", "transition 2", "transition 3"],
   "ctaStyle": "question | direct | soft"
 }`
-    const raw = await callAi(system, userMsg, {
+    const raw = await callAi("voice-profile", system, userMsg, {
       json: true, temperature: 0.3, maxTokens: 600,
       userId, plan, cache: false,
     })

@@ -14,6 +14,9 @@ export const env = {
   googleClientSecret: read("GOOGLE_CLIENT_SECRET"),
   geminiApiKey: read("GEMINI_API_KEY"),
   groqApiKey: read("GROQ_API_KEY"),
+  mistralApiKey: read("MISTRAL_API_KEY"),
+  cerebrasApiKey: read("CEREBRAS_API_KEY"),
+  openrouterApiKey: read("OPENROUTER_API_KEY"),
   authSecret: read("AUTH_SECRET"),
   upstashRedisUrl: read("UPSTASH_REDIS_REST_URL"),
   upstashRedisToken: read("UPSTASH_REDIS_REST_TOKEN"),
@@ -38,8 +41,8 @@ export const requireSupabaseEnv = () => {
 }
 
 export function requireAiEnv(): void {
-  if (!env.groqApiKey && !env.geminiApiKey) {
-    throw new Error("At least one AI provider key is required (GROQ_API_KEY or GEMINI_API_KEY)")
+  if (!env.groqApiKey && !env.geminiApiKey && !env.mistralApiKey && !env.cerebrasApiKey && !env.openrouterApiKey) {
+    throw new Error("At least one AI provider key is required")
   }
 }
 
@@ -65,6 +68,9 @@ export const supportEnv = {
 
 export const groqApiKey = env.groqApiKey
 export const geminiApiKey = env.geminiApiKey
+export const mistralApiKey = env.mistralApiKey
+export const cerebrasApiKey = env.cerebrasApiKey
+export const openrouterApiKey = env.openrouterApiKey
 export const authSecret = env.authSecret
 export const upstashRedisUrl = env.upstashRedisUrl
 export const upstashRedisToken = env.upstashRedisToken

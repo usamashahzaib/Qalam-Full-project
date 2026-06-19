@@ -122,13 +122,10 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   return extracted
 }
 
-const addMonths = (months: number) => {
-  const now = new Date()
-  const day = now.getDate()
-  now.setDate(1)
-  now.setMonth(now.getMonth() + months)
-  now.setDate(Math.min(day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()))
-  return now.toISOString()
+const addBillingDays = (days: number) => {
+  const expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+  expiry.setUTCHours(23, 59, 59, 999)
+  return expiry.toISOString()
 }
 
 const getUser = async (payment: VerifiedPayment) => {
@@ -168,7 +165,8 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   if (!user) throw new Error("payment_user_not_found")
 
   const organizationId = await getOrganizationId(user.id)
-  const expiresAt = payment.status === "paid" ? addMonths(payment.billingCycle === "annual" ? 12 : 1) : null
+  const now = new Date().toISOString()
+  const expiresAt = payment.status === "paid" ? addBillingDays(payment.billingCycle === "annual" ? 365 : 30) : null
 
   await supabaseUpsert("payments", {
     provider: payment.provider,
@@ -207,12 +205,18 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
 
   if (rpcError) {
     console.warn("[payments] activate_plan RPC unavailable, falling back to direct updates:", rpcError.message)
-    const now = new Date().toISOString()
-
     // Update users table (payment webhook source of truth)
     const { error: userErr } = await supabase
       .from("users")
-      .update({ plan: payment.planName, plan_expires_at: expiresAt, updated_at: now })
+      .update({
+        plan: payment.planName,
+        plan_expires_at: expiresAt,
+        plan_started_at: now,
+        billing_cycle: payment.billingCycle,
+        reminder_sent_3d: false,
+        reminder_sent_1d: false,
+        updated_at: now,
+      })
       .eq("id", user.id)
     if (userErr) {
       console.error("[payments] fallback users.plan update failed:", userErr)
@@ -235,10 +239,24 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
       .then(undefined, (err: unknown) => console.error("[payments] plan_usage upsert failed:", err))
   }
 
+  await supabase
+    .from("users")
+    .update({
+      plan: payment.planName,
+      plan_expires_at: expiresAt,
+      plan_started_at: now,
+      billing_cycle: payment.billingCycle,
+      reminder_sent_3d: false,
+      reminder_sent_1d: false,
+      updated_at: now,
+    })
+    .eq("id", user.id)
+    .then(undefined, (err: unknown) => console.error("[payments] users plan metadata sync failed:", err))
+
   // Sync cycle dates on plan_usage (best-effort; plan itself is already set by the RPC)
   await supabase
     .from("plan_usage")
-    .update({ cycle_start: new Date().toISOString(), cycle_end: expiresAt, updated_at: new Date().toISOString() })
+    .update({ cycle_start: now, cycle_end: expiresAt, updated_at: now })
     .eq("user_id", user.id)
     .then(undefined, (err: unknown) => console.error("[payments] plan_usage cycle sync failed:", err))
 

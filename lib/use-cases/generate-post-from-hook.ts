@@ -72,7 +72,7 @@ export async function generatePostFromHook(
 
   let rawPost: string
   try {
-    rawPost = await callAi(genSystem, genUser, {
+    rawPost = await callAi("post-generation", genSystem, genUser, {
       temperature: 0.85, maxTokens: 1000,
       userId, plan, cache: false,
     })
@@ -83,7 +83,7 @@ export async function generatePostFromHook(
   let humanized: string
   try {
     const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-    humanized = await callAi(humSystem, humUser, {
+    humanized = await callAi("post-improvement", humSystem, humUser, {
       temperature: 0.4, maxTokens: 1000,
       userId, plan, cache: false,
     })

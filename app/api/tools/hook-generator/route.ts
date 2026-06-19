@@ -36,7 +36,7 @@ Rules:
 Return ONLY a JSON array of 5 strings. No explanation, no markdown, just the JSON array.
 Example format: ["Hook 1 here", "Hook 2 here", "Hook 3 here", "Hook 4 here", "Hook 5 here"]`
 
-    const raw = await callAi(
+    const raw = await callAi("hook-generation",
       systemPrompt,
       `Generate 5 LinkedIn hooks for this topic: ${parsed.data.topic}`,
       {

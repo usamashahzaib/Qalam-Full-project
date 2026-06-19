@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await callAi(
+    const result = await callAi("carousel-outline",
       "Return strict JSON only.",
       `Turn this LinkedIn post or outline into a 5-7 slide carousel. Avoid filler. Each slide should carry one clear idea.
 

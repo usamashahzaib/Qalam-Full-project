@@ -109,7 +109,7 @@ export function CarouselBuilderTool() {
     if (!slides.length || exporting) return
     setExporting(true)
     try {
-      await generateCarouselZip(slideRefs.slice(0, slides.length) as RefObject<HTMLDivElement | null>[], "carousel")
+      await generateCarouselZip(slideRefs.slice(0, 1) as RefObject<HTMLDivElement | null>[], "carousel")
       setExportDone(true)
       setTimeout(() => setExportDone(false), 3000)
     } catch (e) {

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await callAi(
+    const result = await callAi("engagement-prediction",
       "Return strict JSON only.",
       `Analyze this LinkedIn post for viral potential. Be specific and critical.
 

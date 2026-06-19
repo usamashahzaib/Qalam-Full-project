@@ -1,6 +1,6 @@
 import { Redis } from "@upstash/redis"
 import { getRedis } from "@/lib/server/redis"
-import { callAi } from "@/lib/server/ai-router-v2"
+import { callAi, type AiTask } from "@/lib/server/ai-router-v2"
 
 let processorInterval: ReturnType<typeof setInterval> | null = null
 
@@ -39,10 +39,17 @@ async function assertQueueEntitlement(item: QueueItem) {
 async function handleItem(item: QueueItem): Promise<unknown> {
   await assertQueueEntitlement(item)
 
+  const taskMap: Record<QueueItem["type"], AiTask> = {
+    generate: "post-generation",
+    carousel: "carousel-outline",
+    voice: "voice-profile",
+  }
+
   if (item.type === "generate") {
     const topic = String(item.payload.topic ?? "")
     const role = String(item.payload.role ?? "founder")
     const content = await callAi(
+      taskMap.generate,
       "Create a strong LinkedIn post. Return plain text.",
       `Topic: ${topic}\nRole: ${role}`,
       { temperature: 0.8 },
@@ -54,6 +61,7 @@ async function handleItem(item: QueueItem): Promise<unknown> {
     const topic = String(item.payload.topic ?? "")
     const slideCount = Number(item.payload.slideCount ?? 5)
     const content = await callAi(
+      taskMap.carousel,
       "Create a LinkedIn carousel outline as JSON.",
       `Topic: ${topic}\nSlides: ${slideCount}`,
       { json: true, temperature: 0.7 },

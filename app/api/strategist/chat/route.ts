@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       const titlePrompt = `Generate a concise 3-5 word title for a conversation that starts with this message. No quotes, no punctuation at end.
 
 Message: ${cleanMessage}`
-      const titleResult = await callAi(
+      const titleResult = await callAi("chat-strategist",
         "You name conversations. Return only the title.",
         titlePrompt,
         { temperature: 0.3, timeout: 5000 }
@@ -111,7 +111,7 @@ USER: ${cleanMessage}
 
 Respond with specific, actionable LinkedIn strategy advice. Be concise. Give examples. No generic fluff.`
 
-    const response = await callAi(
+    const response = await callAi("chat-strategist",
       "You are Qalam, a concise LinkedIn strategy advisor.",
       prompt,
       { temperature: 0.7, timeout: 15000 }

@@ -112,7 +112,7 @@ export default function CarouselEditorPage() {
 
   const exportAsText = () => {
     if (!slides.length) return
-    const text = slides.map((slide, index) => `--- Slide ${index + 1} ---\n${slide.title ? `TITLE: ${slide.title}\n` : ""}${slide.content || ""}`).join("\n\n")
+    const text = slides.slice(0, 1).map((slide, index) => `--- Slide ${index + 1} ---\n${slide.title ? `TITLE: ${slide.title}\n` : ""}${slide.content || ""}`).join("\n\n")
     const blob = new Blob([text], { type: "text/plain" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
@@ -154,6 +154,7 @@ export default function CarouselEditorPage() {
   const currentSlide = slides[activeSlide]
   const isFirstSlide = activeSlide === 0
   const isLastSlide = activeSlide === slides.length - 1
+  const isDownloadableSlide = activeSlide === 0
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 sm:px-10 font-jakarta">
@@ -237,9 +238,9 @@ export default function CarouselEditorPage() {
               </div>
 
               {/* Slide preview - scaled real slide components */}
-              <div className="mb-6 flex justify-center">
+              <div className="relative mb-6 flex justify-center">
                 <div
-                  className="overflow-hidden rounded-2xl shadow-xl"
+                  className={`overflow-hidden rounded-2xl shadow-xl ${isDownloadableSlide ? "" : "pointer-events-none blur-sm opacity-50"}`}
                   style={{ width: PREVIEW_W, height: PREVIEW_H }}
                 >
                   <div style={{ transform: `scale(${SLIDE_SCALE})`, transformOrigin: "top left", width: 1080, height: 1080 }}>
@@ -265,6 +266,14 @@ export default function CarouselEditorPage() {
                     )}
                   </div>
                 </div>
+                {!isDownloadableSlide ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="rounded-xl bg-white/90 px-4 py-3 text-center shadow-sm">
+                      <p className="text-xs font-bold text-zinc-900">Slide {activeSlide + 1} preview locked</p>
+                      <p className="mt-1 text-[11px] text-zinc-500">Only slide 1 is downloadable.</p>
+                    </div>
+                  </div>
+                ) : null}
               </div>
 
               {/* Edit fields */}

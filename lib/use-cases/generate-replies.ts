@@ -24,7 +24,7 @@ ${postContent.slice(0, 1200)}
 Return JSON: {"replies":["...","...","..."]}`
 
   try {
-    const raw = await callAi(system, user, { json: true, temperature: 0.85, maxTokens: 500, userId, cache: false })
+    const raw = await callAi("chat-strategist", system, user, { json: true, temperature: 0.85, maxTokens: 500, userId, cache: false })
     const parsed = safeParseJson<{ replies?: unknown[] }>(raw)
     const replies = (parsed?.replies || []).map(String).map((v) => v.trim()).filter(Boolean).slice(0, 3)
 

@@ -5,6 +5,7 @@
 import { createServiceClient } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
+import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-expiry"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 
@@ -28,6 +29,19 @@ const FIELD_MAP: Record<Feature, string> = {
   analyses: "analyses_used",
 }
 
+const USAGE_FIELDS = ["ai_drafts_used", "carousels_used", "hooks_used", "analyses_used", "competitor_runs_used"] as const
+const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000
+
+const getThirtyDayWindow = (startedAt?: string | null) => {
+  if (!startedAt) return null
+  const start = new Date(startedAt)
+  if (Number.isNaN(start.getTime())) return null
+  const elapsed = Math.max(0, Math.floor((Date.now() - start.getTime()) / MS_30_DAYS))
+  const windowStart = new Date(start.getTime() + elapsed * MS_30_DAYS)
+  const windowEnd = new Date(windowStart.getTime() + MS_30_DAYS)
+  return { windowStart, windowEnd }
+}
+
 // Single canonical plan resolver — call this everywhere instead of any local higherPlan logic.
 export async function getCanonicalPlan(userId: string): Promise<string> {
   return (await getPlanStatus(userId)).plan
@@ -36,6 +50,7 @@ export async function getCanonicalPlan(userId: string): Promise<string> {
 // Get plan status from plan_usage table, respecting admin overrides
 export async function getPlanStatus(userId: string) {
   const supabase = createServiceClient()
+  const expiryStatus = await getExpiryPlanStatus(userId)
 
   // Parallel: get usage + check admin override + check users.plan (payment source of truth)
   const [usageResult, overrideResult, usersResult, paymentResult] = await Promise.all([
@@ -51,10 +66,10 @@ export async function getPlanStatus(userId: string) {
     Promise.resolve(
       supabase
         .from("users")
-        .select("plan,plan_expires_at,created_at")
+        .select("plan,plan_expires_at,plan_started_at,billing_cycle,created_at")
         .or(`id.eq.${userId},external_user_id.eq.${userId}`)
         .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null; created_at?: string | null } | null }>,
+    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null; plan_started_at?: string | null; billing_cycle?: string | null; created_at?: string | null } | null }>,
     Promise.resolve(
       supabase
         .from("payments")
@@ -90,8 +105,26 @@ export async function getPlanStatus(userId: string) {
       usage = newRow
     }
   }
+  const quotaWindow = usersResult.data?.billing_cycle === "annual" ? getThirtyDayWindow(usersResult.data?.plan_started_at) : null
+  if (usage && quotaWindow) {
+    const cycleStart = usage?.cycle_start ? new Date(String(usage.cycle_start)) : null
+    if (!cycleStart || Number.isNaN(cycleStart.getTime()) || cycleStart < quotaWindow.windowStart) {
+      const resetPayload: Record<string, number | string> = {
+        cycle_start: quotaWindow.windowStart.toISOString(),
+        cycle_end: quotaWindow.windowEnd.toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+      for (const field of USAGE_FIELDS) resetPayload[field] = 0
+      await supabase
+        .from("plan_usage")
+        .update(resetPayload)
+        .eq("user_id", userId)
+        .then(undefined, (err: unknown) => console.error("plan_usage_window_reset_failed", err))
+      usage = { ...usage, ...resetPayload }
+    }
+  }
   const override = overrideResult.data
-  const usersPlan = normalizePlan(usersResult.data?.plan)
+  const usersPlan = normalizePlan(expiryStatus.plan || usersResult.data?.plan)
   const boughtAt = paymentResult.data?.processed_at || paymentResult.data?.created_at || usage?.cycle_start || usersResult.data?.created_at || null
   // Use the stored plan_expires_at from users table as the authoritative expiry.
   // resolvePlanExpiry is only a display fallback — never let a computed date override the stored one.
@@ -103,7 +136,7 @@ export async function getPlanStatus(userId: string) {
 
   // Downgrade to Free ONLY when plan_expires_at is explicitly stored in the DB and has passed.
   // If plan_expires_at is null (e.g. admin-set plan, no stored expiry), leave plan intact.
-  if (plan !== "Free" && storedExpiresAt && new Date(storedExpiresAt) < new Date()) {
+  if (!expiryStatus.isActive) {
     plan = "Free"
   }
 
@@ -144,8 +177,12 @@ export async function getPlanStatus(userId: string) {
       limit: config.analyses,
       remaining: Math.max(0, config.analyses - (usage?.analyses_used || 0))
     },
-    cycleEnd: usage?.cycle_end,
-    planExpiresAt,
+    cycleEnd: getQuotaResetDate(usersResult.data?.plan_started_at ?? null, usersResult.data?.billing_cycle ?? null)?.toISOString() || usage?.cycle_end,
+    planExpiresAt: expiryStatus.expiresAt || planExpiresAt,
+    isActive: expiryStatus.isActive,
+    expiresAt: expiryStatus.expiresAt,
+    renewalDue: expiryStatus.renewalDue,
+    daysUntilExpiry: expiryStatus.daysUntilExpiry,
   }
 }
 

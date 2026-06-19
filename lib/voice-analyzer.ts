@@ -8,7 +8,7 @@ export const analyzeVoice = async (
   userId: string,
   plan: string
 ): Promise<VoiceAnalysis> => {
-  const raw = await callAi(
+  const raw = await callAi("voice-profile",
     "Return strict JSON only.",
     `Analyze this writing sample and return { "tone", "sentenceLength", "vocabulary", "commonPhrases", "transitions", "ctaStyle" }.\n\n${examplePosts}`,
     { json: true, temperature: 0.3, maxTokens: 500, userId, plan, cache: false }

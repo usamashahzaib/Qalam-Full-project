@@ -337,15 +337,16 @@ export async function POST(
     const regular = await pdf.embedFont(StandardFonts.Helvetica)
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
 
-    rawSlides.forEach((slide, index) => {
+    const exportSlides = rawSlides.slice(0, 1)
+    exportSlides.forEach((slide, index) => {
       const title = String(slide.title || `Slide ${index + 1}`)
       const content = Array.isArray(slide.bullets) ? slide.bullets.join(" ") : (slide.designHint || "")
       const slideNum = index + 1
-      const total = rawSlides.length
+      const total = exportSlides.length
 
       if (index === 0) {
         drawCoverSlide(pdf, title, slideNum, total, theme, bold, regular)
-      } else if (index === rawSlides.length - 1 && rawSlides.length > 2) {
+      } else if (index === exportSlides.length - 1 && exportSlides.length > 2) {
         drawCtaSlide(pdf, title, content, slideNum, total, theme, bold, regular)
       } else {
         drawContentSlide(pdf, title, content, slideNum, total, theme, bold, regular)

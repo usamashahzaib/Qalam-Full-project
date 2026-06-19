@@ -51,7 +51,7 @@ Return JSON:
 
     let raw: string
     try {
-      raw = await callAi(system, userMsg, {
+      raw = await callAi("voice-profile", system, userMsg, {
         json: true, temperature: 0.3, maxTokens: 600,
         userId: user.id, plan: user.plan, cache: false,
       })

@@ -91,7 +91,7 @@ export async function improvePost(
   let scoringSucceeded = false
   for (let attempt = 1; attempt <= 2; attempt++) {
     const { system: impSystem, user: impUser } = buildPushTo90Prompt(artifact.content, attempt === 1 ? scores : normalizeScores(rawScores), role, voiceProfile)
-    const candidate = await callAi(impSystem, impUser, {
+    const candidate = await callAi("post-improvement", impSystem, impUser, {
       temperature: 0.7, maxTokens: 1000,
       userId, plan, cache: false,
     }).catch(() => "")
@@ -103,7 +103,7 @@ export async function improvePost(
     artifact = { content: trimmed, wordCount: trimmed.split(/\s+/).filter(Boolean).length }
 
     const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(artifact.content, role, voiceProfile)
-    const scoreRaw = await callAi(scoreSystem, scoreUser, {
+    const scoreRaw = await callAi("post-improvement", scoreSystem, scoreUser, {
       json: true, temperature: 0.2, maxTokens: 600,
       userId, plan, cache: false,
     }).catch(() => "{}")

@@ -77,7 +77,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
 
   // Pass 1: Generate raw post
   const { system: genSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)
-  const rawPost = await callAi(genSystem, genUser, {
+  const rawPost = await callAi("post-generation", genSystem, genUser, {
     temperature: 0.85, maxTokens: 900,
     userId, plan, cache: false,
   })
@@ -86,7 +86,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
   let content: string
   try {
-    content = (await callAi(humSystem, humUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
+    content = (await callAi("post-improvement", humSystem, humUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
   } catch {
     content = rawPost.trim()
   }
@@ -102,14 +102,14 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   if (qualityCheck && plan !== "free") {
     try {
       const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
-      const scoreRaw = await callAi(scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
+      const scoreRaw = await callAi("post-improvement", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
       score = parseJson<Record<string, unknown>>(scoreRaw)
     } catch { score = null }
 
     if (score && (score.total_score as number) < 80 && score.fix_instruction) {
       try {
         const { system: rw, user: ru } = buildRewritePrompt(content, score.fix_instruction as string, score.biggest_weakness as string, role, voiceProfile || undefined)
-        content = (await callAi(rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim()
+        content = (await callAi("post-improvement", rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim()
       } catch { /* keep current content */ }
     }
   }
@@ -142,7 +142,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   let hooks: Array<{ style: string; hook: string }> = []
   try {
     const { system: hs, user: hu } = buildHookVariantsPrompt(topic, role)
-    const hooksRaw = await callAi(hs, hu, { json: true, temperature: 0.9, maxTokens: 400, userId, plan, cache: true, cacheTtl: 3600 })
+    const hooksRaw = await callAi("hook-generation", hs, hu, { json: true, temperature: 0.9, maxTokens: 400, userId, plan, cache: true, cacheTtl: 3600 })
     hooks = (parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []).slice(0, 3)
   } catch { hooks = [] }
 

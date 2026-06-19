@@ -30,7 +30,7 @@ Return ONLY a JSON array of 5 hooks. Each hook is a string.`
   const userPrompt = `Generate 5 hooks for a LinkedIn post about: ${topic}`
 
   try {
-    const result = await callAi(systemPrompt, userPrompt, { json: true, temperature: 0.9, timeout: 15000 })
+    const result = await callAi("hook-generation",systemPrompt, userPrompt, { json: true, temperature: 0.9, timeout: 15000 })
 
     try {
       const parsed = JSON.parse(result)

@@ -66,7 +66,7 @@ export async function trainVoiceProfile(
     confidence_level: "assertive",
     storytelling_approach: "direct",
   }
-  const analysisRaw = await callAi(
+  const analysisRaw = await callAi("voice-profile",
     "Return strict JSON only.",
     `Analyze this LinkedIn post sample and extract voice characteristics.
 
@@ -93,7 +93,7 @@ OUTPUT JSON:
     return ok({ characteristics: { analysis: fallbackAnalysis, fingerprint: fallbackFingerprint } })
   }
 
-  const fingerprintRaw = await callAi(
+  const fingerprintRaw = await callAi("voice-profile",
     "Return strict JSON only.",
     `Based on these ${examplePosts.length} writing samples, create a unified voice fingerprint.
 
