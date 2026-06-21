@@ -78,7 +78,7 @@ Message: ${cleanMessage}`
       const titleResult = await callAi("chat-strategist",
         "You name conversations. Return only the title.",
         titlePrompt,
-        { temperature: 0.3, timeout: 5000 }
+        { temperature: 0.3, timeout: 5000, userId, plan: planCheck.plan }
       )
       title = titleResult.replace(/["']/g, "").replace(/[.?!]+$/g, "").trim().substring(0, 50) || "New Chat"
 

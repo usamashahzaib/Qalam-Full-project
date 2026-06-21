@@ -328,8 +328,14 @@ export function CarouselBuilderTool() {
                 {/* Controls bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-bold text-zinc-900">{slides.length} slides ready</p>
-                    <p className="text-xs text-zinc-400">Change theme or accent color - preview updates instantly.</p>
+                    <p className="text-sm font-bold text-zinc-900">
+                      {slides.length > 1 ? `1 of ${slides.length} slides free` : "1 slide ready"}
+                    </p>
+                    <p className="text-xs text-zinc-400">
+                      {slides.length > 1
+                        ? `Sign up free to download all ${slides.length} slides.`
+                        : "Change theme or accent color - preview updates instantly."}
+                    </p>
                   </div>
                   <motion.button
                     whileHover={{ scale: 1.03 }}
@@ -353,13 +359,13 @@ export function CarouselBuilderTool() {
                         Exporting...
                       </>
                     ) : exportDone ? (
-                      "ZIP Downloaded!"
+                      "Downloaded!"
                     ) : (
                       <>
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Export PNG ZIP
+                        Download Slide 1 (PNG)
                       </>
                     )}
                   </motion.button>
@@ -372,7 +378,7 @@ export function CarouselBuilderTool() {
                       key={i}
                       onClick={() => setActiveSlide(i)}
                       className={`shrink-0 rounded-xl border-2 transition-all overflow-hidden ${
-                        activeSlide === i ? "border-teal shadow-md" : "border-zinc-200 hover:border-zinc-300"
+                        activeSlide === i ? "border-teal shadow-md" : i > 0 ? "border-zinc-300" : "border-zinc-200 hover:border-zinc-300"
                       }`}
                       style={{ width: previewW, height: previewH, position: "relative" }}
                     >
@@ -387,6 +393,22 @@ export function CarouselBuilderTool() {
                       >
                         {renderSlide(slides[i], i)}
                       </div>
+                      {i > 0 && (
+                        <div
+                          style={{
+                            position: "absolute", inset: 0,
+                            backdropFilter: "blur(3px)",
+                            background: "rgba(10,10,16,0.58)",
+                            display: "flex", flexDirection: "column",
+                            alignItems: "center", justifyContent: "center", gap: 3,
+                          }}
+                        >
+                          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2.5} style={{ opacity: 0.9 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, fontWeight: 700 }}>{i + 1}</span>
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -394,7 +416,7 @@ export function CarouselBuilderTool() {
                 {/* Large active preview */}
                 <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:gap-10">
                   <div
-                    className="shrink-0 overflow-hidden rounded-2xl shadow-2xl"
+                    className="relative shrink-0 overflow-hidden rounded-2xl shadow-2xl"
                     style={{ width: CANVAS.width * 0.45, height: CANVAS.height * 0.45 }}
                   >
                     <div
@@ -404,10 +426,26 @@ export function CarouselBuilderTool() {
                         transform: "scale(0.45)",
                         transformOrigin: "top left",
                         pointerEvents: "none",
+                        filter: activeSlide > 0 ? "blur(10px)" : undefined,
                       }}
                     >
                       {renderSlide(slides[activeSlide], activeSlide)}
                     </div>
+                    {activeSlide > 0 && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/40 px-6 text-center">
+                        <svg className="h-9 w-9 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        <p className="text-sm font-bold text-white">Slide {activeSlide + 1} locked</p>
+                        <p className="text-xs text-white/70">Sign up free to get all {slides.length} slides as PNGs.</p>
+                        <Link
+                          href="/sign-up"
+                          className="mt-1 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-teal-600"
+                        >
+                          Get all slides free
+                        </Link>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 space-y-4">

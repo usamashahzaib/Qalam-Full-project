@@ -52,7 +52,7 @@ async function handleItem(item: QueueItem): Promise<unknown> {
       taskMap.generate,
       "Create a strong LinkedIn post. Return plain text.",
       `Topic: ${topic}\nRole: ${role}`,
-      { temperature: 0.8 },
+      { temperature: 0.8, userId: item.userId, plan: item.plan },
     )
     return { content }
   }
@@ -64,7 +64,7 @@ async function handleItem(item: QueueItem): Promise<unknown> {
       taskMap.carousel,
       "Create a LinkedIn carousel outline as JSON.",
       `Topic: ${topic}\nSlides: ${slideCount}`,
-      { json: true, temperature: 0.7 },
+      { json: true, temperature: 0.7, userId: item.userId, plan: item.plan },
     )
     return JSON.parse(content)
   }
