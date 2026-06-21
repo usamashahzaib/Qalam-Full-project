@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 
 const schema = z.object({
@@ -53,6 +53,12 @@ function enforceSlideStructure(slides: Slide[], topic: string): Slide[] {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (planCheck.limits.carouselGenerationsPerMonth === 0) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })
+    }
+
     let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -63,18 +69,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid carousel input", issues: parsed.error.issues }, { status: 400 })
     }
 
-    const limit = await checkPlanLimit(user.id, "carousels")
-    if (!limit.allowed) {
+    const usage = await incrementUsage(user.id, "carousels")
+    if (!usage.allowed) {
       return NextResponse.json(
-        { error: "Carousel limit reached", current: limit.current, limit: limit.limit },
-        { status: 403 }
+        { error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit },
+        { status: 429 }
       )
     }
 
     const systemPrompt = `Create a LinkedIn carousel outline. Each slide has a title and 1-2 bullet points. Total slides: ${parsed.data.slideCount}. Topic: ${parsed.data.topic}. Role: ${parsed.data.role}. Return JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
     const userMessage = parsed.data.tone ? `Tone: ${parsed.data.tone}` : "Tone: practical and sharp"
 
-    const result = await callAi(systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId: user.id, plan: limit.plan })
+    const result = await callAi("carousel-outline",systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId: user.id, plan: planCheck.plan })
 
     let slides = parseSlides(result, parsed.data.slideCount)
     if (slides.length < 5) {
@@ -109,13 +115,15 @@ export async function POST(request: NextRequest) {
     }
     if (!carousel) throw new Error("carousel_save_failed")
 
-    const usage = await incrementUsage(user.id, "carousels")
-    return NextResponse.json({ id: carousel.id, slides, remaining: usage.remaining })
+    return NextResponse.json({ id: carousel.id, slides, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
   })(request)
 }
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (_req, user) => {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")

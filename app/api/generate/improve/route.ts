@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { log } from "@/lib/server/logging"
+import { requirePlan } from "@/lib/server/require-plan"
 import { improvePost } from "@/lib/use-cases/improve-post"
 import { errorToStatus } from "@/lib/errors"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -18,7 +22,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       internalUserId: user.id,
       workspaceId: user.workspaceId,
-      plan: user.plan,
+      plan: planCheck.plan,
     })
 
     if (!result.ok) {

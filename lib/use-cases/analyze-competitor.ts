@@ -69,7 +69,7 @@ Return JSON with exactly this structure:
     contentPattern: { framework: "Problem-Insight", structure: "Hook -> Point -> Improvement", estimatedReadTime: "15 seconds" },
     improvements: ["Add a sharper opening.", "Include one concrete result.", "Close with a direct CTA."],
   }
-  const raw = await callAi(system, userMsg, {
+  const raw = await callAi("competitor-analysis", system, userMsg, {
     json: true, temperature: 0.3, maxTokens: 900,
     userId, plan, cache: false,
   }).catch(() => JSON.stringify(fallback))

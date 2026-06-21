@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { generateHooks } from "@/lib/use-cases/generate-hooks"
 import { errorToStatus } from "@/lib/errors"
 
@@ -11,6 +12,9 @@ const BodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
+
     let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -29,7 +33,7 @@ export async function POST(request: NextRequest) {
       topic: parsed.data.topic,
       role: parsed.data.role,
       userId: user.id,
-      plan: user.plan,
+      plan: planCheck.plan,
     })
 
     if (!result.ok) {

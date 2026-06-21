@@ -8,6 +8,13 @@ type DbPost = { id: string; workspace_id: string }
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (!planCheck.limits.scheduling) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })
+    }
+
     const workspaceId = await resolveWorkspaceId(request)
 
     const body = await request.json()

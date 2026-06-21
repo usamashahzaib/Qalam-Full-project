@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await callAi(
+    const result = await callAi("engagement-prediction",
       "Return strict JSON only. Be realistic - most LinkedIn posts get 10-50 reactions.",
       `Predict LinkedIn engagement for this draft. Use content quality, audience fit, specificity, novelty, clarity, and likely discussion value. Do not use formulaic keyword checks.
 

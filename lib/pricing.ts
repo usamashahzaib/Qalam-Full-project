@@ -309,7 +309,7 @@ export type PlanEnforcement = {
 
 export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   Free: {
-    limits: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
+    limits: { drafts: 5, carousels: 0, hooks: 5, analyses: 5 },
     flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0 },
   },
   Solo: {

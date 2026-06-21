@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 
 const ROLE_MAP: Record<string, string> = {
@@ -14,6 +15,9 @@ const ROLE_MAP: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -33,9 +37,9 @@ Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
 
     const userMsg = `${originalPost ? `Original post context:\n${originalPost.slice(0, 400)}\n\n` : ""}Comment to reply to:\n${comment}\n\nGenerate 3 reply styles: one warm/personal, one authoritative/insightful, one question-based to spark discussion.`
 
-    const raw = await callAi(system, userMsg, {
+    const raw = await callAi("chat-strategist",system, userMsg, {
       json: true, temperature: 0.85, maxTokens: 400,
-      userId: user.id, plan: user.plan, cache: false,
+      userId: user.id, plan: planCheck.plan, cache: false,
     })
 
     const parsed = safeParseJson<{ replies?: Array<{ style: string; reply: string }> }>(raw)

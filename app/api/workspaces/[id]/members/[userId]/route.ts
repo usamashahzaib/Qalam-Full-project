@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 const patchSchema = z.object({
@@ -22,6 +23,9 @@ async function verifyOwner(workspaceId: string, callerId: string) {
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Agency")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: workspaceId, userId: targetUserId } = await params
 
     if (!(await verifyOwner(workspaceId, user.id))) {
@@ -54,7 +58,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  return withAuth(async (_req, user) => {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Agency")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: workspaceId, userId: targetUserId } = await params
 
     if (!(await verifyOwner(workspaceId, user.id))) {

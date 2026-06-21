@@ -53,7 +53,7 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
     { style: "CURIOSITY", text: `What if the biggest blocker to ${topic} is not technical at all?` },
     { style: "DIRECT", text: `${topic} works when the outcome is specific before the system is built.` },
   ]
-  const raw = await callAi(system, userMsg, {
+  const raw = await callAi("hook-generation", system, userMsg, {
     json: false, temperature: 0.9, maxTokens: 700,
     userId, plan, cache: false,
   }).catch(() => JSON.stringify(fallback))

@@ -60,7 +60,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
 
   let raw = ""
   try {
-    raw = await callAi(system, user, {
+    raw = await callAi("post-improvement", system, user, {
       json: true, temperature: 0.2, maxTokens: 600,
       userId, plan, cache: false,
     })

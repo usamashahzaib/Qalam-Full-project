@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const result = await callAi(
+    const result = await callAi("post-improvement",
       "Return strict JSON only.",
       `Analyze this LinkedIn profile headline as the hook for a profile visit. Score it for clarity, authority, differentiation, keyword strength, and buyer relevance.
 

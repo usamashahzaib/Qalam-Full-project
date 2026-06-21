@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { requirePlan } from "@/lib/server/require-plan"
 
 type AnalyticsEvent = {
   id: string
@@ -14,6 +15,9 @@ type AnalyticsEvent = {
 export async function GET(request: NextRequest) {
   try {
     await requireAuth()
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const workspaceId = await resolveWorkspaceId(request)
     const limit = Math.min(Number(request.nextUrl.searchParams.get("limit") || 100), 500)
     const query = `workspace_id=eq.${workspaceId}&select=*&order=recorded_at.desc&limit=${limit}`
@@ -37,6 +41,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const body = (await request.json()) as {
       id?: string
       workspaceKey?: string

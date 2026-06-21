@@ -4,6 +4,7 @@ import { resolveWorkspaceId, fetchWorkspacePlan, getWorkspaceSessionContext } fr
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { getPlanStatus as getExpiryPlanStatus } from "./plan-expiry"
 
 type PlanCheckResult =
   | {
@@ -13,6 +14,10 @@ type PlanCheckResult =
       plan: string
       status: string
       limits: PlanLimits
+      isActive: boolean
+      expiresAt: string | null
+      renewalDue: boolean
+      daysUntilExpiry: number | null
       overrideActive: boolean
       planExpired: boolean
     }
@@ -46,8 +51,19 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
 
+  const expiryStatus = await getExpiryPlanStatus(session.supabaseUserId)
+  if (!expiryStatus.isActive) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "plan_expired", message: "Your plan has expired. Please renew to continue." },
+        { status: 403 }
+      ),
+    }
+  }
+
   const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
-  const effectivePlan = planInfo.plan
+  const effectivePlan = expiryStatus.plan !== "Free" ? expiryStatus.plan : planInfo.plan
 
   if (!canAccessPlan(effectivePlan, requiredPlan)) {
     return {
@@ -65,7 +81,11 @@ export const requirePlan = async (
     workspaceId,
     plan: effectivePlan,
     status: planInfo.status,
-    limits: planInfo.limits || getPlanLimits(effectivePlan),
+    limits: planInfo.plan === effectivePlan && planInfo.limits ? planInfo.limits : getPlanLimits(effectivePlan),
+    isActive: expiryStatus.isActive,
+    expiresAt: expiryStatus.expiresAt,
+    renewalDue: expiryStatus.renewalDue,
+    daysUntilExpiry: expiryStatus.daysUntilExpiry,
     overrideActive: Boolean(planInfo.overrideActive),
     planExpired: Boolean(planInfo.planExpired),
   }

@@ -10,10 +10,10 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 export async function callGemini(
   systemPrompt: string,
   userMessage: string,
-  options: { json?: boolean; temperature?: number; maxTokens?: number } = {},
+  options: { json?: boolean; temperature?: number; maxTokens?: number; model?: string } = {},
   timeout = 15000
 ): Promise<string> {
-  const { json = false, temperature = 0.7, maxTokens = 2048 } = options
+  const { json = false, temperature = 0.7, maxTokens = 2048, model = "gemini-2.5-flash" } = options
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error("Gemini API key not configured")
 
@@ -25,7 +25,7 @@ export async function callGemini(
 
   const response = await withTimeout(
     fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: "POST",
         headers: {

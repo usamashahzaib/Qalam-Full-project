@@ -4,6 +4,9 @@ import { getRedis } from "@/lib/server/redis"
 
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
+let mistralLimiter: Ratelimit | null = null
+let cerebrasLimiter: Ratelimit | null = null
+let openrouterLimiter: Ratelimit | null = null
 
 const getGroqLimiter = () => {
   if (!getRedis()) return null
@@ -25,6 +28,36 @@ const getGeminiLimiter = () => {
   return geminiLimiter
 }
 
+const getMistralLimiter = () => {
+  if (!getRedis()) return null
+  mistralLimiter ??= new Ratelimit({
+    redis: getRedis()!,
+    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    analytics: true,
+  })
+  return mistralLimiter
+}
+
+const getCerebrasLimiter = () => {
+  if (!getRedis()) return null
+  cerebrasLimiter ??= new Ratelimit({
+    redis: getRedis()!,
+    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    analytics: true,
+  })
+  return cerebrasLimiter
+}
+
+const getOpenRouterLimiter = () => {
+  if (!getRedis()) return null
+  openrouterLimiter ??= new Ratelimit({
+    redis: getRedis()!,
+    limiter: Ratelimit.slidingWindow(20, "1 m"),
+    analytics: true,
+  })
+  return openrouterLimiter
+}
+
 // In-process fallback rate limiter when Redis is unavailable (imperfect across instances but functional)
 const _inMemoryBuckets = new Map<string, { count: number; resetAt: number }>()
 function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
@@ -42,18 +75,27 @@ function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
 export async function checkAiRateLimit(
   userId: string,
   _plan: string,
-  provider: "groq" | "gemini"
+  provider: "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
 ) {
   const r = getRedis()
   if (!r) {
     // No Redis - use in-process fallback (per instance, not global - better than blocking)
-    const limit = provider === "groq" ? 50 : 30
+    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 
-  const limiter = provider === "groq" ? getGroqLimiter() : getGeminiLimiter()
+  const limiter =
+    provider === "groq"
+      ? getGroqLimiter()
+      : provider === "gemini"
+        ? getGeminiLimiter()
+        : provider === "mistral"
+          ? getMistralLimiter()
+          : provider === "cerebras"
+            ? getCerebrasLimiter()
+            : getOpenRouterLimiter()
   if (!limiter) {
-    const limit = provider === "groq" ? 50 : 30
+    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 

@@ -8,6 +8,10 @@ const postRepo = new SupabasePostRepository()
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(request, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const workspaceId = await resolveWorkspaceId(request)
     const ctx = await getWorkspaceSessionContext()
 

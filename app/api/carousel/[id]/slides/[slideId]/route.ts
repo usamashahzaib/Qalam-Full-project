@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint: string }
@@ -9,6 +10,9 @@ export async function PATCH(
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: carouselId, slideId } = await context.params
     const slideIndex = parseInt(slideId, 10)
 
@@ -64,7 +68,10 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
-  return withAuth(async (_req, user) => {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const { id: carouselId, slideId } = await context.params
     const slideIndex = parseInt(slideId, 10)
 

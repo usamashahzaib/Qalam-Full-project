@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
-import { getPlanStatus, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { getPlanStatus, incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { createClient } from "@supabase/supabase-js"
 
@@ -24,13 +24,16 @@ const parseSlides = (raw: string, slideCount: number) => {
   }))
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+
     const ctx = await getWorkspaceSessionContext()
     const userId = ctx.supabaseUserId
     const status = await getPlanStatus(userId)
     return NextResponse.json({
-      allowed: true,
+      allowed: status.carousels.remaining > 0,
       current: status.carousels.used,
       limit: status.carousels.limit,
       remaining: status.carousels.remaining,
@@ -44,6 +47,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (planCheck.limits.carouselGenerationsPerMonth === 0) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })
+    }
+
     const ctx = await getWorkspaceSessionContext()
     const userId = ctx.supabaseUserId
     const { topic, role = "founder", slideCount = 5 } = await req.json()
@@ -56,7 +65,7 @@ export async function POST(req: NextRequest) {
     const planStatus = await getPlanStatus(userId)
     const usage = await incrementUsage(userId, "carousels")
     if (!usage.allowed) {
-      return NextResponse.json({ error: "Carousel limit reached", current: usage.current, limit: usage.limit }, { status: 403 })
+      return NextResponse.json({ error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit }, { status: 429 })
     }
 
     const prompt = `Create a ${count}-slide LinkedIn carousel about "${safeTopic}" for a ${safeRole.replace("_", " ")} audience.
@@ -80,7 +89,7 @@ Rules:
 - No generic business jargon
 - Specific, actionable content`
 
-    const result = await callAi("Return strict JSON only.", prompt, { json: true, temperature: 0.7, timeout: 20000 })
+    const result = await callAi("carousel-outline", "Return strict JSON only.", prompt, { json: true, temperature: 0.7, timeout: 20000 })
     const slides = parseSlides(result, count)
     if (!slides.length) return NextResponse.json({ error: "AI returned no slides" }, { status: 502 })
 
@@ -101,7 +110,7 @@ Rules:
       return NextResponse.json({ error: "Failed to save carousel project" }, { status: 500 })
     }
 
-    return NextResponse.json({ projectId, slides, usage: { ...usage, plan: planStatus.plan } })
+    return NextResponse.json({ projectId, slides, usage: { ...usage, plan: planStatus.plan }, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
   } catch (error) {
     const message = (error as Error).message || "Failed to generate carousel"
     return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })

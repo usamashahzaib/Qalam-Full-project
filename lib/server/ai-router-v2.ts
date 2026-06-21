@@ -1,9 +1,81 @@
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
-import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { callGemini } from "./gemini-client"
+import { callGroq, type GroqModel } from "./groq-client"
+import { callMistral } from "./mistral-client"
+import { callCerebras } from "./cerebras-client"
+import { callOpenRouter } from "./openrouter-client"
 import { createServiceClient } from "./supabase-rest"
+import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 
-// Strips markdown fences and returns the first plausible JSON object/array.
+type AiProvider = "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
+export type AiTask =
+  | "post-generation"
+  | "competitor-analysis"
+  | "hook-generation"
+  | "carousel-outline"
+  | "voice-profile"
+  | "chat-strategist"
+  | "post-improvement"
+  | "engagement-prediction"
+type CallOptions = { json: boolean; temperature: number; maxTokens: number }
+type AiResponse = OpenAiCompatibleResult
+
+const CIRCUIT_THRESHOLD = 5
+const CIRCUIT_OPEN_MS = 5 * 60_000
+
+type ProviderState = {
+  calls: number
+  successes: number
+  failures: number
+  rateLimited: number
+  consecutiveFailures: number
+  openUntil: number
+  lastUsed: number
+}
+
+const providerState = new Map<AiProvider, ProviderState>()
+
+const defaultState = (): ProviderState => ({
+  calls: 0,
+  successes: 0,
+  failures: 0,
+  rateLimited: 0,
+  consecutiveFailures: 0,
+  openUntil: 0,
+  lastUsed: 0,
+})
+
+const stateFor = (provider: AiProvider) => providerState.get(provider) ?? defaultState()
+
+const saveState = (provider: AiProvider, patch: Partial<ProviderState>) => {
+  const next = { ...stateFor(provider), ...patch }
+  providerState.set(provider, next)
+  return next
+}
+
+const touchProvider = (provider: AiProvider) => {
+  const current = stateFor(provider)
+  return saveState(provider, { calls: current.calls + 1, lastUsed: Date.now() })
+}
+
+const markSuccess = (provider: AiProvider) => {
+  const current = stateFor(provider)
+  saveState(provider, { successes: current.successes + 1, consecutiveFailures: 0, openUntil: 0 })
+}
+
+const markFailure = (provider: AiProvider, rateLimited = false) => {
+  const current = stateFor(provider)
+  const consecutiveFailures = current.consecutiveFailures + 1
+  saveState(provider, {
+    failures: current.failures + 1,
+    rateLimited: current.rateLimited + (rateLimited ? 1 : 0),
+    consecutiveFailures,
+    openUntil: consecutiveFailures >= CIRCUIT_THRESHOLD ? Date.now() + CIRCUIT_OPEN_MS : current.openUntil,
+  })
+}
+
+const isCircuitOpen = (provider: AiProvider) => stateFor(provider).openUntil > Date.now()
+
 export function safeParseJson<T = unknown>(raw: string): T | null {
   try {
     const cleaned = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim()
@@ -26,7 +98,7 @@ export function safeParseJson<T = unknown>(raw: string): T | null {
           escaped = inString
           continue
         }
-        if (char === "\"") {
+        if (char === '"') {
           inString = !inString
           continue
         }
@@ -55,21 +127,24 @@ export function safeParseJson<T = unknown>(raw: string): T | null {
   }
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
-    ),
-  ])
-}
-
-// Estimated cost per 1M tokens (USD)
+// Cost per 1M tokens - updated with correct model names
 const COST_PER_M: Record<string, { input: number; output: number }> = {
+  // Groq
   "llama-3.1-8b-instant": { input: 0.05, output: 0.08 },
   "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
-  "gemini-2.5-flash": { input: 0.075, output: 0.30 },
-  "gemini-1.5-flash": { input: 0.075, output: 0.30 },
+  // Gemini
+  "gemini-2.5-flash-lite-preview": { input: 0.075, output: 0.30 },
+  "gemini-2.5-flash": { input: 0.15, output: 0.60 },
+  "gemini-2.5-pro": { input: 1.25, output: 10.00 },
+  // Mistral
+  "mistral-small-3": { input: 0.10, output: 0.30 },
+  "mistral-medium-3": { input: 0.40, output: 2.00 },
+  // Cerebras
+  "llama-3.3-70b": { input: 0.50, output: 0.50 },
+  "llama-4-scout": { input: 0.50, output: 0.50 },
+  // OpenRouter (using underlying model costs)
+  "meta-llama/llama-3.1-8b-instruct:free": { input: 0, output: 0 },
+  "deepseek/deepseek-chat-v3-0324:free": { input: 0, output: 0 },
 }
 
 function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
@@ -77,11 +152,9 @@ function estimateCost(model: string, tokensIn: number, tokensOut: number): numbe
   return (tokensIn / 1_000_000) * rates.input + (tokensOut / 1_000_000) * rates.output
 }
 
-// Fire-and-forget: log AI usage to DB for cost monitoring.
-// Never throws — cost tracking must never block a generation request.
 async function logAiUsage(
   userId: string,
-  provider: "groq" | "gemini",
+  provider: AiProvider,
   model: string,
   tokensIn: number,
   tokensOut: number,
@@ -89,7 +162,6 @@ async function logAiUsage(
   if (userId === "anonymous") return
   try {
     const supabase = createServiceClient()
-    // Resolve internal UUID if caller passed external OAuth sub
     const { data: userRow } = await supabase
       .from("users")
       .select("id")
@@ -106,101 +178,87 @@ async function logAiUsage(
       tokens_out: tokensOut,
       estimated_cost_usd: estimateCost(model, tokensIn, tokensOut),
     })
-    // 42P01 = ai_usage table doesn't exist yet (migration pending) — silent degradation
-    if (insertErr && insertErr.code !== "42P01") {
-      console.warn("[ai_usage] insert failed:", insertErr.message)
-    }
+    if (insertErr && insertErr.code !== "42P01") console.warn("[ai_usage] insert failed:", insertErr.message)
   } catch {
-    // Intentionally swallowed — never surface cost tracking errors to users.
+    void 0
   }
 }
 
-type AiResponse = { content: string; tokensIn: number; tokensOut: number; model: string }
-
-async function callGroq(
-  systemPrompt: string,
-  userMessage: string,
-  options: { json?: boolean; temperature?: number; maxTokens?: number } = {},
-  timeout = 15000
-): Promise<AiResponse> {
-  const { json = false, temperature = 0.7, maxTokens = 2048 } = options
-  const apiKey = process.env.GROQ_API_KEY
-  if (!apiKey) throw new Error("Groq API key not configured")
-
-  const model = "llama-3.1-8b-instant"
-
-  const response = await withTimeout(
-    fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessage },
-        ],
-        temperature,
-        max_tokens: maxTokens,
-        response_format: json ? { type: "json_object" } : undefined,
-      }),
-    }),
-    timeout
-  )
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => "Unknown error")
-    console.error(`[ai-router] Groq API error: ${response.status} - ${errorText}`)
-    throw new Error("AI generation failed. Please try again.")
-  }
-
-  const data = await response.json()
-  const content = data.choices?.[0]?.message?.content || ""
-  if (!content) throw new Error("Groq returned empty response")
-
-  return {
-    content,
-    tokensIn: data.usage?.prompt_tokens ?? 0,
-    tokensOut: data.usage?.completion_tokens ?? 0,
-    model,
-  }
+// Model mapping per task per provider
+const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
+  "post-generation": {
+    groq: "llama-3.1-8b-instant",
+    gemini: "gemini-2.5-flash-lite-preview",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "meta-llama/llama-3.1-8b-instruct:free",
+  },
+  "competitor-analysis": {
+    groq: "llama-3.3-70b-versatile",
+    gemini: "gemini-2.5-pro",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "deepseek/deepseek-chat-v3-0324:free",
+  },
+  "hook-generation": {
+    groq: "llama-3.1-8b-instant",
+    gemini: "gemini-2.5-flash-lite-preview",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "meta-llama/llama-3.1-8b-instruct:free",
+  },
+  "carousel-outline": {
+    groq: "llama-3.1-8b-instant",
+    gemini: "gemini-2.5-flash-lite-preview",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "meta-llama/llama-3.1-8b-instruct:free",
+  },
+  "voice-profile": {
+    groq: "llama-3.3-70b-versatile",
+    gemini: "gemini-2.5-pro",
+    mistral: "mistral-medium-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "deepseek/deepseek-chat-v3-0324:free",
+  },
+  "chat-strategist": {
+    groq: "llama-3.1-8b-instant",
+    gemini: "gemini-2.5-flash-lite-preview",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "meta-llama/llama-3.1-8b-instruct:free",
+  },
+  "post-improvement": {
+    groq: "llama-3.3-70b-versatile",
+    gemini: "gemini-2.5-pro",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "deepseek/deepseek-chat-v3-0324:free",
+  },
+  "engagement-prediction": {
+    groq: "llama-3.1-8b-instant",
+    gemini: "gemini-2.5-flash-lite-preview",
+    mistral: "mistral-small-3",
+    cerebras: "llama-3.3-70b",
+    openrouter: "meta-llama/llama-3.1-8b-instruct:free",
+  },
 }
 
-// Monthly cost caps (USD) per plan
-const MONTHLY_COST_CAP: Record<string, number> = {
-  Free: 0.10,
-  Solo: 0.50,
-  Pro: 2.00,
-  Agency: 10.00,
+// Provider priority per task - optimized for free tier limits and model strengths
+const providerOrder: Record<AiTask, AiProvider[]> = {
+  "post-generation":     ["groq", "gemini", "cerebras", "mistral", "openrouter"],
+  "competitor-analysis": ["groq", "gemini", "cerebras", "mistral", "openrouter"],
+  "hook-generation":     ["mistral", "groq", "gemini", "cerebras", "openrouter"],
+  "carousel-outline":    ["groq", "gemini", "cerebras", "mistral", "openrouter"],
+  "voice-profile":       ["gemini", "groq", "mistral", "cerebras", "openrouter"],
+  "chat-strategist":     ["gemini", "groq", "mistral", "cerebras", "openrouter"],
+  "post-improvement":    ["gemini", "groq", "mistral", "cerebras", "openrouter"],
+  "engagement-prediction": ["groq", "gemini", "cerebras", "mistral", "openrouter"],
 }
 
-async function isOverCostCap(userId: string, plan: string): Promise<boolean> {
-  if (userId === "anonymous") return false
-  try {
-    const supabase = createServiceClient()
-    const { data: userRow } = await supabase
-      .from("users")
-      .select("id")
-      .or(`id.eq.${userId},external_user_id.eq.${userId}`)
-      .maybeSingle()
-    if (!userRow?.id) return false
-
-    const { data } = await supabase.rpc("get_monthly_ai_cost", { p_user_id: userRow.id })
-    const spent = typeof data === "number" ? data : 0
-    const planKey = plan.charAt(0).toUpperCase() + plan.slice(1).toLowerCase()
-    const cap = MONTHLY_COST_CAP[planKey] ?? MONTHLY_COST_CAP.Free
-    return spent >= cap
-  } catch {
-    return false
-  }
-}
-
-type CallOptions = { json: boolean; temperature: number; maxTokens: number }
-
-async function attemptProvider(
-  provider: "groq" | "gemini",
+async function callProvider(
+  provider: AiProvider,
+  task: AiTask,
   systemPrompt: string,
   userMessage: string,
   options: CallOptions,
@@ -208,40 +266,48 @@ async function attemptProvider(
   userId: string,
   plan: string
 ): Promise<string | null> {
-  const [rateLimit, circuitAvailable] = await Promise.all([
-    checkAiRateLimit(userId, plan, provider),
-    checkCircuit(provider),
-  ])
+  if (isCircuitOpen(provider)) return null
 
-  if (!circuitAvailable || !rateLimit.allowed) return null
+  const rateLimit = await checkAiRateLimit(userId, plan, provider)
+  if (!rateLimit.allowed) return null
+
+  touchProvider(provider)
+
+  const model = taskModelMap[task][provider]
 
   try {
     let result: AiResponse | null = null
 
     if (provider === "groq") {
-      result = await callGroq(systemPrompt, userMessage, options, timeout)
-    } else {
-      // callGemini returns string; wrap to normalise
-      const raw = await callGemini(systemPrompt, userMessage, options, timeout)
+      result = await callGroq(systemPrompt, userMessage, { ...options, model: model as GroqModel }, timeout)
+    } else if (provider === "gemini") {
+      const raw = await callGemini(systemPrompt, userMessage, { ...options, model }, timeout)
       const tokensIn = Math.ceil((systemPrompt.length + userMessage.length) / 4)
       const tokensOut = Math.ceil(raw.length / 4)
-      result = { content: raw, tokensIn, tokensOut, model: "gemini-2.5-flash" }
+      result = { content: raw, tokensIn, tokensOut, model }
+    } else if (provider === "mistral") {
+      result = await callMistral(systemPrompt, userMessage, { ...options, model }, timeout)
+    } else if (provider === "cerebras") {
+      result = await callCerebras(systemPrompt, userMessage, { ...options, model }, timeout)
+    } else {
+      result = await callOpenRouter(systemPrompt, userMessage, { ...options, model }, timeout)
     }
 
-    await recordSuccess(provider)
-    // Fire-and-forget cost log — never await
+    markSuccess(provider)
     logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
     return result.content
   } catch (error) {
     const msg = (error as Error).message || ""
+    const rateLimited = /429|rate limit|too many requests/i.test(msg)
     const isConfigError = /not configured|API key|401|403|expired|API_KEY_INVALID/i.test(msg)
-    if (!isConfigError) await recordFailure(provider)
+    if (!isConfigError) markFailure(provider, rateLimited)
     console.error(`[${provider.toUpperCase()} Error]`, msg)
     return null
   }
 }
 
 export async function callAi(
+  task: AiTask,
   systemPrompt: string,
   userMessage: string,
   options: {
@@ -253,7 +319,6 @@ export async function callAi(
     plan?: string
     cache?: boolean
     cacheTtl?: number
-    provider?: "groq" | "gemini"
   } = {}
 ) {
   const {
@@ -265,7 +330,6 @@ export async function callAi(
     plan = "free",
     cache = true,
     cacheTtl = 86400,
-    provider = "groq",
   } = options
 
   const promptHash = hashPrompt(systemPrompt, userMessage, { json, temperature, maxTokens })
@@ -275,25 +339,15 @@ export async function callAi(
     if (cached) return cached
   }
 
-  // Check monthly cost cap before spending tokens
-  if (await isOverCostCap(userId, plan)) {
-    throw new Error("monthly_ai_cap_reached")
-  }
-
-  const primary = provider
-  const secondary: "groq" | "gemini" = provider === "groq" ? "gemini" : "groq"
+  const order = providerOrder[task]
   const callOptions: CallOptions = { json, temperature, maxTokens }
 
-  const primaryResult = await attemptProvider(primary, systemPrompt, userMessage, callOptions, timeout, userId, plan)
-  if (primaryResult !== null) {
-    if (cache) await cacheAiResponse(promptHash, primaryResult, cacheTtl)
-    return primaryResult
-  }
-
-  const secondaryResult = await attemptProvider(secondary, systemPrompt, userMessage, callOptions, timeout, userId, plan)
-  if (secondaryResult !== null) {
-    if (cache) await cacheAiResponse(promptHash, secondaryResult, cacheTtl)
-    return secondaryResult
+  for (const candidate of order) {
+    const content = await callProvider(candidate, task, systemPrompt, userMessage, callOptions, timeout, userId, plan)
+    if (content !== null) {
+      if (cache) await cacheAiResponse(promptHash, content, cacheTtl)
+      return content
+    }
   }
 
   throw new Error("All AI services unavailable. Please try again in a moment.")

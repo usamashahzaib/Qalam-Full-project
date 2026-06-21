@@ -22,6 +22,7 @@ export const VALID_PLAN_NAMES: readonly string[] = PLAN_ORDER
 export type PlanLimits = {
   aiDraftsPerMonth: number | "unlimited"
   carouselGenerationsPerMonth: number | "unlimited"
+  carouselSlides: number
   researchRunsPerMonth: number | "unlimited"
   clientWorkspaces: number | "unlimited"
   seats: number | "unlimited"
@@ -38,6 +39,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
   return {
     aiDraftsPerMonth: limits.drafts,
     carouselGenerationsPerMonth: limits.carousels,
+    carouselSlides: 1,
     researchRunsPerMonth: flags.researchRuns,
     clientWorkspaces: flags.clientWorkspaces,
     seats: flags.seats,

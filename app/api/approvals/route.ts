@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
+
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -42,7 +46,6 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       userEmail: user.email || "",
       userName: user.name || null,
-      plan: user.plan,
     })
 
     if (!result.ok) {

@@ -30,7 +30,7 @@ Return JSON:
 {"slides":[{"number":1,"title":"...","body":"...","visual_suggestion":"..."}]}`
 
   try {
-    const raw = await callAi(system, user, { json: true, temperature: 0.8, maxTokens: 1200, userId, cache: false })
+    const raw = await callAi("carousel-outline", system, user, { json: true, temperature: 0.8, maxTokens: 1200, userId, cache: false })
     const parsed = safeParseJson<{ slides?: Partial<CarouselSlide>[] }>(raw)
     const slides = (parsed?.slides || []).slice(0, 7).map((s, i) => ({
       number: Number(s.number) || i + 1,

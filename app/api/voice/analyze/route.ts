@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
+import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-
-const isProOrAbove = (plan: string) => {
-  const p = plan.toLowerCase()
-  return p === "pro" || p === "agency" || p.startsWith("agency")
-}
 
 type Characteristics = {
   tone: string
@@ -19,9 +15,8 @@ type Characteristics = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    if (!isProOrAbove(user.plan)) {
-      return NextResponse.json({ error: "Voice training requires Pro plan." }, { status: 403 })
-    }
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
@@ -51,9 +46,9 @@ Return JSON:
 
     let raw: string
     try {
-      raw = await callAi(system, userMsg, {
+      raw = await callAi("voice-profile", system, userMsg, {
         json: true, temperature: 0.3, maxTokens: 600,
-        userId: user.id, plan: user.plan, cache: false,
+        userId: user.id, plan: planCheck.plan, cache: false,
       })
     } catch {
       return NextResponse.json({ error: "Voice analysis failed. Please try again." }, { status: 503 })

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (!conversationId || shouldNameExisting(title)) {
       const namePrompt = `Generate a 3-5 word topic name for this conversation starter: "${message}". Return ONLY the topic name, no quotes.`
-      title = (await callAi(
+      title = (await callAi("chat-strategist",
         "You are a topic naming assistant. Generate concise, descriptive topic names.",
         namePrompt,
         { temperature: 0.3, timeout: 5000 }
@@ -60,7 +60,7 @@ USER: ${message}
 
 Respond with specific, actionable LinkedIn strategy advice. Be concise. Give examples. No generic fluff.`
 
-    const response = await callAi("You are Qalam, a concise LinkedIn strategy advisor.", prompt, {
+    const response = await callAi("chat-strategist", "You are Qalam, a concise LinkedIn strategy advisor.", prompt, {
       temperature: 0.7,
       timeout: 15000,
     })

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 
 const ROLE_MAP: Record<string, string> = {
   HR: "HR leader",
@@ -22,6 +22,12 @@ type Slide = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Solo")
+    if (!planCheck.ok) return planCheck.response
+    if (planCheck.limits.carouselGenerationsPerMonth === 0) {
+      return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })
+    }
+
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -37,8 +43,8 @@ export async function POST(request: NextRequest) {
     const usage = await incrementUsage(user.id, "carousels")
     if (!usage.allowed) {
       return NextResponse.json(
-        { error: "Carousel limit reached. Upgrade to Pro for carousels.", remaining: 0 },
-        { status: 403 }
+        { error: "carousel_quota_exceeded", remaining: 0 },
+        { status: 429 }
       )
     }
 
@@ -61,9 +67,9 @@ Return JSON:
   ]
 }`
 
-    const raw = await callAi(system, userMsg, {
+    const raw = await callAi("carousel-outline",system, userMsg, {
       json: true, temperature: 0.8, maxTokens: 1200,
-      userId: user.id, plan: user.plan, cache: false,
+      userId: user.id, plan: planCheck.plan, cache: false,
     })
 
     const parsed = safeParseJson<{ slides: Slide[] }>(raw)
@@ -78,6 +84,6 @@ Return JSON:
       visual_suggestion: String(s.visual_suggestion || "").trim(),
     }))
 
-    return NextResponse.json({ slides, remaining: usage.remaining })
+    return NextResponse.json({ slides, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
   })(request)
 }
