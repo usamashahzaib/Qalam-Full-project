@@ -274,7 +274,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <header className="hidden md:flex h-16 border-b border-zinc-100 bg-white/90 backdrop-blur-sm fixed top-0 right-0 left-64 z-20 items-center justify-between px-8 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
+      <header className="qalam-app-header-desktop hidden md:flex h-16 border-b border-zinc-100 bg-white/90 backdrop-blur-sm fixed top-0 right-0 left-64 z-20 items-center justify-between px-8 shadow-[0_1px_0_rgba(0,0,0,0.04)]">
         <div className="relative w-80" ref={searchRef}>
           <div className="relative flex items-center">
             <svg className="absolute left-3.5 h-4 w-4 text-zinc-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -350,7 +350,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <header className="flex md:hidden flex-col border-b border-zinc-200 bg-white/90 backdrop-blur fixed top-0 inset-x-0 z-30" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <header className="qalam-app-header-mobile flex md:hidden flex-col border-b border-zinc-200 bg-white/90 backdrop-blur fixed top-0 inset-x-0 z-30" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="flex h-14 w-full items-center justify-between px-4">
           <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
           <div className="flex items-center gap-2">

@@ -16,7 +16,7 @@ const ROLE_MAP: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
 
     let body: Record<string, unknown>

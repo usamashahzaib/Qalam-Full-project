@@ -7,7 +7,9 @@ import { errorToStatus } from "@/lib/errors"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Solo")
+    // Free plan gets 5 drafts/month; Solo gets 30; Pro gets 60.
+    // The inner generatePostFromHook enforces the per-quota limit via incrementUsage.
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
 
     let body: Record<string, unknown>

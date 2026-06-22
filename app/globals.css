@@ -12,6 +12,7 @@
 html, body {
   background-color: var(--bg-warm) !important;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .app-shell {
@@ -20,11 +21,20 @@ html, body {
     radial-gradient(ellipse at 20% 30%, var(--bg-ripple-1) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 70%, var(--bg-ripple-2) 0%, transparent 50%),
     radial-gradient(ellipse at 50% 50%, var(--bg-ripple-3) 0%, transparent 70%);
-  background-attachment: fixed;
+  /* background-attachment: fixed is broken on iOS Safari - backgrounds don't scroll correctly */
+  background-attachment: scroll;
   background-size: cover;
   min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
   overflow-x: clip;
+}
+
+/* On large non-touch screens, restore the fixed parallax background */
+@media (min-width: 1024px) and (hover: hover) {
+  .app-shell {
+    background-attachment: fixed;
+  }
 }
 
 .app-shell::before {
@@ -160,7 +170,14 @@ body {
   font-family: var(--font-jakarta);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* scrollbar-gutter only on non-touch/desktop to avoid layout issues on mobile */
   scrollbar-gutter: stable;
+}
+
+@media (pointer: coarse) {
+  body {
+    scrollbar-gutter: auto;
+  }
 }
 
 /* Dark mode overrides for app content area */
@@ -168,23 +185,129 @@ body {
   .qalam-app-canvas {
     background: var(--surface-bg);
   }
-  .qalam-app-canvas .bg-zinc-50 {
-    background-color: var(--surface-bg);
+
+  /* Backgrounds */
+  .qalam-app-canvas .bg-white,
+  .qalam-app-canvas .bg-white\/85,
+  .qalam-app-canvas .bg-white\/90,
+  .qalam-app-canvas .bg-white\/98 {
+    background-color: var(--surface-card) !important;
   }
-  .qalam-app-canvas .bg-white {
-    background-color: var(--surface-card);
+  .qalam-app-canvas .bg-zinc-50,
+  .qalam-app-canvas .bg-zinc-50\/60,
+  .qalam-app-canvas .bg-zinc-50\/80,
+  .qalam-app-canvas .bg-zinc-50\/50 {
+    background-color: var(--surface-muted) !important;
   }
-  .qalam-app-canvas .border-zinc-200 {
-    border-color: var(--surface-border);
+  .qalam-app-canvas .bg-zinc-100 {
+    background-color: #27272a !important;
   }
-  .qalam-app-canvas .text-zinc-900,
-  .qalam-app-canvas .text-zinc-950 {
-    color: var(--surface-fg);
+
+  /* Borders */
+  .qalam-app-canvas .border-zinc-200,
+  .qalam-app-canvas .border-zinc-100 {
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-app-canvas .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
+  .qalam-app-canvas .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: var(--surface-border) !important;
+  }
+
+  /* Text */
+  .qalam-app-canvas .text-zinc-950,
+  .qalam-app-canvas .text-zinc-900 {
+    color: var(--surface-fg) !important;
+  }
+  .qalam-app-canvas .text-zinc-700,
+  .qalam-app-canvas .text-zinc-800 {
+    color: #d4d4d8 !important;
+  }
+  .qalam-app-canvas .text-zinc-600 {
+    color: #a1a1aa !important;
   }
   .qalam-app-canvas .text-zinc-500,
   .qalam-app-canvas .text-zinc-400 {
-    color: #a1a1aa;
+    color: #71717a !important;
   }
+
+  /* Inputs in dark mode */
+  .qalam-app-canvas input,
+  .qalam-app-canvas select,
+  .qalam-app-canvas textarea {
+    background-color: #27272a;
+    color: var(--surface-fg);
+    border-color: var(--surface-border);
+  }
+  .qalam-app-canvas input::placeholder,
+  .qalam-app-canvas textarea::placeholder {
+    color: #71717a;
+  }
+
+  /* App header (desktop) */
+  .qalam-app-header-desktop {
+    background-color: rgba(28, 28, 30, 0.92) !important;
+    border-color: var(--surface-border) !important;
+  }
+  /* App header (mobile) */
+  .qalam-app-header-mobile {
+    background-color: rgba(28, 28, 30, 0.95) !important;
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-app-header-mobile .text-zinc-900 {
+    color: var(--surface-fg) !important;
+  }
+  .qalam-app-header-mobile .text-zinc-500 {
+    color: #71717a !important;
+  }
+  .qalam-app-header-mobile .hover\:bg-zinc-100:hover {
+    background-color: #27272a !important;
+  }
+
+  /* Mobile bottom nav */
+  .qalam-mobile-nav {
+    background-color: rgba(28, 28, 30, 0.97) !important;
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-mobile-nav .text-zinc-500 {
+    color: #71717a !important;
+  }
+
+  /* Cards */
+  .qalam-app-canvas .rounded-2xl.border.bg-white,
+  .qalam-app-canvas .rounded-2xl.border.border-zinc-200.bg-white {
+    background-color: var(--surface-card) !important;
+    border-color: var(--surface-border) !important;
+  }
+
+  /* Mobile "more" popup panel (fixed, outside qalam-app-canvas) */
+  .qalam-mobile-more-panel {
+    background-color: rgba(28, 28, 30, 0.98) !important;
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-mobile-more-panel .text-zinc-500 { color: #71717a !important; }
+  .qalam-mobile-more-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
+
+  /* Modal overlays */
+  .qalam-modal-panel {
+    background-color: var(--surface-card) !important;
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-modal-panel .text-zinc-900 { color: var(--surface-fg) !important; }
+  .qalam-modal-panel .text-zinc-500 { color: #71717a !important; }
+  .qalam-modal-panel .bg-zinc-50 { background-color: var(--surface-muted) !important; }
+  .qalam-modal-panel .border-zinc-100,
+  .qalam-modal-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
+
+  /* Writer mobile tab bar */
+  .qalam-writer-tabs {
+    background-color: var(--surface-muted) !important;
+    border-color: var(--surface-border) !important;
+  }
+  .qalam-writer-tabs .bg-white {
+    background-color: var(--surface-card) !important;
+  }
+  .qalam-writer-tabs .text-zinc-900 { color: var(--surface-fg) !important; }
+  .qalam-writer-tabs .text-zinc-500 { color: #71717a !important; }
 }
 
 button,
@@ -192,6 +315,39 @@ a,
 [role="button"],
 summary {
   cursor: pointer;
+}
+
+/* ─── iOS / Mobile fixes ─────────────────────────────────────── */
+
+/* Prevent iOS Safari from auto-zooming when an input is focused.
+   iOS zooms whenever the computed font-size of the focused field is < 16px.
+   This rule overrides Tailwind's text-sm (14px) on all form fields on touch devices. */
+@media (pointer: coarse) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Smooth momentum scrolling on iOS for scrollable containers */
+.qalam-scrollbar,
+.qalam-scrollbar-dark {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text size adjustment on orientation change (iOS/Android) */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* ─── Keyboard navigation focus styles ───────────────────────────── */

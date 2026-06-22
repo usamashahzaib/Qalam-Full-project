@@ -106,6 +106,7 @@ export default function WriterPage() {
   const step2Visible = !isCarouselMode && (hooks.length > 0 || isGeneratingHooks)
   const step3Visible = !isCarouselMode && draftContent.trim().length > 0
   const slidesVisible = isCarouselMode && (slides.length > 0 || isGeneratingSlides)
+  const [mobileTab, setMobileTab] = useState<"writer" | "score">("writer")
 
   useEffect(() => {
     const el = draftRef.current
@@ -116,10 +117,30 @@ export default function WriterPage() {
 
   return (
     <>
-      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-6 px-4 py-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-6">
+      <div className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
+
+        {/* Mobile tab bar - Writer vs Score (hidden on desktop) */}
+        <div className="qalam-writer-tabs mb-4 flex lg:hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setMobileTab("writer")}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "writer" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+          >
+            Writer
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("score")}
+            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "score" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+          >
+            {scores ? `Score · ${scores.overall}` : "Score"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
 
         {/* ── LEFT: Writer flow ────────────────────────────────────────── */}
-        <div className="flex flex-col gap-5">
+        <div className={`flex flex-col gap-5 ${mobileTab !== "writer" ? "hidden lg:flex" : ""}`}>
 
           {/* STEP 1 - Inputs */}
           <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -624,7 +645,7 @@ export default function WriterPage() {
         </div>
 
         {/* ── RIGHT: Sidebar ───────────────────────────────────────────── */}
-        <aside className="space-y-4">
+        <aside className={`space-y-4 ${mobileTab !== "score" ? "hidden lg:block" : ""}`}>
 
           {/* Scoring panel */}
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
@@ -865,6 +886,7 @@ export default function WriterPage() {
             </div>
           )}
         </aside>
+        </div>{/* end grid */}
       </div>
 
       {scheduleModalOpen && (
