@@ -411,7 +411,20 @@ export async function resolveEffectivePlan(
       const { getCanonicalPlan } = await import("@/lib/server/plan-limits-v2")
       const canonical = await getCanonicalPlan(internalUserId)
       if ((PLAN_PRIORITY[canonical.toLowerCase()] ?? 0) > (PLAN_PRIORITY[wsInfo.plan.toLowerCase()] ?? 0)) {
-        return { ...wsInfo, plan: canonical }
+        // Derive featureFlags from the canonical plan's entitlements so they are
+        // never empty when the override wasn't found via the email/workspace path.
+        const { getPlanLimits } = await import("@/lib/entitlements")
+        const limits = getPlanLimits(canonical)
+        const derivedFlags: Record<string, boolean> = {
+          scheduling: limits.scheduling,
+          analytics: limits.analyticsDepth === "full",
+          carouselBuilder: (limits.carouselGenerationsPerMonth as number) > 0,
+          competitorResearch: (limits.researchRunsPerMonth as number) > 0,
+          approvalWorkflow: limits.approvals,
+          exportPdf: limits.canExport,
+          voiceProfiles: limits.voiceTraining,
+        }
+        return { ...wsInfo, plan: canonical, featureFlags: { ...derivedFlags, ...(wsInfo.featureFlags ?? {}) } }
       }
     } catch {
       // Fall through to workspace plan.

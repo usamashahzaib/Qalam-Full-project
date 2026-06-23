@@ -761,7 +761,7 @@ export default function WriterPage() {
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Hashtags</h2>
                 <button
-                  onClick={() => copyText(scores.hashtags.join(" "))}
+                  onClick={async () => { await copyText(scores.hashtags.join(" ")); showStatus("Hashtags copied", "success") }}
                   className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700"
                 >
                   Copy all
@@ -771,7 +771,7 @@ export default function WriterPage() {
                 {scores.hashtags.map((tag) => (
                   <button
                     key={tag}
-                    onClick={() => copyText(tag)}
+                    onClick={async () => { await copyText(tag); showStatus(`${tag} copied`, "success") }}
                     className="cursor-pointer rounded-full border border-teal/20 bg-teal/5 px-2.5 py-1 text-xs font-medium text-teal transition-colors hover:bg-teal/10"
                   >
                     {tag}

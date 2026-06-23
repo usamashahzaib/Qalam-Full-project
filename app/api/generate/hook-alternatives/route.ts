@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { system, user: userMsg } = buildHookAlternativesPrompt(content, role)
-    const raw = await callAi("hook-generation",system, userMsg, {
-      json: false, temperature: 0.9, maxTokens: 500,
+    const raw = await callAi("hook-generation", system, userMsg, {
+      json: true, temperature: 0.9, maxTokens: 600,
       userId: user.id, plan: planCheck.plan, cache: false,
     })
 

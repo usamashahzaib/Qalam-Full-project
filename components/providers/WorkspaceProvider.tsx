@@ -23,6 +23,7 @@ type WorkspaceContextValue = {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
 
 const workspaceCacheKey = (clientId: string | null) => `qalam-workspace:${clientId || "personal"}`
+const billingCacheKey = (clientId: string | null) => `qalam-billing:${clientId || "personal"}`
 
 function WorkspaceProviderInner({
   children,
@@ -72,6 +73,18 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
     const cached = sessionStorage.getItem(workspaceCacheKey(clientParam))
     setWorkspaceId(cached)
+
+    // Restore billing from cache immediately so plan is never "Free" on first render
+    try {
+      const cachedBilling = sessionStorage.getItem(billingCacheKey(clientParam))
+      if (cachedBilling) {
+        const parsed = JSON.parse(cachedBilling) as Partial<WorkspaceBilling>
+        if (parsed.plan && VALID_PLAN_NAMES.includes(parsed.plan)) {
+          setServerBilling(parsed)
+        }
+      }
+    } catch {}
+
     setIsResolving(true)
     setResolveError(null)
     const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
@@ -84,7 +97,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         const rawPlan = data.plan as string | undefined
         const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
         if (normalizedPlan && VALID_PLAN_NAMES.includes(normalizedPlan)) {
-          setServerBilling({
+          const freshBilling: Partial<WorkspaceBilling> = {
             plan: normalizedPlan as WorkspaceBilling["plan"] & PlanTier,
             overrideActive: Boolean(data.overrideActive),
             complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
@@ -92,7 +105,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             planExpired: Boolean(data.planExpired),
             limits: data.limits,
             featureFlags: data.featureFlags || {},
-          })
+          }
+          setServerBilling(freshBilling)
+          // Persist so next refresh shows the correct plan instantly
+          try { sessionStorage.setItem(billingCacheKey(clientParam), JSON.stringify(freshBilling)) } catch {}
         }
         try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
         setResolveError(null)

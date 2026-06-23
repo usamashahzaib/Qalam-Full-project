@@ -470,7 +470,7 @@ export function useWriterLogic({
       showStatus(`Scheduled for ${scheduleDate} at ${scheduleTime}`, "success")
       setScheduleModalOpen(false)
     } catch (e) {
-      showStatus("Schedule failed: " + (e as Error).message, "error")
+      showStatus((e as Error).message || "Scheduling failed. Try again.", "error")
     }
   }
 
@@ -492,9 +492,9 @@ export function useWriterLogic({
       })
       setEditingId(id)
       showStatus("Published to LinkedIn.", "success")
-    } catch (e) {
+    } catch {
       await openLinkedInComposer(draftContent)
-      showStatus(`${(e as Error).message || "Publish failed"} Text copied; LinkedIn composer opened.`, "error")
+      showStatus("Post copied to clipboard. LinkedIn composer opened - paste to publish.", "info")
     } finally {
       setIsPublishing(false)
     }
@@ -523,11 +523,19 @@ export function useWriterLogic({
   }
 
   const onExportPdf = () => {
-    const win = window.open("", "_blank")
-    if (!win) { showStatus("Allow pop-ups to export PDF", "error"); return }
+    const title = resolveTitle().slice(0, 80)
     const escaped = draftContent.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${resolveTitle().slice(0, 60)}</title><style>body{font-family:Georgia,serif;max-width:680px;margin:60px auto;line-height:1.8;color:#18181b;font-size:16px}pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0}@media print{body{margin:20px}}</style></head><body><pre>${escaped}</pre><script>window.onload=function(){window.print()}<\/script></body></html>`)
-    win.document.close()
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Georgia,serif;max-width:680px;margin:60px auto;line-height:1.8;color:#18181b;font-size:16px}pre{white-space:pre-wrap;word-wrap:break-word;font-family:inherit;margin:0}h1{font-size:18px;font-weight:600;margin-bottom:24px;color:#09090b}@media print{body{margin:20px}@page{margin:20mm}}</style></head><body><h1>${title}</h1><pre>${escaped}</pre><script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}<\/script></body></html>`
+    const blob = new Blob([html], { type: "text/html" })
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url, "_blank")
+    if (!win) {
+      URL.revokeObjectURL(url)
+      showStatus("Allow pop-ups to export PDF", "error")
+      return
+    }
+    // Revoke after the window has had time to load
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
   }
 
   // ── CTA rewrite ───────────────────────────────────────────────────────────

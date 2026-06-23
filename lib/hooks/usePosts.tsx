@@ -37,6 +37,8 @@ const friendlyPostError = (message?: string) => {
   if (message === "scheduled_time_must_be_future") return "Choose a future time. Past dates and current minutes are locked."
   if (message === "scheduled_time_required") return "Select date and time"
   if (message === "invalid_scheduled_time") return "Select a valid date and time"
+  if (message === "upgrade_required" || message?.includes("upgrade")) return "Scheduling requires Solo or above. Upgrade your plan."
+  if (message === "auth_required" || message === "plan_expired") return "Your session has expired. Please reload and sign in again."
   return cleanErrorMessage(message)
 }
 

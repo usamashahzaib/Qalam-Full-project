@@ -1,6 +1,8 @@
 import { createHash } from "crypto"
 import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "@/lib/server/redis"
+import { checkRateLimit } from "./rate-limiter"
+import type { PlanTier } from "@/types/domain"
 
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
@@ -187,4 +189,71 @@ export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-
     remaining: result.remaining,
     reset: result.reset,
   }
+}
+
+// ── Generation queue ──────────────────────────────────────────────────────────
+
+const GENERATION_QUEUE_KEY = "generation_queue"
+
+interface QueuedRequest {
+  id: string
+  userId: string
+  task: string
+  payload: unknown
+  priority: number
+  timestamp: number
+}
+
+const PLAN_PRIORITY: Record<PlanTier, number> = { Free: 1, Solo: 2, Pro: 3, Agency: 4 }
+
+export async function enqueueRequest(
+  userId: string,
+  plan: PlanTier,
+  task: string,
+  payload: unknown,
+): Promise<{ id: string; position: number; estimatedWait: number; rateLimited: boolean; message?: string }> {
+  const rateLimit = await checkRateLimit(userId, plan)
+  if (!rateLimit.allowed) {
+    return { id: "", position: 0, estimatedWait: 0, rateLimited: true }
+  }
+
+  const r = getRedis()
+  if (!r) {
+    return { id: crypto.randomUUID(), position: 1, estimatedWait: 0, rateLimited: false, message: "Processing your request..." }
+  }
+
+  const id = crypto.randomUUID()
+  const priority = PLAN_PRIORITY[plan] ?? 1
+  const queued: QueuedRequest = { id, userId, task, payload, priority, timestamp: Date.now() }
+
+  const score = priority * 1_000_000_000_000 + Date.now()
+  await r.zadd(GENERATION_QUEUE_KEY, { score, member: JSON.stringify(queued) })
+
+  const all = (await r.zrange(GENERATION_QUEUE_KEY, 0, -1)) as string[]
+  const position = all.findIndex((item) => {
+    try { return (JSON.parse(item) as QueuedRequest).id === id } catch { return false }
+  }) + 1 || 1
+  const estimatedWait = position * 3
+
+  const message =
+    position === 1
+      ? "You're first in line! Starting soon..."
+      : `You're ${position} in line. Estimated wait: ${Math.ceil(estimatedWait / 60)} min.`
+
+  return { id, position, estimatedWait, rateLimited: false, message }
+}
+
+export async function getQueuePosition(
+  requestId: string,
+): Promise<{ position: number; estimatedWait: number } | null> {
+  const r = getRedis()
+  if (!r) return null
+
+  const all = (await r.zrange(GENERATION_QUEUE_KEY, 0, -1)) as string[]
+  const position = all.findIndex((item) => {
+    try { return (JSON.parse(item) as QueuedRequest).id === requestId } catch { return false }
+  }) + 1
+
+  if (position === 0) return null
+  return { position, estimatedWait: position * 3 }
 }

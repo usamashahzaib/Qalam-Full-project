@@ -1,5 +1,6 @@
 export const openLinkedInComposer = async (text: string) => {
-  const url = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`
+  // Copy full text to clipboard first — the URL param gets truncated for long posts
   await navigator.clipboard.writeText(text).catch(() => undefined)
-  window.open(url, "_blank", "noopener,noreferrer")
+  // Open LinkedIn composer without text in URL so the full post can be pasted
+  window.open("https://www.linkedin.com/feed/?shareActive=true", "_blank", "noopener,noreferrer")
 }
