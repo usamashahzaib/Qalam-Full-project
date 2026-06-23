@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
-import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildHumanizePrompt } from "@/lib/prompts/role-aware-system"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
@@ -49,13 +49,13 @@ export async function generatePostFromHook(
 ): Promise<Result<GeneratePostFromHookOutput>> {
   const { topic, hook, originalContent, role: rawRole, format: rawFormat, goal, userId, workspaceId, plan } = input
 
-  let limit: Awaited<ReturnType<typeof checkPlanLimit>>
+  let usage: Awaited<ReturnType<typeof incrementUsage>>
   try {
-    limit = await checkPlanLimit(userId, "drafts")
+    usage = await incrementUsage(userId, "drafts")
   } catch {
     return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again." })
   }
-  if (!limit.allowed) {
+  if (!usage.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
@@ -95,8 +95,6 @@ export async function generatePostFromHook(
   if (!artifact) {
     return err({ code: "INTERNAL_ERROR", message: "Invalid post artifact", userMessage: "Post generation failed. Please try again in a moment." })
   }
-
-  const usage = await incrementUsage(userId, "drafts")
 
   return ok({
     content: artifact.content,

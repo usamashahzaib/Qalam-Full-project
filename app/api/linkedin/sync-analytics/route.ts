@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { pollLinkedInAnalytics } from "@/lib/server/linkedin"
 import { getAllLinkedInTokens } from "@/lib/server/linkedin-credentials"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { supabaseInsert, supabaseSelect, createServiceClient } from "@/lib/server/supabase-rest"
 
 const CONCURRENCY = 3
 
@@ -58,22 +58,64 @@ export async function GET(request: Request) {
         if (!workspace) return credResultsInner
 
         // BUG #14 fix: column is external_post_urn, not external_urn
-        const posts = await supabaseSelect<{ id: string; external_post_urn: string }>(
+        const posts = await supabaseSelect<{ id: string; external_post_urn: string; user_id: string }>(
           "posts",
-          `workspace_id=eq.${workspace.id}&external_post_urn=not.is.null&status=eq.published&select=id,external_post_urn`
+          `workspace_id=eq.${workspace.id}&external_post_urn=not.is.null&status=eq.published&select=id,external_post_urn,user_id`
         )
         if (!posts || posts.length === 0) return credResultsInner
+
+        const supabase = createServiceClient()
+        const todayStart = new Date()
+        todayStart.setUTCHours(0, 0, 0, 0)
 
         for (const post of posts) {
           if (!post.external_post_urn) continue
           try {
             const stats = await pollLinkedInAnalytics(cred.access_token, post.external_post_urn)
+
+            // Write event log (existing behaviour)
             await supabaseInsert("workspace_events", {
               workspace_key: workspace.key,
               event_type: "linkedin_analytics_polled",
               payload: { postUrn: post.external_post_urn, postId: post.id, ...stats },
               created_at: new Date().toISOString(),
             })
+
+            // Also write to analytics_snapshots so the analytics UI shows auto-synced data.
+            // One snapshot per post per day - update if already exists today, insert otherwise.
+            const { data: existing } = await supabase
+              .from("analytics_snapshots")
+              .select("id")
+              .eq("post_id", post.id)
+              .eq("workspace_id", workspace.id)
+              .gte("captured_at", todayStart.toISOString())
+              .limit(1)
+              .maybeSingle()
+
+            if (!existing) {
+              await supabase
+                .from("analytics_snapshots")
+                .insert({
+                  post_id: post.id,
+                  workspace_id: workspace.id,
+                  user_id: post.user_id,
+                  impressions: stats.impressions,
+                  reactions: 0,
+                  comments: 0,
+                  reposts: 0,
+                  follower_delta: 0,
+                  notes: "Auto-synced from LinkedIn",
+                  captured_at: new Date().toISOString(),
+                })
+                .then(undefined, (e: unknown) => console.error("[sync-analytics] snapshot insert failed:", e))
+            } else {
+              await supabase
+                .from("analytics_snapshots")
+                .update({ impressions: stats.impressions, captured_at: new Date().toISOString() })
+                .eq("id", existing.id)
+                .then(undefined, (e: unknown) => console.error("[sync-analytics] snapshot update failed:", e))
+            }
+
             credResultsInner.push({ email: cred.user_id, urn: post.external_post_urn, status: "success", stats })
           } catch (err) {
             credResultsInner.push({ email: cred.user_id, urn: post.external_post_urn, status: "error", message: (err as Error).message })

@@ -37,14 +37,13 @@ export const plans: Plan[] = [
     monthlyPrice: 0,
     postsPerMonth: 5,
     draftsPerMonth: 5,
-    carouselsPerMonth: 1,
+    carouselsPerMonth: 0,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "",
     features: [
       "5 posts/month",
-      "1 carousel/month",
       "Basic AI Writer",
       "Hook Generator",
     ],
@@ -237,7 +236,7 @@ export const COMPARISON_ROWS = [
   },
   {
     label: "Carousels per month",
-    free: "1",
+    free: "-",
     solo: "3",
     pro: "10",
     agency: "Coming Soon",
@@ -300,6 +299,7 @@ export type PlanFeatureFlags = {
   clientWorkspaces: number
   seats: number
   researchRuns: number
+  carouselSlides: number
 }
 
 export type PlanEnforcement = {
@@ -310,18 +310,18 @@ export type PlanEnforcement = {
 export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   Free: {
     limits: { drafts: 5, carousels: 0, hooks: 5, analyses: 5 },
-    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0 },
+    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 0 },
   },
   Solo: {
     limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
   },
   Pro: {
     limits: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 0, seats: 1, researchRuns: 5 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 0, seats: 1, researchRuns: 5, carouselSlides: 10 },
   },
   Agency: {
     limits: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 3, seats: 5, researchRuns: 5 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 3, seats: 5, researchRuns: 5, carouselSlides: 10 },
   },
 }

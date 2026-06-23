@@ -57,12 +57,21 @@ export async function POST(
       .maybeSingle()
 
     if (!invitee) {
-      // User doesn't have a Qalam account yet — send an invite email but don't create membership
+      // User doesn't have a Qalam account yet — save a pending invite and send an email.
+      // When they sign up, the signup route redeems pending invites automatically.
       const { data: workspace } = await supabase
         .from("workspaces")
         .select("name")
         .eq("id", workspaceId)
         .maybeSingle()
+
+      await supabase
+        .from("workspace_invites")
+        .upsert(
+          { workspace_id: workspaceId, email: email.toLowerCase().trim(), role, invited_by: user.id, created_at: new Date().toISOString() },
+          { onConflict: "workspace_id,email" }
+        )
+        .then(undefined, (e: unknown) => console.warn("[invite] workspace_invites upsert failed (table may not exist):", e))
 
       await sendTransactionalEmail({
         to: email,
@@ -70,7 +79,7 @@ export async function POST(
         text: [
           `You've been invited to join the "${workspace?.name ?? "Qalam"}" workspace.`,
           ``,
-          `Sign up at https://byqalam.com to accept this invitation.`,
+          `Sign up at https://byqalam.com to accept this invitation — you'll be added automatically.`,
           ``,
           `— The Qalam team`,
         ].join("\n"),

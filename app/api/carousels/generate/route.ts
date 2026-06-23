@@ -1,1 +1,1 @@
-export { GET, POST } from "../../carousel/generate/route"
+export { GET, POST } from "../../carousel/route"

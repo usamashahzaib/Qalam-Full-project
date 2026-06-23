@@ -39,7 +39,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
   return {
     aiDraftsPerMonth: limits.drafts,
     carouselGenerationsPerMonth: limits.carousels,
-    carouselSlides: 1,
+    carouselSlides: flags.carouselSlides,
     researchRunsPerMonth: flags.researchRuns,
     clientWorkspaces: flags.clientWorkspaces,
     seats: flags.seats,

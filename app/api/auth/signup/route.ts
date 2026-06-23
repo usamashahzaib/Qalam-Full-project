@@ -119,6 +119,24 @@ export async function POST(req: NextRequest) {
     })
   } catch { /* ignore */ }
 
+  // Redeem any pending workspace invites for this email
+  try {
+    const { data: invites } = await supabase
+      .from("workspace_invites")
+      .select("workspace_id, role")
+      .eq("email", email)
+    if (invites && invites.length > 0) {
+      await supabase
+        .from("workspace_members")
+        .insert(invites.map((inv: { workspace_id: string; role: string }) => ({
+          workspace_id: inv.workspace_id,
+          user_id: userId,
+          role: inv.role,
+        })))
+      await supabase.from("workspace_invites").delete().eq("email", email)
+    }
+  } catch { /* ignore - workspace_invites table may not exist yet */ }
+
   // Save email verification token
   try {
     await supabase.from("email_verifications").insert({

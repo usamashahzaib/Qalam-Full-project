@@ -23,7 +23,21 @@ export async function GET(request: NextRequest) {
       id: string
       name: string
       created_at: string
-    }>("workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at`)
+      owner_id: string | null
+    }>("workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at,owner_id`)
+
+    // Batch-fetch plan for each workspace owner
+    const ownerIds = [...new Set((workspaces || []).map((ws) => ws.owner_id).filter(Boolean))] as string[]
+    const ownerPlans: Record<string, string> = {}
+    if (ownerIds.length > 0) {
+      const users = await supabaseSelect<{ id: string; plan: string | null }>(
+        "users",
+        `id=in.(${ownerIds.map(encodeURIComponent).join(",")})&select=id,plan`
+      ).catch(() => [])
+      for (const u of users || []) {
+        ownerPlans[u.id] = u.plan ?? "Free"
+      }
+    }
 
     const clients = (workspaces || [])
       .map((ws) => {
@@ -32,7 +46,7 @@ export async function GET(request: NextRequest) {
           id: ws.id,
           client_name: ws.name,
           status: "active",
-          plan: "Standard",
+          plan: ws.owner_id ? (ownerPlans[ws.owner_id] ?? "Free") : "Free",
           role: wsRole,
           created_at: ws.created_at,
           planExpiresAt: resolvePlanExpiry(null, ws.created_at),
@@ -89,12 +103,19 @@ export async function POST(request: NextRequest) {
     )
     const ws = workspaces?.[0]
 
+    // Look up current user's plan for the new workspace
+    const ownerRows = await supabaseSelect<{ plan: string | null }>(
+      "users",
+      `id=eq.${encodeURIComponent(dbUserId)}&select=plan&limit=1`
+    ).catch(() => [])
+    const ownerPlan = ownerRows?.[0]?.plan ?? "Free"
+
     const client = ws
       ? {
           id: ws.id,
           client_name: ws.name,
           status: "active",
-          plan: "Standard",
+          plan: ownerPlan,
           role: "admin",
           created_at: ws.created_at,
           planExpiresAt: resolvePlanExpiry(null, ws.created_at),
