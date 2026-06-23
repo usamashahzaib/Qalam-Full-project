@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, name, auth_provider")
+    .select("id, email, full_name, auth_provider")
     .eq("email", email)
     .maybeSingle()
 
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       to: user.email,
       subject: "Reset your Qalam password",
       text: [
-        `Hi ${user.name || "there"},`,
+        `Hi ${user.full_name || "there"},`,
         "",
         "You requested a password reset for your Qalam account.",
         "",

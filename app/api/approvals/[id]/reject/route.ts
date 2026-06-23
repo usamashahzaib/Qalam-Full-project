@@ -56,17 +56,24 @@ export async function POST(
 
   // Notify requester (best-effort)
   try {
-    const approvalsUrl = `${env.frontendOrigin}/approvals`
-    await sendTransactionalEmail({
-      to: approval.reviewer_email,
-      subject: `Needs revision: "${approval.post_title}"`,
-      text: [
-        `"${approval.post_title}" needs revision.`,
-        comment ? `Reviewer comment: "${comment}"` : "",
-        "",
-        `View your approvals: ${approvalsUrl}`,
-      ].filter(Boolean).join("\n"),
-    })
+    const { data: requester } = await supabase
+      .from("users")
+      .select("email")
+      .eq("id", approval.requester_id)
+      .maybeSingle()
+    if (requester?.email) {
+      const approvalsUrl = `${env.frontendOrigin}/approvals`
+      await sendTransactionalEmail({
+        to: requester.email,
+        subject: `Needs revision: "${approval.post_title}"`,
+        text: [
+          `"${approval.post_title}" needs revision.`,
+          comment ? `Reviewer comment: "${comment}"` : "",
+          "",
+          `View your approvals: ${approvalsUrl}`,
+        ].filter(Boolean).join("\n"),
+      })
+    }
   } catch { /* non-fatal */ }
 
   return NextResponse.json({ status: "rejected", comment: comment || null })

@@ -55,8 +55,11 @@ const verifyStripe = (rawBody: string, signature: string | null) => {
   return timingSafeEqual(hmacHex(env.stripeWebhookSecret, `${timestamp}.${rawBody}`), given)
 }
 
-const verifyGenericHmac = (rawBody: string, signature: string | null, secret: string) =>
-  Boolean(secret && signature && timingSafeEqual(hmacHex(secret, rawBody), signature.replace(/^sha256=/i, "")))
+const verifyGenericHmac = (rawBody: string, signature: string | null, secret: string): boolean => {
+  if (!secret) throw new Error("payment_secret_not_configured")
+  if (!signature) return false
+  return timingSafeEqual(hmacHex(secret, rawBody), signature.replace(/^sha256=/i, ""))
+}
 
 const textValue = (...values: unknown[]) =>
   values.map((value) => String(value || "").trim()).find(Boolean) || ""
@@ -253,12 +256,12 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     .eq("id", user.id)
     .then(undefined, (err: unknown) => console.error("[payments] users plan metadata sync failed:", err))
 
-  // Sync cycle dates on plan_usage (best-effort; plan itself is already set by the RPC)
+  // Sync plan and cycle dates on plan_usage (RPC sets plan, but direct update ensures consistency)
   await supabase
     .from("plan_usage")
-    .update({ cycle_start: now, cycle_end: expiresAt, updated_at: now })
+    .update({ plan: payment.planName.toLowerCase(), cycle_start: now, cycle_end: expiresAt, updated_at: now })
     .eq("user_id", user.id)
-    .then(undefined, (err: unknown) => console.error("[payments] plan_usage cycle sync failed:", err))
+    .then(undefined, (err: unknown) => console.error("[payments] plan_usage sync failed:", err))
 
   // Fire-and-forget confirmation email — never block the payment response on this
   sendTransactionalEmail({

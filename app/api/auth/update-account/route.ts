@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
 
   const supabase = createServiceClient()
   const updateData: Record<string, string> = {
-    name,
+    full_name: name,
     updated_at: new Date().toISOString(),
   }
   if (role !== undefined) updateData.role = role
