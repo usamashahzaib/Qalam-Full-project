@@ -5,6 +5,7 @@ import { callMistral } from "./mistral-client"
 import { callCerebras } from "./cerebras-client"
 import { callOpenRouter } from "./openrouter-client"
 import { createServiceClient } from "./supabase-rest"
+import { getFallbackHook, getFallbackPost } from "./fallback"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 
 type AiProvider = "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
@@ -398,5 +399,11 @@ export async function callAi(
     }
   }
 
+  // All providers failed - return a template fallback so the user gets something useful
+  console.warn("[ai-router] All providers unavailable, returning fallback template", { task })
+  const topicMatch = userMessage.match(/topic[:\s]+([^\n]+)/i)
+  const topic = topicMatch?.[1]?.trim() ?? "this topic"
+  if (task === "hook-generation") return getFallbackHook(topic)
+  if (task === "post-generation") return getFallbackPost(topic)
   throw new Error("All AI services unavailable. Please try again in a moment.")
 }
