@@ -8,6 +8,8 @@ export { ROLE_PROFILES, GENERIC_PROFILE } from "./role-profiles";
 
 import type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
 import { ROLE_PROFILES, GENERIC_PROFILE } from "./role-profiles";
+import { GENERATE_CRITICAL_RULES } from "./builders/generate";
+import { HOOKS_CRITICAL_RULES } from "./builders/hooks";
 
 // ---------------------------------------------------------------------------
 // FORMAT CONSTRAINTS
@@ -35,11 +37,11 @@ const FORMAT_RULES: Record<PostFormat, { charLimit: number; lineGuidance: string
 // ---------------------------------------------------------------------------
 const ANTI_AI_RULES = `
 ABSOLUTE RULES - NEVER BREAK THESE:
-- Zero em dashes (-). Zero en dashes (-). Use a hyphen (-) or split into two sentences.
+- ZERO em dashes (—) and ZERO en dashes (–). These Unicode characters are completely banned. Use a plain hyphen (-) or split into two sentences. This rule has no exceptions.
 - Never open with "In today's", "In the world of", "Let's dive in", "I'm excited to share", "As a [role]", "It's no secret".
 - Never use: delve, leverage (as a verb), elevate, seamless, unlock, empower, supercharge, revolutionize, paradigm, holistic, ecosystem, synergy, cutting-edge, game-changer, thought leader, passionate.
 - No three-item lists that are perfectly parallel ("X, Y, and Z" at the end of every thought). It reads like a template.
-- No question as the last line of the post ("What do you think?" "Have you experienced this?") - it's a cliche CTA.
+- No question as the last line of any content. Not "What do you think?" Not "Have you experienced this?" Not "Are you ready?" - ending with a question is a cliche that signals AI-generated content.
 - No rhyming or near-rhyming at sentence ends.
 - No bullet points or numbered lists in the post body. Write in sentences.
 - Never summarise the post in the final line. End on the insight or the action, not "and that's why X matters."
@@ -82,6 +84,8 @@ WORDS THIS PERSON WOULD NEVER USE:
 ${[...profile.banned].join(", ")}
 
 ${ANTI_AI_RULES}
+
+${GENERATE_CRITICAL_RULES}
 
 FORMAT RULES FOR THIS POST:
 Length: ${format} (max ${formatRule.charLimit} characters)
@@ -498,18 +502,18 @@ Generate exactly 5 hooks for the same topic, one per style:
 1. SHARP: An uncomfortable truth or bold claim. Concrete and specific.
 2. AUTHORITY: Lead with credibility, data, or hard-won experience. Shows expertise.
 3. STORY: "I [did/saw/realized] X" - drops the reader into a specific moment.
-4. CURIOSITY: Creates a knowledge gap. The reader must find out the answer.
+4. CURIOSITY: Creates a knowledge gap. Must end as a statement, not a question.
 5. DIRECT: States the value clearly. No buildup, no mystery. Pure clarity.
 
-Rules:
+${HOOKS_CRITICAL_RULES}
+
+Additional rules:
 - Maximum 2 sentences per hook
-- No em dashes (-) or en dashes (-)
-- No openers like "In today's...", "Have you ever...", "Let me tell you..."
-- Specific and concrete - include a number or named situation where possible
+- Specific and concrete - include a number, date, or named situation where possible
 - Match this voice: ${profile.voice.split(".")[0]}
 - Words never to use: ${profile.banned.slice(0, 5).join(", ")}
 
-Return ONLY valid JSON. No other text, no markdown fences:
+Return ONLY valid JSON array. No other text, no markdown, no code fences:
 [
   { "style": "SHARP", "text": "..." },
   { "style": "AUTHORITY", "text": "..." },
