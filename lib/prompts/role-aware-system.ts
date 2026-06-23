@@ -332,10 +332,10 @@ Generate 3 hooks for the same topic, each a different style:
 2. STORY OPENER hook: "I [did/saw/learned] X" - drops the reader into a moment.
 3. CONTRARIAN hook: Challenges a common belief this role's audience holds.
 
-Rules for all hooks:
+${HOOKS_CRITICAL_RULES}
+
+Additional rules:
 - Maximum 2 sentences each
-- No em dashes, no en dashes
-- No generic openers ("In today's...", "Have you ever...", "Let me tell you...")
 - Specific and concrete. If possible, include a number or a named tool/situation.
 - Must fit a ${profile.label}'s voice: ${profile.voice.split(".")[0]}.
 
@@ -556,6 +556,8 @@ ${profile.voice}
 Vocabulary to draw from (use some, not all): ${profile.vocabulary.slice(0, 10).join(", ")}
 
 ${ANTI_AI_RULES}
+
+${GENERATE_CRITICAL_RULES}
 
 Words never to use: ${[...profile.banned, "delve", "utilize", "leverage (as verb)", "seamless", "empower"].join(", ")}
 
@@ -792,10 +794,10 @@ The existing hook is: "${existingHook}"
 
 Write 3 alternative hooks for the same post - each meaningfully different in angle, not just different words.
 
-Rules:
+${HOOKS_CRITICAL_RULES}
+
+Additional rules:
 - Maximum 2 sentences each
-- No em dashes (-) or en dashes (-)
-- No generic openers
 - Specific, concrete, role-appropriate
 - Match this voice: ${profile.voice.split(".")[0]}
 

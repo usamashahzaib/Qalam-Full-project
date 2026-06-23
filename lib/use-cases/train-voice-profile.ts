@@ -3,6 +3,7 @@ import "server-only"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
+import { VOICE_ANALYSIS_SYSTEM_PROMPT } from "@/lib/prompts/builders/voice"
 
 export interface VoiceSampleAnalysis {
   tone: string
@@ -67,7 +68,7 @@ export async function trainVoiceProfile(
     storytelling_approach: "direct",
   }
   const analysisRaw = await callAi("voice-profile",
-    "Return strict JSON only.",
+    VOICE_ANALYSIS_SYSTEM_PROMPT,
     `Analyze this LinkedIn post sample and extract voice characteristics.
 
 SAMPLE:
@@ -94,7 +95,7 @@ OUTPUT JSON:
   }
 
   const fingerprintRaw = await callAi("voice-profile",
-    "Return strict JSON only.",
+    VOICE_ANALYSIS_SYSTEM_PROMPT,
     `Based on these ${examplePosts.length} writing samples, create a unified voice fingerprint.
 
 SAMPLES:

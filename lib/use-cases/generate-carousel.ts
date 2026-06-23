@@ -1,6 +1,7 @@
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
+import { CAROUSEL_SYSTEM_PROMPT } from "@/lib/prompts/builders/carousel"
 
 export type CarouselSlide = {
   number: number
@@ -23,7 +24,7 @@ export async function generateCarousel(input: GenerateCarouselInput): Promise<Re
   const { topic, role, userId } = input
   if (!topic?.trim() || !role?.trim() || !userId) return err({ code: "VALIDATION_ERROR", message: "topic, role, and userId are required" })
 
-  const system = "You are a LinkedIn carousel expert. Return only valid JSON matching the requested schema."
+  const system = CAROUSEL_SYSTEM_PROMPT
   const user = `Create a 5-7 slide LinkedIn carousel on "${topic}" for a ${role}.
 
 Return JSON:
