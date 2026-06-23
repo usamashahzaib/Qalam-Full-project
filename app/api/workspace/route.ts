@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     await requireAuth()
     const ctx = await getWorkspaceSessionContext()
     const workspaceId = await resolveWorkspaceId(request)
-    const planInfo = await resolveEffectivePlan(workspaceId, ctx.email, ctx.userId)
+    const planInfo = await resolveEffectivePlan(workspaceId, ctx.email, ctx.supabaseUserId)
     return NextResponse.json({ workspaceId, ...planInfo })
   } catch (error) {
     const message = (error as Error).message || "server_error"

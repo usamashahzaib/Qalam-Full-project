@@ -63,13 +63,25 @@ export async function POST(request: NextRequest) {
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
   await writeAudit(admin.email, body.targetEmail, "set_override", oldValue, payload)
 
-  // Sync plan_usage.plan so the RPC fast-path reflects the override immediately
+  // Sync plan_usage.plan and users.plan so all read paths see the override immediately.
+  // users.plan is the authoritative source for dashboard stats; without this sync
+  // the stats path ignores the override and always returns Free for manual payments.
   if (body.planOverride) {
     try {
       const supabase = createServiceClient()
-      await supabase
-        .from("plan_usage")
-        .upsert({ user_id: body.userId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" })
+      await Promise.all([
+        supabase
+          .from("plan_usage")
+          .upsert({ user_id: body.userId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" }),
+        supabase
+          .from("users")
+          .update({
+            plan: body.planOverride,
+            plan_expires_at: body.expiresAt || null,
+            updated_at: new Date().toISOString(),
+          })
+          .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+      ])
     } catch { /* non-fatal */ }
   }
 
@@ -100,10 +112,16 @@ export async function PATCH(request: NextRequest) {
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
   await writeAudit(admin.email, body.targetEmail, "reset_to_plan_defaults", oldValue, payload)
 
-  // Reset plan_usage.plan back to free when override is cleared
+  // Reset plan_usage.plan and users.plan to free when override is cleared
   try {
     const supabase = createServiceClient()
-    await supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId)
+    await Promise.all([
+      supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId),
+      supabase
+        .from("users")
+        .update({ plan: "Free", plan_expires_at: null, updated_at: new Date().toISOString() })
+        .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+    ])
   } catch { /* non-fatal */ }
 
   return NextResponse.json({ override: rows?.[0] || payload })
@@ -123,10 +141,16 @@ export async function DELETE(request: NextRequest) {
   await supabaseDelete("user_overrides", `user_id=eq.${encodeURIComponent(body.userId)}`)
   await writeAudit(admin.email, body.targetEmail, "delete_override", oldValue, null)
 
-  // Reset plan_usage.plan to free when override is deleted
+  // Reset plan_usage.plan and users.plan to free when override is deleted
   try {
     const supabase = createServiceClient()
-    await supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId)
+    await Promise.all([
+      supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId),
+      supabase
+        .from("users")
+        .update({ plan: "Free", plan_expires_at: null, updated_at: new Date().toISOString() })
+        .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+    ])
   } catch { /* non-fatal */ }
 
   return NextResponse.json({ deleted: true })

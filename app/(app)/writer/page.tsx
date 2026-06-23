@@ -56,7 +56,7 @@ export default function WriterPage() {
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
   const canUseSolo = canAccessPlan(billing.plan, "Solo")
-  const canUseCarousel = canUseProTools
+  const canUseCarousel = canUseSolo
   const currentDraftLimit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
   const carouselLimit = getEffectivePlanLimits(billing.plan, billing.limits).carouselGenerationsPerMonth
 
@@ -220,7 +220,7 @@ export default function WriterPage() {
                 <>
                   {!canUseCarousel ? (
                     <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                      Carousel generation requires <span className="font-bold">Pro</span>. Upgrade to unlock.
+                      Carousel generation requires <span className="font-bold">Solo</span> or higher. Upgrade to unlock.
                     </div>
                   ) : null}
                   <button
@@ -228,7 +228,7 @@ export default function WriterPage() {
                     disabled={isGeneratingSlides || !topic.trim() || !canUseCarousel}
                     className="w-full cursor-pointer rounded-xl bg-teal py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isGeneratingSlides ? "Generating slides..." : !canUseCarousel ? "Carousel (Pro only)" : "Generate Carousel"}
+                    {isGeneratingSlides ? "Generating slides..." : !canUseCarousel ? "Carousel (Solo+)" : "Generate Carousel"}
                   </button>
                   {canUseCarousel && typeof carouselLimit === "number" && (
                     <p className="mt-2 text-center text-xs text-zinc-400">

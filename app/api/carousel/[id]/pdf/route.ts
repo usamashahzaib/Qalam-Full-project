@@ -3,7 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type RGB } from "pdf-lib"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { CAROUSEL_THEMES, DEFAULT_THEME_ID, type CarouselThemeId, type CarouselTheme } from "@/lib/carousel-design"
+import { CAROUSEL_THEMES, DEFAULT_THEME_ID, resolveTheme, type CarouselThemeId, type CarouselTheme } from "@/lib/carousel-design"
 
 type DbSlide = { title?: string; bullets?: string[]; designHint?: string }
 
@@ -323,8 +323,10 @@ export async function POST(
     const { id } = await context.params
 
     const body = await req.json().catch(() => ({}))
-    const themeId = (body.themeId as CarouselThemeId) || DEFAULT_THEME_ID
-    const theme = CAROUSEL_THEMES[themeId] ?? CAROUSEL_THEMES[DEFAULT_THEME_ID as CarouselThemeId]
+    const rawThemeId = body.themeId as CarouselThemeId
+    const themeId: CarouselThemeId = CAROUSEL_THEMES[rawThemeId] ? rawThemeId : (DEFAULT_THEME_ID as CarouselThemeId)
+    const customAccent = typeof body.customAccent === "string" && body.customAccent ? body.customAccent : undefined
+    const theme = resolveTheme(themeId, customAccent)
 
     const supabase = createServiceClient()
     const { data, error } = await supabase
@@ -344,7 +346,7 @@ export async function POST(
     const regular = await pdf.embedFont(StandardFonts.Helvetica)
     const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
 
-    const exportSlides = rawSlides.slice(0, 1)
+    const exportSlides = rawSlides
     exportSlides.forEach((slide, index) => {
       const title = String(slide.title || `Slide ${index + 1}`)
       const content = Array.isArray(slide.bullets) ? slide.bullets.join(" ") : (slide.designHint || "")

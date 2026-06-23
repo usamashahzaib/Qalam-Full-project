@@ -149,11 +149,6 @@ function PlanCard({ stats }: { stats: Stats }) {
           Upgrade to Pro
         </Link>
       )}
-      {planNorm === "pro" && (
-        <Link href="/pricing" className="mt-4 block w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-center text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-50">
-          Upgrade to Agency
-        </Link>
-      )}
     </div>
   )
 }

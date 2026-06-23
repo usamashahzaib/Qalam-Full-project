@@ -52,24 +52,18 @@ export async function getPlanStatus(userId: string) {
   const supabase = createServiceClient()
   const expiryStatus = await getExpiryPlanStatus(userId)
 
-  // Parallel: get usage + check admin override + check users.plan (payment source of truth)
-  const [usageResult, overrideResult, usersResult, paymentResult] = await Promise.all([
+  // Phase 1 (parallel): usage + users.plan + payment — no inter-dependencies
+  const [usageResult, usersResult, paymentResult] = await Promise.all([
     supabase.rpc("get_or_create_plan_usage", { p_user_id: userId }),
-    Promise.resolve(
-      supabase
-        .from("user_overrides")
-        .select("plan_override, draft_limit_override, expires_at")
-        .eq("user_id", userId)
-        .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null }>,
     // users.plan + plan_expires_at are updated by payment webhook - authoritative source
+    // Include id + external_user_id so we can check overrides under either ID in phase 2
     Promise.resolve(
       supabase
         .from("users")
-        .select("plan,plan_expires_at,plan_started_at,billing_cycle,created_at")
+        .select("id,external_user_id,plan,plan_expires_at,plan_started_at,billing_cycle,created_at")
         .or(`id.eq.${userId},external_user_id.eq.${userId}`)
         .maybeSingle()
-    ).catch(() => ({ data: null })) as Promise<{ data: { plan?: string | null; plan_expires_at?: string | null; plan_started_at?: string | null; billing_cycle?: string | null; created_at?: string | null } | null }>,
+    ).catch(() => ({ data: null })) as Promise<{ data: { id?: string | null; external_user_id?: string | null; plan?: string | null; plan_expires_at?: string | null; plan_started_at?: string | null; billing_cycle?: string | null; created_at?: string | null } | null }>,
     Promise.resolve(
       supabase
         .from("payments")
@@ -81,6 +75,25 @@ export async function getPlanStatus(userId: string) {
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { created_at?: string | null; processed_at?: string | null } | null }>,
   ])
+
+  // Phase 2: check user_overrides with ALL matching IDs.
+  // Admin panel stores overrides under externalId (OAuth sub) but getPlanStatus is called
+  // with the internal Supabase UUID — need to try both so overrides are never missed.
+  const idsToCheck = [userId, usersResult.data?.id, usersResult.data?.external_user_id]
+    .filter((id): id is string => typeof id === "string" && id.length > 0)
+  const uniqueIds = [...new Set(idsToCheck)]
+  let overrideData: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null = null
+  for (const uid of uniqueIds) {
+    const { data } = await Promise.resolve(
+      supabase
+        .from("user_overrides")
+        .select("plan_override, draft_limit_override, expires_at")
+        .eq("user_id", uid)
+        .maybeSingle()
+    ).catch(() => ({ data: null }))
+    if (data) { overrideData = data; break }
+  }
+  const overrideResult = { data: overrideData }
 
   // Try RPC result first; fall back to direct table query if RPC is unavailable
   let usage = (!usageResult.error && usageResult.data)

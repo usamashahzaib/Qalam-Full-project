@@ -165,7 +165,7 @@ export default function CarouselEditorPage() {
       const res = await fetch(`/api/carousel/${id}/pdf`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ themeId: selectedThemeId }),
+        body: JSON.stringify({ themeId: selectedThemeId, customAccent: customAccent || accentOverride || undefined }),
       })
       if (!res.ok) { setPdfStatus("error"); return }
       const blob = await res.blob()
@@ -219,7 +219,15 @@ export default function CarouselEditorPage() {
   }
 
   if (isLoading) return <div className="mx-auto max-w-5xl px-6 py-10"><div className="space-y-4"><div className="h-8 w-48 animate-pulse rounded-lg bg-zinc-200" /><div className="grid grid-cols-3 gap-4">{[1, 2, 3].map((i) => <div key={i} className="h-48 animate-pulse rounded-2xl bg-zinc-100" />)}</div></div></div>
-  if (error) return <div className="mx-auto max-w-5xl px-6 py-10"><div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center"><p className="font-semibold text-red-700">{error}</p><Link href={withClientParam("/writer", activeClientId)} className="mt-4 inline-block text-sm font-semibold text-teal hover:underline">Back to writer</Link></div></div>
+  if (error) {
+    const friendlyError = error.toLowerCase().includes("minimum") ? error
+      : error.toLowerCase().includes("permission") || error === "403" ? "You don't have permission to view this carousel."
+      : error.toLowerCase().includes("session") || error === "401" ? "Session expired. Please refresh the page."
+      : error.toLowerCase().includes("delete failed") ? "Failed to delete slide. Please try again."
+      : error.toLowerCase().includes("save failed") ? "Failed to save changes. Please try again."
+      : "Something went wrong. Please go back and try again."
+    return <div className="mx-auto max-w-5xl px-6 py-10"><div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center"><p className="font-semibold text-red-700">{friendlyError}</p><Link href={withClientParam("/writer", activeClientId)} className="mt-4 inline-block text-sm font-semibold text-teal hover:underline">Back to writer</Link></div></div>
+  }
 
   const currentSlide = slides[activeSlide]
 
