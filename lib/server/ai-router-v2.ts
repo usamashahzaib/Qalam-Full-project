@@ -133,7 +133,7 @@ const COST_PER_M: Record<string, { input: number; output: number }> = {
   "llama-3.1-8b-instant": { input: 0.05, output: 0.08 },
   "llama-3.3-70b-versatile": { input: 0.59, output: 0.79 },
   // Gemini
-  "gemini-2.5-flash-lite-preview": { input: 0.075, output: 0.30 },
+  "gemini-2.5-flash-lite": { input: 0.075, output: 0.30 },
   "gemini-2.5-flash": { input: 0.15, output: 0.60 },
   "gemini-2.5-pro": { input: 1.25, output: 10.00 },
   // Mistral
@@ -188,7 +188,7 @@ async function logAiUsage(
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   "post-generation": {
     groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.5-flash-lite-preview",
+    gemini: "gemini-2.5-flash-lite",
     mistral: "mistral-small-3",
     cerebras: "llama-3.3-70b",
     openrouter: "meta-llama/llama-3.1-8b-instruct:free",
@@ -202,14 +202,14 @@ const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   },
   "hook-generation": {
     groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.5-flash-lite-preview",
+    gemini: "gemini-2.5-flash-lite",
     mistral: "mistral-small-3",
     cerebras: "llama-3.3-70b",
     openrouter: "meta-llama/llama-3.1-8b-instruct:free",
   },
   "carousel-outline": {
     groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.5-flash-lite-preview",
+    gemini: "gemini-2.5-flash-lite",
     mistral: "mistral-small-3",
     cerebras: "llama-3.3-70b",
     openrouter: "meta-llama/llama-3.1-8b-instruct:free",
@@ -223,7 +223,7 @@ const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   },
   "chat-strategist": {
     groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.5-flash-lite-preview",
+    gemini: "gemini-2.5-flash-lite",
     mistral: "mistral-small-3",
     cerebras: "llama-3.3-70b",
     openrouter: "meta-llama/llama-3.1-8b-instruct:free",
@@ -237,7 +237,7 @@ const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   },
   "engagement-prediction": {
     groq: "llama-3.1-8b-instant",
-    gemini: "gemini-2.5-flash-lite-preview",
+    gemini: "gemini-2.5-flash-lite",
     mistral: "mistral-small-3",
     cerebras: "llama-3.3-70b",
     openrouter: "meta-llama/llama-3.1-8b-instruct:free",
