@@ -3,6 +3,8 @@ import { withAuth } from "@/lib/server/auth"
 import { scorePost } from "@/lib/use-cases/score-post"
 import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { errorToStatus } from "@/lib/errors"
+import { enqueueRequest } from "@/lib/server/queue"
+import type { PlanTier } from "@/types/domain"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -21,6 +23,14 @@ export async function POST(request: NextRequest) {
     let body: Record<string, unknown>
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
+
+    const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "score", {})
+    if (queueResult.rateLimited) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
+        { status: 429 }
+      )
     }
 
     const result = await scorePost({

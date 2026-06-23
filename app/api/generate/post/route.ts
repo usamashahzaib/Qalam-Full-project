@@ -4,6 +4,8 @@ import { log } from "@/lib/server/logging"
 import { requirePlan } from "@/lib/server/require-plan"
 import { generatePostFromHook } from "@/lib/use-cases/generate-post-from-hook"
 import { errorToStatus } from "@/lib/errors"
+import { enqueueRequest } from "@/lib/server/queue"
+import type { PlanTier } from "@/types/domain"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -24,6 +26,14 @@ export async function POST(request: NextRequest) {
 
     if (!hasOriginalDraft && (!topic || topic.length < 3)) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     if (!hook) return NextResponse.json({ error: "A hook is required" }, { status: 400 })
+
+    const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "post", { topic, hook })
+    if (queueResult.rateLimited) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
+        { status: 429 }
+      )
+    }
 
     const result = await generatePostFromHook({
       topic,

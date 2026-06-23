@@ -4,6 +4,8 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { generateHooks } from "@/lib/use-cases/generate-hooks"
 import { errorToStatus } from "@/lib/errors"
+import { enqueueRequest } from "@/lib/server/queue"
+import type { PlanTier } from "@/types/domain"
 
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -27,6 +29,14 @@ export async function POST(request: NextRequest) {
     })
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
+    }
+
+    const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "hook", parsed.data)
+    if (queueResult.rateLimited) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
+        { status: 429 }
+      )
     }
 
     const result = await generateHooks({
