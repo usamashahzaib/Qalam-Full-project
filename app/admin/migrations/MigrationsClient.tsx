@@ -68,17 +68,27 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
             </div>
 
             {!status.ok && (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                <h2 className="text-sm font-bold text-zinc-900">How to apply migrations</h2>
-                <ol className="mt-3 space-y-2 text-sm text-zinc-700">
-                  <li className="flex gap-2"><span className="font-bold text-teal-600">1.</span> Go to <a href="https://app.supabase.com" target="_blank" rel="noreferrer" className="text-teal-600 underline">app.supabase.com</a> → Your Project → SQL Editor</li>
-                  <li className="flex gap-2"><span className="font-bold text-teal-600">2.</span> Copy the contents of <code className="rounded bg-zinc-100 px-1 text-xs">supabase/migrations/COMBINED_NEW_MIGRATIONS.sql</code> from the repo</li>
-                  <li className="flex gap-2"><span className="font-bold text-teal-600">3.</span> Paste it into the SQL Editor and click Run</li>
-                  <li className="flex gap-2"><span className="font-bold text-teal-600">4.</span> Refresh this page to verify</li>
-                </ol>
-                <p className="mt-3 text-xs text-zinc-500">
-                  Or via CLI: <code className="rounded bg-zinc-100 px-1">SUPABASE_ACCESS_TOKEN=sbp_xxx node scripts/run-migrations.mjs</code>
-                </p>
+              <div className="rounded-2xl border border-zinc-200 bg-white p-5 space-y-4">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-900">How to apply migrations</h2>
+                  <ol className="mt-3 space-y-2 text-sm text-zinc-700">
+                    <li className="flex gap-2"><span className="font-bold text-teal-600">1.</span> Go to <a href="https://app.supabase.com" target="_blank" rel="noreferrer" className="text-teal-600 underline">app.supabase.com</a> → Your Project → SQL Editor</li>
+                    <li className="flex gap-2"><span className="font-bold text-teal-600">2.</span> Copy the contents of <code className="rounded bg-zinc-100 px-1 text-xs">supabase/migrations/COMBINED_NEW_MIGRATIONS.sql</code> from the repo</li>
+                    <li className="flex gap-2"><span className="font-bold text-teal-600">3.</span> Paste it into the SQL Editor and click Run</li>
+                    <li className="flex gap-2"><span className="font-bold text-teal-600">4.</span> Refresh this page to verify</li>
+                  </ol>
+                  <p className="mt-3 text-xs text-zinc-500">
+                    Or via CLI: <code className="rounded bg-zinc-100 px-1">SUPABASE_ACCESS_TOKEN=sbp_xxx node scripts/run-migrations.mjs</code>
+                  </p>
+                </div>
+                {status.missingTables.length >= 5 && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p className="text-xs font-semibold text-amber-800">Fresh setup detected</p>
+                    <p className="mt-1 text-xs text-amber-700">
+                      Many tables are missing — this looks like a new database. <code className="rounded bg-amber-100 px-1">COMBINED_NEW_MIGRATIONS.sql</code> will drop and recreate all tables from scratch. This is safe on an empty database. Do not run it if you have existing data you want to keep.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
