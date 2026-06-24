@@ -108,7 +108,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       message: `Approval email failed: ${sent.error || "unknown"}`,
       userMessage: sent.error === "no_api_key"
         ? "Email is not configured. Set RESEND_API_KEY to send approval requests."
-        : "Approval request could not be emailed. Check transactional email settings.",
+        : `Approval email failed: ${sent.error || "unknown error"}.`,
     })
   }
 
