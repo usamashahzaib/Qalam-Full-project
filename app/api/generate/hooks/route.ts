@@ -5,7 +5,9 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { generateHooks } from "@/lib/use-cases/generate-hooks"
 import { errorToStatus } from "@/lib/errors"
 import { enqueueRequest } from "@/lib/server/queue"
+import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
+import type { Hook } from "@/lib/use-cases/generate-hooks"
 
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -31,6 +33,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
+    const cacheKey = generateCacheKey({ task: "hooks", topic: parsed.data.topic, role: parsed.data.role })
+    const cached = await getCachedResult<{ hooks: Hook[] }>(cacheKey)
+    if (cached) return NextResponse.json(cached)
+
     const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "hook", parsed.data)
     if (queueResult.rateLimited) {
       return NextResponse.json(
@@ -53,6 +59,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    await setCachedResult(cacheKey, { hooks: result.data.hooks }, 3600)
     return NextResponse.json(result.data)
   })(request)
 }

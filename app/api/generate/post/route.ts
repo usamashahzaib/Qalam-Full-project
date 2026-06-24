@@ -5,7 +5,9 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { generatePostFromHook } from "@/lib/use-cases/generate-post-from-hook"
 import { errorToStatus } from "@/lib/errors"
 import { enqueueRequest } from "@/lib/server/queue"
+import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
+import type { GeneratePostFromHookOutput } from "@/lib/use-cases/generate-post-from-hook"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -26,6 +28,15 @@ export async function POST(request: NextRequest) {
 
     if (!hasOriginalDraft && (!topic || topic.length < 3)) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     if (!hook) return NextResponse.json({ error: "A hook is required" }, { status: 400 })
+
+    // Only cache generic generations - personalised rewrites are unique per user
+    const cacheKey = !hasOriginalDraft
+      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || "") })
+      : null
+    if (cacheKey) {
+      const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)
+      if (cached) return NextResponse.json(cached)
+    }
 
     const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "post", { topic, hook })
     if (queueResult.rateLimited) {
@@ -54,6 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     log.info("generate.post-from-hook.done", { userId: user.id, wordCount: result.data.wordCount })
+    if (cacheKey) await setCachedResult(cacheKey, result.data, 1800)
     return NextResponse.json(result.data)
   })(request)
 }

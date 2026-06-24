@@ -4,12 +4,29 @@ import { scorePost } from "@/lib/use-cases/score-post"
 import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { errorToStatus } from "@/lib/errors"
 import { enqueueRequest } from "@/lib/server/queue"
+import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
+import type { ScorePostOutput } from "@/lib/use-cases/score-post"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+
+    let body: Record<string, unknown>
+    try { body = await req.json() } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
+    }
+
+    const content = String(body.content || body.postContent || "")
+
+    // Check cache before consuming quota - same content always scores identically
+    const cacheKey = generateCacheKey({ task: "score", content })
+    const cached = await getCachedResult<ScorePostOutput>(cacheKey)
+    if (cached) {
+      const { scores, overall, tips, hashtags } = cached
+      return NextResponse.json({ ...scores, overall, tips, hashtags })
+    }
 
     // Atomic check+increment using internal UUID — prevents TOCTOU bypass and wrong-ID ghost rows.
     const usage = await incrementUsage(user.id, "analyses")
@@ -18,11 +35,6 @@ export async function POST(request: NextRequest) {
         { error: "You have reached your scoring limit for this billing period." },
         { status: 429 }
       )
-    }
-
-    let body: Record<string, unknown>
-    try { body = await req.json() } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
     }
 
     const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "score", {})
@@ -34,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await scorePost({
-      content: String(body.content || body.postContent || ""),
+      content,
       role: String(body.role || ""),
       userId: user.id,
       internalUserId: user.id,
@@ -49,6 +61,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    await setCachedResult(cacheKey, result.data, 7200)
     const { scores, overall, tips, hashtags } = result.data
     return NextResponse.json({ ...scores, overall, tips, hashtags })
   })(request)
