@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
+import { useCallback, useEffect, useRef, useState, type RefObject, type ChangeEvent } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
@@ -10,13 +10,15 @@ import {
   CANVAS,
   CAROUSEL_THEMES,
   DEFAULT_THEME_ID,
+  PREMIUM_THEME_IDS,
+  LEGACY_THEME_IDS,
   resolveTheme,
   type CarouselThemeId,
 } from "@/lib/carousel-design"
 import { CoverSlide } from "@/components/carousel/CoverSlide"
 import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
-import { generateCarouselZip } from "@/lib/carousel-generator"
+import { generateCarouselZip, generateCarouselPdf } from "@/lib/carousel-generator"
 
 const SLIDE_SCALE = 0.40
 const PREVIEW_W = Math.round(CANVAS.width * SLIDE_SCALE)
@@ -24,18 +26,20 @@ const PREVIEW_H = Math.round(CANVAS.height * SLIDE_SCALE)
 
 const ACCENT_SWATCHES = [
   { label: "Theme default", value: "" },
+  { label: "Royal blue", value: "#1B3FBF" },
   { label: "Rose", value: "#F43F5E" },
   { label: "Sky", value: "#0EA5E9" },
   { label: "Lime", value: "#84CC16" },
   { label: "Violet", value: "#8B5CF6" },
-  { label: "Coral", value: "#FB923C" },
+  { label: "Terracotta", value: "#C85A2A" },
   { label: "Cyan", value: "#06B6D4" },
 ]
 
 type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
 type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string }
 
-const THEME_LIST = Object.values(CAROUSEL_THEMES)
+const ALL_PREMIUM = PREMIUM_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
+const ALL_LEGACY = LEGACY_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
 
 export default function CarouselEditorPage() {
   const params = useParams()
@@ -50,15 +54,18 @@ export default function CarouselEditorPage() {
   const [savingSlide, setSavingSlide] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<Record<string, string>>({})
   const [deletingSlide, setDeletingSlide] = useState(false)
-  const [pdfStatus, setPdfStatus] = useState<"idle" | "loading" | "error">("idle")
   const [selectedThemeId, setSelectedThemeId] = useState<CarouselThemeId>(DEFAULT_THEME_ID)
   const [accentOverride, setAccentOverride] = useState("")
   const [customAccent, setCustomAccent] = useState("")
   const [authorName, setAuthorName] = useState("")
   const [authorHandle, setAuthorHandle] = useState("")
   const [designation, setDesignation] = useState("")
+  const [backgroundPhoto, setBackgroundPhoto] = useState<string | undefined>(undefined)
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
+  const [pdfExporting, setPdfExporting] = useState(false)
+  const [pdfDone, setPdfDone] = useState(false)
+  const [showLegacyThemes, setShowLegacyThemes] = useState(false)
 
   const theme = resolveTheme(selectedThemeId, customAccent || accentOverride || undefined)
 
@@ -158,26 +165,17 @@ export default function CarouselEditorPage() {
     URL.revokeObjectURL(url)
   }
 
-  const exportAsPdf = async () => {
-    if (!slides.length) return
-    setPdfStatus("loading")
+  const handleExportPdf = async () => {
+    if (!slides.length || pdfExporting) return
+    setPdfExporting(true)
     try {
-      const res = await fetch(`/api/carousel/${id}/pdf`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ themeId: selectedThemeId, customAccent: customAccent || accentOverride || undefined }),
-      })
-      if (!res.ok) { setPdfStatus("error"); return }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `carousel-${id.slice(0, 8)}.pdf`
-      a.click()
-      URL.revokeObjectURL(url)
-      setPdfStatus("idle")
-    } catch {
-      setPdfStatus("error")
+      await generateCarouselPdf(slideRefs.slice(0, slides.length), `carousel-${id.slice(0, 8)}`)
+      setPdfDone(true)
+      setTimeout(() => setPdfDone(false), 3000)
+    } catch (e) {
+      console.error("PDF export failed:", e)
+    } finally {
+      setPdfExporting(false)
     }
   }
 
@@ -195,17 +193,40 @@ export default function CarouselEditorPage() {
     }
   }
 
+  const handleBgPhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setBackgroundPhoto(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
   function renderSlideEl(slide: Slide, index: number) {
     const shared = {
       authorName: authorName || undefined,
       authorHandle: authorHandle || undefined,
       designation: designation || undefined,
       theme,
+      backgroundPhoto,
     }
     const isFirst = index === 0
     const isLast = index === slides.length - 1
-    if (isFirst) return <CoverSlide title={slide.title || "Untitled"} {...shared} />
-    if (isLast && slides.length > 2) return <CTASlide title={slide.title || "Key Takeaway"} body={slide.content || ""} {...shared} />
+    if (isFirst) return (
+      <CoverSlide
+        title={slide.title || "Untitled"}
+        totalSlides={slides.length}
+        {...shared}
+      />
+    )
+    if (isLast && slides.length > 2) return (
+      <CTASlide
+        title={slide.title || "Key Takeaway"}
+        body={slide.content || ""}
+        totalSlides={slides.length}
+        slideNumber={index + 1}
+        {...shared}
+      />
+    )
     return (
       <ContentSlide
         title={slide.title || ""}
@@ -214,19 +235,35 @@ export default function CarouselEditorPage() {
         totalSlides={slides.length}
         authorName={authorName || undefined}
         theme={theme}
+        backgroundPhoto={backgroundPhoto}
       />
     )
   }
 
-  if (isLoading) return <div className="mx-auto max-w-5xl px-6 py-10"><div className="space-y-4"><div className="h-8 w-48 animate-pulse rounded-lg bg-zinc-200" /><div className="grid grid-cols-3 gap-4">{[1, 2, 3].map((i) => <div key={i} className="h-48 animate-pulse rounded-2xl bg-zinc-100" />)}</div></div></div>
+  if (isLoading) return (
+    <div className="mx-auto max-w-5xl px-6 py-10">
+      <div className="space-y-4">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-zinc-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <div key={i} className="h-48 animate-pulse rounded-2xl bg-zinc-100" />)}
+        </div>
+      </div>
+    </div>
+  )
+
   if (error) {
     const friendlyError = error.toLowerCase().includes("minimum") ? error
       : error.toLowerCase().includes("permission") || error === "403" ? "You don't have permission to view this carousel."
       : error.toLowerCase().includes("session") || error === "401" ? "Session expired. Please refresh the page."
-      : error.toLowerCase().includes("delete failed") ? "Failed to delete slide. Please try again."
-      : error.toLowerCase().includes("save failed") ? "Failed to save changes. Please try again."
       : "Something went wrong. Please go back and try again."
-    return <div className="mx-auto max-w-5xl px-6 py-10"><div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center"><p className="font-semibold text-red-700">{friendlyError}</p><Link href={withClientParam("/writer", activeClientId)} className="mt-4 inline-block text-sm font-semibold text-teal hover:underline">Back to writer</Link></div></div>
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-10">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-10 text-center">
+          <p className="font-semibold text-red-700">{friendlyError}</p>
+          <Link href={withClientParam("/writer", activeClientId)} className="mt-4 inline-block text-sm font-semibold text-teal hover:underline">Back to writer</Link>
+        </div>
+      </div>
+    )
   }
 
   const currentSlide = slides[activeSlide]
@@ -249,37 +286,41 @@ export default function CarouselEditorPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">
-            Export as text
+            Export text
           </button>
-          <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
+          <LockedFeature feature="Export to PDF" requiredPlan="Solo" className="inline-block">
             <button
-              onClick={() => void exportAsPdf()}
-              disabled={pdfStatus === "loading"}
-              className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors disabled:opacity-50"
+              onClick={() => void handleExportPdf()}
+              disabled={pdfExporting || !slides.length}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                pdfDone ? "bg-emerald-600 text-white" : pdfExporting ? "cursor-not-allowed bg-zinc-200 text-zinc-400 border border-zinc-300" : "bg-zinc-900 text-white hover:bg-zinc-800"
+              }`}
             >
-              {pdfStatus === "loading" ? "Generating..." : pdfStatus === "error" ? "PDF failed - retry" : "Export as PDF"}
+              {pdfExporting ? (
+                <><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Building PDF...</>
+              ) : pdfDone ? "PDF Downloaded!" : (
+                <><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>Export PDF</>
+              )}
             </button>
           </LockedFeature>
           <button
             onClick={() => void handleExportZip()}
             disabled={exporting || !slides.length}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold shadow-sm transition-all ${
-              exportDone ? "bg-emerald-600 text-white" : exporting ? "cursor-not-allowed bg-zinc-200 text-zinc-400" : "bg-zinc-900 text-white hover:bg-zinc-800"
-            }`}
+            className={`flex items-center gap-2 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition-all hover:bg-zinc-50 ${exporting ? "opacity-50" : ""}`}
           >
             {exporting ? (
               <><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Exporting...</>
-            ) : exportDone ? "ZIP Downloaded!" : (
-              <><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Export PNG ZIP</>
-            )}
+            ) : exportDone ? "ZIP Downloaded!" : "Export PNG ZIP"}
           </button>
         </div>
       </div>
 
-      {/* ── Branding + Style row ── */}
+      {/* ── Branding + Design ── */}
       <div className="mb-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
         <p className="mb-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Branding & Design</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto]">
+
+        {/* Row 1: Author fields */}
+        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-500">Your name</label>
             <input type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="e.g. Sarah Ahmed" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
@@ -289,66 +330,110 @@ export default function CarouselEditorPage() {
             <input type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="e.g. Founder | LinkedIn Strategist" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-500">Handle (optional)</label>
-            <input type="text" value={authorHandle} onChange={(e) => setAuthorHandle(e.target.value)} placeholder="@yourhandle" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
+            <label className="mb-1 block text-xs font-medium text-zinc-500">Background photo (optional)</label>
+            <div className="flex items-center gap-2">
+              <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100 transition-colors">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                {backgroundPhoto ? "Change photo" : "Upload photo"}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleBgPhotoChange} />
+              </label>
+              {backgroundPhoto && (
+                <button onClick={() => setBackgroundPhoto(undefined)} className="text-xs text-zinc-400 hover:text-red-500 transition-colors">Remove</button>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-2 lg:min-w-[200px]">
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-zinc-500">Theme</p>
-              <div className="flex gap-1.5">
-                {THEME_LIST.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setSelectedThemeId(t.id as CarouselThemeId)}
-                    title={t.label}
-                    className={`relative h-7 w-7 rounded-full border-2 transition-all ${selectedThemeId === t.id ? "border-zinc-800 scale-110 shadow-md" : "border-transparent opacity-60 hover:opacity-100 hover:border-zinc-300"}`}
-                    style={{ background: t.bgGradient }}
-                  >
-                    {selectedThemeId === t.id && (
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 6l3 3 5-5" stroke={t.textPrimary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="mb-1.5 text-xs font-medium text-zinc-500">Accent color</p>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {ACCENT_SWATCHES.map((swatch) => (
-                  <button
-                    key={swatch.label}
-                    onClick={() => { setAccentOverride(swatch.value); setCustomAccent("") }}
-                    title={swatch.label}
-                    className={`h-6 w-6 rounded-full border-2 transition-all ${accentOverride === swatch.value && !customAccent ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
-                    style={{ background: swatch.value || resolveTheme(selectedThemeId).accentColor }}
+        </div>
+
+        {/* Row 2: Theme picker */}
+        <div className="mb-3">
+          <p className="mb-2 text-xs font-medium text-zinc-500">Theme</p>
+          {/* Premium themes */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {ALL_PREMIUM.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedThemeId(t.id as CarouselThemeId)}
+                title={t.label}
+                className={`relative flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                  selectedThemeId === t.id
+                    ? "border-zinc-800 bg-zinc-900 text-white shadow-md"
+                    : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50"
+                }`}
+              >
+                <span
+                  className="h-4 w-4 flex-shrink-0 rounded-full border border-white/20"
+                  style={{ background: t.bgGradient.startsWith("#") ? t.bgGradient : t.bgGradient, boxShadow: `inset 0 0 0 1px rgba(0,0,0,0.12)` }}
+                />
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {/* Legacy themes toggle */}
+          <button
+            onClick={() => setShowLegacyThemes((v) => !v)}
+            className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
+            {showLegacyThemes ? "Hide classic themes" : "Show classic themes"} {showLegacyThemes ? "↑" : "↓"}
+          </button>
+          {showLegacyThemes && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ALL_LEGACY.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setSelectedThemeId(t.id as CarouselThemeId)}
+                  title={t.label}
+                  className={`relative flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                    selectedThemeId === t.id
+                      ? "border-zinc-800 bg-zinc-900 text-white shadow-md"
+                      : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50"
+                  }`}
+                >
+                  <span
+                    className="h-4 w-4 flex-shrink-0 rounded-full"
+                    style={{ background: t.bgGradient, boxShadow: `inset 0 0 0 1px rgba(0,0,0,0.12)` }}
                   />
-                ))}
-                <label className="relative h-6 w-6 cursor-pointer" title="Pick custom color">
-                  <input
-                    type="color"
-                    className="sr-only"
-                    value={customAccent || "#F59E0B"}
-                    onChange={(e) => { setCustomAccent(e.target.value); setAccentOverride("") }}
-                  />
-                  <div
-                    className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${customAccent ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
-                    style={{ background: customAccent || "conic-gradient(red 0%,yellow 17%,lime 33%,cyan 50%,blue 67%,magenta 83%,red 100%)" }}
-                  >
-                    {!customAccent && <svg className="w-2.5 h-2.5 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>}
-                  </div>
-                </label>
-              </div>
+                  {t.label}
+                </button>
+              ))}
             </div>
+          )}
+        </div>
+
+        {/* Row 3: Accent color */}
+        <div>
+          <p className="mb-1.5 text-xs font-medium text-zinc-500">Accent color override</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {ACCENT_SWATCHES.map((swatch) => (
+              <button
+                key={swatch.label}
+                onClick={() => { setAccentOverride(swatch.value); setCustomAccent("") }}
+                title={swatch.label}
+                className={`h-6 w-6 rounded-full border-2 transition-all ${accentOverride === swatch.value && !customAccent ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
+                style={{ background: swatch.value || resolveTheme(selectedThemeId).accentColor }}
+              />
+            ))}
+            <label className="relative h-6 w-6 cursor-pointer" title="Pick custom color">
+              <input
+                type="color"
+                className="sr-only"
+                value={customAccent || "#F59E0B"}
+                onChange={(e) => { setCustomAccent(e.target.value); setAccentOverride("") }}
+              />
+              <div
+                className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${customAccent ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
+                style={{ background: customAccent || "conic-gradient(red 0%,yellow 17%,lime 33%,cyan 50%,blue 67%,magenta 83%,red 100%)" }}
+              >
+                {!customAccent && <svg className="w-2.5 h-2.5 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>}
+              </div>
+            </label>
           </div>
         </div>
       </div>
 
       {!slides.length ? (
-        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-16 text-center"><p className="text-zinc-500">No slides found for this carousel.</p></div>
+        <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-16 text-center">
+          <p className="text-zinc-500">No slides found for this carousel.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
           {/* Slide list sidebar */}
@@ -381,7 +466,7 @@ export default function CarouselEditorPage() {
                 </div>
               </div>
 
-              {/* Slide preview - all slides fully visible */}
+              {/* Slide preview */}
               <div className="relative mb-6 flex justify-center">
                 <div
                   className="overflow-hidden rounded-2xl shadow-xl"
@@ -401,7 +486,7 @@ export default function CarouselEditorPage() {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Slide Content</label>
-                  <textarea value={currentSlide.content || ""} onChange={(e) => updateSlide(currentSlide.id, "content", e.target.value)} rows={4} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Supporting detail" />
+                  <textarea value={currentSlide.content || ""} onChange={(e) => updateSlide(currentSlide.id, "content", e.target.value)} rows={4} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Supporting detail or bullet points (one per line)" />
                 </div>
               </div>
 
@@ -414,7 +499,7 @@ export default function CarouselEditorPage() {
         </div>
       )}
 
-      {/* Off-screen render nodes for PNG capture */}
+      {/* Off-screen render nodes for PNG/PDF capture */}
       <div
         aria-hidden="true"
         style={{ position: "fixed", top: 0, left: "-9999px", width: CANVAS.width, pointerEvents: "none", zIndex: -1 }}
