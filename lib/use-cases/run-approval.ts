@@ -31,7 +31,7 @@ export interface RunApprovalOutput {
     post_content: string
     status: string
     message: string | null
-    comments?: string | null
+    comment?: string | null
     created_at: string
     updated_at?: string | null
   }
@@ -64,12 +64,17 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       message: message || null,
       review_token_hash: hashToken(reviewToken),
     })
-    .select("id, post_id, reviewer_email, post_title, post_content, status, message, comments, created_at, updated_at")
+    .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
     .single()
 
   if (error || !approval) {
     console.error("approval_insert_failed", { message: error?.message, code: error?.code })
-    const detail = error?.message?.includes("column") ? "Run migration 0026_fix_approvals_schema.sql in Supabase SQL Editor." : (error?.message ?? "DB error")
+    let detail = error?.message ?? "DB error"
+    if (error?.message?.includes("review_token_hash")) {
+      detail = "Run migration 0027_approval_review_tokens.sql in Supabase SQL Editor."
+    } else if (error?.message?.includes("column") || error?.message?.includes("schema_not_applied")) {
+      detail = "Run migrations 0026 and 0027 in Supabase SQL Editor (supabase/migrations/)."
+    }
     return err({ code: "INTERNAL_ERROR", message: "Approval DB not ready", userMessage: detail })
   }
 
