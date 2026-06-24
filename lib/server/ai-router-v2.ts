@@ -22,11 +22,30 @@ type CallOptions = { json: boolean; temperature: number; maxTokens: number }
 type AiResponse = OpenAiCompatibleResult
 
 // ── 1.4: Output sanitizer applied to every provider response ─────────────────
-// Normalises typography that slips through despite prompt rules.
+// Normalises typography and strips AI-tell phrases that slip through prompts.
 export function sanitizeOutput(text: string): string {
   return text
-    .replace(/[—–]/g, "-")      // em dash / en dash → plain hyphen
-    .replace(/\n{3,}/g, "\n\n") // collapse 3+ blank lines to 2
+    // ── Typography ─────────────────────────────────────────────────────────────
+    .replace(/[—–]/g, "-")
+    // ── Standalone AI-validation sentences (whole line = just the phrase) ─────
+    // These add zero meaning and are a dead giveaway of AI authorship.
+    .replace(
+      /^[ \t]*(?:this framing is (?:right|correct|wrong)|the problem is real|this(?: part)? is real|i'?ve seen this(?: firsthand)?)[\.\!\?]?\s*$/gim,
+      ""
+    )
+    // ── Inline transitional filler ─────────────────────────────────────────────
+    // Pattern: phrase + comma/colon/space → strip phrase, keep the rest.
+    // Re-capitalisation pass below restores sentence-start casing.
+    .replace(
+      /\b(?:needless to say|suffice it to say|without further ado|make no mistake|let me be (?:clear|honest)|here'?s the thing|at the end of the day|that being said|having said that)[,:\s]+/gi,
+      ""
+    )
+    .replace(/\bit goes without saying that\s+/gi, "")
+    // ── Re-capitalise after stripping left a lowercase sentence start ──────────
+    .replace(/(^|\.\s+|!\s+|\?\s+)([a-z])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
+    .replace(/^([a-z])/gm, (_, letter) => letter.toUpperCase())
+    // ── Whitespace ─────────────────────────────────────────────────────────────
+    .replace(/\n{3,}/g, "\n\n")
     .trim()
 }
 
