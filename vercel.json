@@ -6,11 +6,15 @@
     },
     {
       "path": "/api/linkedin/publish-scheduled",
-      "schedule": "0 1 * * *"
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/linkedin/sync-analytics",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/process-queue",
+      "schedule": "*/5 * * * *"
     },
     {
       "path": "/api/cron/cleanup-pdfs",

@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
 import { auth } from "@/auth"
 import { PLAN_PRIORITY } from "@/lib/server/plan-limits-v2"
+import { env } from "@/lib/server/env"
 
 export async function getAuthenticatedSession() {
   return await auth()
@@ -19,9 +20,9 @@ export async function requireAuth(): Promise<string> {
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false
-  const envList = process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS
+  const envList = env.appAdminEmails
   if (!envList) {
-    console.warn("[workspace] ADMIN_EMAILS env var is not configured; no admin emails enabled")
+    console.warn("[workspace] APP_ADMIN_EMAILS env var is not configured; no admin emails enabled")
     return false
   }
   const adminEmails = envList.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
@@ -277,8 +278,7 @@ export const resolveWorkspaceId = async (request: NextRequest): Promise<string> 
   if (
     requestedWorkspaceId &&
     requestedWorkspaceId !== "null" &&
-    requestedWorkspaceId !== "undefined" &&
-    !requestedWorkspaceId.startsWith("client:")
+    requestedWorkspaceId !== "undefined"
   ) {
     const memberships = await supabaseSelect<{ workspace_id: string }>(
       "workspace_members",

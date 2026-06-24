@@ -2,8 +2,6 @@ import { Redis } from "@upstash/redis"
 import { getRedis } from "@/lib/server/redis"
 import { callAi, type AiTask } from "@/lib/server/ai-router-v2"
 
-let processorInterval: ReturnType<typeof setInterval> | null = null
-
 export interface QueueItem {
   id: string
   userId: string
@@ -149,18 +147,6 @@ export async function getQueueStatus(
   }
 
   return { position: 0, estimatedWaitSeconds: 0 }
-}
-
-export async function scheduleQueueProcessor(): Promise<void> {
-  if (!getRedis()) return
-
-  if (processorInterval) return
-
-  processorInterval = setInterval(() => {
-    processQueue().catch((err) => {
-      console.error("[queue-processor] processQueue error:", err)
-    })
-  }, 5_000)
 }
 
 export { getRedis } from "@/lib/server/redis"

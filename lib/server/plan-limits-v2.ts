@@ -2,6 +2,7 @@
 // Infrastructure: Supabase RPC calls for plan usage tracking.
 // Enforcement limits are sourced from lib/pricing.ts (single source of truth).
 
+import { cache } from "react"
 import { createServiceClient } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
@@ -47,8 +48,10 @@ export async function getCanonicalPlan(userId: string): Promise<string> {
   return (await getPlanStatus(userId)).plan
 }
 
-// Get plan status from plan_usage table, respecting admin overrides
-export async function getPlanStatus(userId: string) {
+// Get plan status from plan_usage table, respecting admin overrides.
+// Wrapped with React cache() so repeated calls with the same userId within a
+// single server request (API route or Server Component) hit the DB only once.
+export const getPlanStatus = cache(async function getPlanStatusImpl(userId: string) {
   const supabase = createServiceClient()
   const expiryStatus = await getExpiryPlanStatus(userId)
 
@@ -154,11 +157,12 @@ export async function getPlanStatus(userId: string) {
   }
 
   // Apply admin plan override if not expired
-  if (
+  const overrideActive = Boolean(
     override?.plan_override &&
     (!override.expires_at || new Date(override.expires_at) > new Date())
-  ) {
-    plan = normalizePlan(override.plan_override)
+  )
+  if (overrideActive) {
+    plan = normalizePlan(override!.plan_override!)
   }
 
   const config = { ...PLAN_CONFIG[plan].limits }
@@ -170,6 +174,7 @@ export async function getPlanStatus(userId: string) {
 
   return {
     plan,
+    overrideActive,
     drafts: {
       used: usage?.ai_drafts_used || 0,
       limit: config.drafts,
@@ -197,7 +202,7 @@ export async function getPlanStatus(userId: string) {
     renewalDue: expiryStatus.renewalDue,
     daysUntilExpiry: expiryStatus.daysUntilExpiry,
   }
-}
+})
 
 // Check if user can use a feature
 export async function checkPlanLimit(userId: string, feature: Feature) {

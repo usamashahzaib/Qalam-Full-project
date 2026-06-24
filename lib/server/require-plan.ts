@@ -25,6 +25,9 @@ type PlanCheckResult =
 
 /**
  * Core enforcement middleware. Validates auth session, resolves workspace, checks plan hierarchy.
+ *
+ * Uses fetchWorkspacePlan (workspace-owner's plan) so agency team members correctly
+ * inherit the owner's plan tier — not their own Free-tier users.plan record.
  */
 export const requirePlan = async (
   request: NextRequest,

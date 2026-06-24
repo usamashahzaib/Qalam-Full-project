@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { checkPlanLimit, incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
 
 const schema = z.object({
@@ -69,10 +69,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid carousel input", issues: parsed.error.issues }, { status: 400 })
     }
 
-    const usage = await incrementUsage(user.id, "carousels")
-    if (!usage.allowed) {
+    // Read-only quota check — decrement only after AI call succeeds
+    const precheck = await checkPlanLimit(user.id, "carousels")
+    if (!precheck.allowed) {
       return NextResponse.json(
-        { error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit },
+        { error: "carousel_quota_exceeded", current: precheck.current, limit: precheck.limit },
         { status: 429 }
       )
     }
@@ -85,6 +86,15 @@ export async function POST(request: NextRequest) {
     let slides = parseSlides(result, parsed.data.slideCount)
     if (slides.length < 5) {
       return NextResponse.json({ error: "AI returned too few slides" }, { status: 502 })
+    }
+
+    // AI succeeded — now commit the quota decrement
+    const usage = await incrementUsage(user.id, "carousels")
+    if (!usage.allowed) {
+      return NextResponse.json(
+        { error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit },
+        { status: 429 }
+      )
     }
     slides = enforceSlideStructure(slides, parsed.data.topic)
 

@@ -6,6 +6,7 @@ import { callCerebras } from "./cerebras-client"
 import { callOpenRouter } from "./openrouter-client"
 import { createServiceClient } from "./supabase-rest"
 import { getFallbackHook, getFallbackPost } from "./fallback"
+import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 
 type AiProvider = "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
@@ -49,62 +50,9 @@ export function sanitizeOutput(text: string): string {
     .trim()
 }
 
-// ── Circuit breaker ──────────────────────────────────────────────────────────
-const CIRCUIT_THRESHOLD = 5
-const CIRCUIT_OPEN_MS = 5 * 60_000
-
-type ProviderState = {
-  calls: number
-  successes: number
-  failures: number
-  rateLimited: number
-  consecutiveFailures: number
-  openUntil: number
-  lastUsed: number
-}
-
-const providerState = new Map<AiProvider, ProviderState>()
-
-const defaultState = (): ProviderState => ({
-  calls: 0,
-  successes: 0,
-  failures: 0,
-  rateLimited: 0,
-  consecutiveFailures: 0,
-  openUntil: 0,
-  lastUsed: 0,
-})
-
-const stateFor = (provider: AiProvider) => providerState.get(provider) ?? defaultState()
-
-const saveState = (provider: AiProvider, patch: Partial<ProviderState>) => {
-  const next = { ...stateFor(provider), ...patch }
-  providerState.set(provider, next)
-  return next
-}
-
-const touchProvider = (provider: AiProvider) => {
-  const current = stateFor(provider)
-  return saveState(provider, { calls: current.calls + 1, lastUsed: Date.now() })
-}
-
-const markSuccess = (provider: AiProvider) => {
-  const current = stateFor(provider)
-  saveState(provider, { successes: current.successes + 1, consecutiveFailures: 0, openUntil: 0 })
-}
-
-const markFailure = (provider: AiProvider, rateLimited = false) => {
-  const current = stateFor(provider)
-  const consecutiveFailures = current.consecutiveFailures + 1
-  saveState(provider, {
-    failures: current.failures + 1,
-    rateLimited: current.rateLimited + (rateLimited ? 1 : 0),
-    consecutiveFailures,
-    openUntil: consecutiveFailures >= CIRCUIT_THRESHOLD ? Date.now() + CIRCUIT_OPEN_MS : current.openUntil,
-  })
-}
-
-const isCircuitOpen = (provider: AiProvider) => stateFor(provider).openUntil > Date.now()
+// ── Circuit breaker (Redis-backed, shared across all serverless instances) ────
+// Delegates to ./circuit-breaker.ts which uses Upstash Redis so that open/closed
+// state is consistent regardless of which instance handles the request.
 
 // ── 1.5: Transient-error classification ──────────────────────────────────────
 // Transient = server-side capacity issue; do NOT count toward circuit breaker.
@@ -302,12 +250,12 @@ async function callProvider(
   userId: string,
   plan: string
 ): Promise<string | null> {
-  if (isCircuitOpen(provider)) return null
+  const circuitClosed = await checkCircuit(provider)
+  if (!circuitClosed) return null
 
   const rateLimit = await checkAiRateLimit(userId, plan, provider)
   if (!rateLimit.allowed) return null
 
-  touchProvider(provider)
   const model = taskModelMap[task][provider]
 
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -329,7 +277,7 @@ async function callProvider(
         result = await callOpenRouter(systemPrompt, userMessage, { ...options, model }, timeout)
       }
 
-      markSuccess(provider)
+      await recordSuccess(provider)
       logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
       return sanitizeOutput(result.content)
 
@@ -344,7 +292,7 @@ async function callProvider(
       }
 
       if (kind === "transient") {
-        // 1.5: Gemini 503 / capacity spikes - don't count toward circuit, just fall through
+        // Gemini 503 / capacity spikes - don't count toward circuit, just fall through
         if (attempt < 2) {
           await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt]))
           continue
@@ -355,17 +303,17 @@ async function callProvider(
       }
 
       if (kind === "rate-limit") {
-        markFailure(provider, true)
+        await recordFailure(provider)
         console.warn(`[${provider.toUpperCase()}] rate limited`)
         return null
       }
 
-      // Hard error - retry up to limit, then mark failure
+      // Hard error - retry up to limit, then record failure
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt]))
         continue
       }
-      markFailure(provider, false)
+      await recordFailure(provider)
       console.error(`[${provider.toUpperCase()} Error]`, msg)
       return null
     }

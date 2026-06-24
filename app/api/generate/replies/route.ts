@@ -15,7 +15,7 @@ const ROLE_MAP: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Free")
+    const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
     let body: Record<string, unknown>
@@ -37,16 +37,21 @@ Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
 
     const userMsg = `${originalPost ? `Original post context:\n${originalPost.slice(0, 400)}\n\n` : ""}Comment to reply to:\n${comment}\n\nGenerate 3 reply styles: one warm/personal, one authoritative/insightful, one question-based to spark discussion.`
 
-    const raw = await callAi("chat-strategist",system, userMsg, {
-      json: true, temperature: 0.85, maxTokens: 400,
-      userId: user.id, plan: planCheck.plan, cache: false,
-    })
+    let raw: string
+    try {
+      raw = await callAi("chat-strategist", system, userMsg, {
+        json: true, temperature: 0.85, maxTokens: 400,
+        userId: user.id, plan: planCheck.plan, cache: false,
+      })
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message || "AI service unavailable" }, { status: 503 })
+    }
 
     const parsed = safeParseJson<{ replies?: Array<{ style: string; reply: string }> }>(raw)
     const replies = Array.isArray(parsed?.replies) ? parsed.replies : []
 
     if (!replies.length) {
-      return NextResponse.json({ error: "No replies generated" }, { status: 502 })
+      return NextResponse.json({ error: "No replies generated. Try again or rephrase the comment." }, { status: 502 })
     }
 
     return NextResponse.json({ replies: replies.slice(0, 3) })

@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
     const postId = String(body.postId || "").trim()
     const date = String(body.date || "").trim() // YYYY-MM-DD
 
-    if (!postId || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(date) && !isNaN(new Date(date).getTime())
+    if (!postId || !dateValid) {
       return NextResponse.json({ error: "postId and date (YYYY-MM-DD) required" }, { status: 400 })
     }
 

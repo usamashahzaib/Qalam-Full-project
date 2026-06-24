@@ -1,5 +1,5 @@
-import { groqApiKey } from "@/lib/server/env"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 
 const NOISE_PATTERNS = [
   /^(compose message|compose post|message|send message)$/i,
@@ -140,14 +140,7 @@ export const analyzeCompetitorPaste = async ({
   const cleanedSource = cleanSource(sourceText)
   const fallbackResult = fallbackAnalysis(profileName, cleanedSource)
 
-  if (!groqApiKey) {
-    return {
-      ...fallbackResult,
-      summary: `${profileName || "This profile"} was analyzed with local fallback logic because AI analysis is not configured.`,
-    }
-  }
-
-  const prompt = `You analyze noisy pasted LinkedIn profile text. The input may include copied page chrome, nav items, message overlays, notification text, and duplicated UI fragments.
+  const systemPrompt = `You analyze noisy pasted LinkedIn profile text. The input may include copied page chrome, nav items, message overlays, notification text, and duplicated UI fragments.
 
 Your job:
 - Ignore LinkedIn UI noise
@@ -170,9 +163,9 @@ Return this schema exactly:
   "opportunityAngles": ["angle 1"],
   "counterContentIdeas": ["idea 1"],
   "recommendation": "1 concise sentence"
-}
+}`
 
-Competitor name: ${profileName || "Competitor"}
+  const userPrompt = `Competitor name: ${profileName || "Competitor"}
 
 Text:
 """
@@ -180,26 +173,11 @@ ${cleanedSource.slice(0, 7000)}
 """`
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${groqApiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.2,
-      }),
+    const raw = await callAi("competitor-analysis", systemPrompt, userPrompt, {
+      json: true,
+      temperature: 0.2,
     })
-
-    if (!response.ok) throw new Error("AI analysis failed")
-
-    const data = await response.json()
-    const content = data.choices?.[0]?.message?.content || "{}"
-    const cleaned = content.replace(/```json/gi, "").replace(/```/g, "").trim()
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
-    const parsed = JSON.parse((jsonMatch?.[0] || cleaned || "{}").trim()) as Record<string, unknown>
+    const parsed = safeParseJson<Record<string, unknown>>(raw) ?? {}
 
     const list = (value: unknown, limit: number) =>
       Array.isArray(value) ? value.map(String).map(sanitizeGeneratedText).filter(Boolean).slice(0, limit) : []
