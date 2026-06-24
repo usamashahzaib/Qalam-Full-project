@@ -87,8 +87,18 @@ export async function GET(request: NextRequest) {
     joinedAt: u.created_at,
   }))
 
-  // Admin's own user id for self-assign
-  const selfId = admin.userId
+  // Admin's own internal Supabase UUID for self-assign overrides.
+  // session.user.id is the OAuth sub (LinkedIn sub) for OAuth users, not the internal UUID.
+  // Overrides stored under the internal UUID are reliably found by all plan-resolution paths.
+  let selfId = admin.userId
+  try {
+    const { data: selfUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", admin.email.trim().toLowerCase())
+      .maybeSingle()
+    if (selfUser?.id) selfId = selfUser.id
+  } catch { /* fall back to OAuth sub */ }
 
   return NextResponse.json({
     stats: {

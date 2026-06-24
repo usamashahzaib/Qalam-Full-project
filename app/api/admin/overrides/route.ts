@@ -49,9 +49,36 @@ export async function POST(request: NextRequest) {
 
   const body = (await request.json()) as OverrideInput
   if (!body.userId || !body.targetEmail) return NextResponse.json({ error: "missing_user" }, { status: 400 })
-  const oldValue = await getOldOverride(body.userId)
+
+  // Resolve body.userId to the canonical internal UUID using the target email.
+  // The admin panel now sends the internal UUID, but older overrides may have been
+  // stored under the OAuth sub (external_user_id). Canonicalizing here ensures all
+  // operations use a stable key and cleans up any stale external-ID-based override.
+  const supabase = createServiceClient()
+  let canonicalUserId = body.userId
+  let externalUserId: string | null = null
+  try {
+    const { data: resolvedUser } = await supabase
+      .from("users")
+      .select("id, external_user_id")
+      .eq("email", body.targetEmail.trim().toLowerCase())
+      .maybeSingle()
+    if (resolvedUser?.id) {
+      canonicalUserId = resolvedUser.id
+      externalUserId = resolvedUser.external_user_id || null
+    }
+  } catch { /* fall back to provided userId */ }
+
+  // Clean up any override stored under the external (OAuth sub) key so both IDs
+  // don't exist simultaneously — keeps lookup deterministic.
+  if (externalUserId && externalUserId !== canonicalUserId) {
+    try { await supabase.from("user_overrides").delete().eq("user_id", externalUserId) } catch { /* non-fatal */ }
+    try { await supabase.from("plan_usage").delete().eq("user_id", externalUserId) } catch { /* non-fatal */ }
+  }
+
+  const oldValue = await getOldOverride(canonicalUserId)
   const payload = {
-    user_id: body.userId,
+    user_id: canonicalUserId,
     plan_override: body.planOverride ? body.planOverride.charAt(0).toUpperCase() + body.planOverride.slice(1).toLowerCase() : null,
     draft_limit_override: body.draftLimitOverride ?? null,
     workspace_limit_override: body.workspaceLimitOverride ?? null,
@@ -64,15 +91,12 @@ export async function POST(request: NextRequest) {
   await writeAudit(admin.email, body.targetEmail, "set_override", oldValue, payload)
 
   // Sync plan_usage.plan and users.plan so all read paths see the override immediately.
-  // users.plan is the authoritative source for dashboard stats; without this sync
-  // the stats path ignores the override and always returns Free for manual payments.
   if (body.planOverride) {
     try {
-      const supabase = createServiceClient()
       await Promise.all([
         supabase
           .from("plan_usage")
-          .upsert({ user_id: body.userId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" }),
+          .upsert({ user_id: canonicalUserId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" }),
         supabase
           .from("users")
           .update({
@@ -80,7 +104,7 @@ export async function POST(request: NextRequest) {
             plan_expires_at: body.expiresAt || null,
             updated_at: new Date().toISOString(),
           })
-          .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+          .eq("id", canonicalUserId),
       ])
     } catch { /* non-fatal */ }
   }
@@ -98,9 +122,25 @@ export async function PATCH(request: NextRequest) {
 
   const body = (await request.json()) as Pick<OverrideInput, "userId" | "targetEmail">
   if (!body.userId || !body.targetEmail) return NextResponse.json({ error: "missing_user" }, { status: 400 })
-  const oldValue = await getOldOverride(body.userId)
+
+  const supabase = createServiceClient()
+  let canonicalUserId = body.userId
+  let externalUserId: string | null = null
+  try {
+    const { data: resolvedUser } = await supabase
+      .from("users")
+      .select("id, external_user_id")
+      .eq("email", body.targetEmail.trim().toLowerCase())
+      .maybeSingle()
+    if (resolvedUser?.id) {
+      canonicalUserId = resolvedUser.id
+      externalUserId = resolvedUser.external_user_id || null
+    }
+  } catch { /* fall back to provided userId */ }
+
+  const oldValue = await getOldOverride(canonicalUserId)
   const payload = {
-    user_id: body.userId,
+    user_id: canonicalUserId,
     plan_override: null,
     draft_limit_override: null,
     workspace_limit_override: null,
@@ -110,17 +150,21 @@ export async function PATCH(request: NextRequest) {
     updated_at: new Date().toISOString(),
   }
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
+  // Also wipe any override stored under the external ID
+  if (externalUserId && externalUserId !== canonicalUserId) {
+    try { await supabase.from("user_overrides").delete().eq("user_id", externalUserId) } catch { /* non-fatal */ }
+  }
   await writeAudit(admin.email, body.targetEmail, "reset_to_plan_defaults", oldValue, payload)
 
   // Reset plan_usage.plan and users.plan to free when override is cleared
   try {
-    const supabase = createServiceClient()
+    const cleanIds = [canonicalUserId, externalUserId].filter(Boolean) as string[]
     await Promise.all([
-      supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId),
+      ...cleanIds.map((uid) => supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", uid)),
       supabase
         .from("users")
         .update({ plan: "Free", plan_expires_at: null, updated_at: new Date().toISOString() })
-        .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+        .eq("id", canonicalUserId),
     ])
   } catch { /* non-fatal */ }
 
@@ -137,19 +181,39 @@ export async function DELETE(request: NextRequest) {
 
   const body = (await request.json()) as Pick<OverrideInput, "userId" | "targetEmail">
   if (!body.userId || !body.targetEmail) return NextResponse.json({ error: "missing_user" }, { status: 400 })
-  const oldValue = await getOldOverride(body.userId)
-  await supabaseDelete("user_overrides", `user_id=eq.${encodeURIComponent(body.userId)}`)
+
+  const supabase = createServiceClient()
+  let canonicalUserId = body.userId
+  let externalUserId: string | null = null
+  try {
+    const { data: resolvedUser } = await supabase
+      .from("users")
+      .select("id, external_user_id")
+      .eq("email", body.targetEmail.trim().toLowerCase())
+      .maybeSingle()
+    if (resolvedUser?.id) {
+      canonicalUserId = resolvedUser.id
+      externalUserId = resolvedUser.external_user_id || null
+    }
+  } catch { /* fall back to provided userId */ }
+
+  const oldValue = await getOldOverride(canonicalUserId)
+  // Delete override under both possible keys
+  const idsToDelete = [...new Set([canonicalUserId, externalUserId].filter(Boolean))] as string[]
+  await Promise.all(
+    idsToDelete.map((uid) => supabaseDelete("user_overrides", `user_id=eq.${encodeURIComponent(uid)}`).catch(() => undefined))
+  )
   await writeAudit(admin.email, body.targetEmail, "delete_override", oldValue, null)
 
   // Reset plan_usage.plan and users.plan to free when override is deleted
   try {
-    const supabase = createServiceClient()
+    const cleanIds = [canonicalUserId, externalUserId].filter(Boolean) as string[]
     await Promise.all([
-      supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", body.userId),
+      ...cleanIds.map((uid) => supabase.from("plan_usage").update({ plan: "free" }).eq("user_id", uid)),
       supabase
         .from("users")
         .update({ plan: "Free", plan_expires_at: null, updated_at: new Date().toISOString() })
-        .or(`id.eq.${body.userId},external_user_id.eq.${body.userId}`),
+        .eq("id", canonicalUserId),
     ])
   } catch { /* non-fatal */ }
 

@@ -115,7 +115,7 @@ export function useAdminUsers(adminEmail: string) {
     setMsg(method === "DELETE" ? "Deleting..." : method === "PATCH" ? "Resetting..." : "Applying...")
     const body = method === "POST"
       ? {
-          userId: selected.externalId,
+          userId: selected.id,
           targetEmail: selected.email,
           planOverride: form.planOverride || null,
           draftLimitOverride: form.draftLimitOverride === "" ? null : Number(form.draftLimitOverride),
@@ -124,7 +124,7 @@ export function useAdminUsers(adminEmail: string) {
           notes: form.notes || null,
           expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59`).toISOString() : null,
         }
-      : { userId: selected.externalId, targetEmail: selected.email }
+      : { userId: selected.id, targetEmail: selected.email }
     const res = await fetch("/api/admin/overrides", {
       method,
       headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
