@@ -48,5 +48,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not update password." }, { status: 500 })
   }
 
+  // Invalidate all active sessions by bumping password_version.
+  // Any JWT issued before this reset will fail the version check in requireAuthApi.
+  try {
+    const { data: current } = await supabase
+      .from("users")
+      .select("password_version")
+      .eq("id", record.user_id)
+      .maybeSingle()
+    const currentVersion = (current as { password_version?: number } | null)?.password_version ?? 0
+    await supabase
+      .from("users")
+      .update({ password_version: currentVersion + 1 })
+      .eq("id", record.user_id)
+  } catch { /* column not yet migrated — silently skip */ }
+
   return NextResponse.json({ success: true, message: "Password updated. You can now sign in." })
 }

@@ -94,7 +94,19 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
+const MAX_BODY_BYTES = 4 * 1024 * 1024 // 4 MB
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  // Reject oversized request bodies early — prevents payload-based DoS.
+  if (["POST", "PUT", "PATCH"].includes(request.method)) {
+    const contentLength = request.headers.get("content-length")
+    if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
+      return addSecurityHeaders(
+        NextResponse.json({ error: "Request body too large" }, { status: 413 })
+      )
+    }
+  }
+
   const ip =
     (request as NextRequest & { ip?: string }).ip ||
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
