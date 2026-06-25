@@ -1,5 +1,6 @@
 ﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans } from "next/font/google"
+import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
@@ -194,7 +195,8 @@ const appSchema = {
 export default async function RootLayout({
   children,
 }: { children: React.ReactNode }) {
-  const session = await auth()
+  const [session, headersList] = await Promise.all([auth(), headers()])
+  const nonce = headersList.get("x-nonce") ?? undefined
 
   const app = (
     <SessionProvider session={session}>
@@ -214,7 +216,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable}`} suppressHydrationWarning>
       <head>
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
+        <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {app}

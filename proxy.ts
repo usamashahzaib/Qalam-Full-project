@@ -82,17 +82,46 @@ const PUBLIC_API_PREFIXES = [
   "/api/geo",
 ]
 
+// ─── CSP builder ─────────────────────────────────────────────────────────────
+// Nonce is generated per HTML request and passed via x-nonce request header so
+// Server Components can attach it to any custom <script> tags. Next.js 16
+// automatically reads x-nonce and applies it to its own hydration scripts.
+// 'strict-dynamic' propagates trust to scripts loaded by nonce-bearing scripts,
+// enabling Next.js chunk loading without an allowlist.
+
+function buildCsp(nonce: string, isDev: boolean): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` + (isDev ? " 'unsafe-eval'" : ""),
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co",
+    "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
+    "frame-src 'self' https://*.linkedin.com",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ")
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function addSecurityHeaders(response: NextResponse): NextResponse {
+function addSecurityHeaders(response: NextResponse, nonce?: string): NextResponse {
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
   response.headers.set("X-XSS-Protection", "1; mode=block")
+  response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+  if (nonce) {
+    response.headers.set(
+      "Content-Security-Policy",
+      buildCsp(nonce, process.env.NODE_ENV === "development")
+    )
+  }
   return response
 }
 
-// ─── Middleware ────────────────────────────────────────────────────────────────
+// ─── Proxy ────────────────────────────────────────────────────────────────────
 
 const MAX_BODY_BYTES = 4 * 1024 * 1024 // 4 MB
 
@@ -140,8 +169,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // Generate a per-request nonce for HTML pages (not API routes or static assets).
+  // The nonce is forwarded as x-nonce so Server Components can stamp it on any
+  // inline <script> they own. Next.js 16 reads x-nonce internally and applies it
+  // to its own hydration script bundles, so no manual wiring is needed there.
+  const isHtmlPage = !pathname.startsWith("/api/")
+  const nonce = isHtmlPage
+    ? Buffer.from(crypto.randomUUID()).toString("base64")
+    : undefined
+
   if (isPublicApi) {
-    return addSecurityHeaders(NextResponse.next())
+    return addSecurityHeaders(NextResponse.next(), nonce)
   }
 
   const isProtectedRoute = PROTECTED_ROUTES.some(
@@ -154,7 +192,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Public marketing pages pass through without auth check
   const isApiRoute = pathname.startsWith("/api/")
   if (!isProtectedRoute && !isAuthOnly && !isApiRoute) {
-    return addSecurityHeaders(NextResponse.next())
+    const requestHeaders = new Headers(request.headers)
+    if (nonce) requestHeaders.set("x-nonce", nonce)
+    return addSecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce
+    )
   }
 
   // Read JWT directly - Edge-compatible, no Supabase dependency
@@ -175,7 +218,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (isAuthOnly && userId) {
     return addSecurityHeaders(
-      NextResponse.redirect(new URL("/dashboard", request.url))
+      NextResponse.redirect(new URL("/dashboard", request.url)),
+      nonce
     )
   }
 
@@ -187,19 +231,26 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       )
     }
     if (isAuthOnly) {
-      return addSecurityHeaders(NextResponse.next())
+      const requestHeaders = new Headers(request.headers)
+      if (nonce) requestHeaders.set("x-nonce", nonce)
+      return addSecurityHeaders(
+        NextResponse.next({ request: { headers: requestHeaders } }),
+        nonce
+      )
     }
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
-    return addSecurityHeaders(NextResponse.redirect(loginUrl))
+    return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce)
   }
 
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-user-id", userId)
   if (userEmail) requestHeaders.set("x-user-email", userEmail)
+  if (nonce) requestHeaders.set("x-nonce", nonce)
 
   return addSecurityHeaders(
-    NextResponse.next({ request: { headers: requestHeaders } })
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    nonce
   )
 }
 

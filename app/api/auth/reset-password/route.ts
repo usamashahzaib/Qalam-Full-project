@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const { error: updateErr } = await supabase
     .from("users")
-    .update({ password_hash: hashPassword(password), updated_at: new Date().toISOString() })
+    .update({ password_hash: await hashPassword(password), updated_at: new Date().toISOString() })
     .eq("id", record.user_id)
 
   if (updateErr) {

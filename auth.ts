@@ -54,9 +54,14 @@ const config: NextAuthConfig = {
 
           if (!user?.password_hash) return null
 
-          const valid = verifyPassword(password, user.password_hash)
+          const { valid, rehash } = await verifyPassword(password, user.password_hash)
           if (!valid) return null
           if (!user.email_verified) return null
+
+          // Transparent PBKDF2 → Argon2id upgrade on every successful legacy login.
+          if (rehash) {
+            await supabase.from("users").update({ password_hash: rehash, updated_at: new Date().toISOString() }).eq("id", user.id)
+          }
 
           return { id: user.id, email: user.email, name: user.full_name ?? "" }
         } catch (err) {

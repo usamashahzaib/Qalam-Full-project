@@ -1242,3 +1242,11 @@ BEGIN
     RAISE NOTICE 'pgvector not enabled - skipping embedding columns. Enable via Dashboard → Database → Extensions → vector, then re-run this section.';
   END IF;
 END $$;
+
+
+-- ================================================================
+-- SECTION 23: PASSWORD VERSION (session invalidation on pw change)
+-- ================================================================
+
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS password_version INTEGER NOT NULL DEFAULT 0;

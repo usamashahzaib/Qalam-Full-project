@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = crypto.randomUUID()
-  const passwordHash = hashPassword(password)
+  const passwordHash = await hashPassword(password)
   const verificationToken = generateToken()
   const verificationTokenHash = hashToken(verificationToken)
 

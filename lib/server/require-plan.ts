@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
-import { resolveWorkspaceId, fetchWorkspacePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { resolveWorkspaceId, resolveEffectivePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
-import { getPlanStatus as getExpiryPlanStatus } from "./plan-expiry"
+import { getPlanStatus } from "./plan-limits-v2"
 
 type PlanCheckResult =
   | {
@@ -24,10 +24,10 @@ type PlanCheckResult =
   | { ok: false; response: NextResponse }
 
 /**
- * Core enforcement middleware. Validates auth session, resolves workspace, checks plan hierarchy.
- *
- * Uses fetchWorkspacePlan (workspace-owner's plan) so agency team members correctly
- * inherit the owner's plan tier — not their own Free-tier users.plan record.
+ * Core enforcement middleware. Validates auth session, resolves workspace,
+ * checks plan hierarchy. Single resolution path: getPlanStatus() for expiry /
+ * override state, resolveEffectivePlan() for workspace-owner inheritance.
+ * No duplicate expiry calculations.
  */
 export const requirePlan = async (
   request: NextRequest,
@@ -54,8 +54,16 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
 
-  const expiryStatus = await getExpiryPlanStatus(session.supabaseUserId)
-  if (!expiryStatus.isActive) {
+  // Single resolution path: getPlanStatus owns expiry/override data;
+  // resolveEffectivePlan owns workspace-owner plan inheritance.
+  // Run both in parallel — they use independent DB queries.
+  const [planStatus, planInfo] = await Promise.all([
+    getPlanStatus(session.supabaseUserId),
+    resolveEffectivePlan(workspaceId, session.email, session.supabaseUserId),
+  ])
+
+  // Respect admin override: an override can reactivate an otherwise-expired plan.
+  if (!planStatus.isActive && !planInfo.overrideActive) {
     return {
       ok: false,
       response: NextResponse.json(
@@ -65,8 +73,7 @@ export const requirePlan = async (
     }
   }
 
-  const planInfo = await fetchWorkspacePlan(workspaceId, session.email)
-  const effectivePlan = expiryStatus.plan !== "Free" ? expiryStatus.plan : planInfo.plan
+  const effectivePlan = planInfo.plan
 
   if (!canAccessPlan(effectivePlan, requiredPlan)) {
     return {
@@ -84,11 +91,11 @@ export const requirePlan = async (
     workspaceId,
     plan: effectivePlan,
     status: planInfo.status,
-    limits: planInfo.plan === effectivePlan && planInfo.limits ? planInfo.limits : getPlanLimits(effectivePlan),
-    isActive: expiryStatus.isActive,
-    expiresAt: expiryStatus.expiresAt,
-    renewalDue: expiryStatus.renewalDue,
-    daysUntilExpiry: expiryStatus.daysUntilExpiry,
+    limits: getPlanLimits(effectivePlan),
+    isActive: planStatus.isActive,
+    expiresAt: planStatus.expiresAt,
+    renewalDue: planStatus.renewalDue,
+    daysUntilExpiry: planStatus.daysUntilExpiry,
     overrideActive: Boolean(planInfo.overrideActive),
     planExpired: Boolean(planInfo.planExpired),
   }

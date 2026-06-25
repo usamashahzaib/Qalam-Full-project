@@ -16,6 +16,15 @@ async function probeTable(table: string): Promise<boolean> {
   }
 }
 
+async function probeColumn(table: string, column: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=${column}&limit=1`, { headers })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 async function probeRpc(fn: string, body: Record<string, unknown>): Promise<boolean> {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -36,7 +45,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 })
     }
 
-    const [tables, rpcs] = await Promise.all([
+    const [tables, rpcs, columns] = await Promise.all([
       Promise.all([
         ["users", probeTable("users")],
         ["workspaces", probeTable("workspaces")],
@@ -62,22 +71,31 @@ export async function GET(request: NextRequest) {
         ["update_post_with_version", probeRpc("update_post_with_version", { p_post_id: "00000000-0000-0000-0000-000000000000", p_workspace_id: "00000000-0000-0000-0000-000000000000", p_new_content: "x", p_created_by: "00000000-0000-0000-0000-000000000000" })],
         ["create_personal_workspace", probeRpc("create_personal_workspace", { p_user_id: "00000000-0000-0000-0000-000000000000", p_name: "Personal" })],
       ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
+      Promise.all([
+        ["users.password_version", probeColumn("users", "password_version")],
+      ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
     ])
 
     const missingTables = tables.filter((t) => !t.exists).map((t) => t.name)
     const missingRpcs = rpcs.filter((r) => !r.exists).map((r) => r.name)
-    const allGood = missingTables.length === 0 && missingRpcs.length === 0
+    const missingColumns = columns.filter((c) => !c.exists).map((c) => c.name)
+    const allGood = missingTables.length === 0 && missingRpcs.length === 0 && missingColumns.length === 0
 
     return NextResponse.json({
       ok: allGood,
       tables,
       rpcs,
+      columns,
       missingTables,
       missingRpcs,
+      missingColumns,
       migrationSqlPath: "/supabase/migrations/COMBINED_NEW_MIGRATIONS.sql",
       instructions: allGood
-        ? "All tables and RPCs are present."
-        : "Run COMBINED_NEW_MIGRATIONS.sql in Supabase Dashboard > SQL Editor to apply missing migrations.",
+        ? "All tables, RPCs, and columns are present."
+        : [
+            missingTables.length || missingRpcs.length ? "Run COMBINED_NEW_MIGRATIONS.sql in Supabase Dashboard > SQL Editor." : "",
+            missingColumns.length ? `Run 0040_password_version.sql to add missing columns: ${missingColumns.join(", ")}.` : "",
+          ].filter(Boolean).join(" "),
     })
   })(request)
 }

@@ -45,12 +45,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No password set on this account." }, { status: 400 })
   }
 
-  const valid = verifyPassword(currentPassword, user.password_hash)
+  const { valid } = await verifyPassword(currentPassword, user.password_hash)
   if (!valid) {
     return NextResponse.json({ error: "Current password is incorrect." }, { status: 400 })
   }
 
-  const newHash = hashPassword(newPassword)
+  const newHash = await hashPassword(newPassword)
   const { error: updateErr } = await supabase
     .from("users")
     .update({ password_hash: newHash, updated_at: new Date().toISOString() })
