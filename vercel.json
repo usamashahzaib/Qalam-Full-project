@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/linkedin/publish-scheduled",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/linkedin/sync-analytics",
@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/cron/process-queue",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/cleanup-pdfs",
