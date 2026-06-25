@@ -286,5 +286,31 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
   }
 }
 
+// Refund one usage unit — call this when generation succeeds but a later step fails.
+// Best-effort: if the RPC/DB call fails we log and move on (over-refunding is fine; under-refunding is not).
+export async function decrementUsage(userId: string, feature: Feature): Promise<void> {
+  const supabase = createServiceClient()
+  const field = FIELD_MAP[feature]
+
+  try {
+    // Try RPC first (may not be deployed yet)
+    await supabase.rpc("decrement_plan_usage", { p_user_id: userId, p_field: field })
+  } catch {
+    // CAS fallback
+    try {
+      const { data: row } = await supabase.from("plan_usage").select(field).eq("user_id", userId).maybeSingle()
+      const current: number = (row as Record<string, number> | null)?.[field] ?? 0
+      if (current <= 0) return
+      await supabase
+        .from("plan_usage")
+        .update({ [field]: current - 1, updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq(field, current)
+    } catch (err) {
+      log.error("plan_usage.decrement_failed", { userId, feature, error: (err as Error).message })
+    }
+  }
+}
+
 // Single source of truth for feature gating — delegates to lib/pricing.ts.
 export { isFeatureAllowed } from "@/lib/pricing"

@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
-import { incrementUsage, checkPlanLimit } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
@@ -68,10 +68,11 @@ function parseJson<T>(raw: string): T | null {
 export async function generatePost(input: GeneratePostInput): Promise<Result<GeneratePostOutput>> {
   const { topic, role, format, goal, qualityCheck = true, userId, authorId, workspaceId, plan, reqId } = input
 
-  // Check limit before generation — consume only after a successful save to avoid
-  // burning a credit on AI failures or DB write errors.
-  const limitCheck = await checkPlanLimit(userId, "drafts")
-  if (!limitCheck.allowed) {
+  // Atomically increment usage BEFORE generation. This is the only correct order:
+  // check-then-generate allows thundering-herd bypasses (N concurrent requests all pass
+  // the check, all generate, only billing is capped). Increment first; refund on failure.
+  const usageResult = await incrementUsage(userId, "drafts")
+  if (!usageResult.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
@@ -79,10 +80,17 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
 
   // Pass 1: Generate raw post
   const { system: genSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)
-  const rawPost = await callAi("post-generation", genSystem, genUser, {
-    temperature: 0.85, maxTokens: 900,
-    userId, plan, cache: false,
-  })
+  let rawPost: string
+  try {
+    rawPost = await callAi("post-generation", genSystem, genUser, {
+      temperature: 0.85, maxTokens: 900,
+      userId, plan, cache: false,
+    })
+  } catch (genError) {
+    await decrementUsage(userId, "drafts")
+    log.error("generate-post.generation_failed", { reqId, userId, error: (genError as Error).message })
+    return err({ code: "INTERNAL_ERROR", message: "AI generation failed" })
+  }
 
   // Pass 2: Humanize
   const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
@@ -117,6 +125,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   }
 
   if (content.length > LINKEDIN_MAX_POST_CHARS) {
+    await decrementUsage(userId, "drafts")
     return err({ code: "VALIDATION_ERROR", message: "linkedin_content_too_long", userMessage: "Post exceeds LinkedIn's 3000 character limit." })
   }
 
@@ -136,15 +145,9 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     })
     savedPostId = savedPost.id
   } catch (saveError) {
+    await decrementUsage(userId, "drafts")
     log.error("generate-post.save_failed", { reqId, userId, error: (saveError as Error).message })
     return err({ code: "INTERNAL_ERROR", message: "Failed to save post" })
-  }
-
-  // Consume quota only after a successful save — prevents usage burn on AI/DB failures.
-  const usageResult = await incrementUsage(userId, "drafts")
-  if (!usageResult.allowed) {
-    log.warn("generate-post.usage_exceeded_post_save", { reqId, userId })
-    return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
   // Pass 4: Hook variants (cached, best-effort)
