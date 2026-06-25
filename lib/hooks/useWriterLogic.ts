@@ -144,6 +144,7 @@ export function useWriterLogic({
   const [commentInput, setCommentInput] = useState("")
   const [replies, setReplies] = useState<{ style: string; text: string }[]>([])
   const [isGeneratingReplies, setIsGeneratingReplies] = useState(false)
+  const [repliesError, setRepliesError] = useState<string | null>(null)
 
   // ── Publish / scheduling ─────────────────────────────────────────────────
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
@@ -505,11 +506,17 @@ export function useWriterLogic({
   const onGenerateReplies = async () => {
     if (!commentInput.trim()) return
     setIsGeneratingReplies(true)
+    setRepliesError(null)
     try {
       const data = await apiGenerateReplies({ originalPost: draftContent, comments: commentInput, role })
-      setReplies((data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply })))
+      const mapped = (data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply }))
+      if (!mapped.length) {
+        setRepliesError("No replies generated. Try rephrasing the comment.")
+        return
+      }
+      setReplies(mapped)
     } catch (e) {
-      showStatus((e as Error).message, "error")
+      setRepliesError((e as Error).message)
     } finally {
       setIsGeneratingReplies(false)
     }
@@ -658,7 +665,7 @@ export function useWriterLogic({
     // Replies
     repliesOpen, setRepliesOpen,
     commentInput, setCommentInput,
-    replies, isGeneratingReplies,
+    replies, isGeneratingReplies, repliesError,
 
     // Publish
     scheduleModalOpen, setScheduleModalOpen,

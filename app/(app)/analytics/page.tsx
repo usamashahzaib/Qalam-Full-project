@@ -71,10 +71,12 @@ export default function AnalyticsPage() {
   }, [loadEvents, loadJobs])
 
   const analytics = useMemo(() => {
-    const analyses = posts.map((post) => ({
-      post,
-      analysis: analyzeContent({ title: post.title, content: post.content, type: post.type, profile: profile }),
-    }))
+    const analyses = posts
+      .filter((post) => post.type !== "LinkedIn - Carousel" && post.content && post.content.trim().length >= 40)
+      .map((post) => ({
+        post,
+        analysis: analyzeContent({ title: post.title, content: post.content, type: post.type, profile: profile }),
+      }))
     const earliestIso = [events[events.length - 1]?.created_at, ...posts.map((post) => post.scheduledTime || post.date)].filter(Boolean)[0]
     const earliestDate = earliestIso ? new Date(String(earliestIso)) : null
     const allTimeDays = earliestDate ? Math.max(14, Math.ceil((analyticsNow - earliestDate.getTime()) / 86400000) + 1) : 14

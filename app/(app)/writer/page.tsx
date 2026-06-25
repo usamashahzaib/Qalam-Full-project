@@ -83,7 +83,7 @@ export default function WriterPage() {
     versions, editingId, scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, isSaving,
     scores, isScoring, isImproving,
     hookAltOpen, setHookAltOpen, hookAlts, isGeneratingAlts,
-    repliesOpen, setRepliesOpen, commentInput, setCommentInput, replies, isGeneratingReplies,
+    repliesOpen, setRepliesOpen, commentInput, setCommentInput, replies, isGeneratingReplies, repliesError,
     scheduleModalOpen, setScheduleModalOpen, isPublishing, upgradeModal, setUpgradeModal, upgradeProModal, setUpgradeProModal,
     ctaAltOpen, setCtaAltOpen, ctaAlts, isGeneratingCtaAlts,
     versionsOpen, setVersionsOpen, deleteConfirmIdx, setDeleteConfirmIdx, versionsRef,
@@ -815,6 +815,9 @@ export default function WriterPage() {
                   >
                     {isGeneratingReplies ? "Generating..." : "Generate 3 replies"}
                   </button>
+                  {repliesError && (
+                    <p className="mt-2 text-xs text-red-600">{repliesError}</p>
+                  )}
                   {replies.length > 0 && (
                     <div className="mt-3 space-y-2">
                       {replies.map((r, i) => (
