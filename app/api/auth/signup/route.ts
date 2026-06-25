@@ -4,6 +4,7 @@ import { hashPassword, generateToken, hashToken } from "@/lib/server/password"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp } from "@/lib/server/rate-limit"
 import { checkAuthRateLimit } from "@/lib/server/queue"
+import { log } from "@/lib/server/logging"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -48,6 +49,9 @@ export async function POST(req: NextRequest) {
   if (password.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 })
   }
+  if (password.length > 1000) {
+    return NextResponse.json({ error: "Password is too long." }, { status: 400 })
+  }
   if (!VALID_ROLES.includes(role)) {
     return NextResponse.json({ error: "Select a valid role." }, { status: 400 })
   }
@@ -87,7 +91,6 @@ export async function POST(req: NextRequest) {
   })
 
   if (insertErr) {
-    console.error("[signup] insert error:", insertErr)
     return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
   }
 
@@ -119,32 +122,42 @@ export async function POST(req: NextRequest) {
     })
   } catch { /* ignore */ }
 
-  // Redeem any pending workspace invites for this email
+  // Redeem non-expired pending workspace invites for this email
   try {
     const { data: invites } = await supabase
       .from("workspace_invites")
-      .select("workspace_id, role")
+      .select("workspace_id, role, expires_at")
       .eq("email", email)
     if (invites && invites.length > 0) {
-      await supabase
-        .from("workspace_members")
-        .insert(invites.map((inv: { workspace_id: string; role: string }) => ({
-          workspace_id: inv.workspace_id,
-          user_id: userId,
-          role: inv.role,
-        })))
+      const now = new Date()
+      const validInvites = invites.filter(
+        (inv: { workspace_id: string; role: string; expires_at?: string | null }) =>
+          !inv.expires_at || new Date(inv.expires_at) > now
+      )
+      if (validInvites.length > 0) {
+        await supabase
+          .from("workspace_members")
+          .insert(validInvites.map((inv: { workspace_id: string; role: string }) => ({
+            workspace_id: inv.workspace_id,
+            user_id: userId,
+            role: inv.role,
+          })))
+      }
       await supabase.from("workspace_invites").delete().eq("email", email)
     }
   } catch { /* ignore - workspace_invites table may not exist yet */ }
 
-  // Save email verification token
-  try {
-    await supabase.from("email_verifications").insert({
-      user_id: userId,
-      token_hash: verificationTokenHash,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    })
-  } catch { /* ignore - migration may not have run yet */ }
+  // Save email verification token — required for the user to verify their address.
+  const { error: verificationErr } = await supabase.from("email_verifications").insert({
+    user_id: userId,
+    token_hash: verificationTokenHash,
+    expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  })
+  if (verificationErr && verificationErr.code !== "42P01") {
+    log.error("signup.verification_token_failed", { error: verificationErr.message })
+    await supabase.from("users").delete().eq("id", userId).then(undefined, () => undefined)
+    return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
+  }
 
   // Send verification email (fire-and-forget)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"

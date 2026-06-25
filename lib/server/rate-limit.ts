@@ -66,6 +66,8 @@ export class TokenBucket {
 }
 
 export function getClientIp(request: NextRequest): string {
+  // On Vercel, request.ip is set by the Edge Network and cannot be spoofed.
+  if ((request as unknown as { ip?: string }).ip) return (request as unknown as { ip: string }).ip
   const realIp = request.headers.get("x-real-ip")?.trim()
   if (realIp) return realIp
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()

@@ -65,13 +65,14 @@ export async function POST(
         .eq("id", workspaceId)
         .maybeSingle()
 
+      const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       await supabase
         .from("workspace_invites")
         .upsert(
-          { workspace_id: workspaceId, email: email.toLowerCase().trim(), role, invited_by: user.id, created_at: new Date().toISOString() },
+          { workspace_id: workspaceId, email: email.toLowerCase().trim(), role, invited_by: user.id, expires_at: inviteExpiresAt, created_at: new Date().toISOString() },
           { onConflict: "workspace_id,email" }
         )
-        .then(undefined, (e: unknown) => console.warn("[invite] workspace_invites upsert failed (table may not exist):", e))
+        .then(undefined, () => undefined)
 
       await sendTransactionalEmail({
         to: email,

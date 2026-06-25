@@ -8,6 +8,11 @@ const PLAN_LIMITS: Record<PlanTier, { generationsPerHour: number }> = {
   Agency: { generationsPerHour: 9999 },
 }
 
+// Per-instance in-memory fallback when Redis is unavailable.
+// Not globally consistent across serverless instances, but prevents
+// unlimited usage rather than failing open.
+const _inMemoryBuckets = new Map<string, { count: number; resetAt: number }>()
+
 export async function checkRateLimit(
   userId: string,
   plan: PlanTier,
@@ -17,8 +22,16 @@ export async function checkRateLimit(
   const r = getRedis()
 
   if (!r) {
-    // No Redis: fail open with a conservative in-memory approximation
-    return { allowed: true, remaining: limit - 1, resetTime: Date.now() + 3_600_000 }
+    // No Redis: use in-memory bucket per instance instead of failing open
+    const now = Date.now()
+    const bucket = _inMemoryBuckets.get(key)
+    if (!bucket || now > bucket.resetAt) {
+      _inMemoryBuckets.set(key, { count: 1, resetAt: now + 3_600_000 })
+      return { allowed: true, remaining: limit - 1, resetTime: now + 3_600_000 }
+    }
+    bucket.count++
+    const allowed = bucket.count <= limit
+    return { allowed, remaining: Math.max(0, limit - bucket.count), resetTime: bucket.resetAt }
   }
 
   const current = ((await r.get<number>(key)) ?? 0)

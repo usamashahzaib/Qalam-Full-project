@@ -11,8 +11,8 @@ type MembershipRow = {
 
 const ROLE_HIERARCHY: WorkspaceRole[] = [
   "owner",
-  "admin",
   "super_admin",
+  "admin",
   "agency_admin",
   "editor",
   "client_reviewer",

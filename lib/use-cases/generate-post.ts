@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, checkPlanLimit } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
@@ -68,8 +68,10 @@ function parseJson<T>(raw: string): T | null {
 export async function generatePost(input: GeneratePostInput): Promise<Result<GeneratePostOutput>> {
   const { topic, role, format, goal, qualityCheck = true, userId, authorId, workspaceId, plan, reqId } = input
 
-  const usageResult = await incrementUsage(userId, "drafts")
-  if (!usageResult.allowed) {
+  // Check limit before generation — consume only after a successful save to avoid
+  // burning a credit on AI failures or DB write errors.
+  const limitCheck = await checkPlanLimit(userId, "drafts")
+  if (!limitCheck.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
@@ -136,6 +138,13 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   } catch (saveError) {
     log.error("generate-post.save_failed", { reqId, userId, error: (saveError as Error).message })
     return err({ code: "INTERNAL_ERROR", message: "Failed to save post" })
+  }
+
+  // Consume quota only after a successful save — prevents usage burn on AI/DB failures.
+  const usageResult = await incrementUsage(userId, "drafts")
+  if (!usageResult.allowed) {
+    log.warn("generate-post.usage_exceeded_post_save", { reqId, userId })
+    return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
   // Pass 4: Hook variants (cached, best-effort)

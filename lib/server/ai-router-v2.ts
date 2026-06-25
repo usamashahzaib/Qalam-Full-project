@@ -2,14 +2,13 @@ import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } fr
 import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callMistral } from "./mistral-client"
-import { callCerebras } from "./cerebras-client"
-import { callOpenRouter } from "./openrouter-client"
 import { createServiceClient } from "./supabase-rest"
 import { getFallbackHook, getFallbackPost } from "./fallback"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
+import { log } from "./logging"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 
-type AiProvider = "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
+type AiProvider = "groq" | "gemini" | "mistral"
 export type AiTask =
   | "post-generation"
   | "competitor-analysis"
@@ -98,30 +97,22 @@ export function safeParseJson<T = unknown>(raw: string): T | null {
         }
       }
     }
-    console.warn("[safeParseJson] Could not extract JSON from AI response", { preview: raw.slice(0, 120) })
+    log.warn("ai.safe_parse_json_failed", { preview: raw.slice(0, 120) })
     return null
   } catch (err) {
-    console.warn("[safeParseJson] Unexpected parse error", err)
+    log.warn("ai.safe_parse_json_error", { error: (err as Error).message })
     return null
   }
 }
 
 // ── Cost table ────────────────────────────────────────────────────────────────
 const COST_PER_M: Record<string, { input: number; output: number }> = {
-  // Groq
-  "llama-3.1-8b-instant":      { input: 0.05,  output: 0.08 },
-  "llama-3.3-70b-versatile":   { input: 0.59,  output: 0.79 },
-  // Gemini (2.5-flash is stable; pro for quality tasks)
-  "gemini-2.5-flash":          { input: 0.15,  output: 0.60 },
-  "gemini-2.5-pro":            { input: 1.25,  output: 10.00 },
-  // Mistral
-  "mistral-small-latest":      { input: 0.10,  output: 0.30 },
-  "mistral-medium-2505":       { input: 0.40,  output: 2.00 },
-  // Cerebras (dead provider - kept for completeness)
-  "gpt-oss-120b":              { input: 0.60,  output: 0.60 },
-  // OpenRouter (dead provider - kept for completeness)
-  "meta-llama/llama-3.1-8b-instruct": { input: 0.04, output: 0.04 },
-  "deepseek/deepseek-chat-v3-0324":   { input: 0.14, output: 0.28 },
+  "llama-3.1-8b-instant":    { input: 0.05,  output: 0.08 },
+  "llama-3.3-70b-versatile": { input: 0.59,  output: 0.79 },
+  "gemini-2.5-flash":        { input: 0.15,  output: 0.60 },
+  "gemini-2.5-pro":          { input: 1.25,  output: 10.00 },
+  "mistral-small-latest":    { input: 0.10,  output: 0.30 },
+  "mistral-medium-2505":     { input: 0.40,  output: 2.00 },
 }
 
 function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
@@ -155,86 +146,34 @@ async function logAiUsage(
       tokens_out: tokensOut,
       estimated_cost_usd: estimateCost(model, tokensIn, tokensOut),
     })
-    if (insertErr && insertErr.code !== "42P01") console.warn("[ai_usage] insert failed:", insertErr.message)
+    if (insertErr && insertErr.code !== "42P01") log.warn("ai_usage.insert_failed", { error: insertErr.message })
   } catch { void 0 }
 }
 
 // ── 1.2: Model mapping per task per provider ──────────────────────────────────
-// Cerebras and OpenRouter entries kept so the type is complete, but both providers
-// are excluded from providerOrder below and will never be selected in normal flow.
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
-  "post-generation": {
-    mistral:     "mistral-small-latest",
-    gemini:      "gemini-2.5-flash",
-    groq:        "llama-3.1-8b-instant",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "meta-llama/llama-3.1-8b-instruct",
-  },
-  "competitor-analysis": {
-    gemini:      "gemini-2.5-pro",
-    groq:        "llama-3.3-70b-versatile",
-    mistral:     "mistral-small-latest",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "deepseek/deepseek-chat-v3-0324",
-  },
-  "hook-generation": {
-    mistral:     "mistral-small-latest",
-    gemini:      "gemini-2.5-flash",
-    groq:        "llama-3.1-8b-instant",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "meta-llama/llama-3.1-8b-instruct",
-  },
-  "carousel-outline": {
-    mistral:     "mistral-small-latest",
-    gemini:      "gemini-2.5-flash",
-    groq:        "llama-3.1-8b-instant",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "meta-llama/llama-3.1-8b-instruct",
-  },
-  "voice-profile": {
-    mistral:     "mistral-medium-2505",
-    gemini:      "gemini-2.5-pro",
-    groq:        "llama-3.3-70b-versatile",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "deepseek/deepseek-chat-v3-0324",
-  },
-  "chat-strategist": {
-    gemini:      "gemini-2.5-flash",
-    mistral:     "mistral-small-latest",
-    groq:        "llama-3.1-8b-instant",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "meta-llama/llama-3.1-8b-instruct",
-  },
-  "post-improvement": {
-    mistral:     "mistral-small-latest",
-    gemini:      "gemini-2.5-pro",
-    groq:        "llama-3.3-70b-versatile",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "deepseek/deepseek-chat-v3-0324",
-  },
-  "engagement-prediction": {
-    groq:        "llama-3.1-8b-instant",
-    gemini:      "gemini-2.5-flash",
-    mistral:     "mistral-small-latest",
-    cerebras:    "gpt-oss-120b",
-    openrouter:  "meta-llama/llama-3.1-8b-instruct",
-  },
+  "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
+  "competitor-analysis":   { gemini:  "gemini-2.5-pro",       groq:   "llama-3.3-70b-versatile", mistral: "mistral-small-latest" },
+  "hook-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
+  "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
+  "voice-profile":         { mistral: "mistral-medium-2505",  gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
+  "chat-strategist":       { gemini:  "gemini-2.5-flash",     mistral: "mistral-small-latest", groq: "llama-3.1-8b-instant" },
+  "post-improvement":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
+  "engagement-prediction": { groq:    "llama-3.1-8b-instant", gemini: "gemini-2.5-flash",  mistral: "mistral-small-latest" },
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
-// Cerebras and OpenRouter removed: Cerebras returns empty content (gpt-oss-120b),
-// OpenRouter free models deprecated and paid models are low-quality fallbacks.
-// Routing: Mistral PRIMARY (best quality) → Gemini FALLBACK → Groq SPEED ONLY.
-// Competitor/chat tasks lead with Gemini which has better reasoning depth.
+// Routing: Mistral PRIMARY → Gemini FALLBACK → Groq SPEED ONLY.
+// Competitor/chat tasks lead with Gemini for better reasoning depth.
 const providerOrder: Record<AiTask, AiProvider[]> = {
   "post-generation":       ["mistral", "gemini", "groq"],
-  "competitor-analysis":   ["gemini", "mistral", "groq"],
+  "competitor-analysis":   ["gemini",  "mistral", "groq"],
   "hook-generation":       ["mistral", "gemini", "groq"],
   "carousel-outline":      ["mistral", "gemini", "groq"],
   "voice-profile":         ["mistral", "gemini", "groq"],
-  "chat-strategist":       ["gemini", "mistral", "groq"],
+  "chat-strategist":       ["gemini",  "mistral", "groq"],
   "post-improvement":      ["mistral", "gemini", "groq"],
-  "engagement-prediction": ["groq",   "mistral", "gemini"],
+  "engagement-prediction": ["groq",    "mistral", "gemini"],
 }
 
 // ── 1.6: Retry delays (transient errors only) ─────────────────────────────────
@@ -266,15 +205,15 @@ async function callProvider(
         result = await callGroq(systemPrompt, userMessage, { ...options, model: model as GroqModel }, timeout)
       } else if (provider === "gemini") {
         const raw = await callGemini(systemPrompt, userMessage, { ...options, model }, timeout)
-        const tokensIn = Math.ceil((systemPrompt.length + userMessage.length) / 4)
-        const tokensOut = Math.ceil(raw.length / 4)
+        // Use byte length for non-Latin text (Arabic/Urdu/CJK use 2-3 bytes/char)
+        // Gemini charges ~1 token per 4 chars or ~1 token per 3 bytes, whichever is higher
+        const bytesIn = Buffer.byteLength(systemPrompt + userMessage, "utf8")
+        const bytesOut = Buffer.byteLength(raw, "utf8")
+        const tokensIn = Math.max(Math.ceil((systemPrompt.length + userMessage.length) / 4), Math.ceil(bytesIn / 3))
+        const tokensOut = Math.max(Math.ceil(raw.length / 4), Math.ceil(bytesOut / 3))
         result = { content: raw, tokensIn, tokensOut, model }
-      } else if (provider === "mistral") {
-        result = await callMistral(systemPrompt, userMessage, { ...options, model }, timeout)
-      } else if (provider === "cerebras") {
-        result = await callCerebras(systemPrompt, userMessage, { ...options, model }, timeout)
       } else {
-        result = await callOpenRouter(systemPrompt, userMessage, { ...options, model }, timeout)
+        result = await callMistral(systemPrompt, userMessage, { ...options, model }, timeout)
       }
 
       await recordSuccess(provider)
@@ -286,35 +225,31 @@ async function callProvider(
       const kind = classifyError(msg)
 
       if (kind === "config") {
-        // Wrong key / model - no point retrying or marking failure
-        console.warn(`[${provider.toUpperCase()}] config error, skipping: ${msg.slice(0, 100)}`)
+        log.warn("ai.provider_config_error", { provider, error: msg.slice(0, 100) })
         return null
       }
 
       if (kind === "transient") {
-        // Gemini 503 / capacity spikes - don't count toward circuit, just fall through
         if (attempt < 2) {
           await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt]))
           continue
         }
-        // Exhausted retries for transient - move to next provider without circuit hit
-        console.warn(`[${provider.toUpperCase()}] transient failure after ${attempt + 1} attempts`)
+        log.warn("ai.provider_transient_failure", { provider, attempts: attempt + 1 })
         return null
       }
 
       if (kind === "rate-limit") {
         await recordFailure(provider)
-        console.warn(`[${provider.toUpperCase()}] rate limited`)
+        log.warn("ai.provider_rate_limited", { provider })
         return null
       }
 
-      // Hard error - retry up to limit, then record failure
       if (attempt < 2) {
         await new Promise((r) => setTimeout(r, RETRY_DELAY_MS[attempt]))
         continue
       }
       await recordFailure(provider)
-      console.error(`[${provider.toUpperCase()} Error]`, msg)
+      log.error("ai.provider_hard_error", { provider, error: msg })
       return null
     }
   }
@@ -348,7 +283,9 @@ export async function callAi(
     cacheTtl = 86400,
   } = options
 
-  const promptHash = hashPrompt(systemPrompt, userMessage, { json, temperature, maxTokens })
+  // Scope cache key by userId so users never receive another user's personalized output.
+  const baseHash = hashPrompt(systemPrompt, userMessage, { json, temperature, maxTokens })
+  const promptHash = userId !== "anonymous" ? `${userId.slice(0, 16)}:${baseHash}` : baseHash
 
   if (cache) {
     const cached = await getCachedAiResponse(promptHash)
@@ -366,8 +303,7 @@ export async function callAi(
     }
   }
 
-  // All providers failed - return a template fallback so the user gets something useful
-  console.warn("[ai-router] All providers unavailable, returning fallback template", { task })
+  log.warn("ai.all_providers_unavailable", { task })
   const topicMatch = userMessage.match(/topic[:\s]+([^\n]+)/i)
   const topic = topicMatch?.[1]?.trim() ?? "this topic"
   if (task === "hook-generation") return getFallbackHook(topic)

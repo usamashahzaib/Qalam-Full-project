@@ -7,6 +7,7 @@ import { createServiceClient } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
 import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-expiry"
+import { log } from "./logging"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 
@@ -135,7 +136,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
         .from("plan_usage")
         .update(resetPayload)
         .eq("user_id", userId)
-        .then(undefined, (err: unknown) => console.error("plan_usage_window_reset_failed", err))
+        .then(undefined, (err: unknown) => log.error("plan_usage.window_reset_failed", { error: (err as Error)?.message }))
       usage = { ...usage, ...resetPayload }
     }
   }
@@ -246,7 +247,7 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
       error: parsed.error,
     }
   } catch (err) {
-    console.error("plan_usage_rpc_failed", { userId, feature, error: err instanceof Error ? err.message : String(err) })
+    log.error("plan_usage.rpc_failed", { userId, feature, error: err instanceof Error ? err.message : String(err) })
     // RPC not deployed or failed - fall back to optimistic-concurrency CAS with retry.
     const MAX_ATTEMPTS = 3
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { timingSafeEqual } from "node:crypto"
 import { getAuthenticatedSession } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -6,7 +7,9 @@ const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 }
 const requireAdmin = async (request: NextRequest) => {
   const adminKey = request.headers.get("x-admin-key") || ""
   const secretKey = process.env.ADMIN_SECRET_KEY || ""
-  if (!secretKey || adminKey !== secretKey) throw new Error("Forbidden")
+  const keyBuf = Buffer.from(adminKey)
+  const secretBuf = Buffer.from(secretKey)
+  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
   const session = await getAuthenticatedSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "").split(",").map((v) => v.trim().toLowerCase())

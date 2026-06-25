@@ -1,6 +1,6 @@
 ﻿import type { NextAuthConfig } from "next-auth"
 
-// App routes that require authentication (URL paths, not filesystem paths)
+// App page routes that require authentication
 const PROTECTED = [
   "/dashboard",
   "/write",
@@ -21,7 +21,6 @@ const PROTECTED = [
 const AUTH_ONLY = ["/login", "/signup", "/forgot-password", "/reset-password"]
 
 export const authConfig: NextAuthConfig = {
-  trustHost: true,
   pages: { signIn: "/login", error: "/login" },
   callbacks: {
     authorized({ auth, request }) {
@@ -40,8 +39,16 @@ export const authConfig: NextAuthConfig = {
         return Response.redirect(new URL("/dashboard", request.nextUrl.origin))
       }
 
-      // Require auth for app routes
+      // Require auth for app page routes
       if (isProtected) return isLoggedIn
+
+      // For API routes matched by middleware: return 401 JSON instead of redirect
+      if (pathname.startsWith("/api/") && !isLoggedIn) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
 
       return true
     },

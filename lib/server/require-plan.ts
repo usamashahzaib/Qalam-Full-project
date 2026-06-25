@@ -94,11 +94,20 @@ export const requirePlan = async (
   }
 }
 
+const ALLOWED_COUNT_TABLES = new Set([
+  "posts", "carousels", "hooks", "voice_profiles", "analytics_snapshots",
+  "ai_usage", "competitor_analyses", "workspace_members",
+])
+
 export const getMonthlyCount = async (
   table: string,
   workspaceId: string,
   filterField = "workspace_id"
 ): Promise<number> => {
+  if (!ALLOWED_COUNT_TABLES.has(table)) {
+    throw new Error(`getMonthlyCount: table '${table}' is not in the allowed list`)
+  }
+
   const startOfMonth = new Date()
   startOfMonth.setDate(1)
   startOfMonth.setHours(0, 0, 0, 0)

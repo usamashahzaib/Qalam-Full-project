@@ -6,6 +6,7 @@ import { applyUserOverrides } from "@/lib/server/overrides"
 import { auth } from "@/auth"
 import { PLAN_PRIORITY } from "@/lib/server/plan-limits-v2"
 import { env } from "@/lib/server/env"
+import { log } from "@/lib/server/logging"
 
 export async function getAuthenticatedSession() {
   return await auth()
@@ -22,7 +23,7 @@ export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false
   const envList = env.appAdminEmails
   if (!envList) {
-    console.warn("[workspace] APP_ADMIN_EMAILS env var is not configured; no admin emails enabled")
+    log.warn("workspace.admin_emails_not_configured")
     return false
   }
   const adminEmails = envList.split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
@@ -119,7 +120,7 @@ async function getOrCreateWorkspaceForUser(userId: string, ownerEmail?: string) 
     .single()
 
   if (wsError || !ws) {
-    console.error("[workspace] insert failed:", wsError?.message, wsError?.details, wsError?.hint)
+    log.error("workspace.insert_failed", { error: wsError?.message, details: wsError?.details })
     return null
   }
 

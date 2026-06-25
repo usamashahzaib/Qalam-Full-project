@@ -139,7 +139,7 @@ export async function requireAuthApi(request: NextRequest) {
   if (provider === "credentials") {
     const { data: user } = await supabase
       .from("users")
-      .select("id, email, full_name, image_url")
+      .select("id, email, full_name, image_url, password_version")
       .eq("id", tokenId)
       .maybeSingle()
 
@@ -148,6 +148,20 @@ export async function requireAuthApi(request: NextRequest) {
         userId: null,
         externalUserId: null,
         error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+        session: null,
+      }
+    }
+
+    // Invalidate sessions when password has changed since this JWT was issued.
+    // Only enforced when the column exists (both sides are a number).
+    const dbPwVersion = (user as unknown as { password_version?: number }).password_version
+    const tokenPwVersion = (session.user as { passwordVersion?: number }).passwordVersion
+    if (typeof dbPwVersion === "number" && typeof tokenPwVersion === "number" && dbPwVersion !== tokenPwVersion) {
+      log.warn("auth.password_version_mismatch", { userId: tokenId })
+      return {
+        userId: null,
+        externalUserId: null,
+        error: NextResponse.json({ error: "Session expired. Please sign in again." }, { status: 401 }),
         session: null,
       }
     }

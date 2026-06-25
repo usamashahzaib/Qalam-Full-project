@@ -2,6 +2,7 @@ import { createHash } from "crypto"
 import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "@/lib/server/redis"
 import { checkRateLimit } from "./rate-limiter"
+import { log } from "./logging"
 import type { PlanTier } from "@/types/domain"
 
 let groqLimiter: Ratelimit | null = null
@@ -122,7 +123,7 @@ export async function cacheAiResponse(
   try {
     await r.setex(`ai_cache:${promptHash}`, ttlSeconds, response)
   } catch (e) {
-    console.error("[Redis Cache Write Error]", (e as Error).message)
+    log.error("redis.cache_write_failed", { error: (e as Error).message })
   }
 }
 
@@ -132,7 +133,7 @@ export async function getCachedAiResponse(promptHash: string): Promise<string | 
   try {
     return await r.get<string>(`ai_cache:${promptHash}`)
   } catch (e) {
-    console.error("[Redis Cache Read Error]", (e as Error).message)
+    log.error("redis.cache_read_failed", { error: (e as Error).message })
     return null
   }
 }

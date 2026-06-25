@@ -4,12 +4,14 @@ import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { verifyPassword } from "@/lib/server/password"
+import { log } from "@/lib/server/logging"
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string
       provider?: string
+      passwordVersion?: number
     } & DefaultSession["user"]
   }
   interface JWT {
@@ -18,13 +20,13 @@ declare module "next-auth" {
     name?: string
     picture?: string
     provider?: string
+    passwordVersion?: number
   }
 }
 
 const config: NextAuthConfig = {
   ...authConfig,
   secret: process.env.AUTH_SECRET,
-  trustHost: true,
   providers: [
     LinkedIn({
       clientId: process.env.LINKEDIN_CLIENT_ID!,
@@ -58,7 +60,7 @@ const config: NextAuthConfig = {
 
           return { id: user.id, email: user.email, name: user.full_name ?? "" }
         } catch (err) {
-          console.error("[auth] authorize failed", err)
+          log.error("auth.authorize_failed", { error: (err as Error).message })
           return null
         }
       },
@@ -70,8 +72,7 @@ const config: NextAuthConfig = {
 
   callbacks: {
     async signIn({ user, account }) {
-      // Allow all sign-ins; provisioning happens lazily in requireAuthApi
-      console.log("[auth] sign-in", account?.provider, user.email)
+      log.info("auth.sign_in", { provider: account?.provider, email: user.email })
       return true
     },
 
@@ -82,6 +83,19 @@ const config: NextAuthConfig = {
         token.name = user.name ?? undefined
         token.picture = user.image ?? undefined
         token.provider = account?.provider ?? "credentials"
+        // Embed password_version so sessions are invalidated on password change.
+        // Requires: ALTER TABLE users ADD COLUMN password_version INTEGER DEFAULT 0 NOT NULL
+        if ((account?.provider ?? "credentials") === "credentials") {
+          try {
+            const supabase = createServiceClient()
+            const { data: u } = await supabase
+              .from("users")
+              .select("password_version")
+              .eq("id", user.id)
+              .maybeSingle()
+            token.passwordVersion = (u as { password_version?: number } | null)?.password_version ?? 0
+          } catch { /* column may not exist yet */ }
+        }
       }
       return token
     },
@@ -92,6 +106,7 @@ const config: NextAuthConfig = {
       session.user.name = (token.name as string) ?? null
       session.user.image = (token.picture as string) ?? null
       session.user.provider = (token.provider as string) ?? "credentials"
+      session.user.passwordVersion = token.passwordVersion as number | undefined
       return session
     },
   },

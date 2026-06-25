@@ -2,6 +2,7 @@ import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
 import { supabaseInsert, supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
+import { log } from "@/lib/server/logging"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa"
 export type PaymentStatus = "paid" | "failed" | "cancelled"
@@ -186,6 +187,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   }, "provider,transaction_id")
 
   if (payment.status !== "paid") {
+    log.info("payments.not_paid", { status: payment.status, provider: payment.provider })
     await sendTransactionalEmail({
       to: user.email,
       subject: "Qalam payment failed",
@@ -207,8 +209,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   })
 
   if (rpcError) {
-    console.warn("[payments] activate_plan RPC unavailable, falling back to direct updates:", rpcError.message)
-    // Update users table (payment webhook source of truth)
+    log.warn("payments.activate_plan_rpc_unavailable", { error: rpcError.message })
     const { error: userErr } = await supabase
       .from("users")
       .update({
@@ -222,46 +223,23 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
       })
       .eq("id", user.id)
     if (userErr) {
-      console.error("[payments] fallback users.plan update failed:", userErr)
+      log.error("payments.fallback_users_update_failed", { error: userErr.message })
       throw new Error(`activate_plan_failed: ${userErr.message}`)
     }
 
-    // Update organization plan if one exists
     if (organizationId) {
       await supabase
         .from("organizations")
         .update({ plan: payment.planName, subscription_status: "active", plan_expires_at: expiresAt, updated_at: now })
         .eq("id", organizationId)
-        .then(undefined, (err: unknown) => console.error("[payments] org plan update failed:", err))
+        .then(undefined, (err: unknown) => log.error("payments.org_plan_update_failed", { error: (err as Error).message }))
     }
 
-    // Upsert plan_usage so limit checks read the new plan immediately
     await supabase
       .from("plan_usage")
       .upsert({ user_id: user.id, plan: payment.planName.toLowerCase(), cycle_start: now, cycle_end: expiresAt, updated_at: now }, { onConflict: "user_id" })
-      .then(undefined, (err: unknown) => console.error("[payments] plan_usage upsert failed:", err))
+      .then(undefined, (err: unknown) => log.error("payments.plan_usage_upsert_failed", { error: (err as Error).message }))
   }
-
-  await supabase
-    .from("users")
-    .update({
-      plan: payment.planName,
-      plan_expires_at: expiresAt,
-      plan_started_at: now,
-      billing_cycle: payment.billingCycle,
-      reminder_sent_3d: false,
-      reminder_sent_1d: false,
-      updated_at: now,
-    })
-    .eq("id", user.id)
-    .then(undefined, (err: unknown) => console.error("[payments] users plan metadata sync failed:", err))
-
-  // Sync plan and cycle dates on plan_usage (RPC sets plan, but direct update ensures consistency)
-  await supabase
-    .from("plan_usage")
-    .update({ plan: payment.planName.toLowerCase(), cycle_start: now, cycle_end: expiresAt, updated_at: now })
-    .eq("user_id", user.id)
-    .then(undefined, (err: unknown) => console.error("[payments] plan_usage sync failed:", err))
 
   // Fire-and-forget confirmation email — never block the payment response on this
   sendTransactionalEmail({
