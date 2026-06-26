@@ -181,13 +181,12 @@ export const requireAdminPage = async () => {
   }
   const session = await getAuthenticatedSession()
   const email = session?.user?.email?.trim().toLowerCase()
-  let isAdmin = false
-  try {
-    isAdmin = isAdminEmail(email)
-  } catch {
-    notFound()
+
+  if (!env.appAdminEmails) {
+    return { adminEmailsNotConfigured: true as const, email: email || "", userId }
   }
-  if (!isAdmin) {
+
+  if (!isAdminEmail(email)) {
     notFound()
   }
   return { email: email || "", userId }

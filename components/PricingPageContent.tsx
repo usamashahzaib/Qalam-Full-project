@@ -18,11 +18,11 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month with 30 posts. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 4 months free.",
+    a: "Solo starts at PKR 499/month with 30 posts. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 5 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
-    a: "Annual Solo is PKR 291/mo (save PKR 2,496), Pro is PKR 869/mo (save PKR 7,450). Each annual plan includes 4 months free.",
+    a: "Annual Solo is PKR 291/mo (save PKR 2,496), Pro is PKR 869/mo (save PKR 7,450). Each annual plan includes 5 months free.",
   },
   {
     q: "What does Pro include that Solo doesn't?",

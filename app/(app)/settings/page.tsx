@@ -7,7 +7,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
+import { PLAN_PRICES, formatPkr, annualFraming } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -223,8 +223,9 @@ export default function SettingsPage() {
   }
 
   const selectedPlanPrices = PLAN_PRICES[billingDraft.plan] ?? { monthly: 0, annual: 0 }
-  const upgradePrice = billingDraft.billingCycle === "annual"
-    ? selectedPlanPrices.annual
+  const annualMonthlyEquiv = selectedPlanPrices.annual > 0 ? Math.round(selectedPlanPrices.annual / 12) : 0
+  const displayPrice = billingDraft.billingCycle === "annual" && annualMonthlyEquiv > 0
+    ? annualMonthlyEquiv
     : selectedPlanPrices.monthly
   const isUpgrade = billingDraft.plan !== billing.plan
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
@@ -329,7 +330,7 @@ export default function SettingsPage() {
                 onClick={() => setBillingDraft((prev) => ({ ...prev, billingCycle: cycle }))}
                 className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${billingDraft.billingCycle === cycle ? "bg-teal text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}
               >
-                {cycle === "monthly" ? "Monthly" : "Annual (4 months free)"}
+                {cycle === "monthly" ? "Monthly" : `Annual (${annualFraming})`}
               </button>
             ))}
           </div>
@@ -338,11 +339,17 @@ export default function SettingsPage() {
           {billingDraft.plan !== "Free" && (
             <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 px-4 py-3">
               <p className="text-sm font-semibold text-teal">{billingDraft.plan}</p>
-              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(upgradePrice)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
+              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(displayPrice)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                {billingDraft.billingCycle === "annual" ? "Billed as annual subscription" : "Billed monthly"}
-                {billingDraft.billingCycle === "monthly" && selectedPlanPrices.annual > 0 && (
-                  <> - or <span className="font-semibold text-teal">{formatPkr(selectedPlanPrices.annual)}/mo</span> on annual</>
+                {billingDraft.billingCycle === "annual" ? (
+                  <>Billed annually at <span className="font-semibold text-teal">{formatPkr(selectedPlanPrices.annual)}/year</span></>
+                ) : (
+                  <>
+                    Billed monthly
+                    {annualMonthlyEquiv > 0 && (
+                      <> — or <span className="font-semibold text-teal">{formatPkr(annualMonthlyEquiv)}/mo</span> on annual ({annualFraming})</>
+                    )}
+                  </>
                 )}
               </p>
             </div>
@@ -354,8 +361,9 @@ export default function SettingsPage() {
               <div className="border-b border-amber-200 bg-amber-100/60 px-4 py-3">
                 <p className="text-sm font-bold text-amber-900">Upgrade to {billingDraft.plan}</p>
                 <p className="mt-0.5 text-xs text-amber-700">
-                  {formatPkr(upgradePrice)}/month
-                  {billingDraft.billingCycle === "annual" ? " - billed annually" : " - billed monthly"}
+                  {billingDraft.billingCycle === "annual"
+                    ? `${formatPkr(displayPrice)}/month — billed annually at ${formatPkr(selectedPlanPrices.annual)}/year`
+                    : `${formatPkr(displayPrice)}/month — billed monthly`}
                 </p>
               </div>
               <div className="p-4">
