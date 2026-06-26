@@ -36,7 +36,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Voice-aware tone selection and revision path",
       "Hooks, drafts, and final post stay connected",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     faqs: [
       {
         q: "What makes Qalam's post writer different from a normal AI prompt box?",
@@ -63,7 +63,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Preserves long-term writing patterns",
       "Creates switching cost through accumulated voice data",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     faqs: [
       {
         q: "How does Qalam learn my voice?",
@@ -90,7 +90,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Reusable hook structures inside the archive",
       "Fast entry point into longer post workflows",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     faqs: [
       {
         q: "Can I reuse strong hooks across future posts?",
@@ -117,7 +117,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Operational planning for teams and agencies",
       "Feeds later performance review and reuse",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     faqs: [
       {
         q: "Why does scheduling belong inside the writing workflow?",
@@ -144,7 +144,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Approval flow before publishing",
       "Cleaner delivery and lower revision churn",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     faqs: [
       {
         q: "Why do agencies need isolated workspaces?",
@@ -174,7 +174,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Keeps founder tone intact",
       "Reduces blank-page friction",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     audience: "Founders and executive operators building authority on LinkedIn",
     faqs: [
       {
@@ -198,7 +198,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Cleaner review loop",
       "More consistent team output",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     audience: "In-house marketing teams managing brand voice and output consistency",
     faqs: [
       {
@@ -222,7 +222,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Reusable narratives for culture and hiring",
       "Authority without agency overhead",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     audience: "HR and employer-brand leaders publishing on LinkedIn",
     faqs: [
       {
@@ -246,7 +246,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Archive of reusable angles and frameworks",
       "Better signal for inbound opportunities",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     audience: "Consultants building authority and inbound demand on LinkedIn",
     faqs: [
       {
@@ -270,7 +270,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Approval discipline before publish",
       "More scalable delivery quality",
     ],
-    updatedAt: "2026-05-18",
+    updatedAt: "2026-06-26",
     audience: "Content and ghostwriting agencies running multi-client LinkedIn operations",
     faqs: [
       {

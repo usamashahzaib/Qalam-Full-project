@@ -1,12 +1,22 @@
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
-import { buildPageMetadata } from "@/lib/seo"
+import { buildPageMetadata, buildOrganizationSchema, SITE_URL } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "About",
-  description: "Qalam's product principles: voice fidelity, retained memory, and honest product status.",
+  title: "About Qalam - AI LinkedIn Writing System",
+  description: "Qalam is built as a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders, consultants, HR leaders, and agencies.",
   path: "/about",
+  keywords: ["about Qalam", "Qalam AI writer", "LinkedIn writing system", "Qalam product principles"],
 })
+
+const aboutSchema = {
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: "About Qalam",
+  description: "Qalam is an AI LinkedIn writing system built around persistent voice memory, draft history, and compounding content capital for serious professionals.",
+  url: `${SITE_URL}/about`,
+  mainEntity: buildOrganizationSchema(),
+}
 
 const PRINCIPLES = [
   {
@@ -25,6 +35,8 @@ const PRINCIPLES = [
 
 export default function AboutPage() {
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-24">
         <div className="mx-auto max-w-[860px] text-center">
@@ -110,5 +122,6 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
+    </>
   )
 }

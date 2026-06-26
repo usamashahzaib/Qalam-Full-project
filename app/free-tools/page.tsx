@@ -82,8 +82,29 @@ const TOOLS = [
   },
 ]
 
+const freeToolsSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "Free LinkedIn AI Tools by Qalam",
+  description:
+    "Six free AI-powered LinkedIn tools: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required.",
+  url: "https://www.byqalam.com/free-tools",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: TOOLS.map((tool, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: tool.title,
+      url: `https://www.byqalam.com${tool.href}`,
+      description: tool.desc,
+    })),
+  },
+}
+
 export default function FreeToolsPage() {
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(freeToolsSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-zinc-50 pt-24">
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
         <div
@@ -206,5 +227,6 @@ export default function FreeToolsPage() {
         </div>
       </section>
     </div>
+    </>
   )
 }

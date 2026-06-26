@@ -15,7 +15,7 @@ export type SeoLandingPage = {
   related: { label: string; href: string }[]
 }
 
-const updatedAt = "2026-06-11"
+const updatedAt = "2026-06-26"
 
 export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
   "ai-content-writer": {
@@ -409,6 +409,447 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       { label: "Free Carousel Builder", href: "/free-tools/carousel-builder" },
       { label: "AI Content Writer", href: "/ai-content-writer" },
       { label: "Free Tools", href: "/free-tools" },
+    ],
+  },
+  "best-ai-linkedin-writer": {
+    slug: "best-ai-linkedin-writer",
+    title: "Best AI LinkedIn Writer",
+    h1: "The best AI LinkedIn writer for serious professionals",
+    description:
+      "Looking for the best AI LinkedIn writer? Qalam is purpose-built for LinkedIn: voice memory, hook archives, draft history, and scheduling in one persistent writing system.",
+    summary:
+      "Qalam is built specifically for LinkedIn publishing - not a general-purpose AI tool with a LinkedIn template bolted on. Voice memory, persistent drafts, and a compound writing system in one workspace.",
+    intent: "best AI LinkedIn writer, best LinkedIn AI tool, top LinkedIn writing AI",
+    primaryKeyword: "best AI LinkedIn writer",
+    keywords: [
+      "best AI LinkedIn writer",
+      "best LinkedIn AI tool",
+      "top LinkedIn writing AI",
+      "best AI for LinkedIn posts",
+      "LinkedIn AI writer comparison",
+      "Qalam LinkedIn writer",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "What separates a LinkedIn-specific AI from a generic tool",
+        body: "General-purpose AI models like ChatGPT can draft a LinkedIn post from a prompt, but they reset after every session. A purpose-built LinkedIn AI retains voice memory, hook archives, draft history, and workspace context across every session - so each new post starts from accumulated knowledge rather than a blank page.",
+      },
+      {
+        heading: "The voice memory difference",
+        body: "Qalam trains on your real LinkedIn posts and retains every approved draft, edit, and hook. The system becomes more accurate to your specific voice the longer you use it. Generic AI tools start from the same place every time regardless of how much you have published.",
+      },
+      {
+        heading: "A complete publishing workflow, not just a draft button",
+        body: "The best LinkedIn writing tool for consistent publishers connects generation, revision, archive, scheduling, and analytics in one system. Qalam is built around that workflow rather than offering a draft button attached to a content calendar tool.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is the best AI tool for writing LinkedIn posts?",
+        a: "For consistent publishers who need voice memory and compounding improvement, Qalam is purpose-built for LinkedIn. For occasional one-off posts, general-purpose tools like ChatGPT work fine. The right choice depends on your publishing frequency and whether you need the system to remember your voice across sessions.",
+      },
+      {
+        q: "Is there a free AI LinkedIn writer?",
+        a: "Yes. Qalam has a free plan with 5 AI posts per month, no card required. The free tools at /free-tools also work without any account - hook generator, headline analyzer, profile optimizer, and more.",
+      },
+    ],
+    related: [
+      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+      { label: "Start Free", href: "/login" },
+      { label: "Compare Plans", href: "/pricing" },
+    ],
+  },
+  "qalam-vs-taplio": {
+    slug: "qalam-vs-taplio",
+    title: "Qalam vs Taplio",
+    h1: "Qalam vs Taplio: which LinkedIn tool fits your workflow",
+    description:
+      "A direct comparison of Qalam and Taplio for LinkedIn content creation. Both are LinkedIn-focused tools, but they are built around different workflow assumptions and audience types.",
+    summary:
+      "Qalam focuses on voice memory, persistent drafts, and compounding writing quality. Taplio focuses on scheduling, analytics, and volume management. The right tool depends on whether your bottleneck is writing quality or publishing operations.",
+    intent: "Qalam vs Taplio, Taplio alternative, LinkedIn writing tool comparison",
+    primaryKeyword: "Qalam vs Taplio",
+    keywords: [
+      "Qalam vs Taplio",
+      "Taplio alternative",
+      "LinkedIn writing tool comparison",
+      "best Taplio alternative",
+      "LinkedIn AI tool comparison",
+      "Taplio vs Qalam",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "What each tool is primarily built for",
+        body: "Taplio is built around scheduling, engagement tracking, and viral post inspiration. It is a publishing operations tool with AI drafting as a secondary feature. Qalam is built around voice memory and persistent drafts first, with scheduling and archive as connected layers of the same system.",
+      },
+      {
+        heading: "Voice fidelity: the core difference",
+        body: "Qalam trains on your actual LinkedIn posts and retains every approved draft and edit so each new session starts from real knowledge of your voice. Taplio's AI drafting generates posts from prompts without the same level of cross-session voice retention.",
+      },
+      {
+        heading: "Which workflow each tool fits",
+        body: "If you manage high posting volume across multiple accounts and need scheduling analytics, Taplio's operational features are stronger. If you are a solo creator or consultant who wants posts that genuinely sound like you with compounding improvement over time, Qalam is purpose-built for that problem.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Is Qalam a Taplio alternative?",
+        a: "Yes, Qalam is a Taplio alternative for creators who prioritize voice fidelity and writing quality over analytics and scheduling volume. Qalam's voice memory system and persistent draft archive make it more suitable for professionals who want compounding improvement rather than content operations management.",
+      },
+      {
+        q: "Which is cheaper, Qalam or Taplio?",
+        a: "Qalam is significantly more affordable, especially for the Pakistan market. Qalam's Solo plan starts at PKR 499/month (approximately $1.80 USD). Taplio starts at $49/month USD. Qalam also has a free plan with no card required.",
+      },
+    ],
+    related: [
+      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+      { label: "Voice Profile", href: "/product/voice-profile" },
+      { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  "linkedin-content-strategy": {
+    slug: "linkedin-content-strategy",
+    title: "LinkedIn Content Strategy",
+    h1: "LinkedIn content strategy that builds authority, not just followers",
+    description:
+      "A practical LinkedIn content strategy guide for founders, consultants, HR leaders, and agencies. Build a posting system that compounds over time instead of chasing one-off reach.",
+    summary:
+      "An effective LinkedIn content strategy starts with a defined territory, a consistent voice, and a publishing system that retains what works. Qalam is built to support that workflow.",
+    intent: "LinkedIn content strategy, LinkedIn strategy guide, LinkedIn publishing strategy",
+    primaryKeyword: "LinkedIn content strategy",
+    keywords: [
+      "LinkedIn content strategy",
+      "LinkedIn strategy guide",
+      "LinkedIn publishing strategy",
+      "how to build LinkedIn strategy",
+      "LinkedIn content plan",
+      "LinkedIn growth strategy",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "Start with a territory, not a content calendar",
+        body: "A content calendar without a defined territory produces volume without direction. Choose a specific area where you have genuine expertise and recurring experience, then build your posting system around it. The territory is what lets you write consistently without running out of ideas.",
+      },
+      {
+        heading: "The three elements every LinkedIn strategy needs",
+        body: "First, a defined voice so posts sound like a person rather than a brand account. Second, a hook system so posts get read rather than scrolled past. Third, an archive so approved structures and ideas compound instead of disappearing after publishing.",
+      },
+      {
+        heading: "Building the compounding layer",
+        body: "The LinkedIn accounts that generate consistent inbound do not just post more - they build a searchable body of work that lets prospective clients self-qualify before reaching out. This requires retaining approved posts, tracking what performs, and reusing strong structures rather than reinventing every session.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What is a good LinkedIn content strategy?",
+        a: "Define a specific territory where you have real expertise, build a consistent posting cadence (two to three times per week), focus on specific experience-based content rather than generic advice, and build an archive of what works so your publishing improves over time rather than starting from scratch each week.",
+      },
+      {
+        q: "How many times a week should I post on LinkedIn?",
+        a: "Two to three times per week is the sustainable cadence for most professionals. Consistency matters more than frequency - a consistent three-post week that generates engagement outperforms five posts with weak engagement because the algorithm distributes based on signal quality, not posting volume.",
+      },
+    ],
+    related: [
+      { label: "For Founders", href: "/use-cases/founders" },
+      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
+  "ai-writing-tool-pakistan": {
+    slug: "ai-writing-tool-pakistan",
+    title: "AI Writing Tool Pakistan",
+    h1: "The AI writing tool built for Pakistan's LinkedIn creators",
+    description:
+      "Qalam is the AI writing tool built for Pakistani founders, consultants, HR leaders, and agencies. PKR-first pricing, JazzCash and Easypaisa billing, and a workflow built for serious LinkedIn publishing.",
+    summary:
+      "Most AI writing tools are priced and designed for Western markets. Qalam is purpose-built for Pakistan: local pricing, local payment methods, and a LinkedIn publishing system that works for the Pakistani professional audience.",
+    intent: "AI writing tool Pakistan, LinkedIn AI tool Pakistan, AI content writer Pakistan",
+    primaryKeyword: "AI writing tool Pakistan",
+    keywords: [
+      "AI writing tool Pakistan",
+      "LinkedIn AI tool Pakistan",
+      "AI content writer Pakistan",
+      "best AI writing app Pakistan",
+      "LinkedIn writer Pakistan",
+      "Qalam Pakistan",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "Built for the Pakistan market, not adapted for it",
+        body: "Qalam is priced in PKR, not USD. Solo starts at PKR 499/month. Pro at PKR 1,490/month. There is no forced currency conversion, no international payment friction, and no pricing designed for a different market. Pakistani professionals can pay via JazzCash, Easypaisa, or bank transfer.",
+      },
+      {
+        heading: "The Pakistani LinkedIn opportunity",
+        body: "Pakistani founders, HR leaders, consultants, and agency owners are building LinkedIn presence faster than the market expects. The professionals who build consistent, specific LinkedIn content now will hold the authority position when the market matures. Qalam is built to support that publishing workflow.",
+      },
+      {
+        heading: "Voice memory for every professional niche",
+        body: "Whether you write about tech startups, HR, consulting, sales, or marketing, Qalam learns from your real posts. The voice memory system works across every professional context in the Pakistani market - not just for one type of creator.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Is there a good LinkedIn AI tool for Pakistan?",
+        a: "Qalam is purpose-built for Pakistan. It is priced in PKR, accepts payment via JazzCash, Easypaisa, and bank transfer, and has a free plan with no card required. It is the LinkedIn AI writing tool designed specifically for Pakistani professionals.",
+      },
+      {
+        q: "How much does Qalam cost in Pakistan?",
+        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 499/month. Pro is PKR 1,490/month with voice memory, analytics, and competitor research. Agency is PKR 7,490/month for multi-client workspaces. Annual billing gives 5 months free.",
+      },
+    ],
+    related: [
+      { label: "Pricing in PKR", href: "/pricing" },
+      { label: "Free Tools", href: "/free-tools" },
+      { label: "Start Free", href: "/login" },
+    ],
+  },
+  "linkedin-personal-brand": {
+    slug: "linkedin-personal-brand",
+    title: "LinkedIn Personal Brand",
+    h1: "Build a LinkedIn personal brand that generates real inbound",
+    description:
+      "How to build a LinkedIn personal brand that generates inbound leads, career opportunities, and authority in your field - without sounding like a generic self-promotion account.",
+    summary:
+      "A LinkedIn personal brand is not about self-promotion. It is a searchable public record of specific thinking that lets prospective clients, employers, and collaborators evaluate your expertise before they reach out.",
+    intent: "LinkedIn personal brand, build LinkedIn personal brand, LinkedIn branding guide",
+    primaryKeyword: "LinkedIn personal brand",
+    keywords: [
+      "LinkedIn personal brand",
+      "build LinkedIn personal brand",
+      "LinkedIn branding guide",
+      "LinkedIn personal branding strategy",
+      "how to brand yourself on LinkedIn",
+      "LinkedIn authority building",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "Personal brand is not self-promotion",
+        body: "The professionals with the strongest LinkedIn personal brands are not the ones who post about themselves most. They are the ones who publish specific, experience-based content about their field consistently enough that prospective clients and employers form a genuine impression of how they think.",
+      },
+      {
+        heading: "The four components of a strong LinkedIn brand",
+        body: "A clear profile that names your audience and outcome. A consistent posting territory that is specific enough to be ownable. A posting cadence that does not require daily output to be effective. And an archive of past content that makes your expertise visible to anyone who visits your profile.",
+      },
+      {
+        heading: "Why the archive is the brand",
+        body: "The most credible LinkedIn profiles are not the ones with the most followers or the most recent viral post. They are the ones where a prospective client can spend twenty minutes reading past content and come away with a clear sense of what the person believes, what they have experienced, and whether they are worth a conversation.",
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I build a LinkedIn personal brand?",
+        a: "Define a specific territory where you have genuine expertise, optimize your profile to reflect it clearly, and publish consistent content from that perspective over time. The searchable archive of published thought is what becomes the brand - not a single viral post.",
+      },
+      {
+        q: "How long does it take to build a LinkedIn personal brand?",
+        a: "Most professionals start seeing meaningful inbound after three to six months of consistent, specific publishing. The compound effect accelerates as the content archive grows. Starting is more important than the timeline.",
+      },
+    ],
+    related: [
+      { label: "For Founders", href: "/use-cases/founders" },
+      { label: "For Consultants", href: "/use-cases/consultants" },
+      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+    ],
+  },
+  "linkedin-post-ideas": {
+    slug: "linkedin-post-ideas",
+    title: "LinkedIn Post Ideas",
+    h1: "LinkedIn post ideas that do not sound like everyone else",
+    description:
+      "Fresh LinkedIn post ideas for founders, consultants, HR leaders, and marketers. Ideas that generate real engagement by starting from specific experience rather than generic advice.",
+    summary:
+      "The best LinkedIn post ideas come from specific experience: a decision that did not go as expected, an observation from client work, a counterintuitive lesson from operations. Qalam helps you turn those raw ideas into posts.",
+    intent: "LinkedIn post ideas, LinkedIn content ideas, LinkedIn post topics",
+    primaryKeyword: "LinkedIn post ideas",
+    keywords: [
+      "LinkedIn post ideas",
+      "LinkedIn content ideas",
+      "LinkedIn post topics",
+      "what to post on LinkedIn",
+      "LinkedIn post inspiration",
+      "LinkedIn writing ideas",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "The best post ideas come from what already happened",
+        body: "The most engaging LinkedIn posts are not inspired ideas - they are specific reports from real experience. A decision you made this week. A lesson you learned from a client. A pattern you noticed in your market. These posts perform better than generic topic posts because they carry an irreplicable authority signal.",
+      },
+      {
+        heading: "Twelve post idea categories that consistently generate engagement",
+        body: "Lessons from a specific mistake or failure. A counterintuitive finding from real data. A before-and-after comparison from a decision you made. An observation about your industry that most people are not saying. A specific process you changed and why. A hiring or team decision and its outcome. A framework you actually use (not one you read about). A customer insight that changed your thinking. A market trend with a specific opinion attached. A pattern you noticed only after seeing it five times. A prediction with reasoning. A defense of an unpopular position in your field.",
+      },
+      {
+        heading: "How to never run out of LinkedIn post ideas",
+        body: "The professionals who maintain consistent LinkedIn publishing without running out of ideas keep a running capture system for raw thoughts, observations, and decisions as they happen during the week. The ideas are not created at posting time - they are captured in the moment and developed into posts later. Qalam is designed to work with this workflow: capture a raw idea, turn it into a draft with voice memory, refine it, and schedule it without starting from scratch.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What should I post about on LinkedIn?",
+        a: "Post about specific things you have actually experienced: a decision and its outcome, a lesson from a client or project, a counterintuitive observation from your field, or a framework you genuinely use. Specific, experience-based content consistently outperforms generic advice posts.",
+      },
+      {
+        q: "How do I come up with LinkedIn post ideas every week?",
+        a: "Keep a running capture system for observations, decisions, and lessons as they happen during the week. Do not try to create ideas at posting time. Review your capture list when you sit down to write, pick the most specific or interesting item, and turn it into a structured post.",
+      },
+    ],
+    related: [
+      { label: "AI Post Writer", href: "/product/post-writer" },
+      { label: "Free Hook Generator", href: "/free-tools/hook-generator" },
+      { label: "Blog", href: "/blog" },
+    ],
+  },
+  "linkedin-writing-tips": {
+    slug: "linkedin-writing-tips",
+    title: "LinkedIn Writing Tips",
+    h1: "LinkedIn writing tips that actually improve engagement",
+    description:
+      "Practical LinkedIn writing tips for professionals who want to improve post quality, increase engagement, and build authority without sounding like every other LinkedIn account.",
+    summary:
+      "The writing techniques that separate high-performing LinkedIn posts from forgettable ones are specific and repeatable. These tips apply across every niche and audience size.",
+    intent: "LinkedIn writing tips, how to write better LinkedIn posts, LinkedIn writing advice",
+    primaryKeyword: "LinkedIn writing tips",
+    keywords: [
+      "LinkedIn writing tips",
+      "how to write better LinkedIn posts",
+      "LinkedIn writing advice",
+      "LinkedIn post writing guide",
+      "LinkedIn writing best practices",
+      "professional LinkedIn writing",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "Lead with specificity, not context",
+        body: "The most common LinkedIn writing mistake is starting a post with context rather than the interesting claim. 'In my ten years of experience, I have noticed...' delays the hook by ten words. Start with the observation itself: 'The best LinkedIn posts I have ever read have one thing in common.' Let the reader discover the context later.",
+      },
+      {
+        heading: "Write shorter sentences than you think you need to",
+        body: "LinkedIn is read on mobile, mostly in brief stolen moments. Long, complex sentences with multiple clauses lose readers mid-way. Each sentence should advance the post by one clear step. When in doubt, break it in two. The rhythm of short sentences is also easier to scan, which improves the scroll-stop rate.",
+      },
+      {
+        heading: "End every post with a reason to respond",
+        body: "The last line of your post determines whether you get comments. A question that is too broad ('What do you think?') gives readers nothing to work with. A specific, answerable question ('Which of these patterns have you seen in your own team?') lowers the activation energy for a comment. Comments are the highest-value signal to the LinkedIn algorithm.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What are the most important LinkedIn writing tips?",
+        a: "Lead with your strongest claim rather than context. Write in short mobile-friendly sentences. Use line breaks between ideas. End with a specific, answerable question that invites real responses. Save your word count for the sharpest version of one idea rather than covering three adjacent points.",
+      },
+      {
+        q: "How do I make my LinkedIn posts more engaging?",
+        a: "Improve the hook (first one to two lines), develop one specific idea rather than three general ones, and close with a concrete question. Posts that generate conversation get more distribution because comments are the highest-value engagement signal in the LinkedIn algorithm.",
+      },
+    ],
+    related: [
+      { label: "Free Hook Generator", href: "/free-tools/hook-generator" },
+      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+      { label: "LinkedIn Post Ideas", href: "/linkedin-post-ideas" },
+    ],
+  },
+  "free-linkedin-tools": {
+    slug: "free-linkedin-tools",
+    title: "Free LinkedIn Tools",
+    h1: "Free LinkedIn tools that improve your posts without an account",
+    description:
+      "Six free LinkedIn tools built by Qalam: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No sign-in required.",
+    summary:
+      "All six Qalam free tools work instantly without creating an account. Hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor - use any or all of them.",
+    intent: "free LinkedIn tools, free LinkedIn AI tools, LinkedIn tools no account",
+    primaryKeyword: "free LinkedIn tools",
+    keywords: [
+      "free LinkedIn tools",
+      "free LinkedIn AI tools",
+      "LinkedIn tools no account",
+      "free LinkedIn writing tools",
+      "best free LinkedIn tools",
+      "free tools for LinkedIn creators",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "Six tools, zero friction",
+        body: "Every tool at byqalam.com/free-tools works without creating an account or entering a credit card. Paste your content, get instant AI analysis. Hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor.",
+      },
+      {
+        heading: "What each tool does",
+        body: "Hook Generator: generates 10 opening line variants for any LinkedIn topic. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
+      },
+      {
+        heading: "Built as a trust surface, not a paywall",
+        body: "These tools exist so professionals can try Qalam's AI quality before creating an account. They are not crippled demos - they use the same AI as the paid product. The free plan with 5 monthly posts also requires no card.",
+      },
+    ],
+    faqs: [
+      {
+        q: "What free LinkedIn tools are available from Qalam?",
+        a: "Qalam offers six free tools with no account required: LinkedIn hook generator, headline analyzer, profile optimizer, viral post checker, carousel builder, and engagement predictor. All are available at byqalam.com/free-tools.",
+      },
+      {
+        q: "Do the Qalam free LinkedIn tools require an account?",
+        a: "No. All six tools at byqalam.com/free-tools work without creating an account or entering a credit card. They are fully functional tools, not demos.",
+      },
+    ],
+    related: [
+      { label: "Hook Generator", href: "/free-tools/hook-generator" },
+      { label: "Headline Analyzer", href: "/free-tools/headline-analyzer" },
+      { label: "All Free Tools", href: "/free-tools" },
+    ],
+  },
+  "linkedin-ai-ghostwriter": {
+    slug: "linkedin-ai-ghostwriter",
+    title: "LinkedIn AI Ghostwriter",
+    h1: "LinkedIn AI ghostwriter that writes in your voice, not a template",
+    description:
+      "Use Qalam as a LinkedIn AI ghostwriter: generate posts that reflect your specific voice, experience, and perspective with persistent memory that improves every draft.",
+    summary:
+      "A LinkedIn AI ghostwriter should produce posts that sound like the person publishing them - not a generic AI output. Qalam's voice memory system is built for exactly this use case.",
+    intent: "LinkedIn AI ghostwriter, AI ghostwriter for LinkedIn, LinkedIn ghostwriter AI tool",
+    primaryKeyword: "LinkedIn AI ghostwriter",
+    keywords: [
+      "LinkedIn AI ghostwriter",
+      "AI ghostwriter for LinkedIn",
+      "LinkedIn ghostwriter AI tool",
+      "AI LinkedIn ghostwriting",
+      "best LinkedIn ghostwriter AI",
+      "LinkedIn ghostwriter software",
+    ],
+    updatedAt,
+    sections: [
+      {
+        heading: "The problem with generic AI ghostwriting",
+        body: "Most AI tools produce a reasonable LinkedIn post from a prompt, but it sounds like AI. The vocabulary is too clean, the structure too predictable, and the personal detail absent. A real ghostwriter works from the client's own stories, examples, and perspectives. An AI ghostwriter should do the same.",
+      },
+      {
+        heading: "How Qalam's voice memory changes the output",
+        body: "Qalam trains on real posts you have written and approved. Every session starts from that accumulated material rather than from generic best practices. The system learns your hook preferences, your paragraph length, your specific vocabulary, and the types of examples you favor - so drafts come out closer to your actual voice.",
+      },
+      {
+        heading: "Ghostwriting for agencies and teams",
+        body: "Agencies using Qalam as an AI ghostwriting tool get per-client voice profiles, isolated draft histories, and approval workflows. Each client maintains a separate memory layer so outputs do not bleed across accounts. The result is a ghostwriting operation that scales without flattening every client into the same generic content.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Can AI ghostwrite LinkedIn posts that sound authentic?",
+        a: "Yes, when the AI has access to real source material and persistent memory. Qalam trains on your actual LinkedIn posts and retains approved drafts and edits so outputs match your real voice rather than a generic LinkedIn template.",
+      },
+      {
+        q: "Is Qalam a LinkedIn ghostwriter or an AI tool?",
+        a: "Qalam is AI software that performs the ghostwriting function: it produces drafts in the writer's voice from topic inputs. It is software, not a human ghostwriter. The distinction matters because Qalam's output improves over time through voice memory, which a human ghostwriter does separately through onboarding.",
+      },
+    ],
+    related: [
+      { label: "For Agencies", href: "/use-cases/agencies" },
+      { label: "Voice Profile", href: "/product/voice-profile" },
+      { label: "LinkedIn Ghostwriter AI", href: "/linkedin-ghostwriter-ai" },
     ],
   },
 }

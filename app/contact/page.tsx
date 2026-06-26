@@ -9,12 +9,39 @@ import {
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Contact",
-  description: "Public contact routes for support, plan upgrades, agency onboarding, and commercial questions.",
+  title: "Contact Qalam - Support, Agency Onboarding & Plan Upgrades",
+  description: "Contact the Qalam team for support, plan upgrades via JazzCash or Easypaisa, agency onboarding, partnerships, or commercial questions. Response within 24 hours.",
+  alternates: { canonical: "https://www.byqalam.com/contact" },
+  openGraph: {
+    title: "Contact Qalam",
+    description: "Reach the Qalam team for support, agency onboarding, or plan upgrades. JazzCash and Easypaisa accepted.",
+    url: "https://www.byqalam.com/contact",
+    type: "website",
+  },
+}
+
+const contactPageSchema = {
+  "@context": "https://schema.org",
+  "@type": "ContactPage",
+  name: "Contact Qalam",
+  description: "Contact page for Qalam - AI LinkedIn writing system. Support, plan upgrades, agency onboarding, and commercial questions.",
+  url: "https://www.byqalam.com/contact",
+  mainEntity: {
+    "@type": "Organization",
+    name: "Qalam",
+    url: "https://www.byqalam.com",
+    email: "support@byqalam.com",
+    sameAs: [
+      "https://www.linkedin.com/company/byqalam",
+      "https://www.instagram.com/byyqalam",
+    ],
+  },
 }
 
 export default function ContactPage() {
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-zinc-50 pt-24">
       <section className="border-b border-zinc-100 bg-white px-6 py-20">
         <div className="mx-auto max-w-[860px] text-center">
@@ -109,5 +136,6 @@ export default function ContactPage() {
         </div>
       </section>
     </div>
+    </>
   )
 }
