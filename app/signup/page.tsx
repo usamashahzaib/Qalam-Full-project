@@ -110,7 +110,13 @@ export default function SignupPage() {
           ) : (
             <>
               <h1 className="mb-1 text-2xl font-bold text-zinc-900">Create your account</h1>
-              <p className="mb-6 text-sm text-zinc-500">Free forever. No card required.</p>
+              <p className="mb-4 text-sm text-zinc-500">Free forever. No card required.</p>
+
+              <div className="mb-5 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3.5 text-xs leading-relaxed text-zinc-500">
+                <p className="font-semibold text-zinc-700">What is Qalam?</p>
+                <p className="mt-1">An AI writing workspace for LinkedIn. You write, review, and publish — Qalam helps with drafts, voice memory, and scheduling. Nothing posts without your approval.</p>
+                <p className="mt-2">Qalam is not affiliated with LinkedIn Corporation. You are responsible for your LinkedIn account and for complying with LinkedIn&apos;s terms of service.</p>
+              </div>
 
               {error && (
                 <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
