@@ -17,7 +17,7 @@ export default async function AdminPage() {
         <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 p-6">
           <h1 className="text-base font-bold text-amber-900">ADMIN_EMAILS not configured</h1>
           <p className="mt-2 text-sm text-amber-800">
-            Add <code className="rounded bg-amber-100 px-1">ADMIN_EMAILS</code> to your Vercel environment variables.
+            Add <code className="rounded bg-amber-100 px-1">APP_ADMIN_EMAILS</code> to your Vercel environment variables.
           </p>
           <p className="mt-3 text-sm text-amber-800">
             Your session email is: <strong>{session.email || "(not detected)"}</strong>

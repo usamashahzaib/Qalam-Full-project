@@ -32,8 +32,8 @@ const FOOTER_LINKS = {
     { label: "Contact", href: "/contact" },
   ],
   Legal: [
-    { label: "Privacy Policy", href: "/privacy" },
-    { label: "Terms of Service", href: "/terms" },
+    { label: "Privacy Policy", href: "/legal/privacy" },
+    { label: "Terms of Service", href: "/legal/terms" },
   ],
 }
 
@@ -95,10 +95,10 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
           <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/privacy" className="transition-colors hover:text-white/60">
+            <Link href="/legal/privacy" className="transition-colors hover:text-white/60">
               Privacy
             </Link>
-            <Link href="/terms" className="transition-colors hover:text-white/60">
+            <Link href="/legal/terms" className="transition-colors hover:text-white/60">
               Terms
             </Link>
             <a href={`mailto:${SUPPORT_EMAIL}`} className="transition-colors hover:text-white/60">

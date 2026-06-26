@@ -113,11 +113,11 @@ export function AuthSlidePanel() {
 
                 <p className="mt-8 text-center text-xs text-zinc-400">
                   By continuing, you agree to our{" "}
-                  <Link href="/terms" onClick={closePanel} className="underline hover:text-zinc-600">
+                  <Link href="/legal/terms" onClick={closePanel} className="underline hover:text-zinc-600">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy" onClick={closePanel} className="underline hover:text-zinc-600">
+                  <Link href="/legal/privacy" onClick={closePanel} className="underline hover:text-zinc-600">
                     Privacy Policy
                   </Link>
                   .
