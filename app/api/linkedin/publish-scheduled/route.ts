@@ -179,6 +179,8 @@ export async function GET(request: Request) {
             accessToken: account.access_token,
             authorId: account.provider_account_id,
             content,
+            userId: post.user_id,
+            workspaceId: post.workspace_id,
           })
 
           await markPost(post, {

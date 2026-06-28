@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
       authorId,
       content: body.content,
       media: body.media || undefined,
+      userId: ctx.supabaseUserId,
+      workspaceId,
     })
   } catch (error) {
     const publishError = (error as Error).message || "linkedin_publish_failed"

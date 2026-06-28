@@ -72,7 +72,7 @@ export async function GET(request: Request) {
         for (const post of posts) {
           if (!post.external_post_urn) continue
           try {
-            const stats = await pollLinkedInAnalytics(cred.access_token, post.external_post_urn)
+            const stats = await pollLinkedInAnalytics(cred.access_token, post.external_post_urn, cred.user_id)
 
             // Write event log (existing behaviour)
             await supabaseInsert("workspace_events", {
@@ -93,6 +93,9 @@ export async function GET(request: Request) {
               .limit(1)
               .maybeSingle()
 
+            // Persist the real engagement metrics returned by LinkedIn instead of
+            // hardcoded zeros. Columns may be NOT NULL, so fall back to 0 only when
+            // the API genuinely returns no value.
             if (!existing) {
               await supabase
                 .from("analytics_snapshots")
@@ -101,9 +104,9 @@ export async function GET(request: Request) {
                   workspace_id: workspace.id,
                   user_id: post.user_id,
                   impressions: stats.impressions,
-                  reactions: 0,
-                  comments: 0,
-                  reposts: 0,
+                  reactions: stats.reactions ?? 0,
+                  comments: stats.comments ?? 0,
+                  reposts: stats.reposts ?? 0,
                   follower_delta: 0,
                   notes: "Auto-synced from LinkedIn",
                   captured_at: new Date().toISOString(),
@@ -112,7 +115,13 @@ export async function GET(request: Request) {
             } else {
               await supabase
                 .from("analytics_snapshots")
-                .update({ impressions: stats.impressions, captured_at: new Date().toISOString() })
+                .update({
+                  impressions: stats.impressions,
+                  reactions: stats.reactions ?? 0,
+                  comments: stats.comments ?? 0,
+                  reposts: stats.reposts ?? 0,
+                  captured_at: new Date().toISOString(),
+                })
                 .eq("id", existing.id)
                 .then(undefined, (e: unknown) => console.error("[sync-analytics] snapshot update failed:", e))
             }
