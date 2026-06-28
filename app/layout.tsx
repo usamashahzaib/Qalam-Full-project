@@ -1,5 +1,5 @@
 ﻿import type { Metadata, Viewport } from "next"
-import { Plus_Jakarta_Sans } from "next/font/google"
+import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
 import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
@@ -15,6 +15,14 @@ import { auth } from "@/auth"
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
+  display: "swap",
+})
+
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
   display: "swap",
 })
 
@@ -205,7 +213,7 @@ export default async function RootLayout({
         glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
         backgroundColor="#fafaf8"
         gridColor="rgba(13,74,69,0.07)"
-        glowCount={12}
+        glowCount={4}
       >
         <NavWrapper>{children}</NavWrapper>
       </GridGlowBackground>
@@ -214,7 +222,7 @@ export default async function RootLayout({
   )
 
   return (
-    <html lang="en" className={`${jakarta.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
         <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>

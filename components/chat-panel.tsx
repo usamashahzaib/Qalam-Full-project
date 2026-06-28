@@ -96,7 +96,7 @@ function MessageBubble({
     return (
       <div className="flex justify-end">
         <div className="group relative mb-7 max-w-[78%]">
-          <div className="rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
+          <div className="rounded-2xl rounded-tr-sm bg-teal px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
             <p className="whitespace-pre-wrap">{msg.content}</p>
           </div>
           <span className="pointer-events-none absolute -bottom-5 right-0 text-[10px] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">

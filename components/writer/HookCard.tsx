@@ -5,10 +5,10 @@ import { useEffect, useState } from "react"
 type HookStyle = "SHARP" | "AUTHORITY" | "STORY" | "CURIOSITY" | "DIRECT"
 
 const STYLE_COLORS: Record<HookStyle, { badge: string; ring: string; bg: string }> = {
-  SHARP:     { badge: "bg-red-100 text-red-700 border-red-200",     ring: "border-red-400 ring-red-200",     bg: "bg-red-50/50" },
-  AUTHORITY: { badge: "bg-blue-100 text-blue-700 border-blue-200",  ring: "border-blue-400 ring-blue-200",   bg: "bg-blue-50/50" },
-  STORY:     { badge: "bg-emerald-100 text-emerald-700 border-emerald-200", ring: "border-emerald-400 ring-emerald-200", bg: "bg-emerald-50/50" },
-  CURIOSITY: { badge: "bg-purple-100 text-purple-700 border-purple-200",    ring: "border-purple-400 ring-purple-200",  bg: "bg-purple-50/50" },
+  SHARP:     { badge: "bg-teal/10 text-teal border-teal/20",        ring: "border-teal ring-teal/20",        bg: "bg-teal/5" },
+  AUTHORITY: { badge: "bg-teal/10 text-teal border-teal/20",        ring: "border-teal ring-teal/20",        bg: "bg-teal/5" },
+  STORY:     { badge: "bg-gold/10 text-gold-700 border-gold-200",   ring: "border-gold-500 ring-gold-200",   bg: "bg-gold-50/50" },
+  CURIOSITY: { badge: "bg-zinc-100 text-zinc-600 border-zinc-200",  ring: "border-zinc-400 ring-zinc-200",   bg: "bg-zinc-50/50" },
   DIRECT:    { badge: "bg-zinc-100 text-zinc-600 border-zinc-200",  ring: "border-zinc-400 ring-zinc-200",   bg: "bg-zinc-50/50" },
 }
 

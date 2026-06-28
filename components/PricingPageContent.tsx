@@ -534,7 +534,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-teal/30 text-teal">Pricing FAQ</span>
-            <h2 className="mt-3 text-4xl font-bold text-zinc-900">Common questions</h2>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">Common questions</h2>
           </FadeUp>
 
           <div className="flex flex-col gap-3">

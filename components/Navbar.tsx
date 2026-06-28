@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import { ChevronRightIcon } from "@/components/ui/qalam-icons"
+import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 
@@ -68,17 +68,13 @@ function NavDropdown({
         className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
       >
         {label}
-        <motion.svg
+        <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.18 }}
-          className="h-3.5 w-3.5 text-zinc-400"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
+          className="inline-flex"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </motion.svg>
+          <ChevronDownIcon className="h-3.5 w-3.5 text-zinc-400" />
+        </motion.span>
       </button>
 
       <AnimatePresence>
@@ -137,14 +133,13 @@ function UserMenu({ session }: { session: SessionData }) {
         ) : (
           <UserAvatar name={session.user?.name || "U"} imageUrl={null} />
         )}
-        <motion.svg
+        <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.18 }}
-          className="h-3.5 w-3.5 text-zinc-400"
-          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+          className="inline-flex"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </motion.svg>
+          <ChevronDownIcon className="h-3.5 w-3.5 text-zinc-400" />
+        </motion.span>
       </button>
 
       <AnimatePresence>
@@ -310,9 +305,9 @@ export function Navbar() {
                   className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Product
-                  <motion.svg animate={{ rotate: mobileSection === "product" ? 180 : 0 }} transition={{ duration: 0.18 }} className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </motion.svg>
+                  <motion.span animate={{ rotate: mobileSection === "product" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
+                    <ChevronDownIcon className="h-3.5 w-3.5" />
+                  </motion.span>
                 </button>
                 <AnimatePresence>
                   {mobileSection === "product" && (
@@ -332,9 +327,9 @@ export function Navbar() {
                   className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Use Cases
-                  <motion.svg animate={{ rotate: mobileSection === "use-cases" ? 180 : 0 }} transition={{ duration: 0.18 }} className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </motion.svg>
+                  <motion.span animate={{ rotate: mobileSection === "use-cases" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
+                    <ChevronDownIcon className="h-3.5 w-3.5" />
+                  </motion.span>
                 </button>
                 <AnimatePresence>
                   {mobileSection === "use-cases" && (
