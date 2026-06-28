@@ -379,7 +379,7 @@ function RecentPostsSection({
           </p>
           <Link
             href="/writer"
-            className="mt-6 rounded-xl bg-zinc-950 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+            className="mt-6 rounded-xl bg-teal px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
           >
             Write Post
           </Link>
@@ -564,7 +564,7 @@ export default function DashboardClient({ firstName }: { firstName: string }) {
           </div>
           <Link
             href="/writer"
-            className="inline-flex items-center gap-2 rounded-xl bg-zinc-950 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-800"
+            className="inline-flex items-center gap-2 rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

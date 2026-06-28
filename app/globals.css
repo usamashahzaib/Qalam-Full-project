@@ -60,6 +60,12 @@ html, body {
   50% { opacity: 0.5; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .app-shell::before {
+    animation: none;
+  }
+}
+
 /* Card styling - frosted glass */
 .qalam-card,
 .content-card {
@@ -145,7 +151,6 @@ html {
 
 :root {
   --font-jakarta: var(--font-jakarta, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
-  --font-cormorant: Georgia, "Times New Roman", serif;
   --surface-bg: #f5f7f6;
   --surface-fg: #1a1a1a;
   --surface-card: #ffffff;
@@ -432,6 +437,12 @@ html {
 
 .marquee-track:hover {
   animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
 }
 
 .marquee-fade {

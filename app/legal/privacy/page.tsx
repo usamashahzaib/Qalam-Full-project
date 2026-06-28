@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         <h1 className="mb-3 text-4xl font-extrabold text-zinc-900">Privacy Policy</h1>
         <p className="mb-10 text-sm text-zinc-400">Last updated: June 2026</p>
 
-        <div className="prose prose-zinc max-w-none space-y-8 text-zinc-700">
+        <div className="space-y-8 text-zinc-700">
           <section>
             <h2 className="text-xl font-bold text-zinc-900">1. What We Collect</h2>
             <p>We collect your email address, name, and LinkedIn profile information (when you connect LinkedIn). We store drafts and posts you create inside Qalam.</p>
