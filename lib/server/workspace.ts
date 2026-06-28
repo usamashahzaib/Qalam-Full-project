@@ -187,7 +187,7 @@ export const requireAdminPage = async () => {
   }
 
   if (!isAdminEmail(email)) {
-    return { notAdmin: true as const, email: email || "", userId, configuredEmails: env.appAdminEmails }
+    return { notAdmin: true as const, email: email || "", userId }
   }
   return { email: email || "", userId }
 }

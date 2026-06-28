@@ -1,24 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Ratelimit } from "@upstash/ratelimit"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getClientIp } from "@/lib/server/rate-limit"
+import { getRedis } from "@/lib/server/redis"
 
-// Per-IP rate limit: 3 lookups per hour
-const _buckets = new Map<string, { count: number; resetAt: number }>()
-function checkProviderRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const bucket = _buckets.get(ip)
-  if (!bucket || now > bucket.resetAt) {
-    _buckets.set(ip, { count: 1, resetAt: now + 3_600_000 })
-    return true
-  }
-  bucket.count++
-  return bucket.count <= 3
+// Per-IP rate limit: 3 lookups per hour, backed by Upstash so it holds across
+// serverless instances and cold starts (an in-memory Map does neither).
+// Fails open when Redis is not configured — this is an info-leak guard, not a
+// hard security boundary.
+let _limiter: Ratelimit | null = null
+function providerLimiter(): Ratelimit | null {
+  if (_limiter) return _limiter
+  const redis = getRedis()
+  if (!redis) return null
+  return (_limiter = new Ratelimit({
+    redis,
+    limiter: Ratelimit.slidingWindow(3, "1 h"),
+    prefix: "rl:check-provider",
+  }))
+}
+
+async function checkProviderRateLimit(ip: string): Promise<boolean> {
+  const limiter = providerLimiter()
+  if (!limiter) return true // fail-open when Redis not configured
+  const { success } = await limiter.limit(ip)
+  return success
 }
 
 // Returns which sign-in method an email uses, without revealing account existence.
 // Used by login page to auto-redirect OAuth-only accounts to the right provider.
 export async function GET(request: NextRequest) {
-  if (!checkProviderRateLimit(getClientIp(request))) {
+  if (!(await checkProviderRateLimit(getClientIp(request)))) {
     return NextResponse.json({ provider: null }, { status: 429 })
   }
 

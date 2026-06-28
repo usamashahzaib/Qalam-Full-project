@@ -28,24 +28,9 @@ export default async function AdminPage() {
     )
   }
 
+  // Non-admin (or any unexpected state): reveal nothing.
   if ((session as { notAdmin?: boolean }).notAdmin) {
-    const s = session as { notAdmin: true; email: string; configuredEmails: string }
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-8 font-jakarta">
-        <div className="max-w-md rounded-2xl border border-red-200 bg-red-50 p-6">
-          <h1 className="text-base font-bold text-red-900">Email not in admin list</h1>
-          <p className="mt-3 text-sm text-red-800">
-            Session email detected: <strong>{s.email || "(none)"}</strong>
-          </p>
-          <p className="mt-2 text-sm text-red-800">
-            APP_ADMIN_EMAILS value: <strong>{s.configuredEmails || "(empty)"}</strong>
-          </p>
-          <p className="mt-3 text-xs text-red-700">
-            These two must match exactly (case-insensitive). Copy the session email above into APP_ADMIN_EMAILS in Vercel, then redeploy.
-          </p>
-        </div>
-      </main>
-    )
+    notFound()
   }
 
   return <AdminDashboard adminEmail={session.email} />
