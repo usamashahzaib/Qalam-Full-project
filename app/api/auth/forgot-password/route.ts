@@ -43,29 +43,34 @@ export async function POST(req: NextRequest) {
     const token = generateToken()
     const tokenHash = hashToken(token)
 
-    try {
-      await supabase.from("password_resets").insert({
-        user_id: user.id,
-        token_hash: tokenHash,
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      })
-    } catch { /* ignore */ }
+    // Only send the reset email if the token row was persisted — otherwise the
+    // link would be dead. On failure we log but still return the generic OK
+    // response so we never reveal whether the address exists.
+    const { error: insertError } = await supabase.from("password_resets").insert({
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    })
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
-    sendTransactionalEmail({
-      to: user.email,
-      subject: "Reset your Qalam password",
-      text: [
-        `Hi ${user.full_name || "there"},`,
-        "",
-        "You requested a password reset for your Qalam account.",
-        "",
-        `Reset your password: ${siteUrl}/reset-password?token=${token}`,
-        "",
-        "This link expires in 1 hour.",
-        "If you did not request this, you can safely ignore this email.",
-      ].join("\n"),
-    }).catch(() => undefined)
+    if (insertError) {
+      console.error("[auth/forgot-password] password_resets insert failed:", insertError.message)
+    } else {
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
+      sendTransactionalEmail({
+        to: user.email,
+        subject: "Reset your Qalam password",
+        text: [
+          `Hi ${user.full_name || "there"},`,
+          "",
+          "You requested a password reset for your Qalam account.",
+          "",
+          `Reset your password: ${siteUrl}/reset-password?token=${token}`,
+          "",
+          "This link expires in 1 hour.",
+          "If you did not request this, you can safely ignore this email.",
+        ].join("\n"),
+      }).catch(() => undefined)
+    }
   }
 
   // Always return the same response to prevent email enumeration

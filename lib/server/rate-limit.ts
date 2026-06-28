@@ -68,10 +68,23 @@ export class TokenBucket {
 export function getClientIp(request: NextRequest): string {
   // On Vercel, request.ip is set by the Edge Network and cannot be spoofed.
   if ((request as unknown as { ip?: string }).ip) return (request as unknown as { ip: string }).ip
+
+  // Trust platform-injected headers over client-supplied XFF.
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim()
+  if (cfIp) return cfIp
+
   const realIp = request.headers.get("x-real-ip")?.trim()
   if (realIp) return realIp
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-  return forwarded || "unknown"
+
+  // Take the RIGHTMOST XFF hop — the one appended by the trusted proxy — since
+  // clients can freely forge any number of leftmost hops to evade rate limits.
+  const xff = request.headers.get("x-forwarded-for")
+  if (xff) {
+    const hops = xff.split(",").map((h) => h.trim()).filter(Boolean)
+    return hops[hops.length - 1] ?? "unknown"
+  }
+
+  return "unknown"
 }
 
 export async function checkRateLimit(

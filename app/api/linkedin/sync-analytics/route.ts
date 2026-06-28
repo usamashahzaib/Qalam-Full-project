@@ -32,10 +32,11 @@ async function processBatch<T, R>(
  */
 export async function GET(request: Request) {
   try {
-    // Verify cron secret (Vercel injects this header for cron jobs)
-    const authHeader = request.headers.get("Authorization")
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Verify cron secret (Vercel injects this header for cron jobs).
+    // Guard against an unset CRON_SECRET — otherwise "Bearer undefined" would pass.
+    const cronSecret = process.env.CRON_SECRET
+    if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 })
     }
 
     // Get all users with valid (non-expired) LinkedIn tokens from server-side storage

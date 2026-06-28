@@ -66,10 +66,12 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json(
-      { error: "An account with this email already exists. Try signing in." },
-      { status: 409 }
-    )
+    // Generic response — do not confirm whether the email is already registered.
+    // Returning a 200 here makes a duplicate indistinguishable from a fresh signup.
+    return NextResponse.json({
+      success: true,
+      message: "If this email is new, you'll receive a verification email shortly.",
+    })
   }
 
   const userId = crypto.randomUUID()

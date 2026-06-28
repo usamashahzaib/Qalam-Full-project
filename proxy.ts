@@ -41,6 +41,26 @@ function authLimiter(): Ratelimit | null {
   }))
 }
 
+// Mirrors getClientIp() in lib/server/rate-limit.ts so the proxy and route
+// handlers key rate limits off the same (least-spoofable) client IP. Trust
+// platform-injected headers over client-supplied XFF; for XFF take the
+// rightmost hop appended by the trusted proxy.
+function getClientIp(request: NextRequest): string {
+  if ((request as NextRequest & { ip?: string }).ip) {
+    return (request as NextRequest & { ip: string }).ip
+  }
+  const cfIp = request.headers.get("cf-connecting-ip")?.trim()
+  if (cfIp) return cfIp
+  const realIp = request.headers.get("x-real-ip")?.trim()
+  if (realIp) return realIp
+  const xff = request.headers.get("x-forwarded-for")
+  if (xff) {
+    const hops = xff.split(",").map((h) => h.trim()).filter(Boolean)
+    return hops[hops.length - 1] ?? "unknown"
+  }
+  return "unknown"
+}
+
 async function checkRateLimit(ip: string, isAuthRoute: boolean): Promise<boolean> {
   const limiter = isAuthRoute ? authLimiter() : generalLimiter()
   if (!limiter) return true // fail-open when Redis not configured
@@ -136,10 +156,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const ip =
-    (request as NextRequest & { ip?: string }).ip ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "unknown"
+  const ip = getClientIp(request)
 
   const { pathname } = request.nextUrl
 
