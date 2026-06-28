@@ -42,10 +42,10 @@ describe("PLANS", () => {
     expect(pro.monthlyPkr).toBe(1490)
   })
 
-  it("Agency is coming-soon with null price", () => {
+  it("Agency has a real monthly price and no comingSoon flag", () => {
     const agency = PLANS.find((p) => p.plan === "Agency")!
-    expect(agency.monthlyPkr).toBeNull()
-    expect(agency.comingSoon).toBe(true)
+    expect(agency.monthlyPkr).toBe(7490)
+    expect(agency.comingSoon).toBeFalsy()
   })
 
   it("active paid plans have a positive monthly price", () => {
@@ -128,6 +128,6 @@ describe("COMPARISON_ROWS integrity", () => {
     expect(priceRow.free).toBe("Free")
     expect(priceRow.solo).toContain("499")
     expect(priceRow.pro).toContain("1,490")
-    expect(priceRow.agency).toContain("Coming Soon")
+    expect(priceRow.agency).toContain("7,490")
   })
 })

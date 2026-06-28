@@ -10,7 +10,7 @@ describe("plan expiry", () => {
     expect(addMonthsIso("2026-01-31T10:00:00.000Z")).toBe("2026-02-28T10:00:00.000Z")
   })
 
-  it("prefers computed buy-date expiry over stored expiry", () => {
-    expect(resolvePlanExpiry("2027-01-01T00:00:00.000Z", "2026-06-17T10:00:00.000Z")).toBe("2026-07-17T10:00:00.000Z")
+  it("returns stored expiry when available (stored takes priority over buy-date)", () => {
+    expect(resolvePlanExpiry("2027-01-01T00:00:00.000Z", "2026-06-17T10:00:00.000Z")).toBe("2027-01-01T00:00:00.000Z")
   })
 })

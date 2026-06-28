@@ -96,13 +96,18 @@ export async function checkRateLimit(
   const limit = planLimits[planKey]
   const key = `ip:${ip}:route:${identifier}`
   const bucket = new TokenBucket(limit, limit)
-  const allowed = await bucket.tryConsume(key)
-  const state = await bucket.getState(key)
-  return {
-    allowed,
-    limit,
-    remaining: Math.max(0, Math.floor(state.tokens)),
-    reset: state.lastRefill + bucket.windowMs,
+  try {
+    const allowed = await bucket.tryConsume(key)
+    const state = await bucket.getState(key)
+    return {
+      allowed,
+      limit,
+      remaining: Math.max(0, Math.floor(state.tokens)),
+      reset: state.lastRefill + bucket.windowMs,
+    }
+  } catch {
+    // Fail closed on Redis errors — deny the request rather than bypass rate limiting
+    return { allowed: false, limit, remaining: 0, reset: Date.now() + 60_000 }
   }
 }
 

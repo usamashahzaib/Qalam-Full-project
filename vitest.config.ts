@@ -5,6 +5,12 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
+    exclude: [
+      "**/node_modules/**",
+      "**/.next/**",
+      "**/.claude/worktrees/**",
+      "**/tests/**",
+    ],
   },
   resolve: {
     alias: {

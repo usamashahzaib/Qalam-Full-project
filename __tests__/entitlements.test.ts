@@ -14,24 +14,24 @@ describe("canAccessPlan", () => {
     expect(canAccessPlan("Free", "Free")).toBe(true)
     expect(canAccessPlan("Solo", "Solo")).toBe(true)
     expect(canAccessPlan("Pro", "Pro")).toBe(true)
-    expect(canAccessPlan("Agency Starter", "Agency Starter")).toBe(true)
-    expect(canAccessPlan("Agency Growth", "Agency Growth")).toBe(true)
+    expect(canAccessPlan("Agency", "Agency")).toBe(true)
   })
 
   it("allows higher tier to access lower tier features", () => {
     expect(canAccessPlan("Pro", "Free")).toBe(true)
     expect(canAccessPlan("Pro", "Solo")).toBe(true)
-    expect(canAccessPlan("Agency Growth", "Pro")).toBe(true)
-    expect(canAccessPlan("Agency Starter", "Solo")).toBe(true)
-    expect(canAccessPlan("Agency Growth", "Agency Starter")).toBe(true)
+    expect(canAccessPlan("Agency", "Pro")).toBe(true)
+    expect(canAccessPlan("Agency", "Solo")).toBe(true)
+    expect(canAccessPlan("Agency", "Free")).toBe(true)
   })
 
   it("blocks lower tier from higher tier features", () => {
     expect(canAccessPlan("Free", "Solo")).toBe(false)
     expect(canAccessPlan("Free", "Pro")).toBe(false)
+    expect(canAccessPlan("Free", "Agency")).toBe(false)
     expect(canAccessPlan("Solo", "Pro")).toBe(false)
-    expect(canAccessPlan("Pro", "Agency Starter")).toBe(false)
-    expect(canAccessPlan("Agency Starter", "Agency Growth")).toBe(false)
+    expect(canAccessPlan("Solo", "Agency")).toBe(false)
+    expect(canAccessPlan("Pro", "Agency")).toBe(false)
   })
 
   it("returns false for unknown plan names", () => {
@@ -56,7 +56,7 @@ describe("getPlanLimits", () => {
 
   it("Solo: correct limits", () => {
     const limits = getPlanLimits("Solo")
-    expect(limits.aiDraftsPerMonth).toBe(50)
+    expect(limits.aiDraftsPerMonth).toBe(30)
     expect(limits.linkedinPublish).toBe(true)
     expect(limits.scheduling).toBe(true)
     expect(limits.approvals).toBe(false)
@@ -65,29 +65,21 @@ describe("getPlanLimits", () => {
     expect(limits.carouselGenerationsPerMonth).toBe(3)
   })
 
-  it("Pro: unlimited drafts, approvals, export", () => {
+  it("Pro: 60 drafts, approvals, export", () => {
     const limits = getPlanLimits("Pro")
-    expect(limits.aiDraftsPerMonth).toBe("unlimited")
+    expect(limits.aiDraftsPerMonth).toBe(60)
     expect(limits.approvals).toBe(true)
     expect(limits.canExport).toBe(true)
     expect(limits.researchRunsPerMonth).toBe(5)
     expect(limits.clientWorkspaces).toBe(0)
   })
 
-  it("Agency Starter: 3 client workspaces, 5 seats", () => {
-    const limits = getPlanLimits("Agency Starter")
+  it("Agency: 3 client workspaces, 5 seats, 300 drafts", () => {
+    const limits = getPlanLimits("Agency")
     expect(limits.clientWorkspaces).toBe(3)
     expect(limits.seats).toBe(5)
-    expect(limits.aiDraftsPerMonth).toBe("unlimited")
-  })
-
-  it("Agency Growth: everything unlimited", () => {
-    const limits = getPlanLimits("Agency Growth")
-    expect(limits.aiDraftsPerMonth).toBe("unlimited")
-    expect(limits.clientWorkspaces).toBe("unlimited")
-    expect(limits.seats).toBe("unlimited")
-    expect(limits.carouselGenerationsPerMonth).toBe("unlimited")
-    expect(limits.researchRunsPerMonth).toBe("unlimited")
+    expect(limits.aiDraftsPerMonth).toBe(300)
+    expect(limits.carouselGenerationsPerMonth).toBe(50)
   })
 
   it("unknown plan falls back to Free limits", () => {
@@ -107,7 +99,7 @@ describe("formatLimit", () => {
 
   it("formats positive numbers as their string value", () => {
     expect(formatLimit(5)).toBe("5")
-    expect(formatLimit(50)).toBe("50")
+    expect(formatLimit(30)).toBe("30")
     expect(formatLimit(3)).toBe("3")
   })
 })
@@ -115,41 +107,35 @@ describe("formatLimit", () => {
 describe("getPlanSummary", () => {
   it("Free: shows draft cap and no carousel", () => {
     const summary = getPlanSummary("Free")
-    expect(summary).toContain("10 AI drafts/month")
+    expect(summary).toContain("5 posts/month")
     expect(summary).toContain("No carousel generation")
     expect(summary).not.toContain("LinkedIn publish")
   })
 
   it("Solo: shows draft cap and carousel count", () => {
     const summary = getPlanSummary("Solo")
-    expect(summary).toContain("50 AI drafts/month")
+    expect(summary).toContain("30 posts/month")
     expect(summary).toContain("3 carousels/month")
     expect(summary).toContain("LinkedIn publish")
     expect(summary).toContain("Post scheduling")
   })
 
-  it("Pro: unlimited drafts, approvals, no client workspaces", () => {
+  it("Pro: 60 drafts, approvals, no client workspaces", () => {
     const summary = getPlanSummary("Pro")
-    expect(summary).toContain("Unlimited AI drafts")
+    expect(summary).toContain("60 posts/month")
     expect(summary).toContain("Approval workflow")
-    expect(summary).not.toContain("client workspace")
+    expect(summary).not.toContain("client workspaces")
   })
 
-  it("Agency Starter: shows 3 client workspaces", () => {
-    const summary = getPlanSummary("Agency Starter")
+  it("Agency: shows 3 client workspaces", () => {
+    const summary = getPlanSummary("Agency")
     expect(summary).toContain("3 client workspaces")
-  })
-
-  it("Agency Growth: unlimited workspaces and carousels", () => {
-    const summary = getPlanSummary("Agency Growth")
-    expect(summary).toContain("Unlimited client workspaces")
-    expect(summary).toContain("Unlimited carousels")
   })
 })
 
 describe("PLAN_ORDER and PLAN_HIERARCHY integrity", () => {
-  it("has all five plans in ascending order", () => {
-    expect(PLAN_ORDER).toEqual(["Free", "Solo", "Pro", "Agency Starter", "Agency Growth"])
+  it("has all four plans in ascending order", () => {
+    expect(PLAN_ORDER).toEqual(["Free", "Solo", "Pro", "Agency"])
   })
 
   it("PLAN_HIERARCHY indices match PLAN_ORDER positions", () => {
