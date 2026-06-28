@@ -160,7 +160,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
             <p className="mb-5 text-sm text-zinc-500">Try any of these instantly. No sign-in, no friction.</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
-                { label: "Hook Generator", desc: "Generate 10 opening lines for any topic", href: "/free-tools/hook-generator" },
+                { label: "Hook Generator", desc: "Generate 5 opening lines for any topic", href: "/free-tools/hook-generator" },
                 { label: "Headline Analyzer", desc: "Score your LinkedIn headline", href: "/free-tools/headline-analyzer" },
                 { label: "Engagement Predictor", desc: "Pre-publish score before posting", href: "/free-tools/engagement-predictor" },
               ].map((tool) => (

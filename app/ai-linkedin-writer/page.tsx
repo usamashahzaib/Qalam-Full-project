@@ -396,7 +396,7 @@ export default function AiLinkedInWriterPage() {
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[
-                  { name: "Hook Generator", desc: "10 opening lines for any topic", href: "/free-tools/hook-generator" },
+                  { name: "Hook Generator", desc: "5 opening lines for any topic", href: "/free-tools/hook-generator" },
                   { name: "Headline Analyzer", desc: "Score your profile headline", href: "/free-tools/headline-analyzer" },
                   { name: "Profile Optimizer", desc: "Improve your LinkedIn profile", href: "/free-tools/profile-optimizer" },
                   { name: "Viral Checker", desc: "Analyze why posts perform", href: "/free-tools/viral-checker" },

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { env } from "@/lib/server/env"
-import { processQueue } from "@/lib/server/queue-processor"
 
 export const maxDuration = 30
 
@@ -10,6 +9,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const result = await processQueue()
-  return NextResponse.json(result)
+  // Queue not yet implemented — all generation runs synchronously in route handlers.
+  return NextResponse.json({ processed: 0, note: "queue not yet implemented" })
 }

@@ -15,7 +15,6 @@ import {
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { openLinkedInComposer } from "@/lib/linkedin-compose"
-import { incrementDraftUsage, readDraftUsage } from "@/lib/usage-tracking"
 import type {
   WriterRole as Role,
   PostFormat as FormatKey,

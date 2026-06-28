@@ -780,7 +780,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         heading: "What each tool does",
-        body: "Hook Generator: generates 10 opening line variants for any LinkedIn topic. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
+        body: "Hook Generator: generates 5 opening line variants for any LinkedIn topic. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
       },
       {
         heading: "Built as a trust surface, not a paywall",
