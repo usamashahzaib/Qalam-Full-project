@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useLoginPanel } from "@/components/providers/AuthPanelContext"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
+import { QalamSignupNotice } from "@/components/QalamSignupNotice"
 
 function XIcon() {
   return (
@@ -100,13 +101,7 @@ export function AuthSlidePanel() {
                   )}
                 </p>
 
-                {isSignUp && (
-                  <div className="mb-6 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3.5 text-xs leading-relaxed text-zinc-500">
-                    <p className="font-semibold text-zinc-700">What is Qalam?</p>
-                    <p className="mt-1">Qalam is an AI writing workspace for LinkedIn. You draft, review, and publish content — Qalam assists with writing, voice memory, and scheduling. It does not post anything without your explicit approval.</p>
-                    <p className="mt-2">Qalam is independent of LinkedIn Corporation. You remain responsible for your LinkedIn account and must comply with LinkedIn&apos;s own terms of service.</p>
-                  </div>
-                )}
+                {isSignUp && <QalamSignupNotice className="mb-6" />}
 
                 <motion.button
                   whileHover={{ scale: 1.015 }}
