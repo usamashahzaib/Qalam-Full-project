@@ -1,15 +1,35 @@
 import { env } from "@/lib/server/env"
 import { checkCircuit, recordFailure, recordSuccess } from "@/lib/server/circuit-breaker"
+import { markLinkedInTokenInvalid } from "@/lib/server/linkedin-credentials"
 
 const CIRCUIT_KEY = "linkedin"
 export const LINKEDIN_MAX_POST_CHARS = 3000
 const USER_AGENT = "Qalam/1.0 (+https://byqalam.com)"
+
+export type LinkedInPostAnalytics = {
+  impressions: number
+  reactions: number | null
+  comments: number | null
+  reposts: number | null
+  engagementRate: number | null
+}
+
+const EMPTY_ANALYTICS: LinkedInPostAnalytics = {
+  impressions: 0,
+  reactions: null,
+  comments: null,
+  reposts: null,
+  engagementRate: null,
+}
 
 type LinkedInPostPayload = {
   accessToken: string
   authorId: string
   content: string
   media?: { id?: string; title?: string } | null
+  // Optional owner context so a 401 can flag the stored credential as expired.
+  userId?: string | null
+  workspaceId?: string | null
 }
 
 export class LinkedInApiError extends Error {
@@ -66,7 +86,13 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
       cache: "no-store",
     })
 
-    if (!response.ok) throw new LinkedInApiError(await parseLinkedInError(response), response.status)
+    if (!response.ok) {
+      // Token rejected — flag the stored credential so the UI can prompt a reconnect.
+      if (response.status === 401 && (payload.userId || payload.workspaceId)) {
+        await markLinkedInTokenInvalid({ userId: payload.userId, workspaceId: payload.workspaceId })
+      }
+      throw new LinkedInApiError(await parseLinkedInError(response), response.status)
+    }
     const postUrn = response.headers.get("x-restli-id")
     if (!postUrn) throw new Error("linkedin_publish_unconfirmed")
 
@@ -78,12 +104,16 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
   }
 }
 
-export const pollLinkedInAnalytics = async (accessToken: string, postUrn: string) => {
+export const pollLinkedInAnalytics = async (
+  accessToken: string,
+  postUrn: string,
+  userId?: string | null
+): Promise<LinkedInPostAnalytics> => {
   const url = `https://api.linkedin.com/rest/posts/${encodeURIComponent(postUrn)}?fields=lifecycleState,totalShareStatistics`
 
   if (!(await checkCircuit(CIRCUIT_KEY))) {
     console.warn("LinkedIn circuit open, skipping analytics poll")
-    return { impressions: 0, engagementRate: 0 }
+    return { ...EMPTY_ANALYTICS }
   }
 
   try {
@@ -93,17 +123,34 @@ export const pollLinkedInAnalytics = async (accessToken: string, postUrn: string
       cache: "no-store",
     })
 
-    if (!response.ok) throw new LinkedInApiError("linkedin_analytics_failed", response.status)
-    const data = await response.json() as { totalShareStatistics?: { impressionCount?: number; engagementRate?: number } }
+    if (!response.ok) {
+      if (response.status === 401 && userId) {
+        await markLinkedInTokenInvalid({ userId })
+      }
+      throw new LinkedInApiError("linkedin_analytics_failed", response.status)
+    }
+    const data = await response.json() as {
+      totalShareStatistics?: {
+        impressionCount?: number
+        engagementRate?: number
+        likeCount?: number
+        commentCount?: number
+        shareCount?: number
+      }
+    }
+    const stats = data.totalShareStatistics
 
     await recordSuccess(CIRCUIT_KEY)
     return {
-      impressions: data.totalShareStatistics?.impressionCount || 0,
-      engagementRate: data.totalShareStatistics?.engagementRate || 0,
+      impressions: stats?.impressionCount ?? 0,
+      reactions: stats?.likeCount ?? null,
+      comments: stats?.commentCount ?? null,
+      reposts: stats?.shareCount ?? null,
+      engagementRate: stats?.engagementRate ?? null,
     }
   } catch (e) {
     await recordFailure(CIRCUIT_KEY)
     console.error("LinkedIn Analytics API error", e)
-    return { impressions: 0, engagementRate: 0 }
+    return { ...EMPTY_ANALYTICS }
   }
 }

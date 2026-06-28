@@ -62,6 +62,78 @@ const verifyGenericHmac = (rawBody: string, signature: string | null, secret: st
   return timingSafeEqual(hmacHex(secret, rawBody), signature.replace(/^sha256=/i, ""))
 }
 
+const asStringRecord = (body: Record<string, unknown>): Record<string, string> =>
+  Object.fromEntries(Object.entries(body).map(([key, value]) => [key, value == null ? "" : String(value)]))
+
+/**
+ * Field-based HMAC verification shared by JazzCash and Easypaisa.
+ * Collects the relevant fields (excluding the signature itself), sorts them
+ * alphabetically by key, concatenates the non-empty values with "&", and
+ * compares HMAC-SHA256(secret, message) against the provided signature.
+ * `saltPrefix` prepends the integrity salt to the message (JazzCash style).
+ */
+const verifySortedFieldHmac = (
+  body: Record<string, string>,
+  secret: string,
+  opts: { include: (key: string) => boolean; signatureKeys: string[]; saltPrefix: boolean }
+): boolean => {
+  if (!secret) throw new Error("payment_secret_not_configured")
+  const entries = Object.entries(body)
+  const provided = (entries.find(([key]) => opts.signatureKeys.includes(key.toLowerCase()))?.[1] || "").toLowerCase()
+  if (!provided) return false
+
+  const sortedKeys = entries
+    .filter(([key]) => opts.include(key) && !opts.signatureKeys.includes(key.toLowerCase()))
+    .map(([key]) => key)
+    .sort((a, b) => a.localeCompare(b))
+  const concatenated = sortedKeys
+    .map((key) => String(body[key] ?? ""))
+    .filter((value) => value !== "")
+    .join("&")
+
+  const salted = `${secret}&${concatenated}`
+  // Accept both the salt-prefixed and values-only variants — JazzCash deployments differ.
+  if (opts.saltPrefix && timingSafeEqual(hmacHex(secret, salted), provided)) return true
+  return timingSafeEqual(hmacHex(secret, concatenated), provided)
+}
+
+// JazzCash signature scheme: HMAC-SHA256 of sorted pp_* field values. Verify this matches your JazzCash dashboard settings.
+export const verifyJazzCashHmac = (body: Record<string, string>, secret: string): boolean =>
+  verifySortedFieldHmac(body, secret, {
+    include: (key) => key.toLowerCase().startsWith("pp_"),
+    signatureKeys: ["pp_securehash"],
+    saltPrefix: true,
+  })
+
+// Easypaisa signature scheme: HMAC-SHA256 of sorted signed field values (storeId, orderId,
+// transactionAmount, mobileAccountNo, ...). Verify this matches your Easypaisa merchant settings.
+export const verifyEasypaisaHmac = (body: Record<string, string>, secret: string): boolean =>
+  verifySortedFieldHmac(body, secret, {
+    include: (key) => !["signature", "securehash", "hmac", "merchanthashedreq", "hashrequest"].includes(key.toLowerCase()),
+    signatureKeys: ["signature", "securehash", "hmac", "merchanthashedreq", "hashrequest"],
+    saltPrefix: false,
+  })
+
+// Replay protection: reject webhook payloads whose timestamp is outside a generous window.
+// JazzCash uses pp_TxnDateTime, Easypaisa transactionDateTime, both as yyyyMMddHHmmss.
+// The window is wide (24h) to tolerate gateway/timezone skew; the unique
+// (provider, transaction_id) upsert is the primary defence against double-activation.
+const REPLAY_WINDOW_SECONDS = 24 * 60 * 60
+
+const extractTimestampMs = (body: Record<string, unknown>): number | null => {
+  const raw = textValue(body.pp_TxnDateTime, body.transactionDateTime, body.txnDateTime, body.orderDateTime)
+  if (/^\d{14}$/.test(raw)) {
+    const ms = Date.UTC(
+      Number(raw.slice(0, 4)), Number(raw.slice(4, 6)) - 1, Number(raw.slice(6, 8)),
+      Number(raw.slice(8, 10)), Number(raw.slice(10, 12)), Number(raw.slice(12, 14))
+    )
+    return Number.isFinite(ms) ? ms : null
+  }
+  const epoch = Number(textValue(body.timestamp, body.pp_Timestamp))
+  if (Number.isFinite(epoch) && epoch > 0) return epoch < 1e12 ? epoch * 1000 : epoch
+  return null
+}
+
 const textValue = (...values: unknown[]) =>
   values.map((value) => String(value || "").trim()).find(Boolean) || ""
 
@@ -84,18 +156,39 @@ const stripeStatus = (type: string): PaymentStatus => {
 }
 
 export const verifyAndExtractPayment = (request: Request, rawBody: string): VerifiedPayment => {
-  const body = JSON.parse(rawBody || "{}") as Record<string, unknown>
-  const provider = request.headers.get("stripe-signature") ? "stripe" : normalizeProvider(request.headers.get("x-payment-provider"), body)
-  const signature = request.headers.get("stripe-signature") || request.headers.get("x-payment-signature") || request.headers.get("x-signature")
+  // JazzCash/Easypaisa post form-encoded callbacks; Stripe and JSON APIs post JSON.
+  const contentType = (request.headers.get("content-type") || "").toLowerCase()
+  const isForm = contentType.includes("application/x-www-form-urlencoded")
+  const body: Record<string, unknown> = isForm
+    ? Object.fromEntries(new URLSearchParams(rawBody))
+    : (JSON.parse(rawBody || "{}") as Record<string, unknown>)
+
+  const headerSignature = request.headers.get("x-payment-signature") || request.headers.get("x-signature")
+  const hasPpFields = Object.keys(body).some((key) => key.toLowerCase().startsWith("pp_"))
+  const provider: PaymentProvider = request.headers.get("stripe-signature")
+    ? "stripe"
+    : hasPpFields
+      ? "jazzcash"
+      : normalizeProvider(request.headers.get("x-payment-provider"), body)
 
   const verified =
     provider === "stripe"
       ? verifyStripe(rawBody, request.headers.get("stripe-signature"))
       : provider === "jazzcash"
-        ? verifyGenericHmac(rawBody, signature, env.jazzCashWebhookSecret)
-        : verifyGenericHmac(rawBody, signature, env.easyPaisaWebhookSecret)
+        ? verifyJazzCashHmac(asStringRecord(body), env.jazzCashWebhookSecret)
+        : isForm || !headerSignature
+          ? verifyEasypaisaHmac(asStringRecord(body), env.easyPaisaWebhookSecret)
+          : verifyGenericHmac(rawBody, headerSignature, env.easyPaisaWebhookSecret)
 
   if (!verified) throw new Error("payment_signature_invalid")
+
+  // Replay protection for the field-based gateways (Stripe enforces its own timestamp window).
+  if (provider !== "stripe") {
+    const ts = extractTimestampMs(body)
+    if (ts !== null && Math.abs(Date.now() - ts) / 1000 > REPLAY_WINDOW_SECONDS) {
+      throw new Error("payment_replay_expired")
+    }
+  }
 
   const stripe = provider === "stripe" ? stripeObject(body) : {}
   const metadata = objectValue(stripe.metadata || body.metadata)

@@ -43,17 +43,20 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenData.access_token
     if (!accessToken) throw new Error("linkedin_token_missing")
 
-    const profileRes = await fetch("https://api.linkedin.com/v2/me", {
+    // OIDC userinfo: the connect route requests OIDC scopes (openid profile email),
+    // under which the legacy /v2/me endpoint returns 403. The OIDC `sub` claim is the
+    // member id; the author URN is built elsewhere as `urn:li:person:{sub}`.
+    const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "LinkedIn-Version": process.env.LINKEDIN_VERSION || "202602",
       },
       cache: "no-store",
       signal: AbortSignal.timeout(15000),
     })
     if (!profileRes.ok) throw new Error("linkedin_profile_failed")
-    const profile = await profileRes.json() as { id?: string }
-    const memberId = profile.id || null
+    const profile = await profileRes.json() as { sub?: string }
+    const memberId = profile.sub || null
+    if (!memberId) throw new Error("linkedin_member_id_missing")
     const expiresAt = tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : null
 
     await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt })

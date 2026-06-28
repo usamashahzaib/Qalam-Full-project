@@ -65,7 +65,13 @@ export async function POST(req: NextRequest) {
         "This link expires in 1 hour.",
         "If you did not request this, you can safely ignore this email.",
       ].join("\n"),
-    }).catch(() => undefined)
+    }).then((result) => {
+      if (!result.ok) {
+        console.error("forgot-password.email_not_sent", { userId: user.id, error: result.error })
+      }
+    }).catch((err: unknown) => {
+      console.error("forgot-password.email_failed", { userId: user.id, error: err instanceof Error ? err.message : String(err) })
+    })
   }
 
   // Always return the same response to prevent email enumeration

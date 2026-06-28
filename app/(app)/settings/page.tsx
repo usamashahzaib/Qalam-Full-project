@@ -94,8 +94,16 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch("/api/linkedin/profile")
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 401) {
+          // Token expired — surface the reconnect warning without overwriting an existing status.
+          setLinkedinStatus((prev) => prev || "Your LinkedIn token has expired. Please reconnect to continue publishing.")
+          return null
+        }
+        return res.json()
+      })
       .then((data) => {
+        if (!data) return
         setLinkedinProfile(data.connected ? data : null)
       })
       .catch(() => setLinkedinProfile(null))

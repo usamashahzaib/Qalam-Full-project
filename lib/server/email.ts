@@ -11,7 +11,12 @@ export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput):
   if (!recipient) return { ok: false, error: "no_recipient" }
 
   if (!env.resendApiKey) {
-    console.info("email_skipped", { to: recipient, subject })
+    // In development throw early so the misconfiguration is obvious. In production
+    // log at error level so it surfaces in log aggregators (not just as a silent skip).
+    if (process.env.NODE_ENV === "development") {
+      throw new Error("[ERROR] email not sent: RESEND_API_KEY not configured")
+    }
+    console.error("[ERROR] email not sent: RESEND_API_KEY not configured", { to: recipient, subject })
     return { ok: false, error: "no_api_key" }
   }
 

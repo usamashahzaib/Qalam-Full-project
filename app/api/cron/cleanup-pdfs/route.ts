@@ -6,9 +6,9 @@ import { cleanupOldPdfs } from "@/lib/use-cases/cleanup-old-pdfs"
 export const maxDuration = 30
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
   const result = await cleanupOldPdfs()

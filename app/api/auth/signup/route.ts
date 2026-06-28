@@ -159,9 +159,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
   }
 
-  // Send verification email (fire-and-forget)
+  // Send verification email — critical for account activation; surface failures visibly.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
-  sendTransactionalEmail({
+  const emailResult = await sendTransactionalEmail({
     to: email,
     subject: "Verify your Qalam account",
     text: [
@@ -173,7 +173,19 @@ export async function POST(req: NextRequest) {
       "This link expires in 24 hours.",
       "If you did not create an account, ignore this email.",
     ].join("\n"),
-  }).catch(() => undefined)
+  }).catch((err: unknown) => {
+    console.error("signup.verification_email_failed", { email, error: err instanceof Error ? err.message : String(err) })
+    return { ok: false as const, error: "send_error" }
+  })
+  if (!emailResult.ok) {
+    console.error("signup.verification_email_not_sent", { email, error: emailResult.error })
+    // Account was created; return success but inform the user the email may not have arrived.
+    return NextResponse.json({
+      success: true,
+      message: "Account created, but we could not send the verification email. Please contact support to verify your address.",
+      emailFailed: true,
+    })
+  }
 
   return NextResponse.json({
     success: true,
