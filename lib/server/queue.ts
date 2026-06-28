@@ -8,8 +8,6 @@ import type { PlanTier } from "@/types/domain"
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
 let mistralLimiter: Ratelimit | null = null
-let cerebrasLimiter: Ratelimit | null = null
-let openrouterLimiter: Ratelimit | null = null
 
 const getGroqLimiter = () => {
   if (!getRedis()) return null
@@ -41,26 +39,6 @@ const getMistralLimiter = () => {
   return mistralLimiter
 }
 
-const getCerebrasLimiter = () => {
-  if (!getRedis()) return null
-  cerebrasLimiter ??= new Ratelimit({
-    redis: getRedis()!,
-    limiter: Ratelimit.slidingWindow(30, "1 m"),
-    analytics: true,
-  })
-  return cerebrasLimiter
-}
-
-const getOpenRouterLimiter = () => {
-  if (!getRedis()) return null
-  openrouterLimiter ??= new Ratelimit({
-    redis: getRedis()!,
-    limiter: Ratelimit.slidingWindow(20, "1 m"),
-    analytics: true,
-  })
-  return openrouterLimiter
-}
-
 // In-process fallback rate limiter when Redis is unavailable (imperfect across instances but functional)
 const _inMemoryBuckets = new Map<string, { count: number; resetAt: number }>()
 function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
@@ -78,12 +56,12 @@ function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
 export async function checkAiRateLimit(
   userId: string,
   _plan: string,
-  provider: "groq" | "gemini" | "mistral" | "cerebras" | "openrouter"
+  provider: "groq" | "gemini" | "mistral"
 ) {
   const r = getRedis()
   if (!r) {
     // No Redis - use in-process fallback (per instance, not global - better than blocking)
-    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
+    const limit = provider === "groq" ? 50 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 
@@ -92,13 +70,9 @@ export async function checkAiRateLimit(
       ? getGroqLimiter()
       : provider === "gemini"
         ? getGeminiLimiter()
-        : provider === "mistral"
-          ? getMistralLimiter()
-          : provider === "cerebras"
-            ? getCerebrasLimiter()
-            : getOpenRouterLimiter()
+        : getMistralLimiter()
   if (!limiter) {
-    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
+    const limit = provider === "groq" ? 50 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 
@@ -193,68 +167,34 @@ export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-
 }
 
 // ── Generation queue ──────────────────────────────────────────────────────────
-
-const GENERATION_QUEUE_KEY = "generation_queue"
-
-interface QueuedRequest {
-  id: string
-  userId: string
-  task: string
-  payload: unknown
-  priority: number
-  timestamp: number
-}
-
-const PLAN_PRIORITY: Record<PlanTier, number> = { Free: 1, Solo: 2, Pro: 3, Agency: 4 }
+// TODO: implement a real async queue when needed. Currently all generation
+// requests are processed synchronously in route handlers. The rate-limit check
+// below is the only active gate; no Redis key is written so nothing accumulates.
 
 export async function enqueueRequest(
   userId: string,
   plan: PlanTier,
-  task: string,
-  payload: unknown,
+  _task: string,
+  _payload: unknown,
 ): Promise<{ id: string; position: number; estimatedWait: number; rateLimited: boolean; message?: string }> {
   const rateLimit = await checkRateLimit(userId, plan)
   if (!rateLimit.allowed) {
     return { id: "", position: 0, estimatedWait: 0, rateLimited: true }
   }
 
-  const r = getRedis()
-  if (!r) {
-    return { id: crypto.randomUUID(), position: 1, estimatedWait: 0, rateLimited: false, message: "Processing your request..." }
+  return {
+    id: crypto.randomUUID(),
+    position: 1,
+    estimatedWait: 0,
+    rateLimited: false,
+    message: "Processing your request...",
   }
-
-  const id = crypto.randomUUID()
-  const priority = PLAN_PRIORITY[plan] ?? 1
-  const queued: QueuedRequest = { id, userId, task, payload, priority, timestamp: Date.now() }
-
-  const score = priority * 1_000_000_000_000 + Date.now()
-  await r.zadd(GENERATION_QUEUE_KEY, { score, member: JSON.stringify(queued) })
-
-  const all = (await r.zrange(GENERATION_QUEUE_KEY, 0, -1)) as string[]
-  const position = all.findIndex((item) => {
-    try { return (JSON.parse(item) as QueuedRequest).id === id } catch { return false }
-  }) + 1 || 1
-  const estimatedWait = position * 3
-
-  const message =
-    position === 1
-      ? "You're first in line! Starting soon..."
-      : `You're ${position} in line. Estimated wait: ${Math.ceil(estimatedWait / 60)} min.`
-
-  return { id, position, estimatedWait, rateLimited: false, message }
 }
 
+// No queue is written, so every requestId is absent — the status route maps
+// null → { status: "completed" }, which is the correct observable behaviour.
 export async function getQueuePosition(
-  requestId: string,
+  _requestId: string,
 ): Promise<{ position: number; estimatedWait: number } | null> {
-  const r = getRedis()
-  if (!r) return null
-
-  const all = (await r.zrange(GENERATION_QUEUE_KEY, 0, -1)) as string[]
-  const position = all.findIndex((item) => {
-    try { return (JSON.parse(item) as QueuedRequest).id === requestId } catch { return false }
-  }) + 1
-
-  if (position === 0) return null
-  return { position, estimatedWait: position * 3 }
+  return null
 }

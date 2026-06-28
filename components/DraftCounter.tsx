@@ -7,8 +7,6 @@ import { getPlanLimits } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import type { PlanTier } from "@/lib/entitlements"
 
-export { getDraftUsageKey, readDraftUsage, incrementDraftUsage } from "@/lib/usage-tracking"
-
 type DraftStatus = {
   remaining: number | null
   current: number

@@ -13,7 +13,6 @@ const PRIVATE_ROUTES = [
   "/agency",
   "/competitors",
   "/settings",
-  "/strategist",
   "/carousel",
   "/carousels",
   "/reset-password",

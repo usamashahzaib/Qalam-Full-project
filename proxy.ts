@@ -84,7 +84,6 @@ const PROTECTED_ROUTES = [
   "/agency-setup",
   "/competitors",
   "/calendar",
-  "/strategist",
   "/approvals",
   "/chat",
   "/admin",
