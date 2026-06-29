@@ -108,7 +108,41 @@ export default function WriterPage() {
   const step2Visible = !isCarouselMode && (hooks.length > 0 || isGeneratingHooks)
   const step3Visible = !isCarouselMode && draftContent.trim().length > 0
   const slidesVisible = isCarouselMode && (slides.length > 0 || isGeneratingSlides)
-  const [mobileTab, setMobileTab] = useState<"writer" | "score">("writer")
+  const [mobileTab, setMobileTab] = useState<"writer" | "score" | "slides">("writer")
+
+  useEffect(() => {
+    if ((slides.length > 0 || isGeneratingSlides) && isCarouselMode) setMobileTab("slides")
+  }, [slides.length, isGeneratingSlides, isCarouselMode])
+
+  const updateSlide = (idx: number, field: "title" | "body", value: string) =>
+    setSlides((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
+
+  const deleteSlide = (idx: number) =>
+    setSlides((prev) => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, number: i + 1 })))
+
+  const addSlide = () =>
+    setSlides((prev) => [...prev, { number: prev.length + 1, title: "New slide", body: "", visual_suggestion: "" }])
+
+  const onDownloadCarouselPdf = () => {
+    if (!slides.length) return
+    const rows = slides.map((s, i) => {
+      const f = i === 0, l = i === slides.length - 1
+      const bg = f ? "#0d9488" : l ? "#d97706" : "#ffffff"
+      const tc = f || l ? "#ffffff" : "#18181b"
+      const bc = f || l ? "rgba(255,255,255,.75)" : "#52525b"
+      const bb = f || l ? "rgba(255,255,255,.2)" : "#18181b"
+      const bl = f ? "Cover" : l ? "CTA" : String(s.number)
+      const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      return `<div class="slide" style="background:${bg}"><span class="badge" style="background:${bb};color:#fff">${bl}</span><h2 style="color:${tc}">${esc(s.title)}</h2>${s.body ? `<p style="color:${bc}">${esc(s.body)}</p>` : ""}${s.visual_suggestion ? `<div class="vis" style="color:${f || l ? "rgba(255,255,255,.4)" : "#a1a1aa"}">📷 ${esc(s.visual_suggestion)}</div>` : ""}</div>`
+    }).join("")
+    const title = (slides[0]?.title ?? "Carousel").replace(/</g, "&lt;")
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.slide{width:100%;max-width:600px;aspect-ratio:1/1;margin:0 auto;padding:48px;display:flex;flex-direction:column;break-after:page}.badge{display:inline-block;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:28px;width:fit-content}h2{font-size:30px;font-weight:800;line-height:1.25;margin-bottom:16px}p{font-size:16px;line-height:1.7;flex:1}.vis{font-size:11px;padding-top:16px;margin-top:auto}@media print{@page{size:6in 6in;margin:0}}</style></head><body>${rows}<script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}<\/script></body></html>`
+    const blob = new Blob([html], { type: "text/html" })
+    const url = URL.createObjectURL(blob)
+    const win = window.open(url, "_blank")
+    if (!win) { URL.revokeObjectURL(url); showStatus("Allow pop-ups to download", "error"); return }
+    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+  }
 
   useEffect(() => {
     const el = draftRef.current
@@ -121,25 +155,44 @@ export default function WriterPage() {
     <>
       <div className="mx-auto max-w-[1280px] px-4 py-6 lg:px-6">
 
-        {/* Mobile tab bar - Writer vs Score (hidden on desktop) */}
-        <div className="qalam-writer-tabs mb-4 flex lg:hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1 gap-1">
-          <button
-            type="button"
-            onClick={() => setMobileTab("writer")}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "writer" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
-          >
-            Writer
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab("score")}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "score" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
-          >
-            {scores ? `Score · ${scores.overall}` : "Score"}
-          </button>
-        </div>
+        {/* Mobile tab bar */}
+        {isCarouselMode ? (
+          <div className="qalam-writer-tabs mb-4 flex lg:hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setMobileTab("writer")}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "writer" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              Setup
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("slides")}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "slides" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              {slides.length > 0 ? `Slides · ${slides.length}` : "Slides"}
+            </button>
+          </div>
+        ) : (
+          <div className="qalam-writer-tabs mb-4 flex lg:hidden rounded-xl border border-zinc-200 bg-zinc-50 p-1 gap-1">
+            <button
+              type="button"
+              onClick={() => setMobileTab("writer")}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "writer" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              Writer
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("score")}
+              className={`flex-1 rounded-lg py-2 text-sm font-semibold transition-colors ${mobileTab === "score" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"}`}
+            >
+              {scores ? `Score · ${scores.overall}` : "Score"}
+            </button>
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className={`grid grid-cols-1 gap-6 ${isCarouselMode ? "" : "lg:grid-cols-[minmax(0,1fr)_360px]"}`}>
 
         {/* ── LEFT: Writer flow ────────────────────────────────────────── */}
         <div className={`flex flex-col gap-5 ${mobileTab !== "writer" ? "hidden lg:flex" : ""}`}>
@@ -343,110 +396,6 @@ export default function WriterPage() {
             </section>
           )}
 
-          {/* STEP 2C - Carousel slides */}
-          {slidesVisible && (
-            <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
-                    <h2 className="text-sm font-bold text-zinc-900">Carousel slides</h2>
-                  </div>
-                  {slides.length > 0 && (
-                    <button
-                      onClick={() => void onGenerateCarousel()}
-                      disabled={isGeneratingSlides}
-                      className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
-                    >
-                      Regenerate
-                    </button>
-                  )}
-                </div>
-                <p className="mt-0.5 pl-7 text-xs text-zinc-500">
-                  {slides.length} slide{slides.length !== 1 ? "s" : ""} - review, edit, then save
-                </p>
-              </div>
-
-              <div className="p-5">
-                {isGeneratingSlides ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <div key={i} className="h-36 animate-pulse rounded-2xl bg-zinc-100" />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {slides.map((slide) => (
-                      <div
-                        key={slide.number}
-                        className={`rounded-2xl border p-4 ${
-                          slide.number === 1
-                            ? "border-teal/30 bg-teal/5"
-                            : slide.title === "Follow for more" || slide.body === ""
-                            ? "border-gold/30 bg-gold/5"
-                            : "border-zinc-200 bg-white"
-                        }`}
-                      >
-                        <div className="mb-2 flex items-center gap-2">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-[10px] font-bold text-white">
-                            {slide.number}
-                          </span>
-                          {slide.number === 1 && (
-                            <span className="rounded-full bg-teal px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">Hook</span>
-                          )}
-                          {(slide.title === "Follow for more" || slide.body === "") && slide.number > 1 && (
-                            <span className="rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">CTA</span>
-                          )}
-                        </div>
-                        <p className="text-sm font-bold leading-snug text-zinc-900">{slide.title}</p>
-                        {slide.body && (
-                          <p className="mt-1 text-xs leading-relaxed text-zinc-600">{slide.body}</p>
-                        )}
-                        {slide.visual_suggestion && (
-                          <div className="mt-2 flex items-center gap-1.5">
-                            <svg className="h-3 w-3 shrink-0 text-zinc-400" viewBox="0 0 16 16" fill="none">
-                              <rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.2"/>
-                              <circle cx="5.5" cy="5.5" r="1.5" stroke="currentColor" strokeWidth="1"/>
-                              <path d="M1 10.5l3.5-3 2.5 2.5 2.5-2.5 4.5 4.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <p className="text-[10px] text-zinc-400">{slide.visual_suggestion}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {slides.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => void onSaveCarousel()}
-                      disabled={isSaving}
-                      className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
-                    >
-                      {isSaving ? "Saving..." : "Save carousel"}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        const text = slides.map((s) => `Slide ${s.number}: ${s.title}${s.body ? `\n${s.body}` : ""}`).join("\n\n")
-                        await copyText(text)
-                        showStatus("Copied to clipboard", "success")
-                      }}
-                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
-                    >
-                      Copy all text
-                    </button>
-                  </div>
-                )}
-
-                {status && (
-                  <p className={`mt-3 text-xs font-medium ${status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-zinc-500"}`}>
-                    {status.text}
-                  </p>
-                )}
-              </div>
-            </section>
-          )}
 
           {/* STEP 3 - Full draft */}
           {step3Visible && (
@@ -669,7 +618,168 @@ export default function WriterPage() {
           )}
         </div>
 
+        {/* ── CAROUSEL EDITOR ─────────────────────────────────────────── */}
+        {isCarouselMode && (slides.length > 0 || isGeneratingSlides) && (
+          <div className={`${mobileTab !== "slides" ? "hidden lg:block" : ""}`}>
+            {isGeneratingSlides ? (
+              <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
+                    <span className="text-sm font-bold text-zinc-900">Generating slides...</span>
+                    <span className="animate-pulse text-xs text-teal">Working</span>
+                  </div>
+                </div>
+                <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="aspect-square animate-pulse rounded-2xl bg-zinc-100" />
+                  ))}
+                </div>
+              </section>
+            ) : (
+              <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                {/* Header */}
+                <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
+                      <h2 className="text-sm font-bold text-zinc-900">Carousel slides</h2>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-500">{slides.length} slides</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={addSlide}
+                        className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+                      >
+                        + Add slide
+                      </button>
+                      <button
+                        onClick={() => void onGenerateCarousel()}
+                        disabled={isGeneratingSlides}
+                        className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                      >
+                        Regenerate
+                      </button>
+                    </div>
+                  </div>
+                  <p className="mt-0.5 pl-7 text-xs text-zinc-500">Click any title or body to edit · hover a card to delete</p>
+                </div>
+
+                {/* Slide cards */}
+                <div className="p-5">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {slides.map((slide, idx) => {
+                      const isFirst = idx === 0
+                      const isLast = idx === slides.length - 1
+                      return (
+                        <div
+                          key={slide.number}
+                          className={`group relative flex min-h-[220px] flex-col overflow-hidden rounded-2xl border-2 ${
+                            isFirst
+                              ? "border-teal bg-gradient-to-br from-teal to-teal-700"
+                              : isLast
+                                ? "border-amber-400 bg-gradient-to-br from-amber-500 to-amber-700"
+                                : "border-zinc-200 bg-white"
+                          }`}
+                        >
+                          {/* Badge + delete */}
+                          <div className="flex items-center justify-between px-4 pb-2 pt-4">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                              isFirst || isLast ? "bg-white/20 text-white" : "bg-zinc-900 text-white"
+                            }`}>
+                              {isFirst ? "Cover" : isLast ? "CTA" : slide.number}
+                            </span>
+                            <button
+                              onClick={() => deleteSlide(idx)}
+                              className={`cursor-pointer rounded-lg p-1 opacity-0 transition-opacity group-hover:opacity-100 ${
+                                isFirst || isLast
+                                  ? "text-white/60 hover:bg-white/10 hover:text-white"
+                                  : "text-zinc-300 hover:bg-red-50 hover:text-red-500"
+                              }`}
+                              aria-label="Delete slide"
+                            >
+                              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none">
+                                <path d="M2 4h12M5.333 4V2.667a1.333 1.333 0 0 1 1.334-1.334h2.666a1.333 1.333 0 0 1 1.334 1.334V4m2 0v9.333a1.333 1.333 0 0 1-1.334 1.334H4.667a1.333 1.333 0 0 1-1.334-1.334V4h9.334Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Editable content */}
+                          <div className="flex flex-1 flex-col px-4 pb-3">
+                            <textarea
+                              value={slide.title}
+                              onChange={(e) => updateSlide(idx, "title", e.target.value)}
+                              placeholder="Slide title..."
+                              rows={2}
+                              className={`w-full resize-none bg-transparent text-[15px] font-bold leading-snug outline-none ${
+                                isFirst || isLast ? "text-white placeholder:text-white/40" : "text-zinc-900 placeholder:text-zinc-300"
+                              }`}
+                            />
+                            <textarea
+                              value={slide.body ?? ""}
+                              onChange={(e) => updateSlide(idx, "body", e.target.value)}
+                              placeholder="Supporting copy..."
+                              rows={3}
+                              className={`mt-2 w-full resize-none bg-transparent text-xs leading-relaxed outline-none ${
+                                isFirst || isLast ? "text-white/80 placeholder:text-white/30" : "text-zinc-600 placeholder:text-zinc-300"
+                              }`}
+                            />
+                          </div>
+
+                          {/* Visual suggestion */}
+                          {slide.visual_suggestion && (
+                            <div className={`mt-auto border-t px-4 py-2.5 text-[10px] ${
+                              isFirst || isLast ? "border-white/15 text-white/45" : "border-zinc-100 text-zinc-400"
+                            }`}>
+                              <span className="mr-1">📷</span>{slide.visual_suggestion}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="border-t border-zinc-100 px-5 py-4">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => void onSaveCarousel()}
+                      disabled={isSaving}
+                      className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                    >
+                      {isSaving ? "Saving..." : "Save carousel"}
+                    </button>
+                    <button
+                      onClick={onDownloadCarouselPdf}
+                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+                    >
+                      Download PDF
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const text = slides.map((s) => `Slide ${s.number}: ${s.title}${s.body ? `\n${s.body}` : ""}`).join("\n\n")
+                        await copyText(text)
+                        showStatus("Copied to clipboard", "success")
+                      }}
+                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+                    >
+                      Copy all text
+                    </button>
+                  </div>
+                  {status && (
+                    <p className={`mt-3 text-xs font-medium ${status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-zinc-500"}`}>
+                      {status.text}
+                    </p>
+                  )}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
         {/* ── RIGHT: Sidebar ───────────────────────────────────────────── */}
+        {!isCarouselMode && (
         <aside className={`space-y-4 ${mobileTab !== "score" ? "hidden lg:block" : ""}`}>
 
           {/* Scoring panel */}
@@ -941,6 +1051,7 @@ export default function WriterPage() {
             </div>
           )}
         </aside>
+        )}
         </div>{/* end grid */}
       </div>
 
