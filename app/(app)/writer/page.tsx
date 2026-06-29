@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { withClientParam } from "@/lib/workspace-navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { useProfile } from "@/lib/hooks/useProfile"
@@ -51,7 +52,8 @@ const SCORE_LABELS: Array<{ key: keyof Omit<ScoreData, "overall" | "tips" | "has
 
 export default function WriterPage() {
   const draftRef = useRef<HTMLTextAreaElement>(null)
-  const { workspaceId } = useWorkspace()
+  const { workspaceId, activeClientId } = useWorkspace()
+  const router = useRouter()
   const { billing } = useBilling()
   const { saveDraft, schedulePost, publishPost } = usePosts()
   const { profile } = useProfile()
@@ -109,6 +111,7 @@ export default function WriterPage() {
   const step3Visible = !isCarouselMode && draftContent.trim().length > 0
   const slidesVisible = isCarouselMode && (slides.length > 0 || isGeneratingSlides)
   const [mobileTab, setMobileTab] = useState<"writer" | "score" | "slides">("writer")
+  const [isPdfDownloading, setIsPdfDownloading] = useState(false)
 
   useEffect(() => {
     if ((slides.length > 0 || isGeneratingSlides) && isCarouselMode) setMobileTab("slides")
@@ -123,25 +126,92 @@ export default function WriterPage() {
   const addSlide = () =>
     setSlides((prev) => [...prev, { number: prev.length + 1, title: "New slide", body: "", visual_suggestion: "" }])
 
-  const onDownloadCarouselPdf = () => {
+  const onDownloadCarouselPdf = async () => {
     if (!slides.length) return
-    const rows = slides.map((s, i) => {
-      const f = i === 0, l = i === slides.length - 1
-      const bg = f ? "#0d9488" : l ? "#d97706" : "#ffffff"
-      const tc = f || l ? "#ffffff" : "#18181b"
-      const bc = f || l ? "rgba(255,255,255,.75)" : "#52525b"
-      const bb = f || l ? "rgba(255,255,255,.2)" : "#18181b"
-      const bl = f ? "Cover" : l ? "CTA" : String(s.number)
-      const esc = (v: string) => v.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      return `<div class="slide" style="background:${bg}"><span class="badge" style="background:${bb};color:#fff">${bl}</span><h2 style="color:${tc}">${esc(s.title)}</h2>${s.body ? `<p style="color:${bc}">${esc(s.body)}</p>` : ""}${s.visual_suggestion ? `<div class="vis" style="color:${f || l ? "rgba(255,255,255,.4)" : "#a1a1aa"}">📷 ${esc(s.visual_suggestion)}</div>` : ""}</div>`
-    }).join("")
-    const title = (slides[0]?.title ?? "Carousel").replace(/</g, "&lt;")
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.slide{width:100%;max-width:600px;aspect-ratio:1/1;margin:0 auto;padding:48px;display:flex;flex-direction:column;break-after:page}.badge{display:inline-block;padding:3px 12px;border-radius:100px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:28px;width:fit-content}h2{font-size:30px;font-weight:800;line-height:1.25;margin-bottom:16px}p{font-size:16px;line-height:1.7;flex:1}.vis{font-size:11px;padding-top:16px;margin-top:auto}@media print{@page{size:6in 6in;margin:0}}</style></head><body>${rows}<script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}<\/script></body></html>`
-    const blob = new Blob([html], { type: "text/html" })
-    const url = URL.createObjectURL(blob)
-    const win = window.open(url, "_blank")
-    if (!win) { URL.revokeObjectURL(url); showStatus("Allow pop-ups to download", "error"); return }
-    setTimeout(() => URL.revokeObjectURL(url), 10_000)
+    setIsPdfDownloading(true)
+    try {
+      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib")
+      const pdfDoc = await PDFDocument.create()
+      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+      const wrapText = (text: string, font: typeof boldFont, fontSize: number, maxWidth: number): string[] => {
+        const words = text.split(/\s+/)
+        const lines: string[] = []
+        let current = ""
+        for (const word of words) {
+          const test = current ? `${current} ${word}` : word
+          if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
+            lines.push(current)
+            current = word
+          } else {
+            current = test
+          }
+        }
+        if (current) lines.push(current)
+        return lines
+      }
+
+      const PAGE = 540, PAD = 48, CW = PAGE - PAD * 2
+
+      for (let i = 0; i < slides.length; i++) {
+        const slide = slides[i]
+        const isFirst = i === 0, isLast = i === slides.length - 1
+        const page = pdfDoc.addPage([PAGE, PAGE])
+
+        page.drawRectangle({
+          x: 0, y: 0, width: PAGE, height: PAGE,
+          color: isFirst ? rgb(0.051, 0.58, 0.533) : isLast ? rgb(0.851, 0.467, 0.024) : rgb(1, 1, 1),
+        })
+
+        const titleColor = isFirst || isLast ? rgb(1, 1, 1) : rgb(0.094, 0.094, 0.118)
+        const bodyColor = isFirst || isLast ? rgb(0.85, 0.98, 0.96) : rgb(0.322, 0.322, 0.357)
+        const muteColor = isFirst || isLast ? rgb(0.85, 0.98, 0.96) : rgb(0.4, 0.4, 0.45)
+
+        const badge = isFirst ? "COVER" : isLast ? "CTA" : `SLIDE ${slide.number}`
+        page.drawText(badge, { x: PAD, y: PAGE - 64, size: 9, font: boldFont, color: muteColor })
+
+        const titleLines = wrapText(slide.title || "", boldFont, 26, CW)
+        let yPos = PAGE - 96
+        for (const line of titleLines.slice(0, 4)) {
+          page.drawText(line, { x: PAD, y: yPos, size: 26, font: boldFont, color: titleColor })
+          yPos -= 36
+        }
+
+        if (slide.body?.trim()) {
+          yPos -= 14
+          const bodyLines = wrapText(slide.body, regularFont, 13, CW)
+          for (const line of bodyLines.slice(0, 10)) {
+            page.drawText(line, { x: PAD, y: yPos, size: 13, font: regularFont, color: bodyColor })
+            yPos -= 21
+          }
+        }
+      }
+
+      const pdfBytes = await pdfDoc.save()
+      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${(slides[0]?.title ?? "carousel").replace(/[^\w\s-]/g, "").trim().slice(0, 60)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+      showStatus("PDF downloaded", "success")
+    } catch {
+      showStatus("PDF generation failed. Try again.", "error")
+    } finally {
+      setIsPdfDownloading(false)
+    }
+  }
+
+  const onCreateCarousel = () => {
+    if (!draftContent.trim()) return
+    try {
+      sessionStorage.setItem("carouselSeed", JSON.stringify({ content: draftContent, title: resolveTitle() }))
+    } catch { /* ignore */ }
+    router.push(withClientParam("/carousels", activeClientId))
   }
 
   useEffect(() => {
@@ -582,6 +652,12 @@ export default function WriterPage() {
                   >
                     Copy text
                   </button>
+                  <button
+                    onClick={onCreateCarousel}
+                    className="cursor-pointer rounded-xl border border-teal/25 bg-teal/5 px-4 py-2 text-xs font-semibold text-teal transition-colors hover:bg-teal/10"
+                  >
+                    Make Carousel →
+                  </button>
                   {canUseProTools ? (
                     <button
                       onClick={() => onExportPdf()}
@@ -751,10 +827,11 @@ export default function WriterPage() {
                       {isSaving ? "Saving..." : "Save carousel"}
                     </button>
                     <button
-                      onClick={onDownloadCarouselPdf}
-                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
+                      onClick={() => void onDownloadCarouselPdf()}
+                      disabled={isPdfDownloading}
+                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                     >
-                      Download PDF
+                      {isPdfDownloading ? "Generating PDF..." : "Download PDF"}
                     </button>
                     <button
                       onClick={async () => {
@@ -765,6 +842,20 @@ export default function WriterPage() {
                       className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
                     >
                       Copy all text
+                    </button>
+                    <button
+                      onClick={() => {
+                        try {
+                          sessionStorage.setItem("carouselSeed", JSON.stringify({
+                            content: slides.map((s) => `${s.title}${s.body ? `\n${s.body}` : ""}`).join("\n\n"),
+                            title: slides[0]?.title || "Carousel",
+                          }))
+                        } catch { /* ignore */ }
+                        router.push(withClientParam("/carousels", activeClientId))
+                      }}
+                      className="cursor-pointer rounded-xl border border-teal/25 bg-teal/5 px-4 py-2.5 text-xs font-semibold text-teal transition-colors hover:bg-teal/10"
+                    >
+                      Open in Carousel Studio →
                     </button>
                   </div>
                   {status && (

@@ -67,6 +67,23 @@ export default function CarouselsPage() {
   const carouselSourcePosts = useMemo(() => [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [posts])
   const selectedPost = selectedPostId === "manual" ? null : carouselSourcePosts.find((post) => post.id === selectedPostId) || null
 
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("carouselSeed")
+      if (raw) {
+        sessionStorage.removeItem("carouselSeed")
+        const data = JSON.parse(raw) as { content?: string; title?: string }
+        if (data.content) {
+          setSeed(data.content)
+          setSelectedPostId("manual")
+          setTimeout(() => {
+            document.querySelector<HTMLElement>("[data-carousel-generator]")?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }, 100)
+        }
+      }
+    } catch { /* ignore */ }
+  }, [])
+
   const fetchCarousels = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -146,7 +163,7 @@ export default function CarouselsPage() {
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]" data-carousel-generator>
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
