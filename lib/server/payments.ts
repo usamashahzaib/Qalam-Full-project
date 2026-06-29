@@ -310,6 +310,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
         plan_expires_at: expiresAt,
         plan_started_at: now,
         billing_cycle: payment.billingCycle,
+        customer_id: payment.transactionId,
         reminder_sent_3d: false,
         reminder_sent_1d: false,
         updated_at: now,

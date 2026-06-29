@@ -8,6 +8,8 @@ import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, requirePlan } from "@/lib/server/plan-limits-v2"
 import { generatePost } from "@/lib/use-cases/generate-post"
+import { enqueueRequest } from "@/lib/server/queue"
+import type { PlanTier } from "@/types/domain"
 import { errorToStatus } from "@/lib/errors"
 import { canAccessPost } from "@/lib/domain/services/authorization"
 
@@ -54,6 +56,14 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
+
+    const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "post", {})
+    if (queueResult.rateLimited) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
+        { status: 429 }
+      )
+    }
 
     log.info("generate.post.start", { reqId, userId: user.id })
     let body: unknown

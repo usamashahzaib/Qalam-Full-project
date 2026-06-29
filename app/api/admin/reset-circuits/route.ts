@@ -1,36 +1,56 @@
 import { NextRequest, NextResponse } from "next/server"
-import { withAuth } from "@/lib/server/auth"
-import { isAdminEmail } from "@/lib/server/workspace"
+import { timingSafeEqual } from "node:crypto"
+import { getAuthenticatedSession } from "@/lib/server/workspace"
 import { getRedis } from "@/lib/server/redis"
 
+const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
+
+const requireAdmin = async (request: NextRequest) => {
+  const adminKey = request.headers.get("x-admin-key") || ""
+  const secretKey = process.env.ADMIN_SECRET_KEY || ""
+  const keyBuf = Buffer.from(adminKey)
+  const secretBuf = Buffer.from(secretKey)
+  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
+  const session = await getAuthenticatedSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "")
+    .split(",").map((v) => v.trim().toLowerCase())
+  if (!adminEmails.includes(String(session.user.email || "").toLowerCase())) throw new Error("Forbidden")
+  return { email: session.user.email || "", userId: session.user.id }
+}
+
 export async function POST(request: NextRequest) {
-  return withAuth(async (_req, user) => {
-    if (!isAdminEmail(user.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  try {
+    await requireAdmin(request)
+  } catch {
+    return notFound()
+  }
 
-    const redis = getRedis()
-    if (!redis) return NextResponse.json({ message: "Redis not configured, circuits not applicable" })
+  const redis = getRedis()
+  if (!redis) return NextResponse.json({ message: "Redis not configured, circuits not applicable" })
 
-    await Promise.all([
-      redis.set("circuit:groq", { failures: 0, lastFailure: 0, state: "closed" }),
-      redis.set("circuit:gemini", { failures: 0, lastFailure: 0, state: "closed" }),
-    ])
+  await Promise.all([
+    redis.set("circuit:groq", { failures: 0, lastFailure: 0, state: "closed" }),
+    redis.set("circuit:gemini", { failures: 0, lastFailure: 0, state: "closed" }),
+  ])
 
-    return NextResponse.json({ message: "Circuit breakers reset. AI services will retry on next request." })
-  })(request)
+  return NextResponse.json({ message: "Circuit breakers reset. AI services will retry on next request." })
 }
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (_req, user) => {
-    if (!isAdminEmail(user.email)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  try {
+    await requireAdmin(request)
+  } catch {
+    return notFound()
+  }
 
-    const redis = getRedis()
-    if (!redis) return NextResponse.json({ groq: "no-redis", gemini: "no-redis" })
+  const redis = getRedis()
+  if (!redis) return NextResponse.json({ groq: "no-redis", gemini: "no-redis" })
 
-    const [groq, gemini] = await Promise.all([
-      redis.get("circuit:groq"),
-      redis.get("circuit:gemini"),
-    ])
+  const [groq, gemini] = await Promise.all([
+    redis.get("circuit:groq"),
+    redis.get("circuit:gemini"),
+  ])
 
-    return NextResponse.json({ groq: groq || "closed", gemini: gemini || "closed" })
-  })(request)
+  return NextResponse.json({ groq: groq || "closed", gemini: gemini || "closed" })
 }

@@ -282,7 +282,17 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
         return { allowed: false, current: 0, limit, remaining: 0, error: "usage_update_failed" }
       }
     }
-    return { allowed: false, current: 0, limit, remaining: 0, error: "concurrent_update" }
+    // All CAS attempts lost to concurrent updates. Do a final authoritative read
+    // before denying — the concurrent winners may have pushed the counter over the
+    // limit, in which case denying is correct; if they haven't, the user should not
+    // be blocked just because we lost the race.
+    try {
+      const { data: finalRow } = await supabase.from("plan_usage").select(field).eq("user_id", userId).maybeSingle()
+      const finalVal: number = (finalRow as Record<string, number> | null)?.[field] ?? 0
+      return { allowed: finalVal < limit, current: finalVal, limit, remaining: Math.max(0, limit - finalVal), error: finalVal >= limit ? "limit_exceeded" : undefined }
+    } catch {
+      return { allowed: false, current: 0, limit, remaining: 0, error: "concurrent_update" }
+    }
   }
 }
 

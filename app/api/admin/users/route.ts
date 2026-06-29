@@ -38,10 +38,10 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(params.get("page") || "1", 10))
   const pageSize = Math.min(25, Math.max(1, parseInt(params.get("limit") || "25", 10)))
   const offset = (page - 1) * pageSize
-  const users = await supabaseSelect<UserRow>("users", `select=id,email,full_name,image_url,external_user_id,plan_expires_at,created_at&order=email.asc&limit=${pageSize}&offset=${offset}`).catch(() => [])
-  const filtered = q
-    ? users.filter((user) => [user.email, user.full_name, user.id].some((value) => String(value || "").toLowerCase().includes(q)))
-    : users
+  // Push search filter into SQL so pagination applies AFTER filtering
+  const searchFilter = q ? `&or=(email.ilike.*${encodeURIComponent(q)}*,full_name.ilike.*${encodeURIComponent(q)}*)` : ""
+  const users = await supabaseSelect<UserRow>("users", `select=id,email,full_name,image_url,external_user_id,plan_expires_at,created_at&order=email.asc&limit=${pageSize}&offset=${offset}${searchFilter}`).catch(() => [])
+  const filtered = users
   const userIds = filtered.map((user) => user.id)
   const memberships = userIds.length
     ? await supabaseSelect<MembershipRow>("workspace_members", `user_id=in.(${userIds.join(",")})&select=user_id,workspace_id`).catch(() => [])

@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
   if (password.length < 8) {
     return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 })
   }
+  if (password.length > 1000) {
+    return NextResponse.json({ error: "Password is too long." }, { status: 400 })
+  }
 
   const tokenHash = hashToken(token)
   const supabase = createServiceClient()
@@ -61,7 +64,13 @@ export async function POST(req: NextRequest) {
       .from("users")
       .update({ password_version: currentVersion + 1 })
       .eq("id", record.user_id)
-  } catch { /* column not yet migrated — silently skip */ }
+  } catch (e) {
+    // 42P01 = column not yet migrated — safe to skip.
+    // Any other error means existing sessions may not be invalidated; log it.
+    if ((e as { code?: string }).code !== "42P01") {
+      console.error("reset-password.version_bump_failed", { userId: record.user_id, error: (e as Error).message })
+    }
+  }
 
   return NextResponse.json({ success: true, message: "Password updated. You can now sign in." })
 }

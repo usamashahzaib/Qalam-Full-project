@@ -34,15 +34,15 @@ export async function checkRateLimit(
     return { allowed, remaining: Math.max(0, limit - bucket.count), resetTime: bucket.resetAt }
   }
 
-  const current = ((await r.get<number>(key)) ?? 0)
+  // Atomic: increment first, then check. get→check→incr is a TOCTOU race
+  // where N concurrent requests all read the same value and all pass the limit.
+  const newCount = await r.incr(key)
+  if (newCount === 1) await r.expire(key, 3600)
 
-  if (current >= limit) {
+  if (newCount > limit) {
     const ttl = await r.ttl(key)
     return { allowed: false, remaining: 0, resetTime: Date.now() + ttl * 1_000 }
   }
 
-  await r.incr(key)
-  if (current === 0) await r.expire(key, 3600)
-
-  return { allowed: true, remaining: limit - current - 1, resetTime: Date.now() + 3_600_000 }
+  return { allowed: true, remaining: limit - newCount, resetTime: Date.now() + 3_600_000 }
 }

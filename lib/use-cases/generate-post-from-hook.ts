@@ -1,7 +1,7 @@
 import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildHumanizePrompt } from "@/lib/prompts/role-aware-system"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
@@ -77,6 +77,7 @@ export async function generatePostFromHook(
       userId, plan, cache: false,
     })
   } catch {
+    await decrementUsage(userId, "drafts")
     return err({ code: "INTERNAL_ERROR", message: "Post generation failed", userMessage: "Post generation failed. Please try again in a moment." })
   }
 

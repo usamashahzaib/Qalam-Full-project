@@ -157,6 +157,12 @@ export async function POST(req: NextRequest) {
   })
   if (verificationErr && verificationErr.code !== "42P01") {
     log.error("signup.verification_token_failed", { error: verificationErr.message })
+    // Clean up all rows created for this user to avoid orphaned data
+    await Promise.all([
+      supabase.from("workspace_members").delete().eq("user_id", userId),
+      supabase.from("workspaces").delete().eq("owner_id", userId),
+      supabase.from("plan_usage").delete().eq("user_id", userId),
+    ]).catch(() => undefined)
     await supabase.from("users").delete().eq("id", userId).then(undefined, () => undefined)
     return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
   }
