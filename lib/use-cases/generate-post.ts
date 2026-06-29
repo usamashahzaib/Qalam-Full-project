@@ -107,16 +107,22 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     log.warn("generate-post.ai_slop_detected", { reqId, userId, preview: content.slice(0, 80) })
   }
 
-  // Pass 3: Score + rewrite (paid plans only)
+  // Pass 3: Score + quality rewrite
+  // Free: no quality pass (content as-is, typically 60-80)
+  // Solo: score and rewrite if below 72 (consistently 72-82)
+  // Pro/Agency: score and rewrite if below 80 (consistently 80-88)
+  // "Push to 90+" is the separate on-demand Pro feature to reach 90+
   let score: Record<string, unknown> | null = null
-  if (qualityCheck && plan !== "free") {
+  const planLower = plan.toLowerCase()
+  const qualityThreshold = (planLower === "pro" || planLower === "agency") ? 80 : 72
+  if (qualityCheck && planLower !== "free") {
     try {
       const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
       const scoreRaw = await callAi("post-improvement", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
       score = parseJson<Record<string, unknown>>(scoreRaw)
     } catch { score = null }
 
-    if (score && (score.total_score as number) < 80 && score.fix_instruction) {
+    if (score && (score.total_score as number) < qualityThreshold && score.fix_instruction) {
       try {
         const { system: rw, user: ru } = buildRewritePrompt(content, score.fix_instruction as string, score.biggest_weakness as string, role, voiceProfile || undefined)
         content = (await callAi("post-improvement", rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim()

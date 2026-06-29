@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type {
   AdminUser,
   AuditLogEntry as AuditRow,
@@ -34,9 +34,13 @@ export interface AdminFormState {
   expiresAt: string
 }
 
+const ADMIN_KEY_STORAGE = "qalam-admin-key"
+
 export function useAdminUsers(adminEmail: string) {
   const [query, setQuery] = useState("")
-  const [adminKey, setAdminKey] = useState("")
+  const [adminKey, setAdminKey] = useState(() => {
+    try { return typeof localStorage !== "undefined" ? (localStorage.getItem(ADMIN_KEY_STORAGE) ?? "") : "" } catch { return "" }
+  })
   const [unlocked, setUnlocked] = useState(false)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [auditLog, setAuditLog] = useState<AuditRow[]>([])
@@ -59,6 +63,19 @@ export function useAdminUsers(adminEmail: string) {
   })
 
   const headers = useMemo(() => ({ "x-admin-key": adminKey }), [adminKey])
+
+  // Persist admin key across HMR / page reloads so re-unlock isn't needed every code change
+  useEffect(() => {
+    try { if (adminKey) localStorage.setItem(ADMIN_KEY_STORAGE, adminKey) } catch {}
+  }, [adminKey])
+
+  // Auto-unlock on mount if a stored key exists
+  useEffect(() => {
+    if (adminKey && !unlocked) {
+      unlock().catch(() => undefined)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const load = useCallback(async (q = query) => {
     if (!adminKey.trim()) throw new Error("Admin key required")
@@ -137,25 +154,28 @@ export function useAdminUsers(adminEmail: string) {
   }
 
   const giveSelfPro = async () => {
-    if (!selfId) { setMsg("Could not determine your user ID", "err"); return }
+    if (!adminKey.trim()) { setMsg("Enter your admin key first", "err"); return }
     setMsg("Giving you Pro...")
+    // Set expires_at to 1 year from now for a clear, stable override.
+    // Route resolves userId from email so selfId is not strictly required.
+    const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
     const res = await fetch("/api/admin/overrides", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
       body: JSON.stringify({
-        userId: selfId,
+        userId: selfId || "",
         targetEmail: adminEmail,
         planOverride: "Pro",
         draftLimitOverride: 9999,
         workspaceLimitOverride: null,
         featureFlags: Object.fromEntries(FEATURES.map(([k]) => [k, true])),
         notes: "Admin self-assign",
-        expiresAt: null,
+        expiresAt: oneYearLater,
       }),
     })
     if (res.ok) {
-      await load(query)
-      setMsg("You now have Pro with all features unlocked")
+      await load(query).catch(() => undefined)
+      setMsg("You now have Pro with all features. Reload the app to see the updated plan.")
     } else {
       const d = await res.json().catch(() => ({})) as { error?: string }
       setMsg(d.error || "Failed", "err")

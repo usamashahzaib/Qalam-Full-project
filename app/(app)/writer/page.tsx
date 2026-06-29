@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePosts } from "@/lib/hooks/usePosts"
+import { useProfile } from "@/lib/hooks/useProfile"
 import { canAccessPlan, getEffectivePlanLimits } from "@/lib/entitlements"
 import { DraftCounter } from "@/components/DraftCounter"
 import { LockedFeature } from "@/components/LockedFeature"
@@ -53,6 +54,7 @@ export default function WriterPage() {
   const { workspaceId } = useWorkspace()
   const { billing } = useBilling()
   const { saveDraft, schedulePost, publishPost } = usePosts()
+  const { profile } = useProfile()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
   const canUseSolo = canAccessPlan(billing.plan, "Solo")
@@ -203,6 +205,29 @@ export default function WriterPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Active profile pill */}
+              {(profile.name || profile.title) ? (
+                <div className="mb-4 flex items-center gap-2">
+                  <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${canUseProTools ? "border-teal/25 bg-teal/5" : "border-zinc-200 bg-zinc-50"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${canUseProTools ? "bg-teal" : "bg-zinc-400"}`} />
+                    <span className="text-[11px] font-semibold text-zinc-700">
+                      Writing as {[profile.name, profile.title].filter(Boolean).join(", ")}
+                    </span>
+                    {canUseProTools && (
+                      <span className="rounded-full bg-teal/10 px-1.5 py-0.5 text-[9px] font-bold text-teal">Voice active</span>
+                    )}
+                  </div>
+                  <a href="/voice" className="text-[11px] font-semibold text-zinc-400 hover:text-teal transition-colors">Edit</a>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <a href="/voice" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition-colors hover:border-teal hover:text-teal">
+                    <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    Set up your profile — posts will match your voice
+                  </a>
+                </div>
+              )}
 
               {/* Goal */}
               <div className="mb-5">
@@ -698,15 +723,42 @@ export default function WriterPage() {
 
             {scores && (
               <div className="border-t border-zinc-100 p-4 space-y-2">
-                <LockedFeature feature="Push to 90+" requiredPlan="Pro" className="w-full">
+                {scores.overall >= 90 ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
+                    <p className="text-sm font-bold text-emerald-700">90+ Score Achieved</p>
+                    <p className="mt-0.5 text-xs text-emerald-600">This post is ready to publish. Top 5% of LinkedIn content.</p>
+                  </div>
+                ) : canUseProTools ? (
                   <button
                     onClick={() => void onPushTo90()}
-                    disabled={isImproving || !draftContent.trim() || draftLimitHit || scores.overall >= 90}
+                    disabled={isImproving || !draftContent.trim() || draftLimitHit}
                     className="w-full cursor-pointer rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-45"
                   >
-                    {isImproving ? "Improving..." : scores.overall >= 90 ? "90+ achieved" : draftLimitHit ? "Upgrade for more" : "Push to 90+ (uses 1 draft)"}
+                    {isImproving ? "Improving..." : draftLimitHit ? "Upgrade for more drafts" : `Push to 90+ · currently ${scores.overall} (uses 1 draft)`}
                   </button>
-                </LockedFeature>
+                ) : (
+                  <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Push to 90+ · Pro only</span>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">locked</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 mb-2">Qalam rewrites your draft to fix the lowest-scoring dimension and targets a 90+ overall score — hook sharpness, authority, specificity, and CTA all lifted in one pass.</p>
+                    <div className="rounded-lg border border-zinc-100 bg-white px-3 py-2 mb-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400 mb-1">What changes at 90+</p>
+                      <ul className="space-y-0.5 text-[10px] text-zinc-600">
+                        <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Hook rewritten to stop the scroll in the first 2 words</li>
+                        <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Specific numbers and outcomes added where generic now</li>
+                        <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />CTA tightened to a single clear action</li>
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => setUpgradeProModal(true)}
+                      className="w-full cursor-pointer rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-amber-700"
+                    >
+                      Unlock Pro to push your {scores.overall} to 90+
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={() => void onImproveHook()}
                   disabled={!draftContent.trim() || isGeneratingAlts}

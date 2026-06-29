@@ -154,7 +154,7 @@ async function logAiUsage(
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
   "competitor-analysis":   { gemini:  "gemini-2.5-pro",       groq:   "llama-3.3-70b-versatile", mistral: "mistral-small-latest" },
-  "hook-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
+  "hook-generation":       { groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest", gemini: "gemini-2.5-flash" },
   "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
   "voice-profile":         { mistral: "mistral-medium-2505",  gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
   "chat-strategist":       { gemini:  "gemini-2.5-flash",     mistral: "mistral-small-latest", groq: "llama-3.1-8b-instant" },
@@ -168,7 +168,7 @@ const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
 const providerOrder: Record<AiTask, AiProvider[]> = {
   "post-generation":       ["mistral", "gemini", "groq"],
   "competitor-analysis":   ["gemini",  "mistral", "groq"],
-  "hook-generation":       ["mistral", "gemini", "groq"],
+  "hook-generation":       ["groq", "mistral", "gemini"],
   "carousel-outline":      ["mistral", "gemini", "groq"],
   "voice-profile":         ["mistral", "gemini", "groq"],
   "chat-strategist":       ["gemini",  "mistral", "groq"],

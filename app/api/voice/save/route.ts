@@ -1,20 +1,41 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
+import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { storeVoiceExamples } from "@/lib/server/embeddings"
+import { requireAuth } from "@/lib/server/workspace"
 
 export async function POST(request: NextRequest) {
-  const planCheck = await requirePlan(request, "Pro")
-  if (!planCheck.ok) return planCheck.response
+  // Basic identity (name, title, industry, goals) is free for all authenticated users.
+  // Voice training (example_posts, characteristics) requires Pro.
+  const userId = await requireAuth().catch(() => null)
+  if (!userId) return NextResponse.json({ error: "auth_required" }, { status: 401 })
+
+  let session: Awaited<ReturnType<typeof getWorkspaceSessionContext>>
+  let workspaceId: string
+  try {
+    session = await getWorkspaceSessionContext()
+    workspaceId = await resolveWorkspaceId(request)
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message || "server_error" }, { status: 401 })
+  }
 
   let body: Record<string, unknown>
   try { body = await request.json() } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 
+  const hasVoiceTraining = Boolean(body.examplePosts || body.characteristics)
+
+  // Only gate voice training on Pro — basic identity is always allowed
+  if (hasVoiceTraining) {
+    const planCheck = await requirePlan(request, "Pro")
+    if (!planCheck.ok) return planCheck.response
+  }
+
   const profile = {
-    user_id: planCheck.session.supabaseUserId,
-    workspace_id: planCheck.workspaceId,
+    user_id: session.supabaseUserId,
+    workspace_id: workspaceId,
     name: String(body.name || "").trim(),
     title: String(body.title || "").trim(),
     industry: String(body.industry || "").trim(),
@@ -22,8 +43,10 @@ export async function POST(request: NextRequest) {
     brand_tone: String(body.brandTone || "").trim(),
     tone: String(body.brandTone || "").trim(),
     goals: String(body.goals || "").trim(),
-    example_posts: String(body.examplePosts || "").trim() || null,
-    characteristics: body.characteristics || null,
+    ...(hasVoiceTraining ? {
+      example_posts: String(body.examplePosts || "").trim() || null,
+      characteristics: body.characteristics || null,
+    } : {}),
     updated_at: new Date().toISOString(),
   }
 
@@ -31,7 +54,7 @@ export async function POST(request: NextRequest) {
   const { data: existing } = await supabase
     .from("voice_profiles")
     .select("id")
-    .or(`workspace_id.eq.${planCheck.workspaceId},user_id.eq.${planCheck.session.supabaseUserId}`)
+    .or(`workspace_id.eq.${workspaceId},user_id.eq.${session.supabaseUserId}`)
     .limit(1)
     .maybeSingle()
 
@@ -44,10 +67,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save voice profile" }, { status: 500 })
   }
 
-  // Fire-and-forget: chunk + store examples for RAG retrieval
-  const examplePostsText = profile.example_posts || ""
-  if (examplePostsText && planCheck.workspaceId && planCheck.session.supabaseUserId) {
-    storeVoiceExamples(planCheck.workspaceId, planCheck.session.supabaseUserId, examplePostsText)
+  if (hasVoiceTraining && profile.example_posts) {
+    storeVoiceExamples(workspaceId, session.supabaseUserId, profile.example_posts)
       .catch((err) => console.error("voice_examples_store_failed", err))
   }
 

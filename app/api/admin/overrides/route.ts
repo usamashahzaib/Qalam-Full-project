@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = (await request.json()) as OverrideInput
-  if (!body.userId || !body.targetEmail) return NextResponse.json({ error: "missing_user" }, { status: 400 })
+  if (!body.targetEmail) return NextResponse.json({ error: "missing_user" }, { status: 400 })
 
   // Resolve body.userId to the canonical internal UUID using the target email.
   // The admin panel now sends the internal UUID, but older overrides may have been

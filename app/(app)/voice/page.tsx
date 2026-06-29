@@ -49,7 +49,6 @@ export default function VoicePage() {
   }, [])
 
   useEffect(() => {
-    if (!canUseVoice) { setIsLoading(false); return }
     fetch("/api/voice/me")
       .then((r) => r.json())
       .then((data: { profile?: Record<string, unknown> | null }) => {
@@ -104,8 +103,8 @@ export default function VoicePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...profile,
-          examplePosts,
-          characteristics,
+          // Only include voice training data when it exists and user is Pro
+          ...(canUseVoice && characteristics ? { examplePosts, characteristics } : {}),
         }),
       })
       const data = await res.json() as { error?: string }
@@ -120,15 +119,14 @@ export default function VoicePage() {
   }
 
   return (
-    <LockedFeature requiredPlan="Pro" feature="Voice Training">
       <div className="mx-auto max-w-[960px] px-4 py-8 lg:px-6">
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Voice Training</p>
-          <h1 className="mt-1 text-2xl font-bold text-zinc-900">Your Voice Profile</h1>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Voice &amp; Identity</p>
+          <h1 className="mt-1 text-2xl font-bold text-zinc-900">Your Profile</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Train Qalam to write drafts that start closer to your actual tone, rhythm, and vocabulary.
+            Set your identity so every post is written as you. Pro users can also train your writing voice.
             {profileExists && <span className="ml-2 text-emerald-600 font-semibold">Profile active</span>}
           </p>
         </div>
@@ -222,48 +220,60 @@ export default function VoicePage() {
                 </div>
               </section>
 
-              {/* Voice training section */}
-              <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-                <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
-                  <h2 className="text-sm font-bold text-zinc-900">Voice training</h2>
-                  <p className="mt-0.5 text-xs text-zinc-500">Paste 3-5 of your best LinkedIn posts. Qalam will extract your tone, patterns, and phrases.</p>
-                </div>
-                <div className="p-5">
-                  <textarea
-                    value={examplePosts}
-                    onChange={(e) => setExamplePosts(e.target.value)}
-                    rows={8}
-                    placeholder="Paste 3-5 example posts here. Separate with blank lines or --- dividers."
-                    className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-                  />
-                  <p className="mt-1.5 text-xs text-zinc-400">{examplePosts.length} characters</p>
+              {/* Save identity button (all plans) */}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => void onSave()}
+                  disabled={isSaving}
+                  className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                >
+                  {isSaving ? "Saving..." : "Save Profile"}
+                </button>
+                {status && (
+                  <p className={`text-xs font-medium ${status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-zinc-500"}`}>
+                    {status.text}
+                  </p>
+                )}
+              </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                      onClick={() => void onAnalyze()}
-                      disabled={isAnalyzing || examplePosts.trim().length < 100}
-                      className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
-                    >
-                      {isAnalyzing ? "Analyzing voice..." : characteristics ? "Retrain" : "Analyze Voice"}
-                    </button>
-                    {characteristics && (
-                      <button
-                        onClick={() => void onSave()}
-                        disabled={isSaving}
-                        className="cursor-pointer rounded-xl border border-teal/25 bg-teal/8 px-4 py-2.5 text-xs font-bold text-teal transition-colors hover:bg-teal/15 disabled:opacity-50"
-                      >
-                        {isSaving ? "Saving..." : "Save Voice Profile"}
-                      </button>
-                    )}
+              {/* Voice training section — Pro only */}
+              <LockedFeature requiredPlan="Pro" feature="Voice Training">
+                <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                  <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
+                    <h2 className="text-sm font-bold text-zinc-900">Voice training <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">Pro</span></h2>
+                    <p className="mt-0.5 text-xs text-zinc-500">Paste 3-5 of your best LinkedIn posts. Qalam extracts your tone, patterns, and phrases.</p>
                   </div>
-                </div>
-              </section>
+                  <div className="p-5">
+                    <textarea
+                      value={examplePosts}
+                      onChange={(e) => setExamplePosts(e.target.value)}
+                      rows={8}
+                      placeholder="Paste 3-5 example posts here. Separate with blank lines or --- dividers."
+                      className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
+                    />
+                    <p className="mt-1.5 text-xs text-zinc-400">{examplePosts.length} characters</p>
 
-              {status && (
-                <p className={`text-xs font-medium ${status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-zinc-500"}`}>
-                  {status.text}
-                </p>
-              )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => void onAnalyze()}
+                        disabled={isAnalyzing || examplePosts.trim().length < 100}
+                        className="cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:opacity-50"
+                      >
+                        {isAnalyzing ? "Analyzing voice..." : characteristics ? "Retrain" : "Analyze Voice"}
+                      </button>
+                      {characteristics && (
+                        <button
+                          onClick={() => void onSave()}
+                          disabled={isSaving}
+                          className="cursor-pointer rounded-xl border border-teal/25 bg-teal/8 px-4 py-2.5 text-xs font-bold text-teal transition-colors hover:bg-teal/15 disabled:opacity-50"
+                        >
+                          {isSaving ? "Saving..." : "Save Voice Profile"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </LockedFeature>
             </div>
 
             {/* Right: Characteristics panel */}
@@ -355,6 +365,5 @@ export default function VoicePage() {
           </div>
         )}
       </div>
-    </LockedFeature>
   )
 }
