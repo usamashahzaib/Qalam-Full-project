@@ -366,17 +366,11 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
-  const homepagePlans = PLANS.slice(0, 3).map((plan) => ({
+  const homepagePlans = PLANS.map((plan) => ({
     ...plan,
     price: formatPkr(plan.monthlyPkr),
     usdReference: plan.annualPkrPerMonth ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo` : "PKR early pricing",
   }))
-  const agencySource = PLANS[PLANS.length - 1]
-  const agencyPlan = {
-    ...agencySource,
-    price: formatPkr(agencySource.monthlyPkr),
-    usdReference: agencySource.annualPkrPerMonth ? `Annual ${formatPkr(agencySource.annualPkrPerMonth)}/mo` : "PKR early pricing",
-  }
 
   return (
     <>
@@ -736,17 +730,16 @@ export default function HomePage() {
           </FadeUp>
 
           <FadeUp className="mt-6">
-            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 opacity-80 md:flex-row md:items-center">
+            <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 md:flex-row md:items-center">
               <div>
-                <span className="chip mb-3 inline-flex border-zinc-300 bg-zinc-100 text-zinc-500">Coming Soon</span>
-                <h3 className="mb-2 text-xl font-bold text-zinc-700">Agency Plan - launching soon</h3>
+                <h3 className="mb-2 text-xl font-bold text-zinc-700">Managing content for clients or a team?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
-                  Multi-workspace support, approval workflows, team analytics, and dedicated support for agencies managing multiple clients. Join the waitlist to get early access.
+                  We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow.
                 </p>
               </div>
               <div className="shrink-0">
                 <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
-                  Join Waitlist
+                  Get in Touch
                 </Link>
               </div>
             </div>

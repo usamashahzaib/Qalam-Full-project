@@ -463,17 +463,13 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <FadeUp>
             <div className="overflow-x-auto rounded-2xl border border-zinc-100 shadow-sm">
-              <table className="min-w-[820px] w-full text-sm">
+              <table className="min-w-[620px] w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="w-[28%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
+                    <th className="w-[34%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
-                    <th className="bg-zinc-50 px-4 py-4 text-center">
-                      <span className="font-semibold text-zinc-400">Agency</span>
-                      <span className="ml-1.5 inline-flex items-center rounded-full bg-zinc-200 px-1.5 py-0.5 text-[10px] font-bold text-zinc-500">Soon</span>
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -490,11 +486,6 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "-" : row.free}</td>
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "-" : row.solo}</td>
                       <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "-" : row.pro}</span></td>
-                      <td className="bg-zinc-50/60 px-4 py-3.5 text-center text-sm">
-                        <span className={row.agency === "Coming Soon" ? "text-xs italic text-zinc-400" : "text-zinc-400"}>
-                          {row.agency === "-" ? "-" : row.agency}
-                        </span>
-                      </td>
                     </motion.tr>
                   ))}
                 </tbody>
@@ -504,24 +495,21 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </section>
 
-      {/* CTA: Agency / Contact */}
+      {/* CTA: Teams enquiry */}
       <section className="bg-zinc-50 px-6 py-16">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp>
             <div className="flex flex-col items-center justify-between gap-8 rounded-2xl bg-teal-800 p-10 md:flex-row">
               <div>
-                <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">For agencies and teams</p>
-                <h3 className="mb-3 text-3xl font-bold text-white">Running multiple client accounts?</h3>
+                <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">Need something custom?</p>
+                <h3 className="mb-3 text-3xl font-bold text-white">Managing content for multiple clients?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
-                  Agency plans give you isolated client workspaces, shared voice profiles, per-client analytics, and team publishing controls. Contact us for a walkthrough.
+                  We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow.
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href={`mailto:${UPGRADES_EMAIL}`} className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
-                  Contact Sales
-                </Link>
-                <Link href="/contact" className="rounded-xl border-2 border-white/20 px-8 py-4 text-center font-semibold text-white transition-colors hover:bg-white/10">
-                  Book a Call
+                <Link href="/contact" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                  Get in Touch
                 </Link>
               </div>
             </div>

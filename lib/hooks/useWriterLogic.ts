@@ -179,6 +179,13 @@ export function useWriterLogic({
   const [status, setStatus] = useState<StatusMsg | null>(null)
   const [localDraftUsage, setLocalDraftUsage] = useState(0)
 
+  // ── System demand state (for high-demand overlay) ─────────────────────────
+  const [demand, setDemand] = useState<{
+    highDemand: boolean
+    position: number
+    estimatedWaitSeconds: number
+  } | null>(null)
+
   // Prevents debounce from re-scoring when content was just set by a generation action
   const skipDebounceScore = useRef(false)
   // Holds the AbortController for the currently in-flight score request
@@ -282,6 +289,23 @@ export function useWriterLogic({
     if (autoDismiss) statusTimer.current = setTimeout(() => setStatus(null), 4000)
   }, [])
 
+  // ── Demand check ─────────────────────────────────────────────────────────
+  const fetchDemand = useCallback(async () => {
+    try {
+      const res = await fetch("/api/queue/status")
+      if (res.ok) {
+        const data = await res.json() as { highDemand?: boolean; position?: number; estimatedWaitSeconds?: number }
+        setDemand({
+          highDemand: data.highDemand ?? false,
+          position: data.position ?? 0,
+          estimatedWaitSeconds: data.estimatedWaitSeconds ?? 0,
+        })
+      }
+    } catch {
+      // Best-effort — ignore failures
+    }
+  }, [])
+
   // ── Draft credit helpers ──────────────────────────────────────────────────
 
   const checkDraftCredit = useCallback(() => {
@@ -340,6 +364,7 @@ export function useWriterLogic({
     setDraftContent("")
     setScores(null)
     setHookAltOpen(false)
+    void fetchDemand()
 
     try {
       const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: goal.trim() })
@@ -368,6 +393,7 @@ export function useWriterLogic({
     setScores(null)
     setHookAltOpen(false)
     showStatus(isReplacingHook ? "Replacing hook..." : "Generating post from your hook...", "info", false)
+    void fetchDemand()
 
     try {
       const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, originalContent, role, format, goal: goal.trim() })
@@ -700,6 +726,9 @@ export function useWriterLogic({
     // Status
     status, showStatus,
     localDraftUsage,
+
+    // Demand
+    demand,
 
     // Derived
     wordCount, currentVersionIdx, draftHookLine, draftLimitHit, resolveTitle,

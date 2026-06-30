@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getQueuePosition } from "@/lib/server/queue"
+import { getQueuePosition, getSystemDemand } from "@/lib/server/queue"
 
 export async function GET(req: NextRequest) {
   const requestId = req.nextUrl.searchParams.get("requestId")
+
+  // No requestId — return current system demand for pre-generation status checks
   if (!requestId) {
-    return NextResponse.json({ error: "Missing requestId" }, { status: 400 })
+    const demand = await getSystemDemand()
+    return NextResponse.json({
+      highDemand: demand.highDemand,
+      activeCount: demand.activeCount,
+      position: demand.position,
+      estimatedWaitSeconds: demand.estimatedWaitSeconds,
+    })
   }
 
   const status = await getQueuePosition(requestId)

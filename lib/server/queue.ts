@@ -166,28 +166,100 @@ export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-
   }
 }
 
+// ── System demand tracking ────────────────────────────────────────────────────
+// Uses a 30-second time-bucket counter in Redis to measure concurrent load.
+// When >10 requests land in the same 30s window, the system is "high demand".
+
+const HIGH_DEMAND_THRESHOLD = 10
+const BUCKET_SECONDS = 30
+
+export interface DemandInfo {
+  highDemand: boolean
+  activeCount: number
+  position: number           // approximate queue depth above threshold
+  estimatedWaitSeconds: number
+}
+
+async function getDemandBucketKey(): Promise<string> {
+  const bucket = Math.floor(Date.now() / (BUCKET_SECONDS * 1_000))
+  return `qalam:demand:${bucket}`
+}
+
+export async function getSystemDemand(): Promise<DemandInfo> {
+  const r = getRedis()
+  if (!r) return { highDemand: false, activeCount: 0, position: 0, estimatedWaitSeconds: 0 }
+  try {
+    const key = await getDemandBucketKey()
+    const count = (await r.get<number>(key)) ?? 0
+    const highDemand = count > HIGH_DEMAND_THRESHOLD
+    const position = highDemand ? Math.max(1, count - HIGH_DEMAND_THRESHOLD) : 0
+    return { highDemand, activeCount: count, position, estimatedWaitSeconds: position * 3 }
+  } catch {
+    return { highDemand: false, activeCount: 0, position: 0, estimatedWaitSeconds: 0 }
+  }
+}
+
+async function trackAndGetDemand(): Promise<DemandInfo> {
+  const r = getRedis()
+  if (!r) return { highDemand: false, activeCount: 0, position: 0, estimatedWaitSeconds: 0 }
+  try {
+    const key = await getDemandBucketKey()
+    const pipeline = r.pipeline()
+    pipeline.incr(key)
+    pipeline.expire(key, BUCKET_SECONDS * 2) // keep for 2 buckets to handle clock drift
+    const results = await pipeline.exec()
+    const count = (results[0] as number) ?? 1
+    const highDemand = count > HIGH_DEMAND_THRESHOLD
+    const position = highDemand ? Math.max(1, count - HIGH_DEMAND_THRESHOLD) : 0
+    return { highDemand, activeCount: count, position, estimatedWaitSeconds: position * 3 }
+  } catch {
+    return { highDemand: false, activeCount: 0, position: 0, estimatedWaitSeconds: 0 }
+  }
+}
+
 // ── Generation queue ──────────────────────────────────────────────────────────
-// TODO: implement a real async queue when needed. Currently all generation
-// requests are processed synchronously in route handlers. The rate-limit check
-// below is the only active gate; no Redis key is written so nothing accumulates.
+// All generation is synchronous (serverless). enqueueRequest enforces rate
+// limits and tracks system demand — callers can surface high-demand messaging.
 
 export async function enqueueRequest(
   userId: string,
   plan: PlanTier,
   _task: string,
   _payload: unknown,
-): Promise<{ id: string; position: number; estimatedWait: number; rateLimited: boolean; message?: string }> {
-  const rateLimit = await checkRateLimit(userId, plan)
+): Promise<{
+  id: string
+  position: number
+  estimatedWait: number
+  rateLimited: boolean
+  highDemand: boolean
+  activeCount: number
+  estimatedWaitSeconds: number
+  message?: string
+}> {
+  const [rateLimit, demand] = await Promise.all([
+    checkRateLimit(userId, plan),
+    trackAndGetDemand(),
+  ])
+
   if (!rateLimit.allowed) {
-    return { id: "", position: 0, estimatedWait: 0, rateLimited: true }
+    return {
+      id: "", position: 0, estimatedWait: 0, rateLimited: true,
+      highDemand: demand.highDemand, activeCount: demand.activeCount,
+      estimatedWaitSeconds: demand.estimatedWaitSeconds,
+    }
   }
 
   return {
     id: crypto.randomUUID(),
-    position: 1,
-    estimatedWait: 0,
+    position: demand.position,
+    estimatedWait: demand.estimatedWaitSeconds,
     rateLimited: false,
-    message: "Processing your request...",
+    highDemand: demand.highDemand,
+    activeCount: demand.activeCount,
+    estimatedWaitSeconds: demand.estimatedWaitSeconds,
+    message: demand.highDemand
+      ? `High demand — you're approximately #${demand.position} in queue`
+      : "Processing your request...",
   }
 }
 

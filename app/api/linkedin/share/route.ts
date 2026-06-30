@@ -47,8 +47,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "linkedin_auth_required" }, { status: 401 })
   }
   if (expiresAt && expiresAt < Date.now()) {
-    return NextResponse.json({ error: "linkedin_token_expired" }, { status: 401 })
+    return NextResponse.json({ error: "linkedin_token_expired", reconnectRequired: true }, { status: 401 })
   }
+
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+  const tokenNearExpiry = expiresAt != null && expiresAt - Date.now() < SEVEN_DAYS_MS
 
   let shared: { shared: boolean; postUrn: string | null }
   try {
@@ -93,5 +96,5 @@ export async function POST(request: NextRequest) {
     ).catch(() => undefined)
   }
 
-  return NextResponse.json(shared)
+  return NextResponse.json({ ...shared, tokenNearExpiry })
 }

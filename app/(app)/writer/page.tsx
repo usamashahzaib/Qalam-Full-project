@@ -24,6 +24,7 @@ import {
 import { HookCard } from "@/components/writer/HookCard"
 import { WriterScheduleModal } from "@/components/writer/WriterScheduleModal"
 import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
+import { QueueOverlay } from "@/components/QueueOverlay"
 
 import type { Role, FormatKey, HookStyle, HookItem, SlideItem, ScoreData } from "@/lib/hooks/useWriterLogic"
 
@@ -104,6 +105,7 @@ export default function WriterPage() {
     onRewriteCta, applyCtaAlt,
     loadVersion, deleteVersion,
     onGenerateCarousel, onSaveCarousel,
+    demand,
   } = w
 
   const isCarouselMode = format === "Carousel"
@@ -429,6 +431,18 @@ export default function WriterPage() {
               </div>
 
               <div className="p-5">
+                {isGeneratingHooks && demand && (
+                  <div className="mb-4">
+                    <QueueOverlay
+                      message={demand.highDemand ? `High demand — you're approximately #${demand.position} in queue` : "Generating your hooks..."}
+                      plan={billing.plan}
+                      highDemand={demand.highDemand}
+                      position={demand.position}
+                      estimatedWaitSeconds={demand.estimatedWaitSeconds}
+                      onUpgrade={() => setUpgradeModal(true)}
+                    />
+                  </div>
+                )}
                 {isGeneratingHooks ? (
                   <div className="flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-5">
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -461,6 +475,18 @@ export default function WriterPage() {
                   >
                     {isGeneratingPost ? "Generating post..." : "Generate full post from this hook"}
                   </button>
+                  {isGeneratingPost && demand && (
+                    <div className="mt-3">
+                      <QueueOverlay
+                        message={demand.highDemand ? `High demand — you're approximately #${demand.position} in queue` : "Generating your post..."}
+                        plan={billing.plan}
+                        highDemand={demand.highDemand}
+                        position={demand.position}
+                        estimatedWaitSeconds={demand.estimatedWaitSeconds}
+                        onUpgrade={() => setUpgradeModal(true)}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

@@ -17,6 +17,7 @@ export type Plan = {
   cta: string
   badge: string
   comingSoon?: boolean
+  hidden?: boolean
 }
 
 export type ManagedPlan = {
@@ -115,8 +116,12 @@ export const plans: Plan[] = [
     ],
     cta: "Join Waitlist",
     badge: "Coming Soon",
+    hidden: true,
   },
 ]
+
+// Plans visible on the public pricing page — Agency is hidden until it ships
+export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 
 export const MANAGED_PLANS: ManagedPlan[] = [
   {
@@ -196,7 +201,7 @@ export interface PricingPlan {
   comingSoon?: boolean
 }
 
-export const PLANS: PricingPlan[] = plans.map((plan) => ({
+export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   plan: plan.name,
   monthlyPkr: plan.monthlyPrice,
   annualPkrPerMonth: plan.annualPrice != null ? Math.round(plan.annualPrice / 12) : undefined,

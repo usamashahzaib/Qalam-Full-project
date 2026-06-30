@@ -22,8 +22,12 @@ describe("formatPkr", () => {
 })
 
 describe("PLANS", () => {
-  it("has exactly 4 plans", () => {
-    expect(PLANS).toHaveLength(4)
+  it("has exactly 3 public plans (Agency is hidden)", () => {
+    expect(PLANS).toHaveLength(3)
+  })
+
+  it("does not include the Agency plan", () => {
+    expect(PLANS.find((p) => p.plan === "Agency")).toBeUndefined()
   })
 
   it("Free plan has zero monthly price and no annual option", () => {
@@ -40,12 +44,6 @@ describe("PLANS", () => {
   it("Pro starts at 1490 PKR/month", () => {
     const pro = PLANS.find((p) => p.plan === "Pro")!
     expect(pro.monthlyPkr).toBe(1490)
-  })
-
-  it("Agency has a real monthly price and no comingSoon flag", () => {
-    const agency = PLANS.find((p) => p.plan === "Agency")!
-    expect(agency.monthlyPkr).toBe(7490)
-    expect(agency.comingSoon).toBeFalsy()
   })
 
   it("active paid plans have a positive monthly price", () => {
@@ -113,13 +111,12 @@ describe("COMPARISON_ROWS integrity", () => {
     expect(COMPARISON_ROWS.length).toBeGreaterThan(0)
   })
 
-  it("every row has all four plan columns", () => {
+  it("every row has the three active plan columns", () => {
     COMPARISON_ROWS.forEach((row) => {
       expect(row).toHaveProperty("label")
       expect(row).toHaveProperty("free")
       expect(row).toHaveProperty("solo")
       expect(row).toHaveProperty("pro")
-      expect(row).toHaveProperty("agency")
     })
   })
 
@@ -128,6 +125,5 @@ describe("COMPARISON_ROWS integrity", () => {
     expect(priceRow.free).toBe("Free")
     expect(priceRow.solo).toContain("499")
     expect(priceRow.pro).toContain("1,490")
-    expect(priceRow.agency).toContain("7,490")
   })
 })

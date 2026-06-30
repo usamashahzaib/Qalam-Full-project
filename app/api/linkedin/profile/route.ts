@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
     const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacy?.token_expires_at || null
 
     if (!accessToken) return NextResponse.json({ connected: false, error: "LinkedIn token not found" }, { status: 404, headers: corsHeaders })
-    if (expiresAt && expiresAt < Date.now()) return NextResponse.json({ error: "LinkedIn token expired" }, { status: 401, headers: corsHeaders })
+    if (expiresAt && expiresAt < Date.now()) return NextResponse.json({ error: "linkedin_token_expired", reconnectRequired: true }, { status: 401, headers: corsHeaders })
+
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+    const isNearExpiry = expiresAt != null && expiresAt - Date.now() < SEVEN_DAYS_MS
 
     const res = await fetch("https://api.linkedin.com/v2/me", {
       headers: {
@@ -57,6 +60,8 @@ export async function GET(request: NextRequest) {
         avatar: profile.profilePicture?.displayImage || null,
         profilePicture: profile.profilePicture?.displayImage || null,
         vanityName: profile.vanityName || null,
+        tokenExpiresAt: expiresAt,
+        isNearExpiry,
       },
       { headers: corsHeaders }
     )
