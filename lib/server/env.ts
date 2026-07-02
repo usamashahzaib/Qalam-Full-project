@@ -1,3 +1,5 @@
+import "server-only"
+
 const read = (key: string) => process.env[key]?.trim() || ""
 
 export const env = {

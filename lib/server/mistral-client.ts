@@ -1,3 +1,5 @@
+import "server-only"
+
 import { callOpenAiCompatible } from "./openai-compatible-client"
 
 export async function callMistral(

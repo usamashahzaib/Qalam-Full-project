@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     const content = String(body.content || body.postContent || "")
 
-    // Check cache before consuming quota - same content always scores identically
-    const cacheKey = generateCacheKey({ task: "score", content })
+    // Cache key scoped to user + role so voice-profile tips never bleed between users or personas
+    const cacheKey = generateCacheKey({ task: "score", content, userId: user.id, role: String(body.role || "") })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
       const { scores, overall, tips, hashtags } = cached

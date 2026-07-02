@@ -1,3 +1,5 @@
+import "server-only"
+
 // lib/server/plan-limits-v2.ts
 // Infrastructure: Supabase RPC calls for plan usage tracking.
 // Enforcement limits are sourced from lib/pricing.ts (single source of truth).

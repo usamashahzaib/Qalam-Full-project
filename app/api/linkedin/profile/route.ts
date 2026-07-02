@@ -8,12 +8,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type,Authorization",
 }
 
-type LinkedInMe = {
-  id?: string
-  localizedFirstName?: string
-  localizedLastName?: string
-  vanityName?: string
-  profilePicture?: { displayImage?: string }
+type LinkedInUserInfo = {
+  sub?: string
+  name?: string
+  given_name?: string
+  family_name?: string
+  picture?: string
+  email?: string
 }
 
 export async function OPTIONS() {
@@ -35,10 +36,11 @@ export async function GET(request: NextRequest) {
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
     const isNearExpiry = expiresAt != null && expiresAt - Date.now() < SEVEN_DAYS_MS
 
-    const res = await fetch("https://api.linkedin.com/v2/me", {
+    // OIDC-scoped tokens (openid profile email w_member_social) must use /v2/userinfo.
+    // The legacy /v2/me endpoint returns 403 for these tokens.
+    const res = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "LinkedIn-Version": process.env.LINKEDIN_VERSION || "202602",
       },
       cache: "no-store",
     })
@@ -46,20 +48,20 @@ export async function GET(request: NextRequest) {
     if (res.status === 401) return NextResponse.json({ error: "LinkedIn token expired" }, { status: 401, headers: corsHeaders })
     if (!res.ok) return NextResponse.json({ error: "LinkedIn profile fetch failed" }, { status: 502, headers: corsHeaders })
 
-    const profile = (await res.json()) as LinkedInMe
-    const firstName = profile.localizedFirstName || ""
-    const lastName = profile.localizedLastName || ""
+    const profile = (await res.json()) as LinkedInUserInfo
+    const firstName = profile.given_name || profile.name?.split(" ")[0] || ""
+    const lastName = profile.family_name || profile.name?.split(" ").slice(1).join(" ") || ""
     return NextResponse.json(
       {
         connected: true,
-        id: profile.id || account?.provider_account_id || legacy?.member_id || null,
+        id: profile.sub || account?.provider_account_id || legacy?.member_id || null,
         firstName,
         lastName,
-        name: `${firstName} ${lastName}`.trim() || "LinkedIn Account",
+        name: profile.name || `${firstName} ${lastName}`.trim() || "LinkedIn Account",
         headline: "",
-        avatar: profile.profilePicture?.displayImage || null,
-        profilePicture: profile.profilePicture?.displayImage || null,
-        vanityName: profile.vanityName || null,
+        avatar: profile.picture || null,
+        profilePicture: profile.picture || null,
+        vanityName: null,
         tokenExpiresAt: expiresAt,
         isNearExpiry,
       },

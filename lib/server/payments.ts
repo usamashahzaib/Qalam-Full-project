@@ -1,3 +1,5 @@
+import "server-only"
+
 import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
 import { supabaseInsert, supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"

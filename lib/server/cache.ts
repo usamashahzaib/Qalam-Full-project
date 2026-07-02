@@ -1,3 +1,5 @@
+import "server-only"
+
 import { getRedis } from "./redis"
 
 export function generateCacheKey(params: Record<string, unknown>): string {

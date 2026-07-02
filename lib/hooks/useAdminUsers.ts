@@ -34,13 +34,9 @@ export interface AdminFormState {
   expiresAt: string
 }
 
-const ADMIN_KEY_STORAGE = "qalam-admin-key"
-
 export function useAdminUsers(adminEmail: string) {
   const [query, setQuery] = useState("")
-  const [adminKey, setAdminKey] = useState(() => {
-    try { return typeof localStorage !== "undefined" ? (localStorage.getItem(ADMIN_KEY_STORAGE) ?? "") : "" } catch { return "" }
-  })
+  const [adminKey, setAdminKey] = useState("")
   const [unlocked, setUnlocked] = useState(false)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [auditLog, setAuditLog] = useState<AuditRow[]>([])
@@ -63,19 +59,6 @@ export function useAdminUsers(adminEmail: string) {
   })
 
   const headers = useMemo(() => ({ "x-admin-key": adminKey }), [adminKey])
-
-  // Persist admin key across HMR / page reloads so re-unlock isn't needed every code change
-  useEffect(() => {
-    try { if (adminKey) localStorage.setItem(ADMIN_KEY_STORAGE, adminKey) } catch {}
-  }, [adminKey])
-
-  // Auto-unlock on mount if a stored key exists
-  useEffect(() => {
-    if (adminKey && !unlocked) {
-      unlock().catch(() => undefined)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   const load = useCallback(async (q = query) => {
     if (!adminKey.trim()) throw new Error("Admin key required")

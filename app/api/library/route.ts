@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
+      // Strip PostgREST meta-characters before interpolating into the filter string
+      // to prevent filter injection via the search parameter.
+      const safeSearch = search.replace(/[(),%]/g, "")
+      query = query.or(`title.ilike.%${safeSearch}%,content.ilike.%${safeSearch}%`)
     }
 
     if (from) query = query.gte("created_at", `${from}T00:00:00`)

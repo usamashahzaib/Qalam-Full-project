@@ -1,3 +1,5 @@
+import "server-only"
+
 import crypto from "node:crypto"
 import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 

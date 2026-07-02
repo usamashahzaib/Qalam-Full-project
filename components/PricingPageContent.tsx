@@ -14,7 +14,7 @@ import type { ManagedPlan } from "@/lib/pricing"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 5 AI posts per month, 1 carousel, no scheduling, no voice training, no analytics.",
+    a: "Yes. Free is live with no time limit - 5 AI posts per month, hook generator, no scheduling, no voice training, no analytics.",
   },
   {
     q: "How much does Qalam cost?",

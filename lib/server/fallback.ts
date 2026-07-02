@@ -1,3 +1,5 @@
+import "server-only"
+
 const TEMPLATE_HOOKS = [
   "I stopped doing this one thing and my engagement tripled.",
   "The biggest lie about {topic} that nobody talks about.",

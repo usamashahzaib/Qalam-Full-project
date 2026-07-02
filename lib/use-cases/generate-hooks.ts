@@ -44,8 +44,9 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Hook limit reached", userMessage: "Hook limit reached. Upgrade your plan." })
   }
 
+  const { goal } = input
   const mappedRole = ROLE_MAP[role] ?? "founder"
-  const { system, user: userMsg } = buildHook5StylesPrompt(topic, mappedRole)
+  const { system, user: userMsg } = buildHook5StylesPrompt(topic, mappedRole, goal)
   const fallback = [
     { style: "SHARP", text: `${topic}: the hidden cost is not the tool, it is the workflow around it.` },
     { style: "AUTHORITY", text: `Most teams approach ${topic} backwards: they buy first, then define the use case.` },

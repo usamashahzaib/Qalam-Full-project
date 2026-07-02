@@ -64,23 +64,22 @@ export class SupabaseVoiceProfileRepository implements IVoiceProfileRepository {
       updated_at: new Date().toISOString(),
     }
     const supabase = createServiceClient()
-    const { data: existing } = await supabase
+    // Use upsert on workspace_id to eliminate the TOCTOU race between two
+    // concurrent saves both reading null and then both attempting insert.
+    const { data: rows, error } = await supabase
       .from("voice_profiles")
-      .select("id")
-      .eq("workspace_id", workspaceId)
+      .upsert(payload, { onConflict: "workspace_id" })
+      .select()
       .limit(1)
-      .maybeSingle()
-    const query = existing?.id
-      ? supabase.from("voice_profiles").update(payload).eq("id", existing.id)
-      : supabase.from("voice_profiles").insert(payload)
-    const { data: rows, error } = await query.select().limit(1)
     if (!error) return toClientProfile(rows?.[0] ?? null)
     if (!error.message.includes("linkedin_url")) throw new Error(error.message)
 
     const { linkedin_url: _lnUrl, ...fallback } = payload
-    const retry = existing?.id
-      ? await supabase.from("voice_profiles").update(fallback).eq("id", existing.id).select().limit(1)
-      : await supabase.from("voice_profiles").insert(fallback).select().limit(1)
+    const retry = await supabase
+      .from("voice_profiles")
+      .upsert(fallback, { onConflict: "workspace_id" })
+      .select()
+      .limit(1)
     if (retry.error) throw new Error(retry.error.message)
     return toClientProfile(retry.data?.[0] ?? null)
   }

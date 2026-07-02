@@ -1,3 +1,5 @@
+import "server-only"
+
 import { NextRequest } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"

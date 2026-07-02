@@ -1,3 +1,5 @@
+import "server-only"
+
 import { createServiceClient } from "./supabase-rest"
 
 // withErrorBoundary wraps a set of operations in a try/catch and re-throws

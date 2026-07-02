@@ -1,3 +1,5 @@
+import "server-only"
+
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
 import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
@@ -57,10 +59,11 @@ export function sanitizeOutput(text: string): string {
 // Transient = server-side capacity issue; do NOT count toward circuit breaker.
 // Rate-limit = quota exhausted; counts toward circuit but not as hard failure.
 // Config error = key / model wrong; skip silently without any failure mark.
-function classifyError(msg: string): "transient" | "rate-limit" | "config" | "hard" {
+function classifyError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
   if (/not configured|api.?key|401|403|expired|api_key_invalid|invalid.?model/i.test(msg)) return "config"
   if (/503|overloaded|capacity|unavailable|service.?unavailable/i.test(msg)) return "transient"
   if (/429|rate.?limit|too many requests|quota/i.test(msg)) return "rate-limit"
+  if (/content filtered|SAFETY|RECITATION|PROHIBITED/i.test(msg)) return "filtered"
   return "hard"
 }
 
@@ -217,7 +220,7 @@ async function callProvider(
       }
 
       await recordSuccess(provider)
-      logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
+      await logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
       return sanitizeOutput(result.content)
 
     } catch (error) {
@@ -241,6 +244,13 @@ async function callProvider(
       if (kind === "rate-limit") {
         await recordFailure(provider)
         log.warn("ai.provider_rate_limited", { provider })
+        return null
+      }
+
+      if (kind === "filtered") {
+        // Content blocked by provider safety policy — not a provider fault.
+        // Skip to next provider without counting as a circuit failure.
+        log.warn("ai.provider_content_filtered", { provider, error: msg.slice(0, 100) })
         return null
       }
 
@@ -305,7 +315,7 @@ export async function callAi(
 
   log.warn("ai.all_providers_unavailable", { task })
   const topicMatch = userMessage.match(/topic[:\s]+([^\n]+)/i)
-  const topic = topicMatch?.[1]?.trim() ?? "this topic"
+  const topic = topicMatch?.[1]?.trim() || "this topic"
   if (task === "hook-generation") return getFallbackHook(topic)
   if (task === "post-generation") return getFallbackPost(topic)
   throw new Error("All AI services unavailable. Please try again in a moment.")

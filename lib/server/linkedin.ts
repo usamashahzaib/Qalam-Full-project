@@ -1,3 +1,5 @@
+import "server-only"
+
 import { env } from "@/lib/server/env"
 import { checkCircuit, recordFailure, recordSuccess } from "@/lib/server/circuit-breaker"
 import { markLinkedInTokenInvalid } from "@/lib/server/linkedin-credentials"

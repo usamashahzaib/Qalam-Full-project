@@ -1,3 +1,5 @@
+import "server-only"
+
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 

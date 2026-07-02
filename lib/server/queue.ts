@@ -1,3 +1,5 @@
+import "server-only"
+
 import { createHash } from "crypto"
 import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "@/lib/server/redis"

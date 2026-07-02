@@ -93,6 +93,19 @@ export async function GET(request: NextRequest) {
 
     const contentPreview = (post.content || "").slice(0, 300)
 
+    // Mark as notified FIRST — prevents duplicate emails if the email call
+    // succeeds but this write fails on a subsequent cron run.
+    const { error: updateErr } = await supabase
+      .from("posts")
+      .update({ status: "notified", updated_at: now })
+      .eq("id", post.id)
+      .eq("status", "scheduled") // idempotency: only update if still scheduled
+
+    if (updateErr) {
+      console.error(`[cron/schedule] status update failed for post ${post.id}:`, updateErr.message)
+      continue
+    }
+
     // Send reminder to post manually (LinkedIn not connected for this workspace)
     await sendTransactionalEmail({
       to: email,
@@ -116,12 +129,6 @@ export async function GET(request: NextRequest) {
         `— The Qalam team`,
       ].join("\n"),
     }).catch((err) => console.error(`[cron/schedule] email failed for post ${post.id}:`, err))
-
-    // Mark as notified
-    await supabase
-      .from("posts")
-      .update({ status: "notified", updated_at: now })
-      .eq("id", post.id)
 
     // Log the notification (best-effort)
     supabase.from("scheduling_notifications").insert({

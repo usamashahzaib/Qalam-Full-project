@@ -491,7 +491,8 @@ Return ONLY valid JSON - a flat array of exactly 3 strings. No other text, no ma
 // ---------------------------------------------------------------------------
 export function buildHook5StylesPrompt(
   topic: string,
-  role: string
+  role: string,
+  goal?: string
 ): { system: string; user: string } {
   const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
 
@@ -523,7 +524,8 @@ Return ONLY valid JSON array. No other text, no markdown, no code fences:
 ]
 `.trim();
 
-  const user = `Topic: ${topic}\nRole: ${profile.label}`;
+  const goalLine = goal?.trim() ? `\nGoal: ${goal.trim()}` : "";
+  const user = `Topic: ${topic}\nRole: ${profile.label}${goalLine}`;
   return { system, user };
 }
 

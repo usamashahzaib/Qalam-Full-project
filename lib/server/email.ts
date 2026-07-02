@@ -1,3 +1,5 @@
+import "server-only"
+
 import { env, supportEnv } from "@/lib/server/env"
 
 type EmailInput = {

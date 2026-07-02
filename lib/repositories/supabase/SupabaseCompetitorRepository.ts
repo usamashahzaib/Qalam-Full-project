@@ -14,7 +14,7 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
     analysis: CompetitorAnalysis
   ): Promise<void> {
     const supabase = createServiceClient()
-    await supabase.from("competitor_analyses").insert({
+    const { error } = await supabase.from("competitor_analyses").insert({
       user_id: userId,
       post_text: postText.slice(0, 2000),
       post_url: postUrl || null,
@@ -23,6 +23,7 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
       content_pattern: analysis.contentPattern,
       improvements: analysis.improvements,
     })
+    if (error) throw new Error(`saveAnalysis failed: ${error.message}`)
   }
 
   async listAnalyses(userId: string, limit = 5): Promise<CompetitorAnalysisRecord[]> {
@@ -65,6 +66,18 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
         .maybeSingle()
       const current = (row as { competitor_runs_used?: number } | null)?.competitor_runs_used ?? 0
       if (current >= limit) return false
+      // Conditional update: only succeeds if value hasn't changed since we read it.
+      if (current === 0 && !row) {
+        // No row yet — seed it atomically so the first-ever action is never blocked.
+        const { data: inserted } = await supabase
+          .from("plan_usage")
+          .insert({ user_id: userId, competitor_runs_used: 1 })
+          .select("competitor_runs_used")
+          .maybeSingle()
+        if (inserted) return true
+        // Row was inserted by a concurrent request between our SELECT and INSERT — retry.
+        continue
+      }
       // Conditional update: only succeeds if value hasn't changed since we read it.
       const { data: updated } = await supabase
         .from("plan_usage")

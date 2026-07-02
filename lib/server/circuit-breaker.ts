@@ -1,3 +1,5 @@
+import "server-only"
+
 import { getRedis } from "./redis"
 
 const FAILURE_THRESHOLD = 5

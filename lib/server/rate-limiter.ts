@@ -1,3 +1,5 @@
+import "server-only"
+
 import { getRedis } from "./redis"
 import type { PlanTier } from "@/types/domain"
 

@@ -1,3 +1,5 @@
+import "server-only"
+
 // lib/server/auth.ts
 // Wraps NextAuth session into internal user context for API routes.
 // withAuth logs all errors and 401s centrally — individual routes only need

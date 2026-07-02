@@ -83,7 +83,7 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice}/month includes 60 AI drafts, 5 carousels, voice memory training, AI Strategist chat, competitor research, post analytics, and approval workflows.`,
+        text: `Pro at ${proPrice}/month includes 60 AI drafts, 10 carousels, voice memory training, AI Strategist chat, competitor research, post analytics, and approval workflows.`,
       },
     },
     {
@@ -111,7 +111,7 @@ const productSchema = {
       price: "0",
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
-      description: "5 AI posts per month, hook generator, 1 carousel. No card required.",
+      description: "5 AI posts per month, hook generator. No card required.",
       url: `${SITE_URL}/login`,
     },
     {

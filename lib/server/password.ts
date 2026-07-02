@@ -1,3 +1,5 @@
+import "server-only"
+
 import { createHash, randomBytes, pbkdf2Sync } from "node:crypto"
 import argon2 from "argon2"
 

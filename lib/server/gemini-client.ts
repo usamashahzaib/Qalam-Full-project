@@ -1,3 +1,5 @@
+import "server-only"
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
@@ -46,7 +48,15 @@ export async function callGemini(
   }
 
   const data = await response.json()
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ""
+  const candidate = data.candidates?.[0]
+  // Safety/recitation/length blocks return a candidate with no content — not a hard error.
+  // Throw a recognisable message so the router skips to the next provider without
+  // recording a circuit-breaker failure.
+  const finishReason = candidate?.finishReason as string | undefined
+  if (finishReason && finishReason !== "STOP" && finishReason !== "MAX_TOKENS") {
+    throw new Error(`Gemini content filtered: ${finishReason}`)
+  }
+  const text = candidate?.content?.parts?.[0]?.text || ""
   if (!text) throw new Error("Gemini returned empty response")
   return text
 }

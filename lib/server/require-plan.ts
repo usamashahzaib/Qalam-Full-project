@@ -1,3 +1,5 @@
+import "server-only"
+
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId, resolveEffectivePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
@@ -120,15 +122,11 @@ export const getMonthlyCount = async (
   startOfMonth.setHours(0, 0, 0, 0)
   const isoStart = startOfMonth.toISOString()
 
-  try {
-    const rows = await supabaseSelect<{ id: string }>(
-      table,
-      `${filterField}=eq.${workspaceId}&created_at=gte.${isoStart}&select=id`
-    )
-    return rows?.length ?? 0
-  } catch {
-    return 0
-  }
+  const rows = await supabaseSelect<{ id: string }>(
+    table,
+    `${filterField}=eq.${workspaceId}&created_at=gte.${isoStart}&select=id`
+  )
+  return rows?.length ?? 0
 }
 
 export const enforceMonthlyLimit = (

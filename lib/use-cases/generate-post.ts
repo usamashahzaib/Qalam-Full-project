@@ -71,7 +71,12 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   // Atomically increment usage BEFORE generation. This is the only correct order:
   // check-then-generate allows thundering-herd bypasses (N concurrent requests all pass
   // the check, all generate, only billing is capped). Increment first; refund on failure.
-  const usageResult = await incrementUsage(userId, "drafts")
+  let usageResult: Awaited<ReturnType<typeof incrementUsage>>
+  try {
+    usageResult = await incrementUsage(userId, "drafts")
+  } catch {
+    return err({ code: "INTERNAL_ERROR", message: "Usage check failed", userMessage: "Could not verify your usage limit. Please try again in a moment." })
+  }
   if (!usageResult.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }

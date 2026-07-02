@@ -12,6 +12,7 @@ import type { Hook } from "@/lib/use-cases/generate-hooks"
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
   role: z.string().optional().default(""),
+  goal: z.string().optional().default(""),
 })
 
 export async function POST(request: NextRequest) {
@@ -28,12 +29,13 @@ export async function POST(request: NextRequest) {
     const parsed = BodySchema.safeParse({
       topic: raw.topic ?? raw.content,
       role: raw.role ?? raw.style,
+      goal: raw.goal,
     })
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const cacheKey = generateCacheKey({ task: "hooks", topic: parsed.data.topic, role: parsed.data.role })
+    const cacheKey = generateCacheKey({ task: "hooks", topic: parsed.data.topic, role: parsed.data.role, goal: parsed.data.goal })
     const cached = await getCachedResult<{ hooks: Hook[] }>(cacheKey)
     if (cached) return NextResponse.json(cached)
 
@@ -48,6 +50,7 @@ export async function POST(request: NextRequest) {
     const result = await generateHooks({
       topic: parsed.data.topic,
       role: parsed.data.role,
+      goal: parsed.data.goal,
       userId: user.id,
       plan: planCheck.plan,
     })
