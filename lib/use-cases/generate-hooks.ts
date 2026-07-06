@@ -55,7 +55,7 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
     { style: "DIRECT", text: `${topic} works when the outcome is specific before the system is built.` },
   ]
   const raw = await callAi("hook-generation", system, userMsg, {
-    json: false, temperature: 0.9, maxTokens: 500,
+    json: true, temperature: 0.9, maxTokens: 500,
     userId, plan, cache: false,
   }).catch(() => JSON.stringify(fallback))
 
