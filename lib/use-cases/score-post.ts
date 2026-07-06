@@ -7,16 +7,6 @@ import { gateScores } from "@/lib/content-score-gate"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 
-const ROLE_MAP: Record<string, string> = {
-  HR: "hr",
-  Marketing: "marketer",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales",
-  Tech: "developer",
-  Other: "ceo",
-}
-
 export interface ScoreBreakdown {
   hook: number
   readability: number
@@ -51,7 +41,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     return err({ code: "VALIDATION_ERROR", message: "Content too short to score", userMessage: "Post is too short to score." })
   }
 
-  const role = ROLE_MAP[rawRole] || "founder"
+  const role = rawRole
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
   const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined

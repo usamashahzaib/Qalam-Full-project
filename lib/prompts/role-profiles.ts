@@ -615,3 +615,76 @@ export const GENERIC_PROFILE: RoleProfile = {
     "synergy", "passionate", "thought leader",
   ],
 };
+
+// ---------------------------------------------------------------------------
+// ROLE RESOLUTION
+// The writer UI accepts free-text profession input ("plumber", "dentist",
+// "software engineer"), not just the roles above. This resolves that raw
+// text to a canonical profile when one genuinely matches (by key or common
+// alias), but always keeps the user's own words as the display label - so a
+// profession with no canned profile still gets targeted at that profession
+// (via GENERIC_PROFILE + the literal label) instead of silently collapsing
+// into an unrelated role like "CEO".
+// ---------------------------------------------------------------------------
+const ROLE_ALIASES: Record<string, string> = {
+  tech: "developer",
+  engineer: "developer",
+  "software engineer": "developer",
+  "software developer": "developer",
+  programmer: "developer",
+  swe: "developer",
+  "ux designer": "designer",
+  "ui designer": "designer",
+  "ui/ux designer": "designer",
+  "product designer": "designer",
+  "ml engineer": "ai_engineer",
+  "machine learning engineer": "ai_engineer",
+  "data scientist": "ai_engineer",
+  "hr manager": "hr",
+  "people ops": "hr",
+  "human resources": "hr",
+  marketing: "marketer",
+  "digital marketer": "marketer",
+  "growth marketer": "marketer",
+  entrepreneur: "founder",
+  "startup founder": "founder",
+  "co-founder": "founder",
+  cofounder: "founder",
+  "chief executive": "ceo",
+  "chief executive officer": "ceo",
+  vp: "director",
+  svp: "director",
+  "vice president": "director",
+  "sales rep": "sales",
+  "sales manager": "sales",
+  "account executive": "sales",
+  "business development": "sales",
+  pm: "product_manager",
+  "project manager": "product_manager",
+  "talent acquisition": "recruiter",
+  influencer: "content_creator",
+  creator: "content_creator",
+  freelance: "freelancer",
+};
+
+function toDisplayLabel(raw: string): string {
+  return raw
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+export function resolveRoleProfile(rawRole: string): { profile: RoleProfile; label: string; isCanonical: boolean } {
+  const trimmed = (rawRole || "").trim();
+  if (!trimmed) return { profile: GENERIC_PROFILE, label: GENERIC_PROFILE.label, isCanonical: false };
+
+  const key = trimmed.toLowerCase();
+  const canonicalKey = ROLE_PROFILES[key] ? key : ROLE_ALIASES[key];
+  if (canonicalKey) {
+    const profile = ROLE_PROFILES[canonicalKey];
+    return { profile, label: profile.label, isCanonical: true };
+  }
+
+  return { profile: GENERIC_PROFILE, label: toDisplayLabel(trimmed), isCanonical: false };
+}

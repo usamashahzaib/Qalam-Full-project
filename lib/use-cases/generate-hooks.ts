@@ -6,16 +6,6 @@ import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import { buildHook5StylesPrompt } from "@/lib/prompts/role-aware-system"
 
-export const ROLE_MAP: Record<string, string> = {
-  HR: "hr",
-  Marketing: "marketer",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales",
-  Tech: "developer",
-  Other: "ceo",
-}
-
 export interface GenerateHooksInput {
   topic: string
   role: string
@@ -45,8 +35,7 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
   }
 
   const { goal } = input
-  const mappedRole = ROLE_MAP[role] ?? "founder"
-  const { system, user: userMsg } = buildHook5StylesPrompt(topic, mappedRole, goal)
+  const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal)
   const fallback = [
     { style: "SHARP", text: `${topic}: the hidden cost is not the tool, it is the workflow around it.` },
     { style: "AUTHORITY", text: `Most teams approach ${topic} backwards: they buy first, then define the use case.` },

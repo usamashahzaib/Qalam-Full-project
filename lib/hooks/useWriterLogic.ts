@@ -93,6 +93,7 @@ export interface WriterLogicDeps {
   publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
   initialTopic?: string
   initialFormat?: FormatKey
+  initialRole?: string
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -106,11 +107,12 @@ export function useWriterLogic({
   publishPost,
   initialTopic = "",
   initialFormat,
+  initialRole,
 }: WriterLogicDeps) {
 
   // ── Step 1 inputs ────────────────────────────────────────────────────────
   const [topic, setTopic] = useState(initialTopic)
-  const [role, setRole] = useState<Role>("Founder")
+  const [role, setRole] = useState<Role>(initialRole || "Founder")
   const [format, setFormat] = useState<FormatKey>(initialFormat ?? "Medium")
   const [goal, setGoal] = useState("")
 

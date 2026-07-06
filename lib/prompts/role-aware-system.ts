@@ -1,15 +1,58 @@
-﻿// lib/prompts/role-aware-system.ts
+// lib/prompts/role-aware-system.ts
 // Qalam content engine - role-aware, human-sounding, anti-AI-tell.
 // 3-pass pipeline (generate -> humanize -> score/rewrite) feeds from here.
 // Role profiles live in ./role-profiles - add a new role there.
 
 export type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
-export { ROLE_PROFILES, GENERIC_PROFILE } from "./role-profiles";
+export { ROLE_PROFILES, GENERIC_PROFILE, resolveRoleProfile } from "./role-profiles";
 
 import type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
-import { ROLE_PROFILES, GENERIC_PROFILE } from "./role-profiles";
+import { GENERIC_PROFILE, resolveRoleProfile } from "./role-profiles";
 import { GENERATE_CRITICAL_RULES } from "./builders/generate";
 import { HOOKS_CRITICAL_RULES } from "./builders/hooks";
+
+// ---------------------------------------------------------------------------
+// ROLE ADAPTATION HELPERS
+// For a canonical role (one of the profiles in role-profiles.ts) these just
+// return the curated data. For any other free-text profession (a plumber, a
+// dentist, a teacher...) there is no canned vocabulary/pain-point list to
+// draw from, so instead of falling back to generic "professional" filler,
+// these instruct the model to derive authentic, profession-specific detail
+// itself from the literal role label the user typed.
+// ---------------------------------------------------------------------------
+function roleVoiceBlock(label: string, profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.voice;
+  return `Writes as a real ${label} - grounded in the actual day-to-day of that work. Real tools, jargon, workflows, frustrations, and small wins specific to being a ${label}, drawn from genuine knowledge of that profession. Concrete and specific, never generic "professional" language.`;
+}
+
+function roleVoiceHeadline(label: string, profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.voice.split(".")[0];
+  return `Writes like a real ${label}, grounded in the specifics of that work`;
+}
+
+function roleVocabularyLine(label: string, profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.vocabulary.join(", ");
+  return `(No canned list for this profession - use real, specific vocabulary and shorthand that a ${label} would actually use on the job, not generic corporate speak.)`;
+}
+
+function rolePainPointsLine(label: string, profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.painPoints.join("; ");
+  return `Infer the real, specific frustrations and pressures a ${label} deals with day to day - from clients, bosses, tools, schedules, or the public. Be specific, not generic.`;
+}
+
+function roleFormatsBlock(label: string, profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.formats.join("\n");
+  return `A concrete story from the job, a mistake and the fix, a myth outsiders believe about ${label}s, or a specific detail that reveals what the work actually involves.`;
+}
+
+function roleExampleHooksBlock(profile: RoleProfile, isCanonical: boolean): string {
+  if (isCanonical) return profile.exampleHooks.map((h) => `"${h}"`).join("\n");
+  return "(No canned examples for this profession - invent hooks that sound like a real person in this line of work, not a template.)";
+}
+
+function roleBannedWords(profile: RoleProfile, isCanonical: boolean): string[] {
+  return isCanonical ? profile.banned : GENERIC_PROFILE.banned;
+}
 
 // ---------------------------------------------------------------------------
 // FORMAT CONSTRAINTS
@@ -59,29 +102,29 @@ export function buildGeneratePrompt(
   goal?: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
   const formatRule = FORMAT_RULES[format];
 
   const system = `
-You are a LinkedIn ghostwriter. You write for ${profile.label}s.
+You are a LinkedIn ghostwriter. You write for a ${label}.
 
 WHO THIS PERSON IS:
-${profile.voice}
+${roleVoiceBlock(label, profile, isCanonical)}
 
 THEIR NATURAL VOCABULARY (use some of these, not all, and only where they fit):
-${profile.vocabulary.join(", ")}
+${roleVocabularyLine(label, profile, isCanonical)}
 
 WHAT THEY CARE ABOUT / PAIN POINTS:
-${profile.painPoints.join("; ")}
+${rolePainPointsLine(label, profile, isCanonical)}
 
 CONTENT FORMATS THAT WORK FOR THEM:
-${profile.formats.join("\n")}
+${roleFormatsBlock(label, profile, isCanonical)}
 
 EXAMPLE HOOKS IN THEIR VOICE (reference for style only - do not copy these):
-${profile.exampleHooks.map((h) => `"${h}"`).join("\n")}
+${roleExampleHooksBlock(profile, isCanonical)}
 
 WORDS THIS PERSON WOULD NEVER USE:
-${[...profile.banned].join(", ")}
+${roleBannedWords(profile, isCanonical).join(", ")}
 
 ${ANTI_AI_RULES}
 
@@ -120,7 +163,7 @@ Write one post only. No explanation, no preamble, no "here is your post:". Just 
 
   const user = `Write a LinkedIn post about: ${topic}
 
-Role: ${profile.label}
+Role: ${label}
 Format: ${format}
 ${goal ? `Goal: ${goal}` : ""}
 
@@ -134,7 +177,7 @@ Remember: First line must be the hook. Real, specific, and a little surprising. 
 // Feed this the output of Pass 1. temperature: 0.4 (low - we want precise edits not creativity)
 // ---------------------------------------------------------------------------
 export function buildHumanizePrompt(rawPost: string, role: string): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const system = `
 You are an editor who removes AI tells from LinkedIn posts. You make them sound like a real person wrote them.
@@ -146,14 +189,14 @@ WHAT TO FIX:
 2. Perfect parallel structure in triplets: If three items end a thought cleanly, break one of them.
 3. Overly smooth sentence rhythm: Vary it. Mix very short sentences (3-5 words) with longer ones. Real people don't write in perfectly balanced clauses.
 4. AI vocabulary: Remove or replace any of these: delve, leverage (as a verb), elevate, seamless, unlock, empower, supercharge, revolutionize, paradigm, holistic, ecosystem, synergy, cutting-edge, game-changer, thought leader, passionate, fostering, navigating, harnessing, transformative.
-5. Opening cliches: If the post opens with "In today's", "As a ${profile.label}", "It's no secret", "I'm excited to", "Let's talk about" - rewrite just the first line.
+5. Opening cliches: If the post opens with "In today's", "As a ${label}", "It's no secret", "I'm excited to", "Let's talk about" - rewrite just the first line.
 6. Generic closing questions: If the last non-hashtag line is "What do you think?" or "Have you experienced this?" or similar, replace it with a statement or quiet observation.
 7. Overly neat endings: If the last line summarises the post ("and that's why X is important"), cut or reframe it.
 8. Robotic hashtags mid-sentence: Move all hashtags to the very last line.
 
 WHAT TO KEEP:
 - The structure and story arc exactly as written
-- The voice and vocabulary that matches ${profile.label}
+- The voice and vocabulary that matches ${label}
 - Any specific numbers, names, or concrete details
 - Line breaks and white space - do not collapse the post
 - The CTA if it sounds natural
@@ -173,10 +216,10 @@ Output the edited post only. No commentary. No "here's the edited version:". Jus
 // Feed this the Pass 2 output. temperature: 0.2 (we want consistent, reliable scores)
 // ---------------------------------------------------------------------------
 export function buildScorePrompt(post: string, role: string): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const system = `
-You are a LinkedIn content quality evaluator. You score posts for ${profile.label}s on 5 dimensions.
+You are a LinkedIn content quality evaluator. You score posts for ${label}s on 5 dimensions.
 
 Score each dimension 0-100. Be harsh. A 90 should be rare. An average post scores 55-65.
 
@@ -188,7 +231,7 @@ DIMENSIONS:
    - 50-69: Generic opener that most people scroll past
    - Below 50: AI opener, cliche, or tells you what the post is about before showing you
 
-2. AUTHENTICITY SCORE: Does it sound like a real ${profile.label} wrote this, or like AI pretending?
+2. AUTHENTICITY SCORE: Does it sound like a real ${label} wrote this, or like AI pretending?
    - 90+: Could not tell it was AI-assisted. Specific details, natural voice, real opinions
    - 70-89: Mostly real-sounding, one or two tells
    - 50-69: Some AI patterns visible - smooth transitions, perfect structure, vague specifics
@@ -234,7 +277,7 @@ total_score = average of the 5 scores, rounded to nearest integer.
 is_good_enough = total_score >= 80.
 `.trim();
 
-  const user = `Score this LinkedIn post written for a ${profile.label}:\n\n${post}`;
+  const user = `Score this LinkedIn post written for a ${label}:\n\n${post}`;
 
   return { system, user };
 }
@@ -250,10 +293,10 @@ export function buildRewritePrompt(
   role: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const system = `
-You are rewriting a LinkedIn post for a ${profile.label}. One specific problem has been identified. Fix only that problem.
+You are rewriting a LinkedIn post for a ${label}. One specific problem has been identified. Fix only that problem.
 
 KEEP:
 - The story, structure, and content arc exactly
@@ -292,10 +335,10 @@ export function buildTopicSuggestionsPrompt(
   role: string,
   recentTopics: string[] = []
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const system = `
-You generate LinkedIn post topic ideas for ${profile.label}s in Pakistan.
+You generate LinkedIn post topic ideas for ${label}s in Pakistan.
 
 Topics must be:
 - Specific enough to write about immediately (not "talk about your experience")
@@ -309,7 +352,7 @@ Example: ["Topic idea one", "Topic idea two", "Topic idea three"]
 ${recentTopics.length > 0 ? `Do NOT suggest topics similar to these recent ones: ${recentTopics.join(", ")}` : ""}
 `.trim();
 
-  const user = `Give me 3 LinkedIn post topic ideas for a ${profile.label} in Pakistan.`;
+  const user = `Give me 3 LinkedIn post topic ideas for a ${label} in Pakistan.`;
 
   return { system, user };
 }
@@ -322,10 +365,10 @@ export function buildHookVariantsPrompt(
   topic: string,
   role: string
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
 
   const system = `
-You write LinkedIn post opening lines (hooks) for ${profile.label}s.
+You write LinkedIn post opening lines (hooks) for ${label}s.
 
 Generate 3 hooks for the same topic, each a different style:
 1. STATEMENT hook: A bold or unexpected claim. Concrete and specific.
@@ -337,7 +380,7 @@ ${HOOKS_CRITICAL_RULES}
 Additional rules:
 - Maximum 2 sentences each
 - Specific and concrete. If possible, include a number or a named tool/situation.
-- Must fit a ${profile.label}'s voice: ${profile.voice.split(".")[0]}.
+- Must fit a ${label}'s voice: ${roleVoiceHeadline(label, profile, isCanonical)}.
 
 Return ONLY valid JSON in this exact shape. No other text:
 [
@@ -347,7 +390,7 @@ Return ONLY valid JSON in this exact shape. No other text:
 ]
 `.trim();
 
-  const user = `Topic: ${topic}\nRole: ${profile.label}`;
+  const user = `Topic: ${topic}\nRole: ${label}`;
 
   return { system, user };
 }
@@ -357,6 +400,8 @@ Return ONLY valid JSON in this exact shape. No other text:
 // Lightweight - use 8b model. temperature: 0.3
 // ---------------------------------------------------------------------------
 export function buildEngagementPredictionPrompt(post: string, role: string): { system: string; user: string } {
+  const { label } = resolveRoleProfile(role);
+
   const system = `
 You estimate LinkedIn engagement for a post in the Pakistani professional market.
 
@@ -377,7 +422,7 @@ Return ONLY valid JSON. No other text:
 }
 `.trim();
 
-  const user = `Post written for a ${ROLE_PROFILES[role]?.label ?? "professional"} in Pakistan:\n\n${post}`;
+  const user = `Post written for a ${label} in Pakistan:\n\n${post}`;
 
   return { system, user };
 }
@@ -388,28 +433,28 @@ Return ONLY valid JSON. No other text:
 // They wrap the new profile structure into a flat system-prompt string.
 // ---------------------------------------------------------------------------
 export function getSystemPrompt(role: string, voiceProfile?: VoiceProfile, goal?: string): string {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
   const list = (items: string[]) => items.map((i) => `- ${i}`).join("\n");
 
-  let prompt = `You are writing a LinkedIn post as a ${profile.label}.
+  let prompt = `You are writing a LinkedIn post as a ${label}.
 
 Voice:
-${profile.voice}
+${roleVoiceBlock(label, profile, isCanonical)}
 
 Role-specific vocabulary:
-${list(profile.vocabulary)}
+${isCanonical ? list(profile.vocabulary) : roleVocabularyLine(label, profile, isCanonical)}
 
 Pain points this person cares about:
-${list(profile.painPoints)}
+${isCanonical ? list(profile.painPoints) : rolePainPointsLine(label, profile, isCanonical)}
 
 Content formats this role uses:
-${list(profile.formats)}
+${isCanonical ? list(profile.formats) : roleFormatsBlock(label, profile, isCanonical)}
 
 Example hooks:
-${list(profile.exampleHooks)}
+${isCanonical ? list(profile.exampleHooks) : roleExampleHooksBlock(profile, isCanonical)}
 
 Never say:
-${list(profile.banned)}
+${list(roleBannedWords(profile, isCanonical))}
 
 Writing rules:
 - The first line must stop the scroll.
@@ -451,6 +496,7 @@ export const buildRoleAwareSystemPrompt = getSystemPrompt;
 // buildEngagementPredictionPrompt - vanity metric
 // ROLE_PROFILES                   - for role selector UI (re-exported from ./role-profiles)
 // GENERIC_PROFILE                 - fallback (re-exported from ./role-profiles)
+// resolveRoleProfile              - free-text role -> profile resolution (re-exported from ./role-profiles)
 // getSystemPrompt                 - legacy compat (content-generator.ts)
 // buildRoleAwareSystemPrompt      - legacy compat (app/api/hooks/route.ts)
 
@@ -463,17 +509,17 @@ export function buildCtaAlternativesPrompt(
   post: string,
   role: string
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const system = `
-You write alternative call-to-action (CTA) closing lines for LinkedIn posts written for ${profile.label}s.
+You write alternative call-to-action (CTA) closing lines for LinkedIn posts written for ${label}s.
 
 A good CTA is:
 - 1-2 sentences at most
 - Specific and earned - it follows naturally from the story in the post
 - NOT a generic question ("What do you think?", "Have you experienced this?", "Drop a comment below")
 - A quiet statement, a soft challenge, a reflection, or a specific action prompt
-- Feels like a real ${profile.label} wrote it - matches their vocabulary and concerns
+- Feels like a real ${label} wrote it - matches their vocabulary and concerns
 - No em dashes (-), no en dashes (-), no AI vocabulary
 
 Return ONLY valid JSON - a flat array of exactly 3 strings. No other text, no markdown:
@@ -494,10 +540,10 @@ export function buildHook5StylesPrompt(
   role: string,
   goal?: string
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
 
   const system = `
-You write LinkedIn post opening lines for ${profile.label}s.
+You write LinkedIn post opening lines for ${label}s.
 
 Generate exactly 5 hooks for the same topic, one per style:
 1. SHARP: An uncomfortable truth or bold claim. Concrete and specific.
@@ -511,8 +557,8 @@ ${HOOKS_CRITICAL_RULES}
 Additional rules:
 - Maximum 2 sentences per hook
 - Specific and concrete - include a number, date, or named situation where possible
-- Match this voice: ${profile.voice.split(".")[0]}
-- Words never to use: ${profile.banned.slice(0, 5).join(", ")}
+- Match this voice: ${roleVoiceHeadline(label, profile, isCanonical)}
+- Words never to use: ${roleBannedWords(profile, isCanonical).slice(0, 5).join(", ")}
 
 Return ONLY valid JSON array. No other text, no markdown, no code fences:
 [
@@ -525,7 +571,7 @@ Return ONLY valid JSON array. No other text, no markdown, no code fences:
 `.trim();
 
   const goalLine = goal?.trim() ? `\nGoal: ${goal.trim()}` : "";
-  const user = `Topic: ${topic}\nRole: ${profile.label}${goalLine}`;
+  const user = `Topic: ${topic}\nRole: ${label}${goalLine}`;
   return { system, user };
 }
 
@@ -542,7 +588,7 @@ export function buildPostFromHookPrompt(
   goal?: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
   const formatRule = FORMAT_RULES[format];
   const wordTargets: Record<PostFormat, string> = {
     short: "150-200 words",
@@ -551,17 +597,17 @@ export function buildPostFromHookPrompt(
   };
 
   const system = `
-You are a LinkedIn ghostwriter for ${profile.label}s.
+You are a LinkedIn ghostwriter for ${label}s.
 
-${profile.voice}
+${roleVoiceBlock(label, profile, isCanonical)}
 
-Vocabulary to draw from (use some, not all): ${profile.vocabulary.slice(0, 10).join(", ")}
+Vocabulary to draw from (use some, not all): ${isCanonical ? profile.vocabulary.slice(0, 10).join(", ") : roleVocabularyLine(label, profile, isCanonical)}
 
 ${ANTI_AI_RULES}
 
 ${GENERATE_CRITICAL_RULES}
 
-Words never to use: ${[...profile.banned, "delve", "utilize", "leverage (as verb)", "seamless", "empower"].join(", ")}
+Words never to use: ${[...roleBannedWords(profile, isCanonical), "delve", "utilize", "leverage (as verb)", "seamless", "empower"].join(", ")}
 
 FORMAT:
 - Target length: ${wordTargets[format]}
@@ -580,7 +626,7 @@ Output the post only. No preamble, no "Here is the post:".
   const user = `Hook (first line - copy this verbatim): "${hook}"
 
 Topic: ${topic}
-Role: ${profile.label}`;
+Role: ${label}`;
   return { system, user };
 }
 
@@ -591,12 +637,12 @@ export function buildPostWithReplacedHookPrompt(
   goal?: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
 
   const system = `
-You are editing an existing LinkedIn post for a ${profile.label}.
+You are editing an existing LinkedIn post for a ${label}.
 
-${profile.voice}
+${roleVoiceBlock(label, profile, isCanonical)}
 
 ${ANTI_AI_RULES}
 
@@ -631,7 +677,7 @@ export function build7MetricScorePrompt(
   role: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { label } = resolveRoleProfile(role);
 
   const voiceFitDimension = voiceProfile?.tone || voiceProfile?.vocabulary?.length
     ? `7. VOICE_FIT (matches the author's trained personal voice)
@@ -643,13 +689,13 @@ export function build7MetricScorePrompt(
    90+: Post clearly reflects this trained voice in tone, rhythm, and signature phrases
    70-89: Mostly matches but some sections feel off-brand
    Below 50: Voice doesn't match the profile at all`
-    : `7. VOICE_FIT (matches ${profile.label} role voice)
-   90+: Indistinguishable from a real ${profile.label} - vocabulary, concerns, tone
+    : `7. VOICE_FIT (matches ${label} role voice)
+   90+: Indistinguishable from a real ${label} - vocabulary, concerns, tone
    70-89: Close, a couple of off-notes
    Below 50: Wrong voice entirely`;
 
   const system = `
-You score LinkedIn posts for ${profile.label}s on 7 dimensions, 0-100 each.
+You score LinkedIn posts for ${label}s on 7 dimensions, 0-100 each.
 Be strict. Average posts score 55-65. A 90 is rare.
 
 DIMENSIONS:
@@ -658,7 +704,7 @@ DIMENSIONS:
    90+: Stops the scroll immediately, specific and concrete
    70-89: Decent but slightly predictable
    Below 50: Generic, AI-sounding, or tells the punchline upfront
-   Deduct 20 for "In today's...", "Let's dive in", "As a ${profile.label}"
+   Deduct 20 for "In today's...", "Let's dive in", "As a ${label}"
 
 2. READABILITY (mobile reading experience)
    90+: Perfect rhythm - short lines, blank lines between thoughts, scannable
@@ -713,7 +759,7 @@ Respond with ONLY valid JSON. No markdown, no explanation:
 overall = arithmetic mean of all 7 scores, rounded to nearest integer.
 `.trim();
 
-  const user = `Score this LinkedIn post for a ${profile.label}:\n\n${post}`;
+  const user = `Score this LinkedIn post for a ${label}:\n\n${post}`;
   return { system, user };
 }
 
@@ -728,7 +774,7 @@ export function buildPushTo90Prompt(
   role: string,
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
 
   const dimScores = Object.entries(scores)
     .filter(([k]) => k !== "overall" && k !== "tips" && k !== "hashtags")
@@ -737,20 +783,20 @@ export function buildPushTo90Prompt(
     .join(", ");
 
   const system = `
-You are rewriting a LinkedIn post for a ${profile.label} so it scores 90+ on EVERY single quality dimension.
+You are rewriting a LinkedIn post for a ${label} so it scores 90+ on EVERY single quality dimension.
 
-${profile.voice}
+${roleVoiceBlock(label, profile, isCanonical)}
 
 ${ANTI_AI_RULES}
 
-BANNED WORDS (remove every instance): ${[...profile.banned, "delve", "leverage (verb)", "seamless", "empower", "unlock", "holistic", "synergy"].join(", ")}
+BANNED WORDS (remove every instance): ${[...roleBannedWords(profile, isCanonical), "delve", "leverage (verb)", "seamless", "empower", "unlock", "holistic", "synergy"].join(", ")}
 
 CURRENT SCORES: ${dimScores || "not yet scored"}
 TARGET: ALL 7 dimensions must reach 90+. Be aggressive. Do not hold back.
 
 WHAT 90+ REQUIRES ON EACH DIMENSION:
 
-1. HOOK - first line must stop the scroll immediately. Start with a surprising number, a bold claim, or a real challenge. Never "In today's...", "Let's talk about", "As a ${profile.label}".
+1. HOOK - first line must stop the scroll immediately. Start with a surprising number, a bold claim, or a real challenge. Never "In today's...", "Let's talk about", "As a ${label}".
 
 2. READABILITY - short lines, blank lines between every thought, mobile-first. One idea per line. No wall of text longer than 2 sentences.
 
@@ -764,7 +810,7 @@ WHAT 90+ REQUIRES ON EACH DIMENSION:
 
 7. VOICE FIT - ${voiceProfile?.tone || voiceProfile?.vocabulary?.length
     ? `Write in the author's trained voice: tone "${voiceProfile!.tone || "not specified"}", sentence length "${voiceProfile!.sentenceLength || "not specified"}". Weave in these signature phrases where natural: ${(voiceProfile!.vocabulary || []).join(", ") || "none"}.`
-    : `indistinguishable from a real ${profile.label}. Their vocabulary, their concerns, their tone.`}
+    : `indistinguishable from a real ${label}. Their vocabulary, their concerns, their tone.`}
 
 KEEP:
 - All specific numbers, names, and facts from the original
@@ -786,11 +832,11 @@ export function buildHookAlternativesPrompt(
   post: string,
   role: string
 ): { system: string; user: string } {
-  const profile = ROLE_PROFILES[role] ?? GENERIC_PROFILE;
+  const { profile, label, isCanonical } = resolveRoleProfile(role);
   const existingHook = post.split("\n").find((l) => l.trim())?.trim() || "";
 
   const system = `
-You write alternative opening hooks for LinkedIn posts for ${profile.label}s.
+You write alternative opening hooks for LinkedIn posts for ${label}s.
 
 The existing hook is: "${existingHook}"
 
@@ -801,7 +847,7 @@ ${HOOKS_CRITICAL_RULES}
 Additional rules:
 - Maximum 2 sentences each
 - Specific, concrete, role-appropriate
-- Match this voice: ${profile.voice.split(".")[0]}
+- Match this voice: ${roleVoiceHeadline(label, profile, isCanonical)}
 
 Return ONLY valid JSON. No other text:
 [

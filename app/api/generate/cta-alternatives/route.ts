@@ -4,16 +4,6 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { buildCtaAlternativesPrompt } from "@/lib/prompts/role-aware-system"
 
-const ROLE_MAP: Record<string, string> = {
-  HR: "hr",
-  Marketing: "marketer",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales",
-  Tech: "developer",
-  Other: "ceo",
-}
-
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
@@ -25,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     const content = String(body.content || "").trim()
-    const role = ROLE_MAP[String(body.role || "")] || "founder"
+    const role = String(body.role || "").trim()
 
     if (!content || content.length < 20) {
       return NextResponse.json({ error: "Content too short" }, { status: 400 })

@@ -17,11 +17,7 @@ const LINKEDIN_MAX_POST_CHARS = 3000
 
 const generateSchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters").max(200, "Topic too long"),
-  role: z.preprocess((v) => String(v || "").toLowerCase(), z.enum([
-    "ai_engineer", "ceo", "hr", "sales", "designer",
-    "consultant", "founder", "developer", "director",
-    "marketer", "product_manager", "recruiter", "content_creator", "freelancer"
-  ])),
+  role: z.preprocess((v) => String(v || "").trim(), z.string().min(1, "Role is required").max(80, "Role too long")),
   tone: z.string().max(50).optional(),
   format: z.preprocess((v) => String(v || "medium").toLowerCase(), z.enum(["short", "medium", "long"])).default("medium"),
   goal: z.string().max(500, "Goal too long").optional(),

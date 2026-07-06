@@ -47,7 +47,7 @@ const THEME_META: Record<string, { gradient: string; accent: string; text: strin
     structure: ["Gap: The role you actually need", "Signal: How great candidates think", "Screen: What to look for first", "Interview: The question that reveals it", "Red flag: What to walk away from", "Offer: How to close them", "Onboard: The first-week setup"],
   },
 }
-const ROLES = ["Founder", "HR", "Marketing", "Consultant", "Sales", "Tech", "Other"] as const
+const ROLE_SUGGESTIONS = ["Founder", "Software Developer", "Marketer", "Sales Leader", "HR Leader", "Consultant", "CEO"] as const
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
 export default function CarouselsPage() {
@@ -59,7 +59,7 @@ export default function CarouselsPage() {
   const [seed, setSeed] = useState("")
   const [selectedPostId, setSelectedPostId] = useState("manual")
   const [theme, setTheme] = useState<string>(THEMES[0])
-  const [role, setRole] = useState<string>(ROLES[0])
+  const [role, setRole] = useState<string>(ROLE_SUGGESTIONS[0])
   const [slideCount, setSlideCount] = useState(7)
   const [isGenerating, setIsGenerating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -182,9 +182,17 @@ export default function CarouselsPage() {
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-zinc-500">Your role</span>
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10">
-                  {ROLES.map((r) => <option key={r}>{r}</option>)}
-                </select>
+                <input
+                  type="text"
+                  list="carousel-role-suggestions"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  placeholder="e.g. Software Engineer, Plumber, Teacher..."
+                  className="w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-zinc-900 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
+                />
+                <datalist id="carousel-role-suggestions">
+                  {ROLE_SUGGESTIONS.map((r) => <option key={r} value={r} />)}
+                </datalist>
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-zinc-500">Use workspace post</span>

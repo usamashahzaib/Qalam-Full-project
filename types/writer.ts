@@ -1,4 +1,4 @@
-export type WriterRole = "HR" | "Marketing" | "Founder" | "Consultant" | "Sales" | "Tech" | "Other"
+export type WriterRole = string
 
 export type PostFormat = "Short" | "Medium" | "Long" | "Carousel"
 

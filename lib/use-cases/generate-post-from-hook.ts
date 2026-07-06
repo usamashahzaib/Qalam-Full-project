@@ -9,16 +9,6 @@ import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import type { PostFormat } from "@/lib/prompts/role-aware-system"
 
-export const ROLE_MAP: Record<string, string> = {
-  HR: "hr",
-  Marketing: "marketer",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales",
-  Tech: "developer",
-  Other: "ceo",
-}
-
 export const FORMAT_MAP: Record<string, PostFormat> = {
   Short: "short",
   Medium: "medium",
@@ -59,7 +49,7 @@ export async function generatePostFromHook(
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
-  const role = ROLE_MAP[rawRole] || "founder"
+  const role = rawRole
   const format: PostFormat = FORMAT_MAP[rawFormat] || "medium"
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")

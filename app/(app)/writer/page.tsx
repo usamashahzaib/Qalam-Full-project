@@ -30,7 +30,10 @@ import type { Role, FormatKey, HookStyle, HookItem, SlideItem, ScoreData } from 
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLES: Role[] = ["HR", "Marketing", "Founder", "Consultant", "Sales", "Tech", "Other"]
+const ROLE_SUGGESTIONS: string[] = [
+  "Founder", "Software Developer", "Marketer", "Sales Leader", "HR Leader",
+  "Consultant", "Product Manager", "Designer", "Recruiter", "CEO", "Freelancer",
+]
 
 const FORMATS: { key: FormatKey; words: string }[] = [
   { key: "Short", words: "150-200w" },
@@ -79,6 +82,7 @@ export default function WriterPage() {
     publishPost,
     initialTopic,
     initialFormat,
+    initialRole: profile.title || undefined,
   })
 
   const {
@@ -300,13 +304,17 @@ export default function WriterPage() {
               <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Role</label>
-                  <select
+                  <input
+                    type="text"
+                    list="role-suggestions"
                     value={role}
                     onChange={(e) => setRole(e.target.value as Role)}
-                    className="w-full cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
-                  >
-                    {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                    placeholder="e.g. Software Engineer, Plumber, Teacher..."
+                    className="w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
+                  />
+                  <datalist id="role-suggestions">
+                    {ROLE_SUGGESTIONS.map((r) => <option key={r} value={r} />)}
+                  </datalist>
                 </div>
 
                 <div>

@@ -9,16 +9,6 @@ import { toPostArtifact } from "@/lib/use-cases/post-artifact"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 
-const ROLE_MAP: Record<string, string> = {
-  HR: "hr",
-  Marketing: "marketer",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales",
-  Tech: "developer",
-  Other: "ceo",
-}
-
 export interface ImprovePostInput {
   content: string
   role: string
@@ -77,7 +67,7 @@ export async function improvePost(
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
-  const role = ROLE_MAP[rawRole] || "founder"
+  const role = rawRole
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
   const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined

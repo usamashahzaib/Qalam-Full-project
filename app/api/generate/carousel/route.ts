@@ -3,16 +3,6 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 
-const ROLE_MAP: Record<string, string> = {
-  HR: "HR leader",
-  Marketing: "marketing professional",
-  Founder: "founder",
-  Consultant: "consultant",
-  Sales: "sales professional",
-  Tech: "developer",
-  Other: "professional",
-}
-
 type Slide = {
   number: number
   title: string
@@ -34,7 +24,7 @@ export async function POST(request: NextRequest) {
     }
 
     const topic = String(body.topic || "").trim()
-    const role = ROLE_MAP[String(body.role || "")] || "professional"
+    const role = String(body.role || "").trim() || "professional"
 
     if (!topic || topic.length < 3) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
