@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=invalid_token", origin))
   }
 
-  // Update the user FIRST — if this fails the token is still valid and the
+  // Update the user FIRST - if this fails the token is still valid and the
   // user can click the link again.
   const { error } = await supabase
     .from("users")

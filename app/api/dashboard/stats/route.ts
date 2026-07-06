@@ -22,7 +22,7 @@ export async function GET() {
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-    // getPlanStatus is the canonical plan resolver — handles users.plan, plan_usage,
+    // getPlanStatus is the canonical plan resolver - handles users.plan, plan_usage,
     // admin overrides, and expiry in one place.
     const [planStatus, monthPostsRes, libraryRes, publishedRes] = await Promise.allSettled([
       getPlanStatus(supabaseUserId),

@@ -118,7 +118,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setResolveError((error as Error).message || "Failed to resolve workspace")
       })
       .finally(() => setIsResolving(false))
-  // Intentionally exclude `pathname` and `searchParams` from deps — only the
+  // Intentionally exclude `pathname` and `searchParams` from deps - only the
   // client workspace key and auth state should trigger a re-fetch. Including
   // pathname/searchParams would re-fetch the workspace on every page navigation.
   // eslint-disable-next-line react-hooks/exhaustive-deps

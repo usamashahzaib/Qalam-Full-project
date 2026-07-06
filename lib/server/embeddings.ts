@@ -53,7 +53,7 @@ export async function storeVoiceExamples(
 
   // Remove old examples for this workspace before inserting new ones
   const { error: delErr } = await supabase.from("voice_examples").delete().eq("workspace_id", workspaceId)
-  // 42P01 = table doesn't exist (migration pending) — skip silently
+  // 42P01 = table doesn't exist (migration pending) - skip silently
   if (delErr?.code === "42P01") return
 
   const rows = await Promise.all(
@@ -81,7 +81,7 @@ export async function retrieveVoiceExamples(
     .select("content")
     .eq("workspace_id", workspaceId)
     .limit(topN)
-  // 42P01 = table doesn't exist yet — degrade to empty (profile characteristics still used)
+  // 42P01 = table doesn't exist yet - degrade to empty (profile characteristics still used)
   if (error?.code === "42P01") return []
   return (data ?? []).map((row: { content: string }) => row.content)
 }

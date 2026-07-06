@@ -97,7 +97,7 @@ export default function SettingsPage() {
     fetch("/api/linkedin/profile")
       .then((res) => {
         if (res.status === 401) {
-          // Token expired — surface the reconnect warning without overwriting an existing status.
+          // Token expired - surface the reconnect warning without overwriting an existing status.
           setLinkedinStatus((prev) => prev || "Your LinkedIn token has expired. Please reconnect to continue publishing.")
           return null
         }
@@ -356,7 +356,7 @@ export default function SettingsPage() {
                   <>
                     Billed monthly
                     {annualMonthlyEquiv > 0 && (
-                      <> — or <span className="font-semibold text-teal">{formatPkr(annualMonthlyEquiv)}/mo</span> on annual ({annualFraming})</>
+                      <> - or <span className="font-semibold text-teal">{formatPkr(annualMonthlyEquiv)}/mo</span> on annual ({annualFraming})</>
                     )}
                   </>
                 )}
@@ -371,8 +371,8 @@ export default function SettingsPage() {
                 <p className="text-sm font-bold text-amber-900">Upgrade to {billingDraft.plan}</p>
                 <p className="mt-0.5 text-xs text-amber-700">
                   {billingDraft.billingCycle === "annual"
-                    ? `${formatPkr(displayPrice)}/month — billed annually at ${formatPkr(selectedPlanPrices.annual)}/year`
-                    : `${formatPkr(displayPrice)}/month — billed monthly`}
+                    ? `${formatPkr(displayPrice)}/month - billed annually at ${formatPkr(selectedPlanPrices.annual)}/year`
+                    : `${formatPkr(displayPrice)}/month - billed monthly`}
                 </p>
               </div>
               <div className="p-4">

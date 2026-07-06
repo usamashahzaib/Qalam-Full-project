@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import type { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
-  // Basic profile is readable for all authenticated users — Pro gate is on voice training fields only
+  // Basic profile is readable for all authenticated users - Pro gate is on voice training fields only
   const userId = await requireAuth().catch(() => null)
   if (!userId) return NextResponse.json({ error: "auth_required" }, { status: 401 })
 

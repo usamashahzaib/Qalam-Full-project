@@ -94,7 +94,7 @@ const verifySortedFieldHmac = (
     .join("&")
 
   const salted = `${secret}&${concatenated}`
-  // Accept both the salt-prefixed and values-only variants — JazzCash deployments differ.
+  // Accept both the salt-prefixed and values-only variants - JazzCash deployments differ.
   if (opts.saltPrefix && timingSafeEqual(hmacHex(secret, salted), provided)) return true
   return timingSafeEqual(hmacHex(secret, concatenated), provided)
 }
@@ -238,7 +238,7 @@ const getUser = async (payment: VerifiedPayment) => {
 }
 
 // Resolve org via the user's primary workspace (workspace_members -> workspaces -> organization_id).
-// Returns null for personal-workspace users who have no linked org — that is fine;
+// Returns null for personal-workspace users who have no linked org - that is fine;
 // activate_plan handles a null org_id gracefully.
 const getOrganizationId = async (userId: string): Promise<string | null> => {
   try {
@@ -337,7 +337,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
       .then(undefined, (err: unknown) => log.error("payments.plan_usage_upsert_failed", { error: (err as Error).message }))
   }
 
-  // Fire-and-forget confirmation email — never block the payment response on this
+  // Fire-and-forget confirmation email - never block the payment response on this
   sendTransactionalEmail({
     to: user.email,
     subject: `Qalam ${payment.planName} activated`,

@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   const hasVoiceTraining = Boolean(body.examplePosts || body.characteristics)
 
-  // Only gate voice training on Pro — basic identity is always allowed
+  // Only gate voice training on Pro - basic identity is always allowed
   if (hasVoiceTraining) {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response

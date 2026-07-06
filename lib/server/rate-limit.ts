@@ -78,7 +78,7 @@ export function getClientIp(request: NextRequest): string {
   const realIp = request.headers.get("x-real-ip")?.trim()
   if (realIp) return realIp
 
-  // Take the RIGHTMOST XFF hop — the one appended by the trusted proxy — since
+  // Take the RIGHTMOST XFF hop - the one appended by the trusted proxy - since
   // clients can freely forge any number of leftmost hops to evade rate limits.
   const xff = request.headers.get("x-forwarded-for")
   if (xff) {
@@ -108,7 +108,7 @@ export async function checkRateLimit(
       reset: state.lastRefill + bucket.windowMs,
     }
   } catch {
-    // Fail closed on Redis errors — deny the request rather than bypass rate limiting
+    // Fail closed on Redis errors - deny the request rather than bypass rate limiting
     return { allowed: false, limit, remaining: 0, reset: Date.now() + 60_000 }
   }
 }

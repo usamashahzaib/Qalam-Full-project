@@ -31,8 +31,8 @@ import type { Role, FormatKey, HookStyle, HookItem, SlideItem, ScoreData } from 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROLE_SUGGESTIONS: string[] = [
-  "Founder", "Software Developer", "Marketer", "Sales Leader", "HR Leader",
-  "Consultant", "Product Manager", "Designer", "Recruiter", "CEO", "Freelancer",
+  "CEO", "Consultant", "Designer", "Founder", "Freelancer", "HR Leader",
+  "Marketer", "Product Manager", "Recruiter", "Sales Leader", "Software Developer",
 ]
 
 const FORMATS: { key: FormatKey; words: string }[] = [
@@ -357,7 +357,7 @@ export default function WriterPage() {
                 <div className="mb-4">
                   <a href="/voice" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition-colors hover:border-teal hover:text-teal">
                     <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                    Set up your profile — posts will match your voice
+                    Set up your profile - posts will match your voice
                   </a>
                 </div>
               )}
@@ -442,7 +442,7 @@ export default function WriterPage() {
                 {isGeneratingHooks && demand && (
                   <div className="mb-4">
                     <QueueOverlay
-                      message={demand.highDemand ? `High demand — you're approximately #${demand.position} in queue` : "Generating your hooks..."}
+                      message={demand.highDemand ? `High demand - you're approximately #${demand.position} in queue` : "Generating your hooks..."}
                       plan={billing.plan}
                       highDemand={demand.highDemand}
                       position={demand.position}
@@ -486,7 +486,7 @@ export default function WriterPage() {
                   {isGeneratingPost && demand && (
                     <div className="mt-3">
                       <QueueOverlay
-                        message={demand.highDemand ? `High demand — you're approximately #${demand.position} in queue` : "Generating your post..."}
+                        message={demand.highDemand ? `High demand - you're approximately #${demand.position} in queue` : "Generating your post..."}
                         plan={billing.plan}
                         highDemand={demand.highDemand}
                         position={demand.position}
@@ -977,7 +977,7 @@ export default function WriterPage() {
                       <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Push to 90+ · Pro only</span>
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">locked</span>
                     </div>
-                    <p className="text-xs text-zinc-500 mb-2">Qalam rewrites your draft to fix the lowest-scoring dimension and targets a 90+ overall score — hook sharpness, authority, specificity, and CTA all lifted in one pass.</p>
+                    <p className="text-xs text-zinc-500 mb-2">Qalam rewrites your draft to fix the lowest-scoring dimension and targets a 90+ overall score - hook sharpness, authority, specificity, and CTA all lifted in one pass.</p>
                     <div className="rounded-lg border border-zinc-100 bg-white px-3 py-2 mb-2">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400 mb-1">What changes at 90+</p>
                       <ul className="space-y-0.5 text-[10px] text-zinc-600">

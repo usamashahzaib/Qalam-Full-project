@@ -304,7 +304,7 @@ export function useWriterLogic({
         })
       }
     } catch {
-      // Best-effort — ignore failures
+      // Best-effort - ignore failures
     }
   }, [])
 

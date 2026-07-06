@@ -6,7 +6,7 @@ import { getRedis } from "@/lib/server/redis"
 
 // Per-IP rate limit: 3 lookups per hour, backed by Upstash so it holds across
 // serverless instances and cold starts (an in-memory Map does neither).
-// Fails open when Redis is not configured — this is an info-leak guard, not a
+// Fails open when Redis is not configured - this is an info-leak guard, not a
 // hard security boundary.
 let _limiter: Ratelimit | null = null
 function providerLimiter(): Ratelimit | null {

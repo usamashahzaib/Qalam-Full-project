@@ -248,7 +248,7 @@ async function callProvider(
       }
 
       if (kind === "filtered") {
-        // Content blocked by provider safety policy — not a provider fault.
+        // Content blocked by provider safety policy - not a provider fault.
         // Skip to next provider without counting as a circuit failure.
         log.warn("ai.provider_content_filtered", { provider, error: msg.slice(0, 100) })
         return null

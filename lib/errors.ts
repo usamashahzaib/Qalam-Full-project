@@ -11,7 +11,7 @@ export type QalamErrorCode =
 
 export interface QalamError {
   code: QalamErrorCode
-  message: string        // internal — safe to log
+  message: string        // internal - safe to log
   userMessage?: string   // safe to display in UI
   cause?: unknown
 }

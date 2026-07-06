@@ -25,13 +25,14 @@ export async function GET(request: NextRequest) {
     const ctx = await getWorkspaceSessionContext()
     const workspaceId = await resolveWorkspaceId(request)
     const origin = process.env.FRONTEND_ORIGIN || request.nextUrl.origin
+    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${origin}/api/linkedin/callback`
     const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: `${origin}/api/linkedin/callback`,
+        redirect_uri: redirectUri,
         client_id: process.env.LINKEDIN_CLIENT_ID || "",
         client_secret: process.env.LINKEDIN_CLIENT_SECRET || "",
       }),

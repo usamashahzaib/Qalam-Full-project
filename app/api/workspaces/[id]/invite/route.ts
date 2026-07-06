@@ -57,7 +57,7 @@ export async function POST(
       .maybeSingle()
 
     if (!invitee) {
-      // User doesn't have a Qalam account yet — save a pending invite and send an email.
+      // User doesn't have a Qalam account yet - save a pending invite and send an email.
       // When they sign up, the signup route redeems pending invites automatically.
       const { data: workspace } = await supabase
         .from("workspaces")
@@ -80,9 +80,9 @@ export async function POST(
         text: [
           `You've been invited to join the "${workspace?.name ?? "Qalam"}" workspace.`,
           ``,
-          `Sign up at https://byqalam.com to accept this invitation — you'll be added automatically.`,
+          `Sign up at https://byqalam.com to accept this invitation - you'll be added automatically.`,
           ``,
-          `— The Qalam team`,
+          `- The Qalam team`,
         ].join("\n"),
       }).catch(() => undefined)
 
@@ -139,7 +139,7 @@ export async function POST(
         ``,
         `Open Qalam: https://byqalam.com/dashboard`,
         ``,
-        `— The Qalam team`,
+        `- The Qalam team`,
       ].join("\n"),
     }).catch(() => undefined)
 

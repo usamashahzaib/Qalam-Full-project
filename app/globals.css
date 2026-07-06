@@ -510,7 +510,7 @@ html {
   border-color: #C9871F;
 }
 
-/* Frosted glass card — warm ambient background shows through */
+/* Frosted glass card - warm ambient background shows through */
 .app-content :is(section, article, div).bg-white:is(.rounded-2xl, .rounded-3xl):is(.border, [class*="border-"]) {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(10px);

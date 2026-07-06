@@ -146,7 +146,7 @@ const getForgotLimiter = () => {
 
 export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-password") {
   const r = getRedis()
-  // If Redis is unavailable, fail open for auth — blocking signup is too disruptive
+  // If Redis is unavailable, fail open for auth - blocking signup is too disruptive
   if (!r) {
     // Fail closed on auth rate limiting by falling back to a conservative in-memory limiter
     return inMemoryRateLimit(`auth_${action}_${ip}`, 3, 60_000)
@@ -221,7 +221,7 @@ async function trackAndGetDemand(): Promise<DemandInfo> {
 
 // ── Generation queue ──────────────────────────────────────────────────────────
 // All generation is synchronous (serverless). enqueueRequest enforces rate
-// limits and tracks system demand — callers can surface high-demand messaging.
+// limits and tracks system demand - callers can surface high-demand messaging.
 
 export async function enqueueRequest(
   userId: string,
@@ -260,12 +260,12 @@ export async function enqueueRequest(
     activeCount: demand.activeCount,
     estimatedWaitSeconds: demand.estimatedWaitSeconds,
     message: demand.highDemand
-      ? `High demand — you're approximately #${demand.position} in queue`
+      ? `High demand - you're approximately #${demand.position} in queue`
       : "Processing your request...",
   }
 }
 
-// No queue is written, so every requestId is absent — the status route maps
+// No queue is written, so every requestId is absent - the status route maps
 // null → { status: "completed" }, which is the correct observable behaviour.
 export async function getQueuePosition(
   _requestId: string,

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid carousel input", issues: parsed.error.issues }, { status: 400 })
     }
 
-    // Read-only quota check — decrement only after AI call succeeds
+    // Read-only quota check - decrement only after AI call succeeds
     const precheck = await checkPlanLimit(user.id, "carousels")
     if (!precheck.allowed) {
       return NextResponse.json(
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "AI returned too few slides" }, { status: 502 })
     }
 
-    // AI succeeded — now commit the quota decrement
+    // AI succeeded - now commit the quota decrement
     const usage = await incrementUsage(user.id, "carousels")
     if (!usage.allowed) {
       return NextResponse.json(

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ...scores, overall, tips, hashtags })
     }
 
-    // Atomic check+increment using internal UUID — prevents TOCTOU bypass and wrong-ID ghost rows.
+    // Atomic check+increment using internal UUID - prevents TOCTOU bypass and wrong-ID ghost rows.
     const usage = await incrementUsage(user.id, "analyses")
     if (!usage.allowed) {
       return NextResponse.json(

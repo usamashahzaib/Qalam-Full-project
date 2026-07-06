@@ -37,7 +37,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
         setStatus({ remaining, current, limit: effectiveLimit })
         if (typeof remaining === "number" && remaining === 0) setShowUpgrade(true)
       })
-      .catch(() => { /* silent — skeleton stays */ })
+      .catch(() => { /* silent - skeleton stays */ })
   }, [billing.plan])
 
   useEffect(() => {

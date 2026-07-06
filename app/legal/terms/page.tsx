@@ -29,15 +29,15 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">2. Service Description</h2>
-            <p>Qalam is an AI-assisted content drafting and publishing workflow tool designed for LinkedIn professionals. The service provides AI writing assistance, voice profile configuration, draft storage, hook management, content scheduling, and workspace tools. Qalam is a software tool that assists human writers — it does not publish content autonomously, scrape data, or perform automated actions on any platform without explicit, real-time user authorization.</p>
+            <p>Qalam is an AI-assisted content drafting and publishing workflow tool designed for LinkedIn professionals. The service provides AI writing assistance, voice profile configuration, draft storage, hook management, content scheduling, and workspace tools. Qalam is a software tool that assists human writers - it does not publish content autonomously, scrape data, or perform automated actions on any platform without explicit, real-time user authorization.</p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-zinc-900">3. Third-Party Platforms — LinkedIn Disclaimer</h2>
+            <h2 className="text-xl font-bold text-zinc-900">3. Third-Party Platforms - LinkedIn Disclaimer</h2>
             <p className="font-semibold text-zinc-900">Qalam is an independent product. It is not affiliated with, endorsed by, sponsored by, or in any way officially connected to LinkedIn Corporation or its parent company Microsoft.</p>
             <p className="mt-3">When you connect your LinkedIn account, you authorize Qalam to act on your behalf using LinkedIn&apos;s official API and only for the specific actions you initiate within the app (such as posting a draft you have reviewed and approved).</p>
             <p className="mt-3">You are solely responsible for ensuring that your use of Qalam complies with LinkedIn&apos;s <a href="https://www.linkedin.com/legal/user-agreement" target="_blank" rel="noopener noreferrer" className="text-teal underline">User Agreement</a>, <a href="https://www.linkedin.com/legal/professional-community-policies" target="_blank" rel="noopener noreferrer" className="text-teal underline">Professional Community Policies</a>, and all other LinkedIn platform rules. Qalam has no control over LinkedIn&apos;s decisions regarding your account.</p>
-            <p className="mt-3 font-semibold text-zinc-900">Qalam is not responsible — in any way — for any LinkedIn account restriction, suspension, ban, or removal of features, whether or not you were using Qalam at the time. LinkedIn independently enforces its own policies and may take action on any account at its discretion.</p>
+            <p className="mt-3 font-semibold text-zinc-900">Qalam is not responsible - in any way - for any LinkedIn account restriction, suspension, ban, or removal of features, whether or not you were using Qalam at the time. LinkedIn independently enforces its own policies and may take action on any account at its discretion.</p>
           </section>
 
           <section>

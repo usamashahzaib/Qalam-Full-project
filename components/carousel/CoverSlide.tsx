@@ -133,16 +133,16 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             </div>
             <span style={{ color: t.textMuted, fontSize: "19px" }}>{totalSlides ? `${totalSlides - 1} more in the full carousel` : "More in the full carousel"} →</span>
           </div>
+        </div>
 
-          {/* Divider + author */}
-          <div style={{ position: "absolute", bottom: -(H - P * 1.1 - 600), left: 0, right: 0 }}>
-            <div style={{ height: 1, background: t.dividerColor, marginBottom: 28 }} />
-            {authorName && (
-              <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>
-                {authorName}{designation ? ` · ${designation}` : ""}
-              </p>
-            )}
-          </div>
+        {/* Divider + author, anchored to the slide's own bottom edge */}
+        <div style={{ position: "absolute", zIndex: 2, bottom: P * 1.1, left: P, right: P }}>
+          <div style={{ height: 1, background: t.dividerColor, marginBottom: 28 }} />
+          {authorName && (
+            <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>
+              {authorName}{designation ? ` · ${designation}` : ""}
+            </p>
+          )}
         </div>
       </div>
     )
@@ -203,21 +203,21 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             </p>
           )}
 
-          <h1 style={{ color: t.accentColor, fontSize: "72px", fontWeight: 900, lineHeight: 1.06, margin: "0 0 44px", letterSpacing: "-0.03em", maxWidth: 860 }}>
+          <h1 style={{ color: t.accentColor, fontSize: "72px", fontWeight: 900, lineHeight: 1.06, margin: 0, letterSpacing: "-0.03em", maxWidth: 860 }}>
             {title}
           </h1>
-
-          {/* Author with circle avatar */}
-          {authorName && (
-            <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: "auto", position: "absolute", bottom: P * 1.1, left: P }}>
-              <Initials name={authorName} size={64} bg={t.accentColor} color="#FFFFFF" />
-              <div>
-                <p style={{ color: t.textPrimary, fontSize: "24px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{authorName}</p>
-                {designation && <p style={{ color: t.textSecondary, fontSize: "19px", margin: "4px 0 0" }}>{designation}</p>}
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Author with circle avatar, anchored to the slide's own bottom edge */}
+        {authorName && (
+          <div style={{ display: "flex", alignItems: "center", gap: 18, position: "absolute", zIndex: 2, bottom: P * 1.1, left: P }}>
+            <Initials name={authorName} size={64} bg={t.accentColor} color="#FFFFFF" />
+            <div>
+              <p style={{ color: t.textPrimary, fontSize: "24px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{authorName}</p>
+              {designation && <p style={{ color: t.textSecondary, fontSize: "19px", margin: "4px 0 0" }}>{designation}</p>}
+            </div>
+          </div>
+        )}
       </div>
     )
   }

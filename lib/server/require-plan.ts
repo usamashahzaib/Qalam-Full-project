@@ -58,7 +58,7 @@ export const requirePlan = async (
 
   // Single resolution path: getPlanStatus owns expiry/override data;
   // resolveEffectivePlan owns workspace-owner plan inheritance.
-  // Run both in parallel — they use independent DB queries.
+  // Run both in parallel - they use independent DB queries.
   const [planStatus, planInfo] = await Promise.all([
     getPlanStatus(session.supabaseUserId),
     resolveEffectivePlan(workspaceId, session.email, session.supabaseUserId),

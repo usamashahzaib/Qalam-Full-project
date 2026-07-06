@@ -1,5 +1,5 @@
 -- ================================================================
--- DEPRECATED — DO NOT RUN
+-- DEPRECATED - DO NOT RUN
 -- 0002_linkedin_credentials.sql
 -- ================================================================
 -- This file creates linkedin_credentials with owner_email TEXT as PK.

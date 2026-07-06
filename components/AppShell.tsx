@@ -103,6 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
+  const mobileSwitcherRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
   const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
@@ -122,7 +123,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchFocused(false)
-      if (switcherRef.current && !switcherRef.current.contains(e.target as Node)) setSwitcherOpen(false)
+      const insideSwitcher = (switcherRef.current && switcherRef.current.contains(e.target as Node)) ||
+        (mobileSwitcherRef.current && mobileSwitcherRef.current.contains(e.target as Node))
+      if (!insideSwitcher) setSwitcherOpen(false)
       if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) setUserDropdownOpen(false)
     }
     document.addEventListener("mousedown", handleOutsideClick)
@@ -182,7 +185,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <QalamLogo href={withClientParam("/dashboard", activeClientId)} size={28} textClassName="text-lg font-extrabold text-white" containerClassName="flex items-center gap-2" />
           </div>
 
-          <div className="px-4 py-4" ref={switcherRef}>
+          <div className="relative px-4 py-4" ref={switcherRef}>
             <button onClick={() => setSwitcherOpen(!switcherOpen)} aria-expanded={switcherOpen} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] uppercase font-bold tracking-wider text-teal-100/70">Active Workspace</p>
@@ -199,8 +202,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {canAddWorkspace ? (
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
                   ) : (
-                    <div className="px-3 py-2 text-xs text-zinc-500">
-                      Add workspace - <a href="/pricing?plan=Agency" className="text-teal-600 hover:underline">Unlock in Agency</a>
+                    <div className="px-4 py-3 text-xs text-zinc-400">
+                      Add workspace - <a href="/pricing?plan=Agency" className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
                     </div>
                   )}
                 </div>
@@ -371,7 +374,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         {switcherOpen && (
-          <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={switcherRef}>
+          <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
             <div className="bg-teal/5 px-4 py-2.5 text-xs font-bold text-teal">{activeClientName}</div>
             <div>

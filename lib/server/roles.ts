@@ -33,7 +33,7 @@ export const resolveWorkspaceMembership = async (
   _request: NextRequest,
   workspaceId: string
 ): Promise<{ userId: string; role: WorkspaceRole }> => {
-  // Use supabaseUserId (internal UUID) — requireAuth() returns the session token ID
+  // Use supabaseUserId (internal UUID) - requireAuth() returns the session token ID
   // which is the LinkedIn external ID for OAuth users, but workspace_members stores
   // the internal Supabase UUID. Using getWorkspaceSessionContext().supabaseUserId
   // ensures consistent lookups for both credentials and OAuth users.

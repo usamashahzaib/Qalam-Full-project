@@ -236,7 +236,7 @@ export default function VoicePage() {
                 )}
               </div>
 
-              {/* Voice training section — Pro only */}
+              {/* Voice training section - Pro only */}
               <LockedFeature requiredPlan="Pro" feature="Voice Training">
                 <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                   <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">

@@ -51,7 +51,7 @@ export async function POST(
     })
 
     if (rpcErr) {
-      // RPC not deployed yet — fall back to direct post update
+      // RPC not deployed yet - fall back to direct post update
       const { error: directErr } = await supabase
         .from("posts")
         .update({ content: version.content, updated_at: new Date().toISOString() })

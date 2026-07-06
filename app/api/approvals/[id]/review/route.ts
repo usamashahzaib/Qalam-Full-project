@@ -21,7 +21,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
   // Require a valid token always. A null hash means the row was created without
-  // token generation — treat as inaccessible rather than world-readable.
+  // token generation - treat as inaccessible rather than world-readable.
   if (!approval.review_token_hash || hashToken(token) !== approval.review_token_hash) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }

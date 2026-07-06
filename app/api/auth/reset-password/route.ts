@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServiceClient()
   const now = new Date().toISOString()
 
-  // Atomically mark token used — the conditional .eq("used", false) means only one
+  // Atomically mark token used - the conditional .eq("used", false) means only one
   // concurrent request wins; the loser gets null back and returns 400.
   const { data: record } = await supabase
     .from("password_resets")
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       .update({ password_version: currentVersion + 1 })
       .eq("id", record.user_id)
   } catch (e) {
-    // 42P01 = column not yet migrated — safe to skip.
+    // 42P01 = column not yet migrated - safe to skip.
     // Any other error means existing sessions may not be invalidated; log it.
     if ((e as { code?: string }).code !== "42P01") {
       console.error("reset-password.version_bump_failed", { userId: record.user_id, error: (e as Error).message })

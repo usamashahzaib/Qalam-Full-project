@@ -1,5 +1,5 @@
 -- ============================================================
--- COMBINED_NEW_MIGRATIONS.sql — Qalam FULL Schema
+-- COMBINED_NEW_MIGRATIONS.sql - Qalam FULL Schema
 -- ============================================================
 -- Run this on a FRESH Supabase project to create the entire schema.
 --
@@ -521,7 +521,7 @@ ALTER TABLE public.rate_limits              ENABLE ROW LEVEL SECURITY;
 
 -- ================================================================
 -- SECTION 14: RLS POLICIES
--- service_role bypasses RLS — policies govern anon/authenticated only.
+-- service_role bypasses RLS - policies govern anon/authenticated only.
 -- ================================================================
 
 CREATE POLICY "users_own_row" ON public.users
@@ -723,7 +723,7 @@ CREATE INDEX idx_organizations_plan       ON public.organizations (plan, subscri
 
 
 -- ================================================================
--- SECTION 16: TRIGGER — auto-log org plan changes
+-- SECTION 16: TRIGGER - auto-log org plan changes
 -- ================================================================
 
 CREATE OR REPLACE FUNCTION public.fn_track_plan_change()
@@ -1229,7 +1229,7 @@ $$;
 
 
 -- ================================================================
--- SECTION 22: PGVECTOR (conditional — only if extension is enabled)
+-- SECTION 22: PGVECTOR (conditional - only if extension is enabled)
 -- ================================================================
 
 DO $$

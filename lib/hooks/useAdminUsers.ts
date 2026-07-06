@@ -149,7 +149,7 @@ export function useAdminUsers(adminEmail: string) {
         userId: selfId || "",
         targetEmail: adminEmail,
         planOverride: "Pro",
-        draftLimitOverride: 9999,
+        draftLimitOverride: null,
         workspaceLimitOverride: null,
         featureFlags: Object.fromEntries(FEATURES.map(([k]) => [k, true])),
         notes: "Admin self-assign",

@@ -99,7 +99,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
   }
   const rawOverall = parsed.overall ?? Math.round(Object.values(rawScores).reduce((a, b) => a + b, 0) / 7)
 
-  // AI sometimes returns 0-10 scale despite prompt saying 0-100 — normalize
+  // AI sometimes returns 0-10 scale despite prompt saying 0-100 - normalize
   const isZeroToTen = rawOverall < 15 && Object.values(rawScores).every((v) => v <= 10)
   const m = isZeroToTen ? 10 : 1
   const gated = gateScores(trimmed, {

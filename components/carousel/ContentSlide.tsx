@@ -109,12 +109,12 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
               </p>
             </div>
           ))}
+        </div>
 
-          {/* Divider + author */}
-          <div style={{ position: "absolute", bottom: -(H - P - 620), left: 0, right: 0 }}>
-            <div style={{ height: 1, background: t.dividerColor, marginBottom: 24 }} />
-            {authorName && <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>{authorName}</p>}
-          </div>
+        {/* Divider + author, anchored to the slide's own bottom edge */}
+        <div style={{ position: "absolute", zIndex: 2, bottom: P, left: P, right: P }}>
+          <div style={{ height: 1, background: t.dividerColor, marginBottom: 24 }} />
+          {authorName && <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>{authorName}</p>}
         </div>
       </div>
     )

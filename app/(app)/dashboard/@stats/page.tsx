@@ -384,7 +384,7 @@ export default async function StatsPage() {
             ) : (
               <StatCard
                 label="Avg score"
-                value={stats.avgScore != null ? stats.avgScore : "—"}
+                value={stats.avgScore != null ? stats.avgScore : "-"}
                 accent={
                   stats.avgScore != null && stats.avgScore >= 80
                     ? "teal"

@@ -68,14 +68,14 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
       if (current >= limit) return false
       // Conditional update: only succeeds if value hasn't changed since we read it.
       if (current === 0 && !row) {
-        // No row yet — seed it atomically so the first-ever action is never blocked.
+        // No row yet - seed it atomically so the first-ever action is never blocked.
         const { data: inserted } = await supabase
           .from("plan_usage")
           .insert({ user_id: userId, competitor_runs_used: 1 })
           .select("competitor_runs_used")
           .maybeSingle()
         if (inserted) return true
-        // Row was inserted by a concurrent request between our SELECT and INSERT — retry.
+        // Row was inserted by a concurrent request between our SELECT and INSERT - retry.
         continue
       }
       // Conditional update: only succeeds if value hasn't changed since we read it.
@@ -87,7 +87,7 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
         .select("competitor_runs_used")
         .maybeSingle()
       if (updated) return true
-      // Another concurrent request modified the row — retry.
+      // Another concurrent request modified the row - retry.
     }
     return false
   }

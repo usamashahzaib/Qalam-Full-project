@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
   } catch { /* fall back to provided userId */ }
 
   // Clean up any override stored under the external (OAuth sub) key so both IDs
-  // don't exist simultaneously — keeps lookup deterministic.
+  // don't exist simultaneously - keeps lookup deterministic.
   if (externalUserId && externalUserId !== canonicalUserId) {
     try { await supabase.from("user_overrides").delete().eq("user_id", externalUserId) } catch { /* non-fatal */ }
     try { await supabase.from("plan_usage").delete().eq("user_id", externalUserId) } catch { /* non-fatal */ }

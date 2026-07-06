@@ -2,11 +2,11 @@
 --
 -- Fixes three issues found in the schema audit:
 -- 1. workspaces.owner_email column was never added by any migration
---    but provision_oauth_user RPC inserts it — without this column
+--    but provision_oauth_user RPC inserts it - without this column
 --    every new user registration fails with a column-not-found error.
--- 2. competitor_analyses had USING(true) — any authenticated user
+-- 2. competitor_analyses had USING(true) - any authenticated user
 --    could read every other user's competitive research history.
--- 3. carousels had USING(true) WITH CHECK(true) — any authenticated
+-- 3. carousels had USING(true) WITH CHECK(true) - any authenticated
 --    user could read and write carousel data for other users.
 -- 4. review_token_hash column added to approvals (added by 0027 but
 --    may be missing if 0027 did not run cleanly after schema changes).

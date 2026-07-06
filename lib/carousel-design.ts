@@ -361,10 +361,13 @@ export const CANVAS = {
   fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
 } as const
 
-export function resolveTheme(themeId: CarouselThemeId, accentOverride?: string): CarouselTheme {
+export function resolveTheme(themeId: CarouselThemeId, accentOverride?: string, bgOverride?: string): CarouselTheme {
   const base = CAROUSEL_THEMES[themeId] ?? CAROUSEL_THEMES[DEFAULT_THEME_ID]
-  if (!accentOverride) return base
-  return { ...base, accentColor: accentOverride, accentColorAlt: accentOverride }
+  return {
+    ...base,
+    ...(accentOverride ? { accentColor: accentOverride, accentColorAlt: accentOverride } : null),
+    ...(bgOverride ? { bgGradient: bgOverride } : null),
+  }
 }
 
 export type CarouselSlide = {

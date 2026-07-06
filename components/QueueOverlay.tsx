@@ -41,7 +41,7 @@ export function QueueOverlay({
             : message}
         </p>
         <p className="mt-1 text-amber-700 text-xs">
-          Our AI is processing many requests right now. Your request is in line — hang tight.
+          Our AI is processing many requests right now. Your request is in line - hang tight.
         </p>
 
         {plan === "Free" && (
@@ -54,7 +54,7 @@ export function QueueOverlay({
               onClick={onUpgrade}
               className="mt-2 w-full rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors"
             >
-              Upgrade to Solo — PKR 499/mo
+              Upgrade to Solo - PKR 499/mo
             </button>
           </div>
         )}
@@ -80,13 +80,13 @@ export function QueueOverlay({
       <div className="mt-4 rounded-lg border border-teal/20 bg-teal-50 p-4">
         <p className="font-semibold text-teal-800">Need more generations?</p>
         <p className="mt-1 text-teal-700">
-          Free plan: 5 generations/hour — Solo: 15/hour
+          Free plan: 5 generations/hour - Solo: 15/hour
         </p>
         <button
           onClick={onUpgrade}
           className="mt-3 w-full rounded-lg bg-teal px-4 py-2 text-white hover:bg-teal-600 transition-colors"
         >
-          Upgrade to Solo — PKR 499/mo
+          Upgrade to Solo - PKR 499/mo
         </button>
       </div>
     </div>

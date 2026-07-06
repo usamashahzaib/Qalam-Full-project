@@ -17,7 +17,7 @@ DROP TABLE IF EXISTS public.memberships CASCADE;
 DROP TABLE IF EXISTS public.user_workspace CASCADE;
 
 -- ----------------------------------------------------------------
--- 3. plan_usage.user_id — add UUID FK column alongside the TEXT column
+-- 3. plan_usage.user_id - add UUID FK column alongside the TEXT column
 --    We cannot simply change TEXT -> UUID without a data migration,
 --    so we add a new UUID column, backfill it, and enforce FK there.
 --    Application code already uses internal UUIDs for plan_usage inserts.

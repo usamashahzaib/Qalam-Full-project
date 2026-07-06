@@ -8,6 +8,7 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useCalendarLogic } from "@/lib/hooks/useCalendarLogic"
+import { getPostPreviewText } from "@/lib/post-content"
 
 // ─── Helpers (render-only, no state) ─────────────────────────────────────────
 
@@ -378,18 +379,7 @@ export default function CalendarPage() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const getContentPreview = (post: WorkspacePost): string => {
-  if (post.type?.toLowerCase().includes("carousel")) {
-    try {
-      const slides = JSON.parse(post.content) as { title?: string; body?: string }[]
-      if (Array.isArray(slides) && slides.length > 0) {
-        const firstTitle = slides[0].title || slides[0].body?.slice(0, 40) || "Untitled slide"
-        return `Carousel - ${slides.length} slides: ${firstTitle}`
-      }
-    } catch { /* fall through */ }
-  }
-  return post.content?.slice(0, 80) || ""
-}
+const getContentPreview = (post: WorkspacePost): string => getPostPreviewText(post).slice(0, 80)
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

@@ -4,7 +4,7 @@ import { getQueuePosition, getSystemDemand } from "@/lib/server/queue"
 export async function GET(req: NextRequest) {
   const requestId = req.nextUrl.searchParams.get("requestId")
 
-  // No requestId — return current system demand for pre-generation status checks
+  // No requestId - return current system demand for pre-generation status checks
   if (!requestId) {
     const demand = await getSystemDemand()
     return NextResponse.json({

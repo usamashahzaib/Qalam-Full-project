@@ -77,7 +77,7 @@ BEGIN
   WHERE owner_id = target_user_id
     AND id NOT IN (SELECT workspace_id FROM workspace_members);
 
-  -- ── Users row (last — breaks all remaining FK references) ────────
+  -- ── Users row (last - breaks all remaining FK references) ────────
   DELETE FROM users           WHERE id = target_user_id;
 END;
 $$;

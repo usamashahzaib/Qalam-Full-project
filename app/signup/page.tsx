@@ -8,11 +8,11 @@ import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
 
 const ROLES = [
-  "HR Professional",
-  "Marketing Professional",
-  "Founder / Entrepreneur",
   "Consultant",
   "Content Creator",
+  "Founder / Entrepreneur",
+  "HR Professional",
+  "Marketing Professional",
   "Other",
 ]
 

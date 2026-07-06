@@ -7,6 +7,7 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import type { WorkspacePost } from "@/types/domain"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { LockedFeature } from "@/components/LockedFeature"
+import { getPostPreviewText } from "@/lib/post-content"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -309,7 +310,7 @@ export default function LibraryPage() {
                   <tr key={post.id} className="group transition-colors hover:bg-zinc-50/60">
                     <td className="px-5 py-3.5">
                       <p className="max-w-sm truncate text-sm font-semibold text-zinc-900">{post.title}</p>
-                      <p className="mt-0.5 max-w-sm truncate text-xs text-zinc-400">{post.content?.slice(0, 100)}</p>
+                      <p className="mt-0.5 max-w-sm truncate text-xs text-zinc-400">{getPostPreviewText(post).slice(0, 100)}</p>
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-500">
@@ -369,7 +370,7 @@ export default function LibraryPage() {
                 <span className="text-[10px] text-zinc-400">{formatDate(post.scheduledTime || post.updatedAt || post.date)}</span>
               </div>
               <p className="mb-1.5 text-sm font-bold leading-snug text-zinc-900 line-clamp-2">{post.title}</p>
-              <p className="text-xs leading-relaxed text-zinc-500 line-clamp-3">{post.content}</p>
+              <p className="text-xs leading-relaxed text-zinc-500 line-clamp-3">{getPostPreviewText(post)}</p>
               <div className="mt-4 flex items-center gap-2 border-t border-zinc-100 pt-3">
                 <button
                   onClick={() => onEdit(post)}

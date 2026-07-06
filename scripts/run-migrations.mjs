@@ -4,11 +4,11 @@
  *
  * Usage (two options):
  *
- * Option A — Supabase Management API (recommended):
+ * Option A - Supabase Management API (recommended):
  *   SUPABASE_ACCESS_TOKEN=sbp_xxxx node scripts/run-migrations.mjs
  *   Get your access token: https://app.supabase.com/account/tokens
  *
- * Option B — Direct PostgreSQL (needs DB password):
+ * Option B - Direct PostgreSQL (needs DB password):
  *   SUPABASE_DB_URL="postgresql://postgres.rnyjlgxrvtzdavsfocmi:[password]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres" node scripts/run-migrations.mjs
  *   Get the connection string: Supabase Dashboard → Project Settings → Database → Connection pooling
  *

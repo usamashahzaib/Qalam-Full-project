@@ -4,7 +4,7 @@ import { requireAdminPage } from "@/lib/server/workspace"
 import { MigrationsClient } from "./MigrationsClient"
 
 export const metadata: Metadata = {
-  title: "DB Migrations — Admin",
+  title: "DB Migrations - Admin",
   robots: { index: false, follow: false },
 }
 

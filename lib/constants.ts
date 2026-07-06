@@ -2,10 +2,10 @@
 // UI-specific display arrays that require icon imports stay in their respective page files.
 
 export const WRITER_ROLES = [
+  "Consultant",
+  "Founder",
   "HR",
   "Marketing",
-  "Founder",
-  "Consultant",
   "Sales",
   "Tech",
   "Other",
@@ -21,27 +21,27 @@ export const POST_FORMATS = [
 export const HOOK_STYLES = ["SHARP", "AUTHORITY", "STORY", "CURIOSITY", "DIRECT"] as const
 
 export const ACCOUNT_ROLES = [
-  "HR Professional",
-  "Marketing Professional",
-  "Founder / Entrepreneur",
   "Consultant",
   "Content Creator",
+  "Founder / Entrepreneur",
+  "HR Professional",
+  "Marketing Professional",
   "Other",
 ] as const
 
 export const INDUSTRY_OPTIONS = [
-  "Technology",
-  "Marketing & Advertising",
-  "Finance & Banking",
-  "Healthcare",
-  "Education",
   "Consulting",
   "E-commerce & Retail",
-  "Real Estate",
-  "Media & Entertainment",
+  "Education",
+  "Finance & Banking",
+  "Healthcare",
   "HR & Recruitment",
   "Legal",
   "Manufacturing",
+  "Marketing & Advertising",
+  "Media & Entertainment",
   "Non-profit",
+  "Real Estate",
+  "Technology",
   "Other",
 ] as const

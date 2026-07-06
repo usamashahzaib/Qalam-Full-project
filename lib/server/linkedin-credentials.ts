@@ -14,7 +14,7 @@ function getEncryptionKey(): Buffer | null {
 function encryptToken(token: string): string {
   const key = getEncryptionKey()
   if (!key) {
-    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured — cannot encrypt token")
+    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured - cannot encrypt token")
   }
   const iv = crypto.randomBytes(12)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
@@ -25,12 +25,12 @@ function encryptToken(token: string): string {
 
 function decryptToken(stored: string): string {
   if (!stored.startsWith("enc:")) {
-    console.warn("[security] Unencrypted LinkedIn token detected — migrate immediately")
+    console.warn("[security] Unencrypted LinkedIn token detected - migrate immediately")
     throw new Error("LinkedIn token is unencrypted; refusing plaintext token")
   }
   const key = getEncryptionKey()
   if (!key) {
-    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured — cannot decrypt token")
+    throw new Error("LINKEDIN_TOKEN_ENCRYPTION_KEY not configured - cannot decrypt token")
   }
   const parts = stored.split(":")
   if (parts.length !== 4) {
@@ -44,7 +44,7 @@ function decryptToken(stored: string): string {
     decipher.setAuthTag(authTag)
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8")
   } catch (err) {
-    throw new Error(`Token decryption failed — key mismatch or corrupt data: ${(err as Error).message}`)
+    throw new Error(`Token decryption failed - key mismatch or corrupt data: ${(err as Error).message}`)
   }
 }
 
@@ -203,7 +203,7 @@ export const getAllLinkedInTokens = async (): Promise<LinkedInCredential[]> => {
       if (rows.length < pageSize) break
     }
   } catch (err) {
-    // Do not swallow silently — log and return whatever was successfully loaded so far.
+    // Do not swallow silently - log and return whatever was successfully loaded so far.
     console.error("linkedin_tokens_load_failed", {
       error: err instanceof Error ? err.message : String(err),
       recovered: tokens.length,

@@ -18,12 +18,12 @@ BEGIN
 
     RAISE NOTICE 'pgvector: voice_profiles.embedding column created';
   ELSE
-    RAISE NOTICE 'pgvector not enabled — skipping voice_profiles.embedding. Enable in Supabase Dashboard → Extensions → vector';
+    RAISE NOTICE 'pgvector not enabled - skipping voice_profiles.embedding. Enable in Supabase Dashboard → Extensions → vector';
   END IF;
 END $$;
 
 -- Store example posts as individual chunks for retrieval
--- (text only — vector column added separately after pgvector is enabled)
+-- (text only - vector column added separately after pgvector is enabled)
 CREATE TABLE IF NOT EXISTS public.voice_examples (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id UUID        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,

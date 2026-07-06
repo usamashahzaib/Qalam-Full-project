@@ -2,7 +2,7 @@ import "server-only"
 
 // lib/server/auth.ts
 // Wraps NextAuth session into internal user context for API routes.
-// withAuth logs all errors and 401s centrally — individual routes only need
+// withAuth logs all errors and 401s centrally - individual routes only need
 // to add log.info for their success paths.
 
 export type AuthSession = {
@@ -60,7 +60,7 @@ async function provisionOAuthUser(
       return { internalId: existingUser.id, workspaceId: membership?.workspace_id ?? null }
     }
 
-    // New user — sequential inserts with upsert semantics
+    // New user - sequential inserts with upsert semantics
     const internalId = crypto.randomUUID()
     const { data: upsertedUser } = await supabase
       .from("users")
@@ -209,7 +209,7 @@ export async function requireAuthApi(request: NextRequest) {
   let workspaceId: string | null = null
 
   if (!user) {
-    // First sign-in — provision atomically via RPC
+    // First sign-in - provision atomically via RPC
     const provisioned = await provisionOAuthUser(supabase, externalId, session)
     internalId = provisioned.internalId
     workspaceId = provisioned.workspaceId

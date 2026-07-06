@@ -46,7 +46,7 @@ const getThirtyDayWindow = (startedAt?: string | null) => {
   return { windowStart, windowEnd }
 }
 
-// Single canonical plan resolver — call this everywhere instead of any local higherPlan logic.
+// Single canonical plan resolver - call this everywhere instead of any local higherPlan logic.
 export async function getCanonicalPlan(userId: string): Promise<string> {
   return (await getPlanStatus(userId)).plan
 }
@@ -58,7 +58,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
   const supabase = createServiceClient()
   const expiryStatus = await getExpiryPlanStatus(userId)
 
-  // Phase 1 (parallel): usage + users.plan + payment — no inter-dependencies
+  // Phase 1 (parallel): usage + users.plan + payment - no inter-dependencies
   const [usageResult, usersResult, paymentResult] = await Promise.all([
     supabase.rpc("get_or_create_plan_usage", { p_user_id: userId }),
     // users.plan + plan_expires_at are updated by payment webhook - authoritative source
@@ -84,7 +84,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
 
   // Phase 2: check user_overrides with ALL matching IDs.
   // Admin panel stores overrides under externalId (OAuth sub) but getPlanStatus is called
-  // with the internal Supabase UUID — need to try both so overrides are never missed.
+  // with the internal Supabase UUID - need to try both so overrides are never missed.
   const idsToCheck = [userId, usersResult.data?.id, usersResult.data?.external_user_id]
     .filter((id): id is string => typeof id === "string" && id.length > 0)
   const uniqueIds = [...new Set(idsToCheck)]
@@ -146,7 +146,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
   const usersPlan = normalizePlan(expiryStatus.plan || usersResult.data?.plan)
   const boughtAt = paymentResult.data?.processed_at || paymentResult.data?.created_at || usage?.cycle_start || usersResult.data?.created_at || null
   // Use the stored plan_expires_at from users table as the authoritative expiry.
-  // resolvePlanExpiry is only a display fallback — never let a computed date override the stored one.
+  // resolvePlanExpiry is only a display fallback - never let a computed date override the stored one.
   const storedExpiresAt = usersResult.data?.plan_expires_at ?? null
   const planExpiresAt = resolvePlanExpiry(storedExpiresAt || usage?.cycle_end, boughtAt)
 
@@ -279,13 +279,13 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
             remaining: Math.max(0, limit - (currentVal + 1)),
           }
         }
-        // Another request modified the row between our read and write — retry.
+        // Another request modified the row between our read and write - retry.
       } catch {
         return { allowed: false, current: 0, limit, remaining: 0, error: "usage_update_failed" }
       }
     }
     // All CAS attempts lost to concurrent updates. Do a final authoritative read
-    // before denying — the concurrent winners may have pushed the counter over the
+    // before denying - the concurrent winners may have pushed the counter over the
     // limit, in which case denying is correct; if they haven't, the user should not
     // be blocked just because we lost the race.
     try {
@@ -298,7 +298,7 @@ export async function incrementUsage(userId: string, feature: Feature, internalU
   }
 }
 
-// Refund one usage unit — call this when generation succeeds but a later step fails.
+// Refund one usage unit - call this when generation succeeds but a later step fails.
 // Best-effort: if the RPC/DB call fails we log and move on (over-refunding is fine; under-refunding is not).
 export async function decrementUsage(userId: string, feature: Feature): Promise<void> {
   const supabase = createServiceClient()
@@ -324,5 +324,5 @@ export async function decrementUsage(userId: string, feature: Feature): Promise<
   }
 }
 
-// Single source of truth for feature gating — delegates to lib/pricing.ts.
+// Single source of truth for feature gating - delegates to lib/pricing.ts.
 export { isFeatureAllowed } from "@/lib/pricing"

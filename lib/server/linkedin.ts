@@ -89,7 +89,7 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
     })
 
     if (!response.ok) {
-      // Token rejected — flag the stored credential so the UI can prompt a reconnect.
+      // Token rejected - flag the stored credential so the UI can prompt a reconnect.
       if (response.status === 401 && (payload.userId || payload.workspaceId)) {
         await markLinkedInTokenInvalid({ userId: payload.userId, workspaceId: payload.workspaceId })
       }

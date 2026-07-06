@@ -33,7 +33,7 @@ async function processBatch<T, R>(
 export async function GET(request: Request) {
   try {
     // Verify cron secret (Vercel injects this header for cron jobs).
-    // Guard against an unset CRON_SECRET — otherwise "Bearer undefined" would pass.
+    // Guard against an unset CRON_SECRET - otherwise "Bearer undefined" would pass.
     const cronSecret = process.env.CRON_SECRET
     if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 })

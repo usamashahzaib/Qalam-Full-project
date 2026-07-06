@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (existing) {
-    // Generic response — do not confirm whether the email is already registered.
+    // Generic response - do not confirm whether the email is already registered.
     // Returning a 200 here makes a duplicate indistinguishable from a fresh signup.
     return NextResponse.json({
       success: true,
@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* ignore - workspace_invites table may not exist yet */ }
 
-  // Save email verification token — required for the user to verify their address.
+  // Save email verification token - required for the user to verify their address.
   const { error: verificationErr } = await supabase.from("email_verifications").insert({
     user_id: userId,
     token_hash: verificationTokenHash,
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not create account. Please try again." }, { status: 500 })
   }
 
-  // Send verification email — critical for account activation; surface failures visibly.
+  // Send verification email - critical for account activation; surface failures visibly.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
   const emailResult = await sendTransactionalEmail({
     to: email,

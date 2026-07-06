@@ -51,7 +51,7 @@ for (const [label, vp] of Object.entries(VIEWPORTS)) {
     })
 
     for (const path of MARKETING_PAGES) {
-      test(`${path} — no horizontal scroll`, async ({ page }) => {
+      test(`${path} - no horizontal scroll`, async ({ page }) => {
         await page.goto(path, { waitUntil: "domcontentloaded", timeout: 30000 })
         await page.waitForTimeout(800) // allow layout paint
         await expectNoHorizontalOverflow(page)

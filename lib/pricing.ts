@@ -120,7 +120,7 @@ export const plans: Plan[] = [
   },
 ]
 
-// Plans visible on the public pricing page — Agency is hidden until it ships
+// Plans visible on the public pricing page - Agency is hidden until it ships
 export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 
 export const MANAGED_PLANS: ManagedPlan[] = [

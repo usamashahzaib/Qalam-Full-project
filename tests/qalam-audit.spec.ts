@@ -143,7 +143,7 @@ test.describe("SEO landing pages", () => {
   for (const slug of seoSlugs) {
     test(`/${slug} renders correctly`, async ({ page }) => {
       const res = await page.goto(`/${slug}`)
-      // Should be 200 or redirect — not 404
+      // Should be 200 or redirect - not 404
       if (res?.status() === 404) {
         // Page not in registry, skip
         return

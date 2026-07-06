@@ -35,6 +35,17 @@ const ACCENT_SWATCHES = [
   { label: "Cyan", value: "#06B6D4" },
 ]
 
+const BG_SWATCHES = [
+  { label: "Theme default", value: "" },
+  { label: "White", value: "#FFFFFF" },
+  { label: "Cream", value: "#FBF5EE" },
+  { label: "Ivory", value: "#F5F2EC" },
+  { label: "Charcoal", value: "#1A1A1A" },
+  { label: "Navy", value: "#0D1B35" },
+  { label: "Forest", value: "#1A3D30" },
+  { label: "Blush", value: "#F9EDE4" },
+]
+
 type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
 type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string }
 
@@ -57,6 +68,8 @@ export default function CarouselEditorPage() {
   const [selectedThemeId, setSelectedThemeId] = useState<CarouselThemeId>(DEFAULT_THEME_ID)
   const [accentOverride, setAccentOverride] = useState("")
   const [customAccent, setCustomAccent] = useState("")
+  const [bgOverride, setBgOverride] = useState("")
+  const [customBg, setCustomBg] = useState("")
   const [authorName, setAuthorName] = useState("")
   const [authorHandle, setAuthorHandle] = useState("")
   const [designation, setDesignation] = useState("")
@@ -67,7 +80,7 @@ export default function CarouselEditorPage() {
   const [pdfDone, setPdfDone] = useState(false)
   const [showLegacyThemes, setShowLegacyThemes] = useState(false)
 
-  const theme = resolveTheme(selectedThemeId, customAccent || accentOverride || undefined)
+  const theme = resolveTheme(selectedThemeId, customAccent || accentOverride || undefined, customBg || bgOverride || undefined)
 
   // Fixed refs for off-screen PNG capture (supports up to 12 slides)
   const ref0 = useRef<HTMLDivElement>(null)
@@ -424,6 +437,36 @@ export default function CarouselEditorPage() {
                 style={{ background: customAccent || "conic-gradient(red 0%,yellow 17%,lime 33%,cyan 50%,blue 67%,magenta 83%,red 100%)" }}
               >
                 {!customAccent && <svg className="w-2.5 h-2.5 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>}
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Row 4: Background color */}
+        <div className="mt-4">
+          <p className="mb-1.5 text-xs font-medium text-zinc-500">Background color override</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {BG_SWATCHES.map((swatch) => (
+              <button
+                key={swatch.label}
+                onClick={() => { setBgOverride(swatch.value); setCustomBg("") }}
+                title={swatch.label}
+                className={`h-6 w-6 rounded-full border-2 transition-all ${bgOverride === swatch.value && !customBg ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
+                style={{ background: swatch.value || resolveTheme(selectedThemeId).bgGradient, boxShadow: "inset 0 0 0 1px rgba(0,0,0,0.12)" }}
+              />
+            ))}
+            <label className="relative h-6 w-6 cursor-pointer" title="Pick custom background color">
+              <input
+                type="color"
+                className="sr-only"
+                value={customBg || "#FFFFFF"}
+                onChange={(e) => { setCustomBg(e.target.value); setBgOverride("") }}
+              />
+              <div
+                className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${customBg ? "border-zinc-800 scale-110 shadow" : "border-zinc-200 hover:border-zinc-400"}`}
+                style={{ background: customBg || "conic-gradient(red 0%,yellow 17%,lime 33%,cyan 50%,blue 67%,magenta 83%,red 100%)" }}
+              >
+                {!customBg && <svg className="w-2.5 h-2.5 text-white drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>}
               </div>
             </label>
           </div>

@@ -1,5 +1,5 @@
 -- ================================================================
--- schema_final.sql — Qalam Production Schema
+-- schema_final.sql - Qalam Production Schema
 -- ================================================================
 -- Single authoritative file. Run on a clean Supabase project.
 -- Fixes all issues found in the incremental migration sequence:
@@ -247,7 +247,7 @@ CREATE TABLE public.post_versions (
 -- 5. CAROUSEL TABLES
 -- ================================================================
 
--- Simple carousel (direct JSON slides — used by /api/carousel)
+-- Simple carousel (direct JSON slides - used by /api/carousel)
 CREATE TABLE public.carousels (
   id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     TEXT        NOT NULL,
@@ -501,7 +501,7 @@ ALTER TABLE public.rate_limits             ENABLE ROW LEVEL SECURITY;
 
 -- ================================================================
 -- 13. RLS POLICIES
--- service_role bypasses RLS automatically — policies here govern
+-- service_role bypasses RLS automatically - policies here govern
 -- anon / authenticated direct Supabase client access only.
 -- All app routes use service_role key, so RLS is a safety net.
 -- ================================================================
@@ -1269,7 +1269,7 @@ END;
 $$;
 
 -- ================================================================
--- 21. PGVECTOR (conditional — runs only if extension is enabled)
+-- 21. PGVECTOR (conditional - runs only if extension is enabled)
 -- ================================================================
 
 DO $$
@@ -1283,6 +1283,6 @@ BEGIN
 
     RAISE NOTICE 'pgvector: embedding columns created on voice_profiles and voice_examples';
   ELSE
-    RAISE NOTICE 'pgvector not enabled — skipping embedding columns. Enable via Dashboard → Database → Extensions → vector, then re-run section 21.';
+    RAISE NOTICE 'pgvector not enabled - skipping embedding columns. Enable via Dashboard → Database → Extensions → vector, then re-run section 21.';
   END IF;
 END $$;

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
+import { getPostPreviewText, getPostSourceText } from "@/lib/post-content"
 
 type CarouselProject = { id: string; topic: string; role: string; slide_count: number; created_at: string }
 const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
@@ -47,7 +48,7 @@ const THEME_META: Record<string, { gradient: string; accent: string; text: strin
     structure: ["Gap: The role you actually need", "Signal: How great candidates think", "Screen: What to look for first", "Interview: The question that reveals it", "Red flag: What to walk away from", "Offer: How to close them", "Onboard: The first-week setup"],
   },
 }
-const ROLE_SUGGESTIONS = ["Founder", "Software Developer", "Marketer", "Sales Leader", "HR Leader", "Consultant", "CEO"] as const
+const ROLE_SUGGESTIONS = ["CEO", "Consultant", "Founder", "HR Leader", "Marketer", "Sales Leader", "Software Developer"] as const
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
 export default function CarouselsPage() {
@@ -104,13 +105,13 @@ export default function CarouselsPage() {
   useEffect(() => { fetchCarousels() }, [fetchCarousels])
 
   const generateCarousel = async () => {
-    const sourceContent = selectedPost ? selectedPost.content : seed.trim()
+    const sourceContent = selectedPost ? getPostSourceText(selectedPost) : seed.trim()
     if (!sourceContent) { setError("Add source content or pick a post first."); return }
     setIsGenerating(true)
     setError(null)
     try {
       const topic = selectedPost?.title
-        ? `${selectedPost.title}\n\n${selectedPost.content}`.slice(0, 200)
+        ? `${selectedPost.title}\n\n${sourceContent}`.slice(0, 200)
         : sourceContent.slice(0, 200)
       const res = await fetch("/api/carousel", {
         method: "POST",
@@ -211,7 +212,7 @@ export default function CarouselsPage() {
               <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                 <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Selected post</p>
                 <p className="mt-1 text-sm font-semibold text-zinc-900">{selectedPost.title}</p>
-                <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-zinc-600">{selectedPost.content}</p>
+                <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-zinc-600">{getPostPreviewText(selectedPost)}</p>
               </div>
             ) : (
               <label className="mt-3 block">

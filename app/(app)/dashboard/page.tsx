@@ -238,7 +238,7 @@ export default async function DashboardPage() {
         </Link>
       </header>
 
-      {/* Static sections — render immediately, no data dependency */}
+      {/* Static sections - render immediately, no data dependency */}
       <WritingPromptsCard />
       <QuickActionsCard />
     </>

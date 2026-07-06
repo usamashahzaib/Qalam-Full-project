@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.email_verifications (
 CREATE INDEX IF NOT EXISTS idx_email_verifications_token
   ON public.email_verifications (token_hash);
 
--- ── 4. RLS — service role only (tokens are secrets) ─────────────────────────
+-- ── 4. RLS - service role only (tokens are secrets) ─────────────────────────
 
 ALTER TABLE public.password_resets     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.email_verifications ENABLE ROW LEVEL SECURITY;

@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     const token = generateToken()
     const tokenHash = hashToken(token)
 
-    // Only send the reset email if the token row was persisted — otherwise the
+    // Only send the reset email if the token row was persisted - otherwise the
     // link would be dead. On failure we log but still return the generic OK
     // response so we never reveal whether the address exists.
     const { error: insertError } = await supabase.from("password_resets").insert({

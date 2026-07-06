@@ -236,7 +236,7 @@ export function useCalendarLogic({
     setDragOverDay(null)
     const postId = e.dataTransfer.getData(DRAG_POST_KEY)
     const post = dragPostRef.current
-    // Reject if IDs don't match — prevents a foreign drag-data injection from
+    // Reject if IDs don't match - prevents a foreign drag-data injection from
     // rescheduling a post that wasn't started from this calendar's onDragStart.
     if (!postId || !post || postId !== post.id) return
     if (post.date === targetDate) return

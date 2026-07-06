@@ -145,11 +145,11 @@ export function createScopedClient(workspaceId: string) {
 
   function from(table: string) {
     return {
-      /** SELECT — workspace_id filter is the first constraint; caller can chain more */
+      /** SELECT - workspace_id filter is the first constraint; caller can chain more */
       select: (columns = "*") =>
         supabase.from(table).select(columns).eq("workspace_id", workspaceId),
 
-      /** INSERT — forces workspace_id onto every row */
+      /** INSERT - forces workspace_id onto every row */
       insert: (data: Record<string, unknown> | Record<string, unknown>[]) => {
         const rows = (Array.isArray(data) ? data : [data]).map((r) => ({
           ...r,
@@ -158,11 +158,11 @@ export function createScopedClient(workspaceId: string) {
         return supabase.from(table).insert(rows)
       },
 
-      /** UPDATE — forces workspace_id WHERE clause */
+      /** UPDATE - forces workspace_id WHERE clause */
       update: (data: Record<string, unknown>) =>
         supabase.from(table).update(data).eq("workspace_id", workspaceId),
 
-      /** DELETE — forces workspace_id WHERE clause */
+      /** DELETE - forces workspace_id WHERE clause */
       delete: () =>
         supabase.from(table).delete().eq("workspace_id", workspaceId),
 

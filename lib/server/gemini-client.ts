@@ -49,7 +49,7 @@ export async function callGemini(
 
   const data = await response.json()
   const candidate = data.candidates?.[0]
-  // Safety/recitation/length blocks return a candidate with no content — not a hard error.
+  // Safety/recitation/length blocks return a candidate with no content - not a hard error.
   // Throw a recognisable message so the router skips to the next provider without
   // recording a circuit-breaker failure.
   const finishReason = candidate?.finishReason as string | undefined

@@ -1,4 +1,4 @@
-// Vercel Cron: every 5 minutes — see vercel.json
+// Vercel Cron: every 5 minutes - see vercel.json
 // Finds posts due for manual-publish notification. Skips workspaces with a
 // connected LinkedIn account (auto-publish cron handles those).
 export const maxDuration = 30
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
   const now = new Date().toISOString()
 
   for (const post of duePosts as unknown as DuePost[]) {
-    // Skip workspaces that have auto-publish configured — their cron handles publishing
+    // Skip workspaces that have auto-publish configured - their cron handles publishing
     if (autoPublishWorkspaces.has(post.workspace_id)) {
       autoPublishSkipped++
       continue
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 
     const contentPreview = (post.content || "").slice(0, 300)
 
-    // Mark as notified FIRST — prevents duplicate emails if the email call
+    // Mark as notified FIRST - prevents duplicate emails if the email call
     // succeeds but this write fails on a subsequent cron run.
     const { error: updateErr } = await supabase
       .from("posts")
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest) {
         ``,
         `Your post "${post.title}" was scheduled for ${scheduledAt}.`,
         ``,
-        `To publish it, open Qalam and share it to LinkedIn manually — your LinkedIn account`,
+        `To publish it, open Qalam and share it to LinkedIn manually - your LinkedIn account`,
         `is not connected to Qalam for auto-publishing.`,
         ``,
         `Here's a preview of your content:`,
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         ``,
         `To enable auto-publishing in future, connect your LinkedIn account in Settings.`,
         ``,
-        `— The Qalam team`,
+        `- The Qalam team`,
       ].join("\n"),
     }).catch((err) => console.error(`[cron/schedule] email failed for post ${post.id}:`, err))
 

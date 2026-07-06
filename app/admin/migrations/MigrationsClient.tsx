@@ -85,7 +85,7 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                     <p className="text-xs font-semibold text-amber-800">Fresh setup detected</p>
                     <p className="mt-1 text-xs text-amber-700">
-                      Many tables are missing — this looks like a new database. <code className="rounded bg-amber-100 px-1">COMBINED_NEW_MIGRATIONS.sql</code> will drop and recreate all tables from scratch. This is safe on an empty database. Do not run it if you have existing data you want to keep.
+                      Many tables are missing - this looks like a new database. <code className="rounded bg-amber-100 px-1">COMBINED_NEW_MIGRATIONS.sql</code> will drop and recreate all tables from scratch. This is safe on an empty database. Do not run it if you have existing data you want to keep.
                     </p>
                   </div>
                 )}

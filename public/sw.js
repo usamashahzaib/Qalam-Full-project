@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   // Only handle navigation requests for offline fallback.
-  // Authenticated API mutations (POST/PUT) are intentionally NOT intercepted —
+  // Authenticated API mutations (POST/PUT) are intentionally NOT intercepted -
   // storing session cookies in IndexedDB is a security risk and replaying
   // expired tokens is unreliable. Let the browser handle them directly.
   if (event.request.mode === 'navigate') {

@@ -55,5 +55,5 @@ const rpcs = [
 for (const [fn, body] of rpcs) {
   const r = await checkRpc(fn, body)
   const status = r.status === 404 ? "MISS" : r.status === 200 ? "OK  " : `HTTP_${r.status}`
-  console.log(`  ${status} rpc/${fn} — ${r.body.slice(0,80)}`)
+  console.log(`  ${status} rpc/${fn} - ${r.body.slice(0,80)}`)
 }
