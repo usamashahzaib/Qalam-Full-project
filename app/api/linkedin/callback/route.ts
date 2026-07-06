@@ -40,9 +40,18 @@ export async function GET(request: NextRequest) {
     })
 
     if (!tokenRes.ok) throw new Error("linkedin_token_exchange_failed")
-    const tokenData = await tokenRes.json() as { access_token?: string; expires_in?: number }
+    const tokenData = await tokenRes.json() as {
+      access_token?: string
+      expires_in?: number
+      refresh_token?: string
+      refresh_token_expires_in?: number
+    }
     const accessToken = tokenData.access_token
     if (!accessToken) throw new Error("linkedin_token_missing")
+    const refreshToken = tokenData.refresh_token || null
+    const refreshTokenExpiresAt = tokenData.refresh_token_expires_in
+      ? Date.now() + tokenData.refresh_token_expires_in * 1000
+      : null
 
     // OIDC userinfo: the connect route requests OIDC scopes (openid profile email),
     // under which the legacy /v2/me endpoint returns 403. The OIDC `sub` claim is the
@@ -60,8 +69,8 @@ export async function GET(request: NextRequest) {
     if (!memberId) throw new Error("linkedin_member_id_missing")
     const expiresAt = tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : null
 
-    await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt })
-    await storeLinkedInPublishingAccount({ workspaceId, accessToken, memberId, tokenExpiresAt: expiresAt })
+    await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt, refreshToken, refreshTokenExpiresAt })
+    await storeLinkedInPublishingAccount({ workspaceId, accessToken, memberId, tokenExpiresAt: expiresAt, refreshToken, refreshTokenExpiresAt })
 
     const response = redirectToSettings(request, "success")
     response.cookies.delete("linkedin_oauth_state")

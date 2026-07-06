@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
-import { getLinkedInPublishingAccount } from "@/lib/server/linkedin-credentials"
+import { ensureFreshLinkedInPublishingAccount } from "@/lib/server/linkedin-credentials"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getRedis } from "@/lib/server/redis"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
     const uniqueWorkspaceIds = [...new Set(duePosts.map(p => p.workspace_id))]
     const uniqueUserIds = [...new Set(duePosts.map(p => p.user_id).filter(Boolean))]
     const [accountEntries, users] = await Promise.all([
-      Promise.all(uniqueWorkspaceIds.map(async (wsId) => [wsId, await getLinkedInPublishingAccount(wsId)] as const)),
+      Promise.all(uniqueWorkspaceIds.map(async (wsId) => [wsId, await ensureFreshLinkedInPublishingAccount(wsId)] as const)),
       uniqueUserIds.length
         ? supabaseSelect<UserRow>("users", `id=in.(${uniqueUserIds.map(encodeURIComponent).join(",")})&select=id,email,full_name`).catch(() => [])
         : Promise.resolve([]),

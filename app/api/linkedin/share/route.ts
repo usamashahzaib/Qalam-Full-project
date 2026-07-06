@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
-import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { ensureFreshLinkedInPublishingAccount, ensureFreshLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 
 type ShareRequestBody = {
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
   }
 
-  const account = await getLinkedInPublishingAccount(workspaceId)
-  const legacyCred = account ? null : await getLinkedInToken(ctx.supabaseUserId)
+  const account = await ensureFreshLinkedInPublishingAccount(workspaceId)
+  const legacyCred = account ? null : await ensureFreshLinkedInToken(ctx.supabaseUserId)
   const accessToken = account?.access_token || legacyCred?.access_token || null
   const authorId = account?.provider_account_id || legacyCred?.member_id || null
   const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacyCred?.token_expires_at || null

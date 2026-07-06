@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
-import { getLinkedInPublishingAccount, getLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { ensureFreshLinkedInPublishingAccount, ensureFreshLinkedInToken } from "@/lib/server/linkedin-credentials"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": process.env.FRONTEND_ORIGIN || "*",
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   try {
     const ctx = await getWorkspaceSessionContext()
     const workspaceId = await resolveWorkspaceId(request)
-    const account = await getLinkedInPublishingAccount(workspaceId)
-    const legacy = account ? null : await getLinkedInToken(ctx.supabaseUserId)
+    const account = await ensureFreshLinkedInPublishingAccount(workspaceId)
+    const legacy = account ? null : await ensureFreshLinkedInToken(ctx.supabaseUserId)
     const accessToken = account?.access_token || legacy?.access_token || ""
     const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacy?.token_expires_at || null
 

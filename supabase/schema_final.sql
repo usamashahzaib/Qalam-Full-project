@@ -200,12 +200,28 @@ CREATE TABLE public.payments (
 -- ================================================================
 
 CREATE TABLE public.linkedin_credentials (
-  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id          UUID        NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-  access_token     TEXT        NOT NULL,
-  member_id        TEXT,
-  token_expires_at BIGINT,
-  updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id                  UUID        NOT NULL UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+  access_token             TEXT        NOT NULL,
+  member_id                TEXT,
+  token_expires_at         BIGINT,
+  refresh_token            TEXT,
+  refresh_token_expires_at BIGINT,
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE public.publishing_accounts (
+  id                       UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  workspace_id             UUID        NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
+  provider                 TEXT        NOT NULL DEFAULT 'linkedin',
+  provider_account_id      TEXT        NOT NULL,
+  access_token             TEXT,
+  refresh_token            TEXT,
+  expires_at               TIMESTAMPTZ,
+  refresh_token_expires_at TIMESTAMPTZ,
+  created_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at               TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (workspace_id, provider)
 );
 
 CREATE TABLE public.posts (
@@ -479,6 +495,7 @@ ALTER TABLE public.user_overrides          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_audit_log         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.linkedin_credentials    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.publishing_accounts     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts                   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.post_versions           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.carousels               ENABLE ROW LEVEL SECURITY;

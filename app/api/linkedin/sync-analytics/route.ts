@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { pollLinkedInAnalytics } from "@/lib/server/linkedin"
-import { getAllLinkedInTokens } from "@/lib/server/linkedin-credentials"
+import { ensureFreshLinkedInToken, getAllLinkedInTokens } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert, supabaseSelect, createServiceClient } from "@/lib/server/supabase-rest"
 
 const CONCURRENCY = 3
@@ -69,10 +69,13 @@ export async function GET(request: Request) {
         const todayStart = new Date()
         todayStart.setUTCHours(0, 0, 0, 0)
 
+        const fresh = await ensureFreshLinkedInToken(cred.user_id)
+        const accessToken = fresh?.access_token || cred.access_token
+
         for (const post of posts) {
           if (!post.external_post_urn) continue
           try {
-            const stats = await pollLinkedInAnalytics(cred.access_token, post.external_post_urn, cred.user_id)
+            const stats = await pollLinkedInAnalytics(accessToken, post.external_post_urn, cred.user_id)
 
             // Write event log (existing behaviour)
             await supabaseInsert("workspace_events", {

@@ -53,6 +53,8 @@ type LinkedInCredential = {
   access_token: string
   member_id: string | null
   token_expires_at: number | null
+  refresh_token?: string | null
+  refresh_token_expires_at?: number | null
   updated_at: string
 }
 
@@ -64,6 +66,7 @@ type PublishingAccount = {
   access_token: string | null
   refresh_token: string | null
   expires_at: string | null
+  refresh_token_expires_at: string | null
   updated_at: string
 }
 
@@ -72,11 +75,15 @@ export const storeLinkedInToken = async ({
   accessToken,
   memberId,
   tokenExpiresAt,
+  refreshToken,
+  refreshTokenExpiresAt,
 }: {
   userId: string
   accessToken: string
   memberId: string | null
   tokenExpiresAt: number | null
+  refreshToken?: string | null
+  refreshTokenExpiresAt?: number | null
 }) => {
   await supabaseInsert(
     "linkedin_credentials",
@@ -85,6 +92,8 @@ export const storeLinkedInToken = async ({
       access_token: encryptToken(accessToken),
       member_id: memberId,
       token_expires_at: tokenExpiresAt,
+      ...(refreshToken ? { refresh_token: encryptToken(refreshToken) } : {}),
+      ...(refreshTokenExpiresAt !== undefined ? { refresh_token_expires_at: refreshTokenExpiresAt } : {}),
       updated_at: new Date().toISOString(),
     },
     "resolution=merge-duplicates"
@@ -96,11 +105,15 @@ export const storeLinkedInPublishingAccount = async ({
   accessToken,
   memberId,
   tokenExpiresAt,
+  refreshToken,
+  refreshTokenExpiresAt,
 }: {
   workspaceId: string
   accessToken: string
   memberId: string | null
   tokenExpiresAt: number | null
+  refreshToken?: string | null
+  refreshTokenExpiresAt?: number | null
 }) => {
   const existing = await supabaseSelect<PublishingAccount>(
     "publishing_accounts",
@@ -112,8 +125,9 @@ export const storeLinkedInPublishingAccount = async ({
     provider: "linkedin",
     provider_account_id: memberId || workspaceId,
     access_token: encryptToken(accessToken),
-    refresh_token: null,
+    ...(refreshToken ? { refresh_token: encryptToken(refreshToken) } : {}),
     expires_at: tokenExpiresAt ? new Date(tokenExpiresAt).toISOString() : null,
+    refresh_token_expires_at: refreshTokenExpiresAt ? new Date(refreshTokenExpiresAt).toISOString() : null,
     updated_at: new Date().toISOString(),
   }
 
@@ -128,7 +142,7 @@ export const storeLinkedInPublishingAccount = async ({
 
   const rows = await supabaseInsert<PublishingAccount>(
     "publishing_accounts",
-    payload,
+    { ...payload, refresh_token: refreshToken ? encryptToken(refreshToken) : null },
     "return=representation"
   )
   return rows?.[0] || null
@@ -145,10 +159,111 @@ export const getLinkedInPublishingAccount = async (workspaceId: string): Promise
     return {
       ...row,
       access_token: row.access_token ? decryptToken(row.access_token) : null,
+      refresh_token: row.refresh_token ? decryptToken(row.refresh_token) : null,
     }
   } catch (err) {
     console.error("linkedin_publishing_account_load_failed", { workspaceId, error: err instanceof Error ? err.message : String(err) })
     throw err
+  }
+}
+
+/**
+ * LinkedIn access tokens last 60 days; refresh tokens last ~365 days. If the
+ * access token is close to expiry and a live refresh token exists, exchange it
+ * for a new access token so the user does not have to manually reconnect.
+ * Falls back to returning the existing account untouched on any failure -
+ * callers already handle an expired access_token by prompting a reconnect.
+ */
+const REFRESH_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000
+
+export const ensureFreshLinkedInPublishingAccount = async (workspaceId: string): Promise<PublishingAccount | null> => {
+  const account = await getLinkedInPublishingAccount(workspaceId)
+  if (!account?.access_token || !account.refresh_token) return account
+
+  const expiresAt = account.expires_at ? Date.parse(account.expires_at) : null
+  if (expiresAt == null || expiresAt - Date.now() > REFRESH_THRESHOLD_MS) return account
+
+  const refreshTokenExpiresAt = account.refresh_token_expires_at ? Date.parse(account.refresh_token_expires_at) : null
+  if (refreshTokenExpiresAt != null && refreshTokenExpiresAt < Date.now()) return account
+
+  try {
+    const refreshed = await refreshLinkedInAccessToken(account.refresh_token)
+    const updated = await storeLinkedInPublishingAccount({
+      workspaceId,
+      accessToken: refreshed.accessToken,
+      memberId: account.provider_account_id,
+      tokenExpiresAt: refreshed.expiresAt,
+      refreshToken: refreshed.refreshToken,
+      refreshTokenExpiresAt: refreshed.refreshTokenExpiresAt,
+    })
+    return updated || account
+  } catch (err) {
+    console.error("linkedin_publishing_account_refresh_failed", { workspaceId, error: err instanceof Error ? err.message : String(err) })
+    return account
+  }
+}
+
+export const ensureFreshLinkedInToken = async (userId: string): Promise<LinkedInCredential | null> => {
+  const credential = await getLinkedInToken(userId)
+  if (!credential?.access_token || !credential.refresh_token) return credential
+
+  const expiresAt = credential.token_expires_at
+  if (expiresAt == null || expiresAt - Date.now() > REFRESH_THRESHOLD_MS) return credential
+
+  const refreshTokenExpiresAt = credential.refresh_token_expires_at ?? null
+  if (refreshTokenExpiresAt != null && refreshTokenExpiresAt < Date.now()) return credential
+
+  try {
+    const refreshed = await refreshLinkedInAccessToken(credential.refresh_token)
+    await storeLinkedInToken({
+      userId,
+      accessToken: refreshed.accessToken,
+      memberId: credential.member_id,
+      tokenExpiresAt: refreshed.expiresAt,
+      refreshToken: refreshed.refreshToken,
+      refreshTokenExpiresAt: refreshed.refreshTokenExpiresAt,
+    })
+    return await getLinkedInToken(userId)
+  } catch (err) {
+    console.error("linkedin_token_refresh_failed", { userId, error: err instanceof Error ? err.message : String(err) })
+    return credential
+  }
+}
+
+type RefreshedLinkedInToken = {
+  accessToken: string
+  expiresAt: number | null
+  refreshToken: string
+  refreshTokenExpiresAt: number | null
+}
+
+export const refreshLinkedInAccessToken = async (refreshToken: string): Promise<RefreshedLinkedInToken> => {
+  const clientId = process.env.LINKEDIN_CLIENT_ID || ""
+  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET || ""
+  const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) throw new Error("linkedin_refresh_failed")
+  const data = await res.json() as {
+    access_token?: string
+    expires_in?: number
+    refresh_token?: string
+    refresh_token_expires_in?: number
+  }
+  if (!data.access_token) throw new Error("linkedin_refresh_missing_token")
+  return {
+    accessToken: data.access_token,
+    expiresAt: data.expires_in ? Date.now() + data.expires_in * 1000 : null,
+    refreshToken: data.refresh_token || refreshToken,
+    refreshTokenExpiresAt: data.refresh_token_expires_in ? Date.now() + data.refresh_token_expires_in * 1000 : null,
   }
 }
 
@@ -164,7 +279,11 @@ export const getLinkedInToken = async (userId: string): Promise<LinkedInCredenti
     )
     const row = rows?.[0]
     if (!row) return null
-    return { ...row, access_token: decryptToken(row.access_token) }
+    return {
+      ...row,
+      access_token: decryptToken(row.access_token),
+      refresh_token: row.refresh_token ? decryptToken(row.refresh_token) : null,
+    }
   } catch (err) {
     console.error("linkedin_token_load_failed", { userId, error: err instanceof Error ? err.message : String(err) })
     throw err
