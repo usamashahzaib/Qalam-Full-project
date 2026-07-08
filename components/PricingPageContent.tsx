@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -110,7 +111,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
-  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">("selfserve")
+  const searchParams = useSearchParams()
+  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
+    searchParams.get("tab") === "managed" ? "managed" : "selfserve"
+  )
 
   useEffect(() => {
     if (status !== "authenticated") return

@@ -697,49 +697,21 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Managed Plans teaser */}
+          {/* Managed / agency plans - full detail lives on /pricing, not duplicated here */}
           <FadeUp className="mt-8">
-            <div className="rounded-2xl border-2 border-gold/40 bg-gold/10 p-8 shadow-[0_18px_48px_rgba(201,135,31,0.14)]">
-              <div className="mb-6 text-center">
-                <span className="chip mb-3 inline-flex border-gold/40 bg-white text-gold-700">Done-for-you</span>
-                <h3 className="mb-2 text-3xl font-extrabold text-zinc-900">Managed Plans</h3>
-                <p className="mx-auto max-w-lg text-sm leading-relaxed text-zinc-600">
-                  A dedicated Qalam writer creates and posts on your behalf - 3x/week minimum. You approve before it goes live.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {MANAGED_PLANS.map((plan) => (
-                  <div key={plan.name} className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-                    <div className="mb-1 flex items-center justify-between">
-                      <p className="text-sm font-bold text-zinc-900">{plan.name}</p>
-                      <span className="rounded-full bg-gold px-2.5 py-0.5 text-xs font-bold text-white">Managed</span>
-                    </div>
-                    <p className="mb-3 text-2xl font-extrabold text-zinc-900">
-                      {formatPkr(plan.monthlyPrice)}<span className="text-sm font-normal text-zinc-500">/mo</span>
-                    </p>
-                    <p className="text-xs leading-relaxed text-zinc-500">{plan.description}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 text-center">
-                <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
-                  See Managed Plan details
-                </Link>
-              </div>
-            </div>
-          </FadeUp>
-
-          <FadeUp className="mt-6">
             <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-8 md:flex-row md:items-center">
               <div>
-                <h3 className="mb-2 text-xl font-bold text-zinc-700">Managing content for clients or a team?</h3>
+                <h3 className="mb-2 text-xl font-bold text-zinc-700">Want a writer to handle it, or managing content for clients?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
-                  We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow.
+                  Managed plans start at {formatPkr(MANAGED_PLANS[0].monthlyPrice)}/mo, and agencies get isolated client workspaces.
                 </p>
               </div>
-              <div className="shrink-0">
+              <div className="flex shrink-0 gap-3">
+                <Link href="/pricing?tab=managed" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
+                  See managed plans
+                </Link>
                 <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
-                  Get in Touch
+                  Get in touch
                 </Link>
               </div>
             </div>

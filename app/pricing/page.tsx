@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from "next"
+import { Suspense } from "react"
 import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
@@ -152,7 +153,9 @@ export default async function PricingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema).replace(/</g, "\\u003c") }} />
-      <PricingPageContent pricingCurrency={pricingCurrency} />
+      <Suspense fallback={null}>
+        <PricingPageContent pricingCurrency={pricingCurrency} />
+      </Suspense>
     </>
   )
 }
