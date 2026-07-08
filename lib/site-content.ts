@@ -61,7 +61,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
     bullets: [
       "Learns from real source posts and edits",
       "Preserves long-term writing patterns",
-      "Creates switching cost through accumulated voice data",
+      "Gets more precisely you the longer you use it",
     ],
     updatedAt: "2026-06-26",
     faqs: [

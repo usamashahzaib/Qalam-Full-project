@@ -85,8 +85,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-28 pb-16 sm:pt-16">
-      <div className="w-full max-w-sm">
+    <div className="app-shell flex min-h-screen items-center justify-center px-4 pt-28 pb-16 sm:pt-16">
+      <div className="app-content w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <QalamLogo href="/" size={28} textClassName="text-xl font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />

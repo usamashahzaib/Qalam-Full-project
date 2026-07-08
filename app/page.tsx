@@ -187,7 +187,7 @@ function ProductMockup() {
           x: { duration: 0.5, delay: 0.9 },
           y: { duration: 3.5, delay: 1.4, repeat: Infinity, ease: "easeInOut" },
         }}
-        className="absolute -right-4 top-8 rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl"
+        className="absolute -right-4 top-8 hidden rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl sm:block"
       >
         <p className="text-[10px] font-medium text-zinc-500">Live product</p>
         <p className="text-xl font-bold text-teal">Free to start</p>

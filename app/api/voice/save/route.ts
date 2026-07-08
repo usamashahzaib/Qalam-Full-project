@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
     industry: String(body.industry || "").trim(),
     linkedin_url: String(body.linkedinUrl || "").trim(),
     brand_tone: String(body.brandTone || "").trim(),
-    tone: String(body.brandTone || "").trim(),
     goals: String(body.goals || "").trim(),
     ...(hasVoiceTraining ? {
       example_posts: String(body.examplePosts || "").trim() || null,

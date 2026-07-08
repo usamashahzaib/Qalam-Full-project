@@ -1,16 +1,20 @@
 # UI UX Pro Max - Design Intelligence Skill
 
 ## Core Principles
-- **Styles:** Support Glassmorphism, Minimalism, and Aurora UI.
-- **Typography:** Primary Font: 'Space Grotesk' or 'Fredoka' for headings, 'Inter' for body.
-- **Colors:** - Primary: #3B82F6 (Blue)
-  - CTA: #F97316 (Orange)
-  - Background: #F8FAFC (Light Gray/White)
-- **UX Rules:** - Use animations ONLY for loading and subtle transitions.
+- **Style:** Premium editorial - a serious, high-trust publishing system. No generic AI-startup gradients or glassmorphism-as-decoration.
+- **Typography:** 'Cormorant Garamond' for display/serif accents, 'Plus Jakarta Sans' for body and UI text (see `app/globals.css` `--font-cormorant` / `--font-jakarta`).
+- **Colors:**
+  - Teal (primary): `#0D4A45` (`--color-teal`, with `-50` through `-900` steps)
+  - Gold (accent/CTA): `#C9871F` (`--color-gold`, with `-50` through `-700` steps)
+  - Background: warm off-white `#f5f7f6` / `#fafaf8`, not pure white or grey
+- **UX Rules:**
+  - Motion is restrained and purposeful (loading states, subtle reveals) - never decorative noise.
   - Hover feedback on all interactive elements.
-  - Dark mode contrast must be OLED-friendly.
+  - Maintain contrast in both light and dark contexts; avoid dark-on-dark text.
 
 ## Components Guidelines
-- **Hero:** Use 'Video-First' or 'Hero + Features' patterns.
-- **Charts:** Use Recharts or Chart.js for data visualization.
-- **Buttons:** Use rounded corners, 8px spacing, and smooth hover lifts.
+- **Hero:** Editorial headline + product/workspace preview mockup, not stock illustration.
+- **Buttons:** `rounded-xl`, gold fill for the primary/highlighted action, teal-tinted outline for secondary actions so they still read as clickable next to a highlighted CTA.
+- **Cards:** frosted `.qalam-card` / `.content-card` treatment (see `app/globals.css`) for in-app surfaces.
+
+Source of truth for tokens is always `app/globals.css` and `lib/pricing.ts` / `lib/site-content.ts` - if this file and the code disagree, the code wins.

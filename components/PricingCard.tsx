@@ -120,8 +120,10 @@ export function PricingCard({
       ) : (
         <Link
           href={href}
-          className={`w-full rounded-xl py-3 text-center text-sm font-semibold transition-all duration-200 ${
-            highlighted ? "bg-gold text-white shadow-sm hover:bg-gold-600" : "bg-teal-50 text-teal hover:bg-teal hover:text-white"
+          className={`w-full rounded-xl border py-3 text-center text-sm font-semibold transition-all duration-200 ${
+            highlighted
+              ? "border-transparent bg-gold text-white shadow-sm hover:bg-gold-600"
+              : "border-teal/30 bg-teal-50 text-teal hover:border-teal hover:bg-teal hover:text-white"
           }`}
         >
           {cta}

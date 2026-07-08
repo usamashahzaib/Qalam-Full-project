@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
@@ -192,6 +193,10 @@ export function Navbar() {
   const [mobileSection, setMobileSection] = useState<"product" | "use-cases" | null>(null)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
   const { data: session, status } = useSession()
+  const pathname = usePathname()
+  // Pricing has its own early-access urgency banner - stacking the global
+  // announcement on top of it doubles up on urgency messaging.
+  const showAnnouncement = announcementVisible && pathname !== "/pricing"
 
   useEffect(() => {
     if (localStorage.getItem("qalam_announce_dismissed") === "1") {
@@ -208,7 +213,7 @@ export function Navbar() {
   return (
     <div className="fixed left-0 right-0 top-0 z-50 flex flex-col">
       <AnimatePresence>
-        {announcementVisible && (
+        {showAnnouncement && (
           <motion.div
             initial={{ height: 40, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
