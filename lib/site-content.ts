@@ -106,6 +106,33 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       },
     ],
   },
+  "comment-generator": {
+    eyebrow: "Product",
+    title: "Comment Generator",
+    summary: "Write sharp, on-voice comments on other people's posts to build visibility between your own drafts.",
+    description:
+      "Publishing your own posts is only half the feed. Qalam's Comment Generator drafts thoughtful, on-voice replies to posts you want to engage with, so you stay visible in other people's threads without sounding like a generic reply-guy.",
+    bullets: [
+      "On-voice comment drafts for any post",
+      "Builds visibility between your own publishing days",
+      "Fast entry point into daily engagement habits",
+    ],
+    updatedAt: "2026-07-09",
+    faqs: [
+      {
+        q: "Is the Comment Generator different from the AI Writer?",
+        a: "Yes. The AI Writer drafts your own posts, while the Comment Generator drafts replies to other people's posts so you stay visible between publishing days.",
+      },
+      {
+        q: "Does it match my voice profile?",
+        a: "Yes, on paid plans it uses the same voice memory as the writer so comments sound consistent with your posts.",
+      },
+      {
+        q: "Is there a free version?",
+        a: "Yes. The free tool at /free-tools/comment-generator gives a limited number of generations per month with no account setup beyond signing in.",
+      },
+    ],
+  },
   "post-scheduler": {
     eyebrow: "Product",
     title: "Post Scheduler",
@@ -173,6 +200,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Faster authority-building workflow",
       "Keeps founder tone intact",
       "Reduces blank-page friction",
+      "Comment Generator keeps you visible between posting days",
     ],
     updatedAt: "2026-06-26",
     audience: "Founders and executive operators building authority on LinkedIn",
@@ -197,6 +225,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Shared content system",
       "Cleaner review loop",
       "More consistent team output",
+      "Comment Generator for on-brand engagement across the team",
     ],
     updatedAt: "2026-06-26",
     audience: "In-house marketing teams managing brand voice and output consistency",
@@ -221,6 +250,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Employer-brand publishing support",
       "Reusable narratives for culture and hiring",
       "Authority without agency overhead",
+      "Comment Generator for consistent employer-brand replies",
     ],
     updatedAt: "2026-06-26",
     audience: "HR and employer-brand leaders publishing on LinkedIn",
@@ -245,6 +275,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Thought-leadership consistency",
       "Archive of reusable angles and frameworks",
       "Better signal for inbound opportunities",
+      "Comment Generator to stay visible in client and peer threads",
     ],
     updatedAt: "2026-06-26",
     audience: "Consultants building authority and inbound demand on LinkedIn",
@@ -269,6 +300,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
       "Separate client memory",
       "Approval discipline before publish",
       "More scalable delivery quality",
+      "Comment Generator for per-client engagement at scale",
     ],
     updatedAt: "2026-06-26",
     audience: "Content and ghostwriting agencies running multi-client LinkedIn operations",

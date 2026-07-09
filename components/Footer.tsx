@@ -8,6 +8,7 @@ const FOOTER_LINKS = {
     { label: "Post Writer", href: "/product/post-writer" },
     { label: "Voice Profile", href: "/product/voice-profile" },
     { label: "Hook Generator", href: "/product/hook-generator" },
+    { label: "Comment Generator", href: "/product/comment-generator" },
     { label: "Post Scheduler", href: "/product/post-scheduler" },
     { label: "Agency Workspaces", href: "/product/agency-workspaces" },
   ],

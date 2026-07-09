@@ -12,6 +12,7 @@ const PRODUCT_LINKS = [
   { label: "Post Writer", href: "/product/post-writer", desc: "Draft and revise in one structured workflow" },
   { label: "Voice Profile", href: "/product/voice-profile", desc: "Train Qalam on your real writing tone" },
   { label: "Hook Generator", href: "/product/hook-generator", desc: "Build stronger openings, archive the best" },
+  { label: "Comment Generator", href: "/product/comment-generator", desc: "Stay visible with on-voice replies" },
   { label: "Post Scheduler", href: "/product/post-scheduler", desc: "Plan publishing without losing draft context" },
   { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Separate clients with their own voice memory" },
 ]

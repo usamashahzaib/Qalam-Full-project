@@ -10,6 +10,7 @@ import {
   BrainIcon,
   CalendarIcon,
   CheckIcon,
+  CommentIcon,
   ComposeIcon,
   GrowthIcon,
   HookIcon,
@@ -74,6 +75,11 @@ const FEATURES = [
     icon: TeamIcon,
     title: "Agency Workflow Preview",
     desc: "Client isolation, approval workflows, and per-client publishing controls are live. Contact us directly to set up your agency workspace.",
+  },
+  {
+    icon: CommentIcon,
+    title: "Comment Generator",
+    desc: "Draft sharp, on-voice replies to other people's posts so you stay visible between your own publishing days.",
   },
 ]
 

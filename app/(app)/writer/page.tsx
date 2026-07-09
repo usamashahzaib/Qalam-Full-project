@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { withClientParam } from "@/lib/workspace-navigation"
@@ -723,6 +724,14 @@ export default function WriterPage() {
                     {status.text}
                   </p>
                 )}
+
+                <p className="mt-3 text-xs text-zinc-400">
+                  Stay visible between posts with the{" "}
+                  <Link href="/free-tools/comment-generator" className="font-medium text-teal hover:text-teal-700">
+                    Comment Generator
+                  </Link>
+                  .
+                </p>
               </div>
             </section>
           )}

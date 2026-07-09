@@ -11,6 +11,7 @@ const PRODUCT_KEYWORDS: Record<keyof typeof PRODUCT_PAGES, string[]> = {
   "post-writer": ["AI post writer", "LinkedIn post writer", "AI LinkedIn writer", "LinkedIn content generator"],
   "voice-profile": ["AI voice profile", "brand voice AI", "AI writing memory", "train AI on writing style"],
   "hook-generator": ["LinkedIn hook generator", "AI hook generator", "LinkedIn opening lines", "post hook generator"],
+  "comment-generator": ["LinkedIn comment generator", "AI comment generator", "LinkedIn engagement AI", "comment on LinkedIn posts"],
   "post-scheduler": ["LinkedIn post scheduler", "LinkedIn content scheduler", "schedule LinkedIn posts", "AI publishing workflow"],
   "agency-workspaces": ["agency content workflow", "LinkedIn agency tool", "client content approvals", "AI ghostwriting agency"],
 }
