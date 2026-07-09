@@ -156,12 +156,12 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
 
         <section className="px-6 pb-8">
           <div className="mx-auto max-w-[860px] rounded-2xl border border-teal/20 bg-teal/5 p-7">
-            <h2 className="mb-2 text-lg font-bold text-zinc-900">Free LinkedIn tools - no account required</h2>
-            <p className="mb-5 text-sm text-zinc-500">Try any of these instantly. No sign-in, no friction.</p>
+            <h2 className="mb-2 text-lg font-bold text-zinc-900">Free LinkedIn tools</h2>
+            <p className="mb-5 text-sm text-zinc-500">Try any of these instantly. Most need no sign-in.</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { label: "Hook Generator", desc: "Generate 5 opening lines for any topic", href: "/free-tools/hook-generator" },
-                { label: "Comment Generator", desc: "On-voice replies to any post", href: "/free-tools/comment-generator" },
+                { label: "Comment Generator", desc: "On-voice replies, free sign-in required", href: "/free-tools/comment-generator" },
                 { label: "Headline Analyzer", desc: "Score your LinkedIn headline", href: "/free-tools/headline-analyzer" },
                 { label: "Engagement Predictor", desc: "Pre-publish score before posting", href: "/free-tools/engagement-predictor" },
               ].map((tool) => (

@@ -1,226 +1,64 @@
-"use client"
+import type { Metadata } from "next"
+import { CommentGeneratorTool } from "@/components/tools/CommentGeneratorTool"
+import { SITE_URL } from "@/lib/seo"
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { FadeUp } from "@/components/FadeUp"
-import { RequireAuth } from "@/components/providers/RequireAuth"
-import { CommentIcon } from "@/components/ui/qalam-icons"
-
-const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
-
-const STYLE_LABELS: Record<string, string> = {
-  insightful: "Insightful",
-  supportive: "Supportive",
-  engaging: "Engaging",
+export const metadata: Metadata = {
+  title: "Free LinkedIn Comment Generator - On-Voice Replies",
+  description:
+    "Draft sharp, on-voice LinkedIn comments for any post in seconds. AI-powered comment generator with 3 tailored styles per post. Free sign-in required.",
+  alternates: { canonical: `${SITE_URL}/free-tools/comment-generator` },
+  openGraph: {
+    title: "Free LinkedIn Comment Generator - On-Voice Replies | Qalam",
+    description:
+      "Paste a post, pick your professional angle, and get 3 tailored comment styles ready to post. Free sign-in required. Built by Qalam, the AI LinkedIn writer.",
+    url: `${SITE_URL}/free-tools/comment-generator`,
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Free LinkedIn Comment Generator | Qalam",
+    description:
+      "3 tailored comment styles for any LinkedIn post. Free sign-in required. Built by Qalam.",
+  },
 }
 
-const MAX_POST_LENGTH = 5000
-
-type Comment = { style: string; text: string }
-
-function CommentGeneratorTool() {
-  const router = useRouter()
-  const [postText, setPostText] = useState("")
-  const [profile, setProfile] = useState<(typeof PROFILES)[number]>("Founder")
-  const [comments, setComments] = useState<Comment[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [upgradeRequired, setUpgradeRequired] = useState(false)
-  const [copied, setCopied] = useState<number | null>(null)
-
-  const handleGenerate = async () => {
-    const trimmed = postText.trim()
-    if (trimmed.length < 10) {
-      setError("Paste at least 10 characters of the post you want to comment on.")
-      return
-    }
-    setLoading(true)
-    setError(null)
-    setUpgradeRequired(false)
-    setComments([])
-
-    try {
-      const res = await fetch("/api/comments/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText: trimmed, profile }),
-      })
-
-      if (res.status === 401) {
-        router.replace(`/login?callbackUrl=${encodeURIComponent("/free-tools/comment-generator")}`)
-        return
-      }
-
-      const data = await res.json()
-
-      if (res.status === 403 && (data.error === "monthly_limit_reached" || data.error === "upgrade_required" || data.error === "plan_expired")) {
-        setUpgradeRequired(true)
-        setError(data.message || "You've reached your monthly comment generation limit.")
-        return
-      }
-
-      if (!res.ok) {
-        setError(data.error || "Failed to generate comments. Please try again.")
-        return
-      }
-
-      if (!data.comments || data.comments.length === 0) {
-        setError("No comments returned. Please try again.")
-        return
-      }
-
-      setComments(data.comments)
-    } catch {
-      setError("Network error. Please check your connection and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCopy = async (text: string, index: number) => {
-    try {
-      await navigator.clipboard.writeText(text)
-    } catch {
-      const ta = document.createElement("textarea")
-      ta.value = text
-      ta.style.position = "fixed"
-      ta.style.opacity = "0"
-      document.body.appendChild(ta)
-      ta.select()
-      document.execCommand("copy")
-      document.body.removeChild(ta)
-    }
-    setCopied(index)
-    setTimeout(() => setCopied(null), 2000)
-  }
-
-  return (
-    <div className="min-h-screen bg-zinc-50 pt-24">
-      <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-16">
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-[400px] w-[400px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.2) 0%, transparent 70%)" }}
-        />
-        <div className="relative z-10 mx-auto max-w-[760px]">
-          <FadeUp>
-            <Link href="/free-tools" className="mb-6 inline-flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-teal">
-              {"<- All Free Tools"}
-            </Link>
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal">
-                <CommentIcon className="h-6 w-6" />
-              </div>
-            </div>
-            <h1 className="mb-4 text-4xl font-extrabold leading-tight text-zinc-900 sm:text-5xl">
-              LinkedIn Comment Generator
-            </h1>
-            <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              Paste a post you want to comment on, pick your professional angle, and get 3 tailored comment styles ready to post.
-            </p>
-          </FadeUp>
-        </div>
-      </section>
-
-      <section className="px-6 py-12">
-        <div className="mx-auto max-w-[760px]">
-          <FadeUp>
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-              <div className="border-b border-zinc-100 p-6">
-                <label className="mb-2 block text-sm font-semibold text-zinc-800">Post you want to comment on</label>
-                <textarea
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value.slice(0, MAX_POST_LENGTH))}
-                  placeholder="Paste the LinkedIn post text here..."
-                  rows={6}
-                  className="w-full resize-y rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-800 placeholder-zinc-400 transition-all focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
-                  disabled={loading}
-                />
-                <div className="mt-1 flex justify-end">
-                  <span className="text-xs text-zinc-400">{postText.length}/{MAX_POST_LENGTH}</span>
-                </div>
-
-                <label className="mb-2 mt-4 block text-sm font-semibold text-zinc-800">Your profile</label>
-                <select
-                  value={profile}
-                  onChange={(e) => setProfile(e.target.value as (typeof PROFILES)[number])}
-                  disabled={loading}
-                  className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-800 transition-all focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/30"
-                >
-                  {PROFILES.map((p) => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleGenerate}
-                  disabled={postText.trim().length < 10 || loading}
-                  className={`mt-4 w-full rounded-xl px-6 py-3 text-sm font-semibold transition-all ${
-                    postText.trim().length >= 10 && !loading
-                      ? "bg-teal text-white shadow-sm hover:bg-teal-600"
-                      : "cursor-not-allowed bg-zinc-200 text-zinc-400"
-                  }`}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Generating...
-                    </span>
-                  ) : "Generate 3 Comments"}
-                </motion.button>
-              </div>
-
-              {error && (
-                <div className="border-b border-red-100 bg-red-50 px-6 py-4">
-                  <p className="text-sm text-red-700">{error}</p>
-                  {upgradeRequired && (
-                    <Link href="/pricing" className="mt-2 inline-block text-sm font-semibold text-teal hover:underline">
-                      {"Upgrade your plan ->"}
-                    </Link>
-                  )}
-                </div>
-              )}
-
-              {comments.length > 0 && (
-                <div className="divide-y divide-zinc-50">
-                  {comments.map((c, i) => (
-                    <div key={i} className="px-6 py-5">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal">
-                          {STYLE_LABELS[c.style] || c.style}
-                        </span>
-                        <button
-                          onClick={() => void handleCopy(c.text, i)}
-                          className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
-                            copied === i ? "bg-green-50 text-green-700" : "bg-zinc-100 text-zinc-500 hover:bg-zinc-200"
-                          }`}
-                        >
-                          {copied === i ? "Copied!" : "Copy"}
-                        </button>
-                      </div>
-                      <p className="text-sm leading-relaxed text-zinc-700">{c.text}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </FadeUp>
-        </div>
-      </section>
-    </div>
-  )
+const commentGeneratorSchema = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: "How to write a LinkedIn comment",
+  description:
+    "Generate three on-voice comment styles for any LinkedIn post in seconds. Free sign-in required.",
+  tool: { "@type": "HowToTool", name: "Qalam LinkedIn Comment Generator" },
+  step: [
+    {
+      "@type": "HowToStep",
+      position: 1,
+      name: "Paste the post",
+      text: "Copy the LinkedIn post text you want to comment on and paste it into the tool.",
+    },
+    {
+      "@type": "HowToStep",
+      position: 2,
+      name: "Pick your profile",
+      text: "Choose the professional angle that matches how you want to sound in the comment.",
+    },
+    {
+      "@type": "HowToStep",
+      position: 3,
+      name: "Copy your comment",
+      text: "Select the comment style that fits your voice, then paste it into LinkedIn.",
+    },
+  ],
 }
 
 export default function CommentGeneratorPage() {
   return (
-    <RequireAuth>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(commentGeneratorSchema).replace(/</g, "\\u003c") }}
+      />
       <CommentGeneratorTool />
-    </RequireAuth>
+    </>
   )
 }

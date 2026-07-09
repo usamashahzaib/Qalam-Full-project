@@ -757,11 +757,11 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
   "free-linkedin-tools": {
     slug: "free-linkedin-tools",
     title: "Free LinkedIn Tools",
-    h1: "Free LinkedIn tools that improve your posts without an account",
+    h1: "Free LinkedIn tools that improve your posts, most with no account needed",
     description:
-      "Seven free LinkedIn tools built by Qalam: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No sign-in required.",
+      "Seven free LinkedIn tools built by Qalam: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Six work with no sign-in.",
     summary:
-      "All seven Qalam free tools work instantly without creating an account. Hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor - use any or all of them.",
+      "Six of Qalam's seven free tools work instantly without creating an account. Hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor need nothing but a paste. Comment Generator needs a free sign-in to track your monthly usage.",
     intent: "free LinkedIn tools, free LinkedIn AI tools, LinkedIn tools no account",
     primaryKeyword: "free LinkedIn tools",
     keywords: [
@@ -775,12 +775,12 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     updatedAt,
     sections: [
       {
-        heading: "Seven tools, zero friction",
-        body: "Every tool at byqalam.com/free-tools works without creating an account or entering a credit card. Paste your content, get instant AI analysis. Hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor.",
+        heading: "Seven tools, minimal friction",
+        body: "Six tools at byqalam.com/free-tools work without creating an account or entering a credit card - paste your content, get instant AI analysis. Comment Generator is the one exception: it asks for a free sign-in so it can track your monthly comment quota. Hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor.",
       },
       {
         heading: "What each tool does",
-        body: "Hook Generator: generates 5 opening line variants for any LinkedIn topic. Comment Generator: drafts on-voice replies to other people's LinkedIn posts. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
+        body: "Hook Generator: generates 5 opening line variants for any LinkedIn topic. Comment Generator: drafts on-voice replies to other people's LinkedIn posts, free sign-in required. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
       },
       {
         heading: "Built as a trust surface, not a paywall",
@@ -790,11 +790,11 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     faqs: [
       {
         q: "What free LinkedIn tools are available from Qalam?",
-        a: "Qalam offers seven free tools with no account required: LinkedIn hook generator, comment generator, headline analyzer, profile optimizer, viral post checker, carousel builder, and engagement predictor. All are available at byqalam.com/free-tools.",
+        a: "Qalam offers seven free tools: LinkedIn hook generator, comment generator, headline analyzer, profile optimizer, viral post checker, carousel builder, and engagement predictor. All are available at byqalam.com/free-tools.",
       },
       {
         q: "Do the Qalam free LinkedIn tools require an account?",
-        a: "No. All seven tools at byqalam.com/free-tools work without creating an account or entering a credit card. They are fully functional tools, not demos.",
+        a: "Six of the seven tools at byqalam.com/free-tools work without creating an account or entering a credit card. Comment Generator is the exception - it asks for a free sign-in so it can track your monthly comment limit. None of them are crippled demos; they use the same AI as the paid product.",
       },
     ],
     related: [

@@ -392,12 +392,12 @@ export default function AiLinkedInWriterPage() {
             <FadeUp>
               <h2 className="mb-4 text-4xl font-bold text-zinc-900">Try Qalam free tools first</h2>
               <p className="mb-10 text-lg text-zinc-600">
-                No account required. See the quality before you commit to anything.
+                Most need no account. See the quality before you commit to anything.
               </p>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[
                   { name: "Hook Generator", desc: "5 opening lines for any topic", href: "/free-tools/hook-generator" },
-                  { name: "Comment Generator", desc: "On-voice replies to any post", href: "/free-tools/comment-generator" },
+                  { name: "Comment Generator", desc: "On-voice replies, free sign-in required", href: "/free-tools/comment-generator" },
                   { name: "Headline Analyzer", desc: "Score your profile headline", href: "/free-tools/headline-analyzer" },
                   { name: "Profile Optimizer", desc: "Improve your LinkedIn profile", href: "/free-tools/profile-optimizer" },
                   { name: "Viral Checker", desc: "Analyze why posts perform", href: "/free-tools/viral-checker" },

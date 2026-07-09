@@ -129,7 +129,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       },
       {
         q: "Is there a free version?",
-        a: "Yes. The free tool at /free-tools/comment-generator gives a limited number of generations per month with no account setup beyond signing in.",
+        a: "Yes. The free tool at /free-tools/comment-generator gives a limited number of generations per month. It asks for a free sign-in, unlike Qalam's other free tools, so it can track your monthly usage.",
       },
     ],
   },

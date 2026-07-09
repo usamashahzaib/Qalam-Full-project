@@ -15,12 +15,12 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More",
   description:
-    "Free AI tools for LinkedIn: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required. Built by Qalam, the AI LinkedIn writer.",
+    "Free AI tools for LinkedIn: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Most need no account. Built by Qalam, the AI LinkedIn writer.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
     title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
-      "Seven free AI-powered LinkedIn tools to help you write better posts, comment smarter, optimize your profile, and predict engagement. No sign-in required.",
+      "Seven free AI-powered LinkedIn tools to help you write better posts, comment smarter, optimize your profile, and predict engagement. Most work with no sign-in.",
     url: `${SITE_URL}/free-tools`,
     type: "website",
   },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
-      "Hook generator, comment generator, headline analyzer, profile optimizer, viral checker. No account required. Built by Qalam.",
+      "Hook generator, comment generator, headline analyzer, profile optimizer, viral checker. Most need no account. Built by Qalam.",
   },
 }
 
@@ -44,7 +44,7 @@ const TOOLS = [
   {
     icon: CommentIcon,
     title: "Comment Generator",
-    desc: "Draft sharp, on-voice LinkedIn comments for any post in seconds. No account required.",
+    desc: "Draft sharp, on-voice LinkedIn comments for any post in seconds. Free sign-in required.",
     badge: "New",
     badgeColor: "border border-green-200 bg-green-50 text-green-700",
     href: "/free-tools/comment-generator",
@@ -96,7 +96,7 @@ const freeToolsSchema = {
   "@type": "CollectionPage",
   name: "Free LinkedIn AI Tools by Qalam",
   description:
-    "Seven free AI-powered LinkedIn tools: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required.",
+    "Seven free AI-powered LinkedIn tools: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Most need no account.",
   url: "https://www.byqalam.com/free-tools",
   mainEntity: {
     "@type": "ItemList",
@@ -131,7 +131,7 @@ export default function FreeToolsPage() {
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-gold/15">
                 <span className="h-1.5 w-1.5 rounded-full bg-gold" />
               </span>
-              Free tools · no account required
+              Free tools · most need no account
             </span>
             <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">
               Free LinkedIn
@@ -143,7 +143,7 @@ export default function FreeToolsPage() {
               stronger, and pressure-test ideas before they hit the feed.
             </p>
             <div className="flex flex-wrap gap-3">
-              {["No sign-up needed", "Instant results", "Real routes", "Zero cost"].map(
+              {["Most need no sign-up", "Instant results", "Real routes", "Zero cost"].map(
                 (tag) => (
                   <span
                     key={tag}
