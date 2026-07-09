@@ -50,7 +50,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
     canExport: flags.canExport,
     analyticsDepth: flags.analyticsDepth,
     voiceTraining: flags.voiceTraining,
-    commentGenerationsPerMonth: tier === "Free" ? 3 : "unlimited",
+    commentGenerationsPerMonth: tier === "Free" ? 3 : limits.hooks,
   }
 }
 

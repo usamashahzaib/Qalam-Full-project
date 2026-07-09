@@ -727,7 +727,7 @@ export default function WriterPage() {
 
                 <p className="mt-3 text-xs text-zinc-400">
                   Stay visible between posts with the{" "}
-                  <Link href="/free-tools/comment-generator" className="font-medium text-teal hover:text-teal-700">
+                  <Link href="/comment-generator" className="font-medium text-teal hover:text-teal-700">
                     Comment Generator
                   </Link>
                   .

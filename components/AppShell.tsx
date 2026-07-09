@@ -53,7 +53,7 @@ const NAV_GROUPS = [
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
-      { href: "/free-tools/comment-generator", label: "Comment Generator", icon: CommentIcon },
+      { href: "/comment-generator", label: "Comment Generator", icon: CommentIcon },
     ],
   },
   {
