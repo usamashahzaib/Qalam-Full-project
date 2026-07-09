@@ -168,6 +168,7 @@ export function GET() {
     "## Free tools (no account required)",
     "",
     `- ${SITE_URL}/free-tools/hook-generator - generates 5 LinkedIn hook opening line variants for any topic`,
+    `- ${SITE_URL}/free-tools/comment-generator - generates on-voice LinkedIn comments for any post`,
     `- ${SITE_URL}/free-tools/headline-analyzer - AI scores LinkedIn profile headlines and suggests improvements`,
     `- ${SITE_URL}/free-tools/profile-optimizer - structured LinkedIn profile audit with specific rewrite suggestions`,
     `- ${SITE_URL}/free-tools/viral-checker - AI scores a LinkedIn post across 5 viral dimensions and rewrites the hook`,

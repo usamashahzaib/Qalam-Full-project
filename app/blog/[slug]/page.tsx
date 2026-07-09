@@ -161,6 +161,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {[
                 { label: "Hook Generator", desc: "Generate 5 opening lines for any topic", href: "/free-tools/hook-generator" },
+                { label: "Comment Generator", desc: "On-voice replies to any post", href: "/free-tools/comment-generator" },
                 { label: "Headline Analyzer", desc: "Score your LinkedIn headline", href: "/free-tools/headline-analyzer" },
                 { label: "Engagement Predictor", desc: "Pre-publish score before posting", href: "/free-tools/engagement-predictor" },
               ].map((tool) => (

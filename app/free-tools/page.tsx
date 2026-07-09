@@ -5,6 +5,7 @@ import {
   AnalyticsIcon,
   CarouselIcon,
   CheckIcon,
+  CommentIcon,
   HookIcon,
   MicroscopeIcon,
   ProfileIcon,
@@ -14,12 +15,12 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More",
   description:
-    "Free AI tools for LinkedIn: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required. Built by Qalam, the AI LinkedIn writer.",
+    "Free AI tools for LinkedIn: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required. Built by Qalam, the AI LinkedIn writer.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
     title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
-      "Six free AI-powered LinkedIn tools to help you write better posts, optimize your profile, and predict engagement. No sign-in required.",
+      "Seven free AI-powered LinkedIn tools to help you write better posts, comment smarter, optimize your profile, and predict engagement. No sign-in required.",
     url: `${SITE_URL}/free-tools`,
     type: "website",
   },
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
     description:
-      "Hook generator, headline analyzer, profile optimizer, viral checker. No account required. Built by Qalam.",
+      "Hook generator, comment generator, headline analyzer, profile optimizer, viral checker. No account required. Built by Qalam.",
   },
 }
 
@@ -39,6 +40,14 @@ const TOOLS = [
     badge: "Most Used",
     badgeColor: "bg-gold text-white",
     href: "/free-tools/hook-generator",
+  },
+  {
+    icon: CommentIcon,
+    title: "Comment Generator",
+    desc: "Draft sharp, on-voice LinkedIn comments for any post in seconds. No account required.",
+    badge: "New",
+    badgeColor: "border border-green-200 bg-green-50 text-green-700",
+    href: "/free-tools/comment-generator",
   },
   {
     icon: AnalyticsIcon,
@@ -87,7 +96,7 @@ const freeToolsSchema = {
   "@type": "CollectionPage",
   name: "Free LinkedIn AI Tools by Qalam",
   description:
-    "Six free AI-powered LinkedIn tools: hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required.",
+    "Seven free AI-powered LinkedIn tools: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. No account required.",
   url: "https://www.byqalam.com/free-tools",
   mainEntity: {
     "@type": "ItemList",
@@ -130,8 +139,8 @@ export default function FreeToolsPage() {
               <span className="text-gold gold-underline">workflow tools</span>
             </h1>
             <p className="mb-8 max-w-2xl font-cormorant text-2xl italic leading-relaxed text-zinc-500">
-              Six focused tools to help you write better, profile stronger, and
-              pressure-test ideas before they hit the feed.
+              Seven focused tools to help you write better, comment sharper, profile
+              stronger, and pressure-test ideas before they hit the feed.
             </p>
             <div className="flex flex-wrap gap-3">
               {["No sign-up needed", "Instant results", "Real routes", "Zero cost"].map(
