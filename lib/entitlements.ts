@@ -32,6 +32,7 @@ export type PlanLimits = {
   canExport: boolean
   analyticsDepth: "basic" | "full"
   voiceTraining: boolean
+  commentGenerationsPerMonth: number | "unlimited"
 }
 
 const derivePlanLimits = (tier: PlanTier): PlanLimits => {
@@ -49,6 +50,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
     canExport: flags.canExport,
     analyticsDepth: flags.analyticsDepth,
     voiceTraining: flags.voiceTraining,
+    commentGenerationsPerMonth: tier === "Free" ? 3 : "unlimited",
   }
 }
 

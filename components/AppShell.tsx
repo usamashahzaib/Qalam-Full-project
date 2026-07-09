@@ -23,6 +23,7 @@ import {
   LinkedInIcon,
   BrainIcon,
   CheckIcon,
+  CommentIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
@@ -52,6 +53,7 @@ const NAV_GROUPS = [
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/free-tools/comment-generator", label: "Comment Generator", icon: CommentIcon },
     ],
   },
   {
