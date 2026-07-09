@@ -14,6 +14,7 @@ const APP_ROUTES = [
   "/calendar",
   "/carousels",
   "/chat",
+  "/comment-generator",
   "/competitors",
   "/dashboard",
   "/forgot-password",
