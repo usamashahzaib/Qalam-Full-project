@@ -9,18 +9,7 @@ import { log } from "@/lib/server/logging"
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 type Profile = (typeof VALID_PROFILES)[number]
 
-const STYLES = ["insightful", "supportive", "engaging"] as const
-type Style = (typeof STYLES)[number]
-
 const MAX_POST_LENGTH = 5000
-
-function fallbackComments(profile: Profile): Array<{ style: Style; text: string }> {
-  return [
-    { style: "insightful", text: `As a ${profile.toLowerCase()}, this lines up with what I've seen in practice - the details here matter more than they get credit for.` },
-    { style: "supportive", text: "This is a genuinely helpful post. Thanks for taking the time to write it out." },
-    { style: "engaging", text: "How would you apply this on a smaller team with fewer resources?" },
-  ]
-}
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -55,17 +44,6 @@ export async function POST(request: NextRequest) {
     }
     const profile = profileInput as Profile
 
-    const limits = getPlanLimits(planCheck.plan)
-    if (limits.commentGenerationsPerMonth !== "unlimited") {
-      const usage = await checkAndIncrementCommentUsage(user.id, limits.commentGenerationsPerMonth)
-      if (!usage.allowed) {
-        return NextResponse.json(
-          { error: "monthly_limit_reached", featureName: "comment_generations", limit: usage.limit, current: usage.current },
-          { status: 403 }
-        )
-      }
-    }
-
     const system = `You are a LinkedIn expert helping a ${profile} write authentic, engaging comments on other people's posts.
 Generate exactly 3 comments, one for each style:
 - "insightful": adds a thoughtful perspective or observation
@@ -95,8 +73,23 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
     }
 
     if (!comments.length) {
-      comments = fallbackComments(profile)
-      log.warn("comments.generate.fallback", { userId: user.id, profile })
+      log.warn("comments.generate.empty", { userId: user.id, profile })
+      return NextResponse.json(
+        { error: "ai_unavailable", message: "Comment generation is temporarily unavailable. Please try again in a moment." },
+        { status: 503 }
+      )
+    }
+
+    // Quota is only spent on a successful generation - a failed AI call never costs the user a credit.
+    const limits = getPlanLimits(planCheck.plan)
+    if (limits.commentGenerationsPerMonth !== "unlimited") {
+      const usage = await checkAndIncrementCommentUsage(user.id, limits.commentGenerationsPerMonth)
+      if (!usage.allowed) {
+        return NextResponse.json(
+          { error: "monthly_limit_reached", featureName: "comment_generations", limit: usage.limit, current: usage.current },
+          { status: 403 }
+        )
+      }
     }
 
     log.info("comments.generate.done", { userId: user.id, profile, count: comments.length })

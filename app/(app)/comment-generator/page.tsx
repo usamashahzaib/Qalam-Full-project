@@ -53,7 +53,7 @@ export default function CommentGeneratorPage() {
       }
 
       if (!res.ok) {
-        setError(data.error || "Failed to generate comments. Please try again.")
+        setError(data.message || data.error || "Failed to generate comments. Please try again.")
         return
       }
 
