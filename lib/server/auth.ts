@@ -23,6 +23,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "./supabase-rest"
 import { log } from "./logging"
 import { getPlanStatus } from "./plan-limits-v2"
+import { applyReferralCode } from "./referrals"
+
+const REFERRAL_COOKIE = "qalam_referral_code"
 
 async function provisionOAuthUser(
   supabase: ReturnType<typeof createServiceClient>,
@@ -213,6 +216,14 @@ export async function requireAuthApi(request: NextRequest) {
     const provisioned = await provisionOAuthUser(supabase, externalId, session)
     internalId = provisioned.internalId
     workspaceId = provisioned.workspaceId
+
+    // Apply a pending referral code from the ?ref= flow - best-effort, never blocks sign-in.
+    const referralCode = request.cookies.get(REFERRAL_COOKIE)?.value
+    if (referralCode) {
+      applyReferralCode(referralCode, internalId).catch((err: unknown) =>
+        log.error("auth.referral_apply_failed", { error: (err as Error).message })
+      )
+    }
 
     const planStatus = await getPlanStatus(internalId)
     return {

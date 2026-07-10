@@ -5,6 +5,7 @@ import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp } from "@/lib/server/rate-limit"
 import { checkAuthRateLimit } from "@/lib/server/queue"
 import { log } from "@/lib/server/logging"
+import { applyReferralCode } from "@/lib/server/referrals"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
   const email = String(body.email ?? "").trim().toLowerCase()
   const password = String(body.password ?? "")
   const role = String(body.role ?? "").trim()
+  const referralCode = String(body.referralCode ?? "").trim()
 
   if (!name || !email || !password || !role) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 })
@@ -123,6 +125,13 @@ export async function POST(req: NextRequest) {
       role: "owner",
     })
   } catch { /* ignore */ }
+
+  // Apply a referral code if one was passed - best-effort, never blocks signup.
+  if (referralCode) {
+    await applyReferralCode(referralCode, userId).catch((err: unknown) =>
+      log.error("signup.referral_apply_failed", { error: (err as Error).message })
+    )
+  }
 
   // Redeem non-expired pending workspace invites for this email
   try {

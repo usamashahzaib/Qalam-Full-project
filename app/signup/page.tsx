@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react"
 import { QalamLogo } from "@/components/QalamLogo"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
+import { ReferralBanner, readPendingReferralCode, clearPendingReferralCode } from "@/components/ReferralBanner"
 
 const ROLES = [
   "Consultant",
@@ -29,6 +30,7 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [socialLoading, setSocialLoading] = useState<"linkedin" | null>(null)
+  const [referralCode, setReferralCode] = useState<string>(() => readPendingReferralCode())
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,12 +50,13 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, referralCode: referralCode || undefined }),
       })
       const data = await res.json()
       if (!res.ok) {
         setError(data.error || "Something went wrong. Please try again.")
       } else {
+        clearPendingReferralCode()
         setPageState("success")
       }
     } catch {
@@ -105,6 +108,7 @@ export default function SignupPage() {
               <h1 className="mb-1 text-2xl font-bold text-zinc-900">Create your account</h1>
               <p className="mb-4 text-sm text-zinc-500">Free forever. No card required.</p>
 
+              <ReferralBanner onCode={setReferralCode} />
               <QalamSignupNotice className="mb-5" />
 
               {error && (

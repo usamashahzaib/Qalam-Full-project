@@ -7,6 +7,7 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
+import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
@@ -111,6 +112,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
+  const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
   const searchParams = useSearchParams()
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
     searchParams.get("tab") === "managed" ? "managed" : "selfserve"
@@ -121,6 +123,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => { if (data.user?.plan) setCurrentPlan(data.user.plan) })
+      .catch(() => {})
+    fetch("/api/referrals/stats")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => { if (data.activeDiscountPercent) setReferralDiscountPercent(data.activeDiscountPercent) })
       .catch(() => {})
   }, [status])
 
@@ -137,7 +143,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
     const isAnnual = billing === "annual"
     const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0
-    const price = isAnnual && hasAnnual ? formatPkr(plan.annualPkrPerMonth) : formatPkr(plan.monthlyPkr)
+    const basePkr = isAnnual && hasAnnual ? plan.annualPkrPerMonth : plan.monthlyPkr
+    const hasDiscount = referralDiscountPercent > 0 && !!basePkr && basePkr > 0
+    const price = formatPkr(basePkr)
     const annualSavings = !isAnnual && hasAnnual
       ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}`
       : undefined
@@ -152,6 +160,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       description: plan.description,
       note: noteOverride,
       price,
+      discountBadge: hasDiscount ? <ReferralBadge discountPercent={referralDiscountPercent} /> : undefined,
       annualSavings,
       usdReference,
       cta: plan.cta,

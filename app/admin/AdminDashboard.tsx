@@ -74,6 +74,9 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             <Link href="/admin/migrations" className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
               DB Migrations
             </Link>
+            <Link href="/admin/referrals" className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
+              Referrals
+            </Link>
             <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-700 ring-1 ring-red-200">
               Admin access
             </span>

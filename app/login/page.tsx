@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { useState } from "react"
 import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
+import { ReferralBanner } from "@/components/ReferralBanner"
 
 const ERROR_MESSAGES: Record<string, string> = {
   Configuration: "Server configuration error. Please try again shortly or contact support.",
@@ -95,6 +96,8 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
           <h1 className="mb-1 text-2xl font-bold text-zinc-900">Welcome back</h1>
           <p className="mb-6 text-sm text-zinc-500">Sign in to your Qalam workspace.</p>
+
+          <ReferralBanner />
 
           {/* Verified banner */}
           {verified && (

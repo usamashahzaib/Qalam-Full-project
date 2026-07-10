@@ -12,7 +12,7 @@ const proPlan = PLANS.find((plan) => plan.plan === "Pro")
 // Agency is hidden from the public plan cards (waitlist-only), but its real pricing data
 // still belongs in FAQ copy and structured data, so it's read from the unfiltered `plans` list.
 const agencyPlan = plans.find((plan) => plan.name === "Agency")
-const freeDrafts = freePlan ? "5 AI posts per month" : "5 AI posts per month"
+const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
 const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 499"
 const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,490"
 const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPrice) : "PKR 7,490"
@@ -70,7 +70,7 @@ const pricingFaqSchema = {
       name: "Can I cancel anytime?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "If your workspace is onboarded manually, cancellation terms are defined in that onboarding agreement.",
+        text: "Yes. Paid plans can be cancelled - your workspace and drafts stay accessible on the Free tier, and you never lose your content history. If your workspace is onboarded manually, cancellation terms are defined in that onboarding agreement instead.",
       },
     },
     {

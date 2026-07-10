@@ -20,6 +20,7 @@ interface PricingCardProps {
   featureStatus?: "live" | "beta" | "coming_soon"
   comingSoon?: boolean
   note?: string
+  discountBadge?: React.ReactNode
 }
 
 function badgeClasses(badge: string): string {
@@ -46,6 +47,7 @@ export function PricingCard({
   featureStatus,
   comingSoon,
   note,
+  discountBadge,
 }: PricingCardProps) {
   const isComingSoon = comingSoon || featureStatus === "coming_soon"
 
@@ -76,12 +78,13 @@ export function PricingCard({
         <p className={`mb-2 text-sm font-semibold uppercase tracking-widest ${
           isComingSoon ? "text-zinc-400" : highlighted ? "text-teal-100" : "text-teal"
         }`}>{plan}</p>
-        <div className="mb-1 flex items-end gap-1">
+        <div className="mb-1 flex items-end gap-2">
           <span className={`text-5xl font-bold ${
             isComingSoon ? "text-zinc-400" : highlighted ? "text-white" : "text-zinc-900"
           }`}>{price}</span>
           {period && <span className={`mb-2 text-sm ${highlighted ? "text-teal-100" : "text-zinc-500"}`}>/{period}</span>}
         </div>
+        {discountBadge && <div className="mb-1">{discountBadge}</div>}
         {perDay && (
           <p className={`text-xs font-medium ${highlighted ? "text-gold-200" : "text-gold"}`}>
             {perDay}

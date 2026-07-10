@@ -15,6 +15,7 @@ import { isValidLinkedInUrl } from "@/lib/validation"
 import { useProfileForm } from "@/lib/hooks/useProfileForm"
 import { formatPlanDate } from "@/lib/plan-expiry"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
+import { ReferralCard } from "@/components/ReferralCard"
 
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
 
@@ -598,6 +599,11 @@ export default function SettingsPage() {
             </p>
           </section>
         )}
+      </div>
+
+      {/* Referrals */}
+      <div className="mt-6">
+        <ReferralCard />
       </div>
 
       {/* Billing history */}
