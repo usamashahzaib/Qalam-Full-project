@@ -6,11 +6,15 @@ type ContentSlideProps = {
   slideNumber: number
   totalSlides: number
   authorName?: string
+  authorPhotoUrl?: string
   theme: CarouselTheme
   backgroundPhoto?: string
 }
 
-function Initials({ name, size, bg, color }: { name: string; size: number; bg: string; color: string }) {
+function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  }
   const letters = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")
   return (
     <div style={{ width: size, height: size, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -36,7 +40,7 @@ function parseBullets(body: string): string[] {
   return [body]
 }
 
-export function ContentSlide({ title, body, slideNumber, totalSlides, authorName, theme: t, backgroundPhoto }: ContentSlideProps) {
+export function ContentSlide({ title, body, slideNumber, totalSlides, authorName, authorPhotoUrl, theme: t, backgroundPhoto }: ContentSlideProps) {
   const W = CANVAS.width
   const H = CANVAS.height
   const P = CANVAS.padding
@@ -188,7 +192,7 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
         {/* Author bottom */}
         {authorName && (
           <div style={{ position: "absolute", bottom: P, left: P, display: "flex", alignItems: "center", gap: 14, zIndex: 2 }}>
-            <Initials name={authorName} size={48} bg={t.accentColor} color="#FFFFFF" />
+            <Avatar name={authorName} photoUrl={authorPhotoUrl} size={48} bg={t.accentColor} color="#FFFFFF" />
             <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>{authorName}</p>
           </div>
         )}
@@ -298,9 +302,7 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
         </div>
         {initials && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: t.accentColor, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: isDark ? "#000" : "#fff", fontSize: "14px", fontWeight: 800 }}>{initials}</span>
-            </div>
+            <Avatar name={authorName!} photoUrl={authorPhotoUrl} size={38} bg={t.accentColor} color={isDark ? "#000" : "#fff"} />
             <span style={{ color: t.textMuted, fontSize: "18px" }}>{authorName}</span>
           </div>
         )}

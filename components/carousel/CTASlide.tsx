@@ -6,13 +6,17 @@ type CTASlideProps = {
   authorName?: string
   authorHandle?: string
   designation?: string
+  authorPhotoUrl?: string
   theme: CarouselTheme
   backgroundPhoto?: string
   totalSlides?: number
   slideNumber?: number
 }
 
-function Initials({ name, size, bg, color }: { name: string; size: number; bg: string; color: string }) {
+function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  }
   const letters = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")
   return (
     <div style={{ width: size, height: size, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -30,7 +34,7 @@ function BgPhoto({ src, overlay }: { src: string; overlay: string }) {
   )
 }
 
-export function CTASlide({ title, body, authorName, authorHandle, designation, theme: t, backgroundPhoto, totalSlides, slideNumber }: CTASlideProps) {
+export function CTASlide({ title, body, authorName, authorHandle, designation, authorPhotoUrl, theme: t, backgroundPhoto, totalSlides, slideNumber }: CTASlideProps) {
   const W = CANVAS.width
   const H = CANVAS.height
   const P = CANVAS.padding
@@ -184,7 +188,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, t
 
           {authorName && (
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <Initials name={authorName} size={52} bg={t.accentColor} color="#FFFFFF" />
+              <Avatar name={authorName} photoUrl={authorPhotoUrl} size={52} bg={t.accentColor} color="#FFFFFF" />
               <div>
                 <p style={{ color: t.textPrimary, fontSize: "22px", fontWeight: 700, margin: 0 }}>{authorName}</p>
                 {designation && <p style={{ color: t.textSecondary, fontSize: "18px", margin: "4px 0 0" }}>{designation}</p>}
@@ -309,9 +313,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, t
         {(authorName || designation) && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18 }}>
             {initials && (
-              <div style={{ width: 64, height: 64, borderRadius: "50%", background: t.accentColor, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ color: isDark ? "#000" : "#fff", fontSize: "22px", fontWeight: 800 }}>{initials}</span>
-              </div>
+              <Avatar name={authorName!} photoUrl={authorPhotoUrl} size={64} bg={t.accentColor} color={isDark ? "#000" : "#fff"} />
             )}
             <div style={{ textAlign: "left" }}>
               {authorName && <p style={{ color: t.textPrimary, fontSize: "24px", fontWeight: 700, margin: 0 }}>{authorName}</p>}

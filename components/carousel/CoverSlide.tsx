@@ -6,12 +6,16 @@ type CoverSlideProps = {
   authorName?: string
   authorHandle?: string
   designation?: string
+  authorPhotoUrl?: string
   theme: CarouselTheme
   backgroundPhoto?: string
   totalSlides?: number
 }
 
-function Initials({ name, size, bg, color }: { name: string; size: number; bg: string; color: string }) {
+function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
+  if (photoUrl) {
+    return <img src={photoUrl} alt={name} crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+  }
   const letters = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")
   return (
     <div style={{ width: size, height: size, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -29,7 +33,7 @@ function BgPhoto({ src, overlay }: { src: string; overlay: string }) {
   )
 }
 
-export function CoverSlide({ title, accentLabel, authorName, authorHandle, designation, theme: t, backgroundPhoto, totalSlides }: CoverSlideProps) {
+export function CoverSlide({ title, accentLabel, authorName, authorHandle, designation, authorPhotoUrl, theme: t, backgroundPhoto, totalSlides }: CoverSlideProps) {
   const W = CANVAS.width
   const H = CANVAS.height
   const P = CANVAS.padding
@@ -41,8 +45,9 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
   const AuthorRow = ({ align = "left" }: { align?: "left" | "center" }) => (
     <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: align === "center" ? "center" : "flex-start" }}>
       {authorName && (
-        <Initials
+        <Avatar
           name={authorName}
+          photoUrl={authorPhotoUrl}
           size={54}
           bg={t.accentColor}
           color={isDark ? "#000" : "#fff"}
@@ -211,7 +216,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
         {/* Author with circle avatar, anchored to the slide's own bottom edge */}
         {authorName && (
           <div style={{ display: "flex", alignItems: "center", gap: 18, position: "absolute", zIndex: 2, bottom: P * 1.1, left: P }}>
-            <Initials name={authorName} size={64} bg={t.accentColor} color="#FFFFFF" />
+            <Avatar name={authorName} photoUrl={authorPhotoUrl} size={64} bg={t.accentColor} color="#FFFFFF" />
             <div>
               <p style={{ color: t.textPrimary, fontSize: "24px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{authorName}</p>
               {designation && <p style={{ color: t.textSecondary, fontSize: "19px", margin: "4px 0 0" }}>{designation}</p>}
@@ -329,7 +334,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {authorName ? (
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-              <Initials name={authorName} size={62} bg={t.accentColor} color={isDark ? "#000" : "#fff"} />
+              <Avatar name={authorName} photoUrl={authorPhotoUrl} size={62} bg={t.accentColor} color={isDark ? "#000" : "#fff"} />
               <div>
                 <p style={{ color: t.textPrimary, fontSize: "24px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{authorName}</p>
                 {(designation || authorHandle) && (

@@ -75,6 +75,7 @@ export default function CarouselEditorPage() {
   const [authorHandle, setAuthorHandle] = useState("")
   const [designation, setDesignation] = useState("")
   const [backgroundPhoto, setBackgroundPhoto] = useState<string | undefined>(undefined)
+  const [authorPhotoUrl, setAuthorPhotoUrl] = useState<string | undefined>(undefined)
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
   const [pdfExporting, setPdfExporting] = useState(false)
@@ -123,6 +124,15 @@ export default function CarouselEditorPage() {
   }, [id, workspaceId])
 
   useEffect(() => { fetchCarousel() }, [fetchCarousel])
+
+  useEffect(() => {
+    fetch("/api/linkedin/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.connected && data.avatar) setAuthorPhotoUrl(data.avatar)
+      })
+      .catch(() => {})
+  }, [])
 
   const updateSlide = (slideId: string, field: "title" | "content", value: string) =>
     setSlides((prev) => prev.map((slide) => slide.id === slideId ? { ...slide, [field]: value } : slide))
@@ -222,6 +232,7 @@ export default function CarouselEditorPage() {
       authorName: authorName || undefined,
       authorHandle: authorHandle || undefined,
       designation: designation || undefined,
+      authorPhotoUrl,
       theme,
       backgroundPhoto,
     }
@@ -250,6 +261,7 @@ export default function CarouselEditorPage() {
         slideNumber={index + 1}
         totalSlides={slides.length}
         authorName={authorName || undefined}
+        authorPhotoUrl={authorPhotoUrl}
         theme={theme}
         backgroundPhoto={backgroundPhoto}
       />
