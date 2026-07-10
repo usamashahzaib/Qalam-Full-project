@@ -24,6 +24,11 @@ export async function callGemini(
     maxOutputTokens: maxTokens,
   }
   if (json) generationConfig.responseMimeType = "application/json"
+  // Flash models spend part of maxOutputTokens on hidden reasoning tokens before
+  // writing the answer, which can exhaust a small token budget and truncate the
+  // response before any real output is written. Pro models require a nonzero
+  // thinking budget, so only disable it on Flash.
+  if (model.includes("flash")) generationConfig.thinkingConfig = { thinkingBudget: 0 }
 
   const response = await withTimeout(
     fetch(

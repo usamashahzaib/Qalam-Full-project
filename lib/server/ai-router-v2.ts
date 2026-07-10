@@ -307,10 +307,19 @@ export async function callAi(
 
   for (const candidate of order) {
     const content = await callProvider(candidate, task, systemPrompt, userMessage, callOptions, timeout, userId, plan)
-    if (content !== null) {
-      if (cache) await cacheAiResponse(promptHash, content, cacheTtl)
-      return content
+    if (content === null) continue
+
+    // A provider can return content without throwing (e.g. truncated by its own
+    // token budget) yet still be unusable. In JSON mode, verify it actually
+    // parses before accepting it - otherwise fall through to the next provider
+    // instead of returning garbage as if it were a success.
+    if (json && safeParseJson(content) === null) {
+      log.warn("ai.provider_unparseable_json", { provider: candidate, task })
+      continue
     }
+
+    if (cache) await cacheAiResponse(promptHash, content, cacheTtl)
+    return content
   }
 
   log.warn("ai.all_providers_unavailable", { task })
