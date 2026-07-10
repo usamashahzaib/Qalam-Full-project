@@ -74,25 +74,6 @@ export const buildArticleSchema = ({
   url,
 })
 
-export const buildSoftwareApplicationSchema = () => ({
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: SITE_NAME,
-  url: SITE_URL,
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  description:
-    "Qalam is an AI writer and LinkedIn publishing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing.",
-  publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
-  offers: {
-    "@type": "Offer",
-    name: "Free Plan",
-    price: "0",
-    priceCurrency: "PKR",
-    availability: "https://schema.org/InStock",
-  },
-})
-
 export const buildOrganizationSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",

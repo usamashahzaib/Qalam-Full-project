@@ -38,13 +38,14 @@ export const plans: Plan[] = [
     monthlyPrice: 0,
     postsPerMonth: 5,
     draftsPerMonth: 5,
-    carouselsPerMonth: 0,
+    carouselsPerMonth: 1,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "",
     features: [
       "5 posts/month",
+      "1 carousel/month",
       "Basic AI Writer",
       "Hook Generator",
       "Comment Generator (3/month)",
@@ -58,14 +59,14 @@ export const plans: Plan[] = [
     annualPrice: 3492,
     postsPerMonth: 30,
     draftsPerMonth: 30,
-    carouselsPerMonth: 3,
+    carouselsPerMonth: 4,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "Save PKR 2,496",
     features: [
       "30 posts/month",
-      "3 carousels/month",
+      "4 carousels/month",
       "Role-Aware AI Writer",
       "Hook Generator",
       "Comment Generator (30/month)",
@@ -184,7 +185,7 @@ export function isFeatureAllowed(plan: string, feature: string): boolean {
   if (feature === "research" || feature === "competitorResearch") return current.researchPerMonth > 0
   if (feature === "teamSeats") return current.name === "Agency"
   if (feature === "approvalWorkflow") return current.name === "Pro" || current.name === "Agency"
-  if (feature === "basic_analytics") return current.name === "Solo" || current.name === "Pro" || current.name === "Agency"
+  if (feature === "basic_analytics") return current.name === "Pro" || current.name === "Agency"
   return current.name !== "Free"
 }
 
@@ -245,8 +246,8 @@ export const COMPARISON_ROWS = [
   },
   {
     label: "Carousels per month",
-    free: "-",
-    solo: "3",
+    free: "1",
+    solo: "4",
     pro: "10",
     agency: "Coming Soon",
   },
@@ -325,12 +326,12 @@ export type PlanEnforcement = {
 
 export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   Free: {
-    limits: { drafts: 5, carousels: 0, hooks: 5, analyses: 5 },
-    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 0 },
+    limits: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
+    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
   },
   Solo: {
-    limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
+    limits: { drafts: 30, carousels: 4, hooks: 30, analyses: 10 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
   },
   Pro: {
     limits: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },
@@ -338,6 +339,6 @@ export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   },
   Agency: {
     limits: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 3, seats: 5, researchRuns: 5, carouselSlides: 10 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 5, seats: 5, researchRuns: 0, carouselSlides: 10 },
   },
 }

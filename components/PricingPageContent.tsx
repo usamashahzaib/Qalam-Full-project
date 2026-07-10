@@ -15,11 +15,11 @@ import type { ManagedPlan } from "@/lib/pricing"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 5 AI posts per month, hook generator, no scheduling, no voice training, no analytics.",
+    a: "Yes. Free is live with no time limit - 5 AI posts per month, 1 carousel per month, hook generator, no scheduling, no voice training, no analytics.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month with 30 posts. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 5 months free.",
+    a: "Solo starts at PKR 499/month with 30 posts and 4 carousels. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month and coming soon. Annual billing gives 5 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
@@ -27,7 +27,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Pro adds carousel generation (10/month), voice training so Qalam learns your tone, Push to 90+ quality improvement, AI Strategist, and analytics.",
+    a: "Pro adds more carousels (10/month vs Solo's 4), voice training so Qalam learns your tone, Push to 90+ quality improvement, AI Strategist, and analytics.",
   },
   {
     q: "Can I cancel anytime?",

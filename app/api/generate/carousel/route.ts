@@ -12,7 +12,7 @@ type Slide = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     if (planCheck.limits.carouselGenerationsPerMonth === 0) {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })

@@ -26,10 +26,6 @@ export async function PUT(request: NextRequest) {
     const { name, title, industry, tone, goals, samplePosts, linkedinUrl } = body
     const trimmedLinkedinUrl = typeof linkedinUrl === "string" ? linkedinUrl.trim() : ""
 
-    if (trimmedLinkedinUrl && !isValidLinkedInUrl(trimmedLinkedinUrl)) {
-      return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
-    }
-
     // Basic identity (name, title, industry, tone, goals, linkedinUrl) is free for all
     // authenticated users. Only actual voice training (sample posts) requires Pro.
     const hasVoiceTraining = Array.isArray(samplePosts) && samplePosts.length > 0
@@ -38,6 +34,10 @@ export async function PUT(request: NextRequest) {
       if (!planCheck.ok) return planCheck.response
     } else {
       await requireAuth()
+    }
+
+    if (trimmedLinkedinUrl && !isValidLinkedInUrl(trimmedLinkedinUrl)) {
+      return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
     }
     const workspaceId = await resolveWorkspaceId(request)
 

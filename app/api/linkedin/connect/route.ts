@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
+import { requireAuth } from "@/lib/server/workspace"
 
 export async function GET(request: NextRequest) {
+  try {
+    await requireAuth()
+  } catch {
+    return NextResponse.redirect(new URL("/login", request.nextUrl.origin))
+  }
+
   const clientId = process.env.LINKEDIN_CLIENT_ID
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET
   const origin = process.env.FRONTEND_ORIGIN || request.nextUrl.origin

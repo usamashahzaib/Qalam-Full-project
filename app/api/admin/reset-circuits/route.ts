@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { timingSafeEqual } from "node:crypto"
-import { getAuthenticatedSession } from "@/lib/server/workspace"
+import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
 import { getRedis } from "@/lib/server/redis"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
@@ -13,9 +13,7 @@ const requireAdmin = async (request: NextRequest) => {
   if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
   const session = await getAuthenticatedSession()
   if (!session?.user?.id) throw new Error("Unauthorized")
-  const adminEmails = (process.env.ADMIN_EMAILS || process.env.APP_ADMIN_EMAILS || "")
-    .split(",").map((v) => v.trim().toLowerCase())
-  if (!adminEmails.includes(String(session.user.email || "").toLowerCase())) throw new Error("Forbidden")
+  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
   return { email: session.user.email || "", userId: session.user.id }
 }
 

@@ -4,19 +4,21 @@ import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL } from "@/lib/seo"
-import { PLANS, formatPkr } from "@/lib/pricing"
+import { PLANS, plans, formatPkr } from "@/lib/pricing"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
-const agencyPlan = PLANS.find((plan) => plan.plan === "Agency")
+// Agency is hidden from the public plan cards (waitlist-only), but its real pricing data
+// still belongs in FAQ copy and structured data, so it's read from the unfiltered `plans` list.
+const agencyPlan = plans.find((plan) => plan.name === "Agency")
 const freeDrafts = freePlan ? "5 AI posts per month" : "5 AI posts per month"
 const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 499"
 const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,490"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 7,490"
+const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPrice) : "PKR 7,490"
 
 export const metadata: Metadata = {
-  title: "Qalam Pricing - AI LinkedIn Writer Plans | Free to PKR 7,490/month",
+  title: `Qalam Pricing - AI LinkedIn Writer Plans | Free to ${proPrice}/month`,
   description:
     `Qalam pricing for the Pakistani market. Free plan with ${freeDrafts} - no card, no expiry. Solo at ${soloPrice}/month. Pro at ${proPrice}/month. Pay via JazzCash, Easypaisa, or bank transfer.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
@@ -121,7 +123,7 @@ const productSchema = {
       price: String(soloPlan?.monthlyPkr ?? 499),
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
-      description: "30 AI drafts, 3 carousels, content calendar, post library.",
+      description: "30 AI drafts, 4 carousels, content calendar, post library.",
       url: `${SITE_URL}/pricing`,
     },
     {
@@ -136,7 +138,7 @@ const productSchema = {
     {
       "@type": "Offer",
       name: "Agency Plan",
-      price: String(agencyPlan?.monthlyPkr ?? 7490),
+      price: String(agencyPlan?.monthlyPrice ?? 7490),
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
       description: "Multi-client workspaces, team collaboration, approval workflows.",

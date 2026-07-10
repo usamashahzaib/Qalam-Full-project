@@ -20,7 +20,7 @@ const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "5 posts, 1 carousel/month",
-  Solo: "30 posts, 3 carousels, library, planner",
+  Solo: "30 posts, 4 carousels, library, planner",
   Pro: "60 posts, voice training, analytics, AI Strategist",
   Agency: "Coming soon - multi-workspace, team seats",
 }

@@ -193,16 +193,20 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mobileSection, setMobileSection] = useState<"product" | "use-cases" | null>(null)
   const [announcementVisible, setAnnouncementVisible] = useState(true)
+  const [announcementReady, setAnnouncementReady] = useState(false)
   const { data: session, status } = useSession()
   const pathname = usePathname()
   // Pricing has its own early-access urgency banner - stacking the global
   // announcement on top of it doubles up on urgency messaging.
-  const showAnnouncement = announcementVisible && pathname !== "/pricing"
+  // Gated on announcementReady so repeat visitors (who already dismissed it) never
+  // see the banner flash in and animate-collapse before the localStorage check runs.
+  const showAnnouncement = announcementReady && announcementVisible && pathname !== "/pricing"
 
   useEffect(() => {
     if (localStorage.getItem("qalam_announce_dismissed") === "1") {
       setAnnouncementVisible(false)
     }
+    setAnnouncementReady(true)
   }, [])
 
   useEffect(() => {

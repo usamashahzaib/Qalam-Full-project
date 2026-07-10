@@ -108,7 +108,7 @@ export const getPlanSummary = (plan: string): string[] => {
   } else if (limits.carouselGenerationsPerMonth === "unlimited") {
     items.push("Unlimited carousels")
   } else {
-    items.push(`${limits.carouselGenerationsPerMonth} carousels/month`)
+    items.push(`${limits.carouselGenerationsPerMonth} carousel${limits.carouselGenerationsPerMonth > 1 ? "s" : ""}/month`)
   }
   if (limits.linkedinPublish) items.push("LinkedIn publish")
   if (limits.scheduling) items.push("Post scheduling")

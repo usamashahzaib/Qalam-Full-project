@@ -45,7 +45,7 @@ describe("getPlanLimits", () => {
   it("Free: correct limits", () => {
     const limits = getPlanLimits("Free")
     expect(limits.aiDraftsPerMonth).toBe(5)
-    expect(limits.carouselGenerationsPerMonth).toBe(0)
+    expect(limits.carouselGenerationsPerMonth).toBe(1)
     expect(limits.linkedinPublish).toBe(false)
     expect(limits.scheduling).toBe(false)
     expect(limits.approvals).toBe(false)
@@ -61,8 +61,9 @@ describe("getPlanLimits", () => {
     expect(limits.scheduling).toBe(true)
     expect(limits.approvals).toBe(false)
     expect(limits.canExport).toBe(false)
-    expect(limits.analyticsDepth).toBe("full")
-    expect(limits.carouselGenerationsPerMonth).toBe(3)
+    expect(limits.analyticsDepth).toBe("basic")
+    expect(limits.voiceTraining).toBe(false)
+    expect(limits.carouselGenerationsPerMonth).toBe(4)
   })
 
   it("Pro: 60 drafts, approvals, export", () => {
@@ -74,12 +75,13 @@ describe("getPlanLimits", () => {
     expect(limits.clientWorkspaces).toBe(0)
   })
 
-  it("Agency: 3 client workspaces, 5 seats, 300 drafts", () => {
+  it("Agency: 5 client workspaces, 5 seats, 300 drafts", () => {
     const limits = getPlanLimits("Agency")
-    expect(limits.clientWorkspaces).toBe(3)
+    expect(limits.clientWorkspaces).toBe(5)
     expect(limits.seats).toBe(5)
     expect(limits.aiDraftsPerMonth).toBe(300)
     expect(limits.carouselGenerationsPerMonth).toBe(50)
+    expect(limits.researchRunsPerMonth).toBe(0)
   })
 
   it("unknown plan falls back to Free limits", () => {
@@ -105,17 +107,17 @@ describe("formatLimit", () => {
 })
 
 describe("getPlanSummary", () => {
-  it("Free: shows draft cap and no carousel", () => {
+  it("Free: shows draft cap and carousel count", () => {
     const summary = getPlanSummary("Free")
     expect(summary).toContain("5 posts/month")
-    expect(summary).toContain("No carousel generation")
+    expect(summary).toContain("1 carousel/month")
     expect(summary).not.toContain("LinkedIn publish")
   })
 
   it("Solo: shows draft cap and carousel count", () => {
     const summary = getPlanSummary("Solo")
     expect(summary).toContain("30 posts/month")
-    expect(summary).toContain("3 carousels/month")
+    expect(summary).toContain("4 carousels/month")
     expect(summary).toContain("LinkedIn publish")
     expect(summary).toContain("Post scheduling")
   })
@@ -127,9 +129,9 @@ describe("getPlanSummary", () => {
     expect(summary).not.toContain("client workspaces")
   })
 
-  it("Agency: shows 3 client workspaces", () => {
+  it("Agency: shows 5 client workspaces", () => {
     const summary = getPlanSummary("Agency")
-    expect(summary).toContain("3 client workspaces")
+    expect(summary).toContain("5 client workspaces")
   })
 })
 
