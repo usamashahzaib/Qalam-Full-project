@@ -206,8 +206,8 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, t
       <div style={{ width: W, height: H, position: "relative", overflow: "hidden", fontFamily: font, display: "flex" }}>
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(0,0,0,0.65)" />}
 
-        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
-          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px" }}>
+        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
+          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h2>
           <div style={{ width: 40, height: 3, background: t.accentColor, borderRadius: 2 }} />

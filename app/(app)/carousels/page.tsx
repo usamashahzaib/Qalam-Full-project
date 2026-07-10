@@ -7,7 +7,7 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { getPostPreviewText, getPostSourceText } from "@/lib/post-content"
 
-type CarouselProject = { id: string; topic: string; role: string; slide_count: number; created_at: string }
+type CarouselProject = { id: string; topic: string; role: string; tone: string | null; slide_count: number; created_at: string }
 const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
 
 const THEME_META: Record<string, { gradient: string; accent: string; text: string; muted: string; tagline: string; structure: string[] }> = {
@@ -286,11 +286,14 @@ export default function CarouselsPage() {
             {carousels.map((carousel) => (
               <div key={carousel.id} className="group relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal/40 hover:shadow-md">
                 <Link href={withClientParam(`/carousels/${carousel.id}`, activeClientId)} className="block">
-                  <div className="mb-4 overflow-hidden rounded-xl bg-gradient-to-br from-zinc-950 via-teal-950 to-teal p-4 text-white">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-teal-100">{carousel.slide_count || 7} slides</p>
-                    <p className="mt-5 line-clamp-2 min-h-10 text-base font-bold">{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
+                  <div
+                    className="mb-4 overflow-hidden rounded-xl p-4"
+                    style={{ background: (carousel.tone && THEME_META[carousel.tone]?.gradient) || "linear-gradient(135deg, #0d1117 0%, #0d4a45 60%, #0f766e 100%)" }}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.accent) || "#5eead4" }}>{carousel.slide_count || 7} slides</p>
+                    <p className="mt-5 line-clamp-2 min-h-10 text-base font-bold" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.text) || "#ffffff" }}>{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                     <div className="mt-5 h-px bg-white/15" />
-                    <p className="mt-2 text-[10px] text-teal-100">{carousel.role || "LinkedIn"} · {formatDate(carousel.created_at)}</p>
+                    <p className="mt-2 text-[10px]" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.muted) || "rgba(255,255,255,0.6)" }}>{carousel.role || "LinkedIn"} · {formatDate(carousel.created_at)}</p>
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">

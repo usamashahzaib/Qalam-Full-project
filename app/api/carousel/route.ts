@@ -137,7 +137,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
-      .select("id, topic, role, slide_count, created_at")
+      .select("id, topic, role, tone, slide_count, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(50)

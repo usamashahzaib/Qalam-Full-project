@@ -233,11 +233,11 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(0,0,0,0.60)" />}
 
         {/* Left dark panel */}
-        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
+        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
           {accentLabel && (
             <p style={{ color: t.accentColor, fontSize: "17px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 28px" }}>{accentLabel}</p>
           )}
-          <h1 style={{ color: leftText, fontSize: "64px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 20px", letterSpacing: "-0.025em" }}>
+          <h1 style={{ color: leftText, fontSize: "64px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 20px", letterSpacing: "-0.025em", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h1>
           {/* Accent underline */}

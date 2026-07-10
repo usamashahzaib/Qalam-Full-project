@@ -208,11 +208,11 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(0,0,0,0.65)" />}
 
         {/* Left panel */}
-        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
+        <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
           <span style={{ color: t.accentColor, fontSize: "17px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20, display: "block" }}>
             {String(slideNumber).padStart(2, "0")}
           </span>
-          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 16px", letterSpacing: "-0.02em" }}>
+          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 16px", letterSpacing: "-0.02em", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h2>
           <div style={{ width: 40, height: 3, background: t.accentColor, borderRadius: 2 }} />

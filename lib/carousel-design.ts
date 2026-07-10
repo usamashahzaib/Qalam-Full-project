@@ -354,6 +354,16 @@ export const LEGACY_THEME_IDS: CarouselThemeId[] = [
   "cosmos", "sage", "aurora", "ember", "ivory",
 ]
 
+/** Maps a content tone (chosen at generation time) to the closest-matching visual theme, so the editor opens with colors consistent with what was previewed at generation. */
+export const TONE_THEME_MAP: Record<string, CarouselThemeId> = {
+  "Authority Playbook": "forest",
+  "Executive Brief": "navy-split",
+  "Contrarian Breakdown": "nightfire",
+  "People Strategy": "aurora",
+  "Growth Memo": "obsidian",
+  "Hiring Deep Dive": "terracotta",
+}
+
 export const CANVAS = {
   width: 1080,
   height: 1080,

@@ -12,6 +12,7 @@ import {
   DEFAULT_THEME_ID,
   PREMIUM_THEME_IDS,
   LEGACY_THEME_IDS,
+  TONE_THEME_MAP,
   resolveTheme,
   type CarouselThemeId,
 } from "@/lib/carousel-design"
@@ -107,6 +108,8 @@ export default function CarouselEditorPage() {
       if (!res.ok) throw new Error(data.error || "Failed to load carousel")
       setProject(data.project)
       setSlides(data.slides || [])
+      const mappedTheme = data.project?.theme ? TONE_THEME_MAP[data.project.theme] : undefined
+      if (mappedTheme) setSelectedThemeId(mappedTheme)
     } catch (e) {
       const msg = (e as Error).message
       if (msg === "not_found" || msg === "not found" || (msg.toLowerCase().includes("not_found") && !msg.includes("column"))) {
