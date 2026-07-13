@@ -14,6 +14,12 @@ export type ApprovalRow = {
   comment: string | null
   created_at: string
   updated_at: string
+  /**
+   * Only present right after creation, this session - the server only stores a hash,
+   * so a reloaded/refetched row never has this. Lets the requester open their own
+   * review link once, immediately after sending it.
+   */
+  reviewToken?: string
 }
 
 export type StatusMsg = { text: string; type: "info" | "error" | "success" }

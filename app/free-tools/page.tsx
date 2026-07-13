@@ -214,7 +214,7 @@ export default function FreeToolsPage() {
                 Unlock the full <span className="text-gold">Qalam platform</span>
               </h2>
               <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
-                Unlimited posts, trained Voice Profile, scheduler, and performance
+                60 posts a month, trained Voice Profile, scheduler, and performance
                 review. Pro starts at PKR 1,490/month.
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">

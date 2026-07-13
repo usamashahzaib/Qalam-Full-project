@@ -12,7 +12,7 @@ const DASH_RE = /[–—]/
 // to avoid) rather than as prose punctuation. Keep in sync with any file
 // moves.
 const ALLOWED = new Set([
-  "lib/server/ai-router-v2.ts:31",
+  "lib/server/ai-router-v2.ts:30",
   "lib/server/embeddings.ts:9",
   "lib/prompts/role-aware-system.ts:83",
   "lib/prompts/builders/voice.ts:12",

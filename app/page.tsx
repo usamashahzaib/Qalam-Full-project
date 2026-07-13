@@ -655,22 +655,22 @@ export default function HomePage() {
       <section className="border-y border-gold/20 bg-gold/5 px-6 py-20">
         <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>
-            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">While This Offer Lasts</span>
+            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">New Users</span>
             <h2 className="mb-5 mt-2 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              The first 30 users get something no paid plan includes.
+              Something no paid plan includes.
             </h2>
             <p className="mb-8 text-xl leading-relaxed text-zinc-600">
-              The first 30 users get guided onboarding from the Qalam team. 20 minutes. We set up your voice profile with you and draft your first three posts together. Once those 30 spots are gone, this offer closes because guided setup does not scale forever.
+              New users get guided onboarding from the Qalam team. 20 minutes. We set up your voice profile with you and draft your first three posts together.
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 rounded-xl bg-teal px-8 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
               >
-                Claim a spot - it&apos;s free to start
+                Get started - it&apos;s free to start
               </Link>
             </motion.div>
-            <p className="mt-4 text-sm text-zinc-400">Spots are tracked manually. When they&apos;re gone, they&apos;re gone.</p>
+            <p className="mt-4 text-sm text-zinc-400">Guided onboarding is offered manually by the Qalam team.</p>
           </FadeUp>
         </div>
       </section>

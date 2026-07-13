@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, decrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { log } from "@/lib/server/logging"
 
 type Slide = {
   number: number
@@ -57,13 +58,21 @@ Return JSON:
   ]
 }`
 
-    const raw = await callAi("carousel-outline",system, userMsg, {
-      json: true, temperature: 0.8, maxTokens: 1200,
-      userId: user.id, plan: planCheck.plan, cache: false,
-    })
+    let raw: string
+    try {
+      raw = await callAi("carousel-outline", system, userMsg, {
+        json: true, temperature: 0.8, maxTokens: 1200,
+        userId: user.id, plan: planCheck.plan, cache: false,
+      })
+    } catch (genError) {
+      await decrementUsage(user.id, "carousels")
+      log.error("generate-carousel.generation_failed", { userId: user.id, error: (genError as Error).message })
+      return NextResponse.json({ error: "Carousel generation is temporarily unavailable. Please try again in a moment." }, { status: 503 })
+    }
 
     const parsed = safeParseJson<{ slides: Slide[] }>(raw)
     if (!parsed?.slides?.length) {
+      await decrementUsage(user.id, "carousels")
       return NextResponse.json({ error: "Carousel generation returned no slides" }, { status: 502 })
     }
 

@@ -1,10 +1,11 @@
 import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import { buildHook5StylesPrompt } from "@/lib/prompts/role-aware-system"
+import { log } from "@/lib/server/logging"
 
 export interface GenerateHooksInput {
   topic: string
@@ -36,17 +37,17 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
 
   const { goal } = input
   const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal)
-  const fallback = [
-    { style: "SHARP", text: `${topic}: the hidden cost is not the tool, it is the workflow around it.` },
-    { style: "AUTHORITY", text: `Most teams approach ${topic} backwards: they buy first, then define the use case.` },
-    { style: "STORY", text: `I changed my mind about ${topic} after seeing what actually breaks in the field.` },
-    { style: "CURIOSITY", text: `What if the biggest blocker to ${topic} is not technical at all?` },
-    { style: "DIRECT", text: `${topic} works when the outcome is specific before the system is built.` },
-  ]
-  const raw = await callAi("hook-generation", system, userMsg, {
-    json: true, temperature: 0.9, maxTokens: 500,
-    userId, plan, cache: false,
-  }).catch(() => JSON.stringify(fallback))
+  let raw: string
+  try {
+    raw = await callAi("hook-generation", system, userMsg, {
+      json: true, temperature: 0.9, maxTokens: 500,
+      userId, plan, cache: false,
+    })
+  } catch (genError) {
+    await decrementUsage(userId, "hooks")
+    log.error("generate-hooks.generation_failed", { userId, error: (genError as Error).message })
+    return err({ code: "INTERNAL_ERROR", message: "ai_unavailable", userMessage: "Hook generation is temporarily unavailable. Please try again in a moment." })
+  }
 
   const parsed = safeParseJson<unknown>(raw)
   const hooks: Hook[] = Array.isArray(parsed)
@@ -56,7 +57,9 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
       : []
 
   if (!hooks.length) {
-    return ok({ hooks: fallback, remaining: usage.remaining })
+    await decrementUsage(userId, "hooks")
+    log.warn("generate-hooks.empty_result", { userId })
+    return err({ code: "INTERNAL_ERROR", message: "ai_unavailable", userMessage: "Hook generation is temporarily unavailable. Please try again in a moment." })
   }
 
   return ok({ hooks: hooks.slice(0, 5), remaining: usage.remaining })

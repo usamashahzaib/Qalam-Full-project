@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       title = (await callAi("chat-strategist",
         "You are a topic naming assistant. Generate concise, descriptive topic names.",
         namePrompt,
-        { temperature: 0.3, timeout: 5000 }
+        { temperature: 0.3, timeout: 5000, userId, plan: planCheck.plan }
       )).replace(/["']/g, "").trim().substring(0, 50) || "New Chat"
     }
 
@@ -63,6 +63,9 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
     const response = await callAi("chat-strategist", "You are Qalam, a concise LinkedIn strategy advisor.", prompt, {
       temperature: 0.7,
       timeout: 15000,
+      userId,
+      plan: planCheck.plan,
+      cache: false,
     })
 
     if (conversationId) {

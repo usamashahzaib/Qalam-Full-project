@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: result.error.userMessage || result.error.message }, { status: errorToStatus(result.error.code) })
     }
 
-    return NextResponse.json({ approval: toApprovalRow(result.data.approval) }, { status: 201 })
+    return NextResponse.json(
+      { approval: toApprovalRow(result.data.approval), reviewToken: result.data.reviewToken },
+      { status: 201 }
+    )
   })(request)
 }

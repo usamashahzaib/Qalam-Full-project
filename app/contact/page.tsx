@@ -30,7 +30,7 @@ const contactPageSchema = {
     "@type": "Organization",
     name: "Qalam",
     url: "https://www.byqalam.com",
-    email: "support@byqalam.com",
+    email: "info@byqalam.com",
     sameAs: [
       "https://www.linkedin.com/company/byqalam",
       "https://www.instagram.com/byyqalam",

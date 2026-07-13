@@ -5,7 +5,6 @@ import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callMistral } from "./mistral-client"
 import { createServiceClient } from "./supabase-rest"
-import { getFallbackHook, getFallbackPost } from "./fallback"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
@@ -323,9 +322,5 @@ export async function callAi(
   }
 
   log.warn("ai.all_providers_unavailable", { task })
-  const topicMatch = userMessage.match(/topic[:\s]+([^\n]+)/i)
-  const topic = topicMatch?.[1]?.trim() || "this topic"
-  if (task === "hook-generation") return getFallbackHook(topic)
-  if (task === "post-generation") return getFallbackPost(topic)
   throw new Error("All AI services unavailable. Please try again in a moment.")
 }

@@ -214,7 +214,7 @@ export function GET() {
     "",
     "- LinkedIn: https://www.linkedin.com/company/byqalam",
     "- Instagram: https://www.instagram.com/byyqalam",
-    "- Contact: support@byqalam.com",
+    "- Contact: info@byqalam.com",
   ].join("\n")
 
   return new Response(body, {

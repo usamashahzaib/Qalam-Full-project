@@ -284,7 +284,15 @@ export function Navbar() {
             ) : session ? (
               <UserMenu session={session} />
             ) : (
-              <Link href="/login" className="text-sm font-medium">Log in</Link>
+              <>
+                <Link href="/login" className="text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
+                <Link
+                  href="/signup"
+                  className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+                >
+                  Start free
+                </Link>
+              </>
             )}
           </div>
 
@@ -383,7 +391,16 @@ export function Navbar() {
                       </button>
                     </>
                   ) : (
-                    <Link href="/login" className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
+                    <>
+                      <Link href="/login" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
+                      <Link
+                        href="/signup"
+                        onClick={() => setMobileOpen(false)}
+                        className="rounded-lg bg-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+                      >
+                        Start free
+                      </Link>
+                    </>
                   )}
                 </div>
               </div>

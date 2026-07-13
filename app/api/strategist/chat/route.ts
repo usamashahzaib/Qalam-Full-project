@@ -114,7 +114,7 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
     const response = await callAi("chat-strategist",
       "You are Qalam, a concise LinkedIn strategy advisor.",
       prompt,
-      { temperature: 0.7, timeout: 15000 }
+      { temperature: 0.7, timeout: 15000, userId, plan: planCheck.plan, cache: false }
     )
 
     if (!conversationId) {

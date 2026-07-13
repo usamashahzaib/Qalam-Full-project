@@ -196,14 +196,20 @@ function ApprovalCard({ row, expanded, onToggle }: {
               </p>
             </div>
           )}
-          <a
-            href={`/approvals/${row.id}/review`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-[10px] font-semibold text-teal underline underline-offset-2 hover:text-teal-700"
-          >
-            Open review link &rarr;
-          </a>
+          {row.reviewToken ? (
+            <a
+              href={`/approvals/${row.id}/review?token=${encodeURIComponent(row.reviewToken)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block text-[10px] font-semibold text-teal underline underline-offset-2 hover:text-teal-700"
+            >
+              Open review link &rarr;
+            </a>
+          ) : (
+            <p className="text-[10px] text-zinc-400">
+              Review link was emailed to {row.reviewer_email}. For security, it can only be viewed here right after sending.
+            </p>
+          )}
         </div>
       )}
     </div>
@@ -238,9 +244,9 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           message: message.trim(),
         }),
       })
-      const data = await res.json() as { approval?: ApprovalRow; error?: string }
+      const data = await res.json() as { approval?: ApprovalRow; reviewToken?: string; error?: string }
       if (!res.ok) throw new Error(data.error || "Failed to send")
-      onSent(data.approval!)
+      onSent({ ...data.approval!, reviewToken: data.reviewToken })
       onClose()
     } catch (e) {
       onError((e as Error).message)

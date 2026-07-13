@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
   }
 
   const params = new URL(request.url).searchParams
-  const q = (params.get("search") || params.get("q") || "").trim().toLowerCase()
+  const rawQ = (params.get("search") || params.get("q") || "").trim().toLowerCase()
+  // encodeURIComponent does not escape PostgREST filter syntax metacharacters
+  // ( ) , * - strip them so a search term can't inject extra or/and clauses.
+  const q = rawQ.replace(/[(),*]/g, "")
   const page = Math.max(1, parseInt(params.get("page") || "1", 10))
   const pageSize = Math.min(25, Math.max(1, parseInt(params.get("limit") || "25", 10)))
   const offset = (page - 1) * pageSize

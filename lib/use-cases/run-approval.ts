@@ -23,6 +23,12 @@ export interface RunApprovalInput {
 export interface RunApprovalOutput {
   approvalId: string
   postTitle: string
+  /**
+   * Only the hash is persisted server-side, so this raw token exists solely in this
+   * response - it cannot be recovered later (e.g. on a page reload / GET /api/approvals).
+   * Callers should let the requester copy/open the review link now or never.
+   */
+  reviewToken: string
   approval: {
     id: string
     post_id: string | null
@@ -112,5 +118,5 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     })
   }
 
-  return ok({ approvalId: approval.id as string, postTitle: title, approval })
+  return ok({ approvalId: approval.id as string, postTitle: title, reviewToken, approval })
 }
