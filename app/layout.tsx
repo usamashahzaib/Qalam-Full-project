@@ -224,7 +224,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
-        <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
+        {/* suppressHydrationWarning: browsers hide the nonce attribute from the
+            DOM after parsing, so the client always sees "" vs the server value. */}
+        <script type="application/ld+json" nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {app}

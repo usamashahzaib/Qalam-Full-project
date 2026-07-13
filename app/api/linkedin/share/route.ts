@@ -14,7 +14,9 @@ type ShareRequestBody = {
 export async function POST(request: NextRequest) {
   const userId = await requireAuth()
   const { requirePlan } = await import("@/lib/server/plan-limits-v2")
-  const planCheck = await requirePlan(request, "Pro")
+  // Solo and above: PLAN_CONFIG grants linkedinPublish from Solo up, and the
+  // flag check below is the real capability gate.
+  const planCheck = await requirePlan(request, "Solo")
   if (!planCheck.ok) return planCheck.response
   if (!planCheck.limits.linkedinPublish) {
     return NextResponse.json({ error: "upgrade_required", requiredFeature: "linkedinPublish" }, { status: 403 })

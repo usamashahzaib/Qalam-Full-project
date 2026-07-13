@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
-import { getClientIp } from "@/lib/server/rate-limit"
+import { getClientIp, TokenBucket } from "@/lib/server/rate-limit"
 import { supportEnv } from "@/lib/server/env"
 
 /*
@@ -18,22 +18,14 @@ import { supportEnv } from "@/lib/server/env"
   );
 */
 
-const CONTACT_LIMITS = new Map<string, { count: number; resetAt: number }>()
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now()
-  const bucket = CONTACT_LIMITS.get(ip)
-  if (bucket && bucket.resetAt > now) {
-    bucket.count += 1
-    return bucket.count > 5
-  }
-  CONTACT_LIMITS.set(ip, { count: 1, resetAt: now + 15 * 60 * 1000 })
-  return false
-}
+// Redis-backed so the limit holds across serverless instances; falls back to
+// in-memory when Redis is not configured. 5 submissions per 15 minutes per IP.
+const contactLimiter = new TokenBucket(5, 5, 15 * 60 * 1000)
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (isRateLimited(ip)) {
+  const allowed = await contactLimiter.tryConsume(`contact:${ip}`)
+  if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before submitting again." },
       { status: 429 },

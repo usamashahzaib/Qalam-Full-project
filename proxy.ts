@@ -99,6 +99,16 @@ const PUBLIC_API_PREFIXES = [
   "/api/free-tools",
   "/api/tools",
   "/api/geo",
+  // Vercel cron endpoints authenticate with CRON_SECRET (Bearer header), not a
+  // session cookie - each route validates the secret itself.
+  "/api/cron",
+  "/api/linkedin/publish-scheduled",
+  "/api/linkedin/sync-analytics",
+  // Anonymous marketing surfaces: contact form and referral landing tracking.
+  // Each route enforces its own Redis-backed rate limit.
+  "/api/contact",
+  "/api/referrals/click",
+  "/api/referrals/validate",
 ]
 
 // ─── CSP builder ─────────────────────────────────────────────────────────────
