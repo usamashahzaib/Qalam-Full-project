@@ -1,7 +1,7 @@
 import "server-only"
 
 import crypto from "node:crypto"
-import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
+import { supabaseDelete, supabaseInsert, supabasePatch, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 
 const ALGORITHM = "aes-256-gcm"
 
@@ -85,7 +85,7 @@ export const storeLinkedInToken = async ({
   refreshToken?: string | null
   refreshTokenExpiresAt?: number | null
 }) => {
-  await supabaseInsert(
+  await supabaseUpsert(
     "linkedin_credentials",
     {
       user_id: userId,
@@ -96,7 +96,7 @@ export const storeLinkedInToken = async ({
       ...(refreshTokenExpiresAt !== undefined ? { refresh_token_expires_at: refreshTokenExpiresAt } : {}),
       updated_at: new Date().toISOString(),
     },
-    "resolution=merge-duplicates"
+    "user_id"
   )
 }
 

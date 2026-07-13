@@ -219,7 +219,7 @@ export default function SettingsPage() {
   const onDeleteAccount = async () => {
     setDeleteStep("deleting")
     try {
-      const res = await fetch("/api/auth/delete-account", { method: "DELETE" })
+      const res = await fetch("/api/user/delete", { method: "DELETE" })
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || "Failed to delete account.")

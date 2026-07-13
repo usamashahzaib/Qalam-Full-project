@@ -3,9 +3,59 @@ import "server-only"
 import { createHash } from "crypto"
 import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "@/lib/server/redis"
-import { checkRateLimit } from "./rate-limiter"
 import { log } from "./logging"
 import type { PlanTier } from "@/types/domain"
+
+// ── Per-plan generation rate limit ──────────────────────────────────────────
+// Formerly lib/server/rate-limiter.ts - folded in here since enqueueRequest()
+// is its only caller. Backed by @upstash/ratelimit like every other limiter
+// in the app, instead of a hand-rolled Redis incr/expire counter.
+
+const GENERATION_PLAN_LIMITS: Record<PlanTier, number> = {
+  Free: 5,
+  Solo: 15,
+  Pro: 50,
+  Agency: 9999,
+}
+
+const _generationLimiters = new Map<PlanTier, Ratelimit>()
+
+function getGenerationLimiter(plan: PlanTier, limit: number): Ratelimit | null {
+  const redis = getRedis()
+  if (!redis) return null
+  let limiter = _generationLimiters.get(plan)
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(limit, "1 h"),
+      prefix: "rl:generation",
+    })
+    _generationLimiters.set(plan, limiter)
+  }
+  return limiter
+}
+
+export async function checkGenerationRateLimit(
+  userId: string,
+  plan: PlanTier,
+): Promise<{ allowed: boolean; remaining: number; resetTime: number }> {
+  const limit = GENERATION_PLAN_LIMITS[plan] ?? GENERATION_PLAN_LIMITS.Free
+  const key = `generation:${userId}`
+  const limiter = getGenerationLimiter(plan, limit)
+
+  if (!limiter) {
+    const result = inMemoryRateLimit(key, limit, 3_600_000)
+    return { allowed: result.allowed, remaining: result.remaining, resetTime: result.reset }
+  }
+
+  try {
+    const { success, remaining, reset } = await limiter.limit(key)
+    return { allowed: success, remaining, resetTime: reset }
+  } catch {
+    // Fail closed on Redis errors - deny the request rather than bypass rate limiting
+    return { allowed: false, remaining: 0, resetTime: Date.now() + 3_600_000 }
+  }
+}
 
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
@@ -239,7 +289,7 @@ export async function enqueueRequest(
   message?: string
 }> {
   const [rateLimit, demand] = await Promise.all([
-    checkRateLimit(userId, plan),
+    checkGenerationRateLimit(userId, plan),
     trackAndGetDemand(),
   ])
 

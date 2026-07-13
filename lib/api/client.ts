@@ -83,7 +83,7 @@ const resolvedTitle = (title: string | undefined, content: string, fallback = "U
   title || content.trim().split("\n")[0]?.slice(0, 80) || fallback
 
 const scheduledAt = (date?: string, time?: string, scheduledTime?: string) =>
-  scheduledTime || (date && time ? `${date}T${time}:00` : null)
+  scheduledTime || (date && time ? new Date(`${date}T${time}:00`).toISOString() : null)
 
 export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string }
 export type GenerateHooksOutput = { hooks: HookItem[] }
@@ -161,14 +161,7 @@ export const schedulePost = async (data: SchedulePostInput) => {
     scheduledTime,
   }
   if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
-  try {
-    return await postJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts/${data.id}/schedule`, body)
-  } catch (e) {
-    if (e instanceof ApiClientError && [404, 405].includes(e.status)) {
-      return patchJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
-    }
-    throw e
-  }
+  return patchJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
 }
 
 export const publishPost = async (data: PublishPostInput) => {
@@ -180,14 +173,7 @@ export const publishPost = async (data: PublishPostInput) => {
     externalPostUrn: data.externalPostUrn ?? null,
   }
   if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
-  try {
-    return await postJson<PublishPostOutput, Record<string, unknown>>(`/api/posts/${data.id}/publish`, body)
-  } catch (e) {
-    if (e instanceof ApiClientError && [404, 405].includes(e.status)) {
-      return patchJson<PublishPostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
-    }
-    throw e
-  }
+  return patchJson<PublishPostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
 }
 
 export const exportPost = ({ id, ...data }: ExportPostInput) =>

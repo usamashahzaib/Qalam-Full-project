@@ -107,7 +107,9 @@ async function getOrCreateWorkspaceForUser(userId: string, ownerEmail?: string) 
     .from("workspace_members")
     .select("workspace_id, role")
     .eq("user_id", userId)
-    .single()
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   if (membership) return membership.workspace_id
 
@@ -251,7 +253,9 @@ export async function getCurrentWorkspace() {
     .from("workspace_members")
     .select("workspace_id, role")
     .eq("user_id", userId)
-    .single()
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   if (membership) return { workspaceId: membership.workspace_id, role: membership.role }
 

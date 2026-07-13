@@ -6,6 +6,9 @@ import { log } from "@/lib/server/logging"
 
 const generateLimiter = new TokenBucket(10, 10, 60 * 60 * 1000)
 
+// Pinned server-side - the discount rate must not be attacker-controlled.
+const DISCOUNT_PERCENT = 20
+
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const ip = getClientIp(req)
@@ -21,7 +24,6 @@ export async function POST(request: NextRequest) {
       // no body is fine - all fields are optional
     }
 
-    const discountPercent = typeof body.discountPercent === "number" ? Math.min(100, Math.max(0, body.discountPercent)) : 20
     const maxUses = typeof body.maxUses === "number" && body.maxUses > 0 ? Math.floor(body.maxUses) : null
     const expiresAt = typeof body.expiresAt === "string" && body.expiresAt ? new Date(body.expiresAt) : null
 
@@ -30,12 +32,12 @@ export async function POST(request: NextRequest) {
         referrerUserId: user.id,
         referrerName: user.name || user.email || "User",
         referrerEmail: user.email || "",
-        discountPercent,
+        discountPercent: DISCOUNT_PERCENT,
         maxUses,
         expiresAt: expiresAt && !Number.isNaN(expiresAt.getTime()) ? expiresAt : null,
       })
       log.info("referrals.generated", { userId: user.id })
-      return NextResponse.json({ code: result.code, discountPercent }, { status: 201 })
+      return NextResponse.json({ code: result.code, discountPercent: DISCOUNT_PERCENT }, { status: 201 })
     } catch (err) {
       log.error("referrals.generate_route_failed", { error: (err as Error).message })
       return NextResponse.json({ error: "Could not generate referral code. Please try again." }, { status: 500 })

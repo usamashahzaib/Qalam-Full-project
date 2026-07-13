@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { getRedis } from "@/lib/server/redis"
 
 vi.mock("@/lib/server/redis", () => ({
@@ -8,70 +8,47 @@ vi.mock("@/lib/server/redis", () => ({
 const mockGetRedis = vi.mocked(getRedis)
 
 // Import after mock is set up
-const { checkRateLimit } = await import("@/lib/server/rate-limiter")
+const { checkGenerationRateLimit } = await import("@/lib/server/queue")
 
-describe("checkRateLimit (user-based sliding window)", () => {
+describe("checkGenerationRateLimit (per-plan generation limit)", () => {
   beforeEach(() => {
     vi.resetAllMocks()
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it("allows first request when Redis returns count=1", async () => {
-    mockGetRedis.mockReturnValue({
-      incr: vi.fn().mockResolvedValue(1),
-      expire: vi.fn().mockResolvedValue(1),
-      ttl: vi.fn().mockResolvedValue(3600),
-    } as never)
-
-    const result = await checkRateLimit("user-abc", "Pro")
-    expect(result.allowed).toBe(true)
-    expect(result.remaining).toBeGreaterThan(0)
-  })
-
-  it("blocks request when count exceeds Pro limit (50/hr)", async () => {
-    mockGetRedis.mockReturnValue({
-      incr: vi.fn().mockResolvedValue(51),
-      expire: vi.fn().mockResolvedValue(1),
-      ttl: vi.fn().mockResolvedValue(1800),
-    } as never)
-
-    const result = await checkRateLimit("user-abc", "Pro")
-    expect(result.allowed).toBe(false)
-    expect(result.remaining).toBe(0)
-  })
-
-  it("blocks request when count exceeds Free limit (5/hr)", async () => {
-    mockGetRedis.mockReturnValue({
-      incr: vi.fn().mockResolvedValue(6),
-      expire: vi.fn().mockResolvedValue(1),
-      ttl: vi.fn().mockResolvedValue(3000),
-    } as never)
-
-    const result = await checkRateLimit("user-xyz", "Free")
-    expect(result.allowed).toBe(false)
-    expect(result.remaining).toBe(0)
-  })
-
-  it("falls back to in-memory limiter when Redis is unavailable", async () => {
+  it("falls back to in-memory limiter when Redis is unavailable and allows a fresh user", async () => {
     mockGetRedis.mockReturnValue(null)
 
-    const result = await checkRateLimit("user-no-redis", "Solo")
+    const result = await checkGenerationRateLimit("user-no-redis", "Solo")
     expect(result.allowed).toBe(true)
     expect(typeof result.remaining).toBe("number")
   })
 
-  it("Agency plan has a very high limit (9999/hr)", async () => {
-    mockGetRedis.mockReturnValue({
-      incr: vi.fn().mockResolvedValue(100),
-      expire: vi.fn().mockResolvedValue(1),
-      ttl: vi.fn().mockResolvedValue(3600),
-    } as never)
+  it("blocks once the in-memory bucket for a Free-plan user is exhausted (5/hr)", async () => {
+    mockGetRedis.mockReturnValue(null)
 
-    const result = await checkRateLimit("agency-user", "Agency")
+    let last
+    for (let i = 0; i < 6; i += 1) {
+      last = await checkGenerationRateLimit("user-free-exhaust", "Free")
+    }
+    expect(last!.allowed).toBe(false)
+    expect(last!.remaining).toBe(0)
+  })
+
+  it("Agency plan has a very high limit (9999/hr) via in-memory fallback", async () => {
+    mockGetRedis.mockReturnValue(null)
+
+    const result = await checkGenerationRateLimit("agency-user", "Agency")
     expect(result.allowed).toBe(true)
     expect(result.remaining).toBeGreaterThan(9000)
+  })
+
+  it("fails closed when Redis errors", async () => {
+    // A Redis client with no usable methods forces @upstash/ratelimit to throw,
+    // which checkGenerationRateLimit must translate into a denied request.
+    mockGetRedis.mockReturnValue({} as never)
+
+    const result = await checkGenerationRateLimit("user-abc", "Pro")
+    expect(result.allowed).toBe(false)
+    expect(result.remaining).toBe(0)
   })
 })

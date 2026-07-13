@@ -1,71 +1,10 @@
 import "server-only"
 
 import type { NextRequest } from "next/server"
+import { Ratelimit } from "@upstash/ratelimit"
 import { getRedis } from "./redis"
 
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
-type Bucket = { tokens: number; lastRefill: number }
-
-const memoryStore = new Map<string, Bucket>()
-const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
-
-export class TokenBucket {
-  constructor(
-    public capacity: number,
-    public refillRate: number,
-    public windowMs: number = 60_000
-  ) {}
-
-  async tryConsume(key: string, tokens: number = 1): Promise<boolean> {
-    const redis = getRedis()
-    const now = Date.now()
-
-    if (redis) {
-      const redisKey = `ratelimit:${key}`
-      const data = await redis.get<Bucket>(redisKey)
-      let bucketTokens = data?.tokens ?? this.capacity
-      const lastRefill = data?.lastRefill ?? now
-      const elapsed = now - lastRefill
-      const tokensToAdd = (elapsed / this.windowMs) * this.capacity
-      bucketTokens = Math.min(this.capacity, bucketTokens + tokensToAdd)
-
-      if (bucketTokens >= tokens) {
-        bucketTokens -= tokens
-        await redis.set(redisKey, { tokens: bucketTokens, lastRefill: now }, { ex: Math.ceil(this.windowMs / 1000) * 2 })
-        return true
-      }
-      await redis.set(redisKey, { tokens: bucketTokens, lastRefill: now }, { ex: Math.ceil(this.windowMs / 1000) * 2 })
-      return false
-    }
-
-    if (process.env.NODE_ENV === "production") {
-      console.warn("[rate-limit] Redis unavailable, using in-memory fallback")
-    }
-    return this._tryConsumeMemory(key, tokens, now)
-  }
-
-  async getState(key: string): Promise<Bucket> {
-    const redis = getRedis()
-    const state = redis ? await redis.get<Bucket>(`ratelimit:${key}`) : memoryStore.get(key)
-    return state ?? { tokens: this.capacity, lastRefill: Date.now() }
-  }
-
-  private _tryConsumeMemory(key: string, tokens: number, now: number): boolean {
-    const data = memoryStore.get(key)
-    let bucketTokens = data?.tokens ?? this.capacity
-    const lastRefill = data?.lastRefill ?? now
-    const elapsed = now - lastRefill
-    const tokensToAdd = (elapsed / this.windowMs) * this.capacity
-    bucketTokens = Math.min(this.capacity, bucketTokens + tokensToAdd)
-
-    if (bucketTokens >= tokens) {
-      memoryStore.set(key, { tokens: bucketTokens - tokens, lastRefill: now })
-      return true
-    }
-    memoryStore.set(key, { tokens: bucketTokens, lastRefill: now })
-    return false
-  }
-}
 
 export function getClientIp(request: NextRequest): string {
   // On Vercel, request.ip is set by the Edge Network and cannot be spoofed.
@@ -89,6 +28,97 @@ export function getClientIp(request: NextRequest): string {
   return "unknown"
 }
 
+export async function checkBotDetection(ip: string, userAgent: string | null): Promise<boolean> {
+  void ip
+  if (!userAgent?.trim()) return true
+  return /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i.test(userAgent)
+}
+
+// ── In-memory fallback ────────────────────────────────────────────────────────
+// Only used when Redis isn't configured. Per-instance, not globally consistent
+// across serverless instances, but prevents unlimited usage rather than
+// failing open entirely.
+const _inMemoryBuckets = new Map<string, { tokens: number; lastRefill: number }>()
+
+function inMemoryTokenBucket(key: string, capacity: number, refillRate: number, windowMs: number): boolean {
+  const now = Date.now()
+  const data = _inMemoryBuckets.get(key)
+  let tokens = data?.tokens ?? capacity
+  const lastRefill = data?.lastRefill ?? now
+  const elapsed = now - lastRefill
+  tokens = Math.min(capacity, tokens + (elapsed / windowMs) * refillRate)
+
+  if (tokens >= 1) {
+    _inMemoryBuckets.set(key, { tokens: tokens - 1, lastRefill: now })
+    return true
+  }
+  _inMemoryBuckets.set(key, { tokens, lastRefill: now })
+  return false
+}
+
+// ── Token bucket (route-scoped, arbitrary capacity/refill) ────────────────────
+// Backed by @upstash/ratelimit's tokenBucket algorithm so every limiter in the
+// app shares one Redis-side implementation instead of hand-rolled get/set math.
+
+export class TokenBucket {
+  private limiter: Ratelimit | null | undefined
+
+  constructor(
+    public capacity: number,
+    public refillRate: number,
+    public windowMs: number = 60_000
+  ) {}
+
+  private getLimiter(): Ratelimit | null {
+    if (this.limiter !== undefined) return this.limiter
+    const redis = getRedis()
+    if (!redis) return (this.limiter = null)
+    return (this.limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.tokenBucket(this.refillRate, `${Math.max(1, Math.ceil(this.windowMs / 1000))} s`, this.capacity),
+      prefix: "rl:bucket",
+    }))
+  }
+
+  async tryConsume(key: string): Promise<boolean> {
+    const limiter = this.getLimiter()
+    if (!limiter) {
+      if (process.env.NODE_ENV === "production") {
+        console.warn("[rate-limit] Redis unavailable, using in-memory fallback")
+      }
+      return inMemoryTokenBucket(key, this.capacity, this.refillRate, this.windowMs)
+    }
+    try {
+      const { success } = await limiter.limit(key)
+      return success
+    } catch {
+      // Fail closed on Redis errors - deny the request rather than bypass rate limiting.
+      return false
+    }
+  }
+}
+
+// ── Plan-scoped route limiter ──────────────────────────────────────────────────
+// Used by free-tools and other endpoints that key limits off (route, plan, ip).
+
+const planLimits: Record<string, number> = { free: 5, solo: 10, pro: 20, agency: 50 }
+const _routeLimiters = new Map<string, Ratelimit>()
+
+function getRouteLimiter(planKey: string, limit: number): Ratelimit | null {
+  const redis = getRedis()
+  if (!redis) return null
+  let limiter = _routeLimiters.get(planKey)
+  if (!limiter) {
+    limiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.tokenBucket(limit, "60 s", limit),
+      prefix: "rl:route",
+    })
+    _routeLimiters.set(planKey, limiter)
+  }
+  return limiter
+}
+
 export async function checkRateLimit(
   identifier: string,
   plan: string,
@@ -97,24 +127,18 @@ export async function checkRateLimit(
   const planKey = planLimits[plan.toLowerCase()] !== undefined ? plan.toLowerCase() : "free"
   const limit = planLimits[planKey]
   const key = `ip:${ip}:route:${identifier}`
-  const bucket = new TokenBucket(limit, limit)
+
   try {
-    const allowed = await bucket.tryConsume(key)
-    const state = await bucket.getState(key)
-    return {
-      allowed,
-      limit,
-      remaining: Math.max(0, Math.floor(state.tokens)),
-      reset: state.lastRefill + bucket.windowMs,
+    const limiter = getRouteLimiter(planKey, limit)
+    if (!limiter) {
+      const allowed = inMemoryTokenBucket(key, limit, limit, 60_000)
+      const bucket = _inMemoryBuckets.get(key)
+      return { allowed, limit, remaining: Math.max(0, Math.floor(bucket?.tokens ?? 0)), reset: Date.now() + 60_000 }
     }
+    const { success, remaining, reset } = await limiter.limit(key)
+    return { allowed: success, limit, remaining, reset }
   } catch {
     // Fail closed on Redis errors - deny the request rather than bypass rate limiting
     return { allowed: false, limit, remaining: 0, reset: Date.now() + 60_000 }
   }
-}
-
-export async function checkBotDetection(ip: string, userAgent: string | null): Promise<boolean> {
-  void ip
-  if (!userAgent?.trim()) return true
-  return /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i.test(userAgent)
 }

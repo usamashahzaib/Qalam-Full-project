@@ -9,7 +9,8 @@ import { Redis } from "@upstash/redis"
 
 let _redis: Redis | null = null
 let _generalLimiter: Ratelimit | null = null
-let _authLimiter: Ratelimit | null = null
+let _authIpLimiter: Ratelimit | null = null
+let _authEmailLimiter: Ratelimit | null = null
 
 function proxyRedis(): Redis | null {
   if (_redis) return _redis
@@ -30,15 +31,54 @@ function generalLimiter(): Ratelimit | null {
   }))
 }
 
-function authLimiter(): Ratelimit | null {
-  if (_authLimiter) return _authLimiter
+// IP limit is raised (20/15m) since it now only guards against broad abuse -
+// the tighter per-email limit below is what actually stops credential
+// stuffing against a single account, without penalizing shared IPs (offices,
+// campuses, carrier-grade NAT) that legitimately host many distinct users.
+function authIpLimiter(): Ratelimit | null {
+  if (_authIpLimiter) return _authIpLimiter
   const r = proxyRedis()
   if (!r) return null
-  return (_authLimiter = new Ratelimit({
+  return (_authIpLimiter = new Ratelimit({
+    redis: r,
+    limiter: Ratelimit.slidingWindow(20, "15 m"),
+    prefix: "rl:auth:ip",
+  }))
+}
+
+function authEmailLimiter(): Ratelimit | null {
+  if (_authEmailLimiter) return _authEmailLimiter
+  const r = proxyRedis()
+  if (!r) return null
+  return (_authEmailLimiter = new Ratelimit({
     redis: r,
     limiter: Ratelimit.slidingWindow(5, "15 m"),
-    prefix: "rl:auth",
+    prefix: "rl:auth:email",
   }))
+}
+
+async function hashEmail(email: string): Promise<string> {
+  const data = new TextEncoder().encode(email.trim().toLowerCase())
+  const digest = await crypto.subtle.digest("SHA-256", data)
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("")
+}
+
+async function extractAuthEmail(request: NextRequest): Promise<string | null> {
+  try {
+    const contentType = request.headers.get("content-type") || ""
+    if (contentType.includes("application/json")) {
+      const body = await request.clone().json()
+      return typeof body?.email === "string" && body.email ? body.email : null
+    }
+    if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+      const form = await request.clone().formData()
+      const email = form.get("email")
+      return typeof email === "string" && email ? email : null
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 // Mirrors getClientIp() in lib/server/rate-limit.ts so the proxy and route
@@ -61,8 +101,28 @@ function getClientIp(request: NextRequest): string {
   return "unknown"
 }
 
-async function checkRateLimit(ip: string, isAuthRoute: boolean): Promise<boolean> {
-  const limiter = isAuthRoute ? authLimiter() : generalLimiter()
+async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextRequest): Promise<boolean> {
+  if (isAuthRoute) {
+    const ipLimiter = authIpLimiter()
+    const emailLimiter = authEmailLimiter()
+    if (!ipLimiter && !emailLimiter) return true // fail-open when Redis not configured
+
+    if (ipLimiter) {
+      const { success } = await ipLimiter.limit(ip)
+      if (!success) return false
+    }
+
+    if (emailLimiter) {
+      const email = await extractAuthEmail(request)
+      if (email) {
+        const { success } = await emailLimiter.limit(await hashEmail(email))
+        if (!success) return false
+      }
+    }
+    return true
+  }
+
+  const limiter = generalLimiter()
   if (!limiter) return true // fail-open when Redis not configured
   const { success } = await limiter.limit(ip)
   return success
@@ -167,6 +227,17 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   const ip = getClientIp(request)
 
+  // Baseline sanitized headers used for every pass-through response - strips
+  // any inbound x-user-id / x-user-email before they reach downstream
+  // handlers, since those are only ever trusted when set below after auth
+  // verification succeeds.
+  const baseHeaders = () => {
+    const headers = new Headers(request.headers)
+    headers.delete("x-user-id")
+    headers.delete("x-user-email")
+    return headers
+  }
+
   const { pathname } = request.nextUrl
 
   const isPublicApi = PUBLIC_API_PREFIXES.some(
@@ -187,7 +258,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       pathname.startsWith("/api/auth/callback") ||
       AUTH_ONLY_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
     )
-    const rateLimitOk = await checkRateLimit(ip, isAuthRoute)
+    const rateLimitOk = await checkRateLimit(ip, isAuthRoute, request)
     if (!rateLimitOk) {
       return addSecurityHeaders(
         NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
@@ -205,7 +276,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     : undefined
 
   if (isPublicApi) {
-    return addSecurityHeaders(NextResponse.next(), nonce)
+    return addSecurityHeaders(
+      NextResponse.next({ request: { headers: baseHeaders() } }),
+      nonce
+    )
   }
 
   const isProtectedRoute = PROTECTED_ROUTES.some(
@@ -218,7 +292,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Public marketing pages pass through without auth check
   const isApiRoute = pathname.startsWith("/api/")
   if (!isProtectedRoute && !isAuthOnly && !isApiRoute) {
-    const requestHeaders = new Headers(request.headers)
+    const requestHeaders = baseHeaders()
     if (nonce) requestHeaders.set("x-nonce", nonce)
     return addSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
@@ -257,7 +331,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       )
     }
     if (isAuthOnly) {
-      const requestHeaders = new Headers(request.headers)
+      const requestHeaders = baseHeaders()
       if (nonce) requestHeaders.set("x-nonce", nonce)
       return addSecurityHeaders(
         NextResponse.next({ request: { headers: requestHeaders } }),
@@ -269,7 +343,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce)
   }
 
-  const requestHeaders = new Headers(request.headers)
+  const requestHeaders = baseHeaders()
   requestHeaders.set("x-user-id", userId)
   if (userEmail) requestHeaders.set("x-user-email", userEmail)
   if (nonce) requestHeaders.set("x-nonce", nonce)

@@ -76,7 +76,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { billing } = useBilling()
   const { posts } = usePosts()
   const activeClientId = searchParams.get("client")
-  const linkedinConnected = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
+  const [linkedinConnected, setLinkedinConnected] = useState(false)
+
+  useEffect(() => {
+    if (!session?.user) {
+      setLinkedinConnected(false)
+      return
+    }
+    let cancelled = false
+    fetch("/api/linkedin/profile")
+      .then((res) => (res.ok ? res.json() : { connected: false }))
+      .then((data) => { if (!cancelled) setLinkedinConnected(Boolean(data?.connected)) })
+      .catch(() => { if (!cancelled) setLinkedinConnected(false) })
+    return () => { cancelled = true }
+  }, [session?.user])
+
   const user = session?.user
     ? {
         email: session.user.email || "",

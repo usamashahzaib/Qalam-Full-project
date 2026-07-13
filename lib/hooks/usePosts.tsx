@@ -11,11 +11,13 @@ type PostsContextValue = {
   drafts: WorkspacePost[]
   scheduled: WorkspacePost[]
   published: WorkspacePost[]
+  failed: WorkspacePost[]
   isLoadingPosts: boolean
   postsError: string | null
   saveDraft: (input: { id?: string | null; title: string; content: string; type: string }) => Promise<string>
   schedulePost: (input: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
   publishPost: (input: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
+  retryFailedPost: (id: string) => Promise<void>
   deletePost: (id: string) => Promise<void>
   refreshPosts: () => Promise<void>
   trackEvent: (type: string, payload?: Record<string, unknown>) => Promise<void>
@@ -31,6 +33,7 @@ const deriveBuckets = (posts: WorkspacePost[]) => ({
   drafts: posts.filter((p) => p.status === "draft"),
   scheduled: posts.filter((p) => p.status === "scheduled"),
   published: posts.filter((p) => p.status === "published"),
+  failed: posts.filter((p) => p.status === "failed"),
 })
 
 const friendlyPostError = (message?: string) => {
@@ -102,7 +105,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
 
   const schedulePost = useCallback(async ({ id, title, content, type, date, time }: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => {
     const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
-    const scheduledTime = date && time ? `${date}T${time}:00` : null
+    const scheduledTime = date && time ? new Date(`${date}T${time}:00`).toISOString() : null
     if (id) {
       const res = await fetch(`/api/posts?id=${id}`, {
         method: "PATCH",
@@ -153,6 +156,22 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
 
+  const retryFailedPost = useCallback(async (id: string) => {
+    const res = await fetch(`/api/posts?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "scheduled",
+        scheduledTime: new Date().toISOString(),
+        workspaceKey: workspaceId,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to retry post"))
+    if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
+    await trackEvent("post_retry", { postId: id })
+  }, [trackEvent, workspaceId])
+
   const deletePost = useCallback(async (id: string) => {
     const res = await fetch(`/api/posts?id=${id}&workspaceKey=${encodeURIComponent(workspaceId)}`, { method: "DELETE" })
     if (!res.ok) {
@@ -199,11 +218,13 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     drafts: buckets.drafts,
     scheduled: buckets.scheduled,
     published: buckets.published,
+    failed: buckets.failed,
     isLoadingPosts,
     postsError,
     saveDraft,
     schedulePost,
     publishPost,
+    retryFailedPost,
     deletePost,
     refreshPosts,
     trackEvent,
@@ -211,7 +232,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     loadJobs,
     createJob,
     deleteJob,
-  }), [buckets, createJob, deleteJob, deletePost, isLoadingPosts, loadEvents, loadJobs, posts, postsError, publishPost, refreshPosts, saveDraft, schedulePost, trackEvent])
+  }), [buckets, createJob, deleteJob, deletePost, isLoadingPosts, loadEvents, loadJobs, posts, postsError, publishPost, refreshPosts, retryFailedPost, saveDraft, schedulePost, trackEvent])
 
   return <PostsContext.Provider value={value}>{children}</PostsContext.Provider>
 }

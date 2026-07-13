@@ -12,6 +12,7 @@ import {
   generateCarousel as apiGenerateCarousel,
   shareToLinkedIn,
   API_PATHS,
+  ApiClientError,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { openLinkedInComposer } from "@/lib/linkedin-compose"
@@ -507,25 +508,53 @@ export function useWriterLogic({
   const onPublish = async () => {
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
     setIsPublishing(true)
+
+    let postUrn: string | null = null
     try {
       const shared = await shareToLinkedIn({ content: draftContent, postId: editingId, workspaceKey: workspaceId })
       if (!shared.postUrn) throw new Error("LinkedIn did not confirm the post.")
-      const id = await publishPost({
-        id: editingId,
-        title: resolveTitle(),
-        content: draftContent,
-        type: "LinkedIn - Text post",
-        publishedAt: new Date().toISOString(),
-        externalPostUrn: shared.postUrn,
-      })
-      setEditingId(id)
-      showStatus("Published to LinkedIn.", "success")
-    } catch {
-      await openLinkedInComposer(draftContent)
-      showStatus("Post copied to clipboard. LinkedIn composer opened - paste to publish.", "info")
-    } finally {
+      postUrn = shared.postUrn
+    } catch (e) {
+      if (e instanceof ApiClientError && e.status === 401) {
+        showStatus("Your LinkedIn connection expired. Reconnect LinkedIn in Settings.", "error")
+      } else if (e instanceof ApiClientError && e.status === 403) {
+        showStatus("Publishing to LinkedIn requires a higher plan. Upgrade to continue.", "error")
+      } else {
+        await openLinkedInComposer(draftContent)
+        showStatus("Post copied to clipboard. LinkedIn composer opened - paste to publish.", "info")
+      }
       setIsPublishing(false)
+      return
     }
+
+    // LinkedIn share succeeded - the post is live. From here we only persist the
+    // record; never re-attempt shareToLinkedIn or prompt the composer again.
+    const maxAttempts = 3
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const id = await publishPost({
+          id: editingId,
+          title: resolveTitle(),
+          content: draftContent,
+          type: "LinkedIn - Text post",
+          publishedAt: new Date().toISOString(),
+          externalPostUrn: postUrn,
+        })
+        setEditingId(id)
+        showStatus("Published to LinkedIn.", "success")
+        break
+      } catch (e) {
+        if (attempt === maxAttempts) {
+          showStatus(
+            "Published to LinkedIn, but saving the record failed. It will not be re-posted - refresh to check Library.",
+            "error"
+          )
+          break
+        }
+        await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
+      }
+    }
+    setIsPublishing(false)
   }
 
   // ── Comment replies ───────────────────────────────────────────────────────

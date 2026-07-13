@@ -14,7 +14,7 @@ import { getPostPreviewText } from "@/lib/post-content"
 type View = "table" | "grid"
 type SortKey = "newest" | "oldest"
 type FilterType = "all" | "text" | "carousel"
-type FilterStatus = "all" | "draft" | "scheduled" | "published"
+type FilterStatus = "all" | "draft" | "scheduled" | "published" | "failed"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -31,6 +31,7 @@ function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "scheduled" ? "bg-amber-100 text-amber-700" :
     status === "published" ? "bg-emerald-100 text-emerald-700" :
+    status === "failed" ? "bg-red-100 text-red-700" :
     "bg-zinc-100 text-zinc-500"
   return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${cls}`}>{status}</span>
 }
@@ -59,7 +60,8 @@ function LibrarySkeleton() {
 export default function LibraryPage() {
   const router = useRouter()
   const { workspaceId, activeClientId } = useWorkspace()
-  const { posts, deletePost, refreshPosts, isLoadingPosts } = usePosts()
+  const { posts, deletePost, refreshPosts, isLoadingPosts, retryFailedPost } = usePosts()
+  const [isRetrying, setIsRetrying] = useState<string | null>(null)
 
   // Filters
   const [filterType, setFilterType] = useState<FilterType>("all")
@@ -132,6 +134,18 @@ export default function LibraryPage() {
       showStatus((e as Error).message || "Delete failed", "error")
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const onRetry = async (post: WorkspacePost) => {
+    setIsRetrying(post.id)
+    try {
+      await retryFailedPost(post.id)
+      showStatus("Post requeued for publishing.", "success")
+    } catch (e) {
+      showStatus((e as Error).message || "Retry failed", "error")
+    } finally {
+      setIsRetrying(null)
     }
   }
 
@@ -221,6 +235,7 @@ export default function LibraryPage() {
           <option value="draft">Drafts</option>
           <option value="scheduled">Scheduled</option>
           <option value="published">Published</option>
+          <option value="failed">Failed</option>
         </select>
 
         {/* Sort */}
@@ -325,6 +340,15 @@ export default function LibraryPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        {post.status === "failed" && (
+                          <button
+                            onClick={() => void onRetry(post)}
+                            disabled={isRetrying === post.id}
+                            className="cursor-pointer rounded-lg border border-teal/40 bg-teal/5 px-2.5 py-1 text-xs font-semibold text-teal-700 hover:bg-teal/10 disabled:opacity-50"
+                          >
+                            {isRetrying === post.id ? "..." : "Retry"}
+                          </button>
+                        )}
                         <button
                           onClick={() => onEdit(post)}
                           className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
@@ -372,6 +396,15 @@ export default function LibraryPage() {
               <p className="mb-1.5 text-sm font-bold leading-snug text-zinc-900 line-clamp-2">{post.title}</p>
               <p className="text-xs leading-relaxed text-zinc-500 line-clamp-3">{getPostPreviewText(post)}</p>
               <div className="mt-4 flex items-center gap-2 border-t border-zinc-100 pt-3">
+                {post.status === "failed" && (
+                  <button
+                    onClick={() => void onRetry(post)}
+                    disabled={isRetrying === post.id}
+                    className="cursor-pointer rounded-lg border border-teal/40 bg-teal/5 px-3 py-1.5 text-xs font-semibold text-teal-700 transition-colors hover:bg-teal/10 disabled:opacity-50"
+                  >
+                    {isRetrying === post.id ? "..." : "Retry"}
+                  </button>
+                )}
                 <button
                   onClick={() => onEdit(post)}
                   className="cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"

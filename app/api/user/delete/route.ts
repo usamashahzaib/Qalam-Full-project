@@ -17,6 +17,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     log.info("gdpr.delete.complete", { userId: user.id })
-    return NextResponse.json({ success: true })
+
+    // Clear session cookies so the deleted user's JWT cannot be reused.
+    // NextAuth v5 uses "authjs.session-token" / "__Secure-authjs.session-token";
+    // "next-auth.session-token" is kept for sessions issued before the v5 migration.
+    const response = NextResponse.json({ success: true })
+    const cookieNames = [
+      "next-auth.session-token",
+      "authjs.session-token",
+      "__Secure-authjs.session-token",
+    ]
+    for (const name of cookieNames) {
+      response.cookies.set(name, "", { expires: new Date(0), path: "/" })
+    }
+    return response
   })(request)
 }
