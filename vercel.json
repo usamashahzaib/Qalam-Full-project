@@ -1,5 +1,4 @@
 {
-  "_comment": "If Vercel Hobby limits to daily, use Upstash QStash or cron-job.org with Bearer CRON_SECRET header.",
   "crons": [
     {
       "path": "/api/cron/schedule",
