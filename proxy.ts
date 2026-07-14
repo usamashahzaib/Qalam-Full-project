@@ -147,6 +147,7 @@ const PROTECTED_ROUTES = [
   "/approvals",
   "/chat",
   "/admin",
+  "/silent-growth",
 ]
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]

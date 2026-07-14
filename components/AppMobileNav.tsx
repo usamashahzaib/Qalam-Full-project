@@ -11,6 +11,7 @@ import {
   LibraryIcon,
   MicroscopeIcon,
   ProfileIcon,
+  StealthIcon,
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
@@ -29,6 +30,7 @@ const MORE_LINKS = [
   { href: "/library", label: "Library", icon: LibraryIcon },
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon },
+  { href: "/silent-growth", label: "Silent Growth", icon: StealthIcon },
   { href: "/agency", label: "Team", icon: TeamIcon },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]

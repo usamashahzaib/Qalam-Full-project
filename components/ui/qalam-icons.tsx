@@ -177,6 +177,14 @@ export const RepostIcon = (props: IconProps) => (
   </Svg>
 )
 
+export const StealthIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" opacity="0.35" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M4 4l16 16" />
+  </Svg>
+)
+
 export const LinkedInIcon = (props: IconProps) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={props.className ?? base} aria-hidden="true" {...props}>
     <path d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 7.06A1.96 1.96 0 1 0 5.2 3.14a1.96 1.96 0 0 0 .05 3.92ZM20 20h-3.37v-5.57c0-1.33-.02-3.03-1.85-3.03-1.86 0-2.14 1.45-2.14 2.94V20H9.27V8.5h3.24v1.57h.05c.45-.86 1.56-1.77 3.21-1.77 3.43 0 4.06 2.26 4.06 5.2V20Z" />

@@ -24,6 +24,7 @@ import {
   BrainIcon,
   CheckIcon,
   CommentIcon,
+  StealthIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
@@ -54,6 +55,7 @@ const NAV_GROUPS = [
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/comment-generator", label: "Comment Generator", icon: CommentIcon },
+      { href: "/silent-growth", label: "Silent Growth", icon: StealthIcon },
     ],
   },
   {
