@@ -154,7 +154,7 @@ export default function SettingsPage() {
         return
       }
       const data = await res.json().catch(() => ({}))
-      setLinkedinStatus(data.error || "LinkedIn integration is coming soon. Contact us to enable publishing.")
+      setLinkedinStatus(data.error || "Couldn't start the LinkedIn connection. Please try again or contact support.")
     } catch {
       window.location.href = "/api/linkedin/connect"
     }

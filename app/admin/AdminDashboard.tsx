@@ -58,6 +58,8 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     mutate,
     giveSelfPro,
     resetCircuits,
+    deleteUser,
+    deletingUser,
   } = useAdminUsers(adminEmail)
 
   return (
@@ -416,6 +418,26 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           className="cursor-pointer rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50"
                         >
                           Delete override
+                        </button>
+                      </div>
+
+                      {/* Danger zone */}
+                      <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">Danger zone</p>
+                        <p className="mt-1 text-xs text-red-700/80">
+                          Permanently deletes this user and all their data (posts, carousels, voice profiles, credentials). This cannot be undone.
+                        </p>
+                        <button
+                          onClick={() => {
+                            if (!selected) return
+                            if (window.confirm(`Permanently delete ${selected.email} and all their data? This cannot be undone.`)) {
+                              deleteUser().catch(() => undefined)
+                            }
+                          }}
+                          disabled={deletingUser}
+                          className="mt-2 w-full cursor-pointer rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                        >
+                          {deletingUser ? "Deleting user..." : "Delete user permanently"}
                         </button>
                       </div>
                     </div>

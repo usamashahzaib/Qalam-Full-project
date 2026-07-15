@@ -3,65 +3,63 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 
-const LEDGER_STORAGE_KEY = "silent_growth_ledger"
-
 type LedgerEntry = {
   id: string
   name: string
-  date: string
-  reciprocateBy: string
-}
-
-function loadLedger(): LedgerEntry[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(LEDGER_STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveLedger(entries: LedgerEntry[]) {
-  try {
-    localStorage.setItem(LEDGER_STORAGE_KEY, JSON.stringify(entries))
-  } catch {
-    // localStorage unavailable (private mode, quota) - entry is lost silently
-  }
+  engaged_date: string
+  reciprocate_by: string
 }
 
 export function EngagementLedger() {
   const [entries, setEntries] = useState<LedgerEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [name, setName] = useState("")
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [reciprocateBy, setReciprocateBy] = useState("")
 
   useEffect(() => {
-    setEntries(loadLedger())
+    fetch("/api/silent-growth/ledger")
+      .then((res) => res.json())
+      .then((data) => setEntries(Array.isArray(data.entries) ? data.entries : []))
+      .catch(() => setError("Could not load your ledger. Please refresh."))
+      .finally(() => setLoading(false))
   }, [])
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const trimmedName = name.trim()
     if (!trimmedName || !date || !reciprocateBy) return
-    const entry: LedgerEntry = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      name: trimmedName,
-      date,
-      reciprocateBy,
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/silent-growth/ledger", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmedName, date, reciprocateBy }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to save entry")
+      setEntries((prev) => [data.entry, ...prev])
+      setName("")
+      setReciprocateBy("")
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setSaving(false)
     }
-    const next = [entry, ...entries]
-    setEntries(next)
-    saveLedger(next)
-    setName("")
-    setReciprocateBy("")
   }
 
-  const handleRemove = (id: string) => {
-    const next = entries.filter((e) => e.id !== id)
-    setEntries(next)
-    saveLedger(next)
+  const handleRemove = async (id: string) => {
+    const prev = entries
+    setEntries((current) => current.filter((e) => e.id !== id))
+    try {
+      const res = await fetch(`/api/silent-growth/ledger?id=${encodeURIComponent(id)}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed to remove entry")
+    } catch {
+      setEntries(prev)
+      setError("Failed to remove entry. Please try again.")
+    }
   }
 
   return (
@@ -90,32 +88,35 @@ export function EngagementLedger() {
           />
         </div>
         <p className="mt-1 text-xs text-zinc-400">Left: date you engaged. Right: date to reciprocate by.</p>
+        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleAdd}
-          disabled={!name.trim() || !date || !reciprocateBy}
+          disabled={!name.trim() || !date || !reciprocateBy || saving}
           className={`mt-4 w-full rounded-xl px-6 py-3 text-sm font-semibold transition-all ${
-            name.trim() && date && reciprocateBy
+            name.trim() && date && reciprocateBy && !saving
               ? "bg-teal text-white shadow-sm hover:bg-teal-600"
               : "cursor-not-allowed bg-zinc-200 text-zinc-400"
           }`}
         >
-          Add to Ledger
+          {saving ? "Saving..." : "Add to Ledger"}
         </motion.button>
       </div>
 
       <div className="divide-y divide-zinc-50">
-        {entries.length === 0 ? (
-          <p className="px-6 py-8 text-center text-sm text-zinc-400">No entries yet. Stored only on this device.</p>
+        {loading ? (
+          <p className="px-6 py-8 text-center text-sm text-zinc-400">Loading...</p>
+        ) : entries.length === 0 ? (
+          <p className="px-6 py-8 text-center text-sm text-zinc-400">No entries yet.</p>
         ) : (
           entries.map((entry) => (
             <div key={entry.id} className="flex items-center justify-between gap-3 px-6 py-4">
               <p className="text-sm text-zinc-700">
                 Engaged with <span className="font-semibold text-zinc-900">{entry.name}</span> on{" "}
-                <span className="font-semibold text-zinc-900">{entry.date}</span> - reciprocate by{" "}
-                <span className="font-semibold text-teal">{entry.reciprocateBy}</span>
+                <span className="font-semibold text-zinc-900">{entry.engaged_date}</span> - reciprocate by{" "}
+                <span className="font-semibold text-teal">{entry.reciprocate_by}</span>
               </p>
               <button
                 onClick={() => handleRemove(entry.id)}

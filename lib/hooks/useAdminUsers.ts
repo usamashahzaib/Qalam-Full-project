@@ -48,6 +48,7 @@ export function useAdminUsers(adminEmail: string) {
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
   const [selfId, setSelfId] = useState<string | null>(null)
   const [resettingCircuits, setResettingCircuits] = useState(false)
+  const [deletingUser, setDeletingUser] = useState(false)
 
   const [form, setForm] = useState<AdminFormState>({
     planOverride: "",
@@ -165,6 +166,29 @@ export function useAdminUsers(adminEmail: string) {
     }
   }
 
+  const deleteUser = async () => {
+    if (!selected) return
+    if (selected.email.toLowerCase() === adminEmail.toLowerCase()) {
+      setMsg("You cannot delete your own account from here", "err")
+      return
+    }
+    setDeletingUser(true)
+    setMsg("Deleting user...")
+    const res = await fetch(`/api/admin/users/${selected.id}`, {
+      method: "DELETE",
+      headers: { "x-admin-key": adminKey },
+    })
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    setDeletingUser(false)
+    if (!res.ok) {
+      setMsg(data.error || "Failed to delete user", "err")
+      return
+    }
+    setSelected(null)
+    await load(query)
+    setMsg("User deleted")
+  }
+
   const resetCircuits = async () => {
     setResettingCircuits(true)
     const res = await fetch("/api/admin/reset-circuits", {
@@ -201,6 +225,8 @@ export function useAdminUsers(adminEmail: string) {
     mutate,
     giveSelfPro,
     resetCircuits,
+    deleteUser,
+    deletingUser,
     FEATURES,
   }
 }
