@@ -142,6 +142,11 @@ html, body {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 
 /* ─── Global resets & base ────────────────────────────────────── */
 
@@ -440,13 +445,26 @@ html {
   outline-offset: 2px;
 }
 
+/* Smooth focus transitions on every form field so existing focus:ring/focus:border
+   utilities animate instead of snapping */
+input, textarea, select {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
 /* ─── Reusable utility classes ────────────────────────────────── */
 
-/* Glassmorphism nav */
+/* Glassmorphism nav - solid fallback first so unsupported/degraded
+   backdrop-filter never lets page content show through the nav bar */
 .glass {
-  background: rgba(250, 250, 248, 0.82);
-  backdrop-filter: blur(18px) saturate(200%);
-  -webkit-backdrop-filter: blur(18px) saturate(200%);
+  background: rgba(250, 250, 248, 0.97);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass {
+    background: rgba(250, 250, 248, 0.82);
+    backdrop-filter: blur(18px) saturate(200%);
+    -webkit-backdrop-filter: blur(18px) saturate(200%);
+  }
 }
 
 /* Grid-line background pattern (80 px) */
@@ -550,6 +568,43 @@ html {
   font-size: 0.8125rem;
   font-weight: 500;
   letter-spacing: 0.01em;
+}
+
+/* Press feedback - brief scale-down on click/tap for buttons and primary links */
+.press {
+  transition: transform 0.15s ease;
+}
+.press:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active {
+    transform: none;
+  }
+}
+
+/* Animated underline for nav-style text links */
+.nav-underline {
+  position: relative;
+}
+.nav-underline::after {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.3rem;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+  opacity: 0.55;
+}
+.nav-underline:hover::after,
+.nav-underline[aria-expanded="true"]::after {
+  transform: scaleX(1);
 }
 
 /* Card hover lift */

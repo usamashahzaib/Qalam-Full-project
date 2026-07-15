@@ -1,8 +1,8 @@
 ﻿"use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { AnimatePresence, motion, useInView } from "framer-motion"
+import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import {
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
-import { LINKEDIN_NICHES, LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
+import { LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -43,7 +43,18 @@ function useCountUp(end: number, duration = 1400) {
   return { count, ref }
 }
 
-const NICHES = LINKEDIN_NICHES
+const NICHE_PROOF: { name: string; proof: string }[] = [
+  { name: "Founders", proof: "Thought leadership that does not sound outsourced" },
+  { name: "HR Directors", proof: "Employer-brand posts that do not read legal-reviewed" },
+  { name: "Consultants", proof: "Frameworks and case notes that compound into an archive" },
+  { name: "Agency Owners", proof: "Client voices kept separate, never blended" },
+  { name: "Marketing Directors", proof: "Consistent output without a ghostwriter retainer" },
+  { name: "Sales Directors", proof: "Prospect-facing posts that build trust before the call" },
+  { name: "Product Managers", proof: "Ship notes and lessons turned into real posts" },
+  { name: "Recruiters", proof: "Role posts and candidate outreach in one voice" },
+  { name: "CFOs", proof: "Precise, credible posts with zero buzzword padding" },
+  { name: "Executive Coaches", proof: "A point of view that sounds like one person, every time" },
+]
 
 const FEATURES = [
   {
@@ -104,10 +115,140 @@ const HOW_IT_WORKS = [
   },
 ]
 
+const STATUS_META: Record<string, {
+  label: string
+  dotClass: string
+  pillClass: string
+  headerClass: string
+  borderClass: string
+  animate?: boolean
+}> = {
+  "Live now": {
+    label: "Operational",
+    dotClass: "bg-emerald-500",
+    pillClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    headerClass: "border-emerald-100 bg-emerald-50/40",
+    borderClass: "border-emerald-200/70",
+    animate: true,
+  },
+  "Active workflows": {
+    label: "Manual",
+    dotClass: "bg-gold",
+    pillClass: "bg-gold-50 text-gold-700 border border-gold-200",
+    headerClass: "border-gold/15 bg-gold/5",
+    borderClass: "border-gold/25",
+  },
+  "Building next": {
+    label: "Planned",
+    dotClass: "bg-zinc-400",
+    pillClass: "bg-zinc-100 text-zinc-500 border border-zinc-200",
+    headerClass: "border-zinc-100 bg-zinc-50/60",
+    borderClass: "border-zinc-200",
+  },
+}
+
 const SOLO_PLAN = PLANS.find((plan) => plan.plan === "Solo")
 const SOLO_MONTHLY_PRICE = SOLO_PLAN ? `${formatPkr(SOLO_PLAN.monthlyPkr)}/month` : "Paid plan"
 
+type DraftSegment = { text: string; bold?: boolean }
+type DraftVariant = { tone: string; segments: DraftSegment[] }
+
+const DRAFT_VARIANTS: DraftVariant[] = [
+  {
+    tone: "Witty",
+    segments: [
+      { text: "I spent three years testing LinkedIn advice that looked smart but produced nothing durable.\n\n" },
+      { text: "What changed was not another prompt.\n\n" },
+      { text: "It was the system that remembered what I kept, what I edited, and what I wanted the next draft to inherit.", bold: true },
+    ],
+  },
+  {
+    tone: "Professional",
+    segments: [
+      { text: "Most LinkedIn advice optimizes for the algorithm instead of the reader.\n\n" },
+      { text: "We rebuilt the process around one question: would a specific person stop scrolling for this.\n\n" },
+      { text: "The result was fewer posts, more replies, and a pipeline that did not depend on going viral.", bold: true },
+    ],
+  },
+  {
+    tone: "Bold",
+    segments: [
+      { text: "Delete your content calendar.\n\n" },
+      { text: "Nobody remembers a post that sounded like every other post in their feed that week.\n\n" },
+      { text: "Write the one sentence you would actually say out loud, then build the post backward from there.", bold: true },
+    ],
+  },
+]
+
+function renderTypedSegments(segments: DraftSegment[], visibleChars: number) {
+  let consumed = 0
+  const nodes: React.ReactNode[] = []
+  for (let i = 0; i < segments.length; i++) {
+    if (consumed >= visibleChars) break
+    const seg = segments[i]
+    const slice = seg.text.slice(0, visibleChars - consumed)
+    nodes.push(
+      seg.bold ? (
+        <span key={i} className="font-semibold text-teal">{slice}</span>
+      ) : (
+        <span key={i}>{slice}</span>
+      )
+    )
+    consumed += seg.text.length
+  }
+  return nodes
+}
+
+function useTypedDraft(variants: DraftVariant[], charDelay = 16, holdMs = 2600) {
+  const prefersReducedMotion = useReducedMotion()
+  const [variantIndex, setVariantIndex] = useState(0)
+  const [visibleChars, setVisibleChars] = useState(0)
+  const [phase, setPhase] = useState<"typing" | "holding">(prefersReducedMotion ? "holding" : "typing")
+
+  const fullLength = useMemo(
+    () => variants[variantIndex].segments.reduce((sum, s) => sum + s.text.length, 0),
+    [variants, variantIndex]
+  )
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setVisibleChars(fullLength)
+      return
+    }
+    if (phase !== "typing") return
+    setVisibleChars(0)
+    let raf: number
+    const start = performance.now()
+    const step = (now: number) => {
+      const elapsed = now - start
+      const count = Math.min(fullLength, Math.floor(elapsed / charDelay))
+      setVisibleChars(count)
+      if (count < fullLength) {
+        raf = requestAnimationFrame(step)
+      } else {
+        setPhase("holding")
+      }
+    }
+    raf = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, variantIndex, fullLength, charDelay, prefersReducedMotion])
+
+  useEffect(() => {
+    if (prefersReducedMotion || phase !== "holding") return
+    const t = setTimeout(() => {
+      setVariantIndex((i) => (i + 1) % variants.length)
+      setPhase("typing")
+    }, holdMs)
+    return () => clearTimeout(t)
+  }, [phase, holdMs, variants.length, prefersReducedMotion])
+
+  return { variant: variants[variantIndex], variantIndex, visibleChars, isTyping: phase === "typing" && !prefersReducedMotion }
+}
+
 function ProductMockup() {
+  const { variant, variantIndex, visibleChars, isTyping } = useTypedDraft(DRAFT_VARIANTS)
+
   return (
     <div className="relative" style={{ perspective: "1200px" }}>
       <motion.div
@@ -133,13 +274,14 @@ function ProductMockup() {
         </div>
 
         <div className="flex gap-2 px-5 pb-2 pt-4">
-          {["Witty", "Professional", "Bold"].map((tone, i) => (
+          {DRAFT_VARIANTS.map((v, i) => (
             <span
-              key={tone}
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${i === 0 ? "border-gold bg-gold text-white" : "border-white/15 text-white/55"
-                }`}
+              key={v.tone}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-300 ${
+                i === variantIndex ? "border-gold bg-gold text-white" : "border-white/15 text-white/55"
+              }`}
             >
-              {tone}
+              {v.tone}
             </span>
           ))}
         </div>
@@ -154,16 +296,9 @@ function ProductMockup() {
               <p className="text-[10px] text-zinc-400">Live surface preview</p>
             </div>
           </div>
-          <p className="text-xs leading-relaxed text-zinc-700">
-            I spent three years testing LinkedIn advice that looked smart but produced nothing durable.
-            <br />
-            <br />
-            What changed was not another prompt.
-            <br />
-            <br />
-            <span className="font-semibold text-teal">
-              It was the system that remembered what I kept, what I edited, and what I wanted the next draft to inherit.
-            </span>
+          <p className="min-h-[104px] whitespace-pre-line text-xs leading-relaxed text-zinc-700">
+            {renderTypedSegments(variant.segments, visibleChars)}
+            {isTyping && <span className="ml-0.5 inline-block h-3 w-[2px] -mb-0.5 animate-pulse bg-teal align-middle" />}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-[10px] text-zinc-500">
             <span className="rounded-lg bg-zinc-50 px-2 py-1">Draft saved</span>
@@ -210,7 +345,6 @@ function VoiceStatCard({
   title,
   desc,
   index,
-  showConnector,
 }: {
   label: string
   end: number
@@ -218,7 +352,6 @@ function VoiceStatCard({
   title: string
   desc: string
   index: number
-  showConnector: boolean
 }) {
   const { count, ref } = useCountUp(end, 1200 + index * 200)
 
@@ -232,7 +365,6 @@ function VoiceStatCard({
           <span className="rounded-full border border-teal/20 bg-teal/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-teal">
             {label}
           </span>
-          {showConnector && <div className="h-px flex-1 bg-gradient-to-r from-teal/20 to-transparent" />}
         </div>
         <p className="mb-2 text-3xl font-bold text-gold">
           <span ref={ref}>{count}</span>
@@ -242,6 +374,35 @@ function VoiceStatCard({
         <p className="text-sm leading-relaxed text-zinc-600">{desc}</p>
       </motion.div>
     </FadeUp>
+  )
+}
+
+function VoiceMemoryConnector({ stages }: { stages: { label: string }[] }) {
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start 85%", "end 65%"] })
+  const pathLength = useSpring(scrollYProgress, { stiffness: 110, damping: 26, mass: 0.4 })
+  const prefersReducedMotion = useReducedMotion()
+
+  return (
+    <div ref={sectionRef} className="relative mb-3 hidden h-10 md:block">
+      <svg viewBox="0 0 900 40" preserveAspectRatio="none" className="absolute inset-0 h-10 w-full overflow-visible" aria-hidden>
+        <line x1="75" y1="20" x2="825" y2="20" stroke="#0D4A4522" strokeWidth="2" />
+        <motion.line
+          x1="75"
+          y1="20"
+          x2="825"
+          y2="20"
+          stroke="#C9871F"
+          strokeWidth="2"
+          strokeLinecap="round"
+          style={prefersReducedMotion ? undefined : { pathLength }}
+        />
+        {stages.map((stage, i) => {
+          const cx = 75 + (i * (825 - 75)) / (stages.length - 1)
+          return <circle key={stage.label} cx={cx} cy="20" r="5" className="fill-white" stroke="#C9871F" strokeWidth="2" />
+        })}
+      </svg>
+    </div>
   )
 }
 
@@ -283,9 +444,11 @@ function VoiceMemorySection() {
           </p>
         </FadeUp>
 
+        <VoiceMemoryConnector stages={stages} />
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {stages.map((stage, i) => (
-            <VoiceStatCard key={stage.label} {...stage} index={i} showConnector={i < 2} />
+            <VoiceStatCard key={stage.label} {...stage} index={i} />
           ))}
         </div>
       </div>
@@ -432,7 +595,7 @@ export default function HomePage() {
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href="/login"
-                  className="pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
+                  className="press pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-all hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_8px_28px_rgba(13,74,69,0.4)]"
                 >
                   Start free - no card needed
                 </Link>
@@ -440,7 +603,7 @@ export default function HomePage() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
                   href="#before-after"
-                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
+                  className="press inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
                 >
                   See it write in your voice
                 </Link>
@@ -529,9 +692,16 @@ export default function HomePage() {
         </div>
         <div className="marquee-fade overflow-hidden">
           <div className="marquee-track">
-            {NICHES.map((name, i) => (
-              <span key={`${name}-${i}`} className="marquee-pill shrink-0 mx-2 inline-flex items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5 text-sm font-semibold tracking-wide text-zinc-600 transition-all hover:border-teal/40 hover:bg-teal/5 hover:text-teal">
-                {name}
+            {[...NICHE_PROOF, ...NICHE_PROOF].map((niche, i) => (
+              <span
+                key={`${niche.name}-${i}`}
+                className="group relative mx-2 inline-flex shrink-0 items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5 text-sm font-semibold tracking-wide text-zinc-600 transition-all hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
+              >
+                {niche.name}
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 scale-95 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-normal leading-snug text-white opacity-0 shadow-lg transition-all duration-150 group-hover:scale-100 group-hover:opacity-100">
+                  {niche.proof}
+                  <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-900" />
+                </span>
               </span>
             ))}
           </div>
@@ -559,21 +729,30 @@ export default function HomePage() {
           </FadeUp>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {LIVE_SURFACE.map((group, i) => (
-              <FadeUp key={group.title} delay={i * 0.08}>
-                <div className="h-full rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm">
-                  <h3 className="mb-4 text-xl font-bold text-zinc-900">{group.title}</h3>
-                  <ul className="space-y-3 text-sm leading-relaxed text-zinc-600">
-                    {group.items.map((item) => (
-                      <li key={item} className="flex gap-3">
-                        <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </FadeUp>
-            ))}
+            {LIVE_SURFACE.map((group, i) => {
+              const status = STATUS_META[group.title] ?? STATUS_META["Building next"]
+              return (
+                <FadeUp key={group.title} delay={i * 0.08}>
+                  <div className={`h-full overflow-hidden rounded-2xl border bg-white shadow-sm ${status.borderClass}`}>
+                    <div className={`flex items-center justify-between border-b px-7 py-4 ${status.headerClass}`}>
+                      <h3 className="text-base font-bold text-zinc-900">{group.title}</h3>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${status.pillClass}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${status.animate ? "animate-pulse" : ""}`} />
+                        {status.label}
+                      </span>
+                    </div>
+                    <ul className="space-y-3 p-7 text-sm leading-relaxed text-zinc-600">
+                      {group.items.map((item) => (
+                        <li key={item} className="flex gap-3">
+                          <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${status.dotClass}`} />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </FadeUp>
+              )
+            })}
           </div>
         </div>
       </section>

@@ -86,8 +86,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="app-shell flex min-h-screen items-center justify-center px-4 pt-28 pb-16 sm:pt-16">
-      <div className="app-content w-full max-w-sm">
+    <div className="app-shell grid-bg relative flex min-h-screen items-center justify-center px-4 pt-28 pb-16 sm:pt-16">
+      <Link
+        href="/"
+        className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 transition-colors hover:text-teal sm:left-6 sm:top-6"
+      >
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Back to byqalam.com
+      </Link>
+
+      <div className="app-content w-full max-w-sm animate-[fadeInUp_0.5s_ease-out]">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
           <QalamLogo href="/" size={28} textClassName="text-xl font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
@@ -167,7 +177,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="press w-full rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
@@ -185,7 +195,7 @@ export default function LoginPage() {
             <button
               onClick={() => handleSocial("linkedin")}
               disabled={socialLoading !== null}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#0A66C2]/30 bg-[#0A66C2]/5 px-4 py-3 text-sm font-semibold text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className="press flex w-full items-center justify-center gap-3 rounded-xl border border-[#0A66C2]/30 bg-[#0A66C2]/5 px-4 py-3 text-sm font-semibold text-[#0A66C2] transition-colors hover:bg-[#0A66C2]/10 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LinkedInIcon className="h-4 w-4 text-[#0A66C2]" />
               {socialLoading === "linkedin" ? "Redirecting to LinkedIn..." : "Continue with LinkedIn"}

@@ -67,7 +67,8 @@ function NavDropdown({
     <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
+        aria-expanded={open}
+        className="nav-underline flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
       >
         {label}
         <motion.span
@@ -225,18 +226,18 @@ export function Navbar() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden bg-[#1f5e57]"
           >
-            <div className="relative flex h-10 items-center justify-center gap-3 px-4 text-sm font-medium text-white">
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/20 bg-white/10">
+            <div className="relative flex h-10 items-center justify-center gap-2 px-10 text-sm font-medium text-white sm:gap-3 sm:px-4">
+              <span className="hidden h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 sm:inline-flex">
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
-              <span>
-                <strong>New:</strong> agency workspaces with separate client voice memory
+              <span className="truncate">
+                <strong>New:</strong> <span className="hidden sm:inline">agency workspaces with separate client voice memory</span><span className="sm:hidden">agency workspaces</span>
               </span>
               <Link
                 href="/agency-setup"
-                className="inline-flex items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
+                className="inline-flex shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
-                See setup <ChevronRightIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">See setup</span><span className="sm:hidden">Setup</span> <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => {
@@ -271,7 +272,7 @@ export function Navbar() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
+                className="nav-underline rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
               >
                 {link.label}
               </Link>
@@ -285,10 +286,10 @@ export function Navbar() {
               <UserMenu session={session} />
             ) : (
               <>
-                <Link href="/login" className="text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
+                <Link href="/login" className="nav-underline px-2 py-2 text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
                 <Link
                   href="/signup"
-                  className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+                  className="press rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 hover:shadow-md"
                 >
                   Start free
                 </Link>

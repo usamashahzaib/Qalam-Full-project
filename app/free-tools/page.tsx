@@ -46,7 +46,7 @@ const TOOLS = [
     title: "Comment Generator",
     desc: "Draft sharp, on-voice LinkedIn comments for any post in seconds. Free sign-in required.",
     badge: "New",
-    badgeColor: "border border-green-200 bg-green-50 text-green-700",
+    badgeColor: "border border-teal/20 bg-teal-50 text-teal",
     href: "/free-tools/comment-generator",
   },
   {
@@ -70,7 +70,7 @@ const TOOLS = [
     title: "Carousel Builder",
     desc: "Turn a post into a cleaner multi-slide asset for LinkedIn distribution.",
     badge: "New",
-    badgeColor: "border border-green-200 bg-green-50 text-green-700",
+    badgeColor: "border border-teal/20 bg-teal-50 text-teal",
     href: "/free-tools/carousel-builder",
   },
   {
