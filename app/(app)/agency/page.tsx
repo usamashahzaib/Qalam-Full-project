@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { PlanGate } from "@/components/PlanGate"
+import { TeamManagement } from "@/components/TeamManagement"
 import { useSearchParams } from "next/navigation"
 
 type Client = {
@@ -31,6 +32,7 @@ export default function AgencyDashboard() {
   const [isAdding, setIsAdding] = useState(false)
   const [newClientName, setNewClientName] = useState("")
   const [addError, setAddError] = useState<string | null>(null)
+  const [teamOpenFor, setTeamOpenFor] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/agency/clients")
@@ -143,7 +145,18 @@ export default function AgencyDashboard() {
                       <Link href={`/writer?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Writer</Link>
                       <Link href={`/library?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Library</Link>
                       <Link href={`/approvals?client=${client.id}`} className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Approvals</Link>
+                      <button
+                        onClick={() => setTeamOpenFor((prev) => (prev === client.id ? null : client.id))}
+                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${teamOpenFor === client.id ? "border-teal/40 bg-teal/10 text-teal-800" : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50"}`}
+                      >
+                        {teamOpenFor === client.id ? "Hide team" : "Manage team"}
+                      </button>
                     </div>
+                    {teamOpenFor === client.id ? (
+                      <div className="mt-3">
+                        <TeamManagement workspaceId={client.id} workspaceName={client.client_name} />
+                      </div>
+                    ) : null}
                   </div>
                 )})
               )}

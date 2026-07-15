@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint: string }
@@ -9,7 +11,7 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
@@ -20,12 +22,23 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid slide id" }, { status: 400 })
     }
 
+    // Workspace scoping instead of user_id: a teammate must be able to edit
+    // a carousel another member created inside the same client workspace.
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "editor")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
+
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
       .single()
 
     if (error || !data) {
@@ -49,7 +62,7 @@ export async function PATCH(
       .from("carousels")
       .update({ slides, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
 
     return NextResponse.json({
       slide: {
@@ -68,7 +81,7 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string; slideId: string }> }
 ) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
@@ -79,12 +92,21 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid slide id" }, { status: 400 })
     }
 
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "editor")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
+
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
       .single()
 
     if (error || !data) {
@@ -105,7 +127,7 @@ export async function DELETE(
       .from("carousels")
       .update({ slides: updated, slide_count: updated.length, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
 
     return NextResponse.json({ ok: true, slideCount: updated.length })
   })(request)

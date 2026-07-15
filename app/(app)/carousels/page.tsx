@@ -116,7 +116,7 @@ export default function CarouselsPage() {
       const res = await fetch("/api/carousel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, role, slideCount, tone: theme }),
+        body: JSON.stringify({ topic, role, slideCount, tone: theme, workspaceKey: workspaceId }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || "Could not generate carousel")
@@ -137,7 +137,7 @@ export default function CarouselsPage() {
     if (!window.confirm("Delete this carousel? This cannot be undone.")) return
     setDeletingId(id)
     try {
-      const res = await fetch(`/api/carousel/${id}`, { method: "DELETE" })
+      const res = await fetch(withWorkspaceKey(`/api/carousel/${id}`, workspaceId), { method: "DELETE" })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Delete failed") }
       setCarousels((prev) => prev.filter((c) => c.id !== id))
     } catch (e) {

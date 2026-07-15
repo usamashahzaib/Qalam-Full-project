@@ -2,24 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
+import { requireRole } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 const patchSchema = z.object({
-  role: z.enum(["editor", "viewer"]),
+  role: z.enum(["editor", "viewer", "client_reviewer"]),
 })
 
 type Params = { params: Promise<{ id: string; userId: string }> }
-
-async function verifyOwner(workspaceId: string, callerId: string) {
-  const supabase = createServiceClient()
-  const { data } = await supabase
-    .from("workspace_members")
-    .select("role")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", callerId)
-    .maybeSingle()
-  return data?.role === "owner"
-}
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (req, user) => {
@@ -28,8 +18,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const { id: workspaceId, userId: targetUserId } = await params
 
-    if (!(await verifyOwner(workspaceId, user.id))) {
-      return NextResponse.json({ error: "only_owner_can_change_roles" }, { status: 403 })
+    try {
+      await requireRole(req, workspaceId, "admin")
+    } catch {
+      return NextResponse.json({ error: "only_admins_can_change_roles" }, { status: 403 })
     }
     if (targetUserId === user.id) {
       return NextResponse.json({ error: "cannot_change_own_role" }, { status: 400 })
@@ -64,11 +56,13 @@ export async function DELETE(request: NextRequest, { params }: Params) {
 
     const { id: workspaceId, userId: targetUserId } = await params
 
-    if (!(await verifyOwner(workspaceId, user.id))) {
-      return NextResponse.json({ error: "only_owner_can_remove_members" }, { status: 403 })
+    try {
+      await requireRole(req, workspaceId, "admin")
+    } catch {
+      return NextResponse.json({ error: "only_admins_can_remove_members" }, { status: 403 })
     }
     if (targetUserId === user.id) {
-      return NextResponse.json({ error: "owner_cannot_remove_self" }, { status: 400 })
+      return NextResponse.json({ error: "cannot_remove_self" }, { status: 400 })
     }
 
     const supabase = createServiceClient()

@@ -91,8 +91,8 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           ))}
         </ul>
 
-        <a
-          href={`mailto:business@byqalam.com?subject=${encodeURIComponent(`${plan.name} Inquiry`)}`}
+        <Link
+          href={`/managed/apply?plan=${encodeURIComponent(plan.name)}`}
           className={`w-full rounded-xl py-3.5 text-center text-sm font-bold transition-all duration-200 ${
             isPremium
               ? "bg-gold text-white shadow-sm hover:bg-amber-600"
@@ -100,8 +100,8 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           }`}
         >
           {isPremium ? "Apply for Premium" : "Get Managed"}
-        </a>
-        <p className="mt-3 text-center text-[10px] text-zinc-400">Response within 4 hours</p>
+        </Link>
+        <p className="mt-3 text-center text-[10px] text-zinc-400">Response within one business day</p>
       </motion.div>
     </motion.div>
   )

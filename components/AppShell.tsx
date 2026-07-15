@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { useAgency } from "@/lib/hooks/useAgency"
+import { useMyWorkspaces } from "@/lib/hooks/useMyWorkspaces"
 import type { WorkspacePost } from "@/types/domain"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import {
@@ -138,17 +138,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const userDropdownRef = useRef<HTMLDivElement>(null)
   const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
-  // Memoize so useAgency's effect dep stays stable during billing re-renders.
   const hasAgencyAccess = useMemo(() => currentPlan.startsWith("Agency"), [currentPlan])
   const canAddWorkspace = hasAgencyAccess
 
-  const { clientWorkspaces } = useAgency({ isAgencyPlan: hasAgencyAccess })
+  // Every workspace the user belongs to - own account plus any client
+  // workspace they were invited into. Not gated on plan: an invited
+  // teammate has no Agency plan of their own but still needs to switch
+  // into the workspace they were added to.
+  const { workspaces: myWorkspaces } = useMyWorkspaces()
+  const clientWorkspaces = useMemo(() => myWorkspaces.filter((w) => !w.isPersonal), [myWorkspaces])
   const showManageClientList = hasAgencyAccess && clientWorkspaces.length > 0
+  const showSwitcherList = clientWorkspaces.length > 0
 
   const activeClientName = useMemo(() => {
     if (!activeClientId) return "Personal Workspace"
     const matched = clientWorkspaces.find((client) => client.id === activeClientId)
-    return matched ? `${matched.client_name}'s Workspace` : "Client Workspace"
+    return matched ? `${matched.name}'s Workspace` : "Client Workspace"
   }, [activeClientId, clientWorkspaces])
 
   useEffect(() => {
@@ -227,7 +232,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {switcherOpen && (
               <div className="qalam-scrollbar-dark absolute left-4 right-4 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-800 shadow-2xl z-40 overflow-hidden divide-y divide-zinc-700">
-                <Link href="/dashboard" onClick={() => setSwitcherOpen(false)} className="block bg-teal/10 px-4 py-3 text-sm font-semibold text-white hover:bg-teal/20 transition-colors">{activeClientName}</Link>
+                <button onClick={() => handleSwitchWorkspace(null)} className={`block w-full cursor-pointer px-4 py-3 text-left text-sm font-semibold transition-colors ${!activeClientId ? "bg-teal/10 text-white" : "text-zinc-300 hover:bg-zinc-700"}`}>Personal Workspace</button>
+                {showSwitcherList ? (
+                  <div className="max-h-40 overflow-y-auto">
+                    {clientWorkspaces.map((client) => (
+                      <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`block w-full cursor-pointer truncate px-4 py-2.5 text-left text-xs font-semibold transition-colors ${activeClientId === client.id ? "bg-teal/10 text-white" : "text-zinc-300 hover:bg-zinc-700"}`}>{client.name}</button>
+                    ))}
+                  </div>
+                ) : null}
                 <div>
                   {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs font-semibold text-gold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link> : null}
                   {canAddWorkspace ? (
@@ -415,7 +427,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {switcherOpen && (
           <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
-            <div className="bg-teal/5 px-4 py-2.5 text-xs font-bold text-teal">{activeClientName}</div>
+            <button onClick={() => handleSwitchWorkspace(null)} className={`block w-full cursor-pointer px-4 py-2.5 text-left text-xs font-bold transition-colors ${!activeClientId ? "bg-teal/5 text-teal" : "text-zinc-700 hover:bg-zinc-50"}`}>Personal Workspace</button>
+            {showSwitcherList ? (
+              <div className="max-h-40 overflow-y-auto">
+                {clientWorkspaces.map((client) => (
+                  <button key={client.id} onClick={() => handleSwitchWorkspace(client.id)} className={`block w-full cursor-pointer truncate px-4 py-2 text-left text-xs font-semibold transition-colors ${activeClientId === client.id ? "bg-teal/5 text-teal" : "text-zinc-600 hover:bg-zinc-50"}`}>{client.name}</button>
+                ))}
+              </div>
+            ) : null}
             <div>
               {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="block px-4 py-2.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Manage client list &gt;</Link> : null}
               {canAddWorkspace ? (

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
@@ -59,6 +61,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })
     }
 
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "editor")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
+
     let body: unknown
     try { body = await req.json() } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
@@ -103,6 +114,7 @@ export async function POST(request: NextRequest) {
       .from("carousels")
       .insert({
         user_id: user.id,
+        workspace_id: workspaceId,
         topic: parsed.data.topic,
         role: parsed.data.role,
         tone: parsed.data.tone ?? null,
@@ -130,15 +142,24 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "viewer")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
 
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
       .select("id, topic, role, tone, slide_count, created_at")
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50)
 

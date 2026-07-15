@@ -1,0 +1,69 @@
+import type { Metadata } from "next"
+import { FadeUp } from "@/components/FadeUp"
+import { ManagedApplyForm } from "@/components/ManagedApplyForm"
+import { buildPageMetadata } from "@/lib/seo"
+import { MANAGED_PLANS, formatPkr } from "@/lib/pricing"
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Apply for Managed LinkedIn Services",
+  description:
+    "Apply for Qalam's done-for-you LinkedIn management - we write, design, and post on your behalf with client approval built in.",
+  path: "/managed/apply",
+  keywords: ["managed LinkedIn services", "done-for-you LinkedIn", "LinkedIn ghostwriting service"],
+})
+
+export default async function ManagedApplyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
+  const params = await searchParams
+  const requestedPlan = typeof params.plan === "string" ? params.plan : undefined
+  const defaultPackage = MANAGED_PLANS.find((p) => p.name === requestedPlan)?.name
+
+  return (
+    <div className="min-h-screen bg-zinc-50 pt-24">
+      <section className="border-b border-zinc-100 bg-white px-6 py-16">
+        <div className="mx-auto max-w-[980px]">
+          <FadeUp>
+            <span className="chip mb-5 inline-flex border-gold/40 bg-gold/5 text-gold">Managed Services</span>
+            <h1 className="mb-5 max-w-3xl text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl">
+              We write and post for you. You just approve.
+            </h1>
+            <p className="max-w-2xl text-lg leading-relaxed text-zinc-600">
+              For founders and executives who want a consistent LinkedIn presence without doing the writing.
+              Apply below and we&apos;ll confirm fit, pricing, and a start date within one business day.
+            </p>
+          </FadeUp>
+        </div>
+      </section>
+
+      <section className="px-6 py-14">
+        <div className="mx-auto grid max-w-[980px] gap-8 md:grid-cols-[.9fr_1.1fr]">
+          <FadeUp>
+            <div className="space-y-4">
+              {MANAGED_PLANS.map((plan) => (
+                <div key={plan.name} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gold">{plan.name}</p>
+                  <p className="mt-1 text-2xl font-bold text-zinc-900">{formatPkr(plan.monthlyPrice)}<span className="text-sm font-medium text-zinc-500">/mo</span></p>
+                  <p className="mt-2 text-sm text-zinc-600">{plan.description}</p>
+                  <ul className="mt-4 space-y-1.5 text-xs text-zinc-500">
+                    {plan.features.map((f) => <li key={f}>- {f}</li>)}
+                  </ul>
+                </div>
+              ))}
+              <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm leading-relaxed text-zinc-600 shadow-sm">
+                <p className="font-semibold text-zinc-900">How it works</p>
+                <p className="mt-2">We draft from your voice and goals, send drafts for your approval, then post on schedule. You keep full sign-off before anything goes live.</p>
+              </div>
+            </div>
+          </FadeUp>
+
+          <FadeUp delay={0.08}>
+            <ManagedApplyForm defaultPackage={defaultPackage} />
+          </FadeUp>
+        </div>
+      </section>
+    </div>
+  )
+}

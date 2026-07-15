@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { storeVoiceExamples } from "@/lib/server/embeddings"
 import { requireAuth } from "@/lib/server/workspace"
@@ -16,8 +17,10 @@ export async function POST(request: NextRequest) {
   try {
     session = await getWorkspaceSessionContext()
     workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
   } catch (err) {
-    return NextResponse.json({ error: (err as Error).message || "server_error" }, { status: 401 })
+    const msg = (err as Error).message || "server_error"
+    return NextResponse.json({ error: msg }, { status: msg === "forbidden" ? 403 : 401 })
   }
 
   let body: Record<string, unknown>

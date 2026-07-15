@@ -7,7 +7,7 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { LockedFeature } from "@/components/LockedFeature"
 import { analyzeContent } from "@/lib/content-intelligence"
-import { withClientParam } from "@/lib/workspace-navigation"
+import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
 type RawJob = { type?: string; status?: string; title?: string; created_at?: string }
@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
     Promise.all([
       loadEvents(500),
       loadJobs("", 200),
-      fetch("/api/carousel").then((r) => r.json()).catch(() => ({ carousels: [] })),
+      fetch(withWorkspaceKey("/api/carousel", activeClientId)).then((r) => r.json()).catch(() => ({ carousels: [] })),
       fetch("/api/analytics?limit=20").then((r) => r.json()).catch(() => ({ snapshots: [] })),
     ]).then(([ev, jb, carouselRes, analyticsRes]) => {
       if (!active) return
@@ -68,7 +68,7 @@ export default function AnalyticsPage() {
       setJobs([])
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [loadEvents, loadJobs])
+  }, [loadEvents, loadJobs, activeClientId])
 
   const analytics = useMemo(() => {
     const analyses = posts

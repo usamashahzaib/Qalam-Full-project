@@ -1,7 +1,9 @@
 import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
-import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { requireRole } from "@/lib/server/roles"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
+import { verifyOAuthState } from "@/lib/server/oauth-state"
 
 const redirectToSettings = (request: NextRequest, status: "success" | "error", message?: string) => {
   const url = new URL(`/settings?linkedin=${status}`, request.nextUrl.origin)
@@ -21,9 +23,20 @@ export async function GET(request: NextRequest) {
     return response
   }
 
+  const statePayload = verifyOAuthState<{ workspaceId: string | null }>(state)
+  if (!statePayload?.workspaceId) {
+    const response = redirectToSettings(request, "error", "invalid_state")
+    response.cookies.delete("linkedin_oauth_state")
+    return response
+  }
+
   try {
     const ctx = await getWorkspaceSessionContext()
-    const workspaceId = await resolveWorkspaceId(request)
+    const workspaceId = statePayload.workspaceId
+    // Re-check membership at callback time too, not just when the OAuth flow
+    // started - roles can change in the minute the user spends on LinkedIn's
+    // consent screen.
+    await requireRole(request, workspaceId, "editor")
     const origin = process.env.FRONTEND_ORIGIN || request.nextUrl.origin
     const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${origin}/api/linkedin/callback`
     const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
+import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole } from "@/lib/server/roles"
+import { signOAuthState } from "@/lib/server/oauth-state"
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +18,20 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "LinkedIn OAuth not configured. Set LINKEDIN_CLIENT_ID and LINKEDIN_CLIENT_SECRET." }, { status: 500 })
   }
 
-  const state = crypto.randomUUID()
+  // Resolve which workspace this connect is for (?client=<id> from the
+  // caller's current URL, or the personal workspace by default) up front
+  // and pack it into the signed state - LinkedIn's redirect back drops any
+  // query params we don't control, so the callback can't re-derive this
+  // from the URL the way other routes do via resolveWorkspaceId(request).
+  let workspaceId: string
+  try {
+    workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
+  } catch {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 })
+  }
+
+  const state = signOAuthState({ workspaceId })
 
   const url = new URL("https://www.linkedin.com/oauth/v2/authorization")
   url.searchParams.set("response_type", "code")

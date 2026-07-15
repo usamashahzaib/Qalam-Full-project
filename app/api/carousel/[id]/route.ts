@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint?: string }
@@ -23,18 +25,27 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
     const { id } = await context.params
+
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "viewer")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
 
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
       .select("id, user_id, topic, role, tone, slide_count, slides, created_at, updated_at")
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle()
 
     if (error) {
@@ -63,18 +74,27 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
     const { id } = await context.params
+
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "editor")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
 
     const supabase = createServiceClient()
     const { error } = await supabase
       .from("carousels")
       .delete()
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })

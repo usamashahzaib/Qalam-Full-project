@@ -141,22 +141,27 @@ export default function SettingsPage() {
 
   const onConnectLinkedIn = async () => {
     setLinkedinStatus(null)
+    // Carry the active client workspace through so the connected LinkedIn
+    // account is stored against that client, not whichever workspace the
+    // session happens to default to.
+    const activeClientId = searchParams.get("client")
+    const connectUrl = activeClientId ? `/api/linkedin/connect?workspaceKey=${encodeURIComponent(activeClientId)}` : "/api/linkedin/connect"
     try {
-      const res = await fetch("/api/linkedin/connect", { redirect: "manual" })
+      const res = await fetch(connectUrl, { redirect: "manual" })
       if (res.type === "opaqueredirect" || res.status === 0) {
-        window.location.href = "/api/linkedin/connect"
+        window.location.href = connectUrl
         return
       }
       if (res.status >= 300 && res.status < 400) {
         const location = res.headers.get("Location")
         if (location) window.location.href = location
-        else window.location.href = "/api/linkedin/connect"
+        else window.location.href = connectUrl
         return
       }
       const data = await res.json().catch(() => ({}))
       setLinkedinStatus(data.error || "Couldn't start the LinkedIn connection. Please try again or contact support.")
     } catch {
-      window.location.href = "/api/linkedin/connect"
+      window.location.href = connectUrl
     }
   }
 

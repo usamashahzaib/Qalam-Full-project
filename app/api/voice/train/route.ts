@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { trainVoiceProfile } from "@/lib/use-cases/train-voice-profile"
 import type { VoiceSampleAnalysis } from "@/lib/use-cases/train-voice-profile"
@@ -87,6 +88,7 @@ export async function POST(req: NextRequest) {
   try {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return NextResponse.json({ error: "upgrade_required", upgradeCta: "Upgrade to Pro for more voice training", requiredPlan: "Pro" }, { status: 403 })
+    await requireRole(req, planCheck.workspaceId, "editor")
     const userId = planCheck.session.supabaseUserId
     const body = await req.json()
     const examples = Array.isArray(body.examplePosts) ? body.examplePosts.map(String) : []
@@ -134,7 +136,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("voice_training_failed", error)
     const message = (error as Error).message || "Failed to train voice"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : errorToStatus(message) })
   }
 }
 
@@ -142,6 +144,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return NextResponse.json({ error: "upgrade_required", upgradeCta: "Upgrade to Pro for more voice training", requiredPlan: "Pro" }, { status: 403 })
+    await requireRole(request, planCheck.workspaceId, "editor")
     const supabase = createServiceClient()
     const row = await getProfile(planCheck.workspaceId, planCheck.session.supabaseUserId)
     const { error } = row?.id
@@ -161,6 +164,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: true, samples_count: 0, samples: [], fingerprint: {} })
   } catch (error) {
     const message = (error as Error).message || "Failed to clear voice profile"
-    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: message === "Unauthorized" ? 401 : errorToStatus(message) })
   }
 }

@@ -165,8 +165,14 @@ const PUBLIC_API_PREFIXES = [
   // Anonymous marketing surfaces: contact form and referral landing tracking.
   // Each route enforces its own Redis-backed rate limit.
   "/api/contact",
+  "/api/managed/apply",
   "/api/referrals/click",
   "/api/referrals/validate",
+  // External approval review links (/approvals/[id]/review) let a client
+  // approve or reject a draft via a emailed, hashed token - without a
+  // Qalam account or session. GET/POST /api/approvals itself stays
+  // protected: it enforces its own session check via withAuth().
+  "/api/approvals",
 ]
 
 // ─── CSP builder ─────────────────────────────────────────────────────────────
@@ -283,7 +289,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     )
   }
 
-  const isProtectedRoute = PROTECTED_ROUTES.some(
+  // The external review page is opened from an emailed link by reviewers who
+  // have no Qalam account - the page itself gates access with a hashed token,
+  // so it must not fall into the /approvals login redirect below.
+  const isPublicReviewPage = /^\/approvals\/[^/]+\/review$/.test(pathname)
+
+  const isProtectedRoute = !isPublicReviewPage && PROTECTED_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
   const isAuthOnly = AUTH_ONLY_ROUTES.some(

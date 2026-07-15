@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
+import { requireRole } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  role: z.enum(["editor", "viewer"]).default("editor"),
+  role: z.enum(["editor", "viewer", "client_reviewer"]).default("editor"),
 })
 
 export async function POST(
@@ -21,16 +22,13 @@ export async function POST(
     const { id: workspaceId } = await context.params
     const supabase = createServiceClient()
 
-    // Only the workspace owner can invite
-    const { data: membership } = await supabase
-      .from("workspace_members")
-      .select("role")
-      .eq("workspace_id", workspaceId)
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    if (!membership) return NextResponse.json({ error: "forbidden" }, { status: 403 })
-    if (membership.role !== "owner") return NextResponse.json({ error: "only_owner_can_invite" }, { status: 403 })
+    // Owner, admin, or agency_admin can invite - not just the owner. Team leads
+    // and agency staff who manage client workspaces need this too.
+    try {
+      await requireRole(req, workspaceId, "admin")
+    } catch {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 })
+    }
 
     let body: unknown
     try { body = await req.json() } catch {

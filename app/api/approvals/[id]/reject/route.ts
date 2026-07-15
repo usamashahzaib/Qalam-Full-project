@@ -20,7 +20,7 @@ export async function POST(
 
   const { data: approval } = await supabase
     .from("approvals")
-    .select("id, requester_id, reviewer_email, post_title, status, review_token_hash")
+    .select("id, post_id, requester_id, reviewer_email, post_title, status, review_token_hash")
     .eq("id", id)
     .maybeSingle()
 
@@ -52,6 +52,17 @@ export async function POST(
   }
   if (!updated) {
     return NextResponse.json({ error: "This request has already been reviewed" }, { status: 409 })
+  }
+
+  // Send the linked post back to draft so the writer can revise it - it
+  // must not stay stuck in pending_approval after a rejection.
+  if (approval.post_id) {
+    await supabase
+      .from("posts")
+      .update({ status: "rejected", updated_at: new Date().toISOString() })
+      .eq("id", approval.post_id)
+      .eq("status", "pending_approval")
+      .then(undefined, () => undefined)
   }
 
   // Notify requester (best-effort)

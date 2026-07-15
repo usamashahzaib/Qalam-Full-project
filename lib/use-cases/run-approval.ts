@@ -15,6 +15,7 @@ export interface RunApprovalInput {
   postTitle: string
   message?: string
   postId?: string | null
+  workspaceId: string
   userId: string
   userEmail: string
   userName?: string | null
@@ -46,7 +47,7 @@ export interface RunApprovalOutput {
 // ─── Use case ─────────────────────────────────────────────────────────────────
 
 export async function runApproval(input: RunApprovalInput): Promise<Result<RunApprovalOutput>> {
-  const { reviewerEmail, postContent, postTitle, message, postId, userId, userEmail, userName } = input
+  const { reviewerEmail, postContent, postTitle, message, postId, workspaceId, userId, userEmail, userName } = input
 
   if (!reviewerEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(reviewerEmail)) {
     return err({ code: "VALIDATION_ERROR", message: "Valid reviewer email is required" })
@@ -62,6 +63,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     .from("approvals")
     .insert({
       post_id: postId || null,
+      workspace_id: workspaceId,
       requester_id: userId,
       reviewer_email: reviewerEmail,
       post_title: postTitle || "Untitled post",
@@ -78,6 +80,8 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     let detail = error?.message ?? "DB error"
     if (error?.message?.includes("review_token_hash")) {
       detail = "Run migration 0027_approval_review_tokens.sql in Supabase SQL Editor."
+    } else if (error?.message?.includes("workspace_id")) {
+      detail = "Run migration 0048_agency_team_and_approvals.sql in Supabase SQL Editor."
     } else if (error?.message?.includes("column") || error?.message?.includes("schema_not_applied")) {
       detail = "Run migrations 0026 and 0027 in Supabase SQL Editor (supabase/migrations/)."
     }

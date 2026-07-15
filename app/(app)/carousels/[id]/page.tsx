@@ -164,7 +164,7 @@ export default function CarouselEditorPage() {
     if (!window.confirm(`Delete slide ${slide.order_index + 1}? This cannot be undone.`)) return
     setDeletingSlide(true)
     try {
-      const res = await fetch(`/api/carousel/${id}/slides/${slide.id}`, { method: "DELETE" })
+      const res = await fetch(withWorkspaceKey(`/api/carousel/${id}/slides/${slide.id}`, workspaceId), { method: "DELETE" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Delete failed")
       const next = slides.filter((s) => s.id !== slide.id).map((s, i) => ({ ...s, order_index: i }))

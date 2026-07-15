@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
 import { ensureFreshLinkedInPublishingAccount, ensureFreshLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
@@ -34,9 +35,13 @@ export async function POST(request: NextRequest) {
   let workspaceId: string
   try {
     workspaceId = await resolveWorkspaceId(request)
+    // A client_reviewer or viewer can be a member of a workspace to approve
+    // or read drafts, but must not be able to publish to the client's
+    // LinkedIn account directly.
+    await requireRole(request, workspaceId, "editor")
   } catch (error) {
     const message = (error as Error).message || "auth_required"
-    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: errorToStatus(message) })
   }
 
   const account = await ensureFreshLinkedInPublishingAccount(workspaceId)
