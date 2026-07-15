@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
+import { attachQstashSchedule } from "@/lib/server/qstash"
 
 type DbPost = { id: string; scheduled_for: string | null; status: string; workspace_id: string }
 
@@ -36,11 +37,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "scheduled_time_must_be_future" }, { status: 400 })
     }
 
-    const updated = await supabasePatch<DbPost>("posts", `id=eq.${postId}&workspace_id=eq.${workspaceId}`, {
+    // Never flip a post that is mid-publish or already live back to
+    // "scheduled" - that would make the safety-net cron publish it again.
+    // The status filter makes the update conditional, so this also holds
+    // against a concurrent claim by the publish worker.
+    if (existing.status === "publishing" || existing.status === "published") {
+      return NextResponse.json({ error: "post_not_reschedulable" }, { status: 409 })
+    }
+    const updated = await supabasePatch<DbPost>("posts", `id=eq.${postId}&workspace_id=eq.${workspaceId}&status=not.in.(publishing,published)`, {
       scheduled_for: newScheduledTime,
       status: "scheduled",
       updated_at: new Date().toISOString(),
     })
+    if (!updated?.length) {
+      return NextResponse.json({ error: "post_not_reschedulable" }, { status: 409 })
+    }
+
+    await attachQstashSchedule(postId, new Date(newScheduledTime)).catch((err) =>
+      console.error("posts.reschedule.qstash_attach_failed", postId, (err as Error).message)
+    )
 
     return NextResponse.json({ post: updated?.[0] || null })
   } catch (error) {

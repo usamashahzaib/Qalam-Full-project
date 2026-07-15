@@ -86,9 +86,6 @@ async function extractAuthEmail(request: NextRequest): Promise<string | null> {
 // platform-injected headers over client-supplied XFF; for XFF take the
 // rightmost hop appended by the trusted proxy.
 function getClientIp(request: NextRequest): string {
-  if ((request as NextRequest & { ip?: string }).ip) {
-    return (request as NextRequest & { ip: string }).ip
-  }
   const cfIp = request.headers.get("cf-connecting-ip")?.trim()
   if (cfIp) return cfIp
   const realIp = request.headers.get("x-real-ip")?.trim()
@@ -183,8 +180,11 @@ function buildCsp(nonce: string, isDev: boolean): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` + (isDev ? " 'unsafe-eval'" : ""),
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    // Fonts are self-hosted via next/font/google (downloaded at build time,
+    // served from our own origin) - no runtime request to Google ever happens,
+    // so the googleapis/gstatic allowances served no purpose and are dropped.
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
     "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co",
     "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
     "frame-src 'self' https://*.linkedin.com",

@@ -82,23 +82,20 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
     ).catch(() => ({ data: null })) as Promise<{ data: { created_at?: string | null; processed_at?: string | null } | null }>,
   ])
 
-  // Phase 2: check user_overrides with ALL matching IDs.
+  // Phase 2: check user_overrides with ALL matching IDs in one query.
   // Admin panel stores overrides under externalId (OAuth sub) but getPlanStatus is called
   // with the internal Supabase UUID - need to try both so overrides are never missed.
   const idsToCheck = [userId, usersResult.data?.id, usersResult.data?.external_user_id]
     .filter((id): id is string => typeof id === "string" && id.length > 0)
   const uniqueIds = [...new Set(idsToCheck)]
-  let overrideData: { plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null } | null = null
-  for (const uid of uniqueIds) {
-    const { data } = await Promise.resolve(
-      supabase
-        .from("user_overrides")
-        .select("plan_override, draft_limit_override, expires_at")
-        .eq("user_id", uid)
-        .maybeSingle()
-    ).catch(() => ({ data: null }))
-    if (data) { overrideData = data; break }
-  }
+  type OverrideRow = { user_id: string; plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null }
+  const { data: overrideRows } = await supabase
+    .from("user_overrides")
+    .select("user_id, plan_override, draft_limit_override, expires_at")
+    .in("user_id", uniqueIds)
+    .then((r) => r, () => ({ data: null as OverrideRow[] | null }))
+  // Prefer a row keyed by the exact id we were called with, then fall back to any match.
+  const overrideData = (overrideRows || []).find((row) => row.user_id === userId) || overrideRows?.[0] || null
   const overrideResult = { data: overrideData }
 
   // Try RPC result first; fall back to direct table query if RPC is unavailable

@@ -3,6 +3,7 @@ import { log } from "@/lib/server/logging"
 import { requireAuth, resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
+import { attachQstashSchedule, detachQstashSchedule } from "@/lib/server/qstash"
 
 const postRepo = new SupabasePostRepository()
 
@@ -71,6 +72,11 @@ export async function POST(request: NextRequest) {
       publishedAt,
       externalPostUrn,
     })
+    if (safeStatus === "scheduled" && scheduledTime) {
+      await attachQstashSchedule(post.id, new Date(scheduledTime)).catch((err) =>
+        log.error("posts.post.qstash_attach_failed", { reqId, postId: post.id, error: (err as Error).message })
+      )
+    }
     log.info("posts.post.done", { reqId, postId: post.id })
     return NextResponse.json({ post }, { status: 201 })
   } catch (error) {
@@ -95,6 +101,13 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
     const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body
+    // A post mid-publish must not change status or schedule from here - the
+    // publish worker owns it until it lands on published/failed (or the
+    // reconciler reverts it). Flipping it back to "scheduled" now would set
+    // up a duplicate publish.
+    if (existing.status === "publishing" && (status !== undefined || scheduledTime !== undefined)) {
+      return NextResponse.json({ error: "post_is_publishing" }, { status: 409 })
+    }
     const nextStatus = status !== undefined && VALID_STATUSES.includes(status) ? status : existing.status
     const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing.scheduled_for
     const scheduleError = validateSchedule(nextStatus, nextScheduledTime)
@@ -117,6 +130,17 @@ export async function PATCH(request: NextRequest) {
     if (externalPostUrn !== undefined) patch.externalPostUrn = externalPostUrn
 
     const post = await postRepo.update(id, workspaceId, patch)
+
+    if (nextStatus === "scheduled" && nextScheduledTime) {
+      await attachQstashSchedule(id, new Date(nextScheduledTime)).catch((err) =>
+        log.error("posts.patch.qstash_attach_failed", { reqId, id, error: (err as Error).message })
+      )
+    } else if (existing.status === "scheduled" && nextStatus !== "scheduled") {
+      await detachQstashSchedule(id).catch((err) =>
+        log.error("posts.patch.qstash_detach_failed", { reqId, id, error: (err as Error).message })
+      )
+    }
+
     log.info("posts.patch.done", { reqId, id })
     return NextResponse.json({ post })
   } catch (error) {
@@ -138,6 +162,20 @@ export async function DELETE(request: NextRequest) {
 
     const existing = await postRepo.get(id, workspaceId)
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 })
+
+    // Deleting a post mid-publish would orphan an in-flight LinkedIn share
+    // (content goes live with no record on our side). The reconciler moves
+    // stuck posts out of "publishing" within ~10 minutes, so ask the user to
+    // retry after that instead.
+    if (existing.status === "publishing") {
+      return NextResponse.json({ error: "post_is_publishing" }, { status: 409 })
+    }
+
+    if (existing.status === "scheduled") {
+      await detachQstashSchedule(id).catch((err) =>
+        log.error("posts.delete.qstash_detach_failed", { reqId, id, error: (err as Error).message })
+      )
+    }
 
     await postRepo.delete(id, workspaceId)
     log.info("posts.delete.done", { reqId, id })

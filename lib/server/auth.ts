@@ -42,13 +42,18 @@ async function provisionOAuthUser(
   if (error || !data) {
     log.error("auth.provision_rpc_failed", { externalId, error: error?.message })
 
-    // Check if user already exists (returning user + RPC temporarily unavailable)
-    const { data: existingUser } = await supabase
-      .from("users")
-      .select("id")
-      .or(`external_user_id.eq.${externalId},email.eq.${session.user.email || ""}`)
-      .limit(1)
-      .maybeSingle()
+    // Check if user already exists (returning user + RPC temporarily unavailable).
+    // Two separate .eq() lookups instead of a single .or() - PostgREST parses
+    // .or()'s value as a raw filter-expression list, so an OAuth-supplied
+    // email containing a comma or parenthesis could otherwise widen or
+    // redirect the match. .eq() has no such parsing surface.
+    let existingUser: { id: string } | null = null
+    const byExternalId = await supabase.from("users").select("id").eq("external_user_id", externalId).maybeSingle()
+    existingUser = byExternalId.data
+    if (!existingUser && session.user.email) {
+      const byEmail = await supabase.from("users").select("id").eq("email", session.user.email).maybeSingle()
+      existingUser = byEmail.data
+    }
 
     if (existingUser?.id) {
       // Returning user - just get their workspace

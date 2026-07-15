@@ -17,6 +17,7 @@
     "@auth/supabase-adapter": "^1.11.2",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.87.1",
+    "@upstash/qstash": "^2.11.2",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "argon2": "^0.44.0",

@@ -34,17 +34,22 @@ export function sanitizeOutput(text: string): string {
       /^[ \t]*(?:this framing is (?:right|correct|wrong)|the problem is real|this(?: part)? is real|i'?ve seen this(?: firsthand)?)[\.\!\?]?\s*$/gim,
       ""
     )
-    // ── Inline transitional filler ─────────────────────────────────────────────
-    // Pattern: phrase + comma/colon/space → strip phrase, keep the rest.
-    // Re-capitalisation pass below restores sentence-start casing.
+    // ── Sentence-start transitional filler ─────────────────────────────────────
+    // Strip the phrase AND capitalize the word it exposes in one pass, so
+    // recapitalization only ever touches the exact spot we just edited - never
+    // a blanket pass over the whole output, which would otherwise mangle any
+    // sentence that legitimately starts lowercase-then-capital (iPhone, eBay).
+    .replace(
+      /(^|[.!?]\s+|\n)(?:needless to say|suffice it to say|without further ado|make no mistake|let me be (?:clear|honest)|here'?s the thing|at the end of the day|that being said|having said that|it goes without saying that)[,:\s]+([a-z])/gi,
+      (_match, prefix: string, letter: string) => prefix + letter.toUpperCase()
+    )
+    // ── Same fillers mid-sentence ────────────────────────────────────────────
+    // No sentence-start capitalization needed here - just remove.
     .replace(
       /\b(?:needless to say|suffice it to say|without further ado|make no mistake|let me be (?:clear|honest)|here'?s the thing|at the end of the day|that being said|having said that)[,:\s]+/gi,
       ""
     )
     .replace(/\bit goes without saying that\s+/gi, "")
-    // ── Re-capitalise after stripping left a lowercase sentence start ──────────
-    .replace(/(^|\.\s+|!\s+|\?\s+)([a-z])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
-    .replace(/^([a-z])/gm, (_, letter) => letter.toUpperCase())
     // ── Whitespace ─────────────────────────────────────────────────────────────
     .replace(/\n{3,}/g, "\n\n")
     .trim()

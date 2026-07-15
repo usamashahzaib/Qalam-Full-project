@@ -34,6 +34,9 @@ export const env = {
   resendApiKey: read("RESEND_API_KEY"),
   transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
   cronSecret: read("CRON_SECRET"),
+  qstashToken: read("QSTASH_TOKEN"),
+  qstashCurrentSigningKey: read("QSTASH_CURRENT_SIGNING_KEY"),
+  qstashNextSigningKey: read("QSTASH_NEXT_SIGNING_KEY"),
 }
 
 export const requireSupabaseEnv = () => {

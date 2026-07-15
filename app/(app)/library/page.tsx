@@ -30,6 +30,7 @@ const formatDate = (iso: string) => {
 function StatusBadge({ status }: { status: string }) {
   const cls =
     status === "scheduled" ? "bg-amber-100 text-amber-700" :
+    status === "publishing" ? "bg-sky-100 text-sky-700" :
     status === "published" ? "bg-emerald-100 text-emerald-700" :
     status === "failed" ? "bg-red-100 text-red-700" :
     "bg-zinc-100 text-zinc-500"

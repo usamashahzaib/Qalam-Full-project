@@ -7,9 +7,6 @@ import { getRedis } from "./redis"
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
 
 export function getClientIp(request: NextRequest): string {
-  // On Vercel, request.ip is set by the Edge Network and cannot be spoofed.
-  if ((request as unknown as { ip?: string }).ip) return (request as unknown as { ip: string }).ip
-
   // Trust platform-injected headers over client-supplied XFF.
   const cfIp = request.headers.get("cf-connecting-ip")?.trim()
   if (cfIp) return cfIp
@@ -117,6 +114,30 @@ function getRouteLimiter(planKey: string, limit: number): Ratelimit | null {
     _routeLimiters.set(planKey, limiter)
   }
   return limiter
+}
+
+// ── Global free-tools budget ───────────────────────────────────────────────
+// The per-IP limiter above stops one abusive IP, but a botnet on rotating IPs
+// can still drive unbounded AI spend on the unauthenticated free tools since
+// each IP gets its own fresh 5/min bucket. This adds one shared daily ceiling
+// across all IPs and all free tools combined, so total exposure is capped
+// regardless of how many source IPs are involved. Fails OPEN when Redis is
+// unavailable - this is a defense-in-depth spend cap, not the primary abuse
+// guard (the per-IP limiter already fails closed and still applies).
+const FREE_TOOLS_DAILY_CAP = Number(process.env.FREE_TOOLS_DAILY_CAP) || 2000
+
+export async function checkFreeToolsGlobalBudget(): Promise<boolean> {
+  const redis = getRedis()
+  if (!redis) return true
+  const day = new Date().toISOString().slice(0, 10)
+  const key = `rl:global:free-tools:${day}`
+  try {
+    const count = await redis.incr(key)
+    if (count === 1) await redis.expire(key, 2 * 24 * 60 * 60)
+    return count <= FREE_TOOLS_DAILY_CAP
+  } catch {
+    return true
+  }
 }
 
 export async function checkRateLimit(

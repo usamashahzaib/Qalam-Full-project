@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { callAi } from "@/lib/server/ai-router-v2"
-import { getClientIp, checkRateLimit } from "@/lib/server/rate-limit"
+import { getClientIp, checkRateLimit, checkFreeToolsGlobalBudget } from "@/lib/server/rate-limit"
 
 const schema = z.object({
   topic: z.string().min(3).max(300),
@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const ip = getClientIp(request)
     const rateLimit = await checkRateLimit("free-tools-hooks", "free", ip)
-    if (!rateLimit.allowed) {
+    if (!rateLimit.allowed || !(await checkFreeToolsGlobalBudget())) {
       return NextResponse.json({ error: "Rate limit exceeded. Please try again later." }, { status: 429 })
     }
 
