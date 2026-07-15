@@ -5,6 +5,7 @@ import { env } from "@/lib/server/env"
 import { supabaseInsert, supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { log } from "@/lib/server/logging"
+import { plans as PRICING_PLANS } from "@/lib/pricing"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa"
 export type PaymentStatus = "paid" | "failed" | "cancelled"
@@ -204,12 +205,33 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   const billingCycle: VerifiedPayment["billingCycle"] = textValue(metadata.billing_cycle, body.billing_cycle, body.interval).toLowerCase().includes("annual") ? "annual" : "monthly"
   if (!PLAN_NAMES.has(planName)) throw new Error("invalid_plan_name")
 
+  const amount = numberValue(stripe.amount_total, stripe.amount_received, body.amount, body.pp_Amount)
+
+  // JazzCash/Easypaisa only sign their own gateway-specific fields (pp_* / non-signature
+  // fields respectively) - plan_name/user_id/email are plain body fields an attacker can
+  // freely add or rewrite on top of a genuine, validly-signed low-value transaction without
+  // invalidating the signature. The transaction amount IS part of the signed field set for
+  // both gateways, so cross-check the claimed plan's price against it to stop a cheap real
+  // payment from being replayed as an activation request for a more expensive plan.
+  if (provider !== "stripe") {
+    const plan = PRICING_PLANS.find((p) => p.name === planName)
+    const candidatePrices = [plan?.monthlyPrice, plan?.annualPrice].filter(
+      (p): p is number => typeof p === "number" && p > 0
+    )
+    // Gateways vary on whether amount is sent as major units (499) or minor units (49900) -
+    // accept either representation of a known plan price.
+    const matchesKnownPrice = candidatePrices.some(
+      (price) => Math.abs(amount - price) <= 1 || Math.abs(amount - price * 100) <= 100
+    )
+    if (!matchesKnownPrice) throw new Error("payment_amount_plan_mismatch")
+  }
+
   const extracted = {
     provider,
     status,
     userId: textValue(metadata.user_id, metadata.userId, body.user_id, body.userId, stripe.client_reference_id),
     userEmail: textValue(metadata.email, body.email, body.user_email, stripe.customer_email),
-    amount: numberValue(stripe.amount_total, stripe.amount_received, body.amount, body.pp_Amount),
+    amount,
     currency: textValue(stripe.currency, body.currency, body.pp_Currency) || "PKR",
     planName,
     transactionId: textValue(stripe.payment_intent, stripe.id, body.transaction_id, body.transactionId, body.pp_TxnRefNo, body.id),
