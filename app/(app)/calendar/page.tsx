@@ -49,7 +49,7 @@ export default function CalendarPage() {
   const router = useRouter()
   const { data: session } = useSession()
   const { workspaceId, activeClientId } = useWorkspace()
-  const { scheduled, drafts, published, publishPost, createJob, refreshPosts } = usePosts()
+  const { scheduled, drafts, published, publishPost, refreshPosts } = usePosts()
   const [linkedinConnected, setLinkedinConnected] = useState(false)
 
   useEffect(() => {
@@ -67,7 +67,6 @@ export default function CalendarPage() {
     workspaceId,
     linkedinMemberId: linkedinConnected ? session?.user?.email || null : null,
     publishPost,
-    createJob,
     refreshPosts,
   })
 

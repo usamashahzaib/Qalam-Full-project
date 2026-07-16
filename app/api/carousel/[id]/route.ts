@@ -43,7 +43,7 @@ export async function GET(
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("carousels")
-      .select("id, user_id, topic, role, tone, slide_count, slides, created_at, updated_at")
+      .select("id, user_id, topic, role, tone, slide_count, slides, created_at, updated_at, linkedin_post_urn, published_at")
       .eq("id", id)
       .eq("workspace_id", workspaceId)
       .maybeSingle()
@@ -64,6 +64,8 @@ export async function GET(
         theme: data.tone || data.role || null,
         created_at: data.created_at,
         updated_at: data.updated_at,
+        linkedinPostUrn: data.linkedin_post_urn ?? null,
+        publishedAt: data.published_at ?? null,
       },
       slides: mapSlides(data.id, data.slides),
     })

@@ -1,4 +1,5 @@
-// Vercel Cron: every 5 minutes - see vercel.json
+// Triggered hourly by a QStash Schedule (not vercel.json - Vercel Hobby crons are
+// daily-only and both slots are taken). Register with: node scripts/setup-qstash-schedules.mjs
 // AI generation runs synchronously in route handlers - there is no background job queue.
 // This cron acts as a cleanup sweep: marks stale "queued" posts (older than 2 hours
 // with no outcome) as "draft" so users can retry them.

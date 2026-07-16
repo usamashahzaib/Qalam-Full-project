@@ -106,6 +106,64 @@ export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
   }
 }
 
+type DocumentUploadPayload = {
+  accessToken: string
+  authorId: string
+  pdfBytes: Buffer
+  userId?: string | null
+  workspaceId?: string | null
+}
+
+/**
+ * Uploads a PDF as a LinkedIn "document" asset (LinkedIn's carousel format)
+ * and returns its URN, ready to pass as `media.id` to shareToLinkedIn.
+ * Two-step LinkedIn flow: initializeUpload gives a one-time upload URL and
+ * a document URN, then the raw bytes are PUT to that URL.
+ */
+export const uploadLinkedInDocument = async (payload: DocumentUploadPayload): Promise<string> => {
+  if (!(await checkCircuit(CIRCUIT_KEY))) throw new Error("linkedin_circuit_open")
+
+  try {
+    const initRes = await fetch("https://api.linkedin.com/rest/documents?action=initializeUpload", {
+      method: "POST",
+      headers: linkedInHeaders(payload.accessToken, true),
+      body: JSON.stringify({
+        initializeUploadRequest: { owner: `urn:li:person:${payload.authorId}` },
+      }),
+      cache: "no-store",
+    })
+
+    if (!initRes.ok) {
+      if (initRes.status === 401 && (payload.userId || payload.workspaceId)) {
+        await markLinkedInTokenInvalid({ userId: payload.userId, workspaceId: payload.workspaceId })
+      }
+      throw new LinkedInApiError(await parseLinkedInError(initRes), initRes.status)
+    }
+
+    const initData = await initRes.json() as { value?: { uploadUrl?: string; document?: string } }
+    const uploadUrl = initData.value?.uploadUrl
+    const documentUrn = initData.value?.document
+    if (!uploadUrl || !documentUrn) throw new Error("linkedin_document_init_failed")
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${payload.accessToken}`,
+        "Content-Type": "application/pdf",
+      },
+      body: new Uint8Array(payload.pdfBytes),
+    })
+
+    if (!uploadRes.ok) throw new LinkedInApiError("linkedin_document_upload_failed", uploadRes.status)
+
+    await recordSuccess(CIRCUIT_KEY)
+    return documentUrn
+  } catch (err) {
+    await recordFailure(CIRCUIT_KEY)
+    throw err
+  }
+}
+
 export const pollLinkedInAnalytics = async (
   accessToken: string,
   postUrn: string,

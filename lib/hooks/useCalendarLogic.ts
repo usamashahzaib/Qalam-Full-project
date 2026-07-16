@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { openLinkedInComposer } from "@/lib/linkedin-compose"
+import { isCarouselPostType } from "@/lib/post-content"
 import type { WorkspacePost } from "@/types/domain"
 
 // ─── Helpers (kept local - calendar-specific) ─────────────────────────────────
@@ -29,7 +30,6 @@ export interface CalendarLogicDeps {
   workspaceId: string
   linkedinMemberId: string | null
   publishPost: (input: { id: string; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
-  createJob: (input: { type: string; status: string; title: string; payload: Record<string, unknown> }) => Promise<unknown>
   refreshPosts: () => Promise<void>
 }
 
@@ -40,7 +40,6 @@ export function useCalendarLogic({
   workspaceId,
   linkedinMemberId,
   publishPost,
-  createJob,
   refreshPosts,
 }: CalendarLogicDeps) {
   const today = todayIso()
@@ -151,20 +150,32 @@ export function useCalendarLogic({
 
   const onPublishNow = async (post: WorkspacePost) => {
     if (!linkedinMemberId) { setStatus("Connect LinkedIn in settings first"); return }
+    if (isCarouselPostType(post.type)) {
+      setStatus("Carousels can't be auto-published yet. Export the PDF from Carousels and post it manually on LinkedIn.")
+      return
+    }
     setPublishingId(post.id)
     setStatus(`Publishing ${post.title}...`)
+
+    let postUrn: string | null = null
     try {
       const result = await shareToLinkedIn({ content: post.content, postId: post.id, workspaceKey: workspaceId })
       if (!result.postUrn) throw new Error("LinkedIn did not confirm the post.")
-      const postUrn = normalizeLinkedInUrn(result.postUrn || "") || null
-      await publishPost({ id: post.id, title: post.title, content: post.content, type: post.type, publishedAt: new Date().toISOString(), externalPostUrn: postUrn })
-      if (post.type.toLowerCase().includes("carousel")) {
-        await createJob({ type: "carousel_generation", status: "queued", title: "Carousel asset generation", payload: { postId: post.id, postUrn, title: post.title } }).catch(() => undefined)
-      }
-      setStatus(`Published: ${post.title}`)
+      postUrn = normalizeLinkedInUrn(result.postUrn || "") || null
     } catch (error) {
       await openLinkedInComposer(post.content)
       setStatus(`${(error as Error).message || "LinkedIn publish failed"} Text copied; LinkedIn composer opened.`)
+      setPublishingId(null)
+      return
+    }
+
+    // LinkedIn share succeeded - the post is live. From here we only persist the
+    // record; never re-attempt shareToLinkedIn or prompt the composer again.
+    try {
+      await publishPost({ id: post.id, title: post.title, content: post.content, type: post.type, publishedAt: new Date().toISOString(), externalPostUrn: postUrn })
+      setStatus(`Published: ${post.title}`)
+    } catch (error) {
+      setStatus(`Published to LinkedIn, but saving the record failed: ${(error as Error).message || "unknown error"}. It will not be re-posted - refresh to check Library.`)
     } finally {
       setPublishingId(null)
     }

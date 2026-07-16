@@ -7,6 +7,7 @@ import { getRedis } from "@/lib/server/redis"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 import { supportEnv } from "@/lib/server/env"
+import { isCarouselPostType } from "@/lib/post-content"
 
 export type ScheduledPost = {
   id: string
@@ -14,6 +15,7 @@ export type ScheduledPost = {
   user_id: string
   title: string | null
   content: string | null
+  type: string | null
   status: string
   scheduled_for: string | null
   metadata?: Record<string, unknown> | null
@@ -65,6 +67,8 @@ const notifyPublishFailure = async (post: ScheduledPost, user: UserRow | undefin
       ``,
       reason === "linkedin_token_expired" || reason === "linkedin_token_invalid"
         ? `Reconnect LinkedIn in Settings, then reschedule or publish the post again.`
+        : reason === "carousel_scheduling_unsupported"
+        ? `Carousel posts can't be auto-published yet. Export the PDF from Carousels and post it manually on LinkedIn.`
         : `Open Qalam to review the failed post.`,
       ``,
       `Post: ${post.title || "Untitled post"}`,
@@ -108,7 +112,7 @@ const alertOps = async (subject: string, detail: Record<string, unknown>) => {
 export async function publishScheduledPost(postId: string): Promise<PublishOutcome> {
   const rows = await supabaseSelect<ScheduledPost>(
     "posts",
-    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,status,scheduled_for,metadata&limit=1`
+    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,type,status,scheduled_for,metadata&limit=1`
   )
   const post = rows?.[0]
   if (!post) return { postId, status: "skipped", reason: "post_not_found" }
@@ -147,6 +151,13 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
         await markFailed(post, "scheduled_post_missing_content")
         await logPublish(post.id, account?.id || null, "failed", "scheduled_post_missing_content", null)
         return { postId, status: "failed", reason: "scheduled_post_missing_content" }
+      }
+
+      if (isCarouselPostType(post.type)) {
+        await markFailed(post, "carousel_scheduling_unsupported")
+        await logPublish(post.id, account?.id || null, "failed", "carousel_scheduling_unsupported", null)
+        await notifyPublishFailure(post, user, "carousel_scheduling_unsupported")
+        return { postId, status: "failed", reason: "carousel_scheduling_unsupported" }
       }
 
       if (content.length > LINKEDIN_MAX_POST_CHARS) {

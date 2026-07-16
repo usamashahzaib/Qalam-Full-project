@@ -19,7 +19,7 @@ import {
 import { CoverSlide } from "@/components/carousel/CoverSlide"
 import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
-import { generateCarouselZip, generateCarouselPdf } from "@/lib/carousel-generator"
+import { generateCarouselZip, generateCarouselPdf, captureCarouselPdfBytes } from "@/lib/carousel-generator"
 
 const SLIDE_SCALE = 0.40
 const PREVIEW_W = Math.round(CANVAS.width * SLIDE_SCALE)
@@ -48,7 +48,7 @@ const BG_SWATCHES = [
 ]
 
 type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
-type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string }
+type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string; linkedinPostUrn: string | null; publishedAt: string | null }
 
 const ALL_PREMIUM = PREMIUM_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
 const ALL_LEGACY = LEGACY_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
@@ -81,6 +81,12 @@ export default function CarouselEditorPage() {
   const [pdfExporting, setPdfExporting] = useState(false)
   const [pdfDone, setPdfDone] = useState(false)
   const [showLegacyThemes, setShowLegacyThemes] = useState(false)
+  const [linkedinConnected, setLinkedinConnected] = useState(false)
+  const [publishOpen, setPublishOpen] = useState(false)
+  const [commentary, setCommentary] = useState("")
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
+  const [publishedUrn, setPublishedUrn] = useState<string | null>(null)
 
   const theme = resolveTheme(selectedThemeId, customAccent || accentOverride || undefined, customBg || bgOverride || undefined)
 
@@ -129,10 +135,15 @@ export default function CarouselEditorPage() {
     fetch("/api/linkedin/profile")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
+        setLinkedinConnected(Boolean(data?.connected))
         if (data?.connected && data.avatar) setAuthorPhotoUrl(data.avatar)
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (project?.linkedinPostUrn) setPublishedUrn(project.linkedinPostUrn)
+  }, [project])
 
   const updateSlide = (slideId: string, field: "title" | "content", value: string) =>
     setSlides((prev) => prev.map((slide) => slide.id === slideId ? { ...slide, [field]: value } : slide))
@@ -202,6 +213,44 @@ export default function CarouselEditorPage() {
       console.error("PDF export failed:", e)
     } finally {
       setPdfExporting(false)
+    }
+  }
+
+  const defaultCommentary = () =>
+    slides.map((slide) => slide.title).filter(Boolean).join("\n").slice(0, 2800)
+
+  const openPublishModal = () => {
+    setPublishError(null)
+    if (!commentary.trim()) setCommentary(defaultCommentary())
+    setPublishOpen(true)
+  }
+
+  const handlePublish = async () => {
+    if (!slides.length || publishing) return
+    setPublishing(true)
+    setPublishError(null)
+    try {
+      // Capture the same branded render (author name, photo, background,
+      // theme) the preview and "Export PDF" button show - the server has no
+      // copy of that branding to rebuild it from, so publishing must send
+      // exactly what the user has been looking at.
+      const pdfBytes = await captureCarouselPdfBytes(slideRefs.slice(0, slides.length))
+      const form = new FormData()
+      form.set("commentary", commentary)
+      form.set("pdf", new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" }), `carousel-${id.slice(0, 8)}.pdf`)
+
+      const res = await fetch(withWorkspaceKey(`/api/carousel/${id}/publish`, workspaceId), {
+        method: "POST",
+        body: form,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Publish failed")
+      setPublishedUrn(data.postUrn || null)
+      setPublishOpen(false)
+    } catch (e) {
+      setPublishError((e as Error).message)
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -340,6 +389,27 @@ export default function CarouselEditorPage() {
               <><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Exporting...</>
             ) : exportDone ? "ZIP Downloaded!" : "Export PNG ZIP"}
           </button>
+          <LockedFeature feature="LinkedIn publishing" requiredPlan="Solo" className="inline-block">
+            {linkedinConnected ? (
+              <button
+                onClick={openPublishModal}
+                disabled={!slides.length}
+                className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all ${
+                  publishedUrn ? "bg-emerald-600 text-white" : "bg-teal text-white hover:bg-teal-600"
+                }`}
+              >
+                {publishedUrn ? "Published to LinkedIn" : "Publish to LinkedIn"}
+              </button>
+            ) : (
+              <Link
+                href={withClientParam("/settings", activeClientId)}
+                className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-500 transition-colors hover:bg-zinc-50"
+                title="Connect LinkedIn in Settings to publish"
+              >
+                Connect LinkedIn to publish
+              </Link>
+            )}
+          </LockedFeature>
         </div>
       </div>
 
@@ -568,6 +638,35 @@ export default function CarouselEditorPage() {
           </div>
         ))}
       </div>
+
+      {/* ── Publish to LinkedIn modal ── */}
+      {publishOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => !publishing && setPublishOpen(false)}>
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-zinc-900">Publish carousel to LinkedIn</h2>
+            <p className="mt-1 text-sm text-zinc-500">This uploads the {slides.length}-slide PDF as a LinkedIn document post and shares it immediately - it goes live on your feed right away.</p>
+            <div className="mt-4">
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Post caption</label>
+              <textarea
+                value={commentary}
+                onChange={(e) => setCommentary(e.target.value)}
+                rows={5}
+                maxLength={3000}
+                className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10"
+                placeholder="What you want to say above the carousel..."
+              />
+              <p className="mt-1 text-right text-[11px] text-zinc-400">{commentary.length} / 3000</p>
+            </div>
+            {publishError && <p className="mt-2 text-sm font-medium text-red-600">{publishError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setPublishOpen(false)} disabled={publishing} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50">Cancel</button>
+              <button onClick={() => void handlePublish()} disabled={publishing || !commentary.trim()} className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50">
+                {publishing ? "Publishing..." : "Publish now"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

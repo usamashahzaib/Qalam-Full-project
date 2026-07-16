@@ -1,3 +1,7 @@
+// Synchronous AI generation - cap route duration so a slow provider chain fails fast instead of
+// hitting the platform kill. Requires Vercel fluid compute (default on) for values over 60s.
+export const maxDuration = 120
+
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { requireRole, errorToStatus } from "@/lib/server/roles"

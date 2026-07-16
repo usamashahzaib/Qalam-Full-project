@@ -1,4 +1,4 @@
-// Vercel Cron: every 5 minutes - see vercel.json
+// Vercel Cron: daily at 00:00 UTC - see vercel.json
 // Finds posts due for manual-publish notification. Skips workspaces with a
 // connected LinkedIn account (auto-publish cron handles those).
 export const maxDuration = 30

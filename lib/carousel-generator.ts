@@ -44,13 +44,14 @@ export async function generateCarouselZip(
 }
 
 /**
- * Generates a PDF by capturing each slide as a PNG image and embedding it.
- * This guarantees the PDF matches exactly what is shown on screen.
+ * Captures each slide as a PNG image and embeds it into a PDF, byte-for-byte
+ * matching what's on screen (branding, photo, background, theme overrides
+ * included) since those only exist as client-side render state - the server
+ * has no way to reconstruct them.
  */
-export async function generateCarouselPdf(
-  slideRefs: React.RefObject<HTMLDivElement | null>[],
-  filename = "qalam-carousel"
-): Promise<void> {
+export async function captureCarouselPdfBytes(
+  slideRefs: React.RefObject<HTMLDivElement | null>[]
+): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
 
   for (let i = 0; i < slideRefs.length; i++) {
@@ -72,7 +73,18 @@ export async function generateCarouselPdf(
     page.drawImage(pngImage, { x: 0, y: 0, width: 1080, height: 1080 })
   }
 
-  const pdfBytes = await pdf.save()
+  return pdf.save()
+}
+
+/**
+ * Generates a PDF by capturing each slide as a PNG image and embedding it.
+ * This guarantees the PDF matches exactly what is shown on screen.
+ */
+export async function generateCarouselPdf(
+  slideRefs: React.RefObject<HTMLDivElement | null>[],
+  filename = "qalam-carousel"
+): Promise<void> {
+  const pdfBytes = await captureCarouselPdfBytes(slideRefs)
   const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")

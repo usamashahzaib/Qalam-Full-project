@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cleanupOldPdfs } from "@/lib/use-cases/cleanup-old-pdfs"
 
-// Vercel Cron: runs daily at 02:00 UTC
-// Add to vercel.json: { "crons": [{ "path": "/api/cron/cleanup-pdfs", "schedule": "0 2 * * *" }] }
+// Triggered daily at 02:00 UTC by a QStash Schedule (not vercel.json - Vercel Hobby
+// crons are daily-only and both slots are taken). Register with: node scripts/setup-qstash-schedules.mjs
 export const maxDuration = 30
 
 export async function GET(request: NextRequest) {
