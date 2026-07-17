@@ -20,16 +20,24 @@ export async function POST(request: NextRequest) {
     const originalPost = String(body.originalPost || "").trim()
     const comment = String(body.comments || body.comment || "").trim()
     const role = String(body.role || "").trim() || "professional"
+    const mode = body.mode === "reply" ? "reply" : "comment"
+    const parentComment = String(body.parentComment || "").trim()
 
     if (!comment) {
-      return NextResponse.json({ error: "Comment is required" }, { status: 400 })
+      return NextResponse.json({ error: mode === "reply" ? "Reply is required" : "Comment is required" }, { status: 400 })
     }
 
-    const system = `You are a LinkedIn expert helping ${role}s craft authentic, engaging comment replies.
+    const system = mode === "reply"
+      ? `You are a LinkedIn expert helping ${role}s craft authentic, engaging replies to a reply they received on their own comment (a nested reply in a comment thread).
+Generate exactly 3 distinct reply styles for the given reply. Keep replies concise (1-3 sentences), genuine, and professional.
+Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
+      : `You are a LinkedIn expert helping ${role}s craft authentic, engaging comment replies.
 Generate exactly 3 distinct reply styles for the given comment. Keep replies concise (1-3 sentences), genuine, and professional.
 Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
 
-    const userMsg = `${originalPost ? `Original post context:\n${originalPost.slice(0, 400)}\n\n` : ""}Comment to reply to:\n${comment}\n\nGenerate 3 reply styles: one warm/personal, one authoritative/insightful, one question-based to spark discussion.`
+    const userMsg = mode === "reply"
+      ? `${originalPost ? `Original post context:\n${originalPost.slice(0, 400)}\n\n` : ""}${parentComment ? `Original comment thread context:\n${parentComment.slice(0, 400)}\n\n` : ""}Reply you received (replying to your comment):\n${comment}\n\nGenerate 3 reply styles: one warm/personal, one authoritative/insightful, one question-based to spark discussion.`
+      : `${originalPost ? `Original post context:\n${originalPost.slice(0, 400)}\n\n` : ""}Comment to reply to:\n${comment}\n\nGenerate 3 reply styles: one warm/personal, one authoritative/insightful, one question-based to spark discussion.`
 
     let raw: string
     try {

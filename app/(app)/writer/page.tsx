@@ -93,7 +93,8 @@ export default function WriterPage() {
     versions, editingId, scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, isSaving,
     scores, isScoring, isImproving,
     hookAltOpen, setHookAltOpen, hookAlts, isGeneratingAlts,
-    repliesOpen, setRepliesOpen, commentInput, setCommentInput, replies, isGeneratingReplies, repliesError,
+    repliesOpen, setRepliesOpen, replyMode, setReplyMode, commentInput, setCommentInput,
+    parentCommentInput, setParentCommentInput, replies, isGeneratingReplies, repliesError,
     scheduleModalOpen, setScheduleModalOpen, isPublishing, upgradeModal, setUpgradeModal, upgradeProModal, setUpgradeProModal,
     ctaAltOpen, setCtaAltOpen, ctaAlts, isGeneratingCtaAlts,
     versionsOpen, setVersionsOpen, deleteConfirmIdx, setDeleteConfirmIdx, versionsRef,
@@ -1098,13 +1099,45 @@ export default function WriterPage() {
               </button>
               {repliesOpen && (
                 <div className="border-t border-zinc-100 p-4">
+                  <div className="mb-3 flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 p-1">
+                    <button
+                      onClick={() => setReplyMode("comment")}
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        replyMode === "comment" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                      }`}
+                    >
+                      Reply to a comment
+                    </button>
+                    <button
+                      onClick={() => setReplyMode("reply")}
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        replyMode === "reply" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
+                      }`}
+                    >
+                      Reply to a reply
+                    </button>
+                  </div>
+                  {replyMode === "reply" && (
+                    <div className="mb-3">
+                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Original comment (optional, for context)</label>
+                      <textarea
+                        value={parentCommentInput}
+                        onChange={(e) => setParentCommentInput(e.target.value)}
+                        rows={2}
+                        placeholder="Paste the original comment your reply was under..."
+                        className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
+                      />
+                    </div>
+                  )}
                   <div className="mb-3">
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Paste a comment to reply to</label>
+                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                      {replyMode === "reply" ? "Paste the reply you received" : "Paste a comment to reply to"}
+                    </label>
                     <textarea
                       value={commentInput}
                       onChange={(e) => setCommentInput(e.target.value)}
                       rows={3}
-                      placeholder="Paste a comment here..."
+                      placeholder={replyMode === "reply" ? "Paste the reply here..." : "Paste a comment here..."}
                       className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-3 py-2.5 text-xs text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
                     />
                   </div>

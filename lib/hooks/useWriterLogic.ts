@@ -143,7 +143,9 @@ export function useWriterLogic({
 
   // ── Comment replies ──────────────────────────────────────────────────────
   const [repliesOpen, setRepliesOpen] = useState(false)
+  const [replyMode, setReplyMode] = useState<"comment" | "reply">("comment")
   const [commentInput, setCommentInput] = useState("")
+  const [parentCommentInput, setParentCommentInput] = useState("")
   const [replies, setReplies] = useState<{ style: string; text: string }[]>([])
   const [isGeneratingReplies, setIsGeneratingReplies] = useState(false)
   const [repliesError, setRepliesError] = useState<string | null>(null)
@@ -564,7 +566,13 @@ export function useWriterLogic({
     setIsGeneratingReplies(true)
     setRepliesError(null)
     try {
-      const data = await apiGenerateReplies({ originalPost: draftContent, comments: commentInput, role })
+      const data = await apiGenerateReplies({
+        originalPost: draftContent,
+        comments: commentInput,
+        role,
+        mode: replyMode,
+        ...(replyMode === "reply" && parentCommentInput.trim() ? { parentComment: parentCommentInput } : {}),
+      })
       const mapped = (data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply }))
       if (!mapped.length) {
         setRepliesError("No replies generated. Try rephrasing the comment.")
@@ -720,7 +728,9 @@ export function useWriterLogic({
 
     // Replies
     repliesOpen, setRepliesOpen,
+    replyMode, setReplyMode,
     commentInput, setCommentInput,
+    parentCommentInput, setParentCommentInput,
     replies, isGeneratingReplies, repliesError,
 
     // Publish

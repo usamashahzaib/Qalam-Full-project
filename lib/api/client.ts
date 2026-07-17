@@ -256,7 +256,7 @@ export const analyzeCompetitorPaste = ({
 export type HookAlternativesInput = { content: string; role?: string }
 export type HookAlternativesOutput = { hooks: HookItem[] }
 
-export type GenerateRepliesInput = { originalPost: string; comments: string; role?: string }
+export type GenerateRepliesInput = { originalPost: string; comments: string; role?: string; mode?: "comment" | "reply"; parentComment?: string }
 export type GenerateRepliesOutput = { replies: Array<{ style: string; reply: string }> }
 
 export type CtaAlternativesInput = { content: string; role?: string }
