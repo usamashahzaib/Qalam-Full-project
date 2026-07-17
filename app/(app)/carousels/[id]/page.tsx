@@ -47,8 +47,9 @@ const BG_SWATCHES = [
   { label: "Blush", value: "#F9EDE4" },
 ]
 
-type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; image_url: string | null }
-type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; created_at: string; linkedinPostUrn: string | null; publishedAt: string | null }
+type Slide = { id: string; carousel_id: string; order_index: number; title: string | null; content: string | null; design_hint: string | null; image_url: string | null }
+type DesignSettings = { authorName?: string; designation?: string; accentOverride?: string; customAccent?: string; bgOverride?: string; customBg?: string }
+type CarouselProject = { id: string; workspace_id: string; post_id: string | null; theme: string | null; themeId: string | null; designSettings: DesignSettings | null; created_at: string; linkedinPostUrn: string | null; publishedAt: string | null }
 
 const ALL_PREMIUM = PREMIUM_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
 const ALL_LEGACY = LEGACY_THEME_IDS.map((id) => CAROUSEL_THEMES[id])
@@ -90,6 +91,10 @@ export default function CarouselEditorPage() {
 
   const theme = resolveTheme(selectedThemeId, customAccent || accentOverride || undefined, customBg || bgOverride || undefined)
 
+  // Guards the branding autosave: stays false until the fetched settings have
+  // been applied, so loading never triggers a write-back of empty defaults.
+  const designReadyRef = useRef(false)
+
   // Fixed refs for off-screen PNG capture (supports up to 12 slides)
   const ref0 = useRef<HTMLDivElement>(null)
   const ref1 = useRef<HTMLDivElement>(null)
@@ -115,8 +120,26 @@ export default function CarouselEditorPage() {
       if (!res.ok) throw new Error(data.error || "Failed to load carousel")
       setProject(data.project)
       setSlides(data.slides || [])
-      const mappedTheme = data.project?.theme ? TONE_THEME_MAP[data.project.theme] : undefined
-      if (mappedTheme) setSelectedThemeId(mappedTheme)
+      // Prefer the theme persisted on the carousel (assigned at generation or
+      // last picked in the editor); fall back to the legacy tone mapping.
+      const savedTheme = data.project?.themeId as CarouselThemeId | null
+      if (savedTheme && CAROUSEL_THEMES[savedTheme]) {
+        setSelectedThemeId(savedTheme)
+      } else {
+        const mappedTheme = data.project?.theme ? TONE_THEME_MAP[data.project.theme] : undefined
+        if (mappedTheme) setSelectedThemeId(mappedTheme)
+      }
+      // Restore branding so the deck reopens exactly as it was designed.
+      const ds = data.project?.designSettings as DesignSettings | null
+      if (ds) {
+        if (ds.authorName !== undefined) setAuthorName(ds.authorName)
+        if (ds.designation !== undefined) setDesignation(ds.designation)
+        if (ds.accentOverride !== undefined) setAccentOverride(ds.accentOverride)
+        if (ds.customAccent !== undefined) setCustomAccent(ds.customAccent)
+        if (ds.bgOverride !== undefined) setBgOverride(ds.bgOverride)
+        if (ds.customBg !== undefined) setCustomBg(ds.customBg)
+      }
+      designReadyRef.current = true
     } catch (e) {
       const msg = (e as Error).message
       if (msg === "not_found" || msg === "not found" || (msg.toLowerCase().includes("not_found") && !msg.includes("column"))) {
@@ -144,6 +167,31 @@ export default function CarouselEditorPage() {
   useEffect(() => {
     if (project?.linkedinPostUrn) setPublishedUrn(project.linkedinPostUrn)
   }, [project])
+
+  // Fire-and-forget persistence of design choices so the deck reopens the way
+  // it was left. Failures are non-fatal (columns may not exist pre-migration).
+  const persistDesign = useCallback((patch: { themeId?: string; designSettings?: DesignSettings }) => {
+    fetch(`/api/carousel/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...patch, workspaceKey: workspaceId }),
+    }).catch(() => {})
+  }, [id, workspaceId])
+
+  const selectTheme = (themeId: CarouselThemeId) => {
+    setSelectedThemeId(themeId)
+    persistDesign({ themeId })
+  }
+
+  // Debounced autosave of branding fields (photos stay local: data URLs are
+  // too large for a settings column).
+  useEffect(() => {
+    if (!designReadyRef.current) return
+    const timer = setTimeout(() => {
+      persistDesign({ designSettings: { authorName, designation, accentOverride, customAccent, bgOverride, customBg } })
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [authorName, designation, accentOverride, customAccent, bgOverride, customBg, persistDesign])
 
   const updateSlide = (slideId: string, field: "title" | "content", value: string) =>
     setSlides((prev) => prev.map((slide) => slide.id === slideId ? { ...slide, [field]: value } : slide))
@@ -313,6 +361,7 @@ export default function CarouselEditorPage() {
         authorPhotoUrl={authorPhotoUrl}
         theme={theme}
         backgroundPhoto={backgroundPhoto}
+        layoutHint={slide.design_hint}
       />
     )
   }
@@ -450,7 +499,7 @@ export default function CarouselEditorPage() {
             {ALL_PREMIUM.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedThemeId(t.id as CarouselThemeId)}
+                onClick={() => selectTheme(t.id as CarouselThemeId)}
                 title={t.label}
                 className={`relative flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
                   selectedThemeId === t.id
@@ -478,7 +527,7 @@ export default function CarouselEditorPage() {
               {ALL_LEGACY.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setSelectedThemeId(t.id as CarouselThemeId)}
+                  onClick={() => selectTheme(t.id as CarouselThemeId)}
                   title={t.label}
                   className={`relative flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
                     selectedThemeId === t.id

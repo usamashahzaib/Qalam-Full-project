@@ -6,48 +6,23 @@ import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { getPostPreviewText, getPostSourceText } from "@/lib/post-content"
+import { CAROUSEL_TONES, CAROUSEL_TONE_NAMES } from "@/lib/carousel-tones"
 
 type CarouselProject = { id: string; topic: string; role: string; tone: string | null; slide_count: number; created_at: string }
-const THEMES = ["Authority Playbook", "Executive Brief", "Contrarian Breakdown", "People Strategy", "Growth Memo", "Hiring Deep Dive"] as const
+const THEMES = CAROUSEL_TONE_NAMES
 
-const THEME_META: Record<string, { gradient: string; accent: string; text: string; muted: string; tagline: string; structure: string[] }> = {
-  "Authority Playbook": {
-    gradient: "linear-gradient(135deg, #0d1117 0%, #0d4a45 60%, #0f766e 100%)",
-    accent: "#5eead4", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Position as the definitive expert",
-    structure: ["Hook: The tension only experts see", "Framework: Your core model", "Case: Proof it works", "Counterpoint: What others get wrong", "Principle: The key insight", "Tool: Practical application", "CTA: Where to go deeper"],
-  },
-  "Executive Brief": {
-    gradient: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)",
-    accent: "#93c5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Crisp, data-backed leadership voice",
-    structure: ["Problem: Business-critical tension", "Data: The number that changes things", "Analysis: What it means", "Decision: What leaders should do", "Risk: What you're trading off", "Upside: Why it's worth it", "Signal: Watch for this outcome"],
-  },
-  "Contrarian Breakdown": {
-    gradient: "linear-gradient(135deg, #18181b 0%, #3f1818 50%, #7f1d1d 100%)",
-    accent: "#fca5a5", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Challenge the conventional wisdom",
-    structure: ["Provocation: The popular belief", "Reveal: Why it's wrong", "Evidence: The actual data", "Mechanism: How it really works", "Example: A case study", "Nuance: When it does apply", "Conclusion: The harder truth"],
-  },
-  "People Strategy": {
-    gradient: "linear-gradient(135deg, #2d1b69 0%, #7c3aed 100%)",
-    accent: "#c4b5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Org design, talent, and leadership",
-    structure: ["Challenge: The team problem", "Pattern: What high performers do", "Signal: How to spot it early", "Structure: The system that works", "Mistake: What managers get wrong", "Build: The practical step", "CTA: Share with your team"],
-  },
-  "Growth Memo": {
-    gradient: "linear-gradient(135deg, #064e3b 0%, #059669 100%)",
-    accent: "#6ee7b7", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Metrics, loops, and distribution",
-    structure: ["Metric: The number to care about", "Benchmark: How you stack up", "Driver: What moves it", "Lever: The high-impact action", "Test: What to validate first", "Scale: How to compound it", "Outcome: What good looks like"],
-  },
-  "Hiring Deep Dive": {
-    gradient: "linear-gradient(135deg, #78350f 0%, #d97706 100%)",
-    accent: "#fbbf24", text: "#ffffff", muted: "rgba(255,255,255,0.6)",
-    tagline: "Attract, assess, and close top talent",
-    structure: ["Gap: The role you actually need", "Signal: How great candidates think", "Screen: What to look for first", "Interview: The question that reveals it", "Red flag: What to walk away from", "Offer: How to close them", "Onboard: The first-week setup"],
-  },
+const TONE_VISUALS: Record<string, { gradient: string; accent: string; text: string; muted: string }> = {
+  "Authority Playbook": { gradient: "linear-gradient(135deg, #0d1117 0%, #0d4a45 60%, #0f766e 100%)", accent: "#5eead4", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
+  "Executive Brief": { gradient: "linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)", accent: "#93c5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
+  "Contrarian Breakdown": { gradient: "linear-gradient(135deg, #18181b 0%, #3f1818 50%, #7f1d1d 100%)", accent: "#fca5a5", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
+  "People Strategy": { gradient: "linear-gradient(135deg, #2d1b69 0%, #7c3aed 100%)", accent: "#c4b5fd", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
+  "Growth Memo": { gradient: "linear-gradient(135deg, #064e3b 0%, #059669 100%)", accent: "#6ee7b7", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
+  "Hiring Deep Dive": { gradient: "linear-gradient(135deg, #78350f 0%, #d97706 100%)", accent: "#fbbf24", text: "#ffffff", muted: "rgba(255,255,255,0.6)" },
 }
+
+const THEME_META: Record<string, { gradient: string; accent: string; text: string; muted: string; tagline: string; structure: string[] }> = Object.fromEntries(
+  CAROUSEL_TONE_NAMES.map((name) => [name, { ...TONE_VISUALS[name], ...CAROUSEL_TONES[name] }])
+)
 const ROLE_SUGGESTIONS = ["CEO", "Consultant", "Founder", "HR Leader", "Marketer", "Sales Leader", "Software Developer"] as const
 const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) } catch { return iso } }
 
@@ -75,6 +50,7 @@ export default function CarouselsPage() {
         sessionStorage.removeItem("carouselSeed")
         const data = JSON.parse(raw) as { content?: string; title?: string }
         if (data.content) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect
           setSeed(data.content)
           setSelectedPostId("manual")
           setTimeout(() => {
@@ -110,13 +86,13 @@ export default function CarouselsPage() {
     setIsGenerating(true)
     setError(null)
     try {
-      const topic = selectedPost?.title
-        ? `${selectedPost.title}\n\n${sourceContent}`.slice(0, 200)
-        : sourceContent.slice(0, 200)
+      // Topic is only a short label for the deck; the full text goes in
+      // sourceContent so the AI works from everything the user wrote.
+      const topic = (selectedPost?.title || sourceContent).slice(0, 200)
       const res = await fetch("/api/carousel", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, role, slideCount, tone: theme, workspaceKey: workspaceId }),
+        body: JSON.stringify({ topic, role, slideCount, tone: theme, sourceContent: sourceContent.slice(0, 6000), workspaceKey: workspaceId }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || "Could not generate carousel")

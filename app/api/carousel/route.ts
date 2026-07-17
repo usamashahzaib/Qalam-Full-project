@@ -10,12 +10,17 @@ import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { callAi } from "@/lib/server/ai-router-v2"
+import { CAROUSEL_TONES } from "@/lib/carousel-tones"
+import { pickThemeForTone } from "@/lib/carousel-design"
 
 const schema = z.object({
   topic: z.string().min(3).max(200),
   role: z.string(),
   slideCount: z.number().min(5).max(10),
   tone: z.string().optional(),
+  // Full pasted post/brief. The topic is only a short label; slides must be
+  // built from this so the carousel text stays faithful to what the user wrote.
+  sourceContent: z.string().max(6000).optional(),
 })
 
 type Slide = {
@@ -38,9 +43,11 @@ function parseSlides(raw: string, count: number): Slide[] {
       : []
   if (!Array.isArray(arr) || arr.length === 0) return []
   return arr.slice(0, count).map((slide: Partial<Slide>, i: number) => ({
-    title: String(slide?.title ?? "").slice(0, 90) || `Slide ${i + 1}`,
-    bullets: Array.isArray(slide?.bullets) ? slide.bullets.map(String).slice(0, 2) : [],
-    designHint: String(slide?.designHint ?? "").slice(0, 180),
+    // Generous caps: these guard against runaway AI output, not normal slides.
+    // Auto-fit typography in the slide components handles long text safely.
+    title: String(slide?.title ?? "").slice(0, 160) || `Slide ${i + 1}`,
+    bullets: Array.isArray(slide?.bullets) ? slide.bullets.map(String).slice(0, 4) : [],
+    designHint: String(slide?.designHint ?? "").slice(0, 40),
   }))
 }
 
@@ -48,11 +55,12 @@ function enforceSlideStructure(slides: Slide[], topic: string): Slide[] {
   if (slides.length === 0) return slides
   slides[0] = { ...slides[0], designHint: slides[0].designHint || "title-slide", title: slides[0].title || topic }
   const last = slides.length - 1
+  // Never inject fabricated copy - the CTA slide component already renders a
+  // follow prompt, so an empty bullets array is fine.
   slides[last] = {
     ...slides[last],
     designHint: slides[last].designHint || "cta-slide",
     title: slides[last].title || "Your next step",
-    bullets: slides[last].bullets.length > 0 ? slides[last].bullets : ["Follow for more.", "Share this with your network."],
   }
   return slides
 }
@@ -93,10 +101,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const systemPrompt = `Create a LinkedIn carousel outline. Each slide has a title and 1-2 bullet points. Total slides: ${parsed.data.slideCount}. Topic: ${parsed.data.topic}. Role: ${parsed.data.role}. Return JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
-    const userMessage = parsed.data.tone ? `Tone: ${parsed.data.tone}` : "Tone: practical and sharp"
+    const sourceContent = parsed.data.sourceContent?.trim()
+    const toneMeta = parsed.data.tone ? CAROUSEL_TONES[parsed.data.tone] : undefined
+    const structureBlock = toneMeta
+      ? `Follow this slide-by-slide narrative arc (adapt to ${parsed.data.slideCount} slides, first slide is the hook, last slide is the CTA):\n${toneMeta.structure.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
+      : "First slide is the hook, last slide is the CTA."
 
-    const result = await callAi("carousel-outline",systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 20000, userId: user.id, plan: planCheck.plan })
+    const systemPrompt = `You write LinkedIn carousel outlines. Total slides: exactly ${parsed.data.slideCount}. Author role: ${parsed.data.role}.
+
+${structureBlock}
+
+Rules:
+- Slide title: max 8 words, punchy.
+- 1-2 bullets per slide, max 20 words each.
+- designHint: one of "title-slide", "big-stat", "list", "quote", "paragraph", "cta-slide" describing the best layout for that slide.
+${sourceContent ? `- The user supplied source content. Stay 100% faithful to it: reuse the author's own phrases, facts, and numbers. Condense, do not rewrite. Never invent claims, statistics, or examples that are not in the source.` : `- Keep claims general and honest. Never fabricate statistics.`}
+
+Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHint": string }] }`
+
+    const userMessage = [
+      `Topic: ${parsed.data.topic}`,
+      parsed.data.tone ? `Tone: ${parsed.data.tone}` : "Tone: practical and sharp",
+      sourceContent ? `Source content:\n\n${sourceContent}` : "",
+    ].filter(Boolean).join("\n\n")
+
+    // cache: false - regenerating the same topic must produce a fresh deck,
+    // not yesterday's cached slides.
+    const result = await callAi("carousel-outline", systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 30000, maxTokens: 3000, userId: user.id, plan: planCheck.plan, cache: false })
 
     let slides = parseSlides(result, parsed.data.slideCount)
     if (slides.length < 5) {
@@ -113,22 +144,37 @@ export async function POST(request: NextRequest) {
     }
     slides = enforceSlideStructure(slides, parsed.data.topic)
 
+    // Rotate the visual theme per generation so decks with the same tone
+    // still come out looking different from each other.
+    const themeId = pickThemeForTone(parsed.data.tone)
+
     const supabase = createServiceClient()
-    const { data: carousel, error: saveError } = await supabase
+    const baseRow = {
+      user_id: user.id,
+      workspace_id: workspaceId,
+      topic: parsed.data.topic,
+      role: parsed.data.role,
+      tone: parsed.data.tone ?? null,
+      slide_count: slides.length,
+      slides,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    let { data: carousel, error: saveError } = await supabase
       .from("carousels")
-      .insert({
-        user_id: user.id,
-        workspace_id: workspaceId,
-        topic: parsed.data.topic,
-        role: parsed.data.role,
-        tone: parsed.data.tone ?? null,
-        slide_count: slides.length,
-        slides,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .insert({ ...baseRow, theme_id: themeId })
       .select()
       .single()
+
+    // theme_id column may not exist yet (migration 0050 not applied) - retry
+    // without it rather than failing the whole generation.
+    if (saveError && saveError.message?.includes("theme_id")) {
+      ;({ data: carousel, error: saveError } = await supabase
+        .from("carousels")
+        .insert(baseRow)
+        .select()
+        .single())
+    }
 
     if (saveError) {
       if (saveError.message?.includes("carousels") && saveError.message?.includes("schema cache")) {

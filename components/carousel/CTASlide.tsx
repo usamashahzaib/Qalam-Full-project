@@ -1,4 +1,4 @@
-import { CANVAS, type CarouselTheme } from "@/lib/carousel-design"
+import { CANVAS, fitFont, type CarouselTheme } from "@/lib/carousel-design"
 
 type CTASlideProps = {
   title: string
@@ -65,11 +65,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             Key Takeaway
           </p>
 
-          <h2 style={{ color: t.textPrimary, fontSize: "56px", fontWeight: 800, lineHeight: 1.10, margin: "0 0 36px", letterSpacing: "-0.025em" }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 56, 30, 60), fontWeight: 800, lineHeight: 1.10, margin: "0 0 36px", letterSpacing: "-0.025em" }}>
             {title}
           </h2>
 
-          {body && <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.68, margin: "0 0 52px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 30, 18, 200), lineHeight: 1.68, margin: "0 0 52px" }}>{body}</p>}
 
           <div style={{ width: "100%", height: 1, background: t.dividerColor, marginBottom: 36 }} />
 
@@ -98,11 +98,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(245,243,238,0.92)" />}
 
         <div style={{ position: "relative", zIndex: 2, maxWidth: 860, width: "100%" }}>
-          <h2 style={{ color: t.textPrimary, fontSize: "58px", fontWeight: 800, lineHeight: 1.08, margin: "0 0 36px", letterSpacing: "-0.02em" }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 58, 30, 55), fontWeight: 800, lineHeight: 1.08, margin: "0 0 36px", letterSpacing: "-0.02em" }}>
             {title}
           </h2>
 
-          {body && <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.68, margin: "0 0 52px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 30, 18, 200), lineHeight: 1.68, margin: "0 0 52px" }}>{body}</p>}
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 16, background: t.badgeBg, borderRadius: 8, padding: "18px 48px", marginBottom: 44 }}>
             <span style={{ color: t.badgeText, fontSize: "26px", fontWeight: 700 }}>
@@ -139,11 +139,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             <div style={{ width: 28, height: 4, background: t.accentColor, opacity: 0.4, borderRadius: 2 }} />
           </div>
 
-          <h2 style={{ color: t.textPrimary, fontSize: "62px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 30px", letterSpacing: "-0.025em", maxWidth: 860 }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 62, 30, 55), fontWeight: 900, lineHeight: 1.05, margin: "0 0 30px", letterSpacing: "-0.025em", maxWidth: 860 }}>
             {title}
           </h2>
 
-          {body && <p style={{ color: t.textSecondary, fontSize: "28px", lineHeight: 1.68, margin: "0 0 48px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 28, 18, 200), lineHeight: 1.68, margin: "0 0 48px" }}>{body}</p>}
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 14, background: "transparent", border: `1.5px solid ${t.accentColor}`, borderRadius: 8, padding: "16px 44px", marginBottom: 40 }}>
             <span style={{ color: t.accentColor, fontSize: "24px", fontWeight: 700 }}>
@@ -174,11 +174,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
         <div style={{ position: "relative", zIndex: 2, maxWidth: 860, width: "100%" }}>
           <div style={{ width: 48, height: 4, background: t.accentColor, borderRadius: 2, marginBottom: 40 }} />
 
-          <h2 style={{ color: t.accentColor, fontSize: "60px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 32px", letterSpacing: "-0.025em" }}>
+          <h2 style={{ color: t.accentColor, fontSize: fitFont(title, 60, 30, 55), fontWeight: 900, lineHeight: 1.05, margin: "0 0 32px", letterSpacing: "-0.025em" }}>
             {title}
           </h2>
 
-          {body && <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.68, margin: "0 0 48px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 30, 18, 200), lineHeight: 1.68, margin: "0 0 48px" }}>{body}</p>}
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 14, background: t.badgeBg, borderRadius: 8, padding: "18px 48px", marginBottom: 44 }}>
             <span style={{ color: t.badgeText, fontSize: "26px", fontWeight: 700 }}>
@@ -211,14 +211,14 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(0,0,0,0.65)" />}
 
         <div style={{ width: leftW, height: H, background: leftBg, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", padding: "0 44px", boxSizing: "border-box", position: "relative", zIndex: 2 }}>
-          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", overflowWrap: "break-word", wordBreak: "break-word" }}>
+          <h2 style={{ color: leftText, fontSize: fitFont(title, 52, 26, 20), fontWeight: 900, lineHeight: 1.08, margin: "0 0 20px", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h2>
           <div style={{ width: 40, height: 3, background: t.accentColor, borderRadius: 2 }} />
         </div>
 
         <div style={{ flex: 1, height: H, background: backgroundPhoto ? "transparent" : rightBg, display: "flex", flexDirection: "column", justifyContent: "center", padding: `${P}px ${P * 0.9}px`, boxSizing: "border-box", position: "relative", zIndex: 2 }}>
-          {body && <p style={{ color: t.textSecondary, fontSize: "28px", lineHeight: 1.65, margin: "0 0 44px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 28, 16, 200), lineHeight: 1.65, margin: "0 0 44px" }}>{body}</p>}
 
           <div style={{ display: "inline-flex", alignItems: "center", gap: 14, background: t.badgeBg, borderRadius: 8, padding: "16px 40px" }}>
             <span style={{ color: t.badgeText, fontSize: "24px", fontWeight: 700 }}>
@@ -248,11 +248,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
         )}
 
         <div style={{ position: "relative", zIndex: 2, maxWidth: 780, width: "100%" }}>
-          <h2 style={{ color: t.textPrimary, fontSize: "52px", fontWeight: 700, lineHeight: 1.28, margin: "0 0 44px", fontStyle: "italic" }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 52, 26, 90), fontWeight: 700, lineHeight: 1.28, margin: "0 0 44px", fontStyle: "italic" }}>
             {title}
           </h2>
 
-          {body && <p style={{ color: t.textSecondary, fontSize: "28px", lineHeight: 1.68, margin: "0 0 44px" }}>{body}</p>}
+          {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 28, 18, 200), lineHeight: 1.68, margin: "0 0 44px" }}>{body}</p>}
 
           <div style={{ width: 52, height: 3, background: t.accentColor, borderRadius: 2, margin: "0 auto 40px" }} />
 
@@ -290,11 +290,11 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
           </span>
         </div>
 
-        <h2 style={{ color: t.textPrimary, fontSize: "46px", fontWeight: 800, lineHeight: 1.12, margin: "0 0 32px", letterSpacing: "-0.015em" }}>
+        <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 46, 28, 70), fontWeight: 800, lineHeight: 1.12, margin: "0 0 32px", letterSpacing: "-0.015em" }}>
           {title}
         </h2>
 
-        {body && <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.65, margin: "0 0 52px" }}>{body}</p>}
+        {body && <p style={{ color: t.textSecondary, fontSize: fitFont(body, 30, 18, 200), lineHeight: 1.65, margin: "0 0 52px" }}>{body}</p>}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 48 }}>
           <div style={{ width: 40, height: 1, background: t.dividerColor }} />

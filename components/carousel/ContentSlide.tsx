@@ -1,4 +1,4 @@
-import { CANVAS, type CarouselTheme } from "@/lib/carousel-design"
+import { CANVAS, fitFont, type CarouselTheme } from "@/lib/carousel-design"
 
 type ContentSlideProps = {
   title: string
@@ -9,6 +9,8 @@ type ContentSlideProps = {
   authorPhotoUrl?: string
   theme: CarouselTheme
   backgroundPhoto?: string
+  /** AI layout hint ("list" | "big-stat" | "quote" | "paragraph") - varies the content treatment so slides within one deck don't all look identical. */
+  layoutHint?: string | null
 }
 
 function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
@@ -32,15 +34,47 @@ function BgPhoto({ src, overlay }: { src: string; overlay: string }) {
   )
 }
 
+// Split only on explicit newlines - never re-split sentences, so the user's
+// text renders exactly as written (decimals and abbreviations stay intact).
 function parseBullets(body: string): string[] {
-  const lines = body.split(/\n|\r/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean)
-  if (lines.length >= 2) return lines
-  const sentences = body.split(/\.\s+/).map((s) => s.trim()).filter((s) => s.length > 8)
-  if (sentences.length >= 2) return sentences.slice(0, 5)
-  return [body]
+  const lines = body.split(/\r?\n/).map((l) => l.replace(/^[-•*]\s*/, "").trim()).filter(Boolean)
+  return lines.length > 0 ? lines : [body]
 }
 
-export function ContentSlide({ title, body, slideNumber, totalSlides, authorName, authorPhotoUrl, theme: t, backgroundPhoto }: ContentSlideProps) {
+/**
+ * Body treatment for paragraph-style variants, switched by the AI layout
+ * hint: multi-line or "list" bodies become numbered items, "quote" gets an
+ * accent-bar italic style, everything else stays a plain paragraph.
+ */
+function BodyContent({ body, hint, t, fontBase, color }: { body: string; hint?: string | null; t: CarouselTheme; fontBase: number; color: string }) {
+  const lines = parseBullets(body)
+  const isList = (hint === "list" && lines.length >= 2) || lines.length >= 3
+  if (isList) {
+    const size = fitFont(lines.join(" "), fontBase, 18, 240)
+    return (
+      <div>
+        {lines.map((line, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 18, marginBottom: i < lines.length - 1 ? 26 : 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: t.badgeBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>
+              <span style={{ color: t.badgeText, fontSize: 15, fontWeight: 800 }}>{i + 1}</span>
+            </div>
+            <p style={{ color, fontSize: size, lineHeight: 1.55, margin: 0 }}>{line}</p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  if (hint === "quote") {
+    return (
+      <p style={{ color, fontSize: fitFont(body, fontBase, 18, 220), lineHeight: 1.7, margin: 0, fontStyle: "italic", borderLeft: `4px solid ${t.accentColor}`, paddingLeft: 28 }}>
+        {body}
+      </p>
+    )
+  }
+  return <p style={{ color, fontSize: fitFont(body, fontBase, 18, 220), lineHeight: 1.7, margin: 0 }}>{body}</p>
+}
+
+export function ContentSlide({ title, body, slideNumber, totalSlides, authorName, authorPhotoUrl, theme: t, backgroundPhoto, layoutHint }: ContentSlideProps) {
   const W = CANVAS.width
   const H = CANVAS.height
   const P = CANVAS.padding
@@ -48,6 +82,8 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
   const isDark = t.textPrimary === "#FFFFFF" || t.textPrimary === "#FFFBF0" || t.textPrimary === "#F0EDD8"
   const initials = authorName ? authorName.split(" ").map((w: string) => w[0]).slice(0, 2).join("") : null
   const v = t.variant
+  // "big-stat" slides lead with an oversized accent-colored headline.
+  const isStat = layoutHint === "big-stat"
 
   // ── VARIANT: editorial ─────────────────────────────────────────────────
   if (v === "editorial") {
@@ -70,13 +106,13 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
           {/* Top rule */}
           <div style={{ width: "100%", height: 1, background: t.dividerColor, marginBottom: 44 }} />
 
-          <h2 style={{ color: t.textPrimary, fontSize: "52px", fontWeight: 800, lineHeight: 1.12, margin: "0 0 36px", letterSpacing: "-0.025em" }}>
+          <h2 style={{ color: isStat ? t.accentColor : t.textPrimary, fontSize: fitFont(title, isStat ? 84 : 52, 30, isStat ? 30 : 60), fontWeight: 800, lineHeight: 1.12, margin: "0 0 36px", letterSpacing: "-0.025em" }}>
             {title}
           </h2>
 
-          <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.72, margin: "0 0 44px", maxWidth: 860 }}>
-            {body}
-          </p>
+          <div style={{ margin: "0 0 44px", maxWidth: 860 }}>
+            <BodyContent body={body} hint={layoutHint} t={t} fontBase={30} color={t.textSecondary} />
+          </div>
 
           {/* Bottom rule + author */}
           <div style={{ width: "100%", height: 1, background: t.dividerColor, marginBottom: 28 }} />
@@ -99,16 +135,16 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
         {backgroundPhoto && <BgPhoto src={backgroundPhoto} overlay="rgba(245,243,238,0.92)" />}
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <h2 style={{ color: t.textPrimary, fontSize: "48px", fontWeight: 800, lineHeight: 1.12, margin: "0 0 48px", letterSpacing: "-0.02em", maxWidth: 860 }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 48, 28, 70), fontWeight: 800, lineHeight: 1.12, margin: "0 0 48px", letterSpacing: "-0.02em", maxWidth: 860 }}>
             {title}
           </h2>
 
-          {bullets.slice(0, 4).map((bullet, i) => (
+          {bullets.map((bullet, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 20, marginBottom: i < bullets.length - 1 ? 32 : 0 }}>
               <div style={{ width: 38, height: 38, borderRadius: "50%", background: t.badgeBg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 4 }}>
-                <span style={{ color: t.badgeText, fontSize: "16px", fontWeight: 800 }}>{slideNumber - 1 > 0 ? (slideNumber - 1) * 4 + i + 1 : i + 1}</span>
+                <span style={{ color: t.badgeText, fontSize: "16px", fontWeight: 800 }}>{i + 1}</span>
               </div>
-              <p style={{ color: t.textPrimary, fontSize: "29px", lineHeight: 1.50, margin: 0, fontWeight: bullets.length <= 2 ? 400 : 500 }}>
+              <p style={{ color: t.textPrimary, fontSize: fitFont(bullets.join(" "), 29, 18, 240), lineHeight: 1.50, margin: 0, fontWeight: bullets.length <= 2 ? 400 : 500 }}>
                 {bullet}
               </p>
             </div>
@@ -143,13 +179,13 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
             <div style={{ width: 28, height: 4, background: t.accentColor, opacity: 0.4, borderRadius: 2 }} />
           </div>
 
-          <h2 style={{ color: t.textPrimary, fontSize: "60px", fontWeight: 900, lineHeight: 1.06, margin: "0 0 32px", letterSpacing: "-0.025em", maxWidth: 860 }}>
+          <h2 style={{ color: isStat ? t.accentColor : t.textPrimary, fontSize: fitFont(title, isStat ? 92 : 60, 30, isStat ? 28 : 55), fontWeight: 900, lineHeight: 1.06, margin: "0 0 32px", letterSpacing: "-0.025em", maxWidth: 860 }}>
             {title}
           </h2>
 
-          <p style={{ color: t.textSecondary, fontSize: "28px", lineHeight: 1.68, margin: "0 0 48px", maxWidth: 860 }}>
-            {body}
-          </p>
+          <div style={{ margin: "0 0 48px", maxWidth: 860 }}>
+            <BodyContent body={body} hint={layoutHint} t={t} fontBase={28} color={t.textSecondary} />
+          </div>
 
           {/* Author + dot */}
           {authorName && (
@@ -180,13 +216,13 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
         <div style={{ position: "relative", zIndex: 2 }}>
           <div style={{ width: 48, height: 4, background: t.accentColor, borderRadius: 2, marginBottom: 36 }} />
 
-          <h2 style={{ color: t.textPrimary, fontSize: "52px", fontWeight: 800, lineHeight: 1.10, margin: "0 0 32px", letterSpacing: "-0.02em", maxWidth: 860 }}>
+          <h2 style={{ color: isStat ? t.accentColor : t.textPrimary, fontSize: fitFont(title, isStat ? 84 : 52, 30, isStat ? 30 : 60), fontWeight: 800, lineHeight: 1.10, margin: "0 0 32px", letterSpacing: "-0.02em", maxWidth: 860 }}>
             {title}
           </h2>
 
-          <p style={{ color: t.textSecondary, fontSize: "30px", lineHeight: 1.72, margin: 0, maxWidth: 860 }}>
-            {body}
-          </p>
+          <div style={{ maxWidth: 860 }}>
+            <BodyContent body={body} hint={layoutHint} t={t} fontBase={30} color={t.textSecondary} />
+          </div>
         </div>
 
         {/* Author bottom */}
@@ -216,7 +252,7 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
           <span style={{ color: t.accentColor, fontSize: "17px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 20, display: "block" }}>
             {String(slideNumber).padStart(2, "0")}
           </span>
-          <h2 style={{ color: leftText, fontSize: "52px", fontWeight: 900, lineHeight: 1.08, margin: "0 0 16px", letterSpacing: "-0.02em", overflowWrap: "break-word", wordBreak: "break-word" }}>
+          <h2 style={{ color: leftText, fontSize: fitFont(title, 52, 26, 20), fontWeight: 900, lineHeight: 1.08, margin: "0 0 16px", letterSpacing: "-0.02em", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h2>
           <div style={{ width: 40, height: 3, background: t.accentColor, borderRadius: 2 }} />
@@ -224,12 +260,12 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
 
         {/* Right panel */}
         <div style={{ flex: 1, height: H, background: backgroundPhoto ? "transparent" : rightBg, display: "flex", flexDirection: "column", justifyContent: "center", padding: `${P * 0.8}px ${P * 0.9}px`, boxSizing: "border-box", position: "relative", zIndex: 2 }}>
-          {bullets.slice(0, 4).map((bullet, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 18, marginBottom: i < Math.min(bullets.length, 4) - 1 ? 28 : 0 }}>
+          {bullets.map((bullet, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 18, marginBottom: i < bullets.length - 1 ? 28 : 0 }}>
               <div style={{ width: 30, height: 30, borderRadius: "50%", border: `1.5px solid ${t.accentColor}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 4 }}>
                 <span style={{ color: t.accentColor, fontSize: "13px", fontWeight: 700 }}>{i + 1}</span>
               </div>
-              <p style={{ color: t.textPrimary, fontSize: "26px", lineHeight: 1.48, margin: 0 }}>{bullet}</p>
+              <p style={{ color: t.textPrimary, fontSize: fitFont(bullets.join(" "), 26, 16, 220), lineHeight: 1.48, margin: 0 }}>{bullet}</p>
             </div>
           ))}
           {authorName && (
@@ -261,11 +297,11 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
             </svg>
           </div>
 
-          <h2 style={{ color: t.textPrimary, fontSize: "48px", fontWeight: 700, lineHeight: 1.35, margin: "0 0 40px", fontStyle: "italic" }}>
+          <h2 style={{ color: t.textPrimary, fontSize: fitFont(title, 48, 26, 90), fontWeight: 700, lineHeight: 1.35, margin: "0 0 40px", fontStyle: "italic" }}>
             {title}
           </h2>
 
-          <p style={{ color: t.textSecondary, fontSize: "28px", lineHeight: 1.68, margin: "0 0 40px" }}>
+          <p style={{ color: t.textSecondary, fontSize: fitFont(body, 28, 18, 200), lineHeight: 1.68, margin: "0 0 40px" }}>
             {body}
           </p>
 
@@ -315,13 +351,13 @@ export function ContentSlide({ title, body, slideNumber, totalSlides, authorName
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: t.accentColor, opacity: 0.5 }} />
         </div>
 
-        <h2 style={{ color: t.textPrimary, fontSize: "44px", fontWeight: 800, lineHeight: 1.15, margin: "0 0 32px", letterSpacing: "-0.015em", maxWidth: 870 }}>
+        <h2 style={{ color: isStat ? t.accentColor : t.textPrimary, fontSize: fitFont(title, isStat ? 76 : 44, 28, isStat ? 30 : 70), fontWeight: 800, lineHeight: 1.15, margin: "0 0 32px", letterSpacing: "-0.015em", maxWidth: 870 }}>
           {title}
         </h2>
 
-        <p style={{ color: t.textSecondary, fontSize: "32px", lineHeight: 1.7, margin: 0, maxWidth: 870 }}>
-          {body}
-        </p>
+        <div style={{ maxWidth: 870 }}>
+          <BodyContent body={body} hint={layoutHint} t={t} fontBase={32} color={t.textSecondary} />
+        </div>
       </div>
 
       {/* Bottom: progress dots */}

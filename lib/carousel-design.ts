@@ -354,7 +354,7 @@ export const LEGACY_THEME_IDS: CarouselThemeId[] = [
   "cosmos", "sage", "aurora", "ember", "ivory",
 ]
 
-/** Maps a content tone (chosen at generation time) to the closest-matching visual theme, so the editor opens with colors consistent with what was previewed at generation. */
+/** Legacy fallback for carousels created before theme_id persistence: maps a content tone to a single matching theme. New carousels get a rotated theme from TONE_THEME_POOLS instead. */
 export const TONE_THEME_MAP: Record<string, CarouselThemeId> = {
   "Authority Playbook": "forest",
   "Executive Brief": "navy-split",
@@ -362,6 +362,34 @@ export const TONE_THEME_MAP: Record<string, CarouselThemeId> = {
   "People Strategy": "aurora",
   "Growth Memo": "obsidian",
   "Hiring Deep Dive": "terracotta",
+}
+
+/** Tone-compatible theme pools. Generation picks randomly from the pool so two decks with the same tone don't come out looking identical. */
+export const TONE_THEME_POOLS: Record<string, CarouselThemeId[]> = {
+  "Authority Playbook": ["forest", "editorial", "obsidian", "navy-split"],
+  "Executive Brief": ["navy-split", "editorial", "ruled", "obsidian"],
+  "Contrarian Breakdown": ["nightfire", "obsidian", "ruled", "thread"],
+  "People Strategy": ["terracotta", "blush", "thread", "editorial"],
+  "Growth Memo": ["obsidian", "nightfire", "navy-split", "forest"],
+  "Hiring Deep Dive": ["terracotta", "thread", "ruled", "blush"],
+}
+
+/** Picks a theme for a new carousel: random from the tone's pool, or from all premium themes when the tone is unknown. */
+export function pickThemeForTone(tone: string | null | undefined): CarouselThemeId {
+  const pool = (tone && TONE_THEME_POOLS[tone]) || PREMIUM_THEME_IDS
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
+/**
+ * Scales a font size down as text grows so it always fits the fixed 1080px
+ * canvas instead of clipping in PNG/PDF exports. Wrapped text fills area
+ * roughly linearly with character count, so scaling by sqrt keeps the
+ * occupied area constant.
+ */
+export function fitFont(text: string | null | undefined, basePx: number, minPx: number, baseChars: number): number {
+  const len = (text ?? "").trim().length
+  if (len <= baseChars) return basePx
+  return Math.max(minPx, Math.round(basePx * Math.sqrt(baseChars / len)))
 }
 
 export const CANVAS = {

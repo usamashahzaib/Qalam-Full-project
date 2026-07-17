@@ -1,4 +1,4 @@
-import { MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
+import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
 
 export function GET() {
@@ -12,7 +12,9 @@ export function GET() {
     "- Primary audiences: founders, marketing teams, HR leaders, consultants, content agencies",
     "- Pricing region: Pakistan (PKR) with international access",
     "- Status: live product, accepting users",
-    "- Last updated: 2026-06-26",
+    `- Last updated: ${CONTENT_LAST_UPDATED}`,
+    `- Full article corpus for LLM ingestion: ${SITE_URL}/llms-full.txt`,
+    `- RSS feed: ${SITE_URL}/feed.xml`,
     "",
     "## What Qalam is",
     "",
@@ -198,7 +200,7 @@ export function GET() {
     "- All pricing is in PKR (Pakistani Rupees). USD approximations are for reference only.",
     "- The product is a Next.js 16 web application hosted on Vercel.",
     "- Authentication is via LinkedIn OAuth with a custom session path.",
-    "- The AI writer uses Groq (Llama) and Gemini for generation, with a circuit-breaker failover.",
+    "- The AI writer routes across Mistral (primary), Gemini (fallback), and Groq (speed tasks) with circuit-breaker failover.",
     "- All free tools at /free-tools/* are fully functional without any authentication.",
     "- App surfaces at /dashboard, /writer, /calendar, etc. require authentication and are not crawlable.",
     "",

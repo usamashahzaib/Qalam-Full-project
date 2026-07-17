@@ -888,3 +888,13 @@ export const MARKETING_ANSWER_PAGES = [
   ...Object.keys(PRODUCT_PAGES).map((slug) => `/product/${slug}`),
   ...Object.keys(USE_CASE_PAGES).map((slug) => `/use-cases/${slug}`),
 ]
+
+// Most recent modification date across every marketing content surface.
+// ISO date strings compare correctly as plain strings, so no Date parsing needed.
+// Used by llms.txt and feed metadata so "last updated" never goes stale by hand.
+export const CONTENT_LAST_UPDATED = [
+  MARKETING_LAST_MODIFIED,
+  ...BLOG_POSTS.map((post) => post.dateModified),
+  ...Object.values(PRODUCT_PAGES).map((page) => page.updatedAt),
+  ...Object.values(USE_CASE_PAGES).map((page) => page.updatedAt),
+].reduce((latest, date) => (date > latest ? date : latest))

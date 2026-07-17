@@ -1,4 +1,4 @@
-import { CANVAS, type CarouselTheme } from "@/lib/carousel-design"
+import { CANVAS, fitFont, type CarouselTheme } from "@/lib/carousel-design"
 
 type CoverSlideProps = {
   title: string
@@ -84,7 +84,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
           {/* Top rule */}
           <div style={{ width: "100%", height: 1, background: t.dividerColor, marginBottom: 44 }} />
 
-          <h1 style={{ color: t.textPrimary, fontSize: "72px", fontWeight: 800, lineHeight: 1.06, margin: 0, letterSpacing: "-0.03em" }}>
+          <h1 style={{ color: t.textPrimary, fontSize: fitFont(title, 72, 34, 50), fontWeight: 800, lineHeight: 1.06, margin: 0, letterSpacing: "-0.03em" }}>
             {title}
           </h1>
 
@@ -117,7 +117,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             {accentLabel || "A Thread"}
           </p>
 
-          <h1 style={{ color: t.textPrimary, fontSize: "64px", fontWeight: 800, lineHeight: 1.08, margin: "0 0 52px", letterSpacing: "-0.025em", maxWidth: 860 }}>
+          <h1 style={{ color: t.textPrimary, fontSize: fitFont(title, 64, 32, 55), fontWeight: 800, lineHeight: 1.08, margin: "0 0 52px", letterSpacing: "-0.025em", maxWidth: 860 }}>
             {title}
           </h1>
 
@@ -176,7 +176,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             </div>
           )}
 
-          <h1 style={{ color: t.textPrimary, fontSize: "72px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 36px", letterSpacing: "-0.03em", maxWidth: 860 }}>
+          <h1 style={{ color: t.textPrimary, fontSize: fitFont(title, 72, 34, 50), fontWeight: 900, lineHeight: 1.05, margin: "0 0 36px", letterSpacing: "-0.03em", maxWidth: 860 }}>
             {title}
           </h1>
 
@@ -208,7 +208,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             </p>
           )}
 
-          <h1 style={{ color: t.accentColor, fontSize: "72px", fontWeight: 900, lineHeight: 1.06, margin: 0, letterSpacing: "-0.03em", maxWidth: 860 }}>
+          <h1 style={{ color: t.accentColor, fontSize: fitFont(title, 72, 34, 50), fontWeight: 900, lineHeight: 1.06, margin: 0, letterSpacing: "-0.03em", maxWidth: 860 }}>
             {title}
           </h1>
         </div>
@@ -242,7 +242,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
           {accentLabel && (
             <p style={{ color: t.accentColor, fontSize: "17px", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 28px" }}>{accentLabel}</p>
           )}
-          <h1 style={{ color: leftText, fontSize: "64px", fontWeight: 900, lineHeight: 1.05, margin: "0 0 20px", letterSpacing: "-0.025em", overflowWrap: "break-word", wordBreak: "break-word" }}>
+          <h1 style={{ color: leftText, fontSize: fitFont(title, 64, 28, 18), fontWeight: 900, lineHeight: 1.05, margin: "0 0 20px", letterSpacing: "-0.025em", overflowWrap: "break-word", wordBreak: "break-word" }}>
             {title}
           </h1>
           {/* Accent underline */}
@@ -274,7 +274,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
             </svg>
           </div>
 
-          <h1 style={{ color: t.textPrimary, fontSize: "54px", fontWeight: 700, lineHeight: 1.30, margin: "0 0 44px", fontStyle: "italic", letterSpacing: "-0.01em" }}>
+          <h1 style={{ color: t.textPrimary, fontSize: fitFont(title, 54, 28, 90), fontWeight: 700, lineHeight: 1.30, margin: "0 0 44px", fontStyle: "italic", letterSpacing: "-0.01em" }}>
             {title}
           </h1>
 
@@ -322,7 +322,7 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
           </div>
         )}
 
-        <h1 style={{ color: t.textPrimary, fontSize: "66px", fontWeight: 800, lineHeight: 1.08, margin: 0, marginBottom: 56, maxWidth: 830, letterSpacing: "-0.025em" }}>
+        <h1 style={{ color: t.textPrimary, fontSize: fitFont(title, 66, 32, 55), fontWeight: 800, lineHeight: 1.08, margin: 0, marginBottom: 56, maxWidth: 830, letterSpacing: "-0.025em" }}>
           {title}
         </h1>
 

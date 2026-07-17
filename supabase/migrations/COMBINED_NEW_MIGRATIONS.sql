@@ -1250,3 +1250,12 @@ END $$;
 
 ALTER TABLE public.users
   ADD COLUMN IF NOT EXISTS password_version INTEGER NOT NULL DEFAULT 0;
+
+
+-- ================================================================
+-- SECTION 24: CAROUSEL DESIGN SETTINGS (theme rotation + branding)
+-- ================================================================
+
+ALTER TABLE public.carousels
+  ADD COLUMN IF NOT EXISTS theme_id TEXT,
+  ADD COLUMN IF NOT EXISTS design_settings JSONB;

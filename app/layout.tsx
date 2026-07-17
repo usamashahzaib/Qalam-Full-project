@@ -83,6 +83,9 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   alternates: {
     canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com",
+    types: {
+      "application/rss+xml": [{ url: "/feed.xml", title: "Qalam Blog RSS" }],
+    },
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
