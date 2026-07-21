@@ -11,6 +11,7 @@ import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
+import { APP_URL } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -163,7 +164,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     // the payment back to a Qalam account, and the payment can't be activated automatically.
     // Send logged-out visitors to log in first, then back to pricing to complete checkout.
     const href = checkoutUrl
-      ? (isAuthed ? checkoutUrl : `/login?callbackUrl=${encodeURIComponent("/pricing")}`)
+      ? (isAuthed ? checkoutUrl : `${APP_URL}/login?callbackUrl=${encodeURIComponent("/pricing")}`)
       : plan.href
 
     return {

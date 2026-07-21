@@ -2,11 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { RequireAuth } from "@/components/providers/RequireAuth"
 import { CommentIcon } from "@/components/ui/qalam-icons"
+import { APP_URL } from "@/lib/seo"
 
 const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 
@@ -21,7 +21,6 @@ const MAX_POST_LENGTH = 5000
 type Comment = { style: string; text: string }
 
 function CommentGeneratorInner() {
-  const router = useRouter()
   const [postText, setPostText] = useState("")
   const [profile, setProfile] = useState<(typeof PROFILES)[number]>("Founder")
   const [comments, setComments] = useState<Comment[]>([])
@@ -49,7 +48,7 @@ function CommentGeneratorInner() {
       })
 
       if (res.status === 401) {
-        router.replace(`/login?callbackUrl=${encodeURIComponent("/free-tools/comment-generator")}`)
+        window.location.href = `${APP_URL}/login?callbackUrl=${encodeURIComponent("/free-tools/comment-generator")}`
         return
       }
 

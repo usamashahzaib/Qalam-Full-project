@@ -6,6 +6,7 @@ import { getClientIp } from "@/lib/server/rate-limit"
 import { checkAuthRateLimit } from "@/lib/server/queue"
 import { log } from "@/lib/server/logging"
 import { applyReferralCode } from "@/lib/server/referrals"
+import { APP_URL } from "@/lib/seo"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -177,7 +178,6 @@ export async function POST(req: NextRequest) {
   }
 
   // Send verification email - critical for account activation; surface failures visibly.
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
   const emailResult = await sendTransactionalEmail({
     to: email,
     subject: "Verify your Qalam account",
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
       `Welcome to Qalam, ${name}!`,
       "",
       "Verify your email address to activate your account:",
-      `${siteUrl}/verify-email?token=${verificationToken}`,
+      `${APP_URL}/verify-email?token=${verificationToken}`,
       "",
       "This link expires in 24 hours.",
       "If you did not create an account, ignore this email.",

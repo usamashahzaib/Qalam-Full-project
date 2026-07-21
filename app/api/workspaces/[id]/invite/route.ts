@@ -5,6 +5,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { requireRole } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
+import { APP_URL } from "@/lib/seo"
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -78,7 +79,7 @@ export async function POST(
         text: [
           `You've been invited to join the "${workspace?.name ?? "Qalam"}" workspace.`,
           ``,
-          `Sign up at https://byqalam.com to accept this invitation - you'll be added automatically.`,
+          `Sign up at ${APP_URL} to accept this invitation - you'll be added automatically.`,
           ``,
           `- The Qalam team`,
         ].join("\n"),
@@ -135,7 +136,7 @@ export async function POST(
         ``,
         `You've been added to the "${workspace?.name ?? "Qalam"}" workspace as ${role}.`,
         ``,
-        `Open Qalam: https://byqalam.com/dashboard`,
+        `Open Qalam: ${APP_URL}/dashboard`,
         ``,
         `- The Qalam team`,
       ].join("\n"),

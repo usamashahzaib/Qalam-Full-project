@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { env } from "@/lib/server/env"
+import { APP_URL } from "@/lib/seo"
 
 type DuePost = {
   id: string
@@ -122,7 +123,7 @@ export async function GET(request: NextRequest) {
         ``,
         contentPreview + ((post.content?.length ?? 0) > 300 ? "..." : ""),
         ``,
-        `Open Qalam to copy and publish: https://byqalam.com/dashboard`,
+        `Open Qalam to copy and publish: ${APP_URL}/dashboard`,
         ``,
         `To enable auto-publishing in future, connect your LinkedIn account in Settings.`,
         ``,

@@ -4,6 +4,7 @@ import { generateToken, hashToken } from "@/lib/server/password"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp } from "@/lib/server/rate-limit"
 import { checkAuthRateLimit } from "@/lib/server/queue"
+import { APP_URL } from "@/lib/seo"
 
 // Generic success message - never reveal whether an email exists
 const OK = { success: true, message: "If that email is registered, a password reset link is on its way." }
@@ -55,7 +56,6 @@ export async function POST(req: NextRequest) {
     if (insertError) {
       console.error("[auth/forgot-password] password_resets insert failed:", insertError.message)
     } else {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://byqalam.com"
       sendTransactionalEmail({
         to: user.email,
         subject: "Reset your Qalam password",
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           "",
           "You requested a password reset for your Qalam account.",
           "",
-          `Reset your password: ${siteUrl}/reset-password?token=${token}`,
+          `Reset your password: ${APP_URL}/reset-password?token=${token}`,
           "",
           "This link expires in 1 hour.",
           "If you did not request this, you can safely ignore this email.",

@@ -8,6 +8,7 @@ import { useLoginPanel } from "@/components/providers/AuthPanelContext"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
+import { APP_URL } from "@/lib/seo"
 
 function XIcon() {
   return (
@@ -24,6 +25,14 @@ export function AuthSlidePanel() {
   const isSignUp = view === "sign-up"
 
   const handleLinkedIn = useCallback(async () => {
+    // NextAuth's OAuth state cookie is host-only, so sign-in must run on the
+    // same host that's registered as the LinkedIn app's redirect URI
+    // (app.byqalam.com) - starting it from the marketing origin would send
+    // LinkedIn a redirect_uri it doesn't recognize.
+    if (typeof window !== "undefined" && window.location.hostname !== new URL(APP_URL).hostname) {
+      window.location.href = `${APP_URL}/login`
+      return
+    }
     setLoading(true)
     await signIn("linkedin", { callbackUrl: "/dashboard" })
   }, [])

@@ -10,6 +10,7 @@ import {
   MicroscopeIcon,
   ProfileIcon,
 } from "@/components/ui/qalam-icons"
+import { APP_URL } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -219,7 +220,7 @@ export default function FreeToolsPage() {
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
-                  href="/login"
+                  href={`${APP_URL}/login`}
                   className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
                 >
                   Start free - no card needed

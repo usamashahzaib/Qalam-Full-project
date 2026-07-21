@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
+import { APP_URL } from "@/lib/seo"
 
 const PRODUCT_LINKS = [
   { label: "Post Writer", href: "/product/post-writer", desc: "Draft and revise in one structured workflow" },
@@ -166,7 +167,7 @@ function UserMenu({ session }: { session: SessionData }) {
                 </svg>
                 Settings
               </Link>
-              <Link href="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-teal/5 hover:text-teal">
+              <Link href={`${APP_URL}/dashboard`} onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-teal/5 hover:text-teal">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -286,9 +287,9 @@ export function Navbar() {
               <UserMenu session={session} />
             ) : (
               <>
-                <Link href="/login" className="nav-underline px-2 py-2 text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
+                <Link href={`${APP_URL}/login`} className="nav-underline px-2 py-2 text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
                 <Link
-                  href="/signup"
+                  href={`${APP_URL}/signup`}
                   className="press rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 hover:shadow-md"
                 >
                   Start free
@@ -385,17 +386,17 @@ export function Navbar() {
                           <p className="text-xs text-zinc-400">{session.user?.email}</p>
                         </div>
                       </div>
-                      <Link href="/settings" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Settings</Link>
-                      <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Dashboard</Link>
+                      <Link href={`${APP_URL}/settings`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Settings</Link>
+                      <Link href={`${APP_URL}/dashboard`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Dashboard</Link>
                       <button onClick={() => signOut({ callbackUrl: "/" })} className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-600">
                         Log out
                       </button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
+                      <Link href={`${APP_URL}/login`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
                       <Link
-                        href="/signup"
+                        href={`${APP_URL}/signup`}
                         onClick={() => setMobileOpen(false)}
                         className="rounded-lg bg-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
                       >

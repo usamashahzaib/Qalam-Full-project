@@ -5,6 +5,7 @@ import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { HookIcon } from "@/components/ui/qalam-icons"
+import { APP_URL } from "@/lib/seo"
 
 export function HookGeneratorTool() {
   const [topic, setTopic] = useState("")
@@ -196,7 +197,7 @@ export function HookGeneratorTool() {
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
                 Voice settings, archive continuity, and guided production onboarding.
               </p>
-              <Link href="/login" className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+              <Link href={`${APP_URL}/login`} className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
                 {"Start with LinkedIn ->"}
               </Link>
             </div>

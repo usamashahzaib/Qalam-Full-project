@@ -5,6 +5,7 @@ import Link from "next/link"
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
+import { APP_URL } from "@/lib/seo"
 import {
   AnalyticsIcon,
   BrainIcon,
@@ -594,7 +595,7 @@ export default function HomePage() {
             >
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href="/login"
+                  href={`${APP_URL}/login`}
                   className="press pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-all hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_8px_28px_rgba(13,74,69,0.4)]"
                 >
                   Start free - no card needed
@@ -843,7 +844,7 @@ export default function HomePage() {
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Link
-                href="/login"
+                href={`${APP_URL}/login`}
                 className="inline-flex items-center gap-2 rounded-xl bg-teal px-8 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
               >
                 Get started - it&apos;s free to start
@@ -920,7 +921,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/login" className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+              <Link href={`${APP_URL}/login`} className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
                 Start free - 5 posts, no card
               </Link>
             </motion.div>

@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
-import { SITE_URL } from "@/lib/seo"
+import { SITE_URL, APP_URL } from "@/lib/seo"
 import { PLANS, plans, formatPkr } from "@/lib/pricing"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
@@ -115,7 +115,7 @@ const productSchema = {
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
       description: "5 AI posts per month, hook generator. No card required.",
-      url: `${SITE_URL}/login`,
+      url: `${APP_URL}/login`,
     },
     {
       "@type": "Offer",

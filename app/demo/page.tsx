@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useLoginPanel } from "@/components/providers/AuthPanelContext"
 import { useSession } from "next-auth/react"
+import { APP_URL } from "@/lib/seo"
 
 const DEMO_HOOKS = [
   "I deleted 47 LinkedIn posts last year. Every one beat the content I wrote trying to sound viral.",
@@ -121,7 +122,7 @@ function DemoBanner() {
           <p className="text-sm text-zinc-600">
             Signed in as <span className="font-semibold text-teal">{user.name || user.email}</span>. This is the demo workspace.
           </p>
-          <Link href="/dashboard" className="rounded-lg bg-teal px-4 py-2 text-center text-xs font-semibold text-white hover:bg-teal-600">
+          <Link href={`${APP_URL}/dashboard`} className="rounded-lg bg-teal px-4 py-2 text-center text-xs font-semibold text-white hover:bg-teal-600">
             Go to my workspace
           </Link>
         </div>

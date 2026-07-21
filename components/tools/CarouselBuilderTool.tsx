@@ -7,6 +7,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { CoverSlide } from "@/components/carousel/CoverSlide"
 import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
+import { APP_URL } from "@/lib/seo"
 import {
   CANVAS,
   CAROUSEL_THEMES,
@@ -492,7 +493,7 @@ export function CarouselBuilderTool() {
                 Qalam AI builds the slides, you refine and export. Voice-matched, on-brand, every time.
               </p>
               <Link
-                href="/login"
+                href={`${APP_URL}/login`}
                 className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
               >
                 Start free {"->"}

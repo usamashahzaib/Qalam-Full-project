@@ -149,6 +149,28 @@ const PROTECTED_ROUTES = [
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
 
+// Page routes with no auth gate of their own (token-based, not session-based)
+// that still belong on the app subdomain rather than the marketing site.
+const APP_ONLY_EXTRA_PATHS = ["/verify-email", "/sso-callback"]
+
+// ─── Host-based domain split ─────────────────────────────────────────────────
+// byqalam.com (marketing) and app.byqalam.com (product) point at the same
+// Vercel deployment. A page's auth requirements (above) are unchanged by this -
+// this only decides which hostname a browser should see it on, via redirect.
+// Only real production hostnames are matched, so localhost/preview deployments
+// serve every route on one origin, unaffected.
+
+const APP_HOST = "app.byqalam.com"
+const MARKETING_HOSTS = new Set(["byqalam.com", "www.byqalam.com"])
+
+function isAppOnlyPath(pathname: string): boolean {
+  return (
+    PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    AUTH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  )
+}
+
 const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
@@ -246,6 +268,31 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const { pathname } = request.nextUrl
+
+  // Page-level domain split - only applies to page navigations, never to
+  // /api/* (the same serverless functions answer both hosts, and pages only
+  // ever call their own API via same-origin relative paths, so leaving API
+  // routes host-agnostic avoids duplicating the route tables here).
+  if (!pathname.startsWith("/api/")) {
+    const hostname = request.nextUrl.hostname
+    if (MARKETING_HOSTS.has(hostname) && isAppOnlyPath(pathname)) {
+      const url = new URL(request.url)
+      url.hostname = APP_HOST
+      return addSecurityHeaders(NextResponse.redirect(url, 308))
+    }
+    if (hostname === APP_HOST) {
+      if (pathname === "/") {
+        const url = new URL(request.url)
+        url.pathname = "/dashboard"
+        return addSecurityHeaders(NextResponse.redirect(url))
+      }
+      if (!isAppOnlyPath(pathname)) {
+        const url = new URL(request.url)
+        url.hostname = "www.byqalam.com"
+        return addSecurityHeaders(NextResponse.redirect(url, 308))
+      }
+    }
+  }
 
   const isPublicApi = PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)

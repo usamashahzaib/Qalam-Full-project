@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
-import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
+import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 type Params = { slug: keyof typeof SEO_LANDING_PAGES }
 
@@ -71,7 +71,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
               <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">{page.h1}</h1>
               <p className="max-w-3xl text-xl leading-relaxed text-zinc-600">{page.summary}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/login" className="inline-flex justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
+                <Link href={`${APP_URL}/login`} className="inline-flex justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
                   Start free
                 </Link>
                 <Link href="/ai-linkedin-writer" className="inline-flex justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">

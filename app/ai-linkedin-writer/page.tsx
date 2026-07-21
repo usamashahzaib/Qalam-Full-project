@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata } from "@/lib/seo"
+import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
   title: "AI LinkedIn Writer - Create Posts in Your Voice with Qalam",
@@ -195,7 +195,7 @@ export default function AiLinkedInWriterPage() {
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
                   <Link
-                    href="/login"
+                    href={`${APP_URL}/login`}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal px-8 py-4 text-lg font-bold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
                   >
                     Start free - 5 posts, no card
@@ -475,7 +475,7 @@ export default function AiLinkedInWriterPage() {
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
-                  href="/login"
+                  href={`${APP_URL}/login`}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
                 >
                   Start free - 5 posts

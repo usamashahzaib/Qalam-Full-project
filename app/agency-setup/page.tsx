@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
-import { buildPageMetadata } from "@/lib/seo"
+import { buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Agency Setup",
@@ -110,7 +110,7 @@ export default function AgencySetupPage() {
               </p>
               <div className="flex flex-col gap-3">
                 <Link
-                  href="/login"
+                  href={`${APP_URL}/login`}
                   className="inline-flex items-center justify-center rounded-xl bg-gold px-6 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
                 >
                   Open Agency Workspace
