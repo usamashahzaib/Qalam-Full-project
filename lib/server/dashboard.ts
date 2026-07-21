@@ -2,7 +2,7 @@ import "server-only"
 import { cache } from "react"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
-import { getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext, ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { SupabasePlanUsageRepository } from "@/lib/repositories/supabase/SupabasePlanUsageRepository"
 
 export type DashboardStats = {
@@ -35,26 +35,29 @@ export type UsageDay = {
 // Per-request memoization: all parallel route slots share one context/auth lookup
 export const getSessionContext = cache(getWorkspaceSessionContext)
 
-export async function fetchDashboardStats(supabaseUserId: string): Promise<DashboardStats> {
+export async function fetchDashboardStats(supabaseUserId: string, workspaceId: string): Promise<DashboardStats> {
   const supabase = createServiceClient()
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
+  // Plan/quota status is per-user (each seat has its own allowance), but post
+  // counts must reflect the whole workspace - otherwise a teammate's dashboard
+  // understates activity everyone else on the team already produced.
   const [planStatus, monthPostsRes, libraryRes, publishedRes] = await Promise.allSettled([
     getPlanStatus(supabaseUserId),
     supabase
       .from("posts")
       .select("engagement_score")
-      .eq("user_id", supabaseUserId)
+      .eq("workspace_id", workspaceId)
       .gte("created_at", monthStart),
     supabase
       .from("posts")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", supabaseUserId),
+      .eq("workspace_id", workspaceId),
     supabase
       .from("posts")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", supabaseUserId)
+      .eq("workspace_id", workspaceId)
       .eq("status", "published")
       .gte("created_at", monthStart),
   ])
@@ -103,12 +106,12 @@ export async function fetchDashboardStats(supabaseUserId: string): Promise<Dashb
   }
 }
 
-export async function fetchRecentPosts(supabaseUserId: string): Promise<DashboardPost[]> {
+export async function fetchRecentPosts(workspaceId: string): Promise<DashboardPost[]> {
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from("posts")
     .select("id,title,content,engagement_score,status,created_at")
-    .eq("user_id", supabaseUserId)
+    .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false })
     .limit(5)
 

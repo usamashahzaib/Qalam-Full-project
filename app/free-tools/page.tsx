@@ -37,7 +37,7 @@ const TOOLS = [
   {
     icon: HookIcon,
     title: "Hook Generator",
-    desc: "Generate ten opening lines for any topic in seconds. No account required.",
+    desc: "Generate five opening lines for any topic in seconds. No account required.",
     badge: "Most Used",
     badgeColor: "bg-gold text-white",
     href: "/free-tools/hook-generator",

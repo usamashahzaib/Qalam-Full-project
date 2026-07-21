@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAuth, getAuthenticatedSession, ensureSupabaseUser } from "@/lib/server/workspace"
+import { requireAuth, getAuthenticatedSession, ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 
@@ -18,27 +18,30 @@ export async function GET() {
       imageUrl: session?.user?.image ?? null,
     }).catch(() => tokenUserId)
 
+    const workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email: userEmail ?? "" })
+
     const supabase = createServiceClient()
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
     // getPlanStatus is the canonical plan resolver - handles users.plan, plan_usage,
-    // admin overrides, and expiry in one place.
+    // admin overrides, and expiry in one place. Post counts are workspace-wide so a
+    // teammate's dashboard reflects the whole team's activity, not just their own posts.
     const [planStatus, monthPostsRes, libraryRes, publishedRes] = await Promise.allSettled([
       getPlanStatus(supabaseUserId),
       supabase
         .from("posts")
         .select("engagement_score")
-        .eq("user_id", supabaseUserId)
+        .eq("workspace_id", workspaceId)
         .gte("created_at", monthStart),
       supabase
         .from("posts")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", supabaseUserId),
+        .eq("workspace_id", workspaceId),
       supabase
         .from("posts")
         .select("id", { count: "exact", head: true })
-        .eq("user_id", supabaseUserId)
+        .eq("workspace_id", workspaceId)
         .eq("status", "published")
         .gte("created_at", monthStart),
     ])

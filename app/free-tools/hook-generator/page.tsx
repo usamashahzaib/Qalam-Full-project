@@ -5,12 +5,12 @@ import { SITE_URL } from "@/lib/seo"
 export const metadata: Metadata = {
   title: "Free LinkedIn Hook Generator - AI-Powered Opening Lines",
   description:
-    "Generate 10 proven LinkedIn hook opening lines for any topic in seconds. AI-powered hook generator trained on viral post patterns. No account required. Free to use.",
+    "Generate 5 proven LinkedIn hook opening lines for any topic in seconds. AI-powered hook generator trained on viral post patterns. No account required. Free to use.",
   alternates: { canonical: `${SITE_URL}/free-tools/hook-generator` },
   openGraph: {
     title: "Free LinkedIn Hook Generator - AI-Powered Opening Lines | Qalam",
     description:
-      "Generate 10 proven LinkedIn opening lines for any topic in seconds. No sign-in required. Built by Qalam, the AI LinkedIn writer.",
+      "Generate 5 proven LinkedIn opening lines for any topic in seconds. No sign-in required. Built by Qalam, the AI LinkedIn writer.",
     url: `${SITE_URL}/free-tools/hook-generator`,
     type: "website",
   },
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Free LinkedIn Hook Generator - AI-Powered | Qalam",
     description:
-      "10 proven hook patterns for any LinkedIn topic. No account required. Built by Qalam.",
+      "5 proven hook patterns for any LinkedIn topic. No account required. Built by Qalam.",
   },
 }
 
@@ -27,7 +27,7 @@ const hookGeneratorSchema = {
   "@type": "HowTo",
   name: "How to write a LinkedIn hook",
   description:
-    "Generate ten attention-grabbing opening lines for any LinkedIn post topic in seconds - no account required.",
+    "Generate five attention-grabbing opening lines for any LinkedIn post topic in seconds - no account required.",
   tool: { "@type": "HowToTool", name: "Qalam LinkedIn Hook Generator" },
   step: [
     {
@@ -39,8 +39,8 @@ const hookGeneratorSchema = {
     {
       "@type": "HowToStep",
       position: 2,
-      name: "Generate ten hooks",
-      text: "Click Generate to instantly see ten different opening lines structured around your topic.",
+      name: "Generate five hooks",
+      text: "Click Generate to instantly see five different opening lines structured around your topic.",
     },
     {
       "@type": "HowToStep",

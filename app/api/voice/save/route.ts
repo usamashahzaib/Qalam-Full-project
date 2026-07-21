@@ -53,10 +53,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createServiceClient()
+  // Same scoping fix as GET /api/voice/me - only fall back to a bare user_id
+  // match for pre-migration rows with no workspace_id, so this never updates
+  // a different workspace's profile for users in more than one workspace.
   const { data: existing } = await supabase
     .from("voice_profiles")
     .select("id")
-    .or(`workspace_id.eq.${workspaceId},user_id.eq.${session.supabaseUserId}`)
+    .or(`workspace_id.eq.${workspaceId},and(workspace_id.is.null,user_id.eq.${session.supabaseUserId})`)
     .limit(1)
     .maybeSingle()
 

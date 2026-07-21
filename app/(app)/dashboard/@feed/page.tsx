@@ -4,6 +4,7 @@ import {
   fetchRecentPosts,
   type DashboardPost,
 } from "@/lib/server/dashboard"
+import { ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { RefreshButton } from "../_components/refresh-button"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,7 +68,8 @@ export default async function FeedPage() {
 
   try {
     const ctx = await getSessionContext()
-    posts = await fetchRecentPosts(ctx.supabaseUserId)
+    const workspaceId = await ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email })
+    posts = await fetchRecentPosts(workspaceId)
   } catch {
     error = true
   }

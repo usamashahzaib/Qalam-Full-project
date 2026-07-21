@@ -1,13 +1,16 @@
 // Triggered hourly by a QStash Schedule (not vercel.json - Vercel Hobby crons are
 // daily-only and both slots are taken). Register with: node scripts/setup-qstash-schedules.mjs
-// AI generation runs synchronously in route handlers - there is no background job queue.
-// This cron acts as a cleanup sweep: marks stale "queued" posts (older than 2 hours
-// with no outcome) as "draft" so users can retry them.
+// AI generation runs synchronously in route handlers - there is no background job queue,
+// so posts.status never actually reaches "queued" (that value isn't even in the
+// posts_status_check constraint). This cron instead recovers the one state that *can*
+// get stuck mid-request: "publishing", when the process dies between claiming a
+// scheduled post and finishing the LinkedIn call. Delegates to the same reconciliation
+// used by the daily safety-net sweep so the two never diverge.
 export const maxDuration = 30
 
 import { NextRequest, NextResponse } from "next/server"
-import { createServiceClient } from "@/lib/server/supabase-rest"
 import { env } from "@/lib/server/env"
+import { reconcileStuckPublishing } from "@/lib/server/linkedin-publish"
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
@@ -15,22 +18,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const supabase = createServiceClient()
-  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-
-  // Mark any posts stuck in "queued" state for over 2 hours back to "draft"
-  const { data, error } = await supabase
-    .from("posts")
-    .update({ status: "draft", updated_at: new Date().toISOString() })
-    .eq("status", "queued")
-    .lt("updated_at", twoHoursAgo)
-    .select("id")
-
-  if (error) {
-    console.error("[cron/process-queue] cleanup error:", error.message)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  try {
+    const { finalized, reverted } = await reconcileStuckPublishing()
+    return NextResponse.json({ recovered: finalized + reverted, finalized, reverted })
+  } catch (error) {
+    console.error("[cron/process-queue] reconciliation error:", (error as Error).message)
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
-
-  const recovered = data?.length ?? 0
-  return NextResponse.json({ recovered, note: "Generation is synchronous. This cron recovers stale queued posts." })
 }

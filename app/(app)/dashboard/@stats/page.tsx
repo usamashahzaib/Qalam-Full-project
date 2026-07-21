@@ -6,6 +6,7 @@ import {
   type DashboardStats,
   type UsageDay,
 } from "@/lib/server/dashboard"
+import { ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { RefreshButton } from "../_components/refresh-button"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -323,8 +324,9 @@ export default async function StatsPage() {
 
   try {
     const ctx = await getSessionContext()
+    const workspaceId = await ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email })
     const [statsResult, usageResult] = await Promise.allSettled([
-      fetchDashboardStats(ctx.supabaseUserId),
+      fetchDashboardStats(ctx.supabaseUserId, workspaceId),
       fetchDashboardUsage(ctx.userId),
     ])
     if (statsResult.status === "fulfilled") {

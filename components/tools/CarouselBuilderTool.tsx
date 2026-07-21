@@ -440,7 +440,7 @@ export function CarouselBuilderTool() {
                         <p className="text-sm font-bold text-white">Slide {activeSlide + 1} locked</p>
                         <p className="text-xs text-white/70">Sign up free to get all {slides.length} slides as PNGs.</p>
                         <Link
-                          href="/sign-up"
+                          href="/signup"
                           className="mt-1 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-teal-600"
                         >
                           Get all slides free

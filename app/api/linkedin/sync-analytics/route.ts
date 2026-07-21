@@ -51,17 +51,18 @@ export async function GET(request: Request) {
       const credResultsInner: typeof allResults = []
       try {
         // Find the user's workspace by owner_id (internal UUID or external OAuth sub)
-        const workspaces = await supabaseSelect<{ id: string; key: string }>(
+        const workspaces = await supabaseSelect<{ id: string; slug: string }>(
           "workspaces",
-          `owner_id=eq.${encodeURIComponent(cred.user_id)}&limit=1&select=id,key`
+          `owner_id=eq.${encodeURIComponent(cred.user_id)}&limit=1&select=id,slug`
         )
         const workspace = workspaces?.[0]
         if (!workspace) return credResultsInner
 
-        // BUG #14 fix: column is external_post_urn, not external_urn
-        const posts = await supabaseSelect<{ id: string; external_post_urn: string; user_id: string }>(
+        // posts.linkedin_post_id is the real column (external_post_urn was
+        // dropped by migration 0010 and never restored)
+        const posts = await supabaseSelect<{ id: string; linkedin_post_id: string; user_id: string }>(
           "posts",
-          `workspace_id=eq.${workspace.id}&external_post_urn=not.is.null&status=eq.published&select=id,external_post_urn,user_id`
+          `workspace_id=eq.${workspace.id}&linkedin_post_id=not.is.null&status=eq.published&select=id,linkedin_post_id,user_id`
         )
         if (!posts || posts.length === 0) return credResultsInner
 
@@ -73,17 +74,18 @@ export async function GET(request: Request) {
         const accessToken = fresh?.access_token || cred.access_token
 
         for (const post of posts) {
-          if (!post.external_post_urn) continue
+          if (!post.linkedin_post_id) continue
           try {
-            const stats = await pollLinkedInAnalytics(accessToken, post.external_post_urn, cred.user_id)
+            const stats = await pollLinkedInAnalytics(accessToken, post.linkedin_post_id, cred.user_id)
 
-            // Write event log (existing behaviour)
-            await supabaseInsert("workspace_events", {
-              workspace_key: workspace.key,
+            // Write event log
+            await supabaseInsert("analytics_events", {
+              workspace_id: workspace.id,
+              post_id: post.id,
               event_type: "linkedin_analytics_polled",
-              payload: { postUrn: post.external_post_urn, postId: post.id, ...stats },
-              created_at: new Date().toISOString(),
-            })
+              metrics: { postUrn: post.linkedin_post_id, ...stats },
+              recorded_at: new Date().toISOString(),
+            }).catch(() => undefined)
 
             // Also write to analytics_snapshots so the analytics UI shows auto-synced data.
             // One snapshot per post per day - update if already exists today, insert otherwise.
@@ -129,9 +131,9 @@ export async function GET(request: Request) {
                 .then(undefined, (e: unknown) => console.error("[sync-analytics] snapshot update failed:", e))
             }
 
-            credResultsInner.push({ email: cred.user_id, urn: post.external_post_urn, status: "success", stats })
+            credResultsInner.push({ email: cred.user_id, urn: post.linkedin_post_id, status: "success", stats })
           } catch (err) {
-            credResultsInner.push({ email: cred.user_id, urn: post.external_post_urn, status: "error", message: (err as Error).message })
+            credResultsInner.push({ email: cred.user_id, urn: post.linkedin_post_id, status: "error", message: (err as Error).message })
           }
         }
       } catch (err) {

@@ -20,7 +20,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const userId = await requireAuth()
+  await requireAuth()
   const planCheck = await requirePlan(request, "Solo")
   if (!planCheck.ok) return planCheck.response
   if (!planCheck.limits.linkedinPublish) {
@@ -63,7 +63,7 @@ export async function POST(
     .from("carousels")
     .select("id, topic")
     .eq("id", id)
-    .eq("user_id", userId)
+    .eq("workspace_id", workspaceId)
     .maybeSingle()
 
   if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 })

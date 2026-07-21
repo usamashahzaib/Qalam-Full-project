@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase
     .from("voice_profiles")
     .select("name, title, industry, linkedin_url, brand_tone, goals, example_posts, characteristics, sample_posts, voice_fingerprint, updated_at")
-    .or(`workspace_id.eq.${workspaceId},user_id.eq.${session.supabaseUserId}`)
+    // Prefer the active workspace's row; only fall back to a user_id match for
+    // legacy rows saved before workspace_id existed (workspace_id IS NULL) - a
+    // user_id-only match against a *populated* workspace_id would pick up a
+    // voice profile from a different workspace they're also a member of.
+    .or(`workspace_id.eq.${workspaceId},and(workspace_id.is.null,user_id.eq.${session.supabaseUserId})`)
     .limit(1)
     .maybeSingle()
 

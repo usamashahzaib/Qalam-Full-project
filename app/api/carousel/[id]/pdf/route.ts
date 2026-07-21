@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { CAROUSEL_THEMES, DEFAULT_THEME_ID, resolveTheme, type CarouselThemeId } from "@/lib/carousel-design"
 import { buildCarouselPdf, type CarouselPdfSlide } from "@/lib/server/carousel-pdf"
@@ -9,7 +11,7 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
     if (!planCheck.limits.canExport) {
@@ -17,6 +19,15 @@ export async function POST(
     }
 
     const { id } = await context.params
+
+    let workspaceId: string
+    try {
+      workspaceId = await resolveWorkspaceId(req)
+      await requireRole(req, workspaceId, "viewer")
+    } catch (error) {
+      const msg = (error as Error).message
+      return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    }
 
     const body = await req.json().catch(() => ({}))
     const rawThemeId = body.themeId as CarouselThemeId
@@ -29,7 +40,7 @@ export async function POST(
       .from("carousels")
       .select("id, topic, role, tone, slides, created_at")
       .eq("id", id)
-      .eq("user_id", user.id)
+      .eq("workspace_id", workspaceId)
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

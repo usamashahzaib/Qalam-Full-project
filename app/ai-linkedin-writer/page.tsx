@@ -5,7 +5,7 @@ import { CheckIcon } from "@/components/ui/qalam-icons"
 import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "AI LinkedIn Writer - Create Posts in Your Voice with Qalam",
+  title: "AI LinkedIn Writer - Create Posts in Your Voice",
   description:
     "The best AI LinkedIn writer that learns your voice. Generate posts, hooks, and carousels that sound like you - not generic AI. Free hook generator included. Start free.",
   path: "/ai-linkedin-writer",

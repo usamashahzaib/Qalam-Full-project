@@ -9,7 +9,7 @@ import {
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Contact Qalam - Support, Agency Onboarding & Plan Upgrades",
+  title: "Contact - Support, Agency Onboarding & Plan Upgrades",
   description: "Contact the Qalam team for support, plan upgrades via JazzCash or Easypaisa, agency onboarding, partnerships, or commercial questions. Response within 24 hours.",
   alternates: { canonical: "https://www.byqalam.com/contact" },
   openGraph: {
