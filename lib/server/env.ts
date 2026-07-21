@@ -31,6 +31,8 @@ export const env = {
   stripeWebhookSecret: read("STRIPE_WEBHOOK_SECRET"),
   jazzCashWebhookSecret: read("JAZZCASH_WEBHOOK_SECRET"),
   easyPaisaWebhookSecret: read("EASYPAISA_WEBHOOK_SECRET"),
+  lemonSqueezyWebhookSecret: read("LEMONSQUEEZY_WEBHOOK_SECRET"),
+  lemonSqueezyApiKey: read("LEMONSQUEEZY_API_KEY"),
   resendApiKey: read("RESEND_API_KEY"),
   transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
   cronSecret: read("CRON_SECRET"),

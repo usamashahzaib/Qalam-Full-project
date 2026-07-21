@@ -9,7 +9,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr } from "@/lib/pricing"
+import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
 import type { ManagedPlan } from "@/lib/pricing"
 
@@ -109,10 +109,12 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 
 export function PricingPageContent({}: PricingPageContentProps) {
   const { status } = useSession()
+  const isAuthed = status === "authenticated"
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
+  const [buyer, setBuyer] = useState<{ userId?: string; email?: string }>({})
   const searchParams = useSearchParams()
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
     searchParams.get("tab") === "managed" ? "managed" : "selfserve"
@@ -122,7 +124,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
     if (status !== "authenticated") return
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => { if (data.user?.plan) setCurrentPlan(data.user.plan) })
+      .then((data) => {
+        if (data.user?.plan) setCurrentPlan(data.user.plan)
+        if (data.user?.id || data.user?.email) setBuyer({ userId: data.user.id, email: data.user.email })
+      })
       .catch(() => {})
     fetch("/api/referrals/stats")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -135,11 +140,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const noteOverride =
       plan.plan === "Free"
         ? "Real free. Not a 7-day trial disguised as a free plan."
-        : plan.plan === "Solo"
-          ? "Early access - we'll reach out within 24 hours."
-          : plan.plan === "Pro"
-            ? "Early access - we'll reach out within 24 hours."
-            : undefined
+        : plan.plan === "Solo" || plan.plan === "Pro"
+          ? "Secure checkout via Lemon Squeezy - card charged in USD. Plan activates instantly after payment."
+          : undefined
 
     const isAnnual = billing === "annual"
     const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0
@@ -155,6 +158,14 @@ export function PricingPageContent({}: PricingPageContentProps) {
       ? `Save ${annualSavingsPercent}%`
       : "Free forever"
 
+    const checkoutUrl = getLemonSqueezyCheckoutUrl(plan.plan, billing, buyer)
+    // Checkout must happen while signed in - otherwise Lemon Squeezy has no user_id to match
+    // the payment back to a Qalam account, and the payment can't be activated automatically.
+    // Send logged-out visitors to log in first, then back to pricing to complete checkout.
+    const href = checkoutUrl
+      ? (isAuthed ? checkoutUrl : `/login?callbackUrl=${encodeURIComponent("/pricing")}`)
+      : plan.href
+
     return {
       ...plan,
       description: plan.description,
@@ -164,6 +175,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       annualSavings,
       usdReference,
       cta: plan.cta,
+      href,
       badge: isCurrentPlan ? "Current plan" : plan.badge,
     }
   })
@@ -176,7 +188,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
       {/* Urgency / early-access banner */}
       <div className="bg-teal text-white text-center py-2.5 px-4 text-xs font-semibold tracking-wide">
-        Early-access pricing - rates increase when self-serve checkout launches.{" "}
+        Early-access pricing - rates increase soon.{" "}
         <span className="text-gold font-bold">Lock your rate now.</span>
       </div>
 

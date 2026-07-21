@@ -190,7 +190,7 @@ CREATE TABLE public.admin_audit_log (
 
 CREATE TABLE public.payments (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider       TEXT         NOT NULL CHECK (provider IN ('stripe','jazzcash','easypaisa')),
+  provider       TEXT         NOT NULL CHECK (provider IN ('stripe','jazzcash','easypaisa','lemonsqueezy')),
   transaction_id TEXT         NOT NULL,
   user_id        UUID         REFERENCES public.users(id) ON DELETE SET NULL,
   organization_id UUID        REFERENCES public.organizations(id) ON DELETE SET NULL,
@@ -1259,3 +1259,47 @@ ALTER TABLE public.users
 ALTER TABLE public.carousels
   ADD COLUMN IF NOT EXISTS theme_id TEXT,
   ADD COLUMN IF NOT EXISTS design_settings JSONB;
+
+
+-- ================================================================
+-- SECTION 25: PAYMENT SUBSCRIPTIONS (trusted plan mapping for renewals)
+-- ================================================================
+
+ALTER TABLE public.payments
+  ADD COLUMN IF NOT EXISTS subscription_id TEXT;
+
+CREATE INDEX IF NOT EXISTS payments_subscription_id_idx
+  ON public.payments (provider, subscription_id)
+  WHERE subscription_id IS NOT NULL;
+
+ALTER TABLE public.payments
+  DROP CONSTRAINT IF EXISTS payments_status_check;
+
+ALTER TABLE public.payments
+  ADD CONSTRAINT payments_status_check
+  CHECK (status IN ('paid', 'failed', 'cancelled', 'refunded'));
+
+CREATE TABLE IF NOT EXISTS public.payment_subscriptions (
+    id              uuid primary key default gen_random_uuid(),
+    provider        text not null check (provider in ('stripe', 'lemonsqueezy')),
+    subscription_id text not null,
+    user_id         uuid references public.users(id) on delete set null,
+    organization_id uuid references public.organizations(id) on delete set null,
+    plan_name       text not null check (plan_name in ('Free', 'Solo', 'Pro', 'Agency')),
+    billing_cycle   text not null default 'monthly' check (billing_cycle in ('monthly', 'annual')),
+    status          text not null default 'active' check (status in ('active', 'cancelled', 'expired', 'refunded')),
+    renews_at       timestamptz,
+    ends_at         timestamptz,
+    created_at      timestamptz not null default now(),
+    updated_at      timestamptz not null default now(),
+    unique(provider, subscription_id)
+);
+
+CREATE INDEX IF NOT EXISTS payment_subscriptions_user_idx
+  ON public.payment_subscriptions (user_id);
+
+ALTER TABLE public.payment_subscriptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "payment_subscriptions_own_select" ON public.payment_subscriptions;
+CREATE POLICY "payment_subscriptions_own_select" ON public.payment_subscriptions
+  FOR SELECT USING (user_id::text = auth.uid()::text);

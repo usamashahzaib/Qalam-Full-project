@@ -83,7 +83,7 @@ create table public.admin_audit_log (
 -- Payments
 create table public.payments (
     id uuid primary key default uuid_generate_v4(),
-    provider text not null check (provider in ('stripe', 'jazzcash', 'easypaisa')),
+    provider text not null check (provider in ('stripe', 'jazzcash', 'easypaisa', 'lemonsqueezy')),
     transaction_id text not null,
     user_id uuid references public.users(id) on delete set null,
     organization_id uuid references public.organizations(id) on delete set null,
@@ -91,11 +91,30 @@ create table public.payments (
     currency text not null default 'PKR',
     plan_name text not null check (plan_name in ('Free', 'Solo', 'Pro', 'Agency')),
     billing_cycle text not null default 'monthly' check (billing_cycle in ('monthly', 'annual')),
-    status text not null check (status in ('paid', 'failed', 'cancelled')),
+    status text not null check (status in ('paid', 'failed', 'cancelled', 'refunded')),
+    subscription_id text,
     raw_payload jsonb not null default '{}',
     processed_at timestamptz not null default now(),
     created_at timestamptz not null default now(),
     unique(provider, transaction_id)
+);
+
+-- Subscription -> plan mapping. Written only from provider-signed variant IDs, so renewal
+-- webhooks (which carry no variant) never have to trust buyer-supplied checkout metadata.
+create table public.payment_subscriptions (
+    id uuid primary key default uuid_generate_v4(),
+    provider text not null check (provider in ('stripe', 'lemonsqueezy')),
+    subscription_id text not null,
+    user_id uuid references public.users(id) on delete set null,
+    organization_id uuid references public.organizations(id) on delete set null,
+    plan_name text not null check (plan_name in ('Free', 'Solo', 'Pro', 'Agency')),
+    billing_cycle text not null default 'monthly' check (billing_cycle in ('monthly', 'annual')),
+    status text not null default 'active' check (status in ('active', 'cancelled', 'expired', 'refunded')),
+    renews_at timestamptz,
+    ends_at timestamptz,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now(),
+    unique(provider, subscription_id)
 );
 
 -- Publishing Accounts
@@ -278,6 +297,7 @@ alter table public.users enable row level security;
 alter table public.user_overrides enable row level security;
 alter table public.admin_audit_log enable row level security;
 alter table public.payments enable row level security;
+alter table public.payment_subscriptions enable row level security;
 
 -- =============================================================
 -- RLS POLICIES
@@ -343,4 +363,8 @@ create policy "notifications_own" on public.notifications
 
 -- payments: users can read their own payment history
 create policy "payments_own_select" on public.payments
+  for select using (user_id::text = auth.uid()::text);
+
+-- payment_subscriptions: users can read their own subscriptions; writes are service-role only
+create policy "payment_subscriptions_own_select" on public.payment_subscriptions
   for select using (user_id::text = auth.uid()::text);

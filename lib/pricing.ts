@@ -301,6 +301,52 @@ export const formatPkr = (amount: number | null | undefined): string => {
   return `PKR ${amount.toLocaleString("en-PK")}`
 }
 
+// ─── Lemon Squeezy checkout ────────────────────────────────────────────────
+
+export type BillingCycle = "monthly" | "annual"
+
+// Hosted checkout links from the Lemon Squeezy store. Not secret - safe in a shared module.
+export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Record<BillingCycle, string>>> = {
+  Solo: {
+    monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
+    annual: "https://byqalam.lemonsqueezy.com/checkout/buy/0872e475-9487-4430-9590-49e569524553",
+  },
+  Pro: {
+    monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
+    annual: "https://byqalam.lemonsqueezy.com/checkout/buy/2f787de4-dc72-40d6-ac70-3544420455f0",
+  },
+}
+
+// Maps Lemon Squeezy variant IDs back to a plan + billing cycle - used by the webhook
+// handler so the activated plan is derived from which checkout link was used, not from
+// client-suppliable data.
+export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; billingCycle: BillingCycle }> = {
+  "1928885": { planName: "Solo", billingCycle: "monthly" },
+  "1929048": { planName: "Solo", billingCycle: "annual" },
+  "1928922": { planName: "Pro", billingCycle: "monthly" },
+  "1929064": { planName: "Pro", billingCycle: "annual" },
+}
+
+export function getLemonSqueezyCheckoutUrl(
+  planName: string,
+  billingCycle: BillingCycle,
+  buyer?: { userId?: string | null; email?: string | null }
+): string | null {
+  const base = LEMONSQUEEZY_CHECKOUT_URLS[planName as PlanName]?.[billingCycle]
+  if (!base) return null
+
+  const params = new URLSearchParams()
+  if (buyer?.email) params.set("checkout[email]", buyer.email)
+  if (buyer?.userId) params.set("checkout[custom][user_id]", buyer.userId)
+  // Stamp plan + cycle into custom_data so the webhook can still resolve the plan on
+  // renewal invoices, which do not carry a variant_id. The webhook always prefers the
+  // signed variant_id when present, so this is a fallback and never an override vector.
+  params.set("checkout[custom][plan_name]", planName)
+  params.set("checkout[custom][billing_cycle]", billingCycle)
+  const query = params.toString()
+  return query ? `${base}?${query}` : base
+}
+
 // ─── Single source of truth for plan enforcement ──────────────────────────────
 
 export type Feature = "drafts" | "carousels" | "hooks" | "analyses"

@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS public.plan_audit_log         CASCADE;
 DROP TABLE IF EXISTS public.user_overrides         CASCADE;
 DROP TABLE IF EXISTS public.admin_audit_log        CASCADE;
 DROP TABLE IF EXISTS public.payments               CASCADE;
+DROP TABLE IF EXISTS public.payment_subscriptions  CASCADE;
 DROP TABLE IF EXISTS public.post_versions          CASCADE;
 DROP TABLE IF EXISTS public.carousels              CASCADE;
 DROP TABLE IF EXISTS public.carousel_projects      CASCADE;
@@ -178,7 +179,7 @@ CREATE TABLE public.admin_audit_log (
 
 CREATE TABLE public.payments (
   id             UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider       TEXT         NOT NULL CHECK (provider IN ('stripe','jazzcash','easypaisa')),
+  provider       TEXT         NOT NULL CHECK (provider IN ('stripe','jazzcash','easypaisa','lemonsqueezy')),
   transaction_id TEXT         NOT NULL,
   user_id        UUID         REFERENCES public.users(id) ON DELETE SET NULL,
   organization_id UUID        REFERENCES public.organizations(id) ON DELETE SET NULL,
@@ -188,11 +189,33 @@ CREATE TABLE public.payments (
                  CHECK (plan_name IN ('Free','Solo','Pro','Agency','Agency Starter','Agency Growth')),
   billing_cycle  TEXT         NOT NULL DEFAULT 'monthly'
                  CHECK (billing_cycle IN ('monthly','annual')),
-  status         TEXT         NOT NULL CHECK (status IN ('paid','failed','cancelled')),
+  status         TEXT         NOT NULL CHECK (status IN ('paid','failed','cancelled','refunded')),
+  subscription_id TEXT,
   raw_payload    JSONB        NOT NULL DEFAULT '{}',
   processed_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
   created_at     TIMESTAMPTZ  NOT NULL DEFAULT now(),
   UNIQUE (provider, transaction_id)
+);
+
+-- Subscription -> plan mapping. Written only from provider-signed variant IDs, so renewal
+-- webhooks (which carry no variant) never have to trust buyer-supplied checkout metadata.
+CREATE TABLE public.payment_subscriptions (
+  id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider        TEXT         NOT NULL CHECK (provider IN ('stripe','lemonsqueezy')),
+  subscription_id TEXT         NOT NULL,
+  user_id         UUID         REFERENCES public.users(id) ON DELETE SET NULL,
+  organization_id UUID         REFERENCES public.organizations(id) ON DELETE SET NULL,
+  plan_name       TEXT         NOT NULL
+                  CHECK (plan_name IN ('Free','Solo','Pro','Agency','Agency Starter','Agency Growth')),
+  billing_cycle   TEXT         NOT NULL DEFAULT 'monthly'
+                  CHECK (billing_cycle IN ('monthly','annual')),
+  status          TEXT         NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active','cancelled','expired','refunded')),
+  renews_at       TIMESTAMPTZ,
+  ends_at         TIMESTAMPTZ,
+  created_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ  NOT NULL DEFAULT now(),
+  UNIQUE (provider, subscription_id)
 );
 
 -- ================================================================
@@ -494,6 +517,7 @@ ALTER TABLE public.plan_audit_log          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_overrides          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_audit_log         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payments                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payment_subscriptions   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.linkedin_credentials    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.publishing_accounts     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.posts                   ENABLE ROW LEVEL SECURITY;
@@ -565,6 +589,10 @@ CREATE POLICY "plan_audit_log_service_only" ON public.plan_audit_log
 
 -- payments: users read their own payment history
 CREATE POLICY "payments_own_read" ON public.payments
+  FOR SELECT USING (user_id = auth.uid());
+
+-- payment_subscriptions: users read their own subscriptions; writes are service-role only
+CREATE POLICY "payment_subscriptions_own_read" ON public.payment_subscriptions
   FOR SELECT USING (user_id = auth.uid());
 
 -- linkedin_credentials: own row only
@@ -701,6 +729,8 @@ CREATE INDEX idx_admin_audit_created      ON public.admin_audit_log (created_at 
 -- payments
 CREATE INDEX idx_payments_user_created    ON public.payments (user_id, created_at DESC);
 CREATE INDEX idx_payments_provider_tx     ON public.payments (provider, transaction_id);
+CREATE INDEX idx_payments_subscription    ON public.payments (provider, subscription_id) WHERE subscription_id IS NOT NULL;
+CREATE INDEX idx_payment_subs_user        ON public.payment_subscriptions (user_id);
 
 -- posts
 CREATE INDEX idx_posts_user_id            ON public.posts (user_id);

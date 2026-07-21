@@ -15,9 +15,17 @@ export async function POST(request: NextRequest) {
       status: payment.status,
       transactionId: payment.transactionId,
       updated: result.updated,
+      // An unattributed payment is recorded, not retried - the row is the reconciliation
+      // handle, and further redeliveries would never find a user either.
+      ...("orphaned" in result && result.orphaned ? { orphaned: true } : {}),
+      ...("revoked" in result && result.revoked ? { revoked: true } : {}),
+      ...("cancelled" in result && result.cancelled ? { cancelled: true } : {}),
     })
   } catch (error) {
     const message = (error as Error).message || "payment_webhook_failed"
+    if (message === "lemonsqueezy_event_ignored") {
+      return NextResponse.json({ ok: true, ignored: true })
+    }
     console.error("payment_webhook_failed", { message })
     const status = message === "payment_signature_invalid" ? 401 : message === "unsupported_payment_provider" ? 400 : 422
     return NextResponse.json({ ok: false, error: message }, { status })

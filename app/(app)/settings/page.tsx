@@ -7,7 +7,7 @@ import { useSession, signOut } from "next-auth/react"
 import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { PLAN_PRICES, formatPkr, annualFraming } from "@/lib/pricing"
+import { PLAN_PRICES, formatPkr, annualFraming, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -53,7 +53,7 @@ export default function SettingsPage() {
   const [disconnecting, setDisconnecting] = useState(false)
   const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
   const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
-  const [userData, setUserData] = useState<{ email: string; name: string; role: string; authProvider: string } | null>(null)
+  const [userData, setUserData] = useState<{ id: string; email: string; name: string; role: string; authProvider: string } | null>(null)
   const [accountDraft, setAccountDraft] = useState({ name: "", role: "", industry: "", goals: "" })
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [accountError, setAccountError] = useState<string | null>(null)
@@ -248,6 +248,10 @@ export default function SettingsPage() {
   const isLinkedInConnected = Boolean(linkedinProfile)
 
   const mailHref = upgradesMailUrl(billingDraft.plan, user?.email || "")
+  const checkoutUrl = getLemonSqueezyCheckoutUrl(billingDraft.plan, billingDraft.billingCycle, {
+    userId: userData?.id,
+    email: userData?.email || user?.email,
+  })
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
@@ -382,21 +386,44 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="p-4">
-                <ol className="space-y-2 text-sm text-amber-800">
-                  <li className="flex gap-2"><span className="font-bold">1.</span>Email us - we confirm the amount and send payment details.</li>
-                  <li className="flex gap-2"><span className="font-bold">2.</span>Pay via Easypaisa, JazzCash, or bank transfer.</li>
-                  <li className="flex gap-2"><span className="font-bold">3.</span>Send your payment screenshot in the same thread.</li>
-                  <li className="flex gap-2"><span className="font-bold">4.</span>Your workspace plan is updated within 24 hours.</li>
-                </ol>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <a
-                    href={mailHref}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
-                  >
-                    Email {UPGRADES_EMAIL}
-                  </a>
-                </div>
-                <p className="mt-3 text-xs text-amber-600">Automated checkout is being built. Manual onboarding is the current path - your plan access is confirmed by our team after payment.</p>
+                {checkoutUrl ? (
+                  <>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <a
+                        href={checkoutUrl}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
+                      >
+                        Pay with card - activates instantly
+                      </a>
+                    </div>
+                    <p className="mt-2 text-xs text-amber-600">Processed via Lemon Squeezy - card charged in USD.</p>
+                    <p className="mt-3 text-xs text-amber-700">
+                      Card not working?{" "}
+                      <a href={mailHref} className="font-semibold underline hover:text-amber-900">
+                        Email {UPGRADES_EMAIL}
+                      </a>{" "}
+                      to pay via Easypaisa, JazzCash, or bank transfer instead.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <ol className="space-y-2 text-sm text-amber-800">
+                      <li className="flex gap-2"><span className="font-bold">1.</span>Email us - we confirm the amount and send payment details.</li>
+                      <li className="flex gap-2"><span className="font-bold">2.</span>Pay via Easypaisa, JazzCash, or bank transfer.</li>
+                      <li className="flex gap-2"><span className="font-bold">3.</span>Send your payment screenshot in the same thread.</li>
+                      <li className="flex gap-2"><span className="font-bold">4.</span>Your workspace plan is updated within 24 hours.</li>
+                    </ol>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <a
+                        href={mailHref}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
+                      >
+                        Email {UPGRADES_EMAIL}
+                      </a>
+                    </div>
+                    <p className="mt-3 text-xs text-amber-600">Self-serve checkout for this plan is not available yet. Manual onboarding is the current path - your plan access is confirmed by our team after payment.</p>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -461,7 +488,7 @@ export default function SettingsPage() {
             <MiniStat label="Scheduled" value={String(scheduled.length)} />
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Billing upgrades are manual until automated checkout is live.</p>
+          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro upgrade instantly via card checkout - other plans are confirmed manually.</p>
         </section>
       </div>
       {/* Account + Password */}
