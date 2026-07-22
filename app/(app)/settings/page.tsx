@@ -60,6 +60,15 @@ export default function SettingsPage() {
   const [accountError, setAccountError] = useState<string | null>(null)
   const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number }; planExpiresAt?: string | null } | null>(null)
   const [checkoutToken, setCheckoutToken] = useState<string | null>(null)
+  const [billingHistory, setBillingHistory] = useState<{
+    id: string
+    planName: string
+    billingCycle: "monthly" | "annual"
+    amount: number
+    currency: string
+    status: "paid" | "failed" | "cancelled" | "refunded"
+    processedAt: string
+  }[] | null>(null)
   const [cancelState, setCancelState] = useState<"idle" | "loading" | "done" | "error">("idle")
   const [cancelMessage, setCancelMessage] = useState<string | null>(null)
   const [passwordDraft, setPasswordDraft] = useState({ current: "", new: "", confirm: "" })
@@ -100,6 +109,10 @@ export default function SettingsPage() {
         if (data.drafts) setPlanUsage({ drafts: data.drafts, carousels: data.carousels, planExpiresAt: data.planExpiresAt })
       })
       .catch(() => {})
+    fetch("/api/billing/history")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => setBillingHistory(data.payments || []))
+      .catch(() => setBillingHistory([]))
   }, [])
 
   useEffect(() => {
@@ -695,13 +708,39 @@ export default function SettingsPage() {
               <span>Status</span>
             </div>
             <div className="divide-y divide-zinc-100">
-              <div className="px-4 py-8 text-center text-sm text-zinc-400">
-                No billing records yet.
-              </div>
+              {billingHistory === null ? (
+                <div className="px-4 py-8 text-center text-sm text-zinc-400">Loading...</div>
+              ) : billingHistory.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-zinc-400">No billing records yet.</div>
+              ) : (
+                billingHistory.map((payment) => (
+                  <div key={payment.id} className="grid grid-cols-4 px-4 py-3 text-sm">
+                    <span className="text-zinc-600">{new Date(payment.processedAt).toLocaleDateString()}</span>
+                    <span className="text-zinc-900">
+                      {payment.planName}
+                      <span className="ml-1 text-xs text-zinc-400">({payment.billingCycle})</span>
+                    </span>
+                    <span className="text-zinc-900">
+                      {payment.amount > 0 ? `${payment.currency} ${payment.amount.toLocaleString()}` : "-"}
+                    </span>
+                    <span
+                      className={`font-medium capitalize ${
+                        payment.status === "paid"
+                          ? "text-emerald-600"
+                          : payment.status === "failed"
+                            ? "text-red-600"
+                            : "text-zinc-500"
+                      }`}
+                    >
+                      {payment.status}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
           <p className="mt-3 text-xs text-zinc-400">
-            Billing history will appear here once automated checkout is live. For manual payments, contact{" "}
+            Records reflect automated Lemon Squeezy checkouts. For manual payments, contact{" "}
             <a href="mailto:info@byqalam.com" className="underline hover:text-zinc-600">info@byqalam.com</a>.
           </p>
         </section>
