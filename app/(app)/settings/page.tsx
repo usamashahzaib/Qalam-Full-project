@@ -8,6 +8,7 @@ import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { PLAN_PRICES, formatPkr, annualFraming, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
+import { SITE_URL } from "@/lib/seo"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -58,6 +59,9 @@ export default function SettingsPage() {
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [accountError, setAccountError] = useState<string | null>(null)
   const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number }; planExpiresAt?: string | null } | null>(null)
+  const [checkoutToken, setCheckoutToken] = useState<string | null>(null)
+  const [cancelState, setCancelState] = useState<"idle" | "loading" | "done" | "error">("idle")
+  const [cancelMessage, setCancelMessage] = useState<string | null>(null)
   const [passwordDraft, setPasswordDraft] = useState({ current: "", new: "", confirm: "" })
   const [passwordStatus, setPasswordStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -85,6 +89,10 @@ export default function SettingsPage() {
           setAccountDraft((prev) => ({ ...prev, name: data.user.name || "", role: data.user.role || "" }))
         }
       })
+      .catch(() => {})
+    fetch("/api/billing/checkout-token")
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => { if (data.token) setCheckoutToken(data.token) })
       .catch(() => {})
     fetch("/plan/status")
       .then((res) => res.json())
@@ -127,6 +135,30 @@ export default function SettingsPage() {
   }, [billing])
 
   const onSaveBilling = () => saveBilling(billingDraft)
+
+  const onCancelSubscription = async () => {
+    if (!confirm("Cancel your subscription? You'll keep access until the end of your current billing period, then your workspace drops to Free.")) return
+    setCancelState("loading")
+    setCancelMessage(null)
+    try {
+      const res = await fetch("/api/billing/cancel", { method: "POST" })
+      const json = await res.json()
+      if (!res.ok) {
+        setCancelState("error")
+        setCancelMessage(json.error ?? "Something went wrong. Please try again.")
+        return
+      }
+      setCancelState("done")
+      setCancelMessage(
+        json.endsAt
+          ? `Cancellation confirmed. You keep full access until ${new Date(json.endsAt).toDateString()}.`
+          : "Cancellation confirmed. You keep full access until the end of your current billing period."
+      )
+    } catch {
+      setCancelState("error")
+      setCancelMessage("Network error. Check your connection and try again.")
+    }
+  }
 
   const onDisconnectLinkedIn = async () => {
     if (!confirm("Disconnect LinkedIn? This removes the saved publishing token and you will need to reconnect.")) return
@@ -251,6 +283,7 @@ export default function SettingsPage() {
   const checkoutUrl = getLemonSqueezyCheckoutUrl(billingDraft.plan, billingDraft.billingCycle, {
     userId: userData?.id,
     email: userData?.email || user?.email,
+    checkoutToken,
   })
 
   return (
@@ -430,8 +463,20 @@ export default function SettingsPage() {
 
           <div className="flex flex-wrap gap-3">
             <button onClick={onSaveBilling} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50">Save preference</button>
-            <Link href="/pricing" className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
+            <Link href={`${SITE_URL}/pricing`} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
+            {billing.plan !== "Free" && cancelState !== "done" && (
+              <button
+                onClick={onCancelSubscription}
+                disabled={cancelState === "loading"}
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {cancelState === "loading" ? "Cancelling..." : "Cancel subscription"}
+              </button>
+            )}
           </div>
+          {cancelMessage && (
+            <p className={`mt-3 text-xs font-medium ${cancelState === "error" ? "text-red-600" : "text-emerald-700"}`}>{cancelMessage}</p>
+          )}
         </section>
       </div>
 

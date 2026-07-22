@@ -20,6 +20,7 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="text-center">
+        <h1 className="mb-2 text-2xl font-bold text-zinc-900">Invalid reset link</h1>
         <p className="mb-4 text-sm text-zinc-600">
           This reset link is invalid or has expired.
         </p>

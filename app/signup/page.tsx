@@ -7,6 +7,7 @@ import { QalamLogo } from "@/components/QalamLogo"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
 import { ReferralBanner, readPendingReferralCode, clearPendingReferralCode } from "@/components/ReferralBanner"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 
 const ROLES = [
   "Consultant",
@@ -17,7 +18,7 @@ const ROLES = [
   "Other",
 ]
 
-type PageState = "form" | "success"
+type PageState = "form" | "success" | "email_failed"
 
 export default function SignupPage() {
   const [pageState, setPageState] = useState<PageState>("form")
@@ -57,7 +58,7 @@ export default function SignupPage() {
         setError(data.error || "Something went wrong. Please try again.")
       } else {
         clearPendingReferralCode()
-        setPageState("success")
+        setPageState(data.emailFailed ? "email_failed" : "success")
       }
     } catch {
       setError("Could not connect to the server. Please try again.")
@@ -83,7 +84,31 @@ export default function SignupPage() {
         </div>
 
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-          {pageState === "success" ? (
+          {pageState === "email_failed" ? (
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200 bg-amber-50">
+                <svg className="h-7 w-7 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+              </div>
+              <h2 className="mb-2 text-xl font-bold text-zinc-900">Account created - verification email did not send</h2>
+              <p className="mb-6 text-sm leading-relaxed text-zinc-500">
+                Your account for{" "}
+                <span className="font-semibold text-zinc-700">{email}</span>{" "}
+                was created, but we could not send the verification email. Contact{" "}
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold text-teal hover:underline">
+                  {SUPPORT_EMAIL}
+                </a>{" "}
+                to verify your address and activate your account.
+              </p>
+              <Link
+                href="/login"
+                className="block w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-center text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50"
+              >
+                Go to sign in
+              </Link>
+            </div>
+          ) : pageState === "success" ? (
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50">
                 <svg className="h-7 w-7 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

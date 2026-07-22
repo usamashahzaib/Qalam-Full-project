@@ -214,8 +214,8 @@ export function GET() {
     "",
     "## Social presence",
     "",
-    "- LinkedIn: https://www.linkedin.com/company/byqalam",
-    "- Instagram: https://www.instagram.com/byyqalam",
+    "- LinkedIn: https://www.linkedin.com/company/withqalam",
+    "- Instagram: https://www.instagram.com/withqalam",
     "- Contact: info@byqalam.com",
   ].join("\n")
 

@@ -268,6 +268,8 @@ export function CarouselBuilderTool() {
                           key={swatch.label}
                           onClick={() => { setAccentOverride(swatch.value); setCustomAccent("") }}
                           title={swatch.label}
+                          aria-label={`${swatch.label} accent color`}
+                          aria-pressed={accentOverride === swatch.value && !customAccent}
                           className={`w-7 h-7 rounded-full border-2 transition-all ${accentOverride === swatch.value && !customAccent ? "border-teal scale-110 shadow-md" : "border-zinc-200 hover:border-zinc-400"}`}
                           style={{ background: swatch.value || resolveTheme(themeId).accentColor }}
                         />
@@ -378,6 +380,8 @@ export function CarouselBuilderTool() {
                     <button
                       key={i}
                       onClick={() => setActiveSlide(i)}
+                      aria-label={`Slide ${i + 1} of ${slides.length}`}
+                      aria-current={activeSlide === i}
                       className={`shrink-0 rounded-xl border-2 transition-all overflow-hidden ${
                         activeSlide === i ? "border-teal shadow-md" : i > 0 ? "border-zinc-300" : "border-zinc-200 hover:border-zinc-300"
                       }`}

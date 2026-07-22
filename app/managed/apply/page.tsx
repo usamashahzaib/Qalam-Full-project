@@ -20,6 +20,7 @@ export default async function ManagedApplyPage({
   const params = await searchParams
   const requestedPlan = typeof params.plan === "string" ? params.plan : undefined
   const defaultPackage = MANAGED_PLANS.find((p) => p.name === requestedPlan)?.name
+  const defaultAccountType = params.type === "company" ? "company" : "individual"
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
@@ -60,7 +61,7 @@ export default async function ManagedApplyPage({
           </FadeUp>
 
           <FadeUp delay={0.08}>
-            <ManagedApplyForm defaultPackage={defaultPackage} />
+            <ManagedApplyForm defaultPackage={defaultPackage} defaultAccountType={defaultAccountType} />
           </FadeUp>
         </div>
       </section>

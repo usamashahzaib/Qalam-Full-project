@@ -1018,8 +1018,12 @@ CREATE OR REPLACE FUNCTION public.activate_plan(
   p_customer_id     TEXT
 ) RETURNS VOID LANGUAGE plpgsql AS $$
 BEGIN
+  -- customer_id must be persisted on users too (migration 0055) - personal-workspace
+  -- users (no organization) previously never got it recorded on this, the primary,
+  -- code path; only the JS fallback (taken when this RPC is missing) ever wrote it.
   UPDATE public.users
-  SET plan = p_plan_name, plan_expires_at = p_expires_at, updated_at = now()
+  SET plan = p_plan_name, plan_expires_at = p_expires_at,
+      customer_id = COALESCE(p_customer_id, customer_id), updated_at = now()
   WHERE id = p_user_id;
 
   IF p_organization_id IS NOT NULL THEN

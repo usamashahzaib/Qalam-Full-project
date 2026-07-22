@@ -82,8 +82,8 @@ export const buildOrganizationSchema = () => ({
   url: SITE_URL,
   logo: `${SITE_URL}/qalam-mark.png`,
   sameAs: [
-    "https://www.linkedin.com/company/byqalam",
-    "https://www.instagram.com/byyqalam",
+    "https://www.linkedin.com/company/withqalam",
+    "https://www.instagram.com/withqalam",
   ],
 })
 

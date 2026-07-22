@@ -11,9 +11,10 @@ const inputClass =
 
 const labelClass = "mb-1.5 block text-sm font-semibold text-zinc-700"
 
-export function ManagedApplyForm({ defaultPackage }: { defaultPackage?: string }) {
+export function ManagedApplyForm({ defaultPackage, defaultAccountType }: { defaultPackage?: string; defaultAccountType?: "individual" | "company" }) {
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState<string | null>(null)
+  const [accountType, setAccountType] = useState<"individual" | "company">(defaultAccountType || "individual")
   const formRef = useRef<HTMLFormElement>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -47,9 +48,32 @@ export function ManagedApplyForm({ defaultPackage }: { defaultPackage?: string }
     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
       <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-gold">Apply for Managed Services</p>
       <h2 className="mb-1 text-2xl font-bold text-zinc-900">Tell us about your account</h2>
-      <p className="mb-7 text-sm leading-relaxed text-zinc-500">
+      <p className="mb-6 text-sm leading-relaxed text-zinc-500">
         We read every application personally and reply within one business day with next steps and pricing confirmation.
       </p>
+
+      <div className="mb-7 grid grid-cols-2 gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+        <button
+          type="button"
+          onClick={() => setAccountType("individual")}
+          disabled={state === "loading"}
+          className={`rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 ${
+            accountType === "individual" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+          }`}
+        >
+          Individual
+        </button>
+        <button
+          type="button"
+          onClick={() => setAccountType("company")}
+          disabled={state === "loading"}
+          className={`rounded-lg py-2.5 text-sm font-semibold transition-all duration-150 ${
+            accountType === "company" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700"
+          }`}
+        >
+          Company
+        </button>
+      </div>
 
       <AnimatePresence mode="wait">
         {state === "success" ? (
@@ -79,7 +103,7 @@ export function ManagedApplyForm({ defaultPackage }: { defaultPackage?: string }
           </motion.div>
         ) : (
           <motion.form
-            key="form"
+            key={`form-${accountType}`}
             ref={formRef}
             onSubmit={handleSubmit}
             noValidate
@@ -89,9 +113,11 @@ export function ManagedApplyForm({ defaultPackage }: { defaultPackage?: string }
             transition={{ duration: 0.2 }}
             className="flex flex-col gap-5"
           >
+            <input type="hidden" name="accountType" value={accountType} />
+
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label htmlFor="managed-name" className={labelClass}>Name</label>
+                <label htmlFor="managed-name" className={labelClass}>{accountType === "company" ? "Contact name" : "Name"}</label>
                 <input id="managed-name" name="name" type="text" maxLength={100} required placeholder="Your full name" className={inputClass} disabled={state === "loading"} />
               </div>
               <div>
@@ -100,16 +126,30 @@ export function ManagedApplyForm({ defaultPackage }: { defaultPackage?: string }
               </div>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div>
-                <label htmlFor="managed-company" className={labelClass}>Company (optional)</label>
-                <input id="managed-company" name="company" type="text" maxLength={150} placeholder="Your company or brand" className={inputClass} disabled={state === "loading"} />
+            {accountType === "company" ? (
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="managed-company" className={labelClass}>Company name</label>
+                  <input id="managed-company" name="company" type="text" maxLength={150} required placeholder="Your company or brand" className={inputClass} disabled={state === "loading"} />
+                </div>
+                <div>
+                  <label htmlFor="managed-team-size" className={labelClass}>Team size / LinkedIn profiles to manage</label>
+                  <input id="managed-team-size" name="teamSize" type="text" maxLength={50} placeholder="e.g. 3 executives" className={inputClass} disabled={state === "loading"} />
+                </div>
               </div>
+            ) : (
               <div>
                 <label htmlFor="managed-linkedin" className={labelClass}>LinkedIn profile URL</label>
                 <input id="managed-linkedin" name="linkedinUrl" type="url" maxLength={300} placeholder="https://linkedin.com/in/you" className={inputClass} disabled={state === "loading"} />
               </div>
-            </div>
+            )}
+
+            {accountType === "company" ? (
+              <div>
+                <label htmlFor="managed-linkedin" className={labelClass}>Primary LinkedIn profile URL (optional)</label>
+                <input id="managed-linkedin" name="linkedinUrl" type="url" maxLength={300} placeholder="https://linkedin.com/in/your-exec" className={inputClass} disabled={state === "loading"} />
+              </div>
+            ) : null}
 
             <div>
               <label htmlFor="managed-package" className={labelClass}>Package</label>

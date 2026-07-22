@@ -8,7 +8,7 @@ import { useLoginPanel } from "@/components/providers/AuthPanelContext"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
-import { APP_URL } from "@/lib/seo"
+import { APP_URL, SITE_URL } from "@/lib/seo"
 
 function XIcon() {
   return (
@@ -125,11 +125,11 @@ export function AuthSlidePanel() {
 
                 <p className="mt-8 text-center text-xs text-zinc-400">
                   By continuing, you agree to our{" "}
-                  <Link href="/legal/terms" onClick={closePanel} className="underline hover:text-zinc-600">
+                  <Link href={`${SITE_URL}/legal/terms`} onClick={closePanel} className="underline hover:text-zinc-600">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/legal/privacy" onClick={closePanel} className="underline hover:text-zinc-600">
+                  <Link href={`${SITE_URL}/legal/privacy`} onClick={closePanel} className="underline hover:text-zinc-600">
                     Privacy Policy
                   </Link>
                   .

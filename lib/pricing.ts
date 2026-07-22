@@ -330,14 +330,20 @@ export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; bi
 export function getLemonSqueezyCheckoutUrl(
   planName: string,
   billingCycle: BillingCycle,
-  buyer?: { userId?: string | null; email?: string | null }
+  buyer?: { userId?: string | null; email?: string | null; checkoutToken?: string | null }
 ): string | null {
   const base = LEMONSQUEEZY_CHECKOUT_URLS[planName as PlanName]?.[billingCycle]
   if (!base) return null
 
   const params = new URLSearchParams()
   if (buyer?.email) params.set("checkout[email]", buyer.email)
+  // checkout[custom][user_id] and checkout[email] are plain query params the buyer's
+  // browser can freely edit before submitting - they are convenience pre-fills, never
+  // proof of identity. checkout[custom][token] is a short-lived, server-signed token
+  // (see lib/server/checkout-token.ts) minted for the caller's own authenticated
+  // session; the webhook trusts ONLY this token to attribute a payment to an account.
   if (buyer?.userId) params.set("checkout[custom][user_id]", buyer.userId)
+  if (buyer?.checkoutToken) params.set("checkout[custom][token]", buyer.checkoutToken)
   // Stamp plan + cycle into custom_data so the webhook can still resolve the plan on
   // renewal invoices, which do not carry a variant_id. The webhook always prefers the
   // signed variant_id when present, so this is a fallback and never an override vector.

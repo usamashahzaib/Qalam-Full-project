@@ -4,6 +4,8 @@ import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
 import { supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
+import { cancelLemonSqueezySubscription } from "@/lib/server/lemonsqueezy-api"
+import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
 import { plans as PRICING_PLANS, LEMONSQUEEZY_VARIANT_PLANS, type PlanName } from "@/lib/pricing"
 
@@ -338,10 +340,20 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
     ? `${lsEventName}:${String(lsData.id)}`
     : textValue(lsData.id)
 
+  // checkout[custom][user_id] and checkout[email] are plain buyer-editable query params -
+  // Lemon Squeezy's HMAC proves the webhook payload is genuinely theirs, not that this
+  // content is truthful. checkout[custom][token] is a short-lived token this app itself
+  // signed server-side for the checkout initiator's own authenticated session (see
+  // lib/server/checkout-token.ts) - it is the only trustworthy identity signal Lemon
+  // Squeezy round-trips back to us, so it is the only one used to attribute a payment.
+  const lsVerifiedUserId = provider === "lemonsqueezy" ? verifyCheckoutToken(textValue(lsCustomData.token)) : null
+
   const extracted: VerifiedPayment = {
     provider,
     status,
-    userId: textValue(metadata.user_id, metadata.userId, body.user_id, body.userId, stripe.client_reference_id, lsCustomData.user_id, lsCustomData.userId),
+    userId: provider === "lemonsqueezy"
+      ? (lsVerifiedUserId || "")
+      : textValue(metadata.user_id, metadata.userId, body.user_id, body.userId, stripe.client_reference_id),
     userEmail: textValue(metadata.email, body.email, body.user_email, stripe.customer_email, lsCustomData.email, lsAttrs.user_email),
     amount,
     currency: textValue(stripe.currency, body.currency, body.pp_Currency, lsAttrs.currency) || "PKR",
@@ -378,6 +390,14 @@ const getUser = async (payment: VerifiedPayment, subscription: SubscriptionRow |
     const byId = await supabaseSelect<UserRow>("users", `id=eq.${encodeURIComponent(candidateId)}&select=id,email&limit=1`)
     if (byId[0]) return byId[0]
   }
+  // Lemon Squeezy's checkout[email] is just as buyer-editable as checkout[custom][user_id] -
+  // once a subscription is established, subscription.user_id (from the earlier
+  // token-verified activation) already covers renewals. For a brand-new subscription with
+  // no verified token, falling back to an email match would let an attacker attribute their
+  // own payment to any existing account by simply typing that account's email into the
+  // checkout form - so there is no safe fallback for Lemon Squeezy here; treat it as
+  // unattributed instead of guessing.
+  if (payment.provider === "lemonsqueezy") return null
   if (!payment.userEmail) return null
   const byEmail = await supabaseSelect<UserRow>("users", `email=eq.${encodeURIComponent(payment.userEmail.trim().toLowerCase())}&select=id,email&limit=1`)
   return byEmail[0] || null
@@ -531,6 +551,27 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   // A deliberate cancellation is not a failure: auto-renew stops, but the period already
   // paid for is honoured. Only correct the expiry to the provider's own end date.
   if (payment.status === "cancelled") {
+    // A plan upgrade/downgrade activates a brand-new Lemon Squeezy subscription and
+    // auto-cancels the old one (see the stale-subscription cleanup below), which makes
+    // the old subscription's own cancellation webhook arrive around the same time the
+    // new plan is already active. That event is about a subscription the account has
+    // already moved on from - applying its expiry/email here would clobber the new
+    // plan's real expiry with the old plan's end date. Only act on a cancellation when
+    // it is the account's sole/most-recent Lemon Squeezy subscription; if another one
+    // is still active, this is the superseded one and there's nothing to apply here.
+    if (payment.provider === "lemonsqueezy" && payment.subscriptionId) {
+      const otherActive = await supabaseSelect<{ subscription_id: string }>(
+        "payment_subscriptions",
+        `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(payment.subscriptionId)}&select=subscription_id&limit=1`
+      ).catch((err: unknown) => {
+        log.error("payments.other_subscription_lookup_failed", { userId: user.id, error: (err as Error).message })
+        return []
+      })
+      if (otherActive.length > 0) {
+        log.info("payments.superseded_subscription_cancelled", { provider: payment.provider, subscriptionId: payment.subscriptionId })
+        return { updated: false, cancelled: true, user, organizationId }
+      }
+    }
     if (payment.periodEndsAt) {
       await createServiceClient()
         .from("users")
@@ -615,6 +656,38 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     subject: `Qalam ${planName} activated`,
     text: `Your ${planName} plan is active until ${expiresAt ? new Date(expiresAt).toDateString() : "your billing renewal"}.`,
   }).catch(() => undefined)
+
+  // Solo and Pro are separate hosted checkout links, each its own Lemon Squeezy
+  // product - clicking "Upgrade to Pro" while on Solo starts a brand-new
+  // subscription rather than modifying the old one. Left alone, both would keep
+  // renewing and the customer would be billed twice every cycle. Whichever
+  // subscription just got activated above is the one to keep; cancel any other
+  // still-active Lemon Squeezy subscription on this account so it stops renewing.
+  //
+  // `user` here is only ever resolved via a token-verified user id (see getUser()
+  // and the checkout[custom][token] handling in verifyAndExtractPayment) or a
+  // subscription record established by an earlier token-verified activation -
+  // never from buyer-editable checkout[custom][user_id]/checkout[email] alone -
+  // so it is safe to act on "another active subscription for this user" here.
+  if (payment.provider === "lemonsqueezy" && payment.subscriptionId) {
+    const staleSubscriptions = await supabaseSelect<{ subscription_id: string }>(
+      "payment_subscriptions",
+      `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(payment.subscriptionId)}&select=subscription_id`
+    ).catch((err: unknown) => {
+      log.error("payments.stale_subscription_lookup_failed", { userId: user.id, error: (err as Error).message })
+      return []
+    })
+
+    for (const stale of staleSubscriptions) {
+      await cancelLemonSqueezySubscription(stale.subscription_id)
+        .then(() => log.info("payments.stale_subscription_cancelled", { userId: user.id, subscriptionId: stale.subscription_id }))
+        .catch((err: unknown) => log.error("payments.stale_subscription_cancel_failed", {
+          userId: user.id,
+          subscriptionId: stale.subscription_id,
+          error: (err as Error).message,
+        }))
+    }
+  }
 
   return { updated: true, user, organizationId, expiresAt }
 }

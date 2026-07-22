@@ -105,6 +105,7 @@ const productSchema = {
   "@type": "Product",
   name: "Qalam",
   description: "AI LinkedIn writing system with voice memory, hook archives, draft history, scheduling, and approval workflows.",
+  image: `${SITE_URL}/qalam-mark.png`,
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },
   offers: [

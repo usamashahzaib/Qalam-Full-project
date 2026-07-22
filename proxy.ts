@@ -138,7 +138,6 @@ const PROTECTED_ROUTES = [
   "/voice",
   "/settings",
   "/agency",
-  "/agency-setup",
   "/competitors",
   "/calendar",
   "/approvals",

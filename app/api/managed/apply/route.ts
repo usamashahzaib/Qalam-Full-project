@@ -27,9 +27,11 @@ export async function POST(req: NextRequest) {
   const name = String(body.name ?? "").trim()
   const email = String(body.email ?? "").trim().toLowerCase()
   const company = String(body.company ?? "").trim()
+  const teamSize = String(body.teamSize ?? "").trim()
   const linkedinUrl = String(body.linkedinUrl ?? "").trim()
   const pkg = String(body.package ?? "").trim()
   const message = String(body.message ?? "").trim()
+  const accountType = body.accountType === "company" ? "company" : "individual"
 
   if (!name || name.length < 2) {
     return NextResponse.json({ error: "Enter your full name." }, { status: 400 })
@@ -40,6 +42,9 @@ export async function POST(req: NextRequest) {
   if (!MANAGED_PACKAGE_NAMES.has(pkg)) {
     return NextResponse.json({ error: "Choose a managed package." }, { status: 400 })
   }
+  if (accountType === "company" && (!company || company.length < 2)) {
+    return NextResponse.json({ error: "Enter your company name." }, { status: 400 })
+  }
   if (linkedinUrl && !/^https?:\/\/(www\.)?linkedin\.com\//i.test(linkedinUrl)) {
     return NextResponse.json({ error: "LinkedIn URL must be a linkedin.com link." }, { status: 400 })
   }
@@ -47,7 +52,18 @@ export async function POST(req: NextRequest) {
   try {
     await supabaseInsert(
       "managed_leads",
-      { name, email, company: company || null, linkedin_url: linkedinUrl || null, package: pkg, message: message || null, ip, created_at: new Date().toISOString() },
+      {
+        name,
+        email,
+        company: company || null,
+        team_size: teamSize || null,
+        account_type: accountType,
+        linkedin_url: linkedinUrl || null,
+        package: pkg,
+        message: message || null,
+        ip,
+        created_at: new Date().toISOString(),
+      },
       "return=minimal",
     )
   } catch (err) {
@@ -59,15 +75,16 @@ export async function POST(req: NextRequest) {
 
   await sendTransactionalEmail({
     to: UPGRADES_EMAIL,
-    subject: `[Managed Services] ${pkg} - ${name}`,
+    subject: `[Managed Services - ${accountType === "company" ? "Company" : "Individual"}] ${pkg} - ${name}`,
     text: [
-      `New Managed Services application`,
+      `New Managed Services application (${accountType})`,
       ``,
-      `Name:     ${name}`,
-      `Email:    ${email}`,
-      `Company:  ${company || "-"}`,
-      `LinkedIn: ${linkedinUrl || "-"}`,
-      `Package:  ${pkg}`,
+      `Name:      ${name}`,
+      `Email:     ${email}`,
+      `Company:   ${company || "-"}`,
+      `Team size: ${teamSize || "-"}`,
+      `LinkedIn:  ${linkedinUrl || "-"}`,
+      `Package:   ${pkg}`,
       ``,
       `Message:`,
       message || "-",

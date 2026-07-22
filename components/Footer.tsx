@@ -68,10 +68,10 @@ export function Footer() {
               The publishing system that learns your voice, stores your archive, and turns ideas into authority over time.
             </p>
             <div className="flex gap-2">
-              <SocialLink href="https://www.instagram.com/byyqalam" label="Instagram">
+              <SocialLink href="https://www.instagram.com/withqalam" label="Instagram">
                 <InstagramIcon className="h-4 w-4" />
               </SocialLink>
-              <SocialLink href="https://www.linkedin.com/company/byqalam" label="LinkedIn">
+              <SocialLink href="https://www.linkedin.com/company/withqalam" label="LinkedIn">
                 <LinkedInIcon className="h-4 w-4" />
               </SocialLink>
             </div>

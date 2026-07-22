@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { SITE_URL } from "@/lib/seo"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CommandMenu } from "@/components/CommandMenu"
 
@@ -452,12 +453,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="qalam-app-canvas app-content pl-0 md:pl-64">
         {billing.planExpired ? (
           <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
-            Your plan expired. You are back on Free. <Link href="/pricing" className="underline underline-offset-2">Renew your plan</Link>
+            Your plan expired. You are back on Free. <Link href={`${SITE_URL}/pricing`} className="underline underline-offset-2">Renew your plan</Link>
           </div>
         ) : null}
         {billing.complimentaryTrialBanner ? (
           <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900">
-            You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href="/pricing" className="underline underline-offset-2">Upgrade to keep these features</Link>
+            You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href={`${SITE_URL}/pricing`} className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}
         <div className="app-content animate-fade-in">{children}</div>

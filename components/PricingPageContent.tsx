@@ -92,16 +92,28 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           ))}
         </ul>
 
-        <Link
-          href={`/managed/apply?plan=${encodeURIComponent(plan.name)}`}
-          className={`w-full rounded-xl py-3.5 text-center text-sm font-bold transition-all duration-200 ${
-            isPremium
-              ? "bg-gold text-white shadow-sm hover:bg-amber-600"
-              : "bg-teal-50 text-teal hover:bg-teal hover:text-white"
-          }`}
-        >
-          {isPremium ? "Apply for Premium" : "Get Managed"}
-        </Link>
+        <div className="grid grid-cols-2 gap-2.5">
+          <Link
+            href={`/managed/apply?plan=${encodeURIComponent(plan.name)}&type=individual`}
+            className={`rounded-xl py-3.5 text-center text-sm font-bold transition-all duration-200 ${
+              isPremium
+                ? "bg-gold text-white shadow-sm hover:bg-amber-600"
+                : "bg-teal-50 text-teal hover:bg-teal hover:text-white"
+            }`}
+          >
+            Individual
+          </Link>
+          <Link
+            href={`/managed/apply?plan=${encodeURIComponent(plan.name)}&type=company`}
+            className={`rounded-xl border py-3.5 text-center text-sm font-bold transition-all duration-200 ${
+              isPremium
+                ? "border-gold/50 text-gold-600 hover:bg-gold/10"
+                : "border-teal/40 text-teal hover:bg-teal-50"
+            }`}
+          >
+            Company
+          </Link>
+        </div>
         <p className="mt-3 text-center text-[10px] text-zinc-400">Response within one business day</p>
       </motion.div>
     </motion.div>
@@ -115,7 +127,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
-  const [buyer, setBuyer] = useState<{ userId?: string; email?: string }>({})
+  const [buyer, setBuyer] = useState<{ userId?: string; email?: string; checkoutToken?: string }>({})
   const searchParams = useSearchParams()
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
     searchParams.get("tab") === "managed" ? "managed" : "selfserve"
@@ -127,8 +139,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
         if (data.user?.plan) setCurrentPlan(data.user.plan)
-        if (data.user?.id || data.user?.email) setBuyer({ userId: data.user.id, email: data.user.email })
+        if (data.user?.id || data.user?.email) setBuyer((prev) => ({ ...prev, userId: data.user.id, email: data.user.email }))
       })
+      .catch(() => {})
+    fetch("/api/billing/checkout-token")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => { if (data.token) setBuyer((prev) => ({ ...prev, checkoutToken: data.token })) })
       .catch(() => {})
     fetch("/api/referrals/stats")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -325,6 +341,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                   <button
                     role="switch"
                     aria-checked={billing === "annual"}
+                    aria-label="Toggle annual billing"
                     onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 ${
                       billing === "annual" ? "bg-teal" : "bg-zinc-300"

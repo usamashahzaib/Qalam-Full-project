@@ -32,8 +32,8 @@ const contactPageSchema = {
     url: "https://www.byqalam.com",
     email: "info@byqalam.com",
     sameAs: [
-      "https://www.linkedin.com/company/byqalam",
-      "https://www.instagram.com/byyqalam",
+      "https://www.linkedin.com/company/withqalam",
+      "https://www.instagram.com/withqalam",
     ],
   },
 }
