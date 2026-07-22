@@ -5,10 +5,10 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
+import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { PLAN_PRICES, formatPkr, annualFraming, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
-import { SITE_URL } from "@/lib/seo"
+import { PLAN_PRICES, formatPkr, annualFraming } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -40,6 +40,7 @@ export default function SettingsPage() {
       }
     : null
   const { billing, saveBilling } = useBilling()
+  const { openCheckout, state: checkoutState } = usePlanCheckout()
   const { profile, saveProfile, isLoadingProfile } = useProfile()
   const { posts, drafts, scheduled, postsError } = usePosts()
   const isLinkedInUser = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
@@ -59,7 +60,6 @@ export default function SettingsPage() {
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
   const [accountError, setAccountError] = useState<string | null>(null)
   const [planUsage, setPlanUsage] = useState<{ drafts: { used: number; limit: number }; carousels: { used: number; limit: number }; planExpiresAt?: string | null } | null>(null)
-  const [checkoutToken, setCheckoutToken] = useState<string | null>(null)
   const [billingHistory, setBillingHistory] = useState<{
     id: string
     planName: string
@@ -98,10 +98,6 @@ export default function SettingsPage() {
           setAccountDraft((prev) => ({ ...prev, name: data.user.name || "", role: data.user.role || "" }))
         }
       })
-      .catch(() => {})
-    fetch("/api/billing/checkout-token")
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => { if (data.token) setCheckoutToken(data.token) })
       .catch(() => {})
     fetch("/plan/status")
       .then((res) => res.json())
@@ -293,11 +289,10 @@ export default function SettingsPage() {
   const isLinkedInConnected = Boolean(linkedinProfile)
 
   const mailHref = upgradesMailUrl(billingDraft.plan, user?.email || "")
-  const checkoutUrl = getLemonSqueezyCheckoutUrl(billingDraft.plan, billingDraft.billingCycle, {
-    userId: userData?.id,
-    email: userData?.email || user?.email,
-    checkoutToken,
-  })
+  // The checkout URL (and the short-lived token inside it) is now built at click
+  // time by usePlanCheckout, so a settings tab left open past the token TTL cannot
+  // launch a checkout whose payment the webhook is unable to attribute.
+  const isCheckoutBusy = checkoutState.phase === "preparing" && checkoutState.targetPlan === billingDraft.plan
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10">
@@ -432,19 +427,18 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="p-4">
-                {checkoutUrl ? (
+                {isSelfServePlan(billingDraft.plan) ? (
                   <>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      <a
-                        href={checkoutUrl}
-                        className="inline-flex items-center gap-1.5 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
-                      >
-                        Pay with card - activates instantly
-                      </a>
-                    </div>
+                    <button
+                      onClick={() => openCheckout(billingDraft.plan, billingDraft.billingCycle)}
+                      disabled={isCheckoutBusy}
+                      className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isCheckoutBusy ? "Opening checkout..." : "Pay with card - activates instantly"}
+                    </button>
                     <p className="mt-2 text-xs text-amber-600">Processed via Lemon Squeezy - card charged in USD.</p>
                     <p className="mt-3 text-xs text-amber-700">
-                      Card not working?{" "}
+                      Card declined or no international card?{" "}
                       <a href={mailHref} className="font-semibold underline hover:text-amber-900">
                         Email {UPGRADES_EMAIL}
                       </a>{" "}
@@ -453,12 +447,10 @@ export default function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <ol className="space-y-2 text-sm text-amber-800">
-                      <li className="flex gap-2"><span className="font-bold">1.</span>Email us - we confirm the amount and send payment details.</li>
-                      <li className="flex gap-2"><span className="font-bold">2.</span>Pay via Easypaisa, JazzCash, or bank transfer.</li>
-                      <li className="flex gap-2"><span className="font-bold">3.</span>Send your payment screenshot in the same thread.</li>
-                      <li className="flex gap-2"><span className="font-bold">4.</span>Your workspace plan is updated within 24 hours.</li>
-                    </ol>
+                    <p className="text-sm text-amber-800">
+                      {billingDraft.plan} is not self-serve yet. We onboard these accounts directly - email us and we
+                      confirm the amount, payment details, and access.
+                    </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <a
                         href={mailHref}
@@ -467,7 +459,6 @@ export default function SettingsPage() {
                         Email {UPGRADES_EMAIL}
                       </a>
                     </div>
-                    <p className="mt-3 text-xs text-amber-600">Self-serve checkout for this plan is not available yet. Manual onboarding is the current path - your plan access is confirmed by our team after payment.</p>
                   </>
                 )}
               </div>
@@ -476,7 +467,7 @@ export default function SettingsPage() {
 
           <div className="flex flex-wrap gap-3">
             <button onClick={onSaveBilling} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50">Save preference</button>
-            <Link href={`${SITE_URL}/pricing`} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
+            <Link href={"/upgrade"} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
             {billing.plan !== "Free" && cancelState !== "done" && (
               <button
                 onClick={onCancelSubscription}
@@ -546,7 +537,7 @@ export default function SettingsPage() {
             <MiniStat label="Scheduled" value={String(scheduled.length)} />
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro upgrade instantly via card checkout - other plans are confirmed manually.</p>
+          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is onboarded by our team.</p>
         </section>
       </div>
       {/* Account + Password */}

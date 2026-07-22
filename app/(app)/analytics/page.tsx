@@ -209,7 +209,7 @@ export default function AnalyticsPage() {
       </div>
 
       {loading ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-12 text-center text-sm text-zinc-500">Loading workspace data...</div> : null}
-      {!loading && !hasData ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-14 text-center"><p className="text-sm font-semibold text-zinc-900">No data yet</p><p className="mt-2 text-sm text-zinc-500">Analytics fill in as you draft, schedule, publish, and generate assets.</p><Link href={withClientParam("/writer", activeClientId)} className="mt-5 inline-block rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Go to writer</Link></div> : null}
+      {!loading && !hasData ? <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-14 text-center"><p className="text-sm font-semibold text-zinc-900">No data yet</p><p className="mt-2 text-sm text-zinc-500">Post 5 times to see analytics. Data fills in as you draft, schedule, publish, and generate assets.</p><Link href={withClientParam("/writer", activeClientId)} className="mt-5 inline-block rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Write post</Link></div> : null}
 
       {!loading ? (
         <>

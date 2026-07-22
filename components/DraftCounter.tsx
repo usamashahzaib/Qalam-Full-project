@@ -6,7 +6,6 @@ import { useBilling } from "@/lib/hooks/useBilling"
 import { getPlanLimits } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import type { PlanTier } from "@/lib/entitlements"
-import { SITE_URL } from "@/lib/seo"
 
 type DraftStatus = {
   remaining: number | null
@@ -68,12 +67,12 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
           <span>
             {remaining === 0 ? (
               <>
-                0 drafts left.{billing.plan === "Agency" ? null : <Link href={`${SITE_URL}/pricing`} className="ml-1 font-bold underline underline-offset-2">Upgrade to {nextPlan} for more.</Link>}
+                0 drafts left.{billing.plan === "Agency" ? null : <Link href={"/upgrade"} className="ml-1 font-bold underline underline-offset-2">Upgrade to {nextPlan} for more.</Link>}
               </>
             ) : (
               <>
                 {`${current} / ${limit} drafts used`}
-                {remaining !== null && remaining < 3 && billing.plan !== "Agency" ? <Link href={`${SITE_URL}/pricing`} className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
+                {remaining !== null && remaining < 3 && billing.plan !== "Agency" ? <Link href={"/upgrade"} className="ml-1 font-bold underline underline-offset-2">Upgrade for more.</Link> : null}
               </>
             )}
           </span>

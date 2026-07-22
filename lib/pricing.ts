@@ -206,6 +206,19 @@ export interface PricingPlan {
   comingSoon?: boolean
 }
 
+// Read directly rather than importing from lib/seo to keep this module free of
+// marketing-content imports. Same env var, same normalisation.
+const APP_ORIGIN = (process.env.NEXT_PUBLIC_APP_URL || "https://app.byqalam.com").replace(/\/$/, "")
+
+/** Absolute link to the in-app upgrade route, optionally pre-selecting a plan and cycle. */
+export const upgradeUrl = (plan?: string, cycle?: "monthly" | "annual"): string => {
+  const params = new URLSearchParams()
+  if (plan) params.set("plan", plan)
+  if (cycle) params.set("cycle", cycle)
+  const query = params.toString()
+  return `${APP_ORIGIN}/upgrade${query ? `?${query}` : ""}`
+}
+
 export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   plan: plan.name,
   monthlyPkr: plan.monthlyPrice,
@@ -221,7 +234,11 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
           : "For teams managing multiple workspaces and approvals.",
   features: plan.features,
   cta: plan.cta,
-  href: plan.name === "Free" ? "/signup" : "/contact",
+  // Paid plans go to the in-app upgrade route, which opens the Lemon Squeezy
+  // overlay. Logged-out visitors are bounced through login with this as the
+  // callback, so the plan they picked survives the round trip. Nothing paid
+  // routes to /contact any more - that was sending buyers to an email form.
+  href: plan.name === "Free" ? "/signup" : upgradeUrl(plan.name),
   highlighted: plan.name === "Solo",
   badge: plan.badge,
   featureStatus: plan.comingSoon ? "coming_soon" : "live",

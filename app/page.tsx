@@ -613,7 +613,7 @@ export default function HomePage() {
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-zinc-600">
               <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
-              <span>Your drafts are private - no one reads your content. Pay how you want - JazzCash, Easypaisa, or card. Free plan is real - 5 posts a month. No card. No expiry.</span>
+              <span>Your drafts are private - no one reads your content. Pay by card and your plan unlocks instantly. Free plan is real - 5 posts a month. No card. No expiry.</span>
             </motion.div>
           </div>
 
@@ -629,7 +629,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
               "Your drafts are private - No one at Qalam reads your content. Ever.",
-              "Pay how you want - JazzCash, Easypaisa, or card. All work.",
+              "Card checkout unlocks your plan instantly. JazzCash and Easypaisa accepted on request.",
               "Free plan is real - 5 posts a month. No card. No expiry. No trick.",
             ].map((block) => (
               <div key={block} className="rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-5 text-center text-sm font-medium text-zinc-700 shadow-sm">
@@ -871,7 +871,7 @@ export default function HomePage() {
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">
-              Free is live now. Paid plans use PKR-first pricing - activate within 2 hours via JazzCash, Easypaisa, or bank transfer.
+              Free is live now. Paid plans use PKR-first pricing and unlock the moment card payment clears.
             </p>
           </FadeUp>
 

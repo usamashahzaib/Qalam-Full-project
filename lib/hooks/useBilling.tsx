@@ -19,6 +19,11 @@ export type WorkspaceBilling = {
 type BillingContextValue = {
   billing: WorkspaceBilling
   saveBilling: (input: Partial<WorkspaceBilling>) => void
+  /**
+   * Re-reads the plan from the server. Called after a Lemon Squeezy checkout
+   * completes so the unlocked plan shows up without a hard reload.
+   */
+  refresh: () => Promise<void>
 }
 
 const BillingContext = createContext<BillingContextValue | null>(null)
@@ -32,9 +37,11 @@ const defaultBilling: WorkspaceBilling = {
 export function BillingProvider({
   children,
   serverBilling,
+  onRefresh,
 }: {
   children: React.ReactNode
   serverBilling: Partial<WorkspaceBilling> | null
+  onRefresh?: () => Promise<void>
 }) {
   const [billing, setBilling] = useState<WorkspaceBilling>(() => ({
     ...defaultBilling,
@@ -50,7 +57,12 @@ export function BillingProvider({
     setBilling((prev) => ({ ...prev, ...input }))
   }, [])
 
-  return <BillingContext.Provider value={{ billing, saveBilling }}>{children}</BillingContext.Provider>
+  const refresh = useCallback(async () => {
+    if (!onRefresh) return
+    await onRefresh()
+  }, [onRefresh])
+
+  return <BillingContext.Provider value={{ billing, saveBilling, refresh }}>{children}</BillingContext.Provider>
 }
 
 export function useBilling(): BillingContextValue {

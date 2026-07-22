@@ -9,9 +9,8 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr, getLemonSqueezyCheckoutUrl } from "@/lib/pricing"
-import { UPGRADES_EMAIL } from "@/lib/contact"
-import { APP_URL } from "@/lib/seo"
+import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr, upgradeUrl } from "@/lib/pricing"
+import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
 import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -122,12 +121,10 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 
 export function PricingPageContent({}: PricingPageContentProps) {
   const { status } = useSession()
-  const isAuthed = status === "authenticated"
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
-  const [buyer, setBuyer] = useState<{ userId?: string; email?: string; checkoutToken?: string }>({})
   const searchParams = useSearchParams()
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
     searchParams.get("tab") === "managed" ? "managed" : "selfserve"
@@ -139,12 +136,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
         if (data.user?.plan) setCurrentPlan(data.user.plan)
-        if (data.user?.id || data.user?.email) setBuyer((prev) => ({ ...prev, userId: data.user.id, email: data.user.email }))
       })
-      .catch(() => {})
-    fetch("/api/billing/checkout-token")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data) => { if (data.token) setBuyer((prev) => ({ ...prev, checkoutToken: data.token })) })
       .catch(() => {})
     fetch("/api/referrals/stats")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
@@ -158,7 +150,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       plan.plan === "Free"
         ? "Real free. Not a 7-day trial disguised as a free plan."
         : plan.plan === "Solo" || plan.plan === "Pro"
-          ? "Secure checkout via Lemon Squeezy - card charged in USD. Plan activates instantly after payment."
+          ? "Secure card checkout via Lemon Squeezy. Your plan unlocks the moment payment clears."
           : undefined
 
     const isAnnual = billing === "annual"
@@ -175,12 +167,14 @@ export function PricingPageContent({}: PricingPageContentProps) {
       ? `Save ${annualSavingsPercent}%`
       : "Free forever"
 
-    const checkoutUrl = getLemonSqueezyCheckoutUrl(plan.plan, billing, buyer)
-    // Checkout must happen while signed in - otherwise Lemon Squeezy has no user_id to match
-    // the payment back to a Qalam account, and the payment can't be activated automatically.
-    // Send logged-out visitors to log in first, then back to pricing to complete checkout.
-    const href = checkoutUrl
-      ? (isAuthed ? checkoutUrl : `${APP_URL}/login?callbackUrl=${encodeURIComponent("/pricing")}`)
+    // Paid plans route to the in-app upgrade page, which mints the checkout token at
+    // click time and opens the Lemon Squeezy overlay. Logged-out visitors hit the app's
+    // auth guard there and come back to the same plan and cycle after logging in, so the
+    // choice made here survives the round trip. Checkout is never launched straight from
+    // this page: without an authenticated session the webhook has no signed token and
+    // cannot attribute the payment to an account.
+    const href = plan.plan === "Solo" || plan.plan === "Pro"
+      ? upgradeUrl(plan.plan, billing)
       : plan.href
 
     return {
@@ -428,26 +422,21 @@ export function PricingPageContent({}: PricingPageContentProps) {
         </div>
       </section>
 
-      {/* Manual payment block */}
-      <section className="border-y border-zinc-100 bg-zinc-50 px-6 py-14">
-        <div className="mx-auto max-w-[600px] text-center">
-          <FadeUp>
-            <h2 className="mb-3 text-2xl font-bold text-zinc-900">Card not working? Pay manually.</h2>
-            <p className="mb-7 text-base leading-relaxed text-zinc-600">
-              Send payment via JazzCash, Easypaisa, or bank transfer. Email the payment screenshot - plan activated after manual review.
-            </p>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} className="inline-block">
-              <a
-                href={`mailto:${UPGRADES_EMAIL}`}
-                className="inline-flex items-center gap-2 rounded-xl bg-teal px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
-              >
-                Email payment team
-              </a>
-            </motion.div>
-            <p className="mt-4 text-xs text-zinc-400">Support response time: under 4 hours</p>
-          </FadeUp>
+      {/* Manual payment fallback. Deliberately a single line, not a section: card
+          checkout is the path, and presenting manual payment as an equal option was
+          reading as "this product does not actually take payments". */}
+      <div className="border-y border-zinc-100 bg-zinc-50 px-6 py-6">
+        <div className="mx-auto max-w-[720px] text-center">
+          <p className="text-xs leading-relaxed text-zinc-500">
+            Card declined, or no international card? Send payment via {MANUAL_UPGRADE_METHODS.join(", ")} and email the
+            screenshot to{" "}
+            <a href={`mailto:${UPGRADES_EMAIL}`} className="font-semibold text-zinc-700 underline">
+              {UPGRADES_EMAIL}
+            </a>
+            . We activate manually, normally within 24 hours.
+          </p>
         </div>
-      </section>
+      </div>
 
       {/* Privacy line */}
       <div className="border-b border-zinc-100 bg-white px-6 py-5">

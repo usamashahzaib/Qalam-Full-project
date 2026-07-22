@@ -316,7 +316,13 @@ export default function CalendarPage() {
           {allScheduledSorted.length === 0 ? (
             <div className="px-5 py-12 text-center">
               <p className="text-sm font-semibold text-zinc-700">No scheduled posts yet</p>
-              <p className="mt-1 text-xs text-zinc-400">Go to the writer and schedule a post to see it here.</p>
+              <p className="mt-1 text-xs text-zinc-400">Schedule posts for optimal times.</p>
+              <button
+                onClick={() => !isPastDay(effectiveSelectedDay) && goToWriter(router, activeClientId, undefined, effectiveSelectedDay)}
+                className="mt-4 cursor-pointer rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600"
+              >
+                Schedule post
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto">

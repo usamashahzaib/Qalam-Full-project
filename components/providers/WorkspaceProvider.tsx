@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
@@ -30,15 +30,17 @@ function WorkspaceProviderInner({
   workspaceId,
   activeClientId,
   serverBilling,
+  refreshBilling,
 }: {
   children: React.ReactNode
   workspaceId: string
   activeClientId: string | null
   serverBilling: Partial<WorkspaceBilling> | null
+  refreshBilling: () => Promise<void>
 }) {
   return (
     <WorkspaceContext.Provider value={{ workspaceId, activeClientId }}>
-      <BillingProvider serverBilling={serverBilling}>
+      <BillingProvider serverBilling={serverBilling} onRefresh={refreshBilling}>
         <PostsProvider workspaceId={workspaceId}>
           <ProfileProvider workspaceId={workspaceId}>
             {children}
@@ -59,6 +61,30 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [serverBilling, setServerBilling] = useState<Partial<WorkspaceBilling> | null>(null)
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
+
+  // Plan-only re-read, used after a Lemon Squeezy checkout completes. Deliberately
+  // narrower than the boot effect below: it never clears workspaceId or surfaces a
+  // boot error, so a transient failure while polling cannot blank the whole app.
+  const refreshBilling = useCallback(async () => {
+    const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
+    const res = await fetch(url, { cache: "no-store" })
+    if (!res.ok) return
+    const data = await res.json().catch(() => ({}))
+    const rawPlan = data.plan as string | undefined
+    const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
+    if (!normalizedPlan || !VALID_PLAN_NAMES.includes(normalizedPlan)) return
+    const freshBilling: Partial<WorkspaceBilling> = {
+      plan: normalizedPlan as WorkspaceBilling["plan"] & PlanTier,
+      overrideActive: Boolean(data.overrideActive),
+      complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
+      overridePlan: data.overridePlan || null,
+      planExpired: Boolean(data.planExpired),
+      limits: data.limits,
+      featureFlags: data.featureFlags || {},
+    }
+    setServerBilling(freshBilling)
+    try { sessionStorage.setItem(billingCacheKey(clientParam), JSON.stringify(freshBilling)) } catch {}
+  }, [clientParam])
 
   useEffect(() => {
     if (status === "loading") return
@@ -162,7 +188,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} serverBilling={serverBilling} key={workspaceId}>
+    <WorkspaceProviderInner workspaceId={workspaceId} activeClientId={clientParam} serverBilling={serverBilling} refreshBilling={refreshBilling} key={workspaceId}>
       {children}
     </WorkspaceProviderInner>
   )

@@ -293,13 +293,13 @@ export default function LibraryPage() {
         <LibrarySkeleton />
       ) : /* Empty state */ posts.length === 0 ? (
         <div className="rounded-2xl border border-zinc-200 bg-white px-6 py-20 text-center shadow-sm">
-          <p className="text-sm font-semibold text-zinc-800">No posts yet</p>
+          <p className="text-sm font-semibold text-zinc-800">Your saved posts appear here</p>
           <p className="mt-1 text-sm text-zinc-400">Create your first post in the writer to see it here.</p>
           <button
             onClick={() => router.push(withClientParam("/writer", activeClientId))}
             className="mt-4 cursor-pointer rounded-xl bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600"
           >
-            Open Writer
+            Create post
           </button>
         </div>
       ) : filtered.length === 0 ? (

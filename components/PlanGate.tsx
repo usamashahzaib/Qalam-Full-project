@@ -51,7 +51,7 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
           <button onClick={() => setShowUpgrade(true)} className="rounded-xl bg-teal px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600">
             Unlock in {requiredPlan}
           </button>
-          <Link href={`/pricing?plan=${encodeURIComponent(requiredPlan)}`} className="text-xs font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">
+          <Link href={`/upgrade?plan=${encodeURIComponent(requiredPlan)}`} className="text-xs font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">
             Compare all plans
           </Link>
         </div>

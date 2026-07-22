@@ -8,7 +8,7 @@ import {
 } from "@/lib/server/dashboard"
 import { ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { RefreshButton } from "../_components/refresh-button"
-import { SITE_URL } from "@/lib/seo"
+import { UpgradeSpotlight } from "@/components/UpgradeSpotlight"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ function LockedStatCard({
       <p className="mt-2 select-none text-3xl font-bold text-zinc-200">--</p>
       <div className="absolute inset-0 flex items-center justify-center bg-white/85 backdrop-blur-[1px]">
         <Link
-          href={`${SITE_URL}/pricing`}
+          href={"/upgrade"}
           className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600"
         >
           {upgradeText}
@@ -151,7 +151,7 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
 
       {isFree && (
         <Link
-          href={`${SITE_URL}/pricing`}
+          href={"/upgrade"}
           className="mt-4 block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600"
         >
           Upgrade to Solo
@@ -159,7 +159,7 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
       )}
       {planNorm === "solo" && (
         <Link
-          href={`${SITE_URL}/pricing`}
+          href={"/upgrade"}
           className="mt-4 block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600"
         >
           Upgrade to Pro
@@ -349,6 +349,9 @@ export default async function StatsPage() {
 
   return (
     <>
+      {/* Upgrade spotlight - opens the Lemon Squeezy overlay in place */}
+      {stats ? <UpgradeSpotlight currentPlan={capitalize(planNorm)} /> : null}
+
       {/* Stats row */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statsError ? (
@@ -422,7 +425,7 @@ export default async function StatsPage() {
               Track your daily writing activity
             </p>
             <Link
-              href={`${SITE_URL}/pricing`}
+              href={"/upgrade"}
               className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-teal-600"
             >
               Upgrade to Solo
@@ -443,7 +446,7 @@ export default async function StatsPage() {
           {planNorm === "solo" && (
             <p className="-mt-4 text-center text-xs text-zinc-400">
               Upgrade to Pro for advanced analytics and competitor insights.{" "}
-              <Link href={`${SITE_URL}/pricing`} className="font-semibold text-teal underline">
+              <Link href={"/upgrade"} className="font-semibold text-teal underline">
                 Learn more
               </Link>
             </p>

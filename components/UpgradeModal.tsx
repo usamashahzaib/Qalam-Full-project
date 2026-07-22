@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { PLAN_FEATURES, PLAN_PRICES, formatPkr } from "@/lib/pricing"
+import { PLAN_FEATURES, PLAN_PRICES, annualFraming, formatPkr, type PlanName } from "@/lib/pricing"
 import { UPGRADES_EMAIL } from "@/lib/contact"
+import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import type { PlanTier } from "@/lib/entitlements"
 
 type UpgradeModalProps = {
@@ -20,6 +21,7 @@ const unlocksFor = (plan: PlanTier) => {
 }
 
 export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, onClose }: UpgradeModalProps) {
+  const { openCheckout, state } = usePlanCheckout()
   const isAgency = requiredPlan === "Agency" || requiredPlan.startsWith("Agency")
 
   if (isAgency) {
@@ -52,7 +54,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
 
   const priceKey = requiredPlan.startsWith("Agency") ? "Agency" : requiredPlan
   const price = PLAN_PRICES[priceKey]?.monthly ?? 0
-  const planParam = encodeURIComponent(requiredPlan)
+  const isBusy = state.phase === "preparing" && state.targetPlan === requiredPlan
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
@@ -72,9 +74,31 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
             ))}
           </ul>
         </div>
-        <div className="mt-5 flex justify-center gap-2">
-          <button onClick={onClose} className="rounded-xl border border-zinc-200 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Close</button>
-          <Link href={`/pricing?plan=${planParam}`} className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white hover:bg-teal-600">Continue to pricing</Link>
+        {/* Pays right here in an overlay - the modal never hands the user off to
+            the marketing site, which is where every upgrade prompt used to dead-end. */}
+        <button
+          onClick={() => {
+            onClose()
+            openCheckout(requiredPlan as PlanName, "monthly")
+          }}
+          disabled={isBusy}
+          className="mt-5 w-full cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isBusy ? "Opening checkout..." : `Unlock ${requiredPlan} - ${formatPkr(price)}/mo`}
+        </button>
+        <button
+          onClick={() => {
+            onClose()
+            openCheckout(requiredPlan as PlanName, "annual")
+          }}
+          className="mt-2 w-full cursor-pointer text-xs font-semibold text-teal hover:underline"
+        >
+          Pay annually and get {annualFraming}
+        </button>
+        <div className="mt-4 flex items-center justify-center gap-3 text-xs">
+          <button onClick={onClose} className="cursor-pointer font-semibold text-zinc-500 hover:text-zinc-700">Not now</button>
+          <span className="text-zinc-200">|</span>
+          <Link href="/upgrade" onClick={onClose} className="font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">Compare plans</Link>
         </div>
       </div>
     </div>

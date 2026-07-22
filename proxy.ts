@@ -212,9 +212,14 @@ function buildCsp(nonce: string, isDev: boolean): string {
     // so the googleapis/gstatic allowances served no purpose and are dropped.
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
-    "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co",
-    "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com",
-    "frame-src 'self' https://*.linkedin.com",
+    // lemonsqueezy.com entries back the overlay checkout: lemon.js is appended by an
+    // already-trusted bundle chunk (so 'strict-dynamic' covers script-src, where a host
+    // allowlist would be ignored anyway), but the checkout itself renders in an iframe
+    // and the script talks back to its own origin. Without frame-src and connect-src
+    // here the overlay fails silently and no one can pay.
+    "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co https://*.lemonsqueezy.com",
+    "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.lemonsqueezy.com",
+    "frame-src 'self' https://*.linkedin.com https://*.lemonsqueezy.com",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ")

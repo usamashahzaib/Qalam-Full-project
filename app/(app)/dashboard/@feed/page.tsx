@@ -110,13 +110,13 @@ export default async function FeedPage() {
           </div>
           <p className="mt-4 text-base font-bold text-zinc-900">No posts yet</p>
           <p className="mt-1 max-w-xs text-sm text-zinc-500">
-            Create your first post and it will appear here.
+            AI generates hooks and a full draft in seconds.
           </p>
           <Link
             href="/writer"
             className="mt-6 rounded-xl bg-teal px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
           >
-            Write Post
+            Write your first post
           </Link>
         </div>
       ) : posts ? (

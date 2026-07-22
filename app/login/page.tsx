@@ -7,6 +7,7 @@ import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
 import { ReferralBanner } from "@/components/ReferralBanner"
 import { SITE_URL } from "@/lib/seo"
+import { safeRedirectPath } from "@/lib/validation"
 
 const ERROR_MESSAGES: Record<string, string> = {
   Configuration: "Server configuration error. Please try again shortly or contact support.",
@@ -28,8 +29,7 @@ function LinkedInIcon({ className }: { className?: string }) {
 export default function LoginPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const rawCallback = searchParams.get("callbackUrl") || "/dashboard"
-  const callbackUrl = rawCallback.startsWith("/") ? rawCallback : "/dashboard"
+  const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"))
   const errorParam = searchParams.get("error")
   const verified = searchParams.get("verified") === "1"
 
@@ -68,8 +68,7 @@ export default function LoginPage() {
         setFormError("Incorrect email or password.")
         setSubmitting(false)
       } else {
-        const safeUrl = callbackUrl?.startsWith("/") ? callbackUrl : "/dashboard"
-        router.push(safeUrl)
+        router.push(callbackUrl)
       }
     } catch {
       setFormError("Incorrect email or password.")

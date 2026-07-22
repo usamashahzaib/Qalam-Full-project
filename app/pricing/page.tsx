@@ -20,12 +20,12 @@ const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPrice) : "PKR 7,490
 export const metadata: Metadata = {
   title: `Pricing - AI LinkedIn Writer Plans | Free to ${proPrice}/month`,
   description:
-    `Qalam pricing for the Pakistani market. Free plan with ${freeDrafts} - no card, no expiry. Solo at ${soloPrice}/month. Pro at ${proPrice}/month. Pay via JazzCash, Easypaisa, or bank transfer.`,
+    `Qalam pricing for the Pakistani market. Free plan with ${freeDrafts} - no card, no expiry. Solo at ${soloPrice}/month. Pro at ${proPrice}/month. Pay by card and your plan unlocks instantly. JazzCash, Easypaisa, and bank transfer accepted on request.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime via JazzCash, Easypaisa, or bank transfer.`,
+      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime with instant card checkout.`,
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime via JazzCash, Easypaisa, or bank transfer.`,
+      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime with instant card checkout.`,
   },
 }
 
@@ -62,7 +62,7 @@ const pricingFaqSchema = {
       name: "Is there a free trial for paid plans?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes. Free gives you ${freeDrafts} with no card and no expiry. Upgrade to paid when you're ready - activate via JazzCash, Easypaisa, or bank transfer.`,
+        text: `Yes. Free gives you ${freeDrafts} with no card and no expiry. Upgrade whenever you are ready - card checkout unlocks the plan straight away.`,
       },
     },
     {
@@ -78,7 +78,7 @@ const pricingFaqSchema = {
       name: "Does Qalam accept JazzCash and Easypaisa?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Qalam accepts JazzCash, Easypaisa, bank transfer, and international card. No need for a Visa or Mastercard.",
+        text: "Yes. Card checkout is the fastest route and unlocks your plan instantly. If you would rather pay by JazzCash, Easypaisa, or bank transfer, send us the payment screenshot and we activate your plan manually, normally within 24 hours.",
       },
     },
     {

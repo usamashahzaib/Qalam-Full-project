@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { CommentIcon } from "@/components/ui/qalam-icons"
-import { SITE_URL } from "@/lib/seo"
 
 const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 
@@ -158,7 +157,7 @@ export default function CommentGeneratorPage() {
           <div className="border-b border-red-100 bg-red-50 px-6 py-4">
             <p className="text-sm text-red-700">{error}</p>
             {upgradeRequired && (
-              <Link href={`${SITE_URL}/pricing`} className="mt-2 inline-block text-sm font-semibold text-teal hover:underline">
+              <Link href={"/upgrade"} className="mt-2 inline-block text-sm font-semibold text-teal hover:underline">
                 {"Upgrade your plan ->"}
               </Link>
             )}

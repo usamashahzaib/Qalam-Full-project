@@ -1,20 +1,26 @@
 "use client"
 
 import { useEffect } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { status } = useSession()
+  const query = searchParams.toString()
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace(`/login?callbackUrl=${encodeURIComponent(pathname || "/dashboard")}`)
+      // The query string is part of the destination, not decoration: /upgrade?plan=Pro
+      // loses the chosen plan without it, and the visitor has to pick all over again
+      // after logging in. Same for any other deep link into the app.
+      const next = `${pathname || "/dashboard"}${query ? `?${query}` : ""}`
+      router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
     }
-  }, [pathname, router, status])
+  }, [pathname, query, router, status])
 
   if (status === "loading") {
     return (

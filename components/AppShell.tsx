@@ -28,9 +28,18 @@ import {
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
-import { SITE_URL } from "@/lib/seo"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CommandMenu } from "@/components/CommandMenu"
+import { HelpPanel } from "@/components/HelpPanel"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
+
+// Update launchDate when a feature actually ships - the badge auto-hides 14 days after.
+const NEW_FEATURES: Record<string, { launchDate: string; tooltip: string }> = {
+  "/silent-growth": {
+    launchDate: "2026-07-15",
+    tooltip: "Silent Growth: build visibility and warm relationships on LinkedIn without publishing.",
+  },
+}
 
 export const NAV_GROUPS = [
   {
@@ -113,6 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(defaultSectionState)
   const [commandMenuOpen, setCommandMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -247,7 +257,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
                   ) : (
                     <div className="px-4 py-3 text-xs text-zinc-400">
-                      Add workspace - <a href={`${SITE_URL}/pricing?plan=Agency`} className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
+                      Add workspace - <a href={"/upgrade?plan=Agency"} className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
                     </div>
                   )}
                 </div>
@@ -289,10 +299,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         </div>
                       )
                     }
+                    const newFeature = NEW_FEATURES[link.href]
                     return (
                       <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl py-2 pl-3 pr-3 text-sm transition-all group ${active ? "border-l-2 border-teal-600 bg-teal-50/50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
                         <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-teal-600" : "text-zinc-600 group-hover:text-zinc-300"}`} />
                         <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
+                        {newFeature ? (
+                          <NewFeatureBadge featureKey={link.href} launchDate={newFeature.launchDate} tooltip={newFeature.tooltip} />
+                        ) : null}
                       </Link>
                     )
                   })}
@@ -350,6 +364,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href={withClientParam("/settings", activeClientId)} className="flex items-center gap-2 rounded-full border border-dashed border-zinc-300 hover:border-zinc-400 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors"><LinkedInIcon className="h-3 w-3 text-zinc-400" />Connect LinkedIn</Link>
           )}
           <button onClick={handleCreatePost} className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors shadow-sm shadow-teal/10">Create Post</button>
+
+          <button
+            onClick={() => setHelpOpen(true)}
+            aria-label="Open help"
+            title="Help"
+            className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:border-teal/40 hover:text-teal"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" />
+            </svg>
+          </button>
 
           {/* User avatar dropdown */}
           <div className="relative" ref={userDropdownRef}>
@@ -411,6 +436,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-teal/5 border border-teal/10 px-2.5 py-0.5 text-[10px] font-bold text-teal max-w-[120px] truncate">{activeClientName}</span>
             <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+            <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
             <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
           </div>
         </div>
@@ -442,7 +468,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
               ) : (
                 <div className="px-3 py-2 text-xs text-zinc-500">
-                  Add workspace - <a href={`${SITE_URL}/pricing?plan=Agency`} className="text-teal-600 hover:underline">Unlock in Agency</a>
+                  Add workspace - <a href={"/upgrade?plan=Agency"} className="text-teal-600 hover:underline">Unlock in Agency</a>
                 </div>
               )}
             </div>
@@ -453,12 +479,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="qalam-app-canvas app-content pl-0 md:pl-64">
         {billing.planExpired ? (
           <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
-            Your plan expired. You are back on Free. <Link href={`${SITE_URL}/pricing`} className="underline underline-offset-2">Renew your plan</Link>
+            Your plan expired. You are back on Free. <Link href={"/upgrade"} className="underline underline-offset-2">Renew your plan</Link>
           </div>
         ) : null}
         {billing.complimentaryTrialBanner ? (
           <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900">
-            You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href={`${SITE_URL}/pricing`} className="underline underline-offset-2">Upgrade to keep these features</Link>
+            You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href={"/upgrade"} className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}
         <div className="app-content animate-fade-in">{children}</div>
@@ -473,6 +499,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onOpenPost={handleOpenPost}
         onCreatePost={handleCreatePost}
       />
+      <HelpPanel open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   )
 }
