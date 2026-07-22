@@ -247,7 +247,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
                   ) : (
                     <div className="px-4 py-3 text-xs text-zinc-400">
-                      Add workspace - <a href="/pricing?plan=Agency" className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
+                      Add workspace - <a href={`${SITE_URL}/pricing?plan=Agency`} className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
                     </div>
                   )}
                 </div>
@@ -442,7 +442,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
               ) : (
                 <div className="px-3 py-2 text-xs text-zinc-500">
-                  Add workspace - <a href="/pricing?plan=Agency" className="text-teal-600 hover:underline">Unlock in Agency</a>
+                  Add workspace - <a href={`${SITE_URL}/pricing?plan=Agency`} className="text-teal-600 hover:underline">Unlock in Agency</a>
                 </div>
               )}
             </div>

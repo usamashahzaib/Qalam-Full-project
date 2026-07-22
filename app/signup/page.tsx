@@ -8,6 +8,7 @@ import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
 import { ReferralBanner, readPendingReferralCode, clearPendingReferralCode } from "@/components/ReferralBanner"
 import { SUPPORT_EMAIL } from "@/lib/contact"
+import { SITE_URL } from "@/lib/seo"
 
 const ROLES = [
   "Consultant",
@@ -240,11 +241,11 @@ export default function SignupPage() {
                   />
                   <span className="text-xs leading-relaxed text-zinc-500">
                     I agree to Qalam&apos;s{" "}
-                    <Link href="/legal/terms" className="font-semibold text-zinc-700 underline hover:text-teal">
+                    <Link href={`${SITE_URL}/legal/terms`} className="font-semibold text-zinc-700 underline hover:text-teal">
                       Terms of Service
                     </Link>
                     {" "}and{" "}
-                    <Link href="/legal/privacy" className="font-semibold text-zinc-700 underline hover:text-teal">
+                    <Link href={`${SITE_URL}/legal/privacy`} className="font-semibold text-zinc-700 underline hover:text-teal">
                       Privacy Policy
                     </Link>.
                   </span>

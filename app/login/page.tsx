@@ -6,6 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
 import { ReferralBanner } from "@/components/ReferralBanner"
+import { SITE_URL } from "@/lib/seo"
 
 const ERROR_MESSAGES: Record<string, string> = {
   Configuration: "Server configuration error. Please try again shortly or contact support.",
@@ -170,9 +171,9 @@ export default function LoginPage() {
             </div>
             <p className="text-center text-xs text-zinc-400">
               By signing in you agree to our{" "}
-              <Link href="/legal/terms" className="underline hover:text-zinc-600">Terms</Link>
+              <Link href={`${SITE_URL}/legal/terms`} className="underline hover:text-zinc-600">Terms</Link>
               {" "}and{" "}
-              <Link href="/legal/privacy" className="underline hover:text-zinc-600">Privacy Policy</Link>.
+              <Link href={`${SITE_URL}/legal/privacy`} className="underline hover:text-zinc-600">Privacy Policy</Link>.
             </p>
             <button
               type="submit"
