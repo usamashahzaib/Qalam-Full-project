@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
@@ -167,6 +167,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return matched ? `${matched.name}'s Workspace` : "Client Workspace"
   }, [activeClientId, clientWorkspaces])
 
+  // Agency Phase 1: the active client workspace's accent color, if the agency
+  // set one. Exposed as a CSS variable so any descendant (primary buttons,
+  // active nav accents, usage bars) can opt in with var(--ws-brand, <default>)
+  // without every component needing to fetch it separately.
+  const activeBrandColor = useMemo(() => {
+    if (!activeClientId) return null
+    const matched = clientWorkspaces.find((client) => client.id === activeClientId)
+    return matched?.brandingColor || null
+  }, [activeClientId, clientWorkspaces])
+
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchFocused(false)
@@ -225,7 +235,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="app-shell min-h-screen font-jakarta">
+    <div
+      className="app-shell min-h-screen font-jakarta"
+      style={activeBrandColor ? ({ "--ws-brand": activeBrandColor } as CSSProperties) : undefined}
+    >
       <aside className="hidden md:flex fixed inset-y-0 left-0 z-30 w-64 flex-col overflow-hidden border-r border-zinc-800 bg-zinc-900 text-zinc-300">
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex h-16 shrink-0 items-center border-b border-zinc-800 px-6">
@@ -301,8 +314,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     }
                     const newFeature = NEW_FEATURES[link.href]
                     return (
-                      <Link key={link.href} href={withClientParam(link.href, activeClientId)} className={`flex cursor-pointer items-center gap-3 rounded-xl py-2 pl-3 pr-3 text-sm transition-all group ${active ? "border-l-2 border-teal-600 bg-teal-50/50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}>
-                        <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? "text-teal-600" : "text-zinc-600 group-hover:text-zinc-300"}`} />
+                      <Link
+                        key={link.href}
+                        href={withClientParam(link.href, activeClientId)}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl py-2 pl-3 pr-3 text-sm transition-all group ${active ? "border-l-2 bg-teal-50/50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}
+                        style={active ? { borderColor: "var(--ws-brand, #0d9488)" } : undefined}
+                      >
+                        <Icon
+                          className="h-4 w-4 shrink-0 transition-colors text-zinc-600 group-hover:text-zinc-300"
+                          style={active ? { color: "var(--ws-brand, #0d9488)" } : undefined}
+                        />
                         <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
                         {newFeature ? (
                           <NewFeatureBadge featureKey={link.href} launchDate={newFeature.launchDate} tooltip={newFeature.tooltip} />

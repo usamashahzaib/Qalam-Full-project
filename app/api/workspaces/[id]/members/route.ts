@@ -33,7 +33,23 @@ export async function GET(request: NextRequest, { params }: Params) {
       fullName: userById.get(m.user_id)?.full_name ?? null,
     }))
 
-    return NextResponse.json({ members })
+    // Invites for people who don't have a Qalam account yet - they're stored
+    // separately and redeemed automatically at signup, so surface them here
+    // too or they're otherwise invisible until the invitee actually joins.
+    const pendingInvites = (
+      (await supabaseSelect<{ email: string; role: string; created_at: string; expires_at: string }>(
+        "workspace_invites",
+        `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=email,role,created_at,expires_at&order=created_at.desc`
+      ).catch(() => [])) || []
+    ).map((invite) => ({
+      email: invite.email,
+      role: invite.role,
+      invitedAt: invite.created_at,
+      expiresAt: invite.expires_at,
+      expired: new Date(invite.expires_at).getTime() < Date.now(),
+    }))
+
+    return NextResponse.json({ members, pendingInvites })
   } catch (error) {
     const msg = (error as Error).message
     return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })

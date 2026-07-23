@@ -219,7 +219,8 @@ export default async function DashboardPage() {
         </div>
         <Link
           href="/writer"
-          className="inline-flex items-center gap-2 rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
+          className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+          style={{ backgroundColor: "var(--ws-brand, #0d4a45)" }}
         >
           <svg
             className="h-4 w-4"

@@ -22,12 +22,17 @@ describe("formatPkr", () => {
 })
 
 describe("PLANS", () => {
-  it("has exactly 3 public plans (Agency is hidden)", () => {
-    expect(PLANS).toHaveLength(3)
+  it("has exactly 4 public plans (Agency is live, manual onboarding)", () => {
+    expect(PLANS).toHaveLength(4)
   })
 
-  it("does not include the Agency plan", () => {
-    expect(PLANS.find((p) => p.plan === "Agency")).toBeUndefined()
+  it("includes the Agency plan", () => {
+    expect(PLANS.find((p) => p.plan === "Agency")).toBeDefined()
+  })
+
+  it("Agency starts at 7490 PKR/month", () => {
+    const agency = PLANS.find((p) => p.plan === "Agency")!
+    expect(agency.monthlyPkr).toBe(7490)
   })
 
   it("Free plan has zero monthly price and no annual option", () => {

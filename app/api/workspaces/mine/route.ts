@@ -21,9 +21,16 @@ export async function GET(_request: NextRequest) {
     const workspaceIds = [...new Set((memberships || []).map((m) => m.workspace_id).filter(Boolean))]
     if (!workspaceIds.length) return NextResponse.json({ workspaces: [] })
 
-    const workspaces = await supabaseSelect<{ id: string; name: string; owner_id: string | null }>(
+    // branding_color falls back gracefully if migration 0057 hasn't run yet in
+    // this environment - the workspace switcher must not break because of it.
+    const workspaces = await supabaseSelect<{ id: string; name: string; owner_id: string | null; branding_color: string | null }>(
       "workspaces",
-      `id=in.(${workspaceIds.join(",")})&select=id,name,owner_id`
+      `id=in.(${workspaceIds.join(",")})&select=id,name,owner_id,branding_color`
+    ).catch(async () =>
+      (await supabaseSelect<{ id: string; name: string; owner_id: string | null }>(
+        "workspaces",
+        `id=in.(${workspaceIds.join(",")})&select=id,name,owner_id`
+      )).map((ws) => ({ ...ws, branding_color: null }))
     )
 
     const roleByWorkspace = new Map((memberships || []).map((m) => [m.workspace_id, m.role]))
@@ -39,6 +46,7 @@ export async function GET(_request: NextRequest) {
         // client_reviewer. So role === "owner" reliably means "this is my
         // own workspace", not a client's.
         isPersonal: role === "owner",
+        brandingColor: ws.branding_color ?? null,
       }
     })
 

@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { PLAN_FEATURES, PLAN_PRICES, annualFraming, formatPkr, type PlanName } from "@/lib/pricing"
-import { UPGRADES_EMAIL } from "@/lib/contact"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import type { PlanTier } from "@/lib/entitlements"
 
@@ -28,19 +27,20 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
-          <span className="inline-flex rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-500">
-            Coming Soon
+          <span className="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal-800">
+            For agencies
           </span>
-          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency tier is coming soon</h2>
+          <h2 className="mt-3 text-lg font-bold text-zinc-900">Get Agency</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            Multi-workspace support, approval workflows, and team analytics are on the way. Join the waitlist to get early access.
+            5 client workspaces, team seats, and approval workflows for PKR 7,490/month. Agency is onboarded manually - tell us about your team and we&apos;ll set it up.
           </p>
-          <a
-            href={`mailto:${UPGRADES_EMAIL}?subject=Agency%20Early%20Access`}
-            className="mt-5 block rounded-xl bg-zinc-950 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-zinc-800"
+          <Link
+            href="/contact"
+            onClick={onClose}
+            className="mt-5 block rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600"
           >
-            Join Waitlist
-          </a>
+            Get Agency
+          </Link>
           <button
             onClick={onClose}
             className="mt-3 text-sm text-zinc-400 transition-colors hover:text-zinc-600"

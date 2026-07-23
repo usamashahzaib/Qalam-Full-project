@@ -8,7 +8,8 @@ import { withAuth } from "@/lib/server/auth"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit, incrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { checkPlanLimit, incrementUsage, decrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { checkWorkspaceUsage, incrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { CAROUSEL_TONES } from "@/lib/carousel-tones"
 import { pickThemeForTone } from "@/lib/carousel-design"
@@ -101,6 +102,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Agency workspaces each get their own 10-carousel allowance, separate
+    // from the account-wide counter above.
+    const isAgency = planCheck.plan.toLowerCase() === "agency"
+    if (isAgency) {
+      const wsPrecheck = await checkWorkspaceUsage(workspaceId, "carousels")
+      if (!wsPrecheck.allowed) {
+        return NextResponse.json(
+          { error: "workspace_carousel_quota_exceeded", current: wsPrecheck.used, limit: wsPrecheck.limit },
+          { status: 429 }
+        )
+      }
+    }
+
     const sourceContent = parsed.data.sourceContent?.trim()
     const toneMeta = parsed.data.tone ? CAROUSEL_TONES[parsed.data.tone] : undefined
     const structureBlock = toneMeta
@@ -141,6 +155,16 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
         { error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit },
         { status: 429 }
       )
+    }
+    if (isAgency) {
+      const wsUsage = await incrementWorkspaceUsage(workspaceId, "carousels")
+      if (!wsUsage.allowed) {
+        await decrementUsage(user.id, "carousels")
+        return NextResponse.json(
+          { error: "workspace_carousel_quota_exceeded", current: wsUsage.used, limit: wsUsage.limit },
+          { status: 429 }
+        )
+      }
     }
     slides = enforceSlideStructure(slides, parsed.data.topic)
 

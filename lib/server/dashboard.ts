@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceSessionContext, ensureWorkspaceForUser } from "@/lib/server/workspace"
 import { SupabasePlanUsageRepository } from "@/lib/repositories/supabase/SupabasePlanUsageRepository"
+import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
 
 export type DashboardStats = {
   postsThisMonth: number
@@ -17,6 +18,10 @@ export type DashboardStats = {
   postsPublished: number
   resetDate: string
   planExpiresAt?: string | null
+  // Agency-only: this client workspace's own 60-draft allowance, distinct
+  // from the account-wide draftsUsed/draftsTotal above.
+  workspaceDraftsUsed: number | null
+  workspaceDraftsLimit: number | null
 }
 
 export type DashboardPost = {
@@ -91,6 +96,16 @@ export async function fetchDashboardStats(supabaseUserId: string, workspaceId: s
       ? planExpiresAt
       : new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 
+  let workspaceDraftsUsed: number | null = null
+  let workspaceDraftsLimit: number | null = null
+  if (planName.toLowerCase() === "agency") {
+    const wsUsage = await checkWorkspaceUsage(workspaceId, "drafts").catch(() => null)
+    if (wsUsage) {
+      workspaceDraftsUsed = wsUsage.used
+      workspaceDraftsLimit = wsUsage.limit
+    }
+  }
+
   return {
     postsThisMonth: monthPosts.length,
     draftsRemaining,
@@ -103,6 +118,8 @@ export async function fetchDashboardStats(supabaseUserId: string, workspaceId: s
     postsPublished,
     resetDate,
     planExpiresAt,
+    workspaceDraftsUsed,
+    workspaceDraftsLimit,
   }
 }
 

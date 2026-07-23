@@ -86,6 +86,8 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
     carouselsUsed,
     resetDate,
     planExpiresAt,
+    workspaceDraftsUsed,
+    workspaceDraftsLimit,
   } = stats
   const planNorm = plan.toLowerCase()
   const planLabel = capitalize(plan)
@@ -96,6 +98,12 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
     draftsTotal && draftsTotal > 0
       ? Math.min(100, (draftsUsed / draftsTotal) * 100)
       : 0
+
+  const wsPct =
+    workspaceDraftsLimit && workspaceDraftsLimit > 0
+      ? Math.min(100, ((workspaceDraftsUsed ?? 0) / workspaceDraftsLimit) * 100)
+      : 0
+  const wsNearLimit = isAgency && wsPct >= 80
 
   const expiryLabel = isFree
     ? `Resets ${fmtResetDate(resetDate)}`
@@ -133,10 +141,32 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
           </div>
           <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100">
             <div
-              className="h-full rounded-full bg-teal transition-all duration-500"
-              style={{ width: `${pct}%` }}
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, backgroundColor: "var(--ws-brand, #0d4a45)" }}
             />
           </div>
+        </div>
+      )}
+
+      {isAgency && workspaceDraftsLimit != null && (
+        <div className="mt-4">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-zinc-500">
+            <span>This workspace: {workspaceDraftsUsed ?? 0} of {workspaceDraftsLimit} drafts</span>
+            <span>{Math.round(wsPct)}%</span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${wsNearLimit ? "bg-amber-500" : ""}`}
+              style={{ width: `${wsPct}%`, backgroundColor: wsNearLimit ? undefined : "var(--ws-brand, #0d4a45)" }}
+            />
+          </div>
+          {wsNearLimit && (
+            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+              {wsPct >= 100
+                ? "This client workspace has used all its drafts this month."
+                : `This client workspace has used ${Math.round(wsPct)}% of its monthly draft limit.`}
+            </p>
+          )}
         </div>
       )}
 

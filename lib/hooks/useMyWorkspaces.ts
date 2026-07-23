@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-export type MyWorkspace = { id: string; name: string; role: string; isPersonal: boolean }
+export type MyWorkspace = { id: string; name: string; role: string; isPersonal: boolean; brandingColor?: string | null }
 
 /**
  * Lists every workspace the current user belongs to - their own personal

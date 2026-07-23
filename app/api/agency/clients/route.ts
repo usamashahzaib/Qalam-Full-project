@@ -4,6 +4,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
+import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,12 +20,15 @@ export async function GET(request: NextRequest) {
 
     const workspaceIds = (memberships || []).map((m) => m.workspace_id).filter(Boolean) as string[]
     if (!workspaceIds.length) return NextResponse.json({ clients: [] })
-    const workspaces = await supabaseSelect<{
-      id: string
-      name: string
-      created_at: string
-      owner_id: string | null
-    }>("workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at,owner_id`)
+    type WorkspaceRow = { id: string; name: string; created_at: string; owner_id: string | null; branding_color: string | null; archived_at: string | null }
+    // branding_color/archived_at fall back gracefully if migrations 0057/0058 haven't run yet.
+    const workspaces = await supabaseSelect<WorkspaceRow>(
+      "workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at,owner_id,branding_color,archived_at`
+    ).catch(async () =>
+      (await supabaseSelect<Omit<WorkspaceRow, "branding_color" | "archived_at">>(
+        "workspaces", `id=in.(${workspaceIds.join(",")})&select=id,name,created_at,owner_id`
+      )).map((ws) => ({ ...ws, branding_color: null, archived_at: null }))
+    )
 
     // Batch-fetch plan for each workspace owner
     const ownerIds = [...new Set((workspaces || []).map((ws) => ws.owner_id).filter(Boolean))] as string[]
@@ -39,17 +43,39 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Team size per workspace - one query for all workspaces, counted client-side.
+    const allMembers = await supabaseSelect<{ workspace_id: string }>(
+      "workspace_members",
+      `workspace_id=in.(${workspaceIds.join(",")})&select=workspace_id`
+    ).catch(() => [])
+    const memberCounts = new Map<string, number>()
+    for (const row of allMembers || []) {
+      memberCounts.set(row.workspace_id, (memberCounts.get(row.workspace_id) ?? 0) + 1)
+    }
+
+    // Draft usage per workspace - at most 5 workspaces on the Agency plan, so parallel is fine.
+    const usageByWorkspace = new Map(
+      await Promise.all(
+        (workspaces || []).map(async (ws) => [ws.id, await checkWorkspaceUsage(ws.id, "drafts").catch(() => null)] as const)
+      )
+    )
+
     const clients = (workspaces || [])
       .map((ws) => {
         const wsRole = (memberships || []).find((m) => m.workspace_id === ws.id)?.role ?? "viewer"
+        const usage = usageByWorkspace.get(ws.id)
         return {
           id: ws.id,
           client_name: ws.name,
-          status: "active",
+          status: ws.archived_at ? "archived" : "active",
           plan: ws.owner_id ? (ownerPlans[ws.owner_id] ?? "Free") : "Free",
           role: wsRole,
           created_at: ws.created_at,
           planExpiresAt: resolvePlanExpiry(null, ws.created_at),
+          brandingColor: ws.branding_color,
+          teamCount: memberCounts.get(ws.id) ?? 0,
+          draftsUsed: usage?.used ?? 0,
+          draftsLimit: usage?.limit ?? null,
         }
       })
 
@@ -119,6 +145,10 @@ export async function POST(request: NextRequest) {
           role: "admin",
           created_at: ws.created_at,
           planExpiresAt: resolvePlanExpiry(null, ws.created_at),
+          brandingColor: null,
+          teamCount: 1,
+          draftsUsed: 0,
+          draftsLimit: 60,
         }
       : null
 

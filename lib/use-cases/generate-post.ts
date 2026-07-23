@@ -2,6 +2,7 @@ import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
@@ -81,6 +82,23 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
 
+  // Agency workspaces each get their own 60-draft allowance, separate from the
+  // account-wide counter above. Check after the user-level increment so the
+  // account limit is still the outer guard; refund it if this workspace is capped.
+  const isAgency = plan.toLowerCase() === "agency"
+  if (isAgency) {
+    const wsUsage = await incrementWorkspaceUsage(workspaceId, "drafts")
+    if (!wsUsage.allowed) {
+      await decrementUsage(userId, "drafts")
+      return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Workspace draft limit reached", userMessage: "This client workspace has used its 60 drafts this month. Switch clients or wait for the monthly reset." })
+    }
+  }
+
+  const refundDraftUsage = async () => {
+    await decrementUsage(userId, "drafts")
+    if (isAgency) await decrementWorkspaceUsage(workspaceId, "drafts")
+  }
+
   const voiceProfile = await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined)
 
   // Pass 1: Generate raw post
@@ -92,7 +110,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
       userId, plan, cache: false,
     })
   } catch (genError) {
-    await decrementUsage(userId, "drafts")
+    await refundDraftUsage()
     log.error("generate-post.generation_failed", { reqId, userId, error: (genError as Error).message })
     return err({ code: "INTERNAL_ERROR", message: "AI generation failed" })
   }
@@ -136,7 +154,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   }
 
   if (content.length > LINKEDIN_MAX_POST_CHARS) {
-    await decrementUsage(userId, "drafts")
+    await refundDraftUsage()
     return err({ code: "VALIDATION_ERROR", message: "linkedin_content_too_long", userMessage: "Post exceeds LinkedIn's 3000 character limit." })
   }
 
@@ -156,7 +174,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     })
     savedPostId = savedPost.id
   } catch (saveError) {
-    await decrementUsage(userId, "drafts")
+    await refundDraftUsage()
     log.error("generate-post.save_failed", { reqId, userId, error: (saveError as Error).message })
     return err({ code: "INTERNAL_ERROR", message: "Failed to save post" })
   }

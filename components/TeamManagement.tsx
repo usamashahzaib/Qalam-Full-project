@@ -10,6 +10,14 @@ type Member = {
   fullName: string | null
 }
 
+type PendingInvite = {
+  email: string
+  role: string
+  invitedAt: string
+  expiresAt: string
+  expired: boolean
+}
+
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
   admin: "Admin",
@@ -26,6 +34,7 @@ const INVITE_ROLES: { value: string; label: string; hint: string }[] = [
 
 export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: string; workspaceName: string }) {
   const [members, setMembers] = useState<Member[]>([])
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +44,8 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
   const [inviteMsg, setInviteMsg] = useState<{ text: string; ok: boolean } | null>(null)
 
   const [busyUserId, setBusyUserId] = useState<string | null>(null)
+  const [busyInviteEmail, setBusyInviteEmail] = useState<string | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
 
   const loadMembers = useCallback(() => {
     setIsLoading(true)
@@ -42,8 +53,10 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
     fetch(`/api/workspaces/${workspaceId}/members`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.members) setMembers(data.members)
-        else setError(data.error || "Could not load team members.")
+        if (data.members) {
+          setMembers(data.members)
+          setPendingInvites(data.pendingInvites || [])
+        } else setError(data.error || "Could not load team members.")
       })
       .catch(() => setError("Could not load team members."))
       .finally(() => setIsLoading(false))
@@ -80,6 +93,26 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
     }
   }
 
+  const handleResend = async (invite: PendingInvite) => {
+    setBusyInviteEmail(invite.email)
+    setInviteMsg(null)
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/invite`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: invite.email, role: invite.role }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "invite_failed")
+      setInviteMsg({ text: `Invite resent to ${invite.email}.`, ok: true })
+      loadMembers()
+    } catch {
+      setInviteMsg({ text: "Could not resend that invite. Try again.", ok: false })
+    } finally {
+      setBusyInviteEmail(null)
+    }
+  }
+
   const handleRoleChange = async (userId: string, role: string) => {
     setBusyUserId(userId)
     try {
@@ -98,6 +131,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
   }
 
   const handleRemove = async (userId: string) => {
+    setConfirmRemove(null)
     setBusyUserId(userId)
     try {
       const res = await fetch(`/api/workspaces/${workspaceId}/members/${userId}`, { method: "DELETE" })
@@ -143,18 +177,60 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
                   </select>
                 )}
                 {m.role !== "owner" ? (
-                  <button
-                    onClick={() => handleRemove(m.userId)}
-                    disabled={busyUserId === m.userId}
-                    className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
-                  >
-                    Remove
-                  </button>
+                  confirmRemove === m.userId ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-xs text-zinc-500">Remove?</span>
+                      <button
+                        onClick={() => handleRemove(m.userId)}
+                        disabled={busyUserId === m.userId}
+                        className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+                      >
+                        {busyUserId === m.userId ? "Removing..." : "Confirm"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmRemove(null)}
+                        className="text-xs font-medium text-zinc-400 hover:text-zinc-600"
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmRemove(m.userId)}
+                      disabled={busyUserId === m.userId}
+                      className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  )
                 ) : null}
               </div>
             </div>
           ))}
           {!members.length ? <p className="text-xs text-zinc-400">No team members yet.</p> : null}
+
+          {pendingInvites.length ? (
+            <div className="mt-3 space-y-2 border-t border-zinc-200 pt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Pending invites</p>
+              {pendingInvites.map((invite) => (
+                <div key={invite.email} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium text-zinc-900">{invite.email}</p>
+                    <p className="text-xs text-zinc-500">
+                      {ROLE_LABELS[invite.role] || invite.role} - {invite.expired ? "Invite expired" : "Awaiting sign-up"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleResend(invite)}
+                    disabled={busyInviteEmail === invite.email}
+                    className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                  >
+                    {busyInviteEmail === invite.email ? "Resending..." : "Resend invite"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       )}
 

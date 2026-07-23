@@ -119,13 +119,12 @@ export const plans: Plan[] = [
       "Team Analytics",
       "Dedicated Support",
     ],
-    cta: "Join Waitlist",
-    badge: "Coming Soon",
-    hidden: true,
+    cta: "Get Agency",
+    badge: "For agencies",
   },
 ]
 
-// Plans visible on the public pricing page - Agency is hidden until it ships
+// Plans visible on the public pricing page.
 export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 
 export const MANAGED_PLANS: ManagedPlan[] = [
@@ -238,7 +237,8 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   // overlay. Logged-out visitors are bounced through login with this as the
   // callback, so the plan they picked survives the round trip. Nothing paid
   // routes to /contact any more - that was sending buyers to an email form.
-  href: plan.name === "Free" ? "/signup" : upgradeUrl(plan.name),
+  // Agency has no self-serve Lemon Squeezy checkout yet - onboarding is manual.
+  href: plan.name === "Free" ? "/signup" : plan.name === "Agency" ? "/contact" : upgradeUrl(plan.name),
   highlighted: plan.name === "Solo",
   badge: plan.badge,
   featureStatus: plan.comingSoon ? "coming_soon" : "live",
@@ -259,14 +259,14 @@ export const COMPARISON_ROWS = [
     free: "5",
     solo: "30",
     pro: "60",
-    agency: "Coming Soon",
+    agency: "60 x 5 workspaces",
   },
   {
     label: "Carousels per month",
     free: "1",
     solo: "4",
     pro: "10",
-    agency: "Coming Soon",
+    agency: "10 x 5 workspaces",
   },
   {
     label: "AI Writer",

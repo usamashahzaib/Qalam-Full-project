@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
@@ -12,7 +13,7 @@ import { CheckIcon } from "@/components/ui/qalam-icons"
 const SELF_SERVE_PLANS: PlanName[] = ["Solo", "Pro"]
 
 const isValidPlan = (value: string | null): value is PlanName =>
-  value === "Solo" || value === "Pro" || value === "Agency"
+  value === "Solo" || value === "Pro"
 
 export default function UpgradePage() {
   const searchParams = useSearchParams()
@@ -136,12 +137,12 @@ export default function UpgradePage() {
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
             Multi-workspace, approvals, and team analytics. Not self-serve yet - we onboard agency accounts directly.
           </p>
-          <a
-            href={`mailto:${UPGRADES_EMAIL}?subject=Agency%20Early%20Access`}
+          <Link
+            href="/contact"
             className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
           >
-            Talk to us about Agency
-          </a>
+            Contact us for Agency
+          </Link>
         </section>
       )}
 
