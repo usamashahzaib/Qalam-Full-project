@@ -133,6 +133,7 @@ const PROTECTED_ROUTES = [
   "/writer",
   "/carousel",
   "/carousels",
+  "/comment-generator",
   "/library",
   "/analytics",
   "/voice",

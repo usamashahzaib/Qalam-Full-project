@@ -11,6 +11,7 @@ const PROTECTED = [
   "/analytics",
   "/calendar",
   "/carousels",
+  "/comment-generator",
   "/competitors",
   "/agency",
   "/approvals",
