@@ -10,8 +10,7 @@ import {
   extractResumePdfText,
 } from "@/lib/server/resume-pdf"
 import {
-  ProfessionalContextSchema,
-  type ProfessionalContext,
+  parseImportedProfessionalContext,
 } from "@/lib/professional-context"
 
 const ERROR_STATUS: Record<string, number> = {
@@ -23,13 +22,10 @@ const ERROR_STATUS: Record<string, number> = {
   resume_pdf_text_missing: 422,
 }
 
-type AnalysisPayload = Omit<ProfessionalContext, "source" | "reviewedAt"> & {
-  suggestedName: string
-  suggestedLinkedinUrl: string
-}
-
 const responseError = (code: string, status = 400) =>
   NextResponse.json({ error: code }, { status })
+const responseText = (value: unknown, max: number) =>
+  typeof value === "string" ? value.trim().slice(0, max) : ""
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -67,6 +63,8 @@ export async function POST(request: NextRequest) {
       "Ignore contact details, addresses, references, dates of birth, IDs, and private personal data.",
       "Do not invent facts. Empty arrays are better than guesses.",
       "Content pillars must fit the person's demonstrated career and expertise.",
+      "Include every requested key. Use empty strings or arrays when evidence is missing.",
+      "Confidence must be a number from 0 to 1.",
     ].join(" ")
 
     const userMessage = `Analyze this redacted professional document.
@@ -105,23 +103,21 @@ Return JSON:
       return responseError("professional_profile_analysis_failed", 503)
     }
 
-    const parsed = safeParseJson<AnalysisPayload>(raw)
-    const contextResult = ProfessionalContextSchema.safeParse({
-      ...(parsed || {}),
-      source,
-    })
-    if (!parsed || !contextResult.success) {
+    const parsed = safeParseJson<unknown>(raw)
+    const context = parseImportedProfessionalContext(parsed, source)
+    if (!context) {
       return responseError("professional_profile_response_invalid", 502)
     }
+    const analysis = parsed as Record<string, unknown>
 
     return NextResponse.json({
-      professionalContext: contextResult.data,
+      professionalContext: context,
       suggestions: {
-        name: String(parsed.suggestedName || "").slice(0, 120),
-        title: contextResult.data.primaryRole,
-        industry: contextResult.data.industry,
-        goals: contextResult.data.contentGoals.join(", "),
-        linkedinUrl: String(parsed.suggestedLinkedinUrl || "").slice(0, 300),
+        name: responseText(analysis.suggestedName, 120),
+        title: context.primaryRole,
+        industry: context.industry,
+        goals: context.contentGoals.join(", "),
+        linkedinUrl: responseText(analysis.suggestedLinkedinUrl, 300),
       },
       sourceDeleted: true,
       rawTextStored: false,

@@ -14,6 +14,11 @@ export const withWorkspaceKey = (path: string, workspaceId?: string | null) => {
   return hash ? `${next}#${hash}` : next
 }
 
+export const getActiveNavigationHref = (pathname: string, hrefs: string[]) =>
+  hrefs
+    .filter((href) => pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`)))
+    .sort((first, second) => second.length - first.length)[0] ?? null
+
 export const persistWriterIntent = (post: unknown, scheduleDate?: string | null) => {
   if (typeof window === "undefined") return
   sessionStorage.setItem("writerLoad", JSON.stringify(post))

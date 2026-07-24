@@ -21,6 +21,48 @@ export const ProfessionalContextSchema = z.object({
 
 export type ProfessionalContext = z.infer<typeof ProfessionalContextSchema>
 
+const importText = (value: unknown, max: number) =>
+  typeof value === "string" ? value.trim().slice(0, max) : ""
+const importList = (value: unknown) => {
+  const values = Array.isArray(value) ? value : typeof value === "string" ? [value] : []
+  return values
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => importText(item, 180))
+    .filter(Boolean)
+    .slice(0, 12)
+}
+const importConfidence = (value: unknown) => {
+  const confidence = typeof value === "number"
+    ? value
+    : typeof value === "string"
+      ? Number(value.replace("%", ""))
+      : 0
+  if (!Number.isFinite(confidence)) return 0
+  return Math.min(1, Math.max(0, confidence > 1 ? confidence / 100 : confidence))
+}
+
+export function parseImportedProfessionalContext(
+  value: unknown,
+  source: ProfessionalContext["source"]
+): ProfessionalContext | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const input = value as Record<string, unknown>
+  return parseProfessionalContext({
+    primaryRole: importText(input.primaryRole, 160),
+    seniority: importText(input.seniority, 160),
+    industry: importText(input.industry, 160),
+    expertise: importList(input.expertise),
+    audience: importList(input.audience),
+    contentPillars: importList(input.contentPillars),
+    proofPoints: importList(input.proofPoints),
+    careerHighlights: importList(input.careerHighlights),
+    avoidedTopics: importList(input.avoidedTopics),
+    contentGoals: importList(input.contentGoals),
+    confidence: importConfidence(input.confidence),
+    source,
+  })
+}
+
 const compact = (value: string) => value.replace(/\s+/g, " ").trim()
 const redact = (value: string, pattern: RegExp, replacement: string) =>
   value.replace(pattern, replacement)

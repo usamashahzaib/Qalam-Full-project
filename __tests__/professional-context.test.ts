@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  parseImportedProfessionalContext,
   parseProfessionalContext,
   professionalContextPrompt,
   redactSensitiveResumeText,
@@ -43,6 +44,25 @@ describe("professional context", () => {
     expect(parseProfessionalContext(context)).toEqual(context)
     expect(parseProfessionalContext({ ...context, confidence: 2 })).toBeNull()
     expect(parseProfessionalContext({ ...context, expertise: Array(20).fill("x") })).toBeNull()
+  })
+
+  it("normalizes incomplete AI import output without weakening saved context validation", () => {
+    const imported = parseImportedProfessionalContext({
+      primaryRole: "  Head of People  ",
+      expertise: ["Talent acquisition", 42, "", ...Array(15).fill("Leadership")],
+      confidence: "92%",
+    }, "resume_pdf")
+
+    expect(imported).toMatchObject({
+      primaryRole: "Head of People",
+      seniority: "",
+      industry: "",
+      confidence: 0.92,
+      source: "resume_pdf",
+    })
+    expect(imported?.expertise).toHaveLength(12)
+    expect(imported?.audience).toEqual([])
+    expect(parseImportedProfessionalContext([], "resume_pdf")).toBeNull()
   })
 
   it("adds factual professional context only when available", () => {

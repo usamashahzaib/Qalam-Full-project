@@ -27,7 +27,7 @@ import {
   StealthIcon,
   GiftIcon,
 } from "@/components/ui/qalam-icons"
-import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
+import { getActiveNavigationHref, persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CommandMenu } from "@/components/CommandMenu"
@@ -79,6 +79,7 @@ export const NAV_GROUPS = [
     ],
   },
 ]
+const NAV_HREFS = NAV_GROUPS.flatMap((group) => group.links.map((link) => link.href))
 
 function ReferralNavBadge() {
   const [count, setCount] = useState<number | null>(null)
@@ -105,6 +106,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const activeNavHref = getActiveNavigationHref(pathname, NAV_HREFS)
   const { data: session } = useSession()
   const { billing } = useBilling()
   const { posts } = usePosts()
@@ -320,7 +322,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {(openSections[group.label] ?? true) ? <div className="space-y-0.5">
                   {group.links.map((link) => {
                     const Icon = link.icon
-                    const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
+                    const active = activeNavHref === link.href
                     const agencyComingSoon = link.requiredPlan === "Agency"
                     const isLocked = agencyComingSoon || (link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags))
                     if (isLocked && link.requiredPlan) {
