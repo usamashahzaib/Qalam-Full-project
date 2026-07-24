@@ -275,7 +275,7 @@ export default function SignupPage() {
                   <LinkedInIcon className="h-4 w-4 text-[#0A66C2]" />
                   {socialLoading === "linkedin" ? "Redirecting to LinkedIn..." : "Continue with LinkedIn"}
                 </button>
-                <p className="text-center text-[11px] text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
+                <p className="text-center text-xs text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
               </div>
 
               <p className="mt-6 text-center text-sm text-zinc-500">

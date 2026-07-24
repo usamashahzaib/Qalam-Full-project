@@ -78,11 +78,11 @@ export function PricingCard({
         <p className={`mb-2 text-sm font-semibold uppercase tracking-widest ${
           isComingSoon ? "text-zinc-400" : highlighted ? "text-teal-100" : "text-teal"
         }`}>{plan}</p>
-        <div className="mb-1 flex items-end gap-2">
-          <span className={`text-5xl font-bold ${
+        <div className="mb-1 flex items-end gap-1">
+          <span className={`whitespace-nowrap text-4xl font-bold xl:text-5xl ${
             isComingSoon ? "text-zinc-400" : highlighted ? "text-white" : "text-zinc-900"
           }`}>{price}</span>
-          {period && <span className={`mb-2 text-sm ${highlighted ? "text-teal-100" : "text-zinc-500"}`}>/{period}</span>}
+          {period && <span className={`mb-2 shrink-0 text-sm ${highlighted ? "text-teal-100" : "text-zinc-500"}`}>/{period}</span>}
         </div>
         {discountBadge && <div className="mb-1">{discountBadge}</div>}
         {perDay && (

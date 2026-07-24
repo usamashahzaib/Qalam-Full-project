@@ -61,6 +61,9 @@ export function CarouselBuilderTool() {
   const [exportDone, setExportDone] = useState(false)
   const [building, setBuilding] = useState(false)
   const [error, setError] = useState("")
+  const [showAllThemes, setShowAllThemes] = useState(false)
+  const themes = Object.values(CAROUSEL_THEMES)
+  const visibleThemes = showAllThemes ? themes : themes.slice(0, 5)
 
   // Fixed refs for up to 8 slides
   const ref0 = useRef<HTMLDivElement>(null)
@@ -156,7 +159,7 @@ export function CarouselBuilderTool() {
             </Link>
             <h1 className="mb-3 text-4xl font-extrabold text-zinc-900 sm:text-5xl">LinkedIn Carousel Builder</h1>
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              5 premium themes. Color picker. Your name, your brand. Export 1080x1080 PNG slides - no account required.
+              {themes.length} premium themes. Color picker. Your name, your brand. Export 1080x1080 PNG slides - no account required.
             </p>
           </FadeUp>
         </div>
@@ -171,9 +174,10 @@ export function CarouselBuilderTool() {
 
               {/* Source content */}
               <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <label className="mb-1 block text-sm font-semibold text-zinc-800">Source content</label>
+                <label htmlFor="carousel-source" className="mb-1 block text-sm font-semibold text-zinc-800">Source content</label>
                 <p className="mb-3 text-xs text-zinc-400">Each paragraph becomes a slide. Up to 6 paragraphs used.</p>
                 <textarea
+                  id="carousel-source"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   rows={9}
@@ -189,8 +193,9 @@ export function CarouselBuilderTool() {
                 <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm space-y-4">
                   <p className="text-sm font-semibold text-zinc-800">Your identity on slides</p>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-500">Your name</label>
+                    <label htmlFor="carousel-author-name" className="mb-1 block text-xs font-medium text-zinc-500">Your name</label>
                     <input
+                      id="carousel-author-name"
                       type="text"
                       value={authorName}
                       onChange={(e) => setAuthorName(e.target.value)}
@@ -199,8 +204,9 @@ export function CarouselBuilderTool() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-500">Designation / tagline</label>
+                    <label htmlFor="carousel-designation" className="mb-1 block text-xs font-medium text-zinc-500">Designation / tagline</label>
                     <input
+                      id="carousel-designation"
                       type="text"
                       value={designation}
                       onChange={(e) => setDesignation(e.target.value)}
@@ -209,8 +215,9 @@ export function CarouselBuilderTool() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-500">Handle (optional)</label>
+                    <label htmlFor="carousel-handle" className="mb-1 block text-xs font-medium text-zinc-500">Handle (optional)</label>
                     <input
+                      id="carousel-handle"
                       type="text"
                       value={authorHandle}
                       onChange={(e) => setAuthorHandle(e.target.value)}
@@ -219,8 +226,9 @@ export function CarouselBuilderTool() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-500">Series label (cover chip)</label>
+                    <label htmlFor="carousel-series-label" className="mb-1 block text-xs font-medium text-zinc-500">Series label (cover chip)</label>
                     <input
+                      id="carousel-series-label"
                       type="text"
                       value={accentLabel}
                       onChange={(e) => setAccentLabel(e.target.value)}
@@ -234,7 +242,7 @@ export function CarouselBuilderTool() {
                 <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
                   <p className="mb-3 text-sm font-semibold text-zinc-800">Design theme</p>
                   <div className="grid grid-cols-5 gap-2">
-                    {Object.values(CAROUSEL_THEMES).map((t) => (
+                    {visibleThemes.map((t) => (
                       <button
                         key={t.id}
                         onClick={() => setThemeId(t.id)}
@@ -247,7 +255,7 @@ export function CarouselBuilderTool() {
                         >
                           <div className="w-5 h-5 rounded-full" style={{ background: t.circleColor, opacity: 0.9 }} />
                         </div>
-                        <span className="text-[10px] font-semibold text-zinc-600 leading-none">{t.label}</span>
+                        <span className="text-xs font-semibold leading-none text-zinc-600">{t.label}</span>
                         {themeId === t.id && (
                           <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-teal flex items-center justify-center shadow">
                             <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -258,6 +266,16 @@ export function CarouselBuilderTool() {
                       </button>
                     ))}
                   </div>
+                  {themes.length > 5 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllThemes((value) => !value)}
+                      aria-expanded={showAllThemes}
+                      className="mt-3 inline-flex min-h-7 items-center text-xs font-semibold text-teal hover:text-teal-700"
+                    >
+                      {showAllThemes ? "Show fewer themes" : `Show ${themes.length - 5} more themes`}
+                    </button>
+                  )}
 
                   {/* Accent color swatches */}
                   <div className="mt-4">

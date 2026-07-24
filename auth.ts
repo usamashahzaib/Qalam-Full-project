@@ -27,6 +27,7 @@ declare module "next-auth" {
 const config: NextAuthConfig = {
   ...authConfig,
   secret: process.env.AUTH_SECRET,
+  trustHost: true,
   providers: [
     LinkedIn({
       clientId: process.env.LINKEDIN_CLIENT_ID!,

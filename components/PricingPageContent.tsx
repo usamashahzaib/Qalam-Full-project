@@ -120,7 +120,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 }
 
 export function PricingPageContent({}: PricingPageContentProps) {
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
@@ -131,7 +131,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
   )
 
   useEffect(() => {
-    if (status !== "authenticated") return
+    if (status !== "authenticated" || !session?.user?.id) return
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
@@ -142,9 +142,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => { if (data.activeDiscountPercent) setReferralDiscountPercent(data.activeDiscountPercent) })
       .catch(() => {})
-  }, [status])
+  }, [session?.user?.id, status])
 
-  const displayPlans = PLANS.map((plan) => {
+  const displayPlans = PLANS.filter((plan) => !plan.comingSoon).map((plan) => {
     const isCurrentPlan = currentPlan != null && plan.plan.toLowerCase() === currentPlan.toLowerCase()
     const noteOverride =
       plan.plan === "Free"

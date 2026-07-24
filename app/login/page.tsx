@@ -153,7 +153,7 @@ export default function LoginPage() {
                 <label className="text-xs font-semibold text-zinc-600" htmlFor="password">
                   Password
                 </label>
-                <Link href="/forgot-password" className="text-xs font-semibold text-teal hover:text-teal-700">
+                <Link href="/forgot-password" className="inline-flex min-h-7 items-center text-xs font-semibold text-teal hover:text-teal-700">
                   Forgot password?
                 </Link>
               </div>
@@ -200,7 +200,7 @@ export default function LoginPage() {
               <LinkedInIcon className="h-4 w-4 text-[#0A66C2]" />
               {socialLoading === "linkedin" ? "Redirecting to LinkedIn..." : "Continue with LinkedIn"}
             </button>
-            <p className="mt-2 text-center text-[11px] text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
+            <p className="mt-2 text-center text-xs text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
           </div>
 
           {/* Sign up link */}

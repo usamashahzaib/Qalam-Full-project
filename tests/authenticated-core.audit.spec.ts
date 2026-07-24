@@ -18,28 +18,25 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
 
   const auditId = crypto.randomUUID()
   const email = `audit-${auditId}@example.invalid`
-  const cookieName = "authjs.session-token"
-  const token = await encode({
-    secret,
-    salt: cookieName,
-    maxAge: 60 * 60,
-    token: {
-      sub: auditId,
-      id: auditId,
-      email,
-      name: "Audit Runtime",
-      provider: "linkedin",
-    },
-  })
-
-  await context.addCookies([{
-    name: cookieName,
-    value: token,
+  const session = {
+    sub: auditId,
+    id: auditId,
+    email,
+    name: "Audit Runtime",
+    provider: "linkedin",
+  }
+  const cookieNames = ["authjs.session-token", "__Secure-authjs.session-token"] as const
+  const cookies = await Promise.all(cookieNames.map(async (name) => ({
+    name,
+    value: await encode({ secret, salt: name, maxAge: 60 * 60, token: session }),
     domain: "localhost",
     path: "/",
     httpOnly: true,
-    sameSite: "Lax",
-  }])
+    secure: name.startsWith("__Secure-"),
+    sameSite: "Lax" as const,
+  })))
+
+  await context.addCookies(cookies)
 
   let provisioned = false
   try {
@@ -168,7 +165,7 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     expect(pricingResponse?.status()).toBeLessThan(400)
     await expect(page.locator("body")).toContainText("PKR 499")
     await expect(page.locator("body")).toContainText("PKR 1,490")
-    await expect(page.locator("body")).toContainText("Coming Soon")
+    await expect(page.locator("body")).toContainText("Managed Plans")
   } finally {
     if (provisioned) {
       const deletion = await page.request.delete("/api/user/delete")

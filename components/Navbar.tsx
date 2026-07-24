@@ -110,7 +110,7 @@ function NavDropdown({
   )
 }
 
-type SessionData = { user?: { name?: string | null; email?: string | null; image?: string | null } | null }
+type SessionData = { user?: { id?: string | null; name?: string | null; email?: string | null; image?: string | null } | null }
 
 function UserMenu({ session }: { session: SessionData }) {
   const [open, setOpen] = useState(false)
@@ -286,7 +286,7 @@ export function Navbar() {
           <div className="hidden items-center gap-3 md:flex">
             {status === "loading" ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-            ) : session ? (
+            ) : session?.user?.id ? (
               <UserMenu session={session} />
             ) : (
               <>
@@ -375,7 +375,7 @@ export function Navbar() {
                 <div className="mt-3 flex flex-col gap-1 border-t border-zinc-200 pt-3">
                   {status === "loading" ? (
                     <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-                  ) : session ? (
+                  ) : session?.user?.id ? (
                     <>
                       <div className="mb-1 flex items-center gap-2.5 px-3 py-2">
                         {session.user?.image ? (

@@ -44,19 +44,6 @@ function useCountUp(end: number, duration = 1400) {
   return { count, ref }
 }
 
-const NICHE_PROOF: { name: string; proof: string }[] = [
-  { name: "Founders", proof: "Thought leadership that does not sound outsourced" },
-  { name: "HR Directors", proof: "Employer-brand posts that do not read legal-reviewed" },
-  { name: "Consultants", proof: "Frameworks and case notes that compound into an archive" },
-  { name: "Agency Owners", proof: "Client voices kept separate, never blended" },
-  { name: "Marketing Directors", proof: "Consistent output without a ghostwriter retainer" },
-  { name: "Sales Directors", proof: "Prospect-facing posts that build trust before the call" },
-  { name: "Product Managers", proof: "Ship notes and lessons turned into real posts" },
-  { name: "Recruiters", proof: "Role posts and candidate outreach in one voice" },
-  { name: "CFOs", proof: "Precise, credible posts with zero buzzword padding" },
-  { name: "Executive Coaches", proof: "A point of view that sounds like one person, every time" },
-]
-
 const FEATURES = [
   {
     icon: VoiceIcon,
@@ -294,14 +281,14 @@ function ProductMockup() {
             </div>
             <div>
               <p className="text-xs font-semibold text-zinc-900">Sample workspace draft</p>
-              <p className="text-[10px] text-zinc-400">Live surface preview</p>
+              <p className="text-xs text-zinc-400">Live surface preview</p>
             </div>
           </div>
           <p className="min-h-[104px] whitespace-pre-line text-xs leading-relaxed text-zinc-700">
             {renderTypedSegments(variant.segments, visibleChars)}
             {isTyping && <span className="ml-0.5 inline-block h-3 w-[2px] -mb-0.5 animate-pulse bg-teal align-middle" />}
           </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-[10px] text-zinc-500">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
             <span className="rounded-lg bg-zinc-50 px-2 py-1">Draft saved</span>
             <span className="rounded-lg bg-zinc-50 px-2 py-1">Voice settings attached</span>
             <span className="rounded-lg bg-zinc-50 px-2 py-1">Archive ready</span>
@@ -331,9 +318,9 @@ function ProductMockup() {
         }}
         className="absolute -right-4 top-8 hidden rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl sm:block"
       >
-        <p className="text-[10px] font-medium text-zinc-500">Live product</p>
+        <p className="text-xs font-medium text-zinc-500">Live product</p>
         <p className="text-xl font-bold text-teal">Free to start</p>
-        <p className="text-[10px] font-medium text-zinc-500">{SOLO_MONTHLY_PRICE} to unlock Solo</p>
+        <p className="text-xs font-medium text-zinc-500">{SOLO_MONTHLY_PRICE} to unlock Solo</p>
       </motion.div>
     </div>
   )
@@ -536,7 +523,7 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
-  const homepagePlans = PLANS.map((plan) => ({
+  const homepagePlans = PLANS.filter((plan) => !plan.comingSoon).map((plan) => ({
     ...plan,
     price: formatPkr(plan.monthlyPkr),
     usdReference: plan.annualPkrPerMonth ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo` : "PKR early pricing",
@@ -626,13 +613,13 @@ export default function HomePage() {
       {/* Trust band */}
       <section className="border-b border-zinc-100 bg-white px-6 py-8">
         <div className="mx-auto max-w-[1200px]">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
               "Your drafts are private - No one at Qalam reads your content. Ever.",
               "Card checkout unlocks your plan instantly. JazzCash and Easypaisa accepted on request.",
               "Free plan is real - 5 posts a month. No card. No expiry. No trick.",
             ].map((block) => (
-              <div key={block} className="rounded-2xl border border-zinc-200 bg-zinc-50 px-6 py-5 text-center text-sm font-medium text-zinc-700 shadow-sm">
+              <div key={block} className="flex items-center justify-center px-6 py-4 text-center text-sm font-medium leading-relaxed text-zinc-700">
                 {block}
               </div>
             ))}
@@ -673,50 +660,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ChatGPT contrast */}
-      <section className="border-b border-zinc-100 bg-white px-6 py-20">
-        <div className="mx-auto max-w-[760px] text-center">
-          <FadeUp>
-            <h2 className="mb-6 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              ChatGPT is a typewriter. <span className="text-gold gold-underline">Qalam is a system.</span>
-            </h2>
-            <p className="text-xl leading-relaxed text-zinc-600">
-              ChatGPT gives you a post and forgets you the moment you close the tab. Qalam remembers your voice, stores every hook that worked, builds your archive over time - so the longer you use it, the better it knows you. Month six is easier than month one. That&apos;s not how any other tool works.
-            </p>
-          </FadeUp>
-        </div>
-      </section>
-
-      <section className="overflow-hidden border-y border-zinc-200 bg-white py-8">
-        <div className="mx-auto mb-4 max-w-[1200px] px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">Built for professionals who take LinkedIn seriously</p>
-        </div>
-        <div className="marquee-fade overflow-hidden">
-          <div className="marquee-track">
-            {[...NICHE_PROOF, ...NICHE_PROOF].map((niche, i) => (
-              <span
-                key={`${niche.name}-${i}`}
-                className="group relative mx-2 inline-flex shrink-0 items-center rounded-full border border-zinc-200 bg-zinc-50 px-4 py-1.5 text-sm font-semibold tracking-wide text-zinc-600 transition-all hover:border-teal/40 hover:bg-teal/5 hover:text-teal"
-              >
-                {niche.name}
-                <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 scale-95 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-normal leading-snug text-white opacity-0 shadow-lg transition-all duration-150 group-hover:scale-100 group-hover:opacity-100">
-                  {niche.proof}
-                  <span className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-zinc-900" />
-                </span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white px-6 py-10">
-        <div className="mx-auto max-w-[760px] text-center">
-          <p className="text-base leading-relaxed text-zinc-500">
-            <strong className="font-semibold text-zinc-800">Qalam</strong> is an AI LinkedIn writing workspace for professionals. It learns your voice from real posts, stores drafts and approvals, helps with hashtags and replies, and moves content from idea to LinkedIn publishing.
-          </p>
-        </div>
-      </section>
-
       <section className="bg-transparent px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-12 text-center">
@@ -737,7 +680,7 @@ export default function HomePage() {
                   <div className={`h-full overflow-hidden rounded-2xl border bg-white shadow-sm ${status.borderClass}`}>
                     <div className={`flex items-center justify-between border-b px-7 py-4 ${status.headerClass}`}>
                       <h3 className="text-base font-bold text-zinc-900">{group.title}</h3>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${status.pillClass}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${status.pillClass}`}>
                         <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${status.animate ? "animate-pulse" : ""}`} />
                         {status.label}
                       </span>

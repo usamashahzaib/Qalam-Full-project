@@ -309,7 +309,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div key={group.label}>
                 <button
                   onClick={() => toggleSection(group.label)}
-                  className="mb-1 flex w-full cursor-pointer items-center justify-between px-3 text-left text-[9px] font-bold uppercase tracking-widest text-zinc-600 transition-colors hover:text-zinc-400"
+                  className="mb-1 flex w-full cursor-pointer items-center justify-between px-3 text-left text-[11px] font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:text-zinc-300"
                   aria-expanded={openSections[group.label] ?? true}
                 >
                   <span>{group.label}</span>
@@ -377,7 +377,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {user?.linkedinMemberId && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#0A66C2] border-2 border-zinc-900 flex items-center justify-center"><LinkedInIcon className="h-1.5 w-1.5 text-white" /></span>}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 text-[9px] font-bold text-gold uppercase tracking-wider">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-red-200">Admin</span> : null}</div>
+              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 text-[11px] font-bold text-gold uppercase tracking-wider">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-red-200">Admin</span> : null}</div>
               <p className="text-xs text-zinc-500 truncate mt-1">{user?.email}</p>
             </div>
           </div>
@@ -488,7 +488,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-14 w-full items-center justify-between px-4">
           <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-teal/5 border border-teal/10 px-2.5 py-0.5 text-[10px] font-bold text-teal max-w-[120px] truncate">{activeClientName}</span>
+            <span className="max-w-[120px] truncate rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal">{activeClientName}</span>
             <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
             <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
             <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>

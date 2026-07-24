@@ -45,7 +45,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 transition-all duration-200 hover:border-gold/40 hover:bg-gold/10 hover:text-gold"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/40 transition-all duration-200 hover:border-gold/40 hover:bg-gold/10 hover:text-gold"
     >
       {children}
     </a>
@@ -83,7 +83,7 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="text-sm text-white/55 transition-colors hover:text-gold">
+                    <Link href={link.href} className="inline-flex min-h-7 items-center text-sm text-white/55 transition-colors hover:text-gold">
                       {link.label}
                     </Link>
                   </li>
@@ -96,13 +96,13 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
           <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/legal/privacy" className="transition-colors hover:text-white/60">
+            <Link href="/legal/privacy" className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
               Privacy
             </Link>
-            <Link href="/legal/terms" className="transition-colors hover:text-white/60">
+            <Link href="/legal/terms" className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
               Terms
             </Link>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="transition-colors hover:text-white/60">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
               {SUPPORT_EMAIL}
             </a>
           </div>

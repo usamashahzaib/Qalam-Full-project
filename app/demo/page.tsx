@@ -195,8 +195,9 @@ function WriterTab({ onStart }: { onStart: () => void }) {
 
       <div className="space-y-5">
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-widest text-zinc-400">Topic</label>
+          <label htmlFor="demo-topic" className="mb-2 block text-xs font-semibold uppercase tracking-widest text-zinc-400">Topic</label>
           <input
+            id="demo-topic"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-teal/40 focus:ring-2 focus:ring-teal/15"
@@ -222,7 +223,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Draft</p>
+            <label htmlFor="demo-draft" className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Draft</label>
             <div className="flex items-center gap-3">
               <span className="text-xs text-zinc-400">{draft.length} / 3000</span>
               <button onClick={regenerate} disabled={generating} className="rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-60">
@@ -231,6 +232,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
             </div>
           </div>
           <textarea
+            id="demo-draft"
             ref={textareaRef}
             rows={15}
             value={draft}
@@ -322,6 +324,7 @@ function ArchiveTab({ onStart }: { onStart: () => void }) {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row">
         <input
+          aria-label="Search your archive"
           placeholder="Search your archive..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -457,14 +460,6 @@ export default function DemoPage() {
         </div>
       </div>
 
-      <div className="fixed inset-x-4 bottom-4 z-30 md:hidden">
-        <button
-          onClick={handleStart}
-          className="flex w-full items-center justify-center rounded-2xl bg-teal px-5 py-3.5 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(13,74,69,0.25)]"
-        >
-          Start with LinkedIn
-        </button>
-      </div>
     </div>
   )
 }
