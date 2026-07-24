@@ -12,6 +12,7 @@ import { enqueueRequest } from "@/lib/server/queue"
 import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
 import type { Hook } from "@/lib/use-cases/generate-hooks"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -39,7 +40,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const cacheKey = generateCacheKey({ task: "hooks", topic: parsed.data.topic, role: parsed.data.role, goal: parsed.data.goal })
+    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const cacheKey = generateCacheKey({
+      task: "hooks",
+      topic: parsed.data.topic,
+      role: parsed.data.role,
+      goal: parsed.data.goal,
+      userId: user.id,
+      professionalContext: JSON.stringify(voiceProfile?.professionalContext || null),
+    })
     const cached = await getCachedResult<{ hooks: Hook[] }>(cacheKey)
     if (cached) return NextResponse.json(cached)
 
@@ -57,6 +66,7 @@ export async function POST(request: NextRequest) {
       goal: parsed.data.goal,
       userId: user.id,
       plan: planCheck.plan,
+      voiceProfile,
     })
 
     if (!result.ok) {

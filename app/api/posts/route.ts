@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     const ctx = await getWorkspaceSessionContext()
 
     const body = await request.json()
-    const { title, content, type = "linkedin", status, scheduledTime, publishedAt, externalPostUrn } = body
+    const { title, content, type = "linkedin", status, scheduledTime, publishedAt, externalPostUrn, engagementScore } = body
     if (!title) {
       return NextResponse.json({ error: "title is required" }, { status: 400 })
     }
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
       scheduledTime,
       publishedAt,
       externalPostUrn,
+      engagementScore: typeof engagementScore === "number" ? engagementScore : null,
     })
     if (safeStatus === "scheduled" && scheduledTime) {
       await attachQstashSchedule(post.id, new Date(scheduledTime)).catch((err) =>
@@ -100,7 +101,7 @@ export async function PATCH(request: NextRequest) {
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
     const body = await request.json()
-    const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn } = body
+    const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn, engagementScore } = body
     // A post mid-publish must not change status or schedule from here - the
     // publish worker owns it until it lands on published/failed (or the
     // reconciler reverts it). Flipping it back to "scheduled" now would set
@@ -128,6 +129,7 @@ export async function PATCH(request: NextRequest) {
     if (scheduledTime !== undefined) patch.scheduledTime = scheduledTime
     if (publishedAt !== undefined) patch.publishedAt = publishedAt
     if (externalPostUrn !== undefined) patch.externalPostUrn = externalPostUrn
+    if (typeof engagementScore === "number") patch.engagementScore = engagementScore
 
     const post = await postRepo.update(id, workspaceId, patch)
 

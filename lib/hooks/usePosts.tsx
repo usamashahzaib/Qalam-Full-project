@@ -14,9 +14,9 @@ type PostsContextValue = {
   failed: WorkspacePost[]
   isLoadingPosts: boolean
   postsError: string | null
-  saveDraft: (input: { id?: string | null; title: string; content: string; type: string }) => Promise<string>
-  schedulePost: (input: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
-  publishPost: (input: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
+  saveDraft: (input: { id?: string | null; title: string; content: string; type: string; engagementScore?: number | null }) => Promise<string>
+  schedulePost: (input: { id?: string | null; title: string; content: string; type: string; date: string; time: string; engagementScore?: number | null }) => Promise<string>
+  publishPost: (input: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null }) => Promise<string>
   retryFailedPost: (id: string) => Promise<void>
   deletePost: (id: string) => Promise<void>
   refreshPosts: () => Promise<void>
@@ -78,13 +78,13 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     return () => window.clearTimeout(timer)
   }, [fetchPosts])
 
-  const saveDraft = useCallback(async ({ id, title, content, type }: { id?: string | null; title: string; content: string; type: string }) => {
+  const saveDraft = useCallback(async ({ id, title, content, type, engagementScore }: { id?: string | null; title: string; content: string; type: string; engagementScore?: number | null }) => {
     const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled draft"
     if (id) {
       const res = await fetch(`/api/posts?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", workspaceKey: workspaceId }),
+        body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", engagementScore, workspaceKey: workspaceId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update draft")
@@ -95,7 +95,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", workspaceKey: workspaceId }),
+      body: JSON.stringify({ title: resolvedTitle, content, type, status: "draft", engagementScore, workspaceKey: workspaceId }),
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Failed to create draft")
@@ -104,14 +104,14 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
 
-  const schedulePost = useCallback(async ({ id, title, content, type, date, time }: { id?: string | null; title: string; content: string; type: string; date: string; time: string }) => {
+  const schedulePost = useCallback(async ({ id, title, content, type, date, time, engagementScore }: { id?: string | null; title: string; content: string; type: string; date: string; time: string; engagementScore?: number | null }) => {
     const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
     const scheduledTime = date && time ? new Date(`${date}T${time}:00`).toISOString() : null
     if (id) {
       const res = await fetch(`/api/posts?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
+        body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, engagementScore, workspaceKey: workspaceId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
@@ -122,7 +122,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, workspaceKey: workspaceId }),
+      body: JSON.stringify({ title: resolvedTitle, content, type, status: "scheduled", scheduledTime, engagementScore, workspaceKey: workspaceId }),
     })
     const data = await res.json()
     if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
@@ -131,13 +131,13 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
 
-  const publishPost = useCallback(async ({ id, title, content, type, publishedAt, externalPostUrn }: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => {
+  const publishPost = useCallback(async ({ id, title, content, type, publishedAt, externalPostUrn, engagementScore }: { id?: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null }) => {
     const resolvedTitle = title || content.trim().split("\n")[0]?.slice(0, 80) || "Untitled post"
     if (id) {
       const res = await fetch(`/api/posts?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, workspaceKey: workspaceId }),
+        body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, engagementScore, workspaceKey: workspaceId }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update post")
@@ -148,7 +148,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, workspaceKey: workspaceId }),
+      body: JSON.stringify({ title: resolvedTitle, content, type, status: "published", publishedAt, externalPostUrn: externalPostUrn ?? null, engagementScore, workspaceKey: workspaceId }),
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Failed to create published post")

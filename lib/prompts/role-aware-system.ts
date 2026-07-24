@@ -10,6 +10,7 @@ import type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
 import { GENERIC_PROFILE, resolveRoleProfile } from "./role-profiles";
 import { GENERATE_CRITICAL_RULES } from "./builders/generate";
 import { HOOKS_CRITICAL_RULES } from "./builders/hooks";
+import { professionalContextPrompt } from "@/lib/professional-context";
 
 // ---------------------------------------------------------------------------
 // ROLE ADAPTATION HELPERS
@@ -104,6 +105,7 @@ export function buildGeneratePrompt(
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
   const formatRule = FORMAT_RULES[format];
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
 
   const system = `
 You are a LinkedIn ghostwriter. You write for a ${label}.
@@ -116,6 +118,8 @@ ${roleVocabularyLine(label, profile, isCanonical)}
 
 WHAT THEY CARE ABOUT / PAIN POINTS:
 ${rolePainPointsLine(label, profile, isCanonical)}
+
+${professionalContext}
 
 CONTENT FORMATS THAT WORK FOR THEM:
 ${roleFormatsBlock(label, profile, isCanonical)}
@@ -538,12 +542,16 @@ Return ONLY valid JSON - a flat array of exactly 3 strings. No other text, no ma
 export function buildHook5StylesPrompt(
   topic: string,
   role: string,
-  goal?: string
+  goal?: string,
+  voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
 
   const system = `
 You write LinkedIn post opening lines for ${label}s.
+
+${professionalContext}
 
 Generate exactly 5 hooks for the same topic, one per style:
 1. SHARP: An uncomfortable truth or bold claim. Concrete and specific.
@@ -590,6 +598,7 @@ export function buildPostFromHookPrompt(
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
   const formatRule = FORMAT_RULES[format];
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
   const wordTargets: Record<PostFormat, string> = {
     short: "150-200 words",
     medium: "250-350 words",
@@ -600,6 +609,8 @@ export function buildPostFromHookPrompt(
 You are a LinkedIn ghostwriter for ${label}s.
 
 ${roleVoiceBlock(label, profile, isCanonical)}
+
+${professionalContext}
 
 Vocabulary to draw from (use some, not all): ${isCanonical ? profile.vocabulary.slice(0, 10).join(", ") : roleVocabularyLine(label, profile, isCanonical)}
 
@@ -638,11 +649,14 @@ export function buildPostWithReplacedHookPrompt(
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
 
   const system = `
 You are editing an existing LinkedIn post for a ${label}.
 
 ${roleVoiceBlock(label, profile, isCanonical)}
+
+${professionalContext}
 
 ${ANTI_AI_RULES}
 

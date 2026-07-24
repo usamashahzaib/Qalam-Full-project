@@ -17,13 +17,14 @@ const toClientPost = (post: DbPost): ClientPost => ({
   date: (post.scheduled_for || post.published_at || post.created_at || "").slice(0, 10),
   scheduledTime: post.scheduled_for ?? null,
   externalPostUrn: post.external_post_urn ?? (post as DbPost & { linkedin_post_id?: string | null }).linkedin_post_id ?? null,
+  engagementScore: post.engagement_score ?? null,
   updatedAt: post.updated_at,
   createdAt: post.created_at,
 })
 
 const DB_STATUSES = new Set(["draft", "published", "scheduled", "archived"])
 
-const POST_COLUMNS = "id,workspace_id,user_id,title,content,status,scheduled_for,published_at,linkedin_post_id,metadata,created_at,updated_at"
+const POST_COLUMNS = "id,workspace_id,user_id,title,content,status,scheduled_for,published_at,linkedin_post_id,engagement_score,metadata,created_at,updated_at"
 
 export class SupabasePostRepository implements IPostRepository {
   async list(workspaceId: string): Promise<ClientPost[]> {
@@ -51,7 +52,7 @@ export class SupabasePostRepository implements IPostRepository {
     const {
       userId, workspaceId, authorId,
       title, content, type, status,
-      scheduledTime, publishedAt, externalPostUrn,
+      scheduledTime, publishedAt, externalPostUrn, engagementScore,
     } = params
     const now = new Date().toISOString()
     const { data: post, error } = await createServiceClient()
@@ -65,6 +66,7 @@ export class SupabasePostRepository implements IPostRepository {
         scheduled_for: scheduledTime ?? null,
         published_at: publishedAt ?? null,
         linkedin_post_id: externalPostUrn ?? null,
+        engagement_score: engagementScore ?? null,
         metadata: { type, authorId },
         created_at: now,
         updated_at: now,
@@ -81,6 +83,7 @@ export class SupabasePostRepository implements IPostRepository {
       date: (scheduledTime || publishedAt || now).slice(0, 10),
       scheduledTime: scheduledTime ?? null,
       externalPostUrn: externalPostUrn ?? null,
+      engagementScore: engagementScore ?? null,
       updatedAt: now,
       createdAt: now,
     }
@@ -114,6 +117,7 @@ export class SupabasePostRepository implements IPostRepository {
     if (patch.scheduledTime !== undefined) dbPatch.scheduled_for = patch.scheduledTime
     if (patch.publishedAt !== undefined) dbPatch.published_at = patch.publishedAt
     if (patch.externalPostUrn !== undefined) dbPatch.linkedin_post_id = patch.externalPostUrn
+    if (patch.engagementScore !== undefined) dbPatch.engagement_score = patch.engagementScore
 
     // If only updated_at remains (all changes handled by RPC) skip the extra UPDATE
     if (Object.keys(dbPatch).length > 1) {
@@ -164,6 +168,7 @@ export class SupabasePostRepository implements IPostRepository {
         title: `${original.title} (copy)`,
         content: original.content ?? "",
         status: "draft",
+        engagement_score: original.engagement_score ?? null,
         metadata: { type: original.type ?? "linkedin", authorId },
         created_at: now,
         updated_at: now,
@@ -180,6 +185,7 @@ export class SupabasePostRepository implements IPostRepository {
       date: now.slice(0, 10),
       scheduledTime: null,
       externalPostUrn: null,
+      engagementScore: original.engagement_score ?? null,
       updatedAt: now,
       createdAt: now,
     }

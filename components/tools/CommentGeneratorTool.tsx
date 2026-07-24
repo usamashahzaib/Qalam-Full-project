@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -19,6 +19,7 @@ const STYLE_LABELS: Record<string, string> = {
 const MAX_POST_LENGTH = 5000
 
 type Comment = { style: string; text: string }
+type Usage = { current: number; limit: number | "unlimited" }
 
 function CommentGeneratorInner() {
   const [postText, setPostText] = useState("")
@@ -28,6 +29,20 @@ function CommentGeneratorInner() {
   const [error, setError] = useState<string | null>(null)
   const [upgradeRequired, setUpgradeRequired] = useState(false)
   const [copied, setCopied] = useState<number | null>(null)
+  const [usage, setUsage] = useState<Usage | null>(null)
+
+  const loadUsage = () => {
+    fetch("/api/comments/generate")
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (typeof data.current === "number") setUsage(data)
+      })
+      .catch(() => { /* usage counter is a nice-to-have - silently skip on failure */ })
+  }
+
+  useEffect(() => {
+    loadUsage()
+  }, [])
 
   const handleGenerate = async () => {
     const trimmed = postText.trim()
@@ -71,6 +86,7 @@ function CommentGeneratorInner() {
       }
 
       setComments(data.comments)
+      void loadUsage()
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {
@@ -118,6 +134,13 @@ function CommentGeneratorInner() {
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
               Paste a post you want to comment on, pick your professional angle, and get 3 tailored comment styles ready to post.
             </p>
+            {usage && (
+              <p className="mt-3 text-sm font-medium text-zinc-500">
+                {usage.limit === "unlimited"
+                  ? "Unlimited comment generations on your plan"
+                  : `${Math.max(0, usage.limit - usage.current)} of ${usage.limit} comment generations left this month`}
+              </p>
+            )}
           </FadeUp>
         </div>
       </section>

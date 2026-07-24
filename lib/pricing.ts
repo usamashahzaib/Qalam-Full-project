@@ -56,14 +56,14 @@ export const plans: Plan[] = [
   {
     name: "Solo",
     monthlyPrice: 499,
-    annualPrice: 3492,
+    annualPrice: 3493,
     postsPerMonth: 30,
     draftsPerMonth: 30,
     carouselsPerMonth: 3,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 2,496",
+    annualSavingsLabel: "Save PKR 2,495",
     features: [
       "30 posts/month",
       "3 carousels/month",
@@ -78,14 +78,14 @@ export const plans: Plan[] = [
   {
     name: "Pro",
     monthlyPrice: 1490,
-    annualPrice: 10430,
+    annualPrice: 10433,
     postsPerMonth: 60,
     draftsPerMonth: 60,
     carouselsPerMonth: 10,
     researchPerMonth: 5,
     voiceProfiles: 1,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 7,450",
+    annualSavingsLabel: "Save PKR 7,447",
     features: [
       "60 posts/month",
       "10 carousels/month",

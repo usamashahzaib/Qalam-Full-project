@@ -33,7 +33,7 @@ const FIELD_MAP: Record<Feature, string> = {
   analyses: "analyses_used",
 }
 
-const USAGE_FIELDS = ["ai_drafts_used", "carousels_used", "hooks_used", "analyses_used", "competitor_runs_used"] as const
+const USAGE_FIELDS = ["ai_drafts_used", "carousels_used", "hooks_used", "analyses_used", "competitor_runs_used", "comment_generations_used"] as const
 const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000
 
 const getThirtyDayWindow = (startedAt?: string | null) => {

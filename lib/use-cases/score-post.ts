@@ -3,7 +3,7 @@ import "server-only"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
-import { gateScores } from "@/lib/content-score-gate"
+import { gateScores, freeTierAttemptCap } from "@/lib/content-score-gate"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 
@@ -31,10 +31,12 @@ export interface ScorePostInput {
   internalUserId?: string
   workspaceId?: string | null
   plan: string
+  attempt?: number
 }
 
 export async function scorePost(input: ScorePostInput): Promise<Result<ScorePostOutput>> {
-  const { content, role: rawRole = "", userId, workspaceId, plan } = input
+  const { content, role: rawRole = "", userId, workspaceId, plan, attempt = 1 } = input
+  const freeCap = plan.toLowerCase() === "free" ? freeTierAttemptCap(attempt) : undefined
 
   const trimmed = content.trim()
   if (!trimmed || trimmed.length < 4) {
@@ -61,7 +63,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
       overall: base - 4,
       tips: { specificity: "Add a concrete example or result.", cta: "End with a clear next step." },
       hashtags: [],
-    })
+    }, freeCap)
     return ok({
       scores: {
         hook: gated.hook,
@@ -113,7 +115,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     overall: rawOverall * m,
     tips: parsed.tips ?? {},
     hashtags: parsed.hashtags ?? [],
-  })
+  }, freeCap)
 
   return ok({
     scores: {

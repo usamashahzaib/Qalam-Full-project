@@ -5,6 +5,10 @@ import { requireRole } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { storeVoiceExamples } from "@/lib/server/embeddings"
 import { requireAuth } from "@/lib/server/workspace"
+import { parseProfessionalContext } from "@/lib/professional-context"
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  Boolean(value && typeof value === "object" && !Array.isArray(value))
 
 export async function POST(request: NextRequest) {
   // Basic identity (name, title, industry, goals) is free for all authenticated users.
@@ -29,6 +33,16 @@ export async function POST(request: NextRequest) {
   }
 
   const hasVoiceTraining = Boolean(body.examplePosts || body.characteristics)
+  const rawCharacteristics = isRecord(body.characteristics) ? body.characteristics : null
+  const professionalContext = parseProfessionalContext(rawCharacteristics?.professionalContext)
+  const characteristics = rawCharacteristics
+    ? {
+        ...rawCharacteristics,
+        ...(professionalContext
+          ? { professionalContext: { ...professionalContext, reviewedAt: new Date().toISOString() } }
+          : {}),
+      }
+    : null
 
   // Only gate voice training on Pro - basic identity is always allowed
   if (hasVoiceTraining) {
@@ -47,7 +61,7 @@ export async function POST(request: NextRequest) {
     goals: String(body.goals || "").trim(),
     ...(hasVoiceTraining ? {
       example_posts: String(body.examplePosts || "").trim() || null,
-      characteristics: body.characteristics || null,
+      characteristics,
     } : {}),
     updated_at: new Date().toISOString(),
   }

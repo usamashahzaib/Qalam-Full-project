@@ -6,6 +6,8 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { buildCtaAlternativesPrompt } from "@/lib/prompts/role-aware-system"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { professionalContextPrompt } from "@/lib/professional-context"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -26,7 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     const { system, user: userMessage } = buildCtaAlternativesPrompt(content, role)
-    const raw = await callAi("cta-rewrite", system, userMessage, {
+    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const context = professionalContextPrompt(voiceProfile?.professionalContext)
+    const contextualSystem = context ? `${system}\n\n${context}` : system
+    const raw = await callAi("cta-rewrite", contextualSystem, userMessage, {
       json: true,
       temperature: 0.9,
       maxTokens: 400,

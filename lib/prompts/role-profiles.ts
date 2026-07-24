@@ -13,6 +13,7 @@ export interface VoiceProfile {
   vocabulary?: string[];
   patterns?: string[];
   examples?: string[];
+  professionalContext?: import("@/lib/professional-context").ProfessionalContext;
 }
 
 export interface RoleProfile {

@@ -3,6 +3,7 @@ import "server-only"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { retrieveVoiceExamples } from "@/lib/server/embeddings"
 import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
+import { parseProfessionalContext } from "@/lib/professional-context"
 
 type VoiceRow = {
   tone?: string | null
@@ -17,6 +18,7 @@ type OldCharacteristics = {
   sentenceLength?: string
   commonPhrases?: string[]
   transitions?: string[]
+  professionalContext?: unknown
 }
 
 type Fingerprint = {
@@ -39,9 +41,10 @@ export const toPromptVoiceProfile = (row?: VoiceRow | null): VoiceProfile | unde
   const patterns = chars?.transitions || fp?.unique_verbal_tics || []
   const sentenceLength = chars?.sentenceLength || fp?.typical_sentence_length || ""
   const formatting = fp?.argument_structure || fp?.storytelling_approach || ""
+  const professionalContext = parseProfessionalContext(chars?.professionalContext)
 
-  return tone || sentenceLength || vocabulary.length || patterns.length || formatting
-    ? { tone, sentenceLength, vocabulary, patterns, formatting }
+  return tone || sentenceLength || vocabulary.length || patterns.length || formatting || professionalContext
+    ? { tone, sentenceLength, vocabulary, patterns, formatting, professionalContext: professionalContext || undefined }
     : undefined
 }
 

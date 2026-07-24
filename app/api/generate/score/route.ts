@@ -23,9 +23,11 @@ export async function POST(request: NextRequest) {
     }
 
     const content = String(body.content || body.postContent || "")
+    const attempt = Number.isFinite(Number(body.attempt)) ? Number(body.attempt) : 1
 
-    // Cache key scoped to user + role so voice-profile tips never bleed between users or personas
-    const cacheKey = generateCacheKey({ task: "score", content, userId: user.id, role: String(body.role || "") })
+    // Cache key scoped to user + role + attempt so a free-plan cap change never bleeds into a
+    // previously cached score for the same content at a different regenerate count.
+    const cacheKey = generateCacheKey({ task: "score", content, userId: user.id, role: String(body.role || ""), attempt })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
       const { scores, overall, tips, hashtags } = cached
@@ -56,6 +58,7 @@ export async function POST(request: NextRequest) {
       internalUserId: user.id,
       workspaceId: user.workspaceId,
       plan: planCheck.plan,
+      attempt,
     })
 
     if (!result.ok) {

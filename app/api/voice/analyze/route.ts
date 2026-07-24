@@ -7,6 +7,7 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { parseProfessionalContext } from "@/lib/professional-context"
 
 type Characteristics = {
   tone: string
@@ -68,15 +69,21 @@ Return JSON:
       const supabase = createServiceClient()
       const { data: existing } = await supabase
         .from("voice_profiles")
-        .select("id")
+        .select("id, characteristics")
         .eq("workspace_id", user.workspaceId)
         .limit(1)
         .maybeSingle()
+      const savedProfessionalContext = parseProfessionalContext(
+        (existing?.characteristics as { professionalContext?: unknown } | null)?.professionalContext
+      )
 
       const profilePayload = {
         user_id: user.id,
         workspace_id: user.workspaceId,
-        characteristics,
+        characteristics: {
+          ...characteristics,
+          ...(savedProfessionalContext ? { professionalContext: savedProfessionalContext } : {}),
+        },
         tone: characteristics.tone,
         brand_tone: characteristics.tone,
         example_posts: examplePosts.slice(0, 5000),

@@ -7,6 +7,8 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
 import { log } from "@/lib/server/logging"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { professionalContextPrompt } from "@/lib/professional-context"
 
 type Slide = {
   number: number
@@ -43,7 +45,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const system = `You are a LinkedIn carousel expert. Return only valid JSON matching the schema exactly. No markdown fences.`
+    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext)
+    const system = `You are a LinkedIn carousel expert. Return only valid JSON matching the schema exactly. No markdown fences.
+
+${professionalContext}`
 
     const userMsg = `Create a 5-7 slide LinkedIn carousel on "${topic}" for a ${role}.
 

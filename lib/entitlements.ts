@@ -42,6 +42,16 @@ export type PlanLimits = {
   commentGenerationsPerMonth: number | "unlimited"
 }
 
+// Comment Generator has its own quota, independent of the hooks/drafts limits -
+// it's a lightweight action meant to stay usable (and useful as an upgrade
+// funnel) even on Free, so it's a fixed table rather than derived from other limits.
+const COMMENT_GENERATIONS_PER_MONTH: Record<PlanTier, number> = {
+  Free: 10,
+  Solo: 50,
+  Pro: 150,
+  Agency: 400,
+}
+
 const derivePlanLimits = (tier: PlanTier): PlanLimits => {
   const { limits, flags } = PLAN_CONFIG[tier]
   return {
@@ -57,7 +67,7 @@ const derivePlanLimits = (tier: PlanTier): PlanLimits => {
     canExport: flags.canExport,
     analyticsDepth: flags.analyticsDepth,
     voiceTraining: flags.voiceTraining,
-    commentGenerationsPerMonth: tier === "Free" ? 3 : limits.hooks,
+    commentGenerationsPerMonth: COMMENT_GENERATIONS_PER_MONTH[tier],
   }
 }
 

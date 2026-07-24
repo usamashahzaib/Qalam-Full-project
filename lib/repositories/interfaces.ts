@@ -16,6 +16,7 @@ export type DbPost = {
   published_at: string | null
   linkedin_post_id?: string | null
   external_post_urn?: string | null
+  engagement_score?: number | null
   metadata?: { type?: string; authorId?: string } | null
   created_at: string
   updated_at: string
@@ -30,6 +31,7 @@ export type ClientPost = {
   date: string
   scheduledTime: string | null
   externalPostUrn: string | null
+  engagementScore: number | null
   updatedAt: string
   createdAt: string
 }
@@ -45,6 +47,7 @@ export type CreatePostParams = {
   scheduledTime?: string | null
   publishedAt?: string | null
   externalPostUrn?: string | null
+  engagementScore?: number | null
 }
 
 export type PostPatch = {
@@ -55,6 +58,7 @@ export type PostPatch = {
   scheduledTime?: string | null
   publishedAt?: string | null
   externalPostUrn?: string | null
+  engagementScore?: number | null
 }
 
 export interface IPostRepository {

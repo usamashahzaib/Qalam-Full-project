@@ -89,9 +89,9 @@ export interface WriterLogicDeps {
   billing: { plan: string; limits?: Record<string, unknown>; featureFlags?: Record<string, boolean> }
   draftLimit: number | "unlimited"
   carouselLimit: number | "unlimited"
-  saveDraft: (input: { id: string | null; title: string; content: string; type: string }) => Promise<string>
-  schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string }) => Promise<string>
-  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
+  saveDraft: (input: { id: string | null; title: string; content: string; type: string; engagementScore?: number | null }) => Promise<string>
+  schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string; engagementScore?: number | null }) => Promise<string>
+  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null }) => Promise<string>
   initialTopic?: string
   initialFormat?: FormatKey
   initialRole?: string
@@ -135,6 +135,10 @@ export function useWriterLogic({
   const [scores, setScores] = useState<ScoreData | null>(null)
   const [isScoring, setIsScoring] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
+  // Counts fresh-content generations for the current topic (1 = first draft, 2 = after 1
+  // regenerate, ...). Free plan uses this to cap the score so it climbs as the user regenerates
+  // instead of hitting 90+ on the very first draft. Resets whenever a new topic is generated.
+  const genAttemptRef = useRef(0)
 
   // ── Hook alternatives panel ──────────────────────────────────────────────
   const [hookAltOpen, setHookAltOpen] = useState(false)
@@ -337,7 +341,7 @@ export function useWriterLogic({
     scoreAbortRef.current = controller
     setIsScoring(true)
     try {
-      const data = await apiScorePost({ content, role }, controller.signal)
+      const data = await apiScorePost({ content, role, attempt: genAttemptRef.current }, controller.signal)
       setScores(data)
       showStatus("Draft scored.", "success")
     } catch (e) {
@@ -373,6 +377,7 @@ export function useWriterLogic({
     setDraftContent("")
     setScores(null)
     setHookAltOpen(false)
+    genAttemptRef.current = 0
     void fetchDemand()
 
     try {
@@ -413,6 +418,7 @@ export function useWriterLogic({
       setVersions((p) => [...p.slice(-19), { content, timestamp: new Date().toISOString() }])
       setEditingId(null)
       consumeDraftCredit(1)
+      genAttemptRef.current += 1
       showStatus("Draft ready. Scoring...", "info", false)
       void autoScore(content)
     } catch (e) {
@@ -483,7 +489,7 @@ export function useWriterLogic({
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
     setIsSaving(true)
     try {
-      const id = await saveDraft({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post" })
+      const id = await saveDraft({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", engagementScore: scores?.overall ?? null })
       setEditingId(id)
       showStatus("Draft saved", "success")
     } catch (e) {
@@ -500,7 +506,7 @@ export function useWriterLogic({
     const err = scheduleValidationError(scheduleDate, scheduleTime)
     if (err) { showStatus(err, "error"); return }
     try {
-      const id = await schedulePost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", date: scheduleDate, time: scheduleTime })
+      const id = await schedulePost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", date: scheduleDate, time: scheduleTime, engagementScore: scores?.overall ?? null })
       setEditingId(id)
       showStatus(`Scheduled for ${scheduleDate} at ${scheduleTime}`, "success")
       setScheduleModalOpen(false)
@@ -545,6 +551,7 @@ export function useWriterLogic({
           type: "LinkedIn - Text post",
           publishedAt: new Date().toISOString(),
           externalPostUrn: postUrn,
+          engagementScore: scores?.overall ?? null,
         })
         setEditingId(id)
         showStatus("Published to LinkedIn.", "success")

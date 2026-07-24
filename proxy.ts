@@ -199,6 +199,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/cron",
   "/api/linkedin/publish-scheduled",
   "/api/linkedin/sync-analytics",
+  "/api/admin/backfill-scores",
   // Anonymous marketing surfaces: contact form and referral landing tracking.
   // Each route enforces its own Redis-backed rate limit.
   "/api/contact",
@@ -438,7 +439,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       )
     }
     const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("callbackUrl", pathname)
+    loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`)
     return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce)
   }
 

@@ -6,6 +6,7 @@ import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import { buildHook5StylesPrompt } from "@/lib/prompts/role-aware-system"
 import { log } from "@/lib/server/logging"
+import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 
 export interface GenerateHooksInput {
   topic: string
@@ -14,6 +15,7 @@ export interface GenerateHooksInput {
   goal?: string
   userId: string
   plan: string
+  voiceProfile?: VoiceProfile
 }
 
 export interface Hook {
@@ -36,7 +38,7 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
   }
 
   const { goal } = input
-  const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal)
+  const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal, input.voiceProfile)
   let raw: string
   try {
     raw = await callAi("hook-generation", system, userMsg, {

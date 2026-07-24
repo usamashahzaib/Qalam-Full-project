@@ -98,7 +98,7 @@ export type GeneratePostInput = {
 }
 export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number }
 
-export type ScorePostInput = { content: string; role?: WriterRole | string }
+export type ScorePostInput = { content: string; role?: WriterRole | string; attempt?: number }
 export type ScorePostOutput = ScoreData
 
 export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown> }

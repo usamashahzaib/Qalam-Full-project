@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { contentScoreCap, gateScores } from "@/lib/content-score-gate"
+import { contentScoreCap, freeTierAttemptCap, gateScores } from "@/lib/content-score-gate"
 
 const highScores = {
   hook: 96,
@@ -32,5 +32,30 @@ describe("contentScoreCap", () => {
     const content = Array.from({ length: 10 }, () => line).join("\n\n")
     expect(contentScoreCap(content).max).toBe(100)
     expect(gateScores(content, highScores).overall).toBe(96)
+  })
+})
+
+describe("freeTierAttemptCap", () => {
+  const line = "This is a concrete sentence with a real example and clear context."
+  const completeContent = Array.from({ length: 10 }, () => line).join("\n\n")
+
+  it("caps the first free-plan draft below 90", () => {
+    expect(freeTierAttemptCap(1)).toBe(80)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(1)).overall).toBe(80)
+  })
+
+  it("allows up to 90 after one regenerate", () => {
+    expect(freeTierAttemptCap(2)).toBe(90)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(2)).overall).toBe(90)
+  })
+
+  it("removes the cap after two regenerates", () => {
+    expect(freeTierAttemptCap(3)).toBe(100)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(3)).overall).toBe(96)
+  })
+
+  it("still respects the quality cap even when the attempt cap is higher", () => {
+    const thin = Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ")
+    expect(gateScores(thin, highScores, freeTierAttemptCap(3)).overall).toBe(68)
   })
 })

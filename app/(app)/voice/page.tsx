@@ -4,17 +4,20 @@ import { useCallback, useEffect, useState } from "react"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan } from "@/lib/entitlements"
 import { LockedFeature } from "@/components/LockedFeature"
+import { ProfessionalProfileImport } from "@/components/voice/ProfessionalProfileImport"
+import { parseProfessionalContext, type ProfessionalContext } from "@/lib/professional-context"
 
 const BRAND_TONES = ["Professional", "Casual", "Bold", "Empathetic", "Technical", "Inspirational"] as const
 type BrandTone = (typeof BRAND_TONES)[number]
 
 type Characteristics = {
-  tone: string
-  sentenceLength: string
-  vocabulary: string
-  commonPhrases: string[]
-  transitions: string[]
-  ctaStyle: string
+  tone?: string
+  sentenceLength?: string
+  vocabulary?: string
+  commonPhrases?: string[]
+  transitions?: string[]
+  ctaStyle?: string
+  professionalContext?: ProfessionalContext
 }
 
 type VoiceProfile = {
@@ -63,7 +66,13 @@ export default function VoicePage() {
             goals: String(data.profile.goals || ""),
           })
           if (data.profile.example_posts) setExamplePosts(String(data.profile.example_posts))
-          if (data.profile.characteristics) setCharacteristics(data.profile.characteristics as Characteristics)
+          if (data.profile.characteristics) {
+            const stored = data.profile.characteristics as Characteristics
+            setCharacteristics({
+              ...stored,
+              professionalContext: parseProfessionalContext(stored.professionalContext) || undefined,
+            })
+          }
         }
       })
       .catch(() => null)
@@ -86,7 +95,10 @@ export default function VoicePage() {
       const data = await res.json() as { characteristics?: Characteristics; error?: string }
       if (!res.ok) throw new Error(data.error || "Analysis failed")
       if (!data.characteristics) throw new Error("No characteristics returned")
-      setCharacteristics(data.characteristics)
+      setCharacteristics((current) => ({
+        ...data.characteristics,
+        professionalContext: current?.professionalContext,
+      }))
       showStatus("Voice analyzed. Review and save your profile.", "success")
     } catch (e) {
       showStatus((e as Error).message, "error")
@@ -116,6 +128,22 @@ export default function VoicePage() {
     } finally {
       setIsSaving(false)
     }
+  }
+
+  const onProfessionalContextImported = (
+    professionalContext: ProfessionalContext,
+    suggestions: { name: string; title: string; industry: string; goals: string; linkedinUrl: string }
+  ) => {
+    setCharacteristics((current) => ({ ...current, professionalContext }))
+    setProfile((current) => ({
+      ...current,
+      name: current.name || suggestions.name,
+      title: suggestions.title || current.title,
+      industry: suggestions.industry || current.industry,
+      goals: current.goals || suggestions.goals,
+      linkedinUrl: current.linkedinUrl || suggestions.linkedinUrl,
+    }))
+    showStatus("Professional context ready. Review and save your profile.", "success")
   }
 
   return (
@@ -238,7 +266,15 @@ export default function VoicePage() {
 
               {/* Voice training section - Pro only */}
               <LockedFeature requiredPlan="Pro" feature="Voice Training">
-                <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                <div className="space-y-5">
+                  <ProfessionalProfileImport
+                    context={characteristics?.professionalContext || null}
+                    onImported={onProfessionalContextImported}
+                    onChange={(professionalContext) => {
+                      setCharacteristics((current) => ({ ...current, professionalContext }))
+                    }}
+                  />
+                  <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                   <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
                     <h2 className="text-sm font-bold text-zinc-900">Voice training <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">Pro</span></h2>
                     <p className="mt-0.5 text-xs text-zinc-500">Paste 3-5 of your best LinkedIn posts. Qalam extracts your tone, patterns, and phrases.</p>
@@ -272,7 +308,8 @@ export default function VoicePage() {
                       )}
                     </div>
                   </div>
-                </section>
+                  </section>
+                </div>
               </LockedFeature>
             </div>
 
@@ -286,7 +323,14 @@ export default function VoicePage() {
                   </div>
                 </div>
 
-                {characteristics ? (
+                {characteristics && (
+                  characteristics.tone ||
+                  characteristics.sentenceLength ||
+                  characteristics.vocabulary ||
+                  characteristics.commonPhrases?.length ||
+                  characteristics.transitions?.length ||
+                  characteristics.ctaStyle
+                ) ? (
                   <div className="divide-y divide-zinc-100">
                     <div className="px-4 py-3">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Tone</p>

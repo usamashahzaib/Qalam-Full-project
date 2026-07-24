@@ -1,11 +1,16 @@
 import { expect, test } from "@playwright/test"
 import { encode } from "next-auth/jwt"
+import { createClient } from "@supabase/supabase-js"
+import { PDFDocument, StandardFonts } from "pdf-lib"
 
 test("authenticated writer, dashboard, settings, and account deletion", async ({ page, context }) => {
   test.skip(process.env.RUN_AUTHENTICATED_AUDIT !== "1", "Requires live Supabase and AI providers")
   test.setTimeout(180_000)
   const secret = process.env.AUTH_SECRET
   if (!secret) throw new Error("AUTH_SECRET is required for authenticated audit")
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service credentials are required")
 
   const loginResponse = await page.goto("/login")
   expect(loginResponse?.status()).toBe(200)
@@ -90,6 +95,74 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     expect(scoreResponse.status()).toBe(200)
     const score = await scoreResponse.json()
     expect(score.overall).toBeGreaterThan(0)
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const { data: auditUser, error: auditUserError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("external_user_id", auditId)
+      .single()
+    if (auditUserError || !auditUser?.id) throw auditUserError || new Error("Audit user missing")
+    const { error: planError } = await supabase
+      .from("users")
+      .update({ plan: "Pro", plan_expires_at: new Date(Date.now() + 86_400_000).toISOString() })
+      .eq("id", auditUser.id)
+    if (planError) throw planError
+
+    const resume = await PDFDocument.create()
+    const resumeFont = await resume.embedFont(StandardFonts.Helvetica)
+    const resumePage = resume.addPage([612, 792])
+    const resumeLines = [
+      "Audit Runtime. Head of People at a B2B technology company.",
+      "Led talent acquisition and scaled the team from forty to one hundred eighty.",
+      "Built leadership systems, improved candidate experience, and advised founders.",
+      "Writes about hiring, workplace culture, management, and people strategy.",
+    ]
+    resumeLines.forEach((line, index) => {
+      resumePage.drawText(line, { x: 40, y: 720 - index * 24, size: 12, font: resumeFont })
+    })
+    const importResponse = await page.request.post("/api/voice/import-document", {
+      multipart: {
+        source: "resume_pdf",
+        document: {
+          name: "audit-resume.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from(await resume.save()),
+        },
+      },
+    })
+    expect(importResponse.status()).toBe(200)
+    const imported = await importResponse.json()
+    expect(imported.sourceDeleted).toBe(true)
+    expect(imported.rawTextStored).toBe(false)
+    expect(imported.professionalContext.primaryRole).toBeTruthy()
+
+    const voiceSave = await page.request.post("/api/voice/save", {
+      data: {
+        name: imported.suggestions.name,
+        title: imported.suggestions.title,
+        industry: imported.suggestions.industry,
+        linkedinUrl: "",
+        brandTone: "Professional",
+        goals: imported.suggestions.goals,
+        characteristics: { professionalContext: imported.professionalContext },
+      },
+    })
+    expect(voiceSave.status()).toBe(200)
+
+    const voiceProfile = await page.request.get("/api/voice/me")
+    expect(voiceProfile.status()).toBe(200)
+    const savedVoice = await voiceProfile.json()
+    expect(savedVoice.profile.characteristics.professionalContext.primaryRole).toBeTruthy()
+    expect(savedVoice.profile.example_posts).toBeFalsy()
+
+    await page.evaluate(() => sessionStorage.clear())
+    const voiceResponse = await page.goto("/voice")
+    expect(voiceResponse?.status()).toBeLessThan(400)
+    await expect(page.getByRole("heading", { name: /Professional context/ })).toBeVisible()
+    await expect(page.getByText("Source deleted", { exact: true })).toBeVisible()
 
     const pricingResponse = await page.goto("/pricing")
     expect(pricingResponse?.status()).toBeLessThan(400)

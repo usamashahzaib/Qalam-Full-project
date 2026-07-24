@@ -14,7 +14,7 @@ const DASH_RE = /[–—]/
 const ALLOWED = new Set([
   "lib/server/ai-router-v2.ts:33",
   "lib/server/embeddings.ts:9",
-  "lib/prompts/role-aware-system.ts:83",
+  "lib/prompts/role-aware-system.ts:84",
   "lib/prompts/builders/voice.ts:12",
   "lib/prompts/builders/hooks.ts:14",
   "lib/prompts/builders/generate.ts:14",

@@ -24,11 +24,11 @@ const PRICING_FAQ = [
   },
   {
     q: "What's the difference between monthly and annual billing?",
-    a: "Annual Solo is PKR 291/mo (save PKR 2,496), Pro is PKR 869/mo (save PKR 7,450). Each annual plan includes 5 months free.",
+    a: "Annual Solo is PKR 291/mo (save PKR 2,495), Pro is PKR 869/mo (save PKR 7,447). Each annual plan includes 5 months free.",
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Pro adds more carousels (10/month vs Solo's 4), voice training so Qalam learns your tone, Push to 90+ quality improvement, AI Strategist, and analytics.",
+    a: "Pro adds more carousels (10/month vs Solo's 3), voice training so Qalam learns your tone, Push to 90+ quality improvement, AI Strategist, and analytics.",
   },
   {
     q: "Can I cancel anytime?",

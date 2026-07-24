@@ -7,13 +7,27 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getPlanLimits } from "@/lib/entitlements"
-import { checkAndIncrementCommentUsage } from "@/lib/server/comment-usage"
+import { checkAndIncrementCommentUsage, getCommentUsage } from "@/lib/server/comment-usage"
 import { log } from "@/lib/server/logging"
 
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 type Profile = (typeof VALID_PROFILES)[number]
 
 const MAX_POST_LENGTH = 5000
+
+export async function GET(request: NextRequest) {
+  return withAuth(async (req, user) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
+
+    const limits = getPlanLimits(planCheck.plan)
+    if (limits.commentGenerationsPerMonth === "unlimited") {
+      return NextResponse.json({ current: 0, limit: "unlimited" })
+    }
+    const usage = await getCommentUsage(user.id, limits.commentGenerationsPerMonth)
+    return NextResponse.json(usage)
+  })(request)
+}
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {

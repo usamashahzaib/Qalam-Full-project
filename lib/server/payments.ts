@@ -9,6 +9,8 @@ import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
 import { plans as PRICING_PLANS, LEMONSQUEEZY_VARIANT_PLANS, type PlanName } from "@/lib/pricing"
 import { creditReferralCommissionFromPayment } from "@/lib/server/referrals"
+import { isStalePaymentRevocation } from "@/lib/payment-lifecycle"
+import { resolveCheckoutSession } from "@/lib/server/checkout-session"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa" | "lemonsqueezy"
 export type PaymentStatus = "paid" | "failed" | "cancelled" | "refunded"
@@ -34,10 +36,11 @@ export type VerifiedPayment = {
   revokeAccess: boolean
   /** Provider-authoritative end of the paid period, when the payload supplies one. */
   periodEndsAt: string | null
+  checkoutToken: string | null
   rawPayload: unknown
 }
 
-type UserRow = { id: string; email: string }
+type UserRow = { id: string; email: string; customer_id: string | null }
 type WorkspaceRow = { id: string; organization_id: string | null }
 type SubscriptionRow = {
   subscription_id: string
@@ -364,11 +367,12 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
     billingCycle,
     revokeAccess: provider === "lemonsqueezy" ? lsEvent.revoke : false,
     periodEndsAt: provider === "lemonsqueezy" ? textValue(lsAttrs.renews_at, lsAttrs.ends_at) || null : null,
+    checkoutToken: provider === "lemonsqueezy" ? textValue(lsCustomData.token) || null : null,
     rawPayload: body,
   }
   if (!extracted.transactionId) throw new Error("missing_transaction_id")
   // A subscription handle is itself a route back to the account, so it counts as an identifier.
-  if (!extracted.userId && !extracted.userEmail && !extracted.subscriptionId) {
+  if (!extracted.userId && !extracted.userEmail && !extracted.subscriptionId && !extracted.checkoutToken) {
     throw new Error("missing_payment_user")
   }
   return extracted
@@ -386,9 +390,13 @@ const addBillingDays = (days: number) => {
  * A null return means the lookup succeeded and genuinely matched nobody.
  */
 const getUser = async (payment: VerifiedPayment, subscription: SubscriptionRow | null) => {
-  const candidateId = payment.userId || subscription?.user_id || ""
+  const checkoutSessionUserId =
+    payment.provider === "lemonsqueezy" && payment.checkoutToken
+      ? await resolveCheckoutSession(payment.checkoutToken)
+      : null
+  const candidateId = payment.userId || checkoutSessionUserId || subscription?.user_id || ""
   if (candidateId) {
-    const byId = await supabaseSelect<UserRow>("users", `id=eq.${encodeURIComponent(candidateId)}&select=id,email&limit=1`)
+    const byId = await supabaseSelect<UserRow>("users", `id=eq.${encodeURIComponent(candidateId)}&select=id,email,customer_id&limit=1`)
     if (byId[0]) return byId[0]
   }
   // Lemon Squeezy's checkout[email] is just as buyer-editable as checkout[custom][user_id] -
@@ -400,7 +408,7 @@ const getUser = async (payment: VerifiedPayment, subscription: SubscriptionRow |
   // unattributed instead of guessing.
   if (payment.provider === "lemonsqueezy") return null
   if (!payment.userEmail) return null
-  const byEmail = await supabaseSelect<UserRow>("users", `email=eq.${encodeURIComponent(payment.userEmail.trim().toLowerCase())}&select=id,email&limit=1`)
+  const byEmail = await supabaseSelect<UserRow>("users", `email=eq.${encodeURIComponent(payment.userEmail.trim().toLowerCase())}&select=id,email,customer_id&limit=1`)
   return byEmail[0] || null
 }
 
@@ -462,7 +470,7 @@ const revokePlan = async (userId: string, organizationId: string | null, now: st
     .then(undefined, (err: unknown) => log.error("payments.plan_usage_revoke_failed", { error: (err as Error).message }))
 }
 
-export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
+const processPaymentWebhook = async (payment: VerifiedPayment) => {
   const subscription = await getSubscription(payment)
 
   // Renewal invoices carry no variant_id, so the stored mapping is the only trusted plan
@@ -530,13 +538,22 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
       renews_at: payment.status === "paid" ? payment.periodEndsAt : null,
       ends_at: payment.status === "paid" ? null : payment.periodEndsAt,
       updated_at: now,
-    }, "provider,subscription_id").catch((err: unknown) =>
-      log.error("payments.subscription_upsert_failed", { error: (err as Error).message })
-    )
+    }, "provider,subscription_id")
   }
 
   // Refunds and expired subscriptions end access now.
   if (payment.revokeAccess) {
+    // Lifecycle events can arrive late and out of order. Never let the expiry or
+    // refund of a superseded subscription revoke a newer paid plan. activate_plan
+    // stamps the currently authoritative subscription/order handle on the user.
+    if (isStalePaymentRevocation(user.customer_id, payment.subscriptionId, payment.transactionId)) {
+      log.info("payments.stale_revocation_ignored", {
+        provider: payment.provider,
+        transactionId: payment.transactionId,
+        subscriptionId: payment.subscriptionId,
+      })
+      return { updated: false, stale: true, user, organizationId }
+    }
     await revokePlan(user.id, organizationId, now)
     log.info("payments.access_revoked", { provider: payment.provider, status: payment.status })
     await sendTransactionalEmail({
@@ -615,6 +632,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     p_plan_name: planName,
     p_expires_at: expiresAt,
     p_customer_id: customerId,
+    p_billing_cycle: billingCycle,
   })
 
   if (rpcError) {
@@ -698,4 +716,54 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   }
 
   return { updated: true, user, organizationId, expiresAt }
+}
+
+export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
+  const supabase = createServiceClient()
+  const { data: claimed, error: claimError } = await supabase.rpc("claim_payment_webhook", {
+    p_provider: payment.provider,
+    p_event_id: payment.transactionId,
+  })
+
+  if (claimError) {
+    throw new Error(`payment_webhook_claim_failed: ${claimError.message}`)
+  }
+  if (!claimed) {
+    log.info("payments.duplicate_webhook_ignored", {
+      provider: payment.provider,
+      transactionId: payment.transactionId,
+    })
+    return { updated: false, duplicate: true }
+  }
+
+  try {
+    const result = await processPaymentWebhook(payment)
+    const { error: completeError } = await supabase
+      .from("payment_webhook_events")
+      .update({
+        processing_state: "completed",
+        processed_at: new Date().toISOString(),
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("provider", payment.provider)
+      .eq("event_id", payment.transactionId)
+
+    if (completeError) {
+      throw new Error(`payment_webhook_complete_failed: ${completeError.message}`)
+    }
+    return result
+  } catch (error) {
+    const message = (error as Error).message || "payment_webhook_processing_failed"
+    await supabase
+      .from("payment_webhook_events")
+      .update({
+        processing_state: "failed",
+        last_error: message.slice(0, 2000),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("provider", payment.provider)
+      .eq("event_id", payment.transactionId)
+    throw error
+  }
 }
