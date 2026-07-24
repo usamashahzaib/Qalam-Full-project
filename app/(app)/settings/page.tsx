@@ -72,7 +72,7 @@ export default function SettingsPage() {
     billingCycle: "monthly" | "annual"
     amount: number
     currency: string
-    status: "paid" | "failed" | "cancelled" | "refunded"
+    status: "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
     processedAt: string
   }[] | null>(null)
   const [cancelState, setCancelState] = useState<"idle" | "loading" | "done" | "error">("idle")

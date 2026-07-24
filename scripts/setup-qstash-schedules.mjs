@@ -9,6 +9,7 @@
  *
  *   - /api/cron/process-queue  hourly   (recovers posts stuck in "queued")
  *   - /api/cron/cleanup-pdfs   daily    (clears expired generated PDFs)
+ *   - /api/cron/check-expiry   daily    (expires plans and sends reminders)
  *
  * Usage:
  *   QSTASH_TOKEN=qstash_xxx node scripts/setup-qstash-schedules.mjs
@@ -65,6 +66,11 @@ const SCHEDULES = [
     scheduleId: "qalam-cleanup-pdfs-daily",
     path: "/api/cron/cleanup-pdfs",
     cron: "0 2 * * *",
+  },
+  {
+    scheduleId: "qalam-check-expiry-daily",
+    path: "/api/cron/check-expiry",
+    cron: "30 1 * * *",
   },
 ]
 

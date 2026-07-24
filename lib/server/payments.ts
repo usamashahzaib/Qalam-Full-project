@@ -8,16 +8,21 @@ import { cancelLemonSqueezySubscription } from "@/lib/server/lemonsqueezy-api"
 import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
 import { plans as PRICING_PLANS, LEMONSQUEEZY_VARIANT_PLANS, type PlanName } from "@/lib/pricing"
-import { creditReferralCommissionFromPayment } from "@/lib/server/referrals"
+import {
+  creditReferralCommissionFromPayment,
+  reverseReferralCommissionFromRefund,
+} from "@/lib/server/referrals"
 import { isStalePaymentRevocation } from "@/lib/payment-lifecycle"
 import { resolveCheckoutSession } from "@/lib/server/checkout-session"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa" | "lemonsqueezy"
-export type PaymentStatus = "paid" | "failed" | "cancelled" | "refunded"
+export type PaymentStatus = "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
 
 export type VerifiedPayment = {
   provider: PaymentProvider
   status: PaymentStatus
+  eventId: string
+  eventName: string
   userId: string
   userEmail?: string
   amount: number
@@ -31,7 +36,15 @@ export type VerifiedPayment = {
   transactionId: string
   /** Stable provider subscription handle. Absent for one-off orders. */
   subscriptionId: string | null
+  /** Provider order handle used to link order/refund events to a subscription. */
+  orderId: string | null
   billingCycle: "monthly" | "annual"
+  /** Only financial events belong in the payments ledger. */
+  recordTransaction: boolean
+  /** Lifecycle events activate access. Initial order events only record money. */
+  activateAccess: boolean
+  /** Only a positive, settled charge can credit a referral. */
+  creditReferral: boolean
   /** True for terminal events that must drop the account back to Free immediately. */
   revokeAccess: boolean
   /** Provider-authoritative end of the paid period, when the payload supplies one. */
@@ -44,12 +57,21 @@ type UserRow = { id: string; email: string; customer_id: string | null }
 type WorkspaceRow = { id: string; organization_id: string | null }
 type SubscriptionRow = {
   subscription_id: string
+  order_id: string | null
   plan_name: PlanName
   billing_cycle: "monthly" | "annual"
   user_id: string | null
 }
 
 const PLAN_NAMES = new Set(["Free", "Solo", "Pro", "Agency"])
+const isEnabledPaymentProvider = (provider: PaymentProvider): boolean => provider === "lemonsqueezy"
+const PAYMENT_STATUS_RANK: Record<PaymentStatus, number> = {
+  failed: 0,
+  cancelled: 0,
+  paid: 1,
+  partially_refunded: 2,
+  refunded: 3,
+}
 
 const timingSafeEqual = (a: string, b: string) => {
   const left = Buffer.from(a)
@@ -222,10 +244,15 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
 
   if (!verified) throw new Error("payment_signature_invalid")
 
-  // Replay protection for the field-based gateways (Stripe and Lemon Squeezy enforce their own).
+  // Only Lemon Squeezy is wired to a server-owned checkout identity and price map.
+  // Keep dormant providers fail-closed until they gain an equivalent order binding.
+  if (!isEnabledPaymentProvider(provider)) throw new Error("payment_provider_not_enabled")
+
+  // Replay protection for field-based gateways if they are enabled later.
   if (provider !== "stripe" && provider !== "lemonsqueezy") {
     const ts = extractTimestampMs(body)
-    if (ts !== null && Math.abs(Date.now() - ts) / 1000 > REPLAY_WINDOW_SECONDS) {
+    if (ts === null) throw new Error("payment_timestamp_missing")
+    if (Math.abs(Date.now() - ts) / 1000 > REPLAY_WINDOW_SECONDS) {
       throw new Error("payment_replay_expired")
     }
   }
@@ -245,13 +272,46 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // a plain "cancelled" keeps access until the already-granted period end, which is what
   // the customer paid for.
   const lsSubscriptionStatus = textValue(lsAttrs.status).toLowerCase()
-  const lsEvent = ((): { status: PaymentStatus; revoke: boolean } => {
+  const lsGrossAmount = numberValue(lsAttrs.total, lsAttrs.subtotal)
+  const lsRefundedAmount = numberValue(lsAttrs.refunded_amount, lsAttrs.amount_refunded)
+  const lsFullyRefunded =
+    lsAttrs.refunded === true ||
+    lsSubscriptionStatus === "refunded" ||
+    (lsGrossAmount > 0 && lsRefundedAmount >= lsGrossAmount)
+  const lsEvent = ((): {
+    status: PaymentStatus
+    revoke: boolean
+    recordTransaction: boolean
+    activateAccess: boolean
+    creditReferral: boolean
+  } => {
     if (lsEventName === "order_created") {
-      return { status: lsSubscriptionStatus === "paid" ? "paid" : "failed", revoke: false }
+      const paid = lsSubscriptionStatus === "paid"
+      return {
+        status: paid ? "paid" : "failed",
+        revoke: false,
+        recordTransaction: true,
+        activateAccess: false,
+        creditReferral: paid,
+      }
     }
-    if (lsEventName === "order_refunded") return { status: "refunded", revoke: true }
+    if (lsEventName === "order_refunded" || lsEventName === "subscription_payment_refunded") {
+      return {
+        status: lsFullyRefunded ? "refunded" : "partially_refunded",
+        revoke: lsFullyRefunded,
+        recordTransaction: true,
+        activateAccess: false,
+        creditReferral: false,
+      }
+    }
     if (lsEventName === "subscription_created" || lsEventName === "subscription_resumed") {
-      return { status: "paid", revoke: false }
+      return {
+        status: "paid",
+        revoke: false,
+        recordTransaction: false,
+        activateAccess: true,
+        creditReferral: false,
+      }
     }
     if (lsEventName === "subscription_updated") {
       // subscription_updated also fires as a side effect of cancellation and expiry, where
@@ -260,17 +320,53 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
       if (lsSubscriptionStatus !== "active" && lsSubscriptionStatus !== "on_trial") {
         throw new Error("lemonsqueezy_event_ignored")
       }
-      return { status: "paid", revoke: false }
+      return {
+        status: "paid",
+        revoke: false,
+        recordTransaction: false,
+        activateAccess: true,
+        creditReferral: false,
+      }
     }
     if (lsEventName === "subscription_payment_success") {
       // The initial subscription charge is already covered by order_created (which carries
       // the variant_id). Ignoring it here avoids a duplicate activation + duplicate email.
       if (lsBillingReason === "initial") throw new Error("lemonsqueezy_event_ignored")
-      return { status: "paid", revoke: false }
+      return {
+        status: "paid",
+        revoke: false,
+        recordTransaction: true,
+        activateAccess: true,
+        creditReferral: false,
+      }
     }
-    if (lsEventName === "subscription_payment_failed") return { status: "failed", revoke: false }
-    if (lsEventName === "subscription_cancelled") return { status: "cancelled", revoke: false }
-    if (lsEventName === "subscription_expired") return { status: "cancelled", revoke: true }
+    if (lsEventName === "subscription_payment_failed") {
+      return {
+        status: "failed",
+        revoke: false,
+        recordTransaction: true,
+        activateAccess: false,
+        creditReferral: false,
+      }
+    }
+    if (lsEventName === "subscription_cancelled") {
+      return {
+        status: "cancelled",
+        revoke: false,
+        recordTransaction: false,
+        activateAccess: false,
+        creditReferral: false,
+      }
+    }
+    if (lsEventName === "subscription_expired") {
+      return {
+        status: "cancelled",
+        revoke: true,
+        recordTransaction: false,
+        activateAccess: false,
+        creditReferral: false,
+      }
+    }
     throw new Error("lemonsqueezy_event_ignored")
   })()
   const status: PaymentStatus = provider === "stripe"
@@ -306,11 +402,20 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
     provider === "lemonsqueezy"
       ? textValue(lsIsLifecycleEvent ? lsData.id : "", lsAttrs.subscription_id) || null
       : textValue(stripe.subscription, body.subscription_id) || null
+  const orderId =
+    provider === "lemonsqueezy"
+      ? textValue(
+          lsEventName.startsWith("order_") ? lsData.id : "",
+          lsAttrs.order_id
+        ) || null
+      : null
 
   // Only Lemon Squeezy defers plan resolution (renewal invoices carry no variant_id);
   // every other provider must name a valid plan up front.
   if (planName && !PLAN_NAMES.has(planName)) throw new Error("invalid_plan_name")
-  if (!planName && !(provider === "lemonsqueezy" && subscriptionId)) throw new Error("invalid_plan_name")
+  if (!planName && !(provider === "lemonsqueezy" && (subscriptionId || orderId))) {
+    throw new Error("invalid_plan_name")
+  }
 
   const amount = provider === "lemonsqueezy"
     ? numberValue(lsAttrs.total, lsAttrs.subtotal) / 100
@@ -337,12 +442,19 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
     if (!matchesKnownPrice) throw new Error("payment_amount_plan_mismatch")
   }
 
-  // Every subscription lifecycle event reuses the subscription's own ID, so an unqualified
-  // data.id would make subscription_expired upsert straight over the subscription_cancelled
-  // row. Qualifying by event name keeps (provider, transaction_id) one-row-per-event.
-  const lsTransactionId = lsIsLifecycleEvent && lsData.id
-    ? `${lsEventName}:${String(lsData.id)}`
-    : textValue(lsData.id)
+  const lsResourceId = textValue(lsData.id)
+  // Financial events for the same order/invoice share one ledger key. Webhook
+  // delivery idempotency uses eventId separately, so a refund can update the
+  // original ledger row without being mistaken for a duplicate.
+  const lsTransactionId = lsEvent.recordTransaction
+    ? textValue(
+        lsEventName === "order_refunded" ? orderId : "",
+        lsResourceId
+      )
+    : `${lsEventName}:${lsResourceId}`
+  const eventId = provider === "lemonsqueezy"
+    ? `${lsEventName}:${lsResourceId}:${payloadHash(rawBody)}`
+    : textValue(body.id, lsTransactionId)
 
   // checkout[custom][user_id] and checkout[email] are plain buyer-editable query params -
   // Lemon Squeezy's HMAC proves the webhook payload is genuinely theirs, not that this
@@ -352,27 +464,44 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // Squeezy round-trips back to us, so it is the only one used to attribute a payment.
   const lsVerifiedUserId = provider === "lemonsqueezy" ? verifyCheckoutToken(textValue(lsCustomData.token)) : null
 
+  const currency = textValue(stripe.currency, body.currency, body.pp_Currency, lsAttrs.currency) || "PKR"
   const extracted: VerifiedPayment = {
     provider,
     status,
+    eventId,
+    eventName: provider === "lemonsqueezy" ? lsEventName : type,
     userId: provider === "lemonsqueezy"
       ? (lsVerifiedUserId || "")
       : textValue(metadata.user_id, metadata.userId, body.user_id, body.userId, stripe.client_reference_id),
     userEmail: textValue(metadata.email, body.email, body.user_email, stripe.customer_email, lsCustomData.email, lsAttrs.user_email),
     amount,
-    currency: textValue(stripe.currency, body.currency, body.pp_Currency, lsAttrs.currency) || "PKR",
+    currency,
     planName,
     transactionId: textValue(stripe.payment_intent, stripe.id, body.transaction_id, body.transactionId, body.pp_TxnRefNo, body.id, lsTransactionId),
     subscriptionId,
+    orderId,
     billingCycle,
+    recordTransaction: provider === "lemonsqueezy" ? lsEvent.recordTransaction : true,
+    activateAccess: provider === "lemonsqueezy" ? lsEvent.activateAccess : status === "paid",
+    creditReferral: provider === "lemonsqueezy" ? lsEvent.creditReferral : status === "paid",
     revokeAccess: provider === "lemonsqueezy" ? lsEvent.revoke : false,
     periodEndsAt: provider === "lemonsqueezy" ? textValue(lsAttrs.renews_at, lsAttrs.ends_at) || null : null,
     checkoutToken: provider === "lemonsqueezy" ? textValue(lsCustomData.token) || null : null,
-    rawPayload: body,
+    rawPayload: sanitizePaymentPayload(provider, body, {
+      eventName: provider === "lemonsqueezy" ? lsEventName : type,
+      resourceId: lsResourceId || textValue(body.id),
+      orderId,
+      subscriptionId,
+      variantId: lsVariantId,
+      amount,
+      currency,
+      status,
+    }),
   }
+  if (!extracted.eventId) throw new Error("missing_event_id")
   if (!extracted.transactionId) throw new Error("missing_transaction_id")
   // A subscription handle is itself a route back to the account, so it counts as an identifier.
-  if (!extracted.userId && !extracted.userEmail && !extracted.subscriptionId && !extracted.checkoutToken) {
+  if (!extracted.userId && !extracted.userEmail && !extracted.subscriptionId && !extracted.orderId && !extracted.checkoutToken) {
     throw new Error("missing_payment_user")
   }
   return extracted
@@ -417,10 +546,13 @@ const getUser = async (payment: VerifiedPayment, subscription: SubscriptionRow |
  * carried a signed variant_id - never from buyer-editable checkout custom_data.
  */
 const getSubscription = async (payment: VerifiedPayment): Promise<SubscriptionRow | null> => {
-  if (!payment.subscriptionId) return null
+  if (!payment.subscriptionId && !payment.orderId) return null
+  const identityFilter = payment.subscriptionId
+    ? `subscription_id=eq.${encodeURIComponent(payment.subscriptionId)}`
+    : `order_id=eq.${encodeURIComponent(payment.orderId || "")}`
   const rows = await supabaseSelect<SubscriptionRow>(
     "payment_subscriptions",
-    `provider=eq.${encodeURIComponent(payment.provider)}&subscription_id=eq.${encodeURIComponent(payment.subscriptionId)}&select=subscription_id,plan_name,billing_cycle,user_id&limit=1`
+    `provider=eq.${encodeURIComponent(payment.provider)}&${identityFilter}&select=subscription_id,order_id,plan_name,billing_cycle,user_id&limit=1`
   )
   return rows[0] || null
 }
@@ -472,6 +604,7 @@ const revokePlan = async (userId: string, organizationId: string | null, now: st
 
 const processPaymentWebhook = async (payment: VerifiedPayment) => {
   const subscription = await getSubscription(payment)
+  const stableSubscriptionId = payment.subscriptionId || subscription?.subscription_id || null
 
   // Renewal invoices carry no variant_id, so the stored mapping is the only trusted plan
   // source. If it is missing the subscription_created webhook has probably not landed yet:
@@ -494,23 +627,34 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   const expiresAt = payment.status === "paid"
     ? payment.periodEndsAt || addBillingDays(billingCycle === "annual" ? 365 : 30)
     : null
+  const existingPayment = payment.recordTransaction
+    ? await supabaseSelect<{ status: PaymentStatus }>(
+        "payments",
+        `provider=eq.${encodeURIComponent(payment.provider)}&transaction_id=eq.${encodeURIComponent(payment.transactionId)}&select=status&limit=1`
+      ).then((rows) => rows[0] || null)
+    : null
+  const staleFinancialState = existingPayment
+    ? PAYMENT_STATUS_RANK[existingPayment.status] > PAYMENT_STATUS_RANK[payment.status]
+    : false
 
-  // Record the payment BEFORE requiring a matched account. A real charge we cannot attribute
-  // must still leave a reconcilable row instead of disappearing once retries are exhausted.
-  await supabaseUpsert("payments", {
-    provider: payment.provider,
-    transaction_id: payment.transactionId,
-    user_id: user?.id ?? null,
-    organization_id: organizationId,
-    subscription_id: payment.subscriptionId,
-    amount: payment.amount,
-    currency: payment.currency.toUpperCase(),
-    plan_name: planName,
-    billing_cycle: billingCycle,
-    status: payment.status,
-    raw_payload: payment.rawPayload,
-    processed_at: now,
-  }, "provider,transaction_id")
+  // Only money movement belongs in the ledger. Lifecycle notifications update
+  // subscription state without creating fake zero-value payment rows.
+  if (payment.recordTransaction && !staleFinancialState) {
+    await supabaseUpsert("payments", {
+      provider: payment.provider,
+      transaction_id: payment.transactionId,
+      user_id: user?.id ?? null,
+      organization_id: organizationId,
+      subscription_id: stableSubscriptionId,
+      amount: payment.amount,
+      currency: payment.currency.toUpperCase(),
+      plan_name: planName,
+      billing_cycle: billingCycle,
+      status: payment.status,
+      raw_payload: payment.rawPayload,
+      processed_at: now,
+    }, "provider,transaction_id")
+  }
 
   if (!user) {
     log.error("payments.unattributed", {
@@ -522,12 +666,23 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     return { updated: false, user: null, organizationId: null, orphaned: true }
   }
 
+  if (staleFinancialState) {
+    log.info("payments.stale_financial_state_ignored", {
+      provider: payment.provider,
+      transactionId: payment.transactionId,
+      existingStatus: existingPayment?.status,
+      incomingStatus: payment.status,
+    })
+    return { updated: false, stale: true, user, organizationId }
+  }
+
   // Keep the subscription -> plan mapping current. planName here is always variant-derived
   // or read back from this same table, so this can never launder custom_data into a plan.
-  if (payment.subscriptionId) {
+  if (stableSubscriptionId && (payment.subscriptionId || payment.revokeAccess)) {
     await supabaseUpsert("payment_subscriptions", {
       provider: payment.provider,
-      subscription_id: payment.subscriptionId,
+      subscription_id: stableSubscriptionId,
+      order_id: payment.orderId || subscription?.order_id || null,
       user_id: user.id,
       organization_id: organizationId,
       plan_name: planName,
@@ -546,15 +701,18 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     // Lifecycle events can arrive late and out of order. Never let the expiry or
     // refund of a superseded subscription revoke a newer paid plan. activate_plan
     // stamps the currently authoritative subscription/order handle on the user.
-    if (isStalePaymentRevocation(user.customer_id, payment.subscriptionId, payment.transactionId)) {
+    if (isStalePaymentRevocation(user.customer_id, stableSubscriptionId, payment.transactionId)) {
       log.info("payments.stale_revocation_ignored", {
         provider: payment.provider,
         transactionId: payment.transactionId,
-        subscriptionId: payment.subscriptionId,
+        subscriptionId: stableSubscriptionId,
       })
       return { updated: false, stale: true, user, organizationId }
     }
     await revokePlan(user.id, organizationId, now)
+    if (payment.status === "refunded") {
+      await reverseReferralCommissionFromRefund(user.id)
+    }
     log.info("payments.access_revoked", { provider: payment.provider, status: payment.status })
     await sendTransactionalEmail({
       to: user.email,
@@ -577,16 +735,16 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     // plan's real expiry with the old plan's end date. Only act on a cancellation when
     // it is the account's sole/most-recent Lemon Squeezy subscription; if another one
     // is still active, this is the superseded one and there's nothing to apply here.
-    if (payment.provider === "lemonsqueezy" && payment.subscriptionId) {
+    if (payment.provider === "lemonsqueezy" && stableSubscriptionId) {
       const otherActive = await supabaseSelect<{ subscription_id: string }>(
         "payment_subscriptions",
-        `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(payment.subscriptionId)}&select=subscription_id&limit=1`
+        `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(stableSubscriptionId)}&select=subscription_id&limit=1`
       ).catch((err: unknown) => {
         log.error("payments.other_subscription_lookup_failed", { userId: user.id, error: (err as Error).message })
         return []
       })
       if (otherActive.length > 0) {
-        log.info("payments.superseded_subscription_cancelled", { provider: payment.provider, subscriptionId: payment.subscriptionId })
+        log.info("payments.superseded_subscription_cancelled", { provider: payment.provider, subscriptionId: stableSubscriptionId })
         return { updated: false, cancelled: true, user, organizationId }
       }
     }
@@ -608,6 +766,14 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     return { updated: false, cancelled: true, user, organizationId }
   }
 
+  if (payment.status === "partially_refunded") {
+    log.info("payments.partial_refund_recorded", {
+      provider: payment.provider,
+      transactionId: payment.transactionId,
+    })
+    return { updated: true, partialRefund: true, user, organizationId }
+  }
+
   if (payment.status !== "paid") {
     log.info("payments.not_paid", { status: payment.status, provider: payment.provider })
     await sendTransactionalEmail({
@@ -618,13 +784,21 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     return { updated: false, user, organizationId }
   }
 
+  if (payment.creditReferral && payment.amount > 0) {
+    await creditReferralCommissionFromPayment(user.id, planName, payment.amount)
+  }
+
+  if (!payment.activateAccess) {
+    return { updated: true, recorded: payment.recordTransaction, user, organizationId }
+  }
+
   const supabase = createServiceClient()
 
   // Atomic plan activation via RPC (migration 0031). Falls back to direct table updates
   // if the RPC has not been deployed yet so payments always succeed.
   // The subscription ID is the stable handle across renewals; the transaction ID changes
   // every cycle, so it is only a fallback for one-off orders.
-  const customerId = payment.subscriptionId || payment.transactionId
+  const customerId = stableSubscriptionId || payment.transactionId
 
   const { error: rpcError } = await supabase.rpc("activate_plan", {
     p_user_id: user.id,
@@ -676,13 +850,6 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
     text: `Your ${planName} plan is active until ${expiresAt ? new Date(expiresAt).toDateString() : "your billing renewal"}.`,
   }).catch(() => undefined)
 
-  // Referral commission, if this user was referred. No-op for the common case
-  // (most payers were never referred) and idempotent on renewal webhooks - see
-  // applyReferralPayment in lib/server/referrals.ts. Never blocks plan activation.
-  creditReferralCommissionFromPayment(user.id, planName, payment.amount).catch((err: unknown) =>
-    log.error("payments.referral_commission_failed", { error: (err as Error).message })
-  )
-
   // Solo and Pro are separate hosted checkout links, each its own Lemon Squeezy
   // product - clicking "Upgrade to Pro" while on Solo starts a brand-new
   // subscription rather than modifying the old one. Left alone, both would keep
@@ -695,10 +862,10 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   // subscription record established by an earlier token-verified activation -
   // never from buyer-editable checkout[custom][user_id]/checkout[email] alone -
   // so it is safe to act on "another active subscription for this user" here.
-  if (payment.provider === "lemonsqueezy" && payment.subscriptionId) {
+  if (payment.provider === "lemonsqueezy" && stableSubscriptionId) {
     const staleSubscriptions = await supabaseSelect<{ subscription_id: string }>(
       "payment_subscriptions",
-      `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(payment.subscriptionId)}&select=subscription_id`
+      `user_id=eq.${encodeURIComponent(user.id)}&provider=eq.lemonsqueezy&status=eq.active&subscription_id=neq.${encodeURIComponent(stableSubscriptionId)}&select=subscription_id`
     ).catch((err: unknown) => {
       log.error("payments.stale_subscription_lookup_failed", { userId: user.id, error: (err as Error).message })
       return []
@@ -718,23 +885,59 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   return { updated: true, user, organizationId, expiresAt }
 }
 
+const payloadHash = (rawBody: string) =>
+  crypto.createHash("sha256").update(rawBody, "utf8").digest("hex")
+
+const sanitizePaymentPayload = (
+  provider: PaymentProvider,
+  body: Record<string, unknown>,
+  fields: {
+    eventName: string
+    resourceId: string
+    orderId: string | null
+    subscriptionId: string | null
+    variantId: string
+    amount: number
+    currency: string
+    status: PaymentStatus
+  }
+) => ({
+  provider,
+  event_name: fields.eventName,
+  resource_id: fields.resourceId,
+  order_id: fields.orderId,
+  subscription_id: fields.subscriptionId,
+  variant_id: fields.variantId || null,
+  amount: fields.amount,
+  currency: fields.currency,
+  status: fields.status,
+  created_at: textValue(
+    objectValue(objectValue(body.data).attributes).created_at,
+    objectValue(objectValue(body.data).attributes).updated_at
+  ) || null,
+})
+
 export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   const supabase = createServiceClient()
-  const { data: claimed, error: claimError } = await supabase.rpc("claim_payment_webhook", {
+  const { data: claimState, error: claimError } = await supabase.rpc("claim_payment_webhook_v2", {
     p_provider: payment.provider,
-    p_event_id: payment.transactionId,
+    p_event_id: payment.eventId,
   })
 
   if (claimError) {
     throw new Error(`payment_webhook_claim_failed: ${claimError.message}`)
   }
-  if (!claimed) {
+  if (claimState === "busy") {
+    throw new Error("payment_webhook_busy")
+  }
+  if (claimState === "completed") {
     log.info("payments.duplicate_webhook_ignored", {
       provider: payment.provider,
-      transactionId: payment.transactionId,
+      eventId: payment.eventId,
     })
     return { updated: false, duplicate: true }
   }
+  if (claimState !== "claimed") throw new Error("payment_webhook_claim_invalid")
 
   try {
     const result = await processPaymentWebhook(payment)
@@ -747,7 +950,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
         updated_at: new Date().toISOString(),
       })
       .eq("provider", payment.provider)
-      .eq("event_id", payment.transactionId)
+      .eq("event_id", payment.eventId)
 
     if (completeError) {
       throw new Error(`payment_webhook_complete_failed: ${completeError.message}`)
@@ -763,7 +966,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
         updated_at: new Date().toISOString(),
       })
       .eq("provider", payment.provider)
-      .eq("event_id", payment.transactionId)
+      .eq("event_id", payment.eventId)
     throw error
   }
 }

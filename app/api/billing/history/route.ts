@@ -8,7 +8,7 @@ type PaymentRow = {
   billing_cycle: "monthly" | "annual"
   amount: number
   currency: string
-  status: "paid" | "failed" | "cancelled" | "refunded"
+  status: "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
   processed_at: string
 }
 

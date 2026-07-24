@@ -77,7 +77,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">8. Payments and Refunds</h2>
-            <p>Paid plans are sold as recurring subscriptions and are processed by our payment provider, Lemon Squeezy, which acts as merchant of record. Card payments activate the plan automatically. Where payment is instead made by JazzCash, Easypaisa, or bank transfer, the plan is activated manually after we verify receipt. Prices are displayed in Pakistani Rupees (PKR); card transactions are charged in USD by the payment provider. Subscriptions renew on the cycle agreed at the time of purchase until cancelled.</p>
+            <p>Paid plans are sold as recurring subscriptions and are processed by our payment provider, Lemon Squeezy, which acts as merchant of record. Card payments activate the plan automatically. Where payment is instead made by JazzCash, Easypaisa, or bank transfer, the plan is activated manually after we verify receipt. Prices and card transactions are charged in Pakistani Rupees (PKR). Subscriptions renew on the cycle agreed at the time of purchase until cancelled.</p>
             <p className="mt-3">Refunds are not automatically guaranteed. We will consider refund requests on a case-by-case basis for documented technical failures on our part. Contact <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a> within 7 days of a payment dispute. Dissatisfaction with AI output quality or a decision to stop using the service does not entitle you to a refund.</p>
           </section>
 

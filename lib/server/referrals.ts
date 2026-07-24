@@ -307,11 +307,12 @@ export async function applyReferralCode(rawCode: string, referredUserId: string)
 export async function getDiscountForUser(userId: string): Promise<number> {
   const supabase = createServiceClient()
   const { data } = await supabase
-    .from("plan_usage")
-    .select("referral_discount_percent")
-    .eq("user_id", userId)
+    .from("referral_uses")
+    .select("discount_applied, status")
+    .eq("referred_user_id", userId)
     .maybeSingle()
-  return data?.referral_discount_percent ?? 0
+  if (!data || data.status === "paid" || data.status === "refunded") return 0
+  return Number(data.discount_applied) || 0
 }
 
 export async function getReferralStats(userId: string, userEmail?: string | null): Promise<ReferralStats> {
@@ -425,7 +426,7 @@ export type ReferralUseDetail = {
   referrerName: string
   referrerEmail: string
   discountApplied: number
-  status: "pending" | "verified" | "paid"
+  status: "pending" | "verified" | "paid" | "refunded"
   planName: string | null
   amountPaid: number
   paidAt: string | null
@@ -504,7 +505,9 @@ async function applyReferralPayment(
     .maybeSingle()
 
   if (!use) return { credited: false, reason: "not_referred" }
-  if (use.status === "paid") return { credited: false, reason: "already_credited" }
+  if (use.status === "paid" || use.status === "refunded") {
+    return { credited: false, reason: "already_credited" }
+  }
 
   const commissionAmount = Math.round(amountPaid * (use.commission_percent / 100) * 100) / 100
 
@@ -548,7 +551,7 @@ export async function markReferralPaid(
 }
 
 /**
- * Called from the Lemon Squeezy payment webhook after a plan activates. Most
+ * Called from the Lemon Squeezy settled-order webhook. Most
  * paying users were never referred, so "not referred" is the expected common
  * case and is not logged as an error.
  */
@@ -558,10 +561,29 @@ export async function creditReferralCommissionFromPayment(
   amountPaid: number
 ): Promise<{ credited: boolean }> {
   const outcome = await applyReferralPayment(referredUserId, planName, amountPaid)
+  if (!outcome.credited && outcome.reason === "update_failed") {
+    throw new Error("referral_commission_update_failed")
+  }
   if (outcome.credited) {
     log.info("referrals.commission_credited", { referredUserId, planName, commissionAmount: outcome.commissionAmount })
   }
   return { credited: outcome.credited }
+}
+
+export async function reverseReferralCommissionFromRefund(referredUserId: string): Promise<void> {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from("referral_uses")
+    .update({
+      status: "refunded",
+      amount_paid: 0,
+      commission_amount: 0,
+      paid_at: null,
+    })
+    .eq("referred_user_id", referredUserId)
+    .eq("status", "paid")
+
+  if (error) throw new Error(`referral_refund_reversal_failed: ${error.message}`)
 }
 
 // ── Payouts ─────────────────────────────────────────────────────────────────
@@ -787,16 +809,16 @@ export async function markPayoutPaid(payoutId: string, paymentReference: string)
   if (!reference) return { success: false, error: "Payment reference is required." }
 
   const supabase = createServiceClient()
-  const { data, error } = await supabase
-    .from("referral_payouts")
-    .update({ status: "paid", payment_reference: reference, processed_at: new Date().toISOString() })
-    .eq("id", payoutId)
-    .in("status", ["pending", "processing"])
-    .select("id")
-    .maybeSingle()
+  const { data, error } = await supabase.rpc("mark_referral_payout_paid", {
+    p_payout_id: payoutId,
+    p_payment_reference: reference,
+  })
 
   if (error) {
     log.error("referrals.mark_payout_paid_failed", { error: error.message })
+    if (error.message?.includes("insufficient_balance")) {
+      return { success: false, error: "Payout exceeds the current refundable commission balance." }
+    }
     return { success: false, error: "Could not mark payout as paid." }
   }
   if (!data) return { success: false, error: "Payout is not pending or processing." }

@@ -192,7 +192,7 @@ export function PlanCheckoutProvider({ children }: { children: React.ReactNode }
       targetPlanRef.current = plan
       setState({ phase: "preparing", targetPlan: plan, message: null })
 
-      // The checkout token expires 30 minutes after minting, so it is minted HERE,
+      // The checkout token is minted HERE,
       // at click time, not at page load. A page left open past the TTL would
       // otherwise send an expired token and the webhook could not attribute the
       // payment to this account, orphaning a real charge.

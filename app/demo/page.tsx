@@ -60,8 +60,6 @@ Six weeks later, two inbound conversations. Both from posts I almost did not pub
 Specificity is not a risk. It is the point.`,
 ]
 
-const DEMO_POST = DEMO_POSTS[0]
-
 const DEMO_ARCHIVE = [
   {
     id: 1,

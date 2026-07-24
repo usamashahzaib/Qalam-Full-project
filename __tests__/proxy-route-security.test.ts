@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { PROTECTED_API_ROUTES, RATE_LIMITED_API_PREFIXES } from "@/proxy"
+import { APP_ONLY_EXTRA_PATHS, PROTECTED_API_ROUTES, RATE_LIMITED_API_PREFIXES } from "@/proxy"
 
 describe("proxy route security tables", () => {
   it("keeps competitor APIs explicitly protected", () => {
@@ -9,6 +9,12 @@ describe("proxy route security tables", () => {
   it("rate limits every generate and auth API route by prefix", () => {
     expect(RATE_LIMITED_API_PREFIXES).toEqual(
       expect.arrayContaining(["/api/generate", "/api/auth"])
+    )
+  })
+
+  it("keeps payment result and plan routes on the app host", () => {
+    expect(APP_ONLY_EXTRA_PATHS).toEqual(
+      expect.arrayContaining(["/upgrade", "/billing", "/plan"])
     )
   })
 })

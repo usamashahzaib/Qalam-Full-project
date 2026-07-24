@@ -20,7 +20,7 @@ export function QalamMark({ size = 36, className = "", priority = false }: Qalam
       style={{ width: size, height: size }}
     >
       <Image
-        src="/qalam-mark.png"
+        src="/icon.png"
         alt="Qalam"
         fill
         priority={priority}

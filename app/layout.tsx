@@ -122,7 +122,7 @@ export const metadata: Metadata = {
       { url: "/favicon.ico", sizes: "any" },
       { url: "/icon.png", type: "image/png", sizes: "3200x3200" },
     ],
-    shortcut: ["/qalam-mark.png"],
+    shortcut: ["/icon.png"],
     apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
   robots: {
@@ -159,7 +159,7 @@ const appSchema = {
       "@id": `${siteUrl}/#organization`,
       name: SITE_NAME,
       url: siteUrl,
-      logo: `${siteUrl}/qalam-mark.png`,
+      logo: `${siteUrl}/icon.png`,
       sameAs: [
         "https://www.linkedin.com/company/withqalam",
         "https://www.instagram.com/withqalam",

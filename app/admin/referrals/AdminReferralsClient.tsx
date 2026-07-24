@@ -21,7 +21,7 @@ type ReferralUseDetail = {
   referrerName: string
   referrerEmail: string
   discountApplied: number
-  status: "pending" | "verified" | "paid"
+  status: "pending" | "verified" | "paid" | "refunded"
   planName: string | null
   amountPaid: number
   paidAt: string | null
@@ -49,6 +49,7 @@ const statusClasses: Record<ReferralUseDetail["status"], string> = {
   pending: "bg-zinc-100 text-zinc-600",
   verified: "bg-amber-100 text-amber-700",
   paid: "bg-emerald-100 text-emerald-700",
+  refunded: "bg-red-100 text-red-700",
 }
 
 const payoutStatusClasses: Record<AdminPayout["status"], string> = {

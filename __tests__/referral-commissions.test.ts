@@ -8,7 +8,9 @@ const {
   markReferralPaid,
   creditReferralCommissionFromPayment,
   getPayoutBalance,
+  getDiscountForUser,
   requestPayout,
+  markPayoutPaid,
   MIN_PAYOUT_PKR,
 } = await import("@/lib/server/referrals")
 
@@ -64,6 +66,32 @@ describe("referral commission accrual", () => {
     const result = await markReferralPaid("user-2", "Solo", 1349)
     expect(result.success).toBe(false)
     expect(result.error).toMatch(/already/i)
+  })
+
+  it("offers the referral discount only before the first paid conversion", async () => {
+    const pending = createFakeSupabase({
+      tableResponses: {
+        referral_uses: ok({ discount_applied: 20, status: "pending" }),
+      },
+    })
+    createServiceClient.mockReturnValue(pending)
+    await expect(getDiscountForUser("user-2")).resolves.toBe(20)
+
+    const paid = createFakeSupabase({
+      tableResponses: {
+        referral_uses: ok({ discount_applied: 20, status: "paid" }),
+      },
+    })
+    createServiceClient.mockReturnValue(paid)
+    await expect(getDiscountForUser("user-2")).resolves.toBe(0)
+
+    const refunded = createFakeSupabase({
+      tableResponses: {
+        referral_uses: ok({ discount_applied: 20, status: "refunded" }),
+      },
+    })
+    createServiceClient.mockReturnValue(refunded)
+    await expect(getDiscountForUser("user-2")).resolves.toBe(0)
   })
 })
 
@@ -162,5 +190,27 @@ describe("requestPayout", () => {
     const result = await requestPayout("user-1", "u@example.com", 2000, "jazzcash", "0300-1234567")
     expect(result.success).toBe(true)
     expect(result.payoutId).toBe("payout-1")
+  })
+})
+
+describe("markPayoutPaid", () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it("blocks a payout whose commission was later refunded", async () => {
+    const fake = createFakeSupabase({
+      rpcResponses: {
+        mark_referral_payout_paid: {
+          data: null,
+          error: { message: "insufficient_balance" },
+        },
+      },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await markPayoutPaid("payout-1", "transfer-1")
+    expect(result.success).toBe(false)
+    expect(result.error).toMatch(/refundable commission balance/i)
   })
 })

@@ -166,7 +166,13 @@ const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-passw
 
 // Page routes with no auth gate of their own (token-based, not session-based)
 // that still belong on the app subdomain rather than the marketing site.
-const APP_ONLY_EXTRA_PATHS = ["/verify-email", "/sso-callback"]
+export const APP_ONLY_EXTRA_PATHS = [
+  "/verify-email",
+  "/sso-callback",
+  "/upgrade",
+  "/billing",
+  "/plan",
+]
 
 // ─── Host-based domain split ─────────────────────────────────────────────────
 // byqalam.com (marketing) and app.byqalam.com (product) point at the same

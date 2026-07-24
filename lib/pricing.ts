@@ -344,12 +344,6 @@ export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; bi
   "1929064": { planName: "Pro", billingCycle: "annual" },
 }
 
-// Real Lemon Squeezy discount (id 1067492 in the byqalam store): 10% off, first
-// invoice only, applies to every paid variant, unlimited redemptions. Referred
-// users get this applied automatically at checkout - see /api/billing/checkout-token,
-// which only returns it when the buyer actually has a referral discount on file.
-export const REFERRAL_DISCOUNT_CODE = "QALAMREF10"
-
 export function getLemonSqueezyCheckoutUrl(
   planName: string,
   billingCycle: BillingCycle,

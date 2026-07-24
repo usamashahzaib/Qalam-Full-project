@@ -27,7 +27,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, ignored: true })
     }
     console.error("payment_webhook_failed", { message })
-    const status = message === "payment_signature_invalid" ? 401 : message === "unsupported_payment_provider" ? 400 : 422
+    const status = message === "payment_signature_invalid"
+      ? 401
+      : message === "payment_webhook_busy" || message.startsWith("payment_webhook_claim_failed")
+        ? 503
+        : message === "unsupported_payment_provider" || message === "payment_provider_not_enabled"
+          ? 400
+          : 422
     return NextResponse.json({ ok: false, error: message }, { status })
   }
 }
