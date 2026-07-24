@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
-import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
+import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import { PLAN_FEATURES, PLAN_PRICES, annualFraming, formatPkr, type BillingCycle, type PlanName } from "@/lib/pricing"
 import { PLAN_HIERARCHY, type PlanTier } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS, upgradesMailUrl } from "@/lib/contact"
@@ -130,21 +129,13 @@ export default function UpgradePage() {
         })}
       </div>
 
-      {/* Agency: not self-serve yet, and the copy says so plainly. */}
-      {!isSelfServePlan("Agency") && (
-        <section className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-          <h2 className="text-sm font-bold text-zinc-900">Agency</h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-            Multi-workspace, approvals, and team analytics. Not self-serve yet - we onboard agency accounts directly.
-          </p>
-          <Link
-            href="/contact"
-            className="mt-3 inline-flex rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50"
-          >
-            Contact us for Agency
-          </Link>
-        </section>
-      )}
+      <section className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+        <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-600">Coming Soon</span>
+        <h2 className="mt-3 text-sm font-bold text-zinc-900">Agency</h2>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+          Multi-workspace, approvals, and team analytics are in development. Agency is not available for purchase yet.
+        </p>
+      </section>
 
       {/* Manual fallback. Secondary by design - card checkout is the primary path. */}
       <p className="mt-8 text-center text-xs leading-relaxed text-zinc-500">

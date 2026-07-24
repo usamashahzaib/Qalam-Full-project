@@ -5,7 +5,7 @@ import "server-only"
 // Enforcement limits are sourced from lib/pricing.ts (single source of truth).
 
 import { cache } from "react"
-import { createServiceClient } from "./supabase-rest"
+import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
 import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-expiry"
@@ -67,7 +67,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
       supabase
         .from("users")
         .select("id,external_user_id,plan,plan_expires_at,plan_started_at,billing_cycle,created_at")
-        .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+        .or(`id.eq.${sanitizeOrFilterValue(userId)},external_user_id.eq.${sanitizeOrFilterValue(userId)}`)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { id?: string | null; external_user_id?: string | null; plan?: string | null; plan_expires_at?: string | null; plan_started_at?: string | null; billing_cycle?: string | null; created_at?: string | null } | null }>,
     Promise.resolve(

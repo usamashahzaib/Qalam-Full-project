@@ -6,13 +6,27 @@ import { getRedis } from "./redis"
 
 type LimitResult = { allowed: boolean; limit: number; remaining: number; reset: number }
 
-export function getClientIp(request: NextRequest): string {
-  // Trust platform-injected headers over client-supplied XFF.
-  const cfIp = request.headers.get("cf-connecting-ip")?.trim()
-  if (cfIp) return cfIp
+// On Vercel, x-vercel-forwarded-for is set by the platform itself on every
+// request, overwriting any client-supplied value - it is the only header here
+// a client cannot forge. cf-connecting-ip/x-real-ip are trusted ONLY when
+// TRUSTED_EDGE_PROXY confirms a real edge proxy sits in front and strips
+// client-supplied copies of them before they reach us; without that proxy in
+// place, both are plain client-controlled headers and trusting them lets an
+// attacker mint a fresh rate-limit bucket on every request by randomizing them.
+const trustedEdgeProxy = process.env.TRUSTED_EDGE_PROXY?.trim().toLowerCase()
 
-  const realIp = request.headers.get("x-real-ip")?.trim()
-  if (realIp) return realIp
+export function getClientIp(request: NextRequest): string {
+  const vercelIp = request.headers.get("x-vercel-forwarded-for")?.trim()
+  if (vercelIp) return vercelIp.split(",")[0]?.trim() || "unknown"
+
+  if (trustedEdgeProxy === "cloudflare") {
+    const cfIp = request.headers.get("cf-connecting-ip")?.trim()
+    if (cfIp) return cfIp
+  }
+  if (trustedEdgeProxy) {
+    const realIp = request.headers.get("x-real-ip")?.trim()
+    if (realIp) return realIp
+  }
 
   // Take the RIGHTMOST XFF hop - the one appended by the trusted proxy - since
   // clients can freely forge any number of leftmost hops to evade rate limits.
@@ -121,14 +135,31 @@ function getRouteLimiter(planKey: string, limit: number): Ratelimit | null {
 // can still drive unbounded AI spend on the unauthenticated free tools since
 // each IP gets its own fresh 5/min bucket. This adds one shared daily ceiling
 // across all IPs and all free tools combined, so total exposure is capped
-// regardless of how many source IPs are involved. Fails OPEN when Redis is
-// unavailable - this is a defense-in-depth spend cap, not the primary abuse
-// guard (the per-IP limiter already fails closed and still applies).
+// regardless of how many source IPs are involved.
 const FREE_TOOLS_DAILY_CAP = Number(process.env.FREE_TOOLS_DAILY_CAP) || 2000
+
+// Redis-down fallback: per-instance, resets on cold start, and multiple
+// concurrent instances each get their own counter - so this is deliberately a
+// much lower ceiling than the Redis-backed one, not a proportional share of
+// it. The AI-provider daily $ cap (ai-router-v2's enforceDailySpendCap) is the
+// real backstop when AI_DAILY_SPEND_CAP_USD is configured; this just keeps a
+// bound on request volume in the meantime, rather than failing open entirely
+// while Redis is unavailable.
+const FREE_TOOLS_FALLBACK_DAILY_CAP = Number(process.env.FREE_TOOLS_FALLBACK_DAILY_CAP) || 100
+let _fallbackBudget: { day: string; count: number } | null = null
+
+function inMemoryFreeToolsBudget(): boolean {
+  const day = new Date().toISOString().slice(0, 10)
+  if (!_fallbackBudget || _fallbackBudget.day !== day) {
+    _fallbackBudget = { day, count: 0 }
+  }
+  _fallbackBudget.count += 1
+  return _fallbackBudget.count <= FREE_TOOLS_FALLBACK_DAILY_CAP
+}
 
 export async function checkFreeToolsGlobalBudget(): Promise<boolean> {
   const redis = getRedis()
-  if (!redis) return true
+  if (!redis) return inMemoryFreeToolsBudget()
   const day = new Date().toISOString().slice(0, 10)
   const key = `rl:global:free-tools:${day}`
   try {
@@ -136,7 +167,10 @@ export async function checkFreeToolsGlobalBudget(): Promise<boolean> {
     if (count === 1) await redis.expire(key, 2 * 24 * 60 * 60)
     return count <= FREE_TOOLS_DAILY_CAP
   } catch {
-    return true
+    // Redis reachable at getRedis() but failed mid-call (timeout, transient
+    // error) - same degrade-to-a-bounded-fallback as the "no Redis configured"
+    // path above, rather than allowing unlimited requests through.
+    return inMemoryFreeToolsBudget()
   }
 }
 

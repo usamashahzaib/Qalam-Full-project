@@ -8,6 +8,7 @@ import { cancelLemonSqueezySubscription } from "@/lib/server/lemonsqueezy-api"
 import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
 import { plans as PRICING_PLANS, LEMONSQUEEZY_VARIANT_PLANS, type PlanName } from "@/lib/pricing"
+import { creditReferralCommissionFromPayment } from "@/lib/server/referrals"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa" | "lemonsqueezy"
 export type PaymentStatus = "paid" | "failed" | "cancelled" | "refunded"
@@ -656,6 +657,13 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
     subject: `Qalam ${planName} activated`,
     text: `Your ${planName} plan is active until ${expiresAt ? new Date(expiresAt).toDateString() : "your billing renewal"}.`,
   }).catch(() => undefined)
+
+  // Referral commission, if this user was referred. No-op for the common case
+  // (most payers were never referred) and idempotent on renewal webhooks - see
+  // applyReferralPayment in lib/server/referrals.ts. Never blocks plan activation.
+  creditReferralCommissionFromPayment(user.id, planName, payment.amount).catch((err: unknown) =>
+    log.error("payments.referral_commission_failed", { error: (err as Error).message })
+  )
 
   // Solo and Pro are separate hosted checkout links, each its own Lemon Squeezy
   // product - clicking "Upgrade to Pro" while on Solo starts a brand-new

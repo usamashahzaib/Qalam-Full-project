@@ -14,7 +14,7 @@ type UpgradeModalProps = {
 }
 
 const unlocksFor = (plan: PlanTier) => {
-  if (plan === "Solo") return ["25 drafts", "scheduling", "1 voice profile", "analytics"]
+  if (plan === "Solo") return (PLAN_FEATURES.Solo || []).slice(0, 4)
   const key = plan.startsWith("Agency") ? "Agency" : plan
   return (PLAN_FEATURES[key] || []).slice(0, 4)
 }
@@ -28,22 +28,15 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
         <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
           <span className="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal-800">
-            For agencies
+            Coming Soon
           </span>
-          <h2 className="mt-3 text-lg font-bold text-zinc-900">Get Agency</h2>
+          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency is coming soon</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            5 client workspaces, team seats, and approval workflows for PKR 7,490/month. Agency is onboarded manually - tell us about your team and we&apos;ll set it up.
+            Multi-workspace tools, team seats, and approval workflows are still in development. Agency is not available for purchase yet.
           </p>
-          <Link
-            href="/contact"
-            onClick={onClose}
-            className="mt-5 block rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600"
-          >
-            Get Agency
-          </Link>
           <button
             onClick={onClose}
-            className="mt-3 text-sm text-zinc-400 transition-colors hover:text-zinc-600"
+            className="mt-5 rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-zinc-700"
           >
             Close
           </button>

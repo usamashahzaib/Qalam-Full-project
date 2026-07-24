@@ -59,14 +59,14 @@ export const plans: Plan[] = [
     annualPrice: 3492,
     postsPerMonth: 30,
     draftsPerMonth: 30,
-    carouselsPerMonth: 4,
+    carouselsPerMonth: 3,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "Save PKR 2,496",
     features: [
       "30 posts/month",
-      "4 carousels/month",
+      "3 carousels/month",
       "Role-Aware AI Writer",
       "Hook Generator",
       "Comment Generator (30/month)",
@@ -101,8 +101,8 @@ export const plans: Plan[] = [
   },
   {
     name: "Agency",
-    monthlyPrice: 7490,
-    annualPrice: 52430,
+    monthlyPrice: null,
+    annualPrice: null,
     postsPerMonth: null,
     draftsPerMonth: null,
     carouselsPerMonth: null,
@@ -119,8 +119,9 @@ export const plans: Plan[] = [
       "Team Analytics",
       "Dedicated Support",
     ],
-    cta: "Get Agency",
-    badge: "For agencies",
+    cta: "Coming Soon",
+    badge: "Coming soon",
+    comingSoon: true,
   },
 ]
 
@@ -237,8 +238,7 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   // overlay. Logged-out visitors are bounced through login with this as the
   // callback, so the plan they picked survives the round trip. Nothing paid
   // routes to /contact any more - that was sending buyers to an email form.
-  // Agency has no self-serve Lemon Squeezy checkout yet - onboarding is manual.
-  href: plan.name === "Free" ? "/signup" : plan.name === "Agency" ? "/contact" : upgradeUrl(plan.name),
+  href: plan.name === "Free" ? "/signup" : plan.name === "Agency" ? "/pricing" : upgradeUrl(plan.name),
   highlighted: plan.name === "Solo",
   badge: plan.badge,
   featureStatus: plan.comingSoon ? "coming_soon" : "live",
@@ -264,7 +264,7 @@ export const COMPARISON_ROWS = [
   {
     label: "Carousels per month",
     free: "1",
-    solo: "4",
+    solo: "3",
     pro: "10",
     agency: "10 x 5 workspaces",
   },
@@ -308,7 +308,7 @@ export const COMPARISON_ROWS = [
     free: "Free",
     solo: "PKR 499",
     pro: "PKR 1,490",
-    agency: "PKR 7,490",
+    agency: "Coming soon",
   },
 ]
 
@@ -399,7 +399,7 @@ export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
     flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
   },
   Solo: {
-    limits: { drafts: 30, carousels: 4, hooks: 30, analyses: 10 },
+    limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
     flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
   },
   Pro: {

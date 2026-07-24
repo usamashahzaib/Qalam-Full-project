@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
+import { requireAdminRequest } from "@/lib/server/workspace"
 import { markReferralPaid } from "@/lib/server/referrals"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
-// Session + isAdminEmail only - see create-for-colleague/route.ts for why this
-// intentionally differs from the header-gated app/api/admin/* ops routes.
-const requireAdmin = async () => {
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-}
-
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdminRequest(request)
   } catch {
     return notFound()
   }

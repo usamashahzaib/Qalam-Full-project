@@ -31,7 +31,10 @@ const config: NextAuthConfig = {
     LinkedIn({
       clientId: process.env.LINKEDIN_CLIENT_ID!,
       clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-      authorization: { params: { scope: "openid profile email" } },
+      // w_member_social lets a LinkedIn login also satisfy the "Connect LinkedIn"
+      // publishing requirement, so users who sign in with LinkedIn are not asked
+      // to connect again - see signIn callback below.
+      authorization: { params: { scope: "openid profile email w_member_social" } },
     }),
 
     Credentials({
@@ -78,6 +81,53 @@ const config: NextAuthConfig = {
   callbacks: {
     async signIn({ user, account }) {
       log.info("auth.sign_in", { provider: account?.provider, email: user.email })
+
+      // Logging in via LinkedIn already grants w_member_social (see provider config
+      // above), so persist that token as the workspace's publishing connection too -
+      // otherwise the dashboard would ask the user to "Connect LinkedIn" again even
+      // though they just authorized posting access during login.
+      if (account?.provider === "linkedin" && account.access_token && user.email) {
+        try {
+          const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/workspace")
+          const { storeLinkedInToken, storeLinkedInPublishingAccount } = await import("@/lib/server/linkedin-credentials")
+
+          const email = user.email.toLowerCase()
+          const supabaseUserId = await ensureSupabaseUser({
+            userId: user.id!,
+            email,
+            fullName: user.name || "",
+            imageUrl: user.image || null,
+          })
+          const workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email })
+
+          const memberId = account.providerAccountId || null
+          const tokenExpiresAt = account.expires_at ? account.expires_at * 1000 : null
+          const refreshToken = (account.refresh_token as string | undefined) || null
+          const refreshTokenExpiresIn = (account as { refresh_token_expires_in?: number }).refresh_token_expires_in
+          const refreshTokenExpiresAt = refreshTokenExpiresIn ? Date.now() + refreshTokenExpiresIn * 1000 : null
+
+          await storeLinkedInToken({
+            userId: supabaseUserId,
+            accessToken: account.access_token,
+            memberId,
+            tokenExpiresAt,
+            refreshToken,
+            refreshTokenExpiresAt,
+          })
+          await storeLinkedInPublishingAccount({
+            workspaceId,
+            accessToken: account.access_token,
+            memberId,
+            tokenExpiresAt,
+            refreshToken,
+            refreshTokenExpiresAt,
+          })
+        } catch (err) {
+          // Don't block login on this - user can still connect manually from settings.
+          log.error("auth.linkedin_publishing_link_failed", { error: (err as Error).message })
+        }
+      }
+
       return true
     },
 
@@ -100,6 +150,19 @@ const config: NextAuthConfig = {
               .maybeSingle()
             token.passwordVersion = (u as { password_version?: number } | null)?.password_version ?? 0
           } catch { /* column may not exist yet */ }
+        }
+      }
+      if (trigger === "update" && token.id) {
+        const supabase = createServiceClient()
+        const { data: currentUser } = await supabase
+          .from("users")
+          .select("email, full_name, image_url")
+          .eq("id", token.id)
+          .maybeSingle()
+        if (currentUser) {
+          token.email = currentUser.email ?? token.email
+          token.name = currentUser.full_name ?? token.name
+          token.picture = currentUser.image_url ?? token.picture
         }
       }
       return token

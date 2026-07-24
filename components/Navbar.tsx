@@ -15,7 +15,7 @@ const PRODUCT_LINKS = [
   { label: "Hook Generator", href: "/product/hook-generator", desc: "Build stronger openings, archive the best" },
   { label: "Comment Generator", href: "/product/comment-generator", desc: "Stay visible with on-voice replies" },
   { label: "Post Scheduler", href: "/product/post-scheduler", desc: "Plan publishing without losing draft context" },
-  { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Separate clients with their own voice memory" },
+  { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Coming soon: separate client voice memory" },
 ]
 
 const USE_CASE_LINKS = [
@@ -205,10 +205,13 @@ export function Navbar() {
   const showAnnouncement = announcementReady && announcementVisible && pathname !== "/pricing"
 
   useEffect(() => {
-    if (localStorage.getItem("qalam_announce_dismissed") === "1") {
-      setAnnouncementVisible(false)
-    }
-    setAnnouncementReady(true)
+    const timer = window.setTimeout(() => {
+      if (localStorage.getItem("qalam_announce_dismissed") === "1") {
+        setAnnouncementVisible(false)
+      }
+      setAnnouncementReady(true)
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -232,13 +235,13 @@ export function Navbar() {
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
               <span className="truncate">
-                <strong>New:</strong> <span className="hidden sm:inline">agency workspaces with separate client voice memory</span><span className="sm:hidden">agency workspaces</span>
+                <strong>Coming soon:</strong> <span className="hidden sm:inline">agency workspaces with separate client voice memory</span><span className="sm:hidden">agency workspaces</span>
               </span>
               <Link
-                href="/agency-setup"
+                href="/pricing#agency"
                 className="inline-flex shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
-                <span className="hidden sm:inline">See setup</span><span className="sm:hidden">Setup</span> <ChevronRightIcon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">View plans</span><span className="sm:hidden">Plans</span> <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => {

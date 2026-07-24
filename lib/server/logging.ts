@@ -1,5 +1,6 @@
 import "server-only"
 import { createHash } from "crypto"
+import * as Sentry from "@sentry/nextjs"
 
 type LogLevel = "info" | "warn" | "error"
 
@@ -26,6 +27,7 @@ function write(level: LogLevel, event: string, ctx: Record<string, unknown> = {}
   const entry = { ts: new Date().toISOString(), level, event, ...sanitizeCtx(ctx) }
   if (level === "error") {
     console.error(JSON.stringify(entry))
+    Sentry.captureException(new Error(event), { extra: sanitizeCtx(ctx), tags: { event } })
   } else {
     console.log(JSON.stringify(entry))
   }

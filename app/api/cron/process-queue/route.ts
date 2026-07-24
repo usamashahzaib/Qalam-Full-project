@@ -9,12 +9,11 @@
 export const maxDuration = 30
 
 import { NextRequest, NextResponse } from "next/server"
-import { env } from "@/lib/server/env"
+import { verifyCronAuth } from "@/lib/server/verify-cron"
 import { reconcileStuckPublishing } from "@/lib/server/linkedin-publish"
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  if (!env.cronSecret || authHeader !== `Bearer ${env.cronSecret}`) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

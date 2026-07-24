@@ -39,7 +39,8 @@ export function ProfileProvider({ children, workspaceId }: { children: React.Rea
   }, [workspaceId])
 
   useEffect(() => {
-    fetchProfile()
+    const timer = window.setTimeout(() => void fetchProfile(), 0)
+    return () => window.clearTimeout(timer)
   }, [fetchProfile])
 
   const saveProfile = useCallback(async (input: WorkspaceProfile) => {

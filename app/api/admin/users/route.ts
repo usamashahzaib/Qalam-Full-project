@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { timingSafeEqual } from "node:crypto"
-import { fetchWorkspacePlan, isAdminEmail } from "@/lib/server/workspace"
-import { getAuthenticatedSession } from "@/lib/server/workspace"
+import { fetchWorkspacePlan, requireAdminOps } from "@/lib/server/workspace"
 import { getMonthlyCount } from "@/lib/server/require-plan"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
@@ -13,21 +11,10 @@ type AuditRow = { id: string; admin_email: string; target_user_email: string; ac
 type PaymentRow = { user_id: string; created_at: string | null; processed_at: string | null }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
-const requireAdmin = async (request: NextRequest) => {
-  const adminKey = request.headers.get("x-admin-key") || ""
-  const secretKey = process.env.ADMIN_SECRET_KEY || ""
-  const keyBuf = Buffer.from(adminKey)
-  const secretBuf = Buffer.from(secretKey)
-  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-  return session.user.id
-}
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireAdminOps(request)
   } catch {
     return notFound()
   }

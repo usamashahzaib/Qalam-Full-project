@@ -1,7 +1,8 @@
 import "server-only"
 
+import { timingSafeEqual } from "node:crypto"
 import { NextRequest } from "next/server"
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
@@ -169,6 +170,7 @@ export type WorkspaceSessionContext = {
 }
 
 export const requireAdminRequest = async (_request: NextRequest) => {
+  void _request
   const session = await getAuthenticatedSession()
   const userId = session?.user?.id || ""
   const email = session?.user?.email?.trim().toLowerCase()
@@ -176,22 +178,33 @@ export const requireAdminRequest = async (_request: NextRequest) => {
   return { email: email || "", userId }
 }
 
-export const requireAdminPage = async () => {
-  let userId = ""
-  try {
-    userId = await requireAuth()
-  } catch {
-    notFound()
-  }
+// Header-gated ops routes (app/api/admin/*, payments/test-webhook): requires both the
+// x-admin-key secret (so curl/scripts can hit them) AND an admin-email session, unlike
+// requireAdminRequest above which is session-only for the browser-driven referrals admin UI.
+export const requireAdminOps = async (request: NextRequest): Promise<{ email: string; userId: string }> => {
+  const adminKey = request.headers.get("x-admin-key") || ""
+  const secretKey = process.env.ADMIN_SECRET_KEY || ""
+  const keyBuf = Buffer.from(adminKey)
+  const secretBuf = Buffer.from(secretKey)
+  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
   const session = await getAuthenticatedSession()
+  if (!session?.user?.id) throw new Error("Unauthorized")
+  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
+  return { email: session.user.email || "", userId: session.user.id }
+}
+
+export const requireAdminPage = async () => {
+  const session = await getAuthenticatedSession()
+  const userId = session?.user?.id
+  if (!userId) redirect("/login?callbackUrl=/admin")
   const email = session?.user?.email?.trim().toLowerCase()
 
   if (!env.appAdminEmails) {
-    return { adminEmailsNotConfigured: true as const, email: email || "", userId }
+    throw new Error("APP_ADMIN_EMAILS is required for admin routes")
   }
 
   if (!isAdminEmail(email)) {
-    return { notAdmin: true as const, email: email || "", userId }
+    redirect("/dashboard")
   }
   return { email: email || "", userId }
 }

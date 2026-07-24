@@ -93,7 +93,7 @@ export async function improvePost(
     artifact = { content: trimmed, wordCount: trimmed.split(/\s+/).filter(Boolean).length }
 
     const { system: scoreSystem, user: scoreUser } = build7MetricScorePrompt(artifact.content, role, voiceProfile)
-    const scoreRaw = await callAi("post-improvement", scoreSystem, scoreUser, {
+    const scoreRaw = await callAi("post-scoring", scoreSystem, scoreUser, {
       json: true, temperature: 0.2, maxTokens: 600,
       userId, plan, cache: false,
     }).catch(() => "{}")

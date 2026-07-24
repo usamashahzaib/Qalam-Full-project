@@ -121,6 +121,7 @@ export async function POST(
     .from("carousels")
     .update({ linkedin_post_urn: shared.postUrn, published_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("workspace_id", workspaceId)
   if (markError) console.error("[carousel publish] failed to record publish state:", markError.message)
 
   return NextResponse.json({ ...shared, documentUrn })

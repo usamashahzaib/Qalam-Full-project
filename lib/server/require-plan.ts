@@ -5,7 +5,7 @@ import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId, resolveEffectivePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
-import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { supabaseCount } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "./plan-limits-v2"
 
 type PlanCheckResult =
@@ -117,16 +117,17 @@ export const getMonthlyCount = async (
     throw new Error(`getMonthlyCount: table '${table}' is not in the allowed list`)
   }
 
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  // Anchored to UTC explicitly (not setDate/setHours, which operate in the
+  // host's local timezone) so "start of month" is identical regardless of
+  // which timezone the serverless instance happens to be running in.
+  const now = new Date()
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0))
   const isoStart = startOfMonth.toISOString()
 
-  const rows = await supabaseSelect<{ id: string }>(
+  return supabaseCount(
     table,
     `${filterField}=eq.${workspaceId}&created_at=gte.${isoStart}&select=id`
   )
-  return rows?.length ?? 0
 }
 
 export const enforceMonthlyLimit = (

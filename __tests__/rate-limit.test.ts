@@ -43,6 +43,41 @@ describe("checkRateLimit", () => {
   })
 })
 
+describe("checkFreeToolsGlobalBudget", () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  it("degrades to a bounded in-memory fallback (not unlimited) when Redis is unconfigured", async () => {
+    vi.stubEnv("FREE_TOOLS_FALLBACK_DAILY_CAP", "3")
+    vi.resetModules()
+    const { getRedis: freshGetRedis } = await import("@/lib/server/redis")
+    vi.mocked(freshGetRedis).mockReturnValue(null)
+    const { checkFreeToolsGlobalBudget: checkWithSmallCap } = await import("@/lib/server/rate-limit")
+
+    expect(await checkWithSmallCap()).toBe(true)
+    expect(await checkWithSmallCap()).toBe(true)
+    expect(await checkWithSmallCap()).toBe(true)
+    expect(await checkWithSmallCap()).toBe(false)
+
+    vi.unstubAllEnvs()
+  })
+
+  it("degrades to the same bounded fallback (not unlimited) when Redis errors mid-call", async () => {
+    vi.stubEnv("FREE_TOOLS_FALLBACK_DAILY_CAP", "2")
+    vi.resetModules()
+    const { getRedis: freshGetRedis } = await import("@/lib/server/redis")
+    vi.mocked(freshGetRedis).mockReturnValue({ incr: vi.fn().mockRejectedValue(new Error("timeout")) } as never)
+    const { checkFreeToolsGlobalBudget: checkWithSmallCap } = await import("@/lib/server/rate-limit")
+
+    expect(await checkWithSmallCap()).toBe(true)
+    expect(await checkWithSmallCap()).toBe(true)
+    expect(await checkWithSmallCap()).toBe(false)
+
+    vi.unstubAllEnvs()
+  })
+})
+
 describe("TokenBucket", () => {
   beforeEach(() => {
     vi.resetAllMocks()

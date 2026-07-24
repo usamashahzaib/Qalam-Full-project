@@ -35,12 +35,15 @@ export function WelcomeModal() {
 
   useEffect(() => {
     if (status !== "authenticated") return
-    try {
-      if (localStorage.getItem(STORAGE_KEY) === "true") return
-    } catch {
-      return
-    }
-    setOpen(true)
+    const timer = window.setTimeout(() => {
+      try {
+        if (localStorage.getItem(STORAGE_KEY) === "true") return
+      } catch {
+        return
+      }
+      setOpen(true)
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [status])
 
   const dismiss = () => {

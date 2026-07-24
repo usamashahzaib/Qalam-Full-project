@@ -27,11 +27,14 @@ export function NewFeatureBadge({
   const [showTooltip, setShowTooltip] = useState(false)
 
   useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem(seenKey(featureKey)) === "true")
-    } catch {
-      setDismissed(false)
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        setDismissed(localStorage.getItem(seenKey(featureKey)) === "true")
+      } catch {
+        setDismissed(false)
+      }
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [featureKey])
 
   if (dismissed || !isNewFeature(launchDate)) return null

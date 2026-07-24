@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useBilling } from "@/lib/hooks/useBilling"
-import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
 type LockedFeatureProps = {
@@ -17,17 +17,33 @@ type LockedFeatureProps = {
 export function LockedFeature({ feature, requiredPlan, children, className = "", buttonClassName = "", tooltip }: LockedFeatureProps) {
   const { billing } = useBilling()
   const [showUpgrade, setShowUpgrade] = useState(false)
+  const upgradeTarget = getUpgradeTarget(billing.plan, requiredPlan)
+  if (requiredPlan === "Agency") {
+    return (
+      <div className={`relative overflow-hidden rounded-xl ${className}`} title="Coming Soon">
+        <div className="pointer-events-none select-none opacity-45 blur-[2px]">{children}</div>
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/75 px-3 text-center backdrop-blur-[1px]">
+          <span className={`whitespace-nowrap rounded-lg bg-zinc-200 px-3 py-1.5 text-xs font-bold text-zinc-600 ${buttonClassName}`}>
+            Coming Soon
+          </span>
+        </div>
+      </div>
+    )
+  }
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
-  const label = feature === "Voice Training" && requiredPlan === "Pro" ? "Upgrade to Pro for more voice training" : `Unlock in ${requiredPlan}`
+  if (!upgradeTarget) return <>{children}</>
+  const label = `Upgrade to ${upgradeTarget}`
+  const buttonMinWidth = label.length * 6.5 + 24
 
   return (
     <>
-      <div className={`relative overflow-hidden rounded-xl ${className}`} title={tooltip}>
+      <div className={`relative overflow-hidden rounded-xl ${className}`} style={{ minWidth: buttonMinWidth + 24 }} title={tooltip}>
         <div className="pointer-events-none select-none opacity-45 blur-[2px]">{children}</div>
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/75 px-3 text-center backdrop-blur-[1px]">
           <button
             onClick={() => setShowUpgrade(true)}
-            className={`rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 ${buttonClassName}`}
+            className={`whitespace-nowrap rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-600 ${buttonClassName}`}
+            style={{ minWidth: buttonMinWidth }}
             title={tooltip}
           >
             {label}
@@ -35,7 +51,7 @@ export function LockedFeature({ feature, requiredPlan, children, className = "",
         </div>
       </div>
       {showUpgrade ? (
-        <UpgradeModal currentPlan={billing.plan} requiredPlan={requiredPlan} reason={`${feature.toLowerCase()} locked`} onClose={() => setShowUpgrade(false)} />
+        <UpgradeModal currentPlan={billing.plan} requiredPlan={upgradeTarget} reason={`${feature.toLowerCase()} locked`} onClose={() => setShowUpgrade(false)} />
       ) : null}
     </>
   )

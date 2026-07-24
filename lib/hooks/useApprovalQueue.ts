@@ -49,7 +49,10 @@ export function useApprovalQueue(plan: string) {
     finally { setIsLoading(false) }
   }, [canUse])
 
-  useEffect(() => { void fetchApprovals() }, [fetchApprovals])
+  useEffect(() => {
+    const timer = window.setTimeout(() => void fetchApprovals(), 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchApprovals])
 
   const addApproval = useCallback((row: ApprovalRow) => {
     setApprovals((prev) => [row, ...prev])

@@ -82,14 +82,29 @@ async function extractAuthEmail(request: NextRequest): Promise<string | null> {
 }
 
 // Mirrors getClientIp() in lib/server/rate-limit.ts so the proxy and route
-// handlers key rate limits off the same (least-spoofable) client IP. Trust
-// platform-injected headers over client-supplied XFF; for XFF take the
-// rightmost hop appended by the trusted proxy.
+// handlers key rate limits off the same (least-spoofable) client IP.
+// x-vercel-forwarded-for is platform-set on every request (Vercel overwrites
+// any client-supplied copy), so it is the only unforgeable signal here.
+// cf-connecting-ip/x-real-ip are plain client-controlled headers unless a real
+// edge proxy in front of Vercel strips inbound copies and sets its own -
+// trusting them unconditionally lets a client randomize them per request to
+// dodge the rate limiter entirely. Only trust them when TRUSTED_EDGE_PROXY
+// confirms that proxy is actually in place.
+const trustedEdgeProxy = process.env.TRUSTED_EDGE_PROXY?.trim().toLowerCase()
+
 function getClientIp(request: NextRequest): string {
-  const cfIp = request.headers.get("cf-connecting-ip")?.trim()
-  if (cfIp) return cfIp
-  const realIp = request.headers.get("x-real-ip")?.trim()
-  if (realIp) return realIp
+  const vercelIp = request.headers.get("x-vercel-forwarded-for")?.trim()
+  if (vercelIp) return vercelIp.split(",")[0]?.trim() || "unknown"
+
+  if (trustedEdgeProxy === "cloudflare") {
+    const cfIp = request.headers.get("cf-connecting-ip")?.trim()
+    if (cfIp) return cfIp
+  }
+  if (trustedEdgeProxy) {
+    const realIp = request.headers.get("x-real-ip")?.trim()
+    if (realIp) return realIp
+  }
+
   const xff = request.headers.get("x-forwarded-for")
   if (xff) {
     const hops = xff.split(",").map((h) => h.trim()).filter(Boolean)
@@ -197,6 +212,15 @@ const PUBLIC_API_PREFIXES = [
   "/api/approvals",
 ]
 
+export const PROTECTED_API_ROUTES = [
+  "/api/competitors",
+] as const
+
+export const RATE_LIMITED_API_PREFIXES = [
+  "/api/generate",
+  "/api/auth",
+] as const
+
 // ─── CSP builder ─────────────────────────────────────────────────────────────
 // Nonce is generated per HTML request and passed via x-nonce request header so
 // Server Components can attach it to any custom <script> tags. Next.js 16
@@ -211,7 +235,12 @@ function buildCsp(nonce: string, isDev: boolean): string {
     // Fonts are self-hosted via next/font/google (downloaded at build time,
     // served from our own origin) - no runtime request to Google ever happens,
     // so the googleapis/gstatic allowances served no purpose and are dropped.
-    "style-src 'self' 'unsafe-inline'",
+    // 'nonce-<value>' + 'unsafe-inline' together is the standard CSP2 migration
+    // pattern: browsers that understand nonce-source ignore 'unsafe-inline' for
+    // this directive (so they get real nonce enforcement), browsers that don't
+    // fall back to 'unsafe-inline' unchanged - never a regression either way,
+    // PROVIDED every inline <style> Next actually emits carries this nonce.
+    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
     "font-src 'self'",
     // lemonsqueezy.com entries back the overlay checkout: lemon.js is appended by an
     // already-trusted bundle chunk (so 'strict-dynamic' covers script-src, where a host
@@ -299,7 +328,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const isPublicApi = PUBLIC_API_PREFIXES.some(
+  const isExplicitlyProtectedApi = PROTECTED_API_ROUTES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
+  const isPublicApi = !isExplicitlyProtectedApi && PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
 
@@ -309,8 +341,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   ) && !AUTH_ONLY_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
+  const isExplicitlyRateLimitedApi = RATE_LIMITED_API_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  )
 
-  if (!isPublicPage) {
+  if (!isPublicPage || isExplicitlyRateLimitedApi) {
     // Strict auth limiter applies only to POST submissions on auth pages and /api/auth/signin
     const isAuthRoute = request.method === "POST" && (
       pathname.startsWith("/api/auth/signin") ||

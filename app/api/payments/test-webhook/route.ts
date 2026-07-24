@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import crypto, { timingSafeEqual } from "node:crypto"
-import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
+import crypto from "node:crypto"
+import { requireAdminOps } from "@/lib/server/workspace"
 import { env } from "@/lib/server/env"
 import { signCheckoutToken } from "@/lib/server/checkout-token"
 import { verifyAndExtractPayment, recordPaymentWebhook } from "@/lib/server/payments"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
-const requireAdmin = async (request: NextRequest) => {
-  const adminKey = request.headers.get("x-admin-key") || ""
-  const secretKey = process.env.ADMIN_SECRET_KEY || ""
-  const keyBuf = Buffer.from(adminKey)
-  const secretBuf = Buffer.from(secretKey)
-  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-}
 
 // Mirrors the Lemon Squeezy event shapes lib/server/payments.ts actually parses,
 // so this exercises the real verify + activate path instead of a parallel mock.
@@ -34,7 +24,7 @@ const REQUIRES_VARIANT = new Set(["order_created", "subscription_created", "subs
 
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin(request)
+    await requireAdminOps(request)
   } catch {
     return notFound()
   }

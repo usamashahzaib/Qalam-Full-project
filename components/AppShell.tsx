@@ -25,9 +25,10 @@ import {
   CheckIcon,
   CommentIcon,
   StealthIcon,
+  GiftIcon,
 } from "@/components/ui/qalam-icons"
 import { persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
-import { hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CommandMenu } from "@/components/CommandMenu"
 import { HelpPanel } from "@/components/HelpPanel"
@@ -73,10 +74,29 @@ export const NAV_GROUPS = [
     label: "Account",
     links: [
       { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency" as PlanTier },
+      { href: "/settings/referrals", label: "Refer & Earn", icon: GiftIcon },
       { href: "/settings", label: "Settings", icon: ProfileIcon },
     ],
   },
 ]
+
+function ReferralNavBadge() {
+  const [count, setCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    fetch("/api/referrals/stats")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setCount(data?.totalReferred ?? 0))
+      .catch(() => setCount(null))
+  }, [])
+
+  if (!count) return null
+  return (
+    <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[10px] font-bold text-teal-300">
+      {count}
+    </span>
+  )
+}
 
 const sidebarSectionStateKey = "qalam-sidebar-sections"
 const defaultSectionState = () => Object.fromEntries(NAV_GROUPS.map((group) => [group.label, true]))
@@ -89,20 +109,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { billing } = useBilling()
   const { posts } = usePosts()
   const activeClientId = searchParams.get("client")
-  const [linkedinConnected, setLinkedinConnected] = useState(false)
+  const sessionIdentity = session?.user?.email || ""
+  const [linkedinConnection, setLinkedinConnection] = useState({ identity: "", connected: false })
+  const linkedinConnected = linkedinConnection.identity === sessionIdentity && linkedinConnection.connected
 
   useEffect(() => {
-    if (!session?.user) {
-      setLinkedinConnected(false)
-      return
-    }
+    if (!sessionIdentity) return
     let cancelled = false
     fetch("/api/linkedin/profile")
       .then((res) => (res.ok ? res.json() : { connected: false }))
-      .then((data) => { if (!cancelled) setLinkedinConnected(Boolean(data?.connected)) })
-      .catch(() => { if (!cancelled) setLinkedinConnected(false) })
+      .then((data) => {
+        if (!cancelled) setLinkedinConnection({ identity: sessionIdentity, connected: Boolean(data?.connected) })
+      })
+      .catch(() => {
+        if (!cancelled) setLinkedinConnection({ identity: sessionIdentity, connected: false })
+      })
     return () => { cancelled = true }
-  }, [session?.user])
+  }, [sessionIdentity])
 
   const user = session?.user
     ? {
@@ -136,12 +159,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(sidebarSectionStateKey)
-      if (saved) setOpenSections((prev) => ({ ...prev, ...JSON.parse(saved) }))
-    } catch {
-      // ignore corrupt localStorage
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        const saved = localStorage.getItem(sidebarSectionStateKey)
+        if (saved) setOpenSections((prev) => ({ ...prev, ...JSON.parse(saved) }))
+      } catch {
+        // ignore corrupt localStorage
+      }
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [])
   const searchRef = useRef<HTMLDivElement>(null)
   const switcherRef = useRef<HTMLDivElement>(null)
@@ -150,7 +176,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
   const hasAgencyAccess = useMemo(() => currentPlan.startsWith("Agency"), [currentPlan])
-  const canAddWorkspace = hasAgencyAccess
+  const canAddWorkspace = false
 
   // Every workspace the user belongs to - own account plus any client
   // workspace they were invited into. Not gated on plan: an invited
@@ -270,7 +296,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
                   ) : (
                     <div className="px-4 py-3 text-xs text-zinc-400">
-                      Add workspace - <a href={"/upgrade?plan=Agency"} className="font-semibold text-teal-300 hover:underline">Unlock in Agency</a>
+                      Add workspace - <span className="font-semibold text-zinc-300">Coming Soon</span>
                     </div>
                   )}
                 </div>
@@ -295,8 +321,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = pathname === link.href || (link.href !== "/dashboard" && pathname.startsWith(link.href + "/"))
-                    const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
+                    const agencyComingSoon = link.requiredPlan === "Agency"
+                    const isLocked = agencyComingSoon || (link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags))
                     if (isLocked && link.requiredPlan) {
+                      const upgradeTarget = getUpgradeTarget(currentPlan, link.requiredPlan)
                       return (
                         <div key={link.href} className={`rounded-xl py-2 pl-3 pr-3 text-sm font-medium ${active ? "border-l-2 border-teal-600 bg-teal-50/50 text-zinc-900" : "text-zinc-400"}`}>
                           <div className="flex items-center gap-3">
@@ -304,10 +332,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
                           </div>
                           <button
-                            onClick={() => setUpgradePrompt({ plan: link.requiredPlan!, reason: `${link.label.toLowerCase()} locked` })}
-                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
+                            onClick={() => upgradeTarget && setUpgradePrompt({ plan: upgradeTarget, reason: `${link.label.toLowerCase()} locked` })}
+                            disabled={!upgradeTarget}
+                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[10px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                           >
-                            Unlock - Upgrade to {link.requiredPlan}
+                            {upgradeTarget ? `Upgrade to ${upgradeTarget}` : "Coming Soon"}
                           </button>
                         </div>
                       )
@@ -325,6 +354,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                           style={active ? { color: "var(--ws-brand, #0d9488)" } : undefined}
                         />
                         <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
+                        {link.href === "/settings/referrals" ? <ReferralNavBadge /> : null}
                         {newFeature ? (
                           <NewFeatureBadge featureKey={link.href} launchDate={newFeature.launchDate} tooltip={newFeature.tooltip} />
                         ) : null}
@@ -403,14 +433,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onClick={() => setUserDropdownOpen((v) => !v)}
               aria-label="User menu"
               aria-expanded={userDropdownOpen}
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-zinc-200 bg-zinc-800 text-xs font-bold text-white transition-colors hover:border-teal/50"
+              className="flex h-9 max-w-44 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-zinc-200 bg-white py-1 pl-1 pr-3 text-xs font-bold text-zinc-800 transition-colors hover:border-teal/50"
             >
-              {user?.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" />
-              ) : (
-                <span>{user?.fullName?.charAt(0) || "U"}</span>
-              )}
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-zinc-800 text-white">
+                {user?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.imageUrl} alt={user.fullName} className="h-full w-full object-cover" />
+                ) : (
+                  <span>{user?.fullName?.charAt(0) || "U"}</span>
+                )}
+              </span>
+              <span className="truncate">{user?.fullName || "User"}</span>
             </button>
             {userDropdownOpen && (
               <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl divide-y divide-zinc-100">
@@ -489,7 +522,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
               ) : (
                 <div className="px-3 py-2 text-xs text-zinc-500">
-                  Add workspace - <a href={"/upgrade?plan=Agency"} className="text-teal-600 hover:underline">Unlock in Agency</a>
+                  Add workspace - <span className="font-semibold text-zinc-600">Coming Soon</span>
                 </div>
               )}
             </div>

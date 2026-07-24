@@ -1,23 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
+import { requireAdminRequest } from "@/lib/server/workspace"
 import { generateReferralCode } from "@/lib/server/referrals"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
-// Session + isAdminEmail only (no x-admin-key) - this route is called from the
-// authenticated app/admin/referrals browser UI, which can never hold the
-// ADMIN_SECRET_KEY used to gate the header-only app/api/admin/* ops routes.
-const requireAdmin = async () => {
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-}
-
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin()
+    await requireAdminRequest(request)
   } catch {
     return notFound()
   }

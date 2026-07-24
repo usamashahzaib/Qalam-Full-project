@@ -480,26 +480,33 @@ export async function getAdminReferralUses(): Promise<ReferralUseDetail[]> {
 
 export type MarkPaidResult = { success: boolean; error?: string }
 
+type ApplyPaymentOutcome =
+  | { credited: true; commissionAmount: number }
+  | { credited: false; reason: "not_referred" | "already_credited" | "update_failed" }
+
 /**
- * Called manually by an admin once a JazzCash/Easypaisa/bank-transfer payment
- * has been verified - there is no automated checkout or webhook in this flow.
+ * Shared by the admin's manual mark-paid flow and the automated payment webhook.
+ * Commission accrues once per referred user (first payment only) - if the row is
+ * already 'paid' this is a renewal or a duplicate webhook delivery, not a new
+ * commission event, so it is a no-op rather than double-crediting the referrer.
  */
-export async function markReferralPaid(
+async function applyReferralPayment(
   referredUserId: string,
   planName: string,
   amountPaid: number
-): Promise<MarkPaidResult> {
+): Promise<ApplyPaymentOutcome> {
   const supabase = createServiceClient()
 
   const { data: use } = await supabase
     .from("referral_uses")
-    .select("id")
+    .select("id, status, commission_percent")
     .eq("referred_user_id", referredUserId)
     .maybeSingle()
 
-  if (!use) {
-    return { success: false, error: "No referral use found for this user." }
-  }
+  if (!use) return { credited: false, reason: "not_referred" }
+  if (use.status === "paid") return { credited: false, reason: "already_credited" }
+
+  const commissionAmount = Math.round(amountPaid * (use.commission_percent / 100) * 100) / 100
 
   const { error } = await supabase
     .from("referral_uses")
@@ -507,15 +514,292 @@ export async function markReferralPaid(
       status: "paid",
       plan_name: planName,
       amount_paid: amountPaid,
+      commission_amount: commissionAmount,
       paid_at: new Date().toISOString(),
     })
     .eq("id", use.id)
 
   if (error) {
-    log.error("referrals.mark_paid_failed", { error: error.message })
+    log.error("referrals.apply_payment_failed", { error: error.message })
+    return { credited: false, reason: "update_failed" }
+  }
+
+  return { credited: true, commissionAmount }
+}
+
+/**
+ * Called manually by an admin once a JazzCash/Easypaisa/bank-transfer payment
+ * has been verified for a referred user paying outside the Lemon Squeezy checkout.
+ */
+export async function markReferralPaid(
+  referredUserId: string,
+  planName: string,
+  amountPaid: number
+): Promise<MarkPaidResult> {
+  const outcome = await applyReferralPayment(referredUserId, planName, amountPaid)
+  if (!outcome.credited) {
+    if (outcome.reason === "not_referred") return { success: false, error: "No referral use found for this user." }
+    if (outcome.reason === "already_credited") return { success: false, error: "This referral has already been marked paid." }
     return { success: false, error: "Could not mark this referral as paid." }
   }
 
-  log.info("referrals.marked_paid", { referredUserId, planName })
+  log.info("referrals.marked_paid", { referredUserId, planName, commissionAmount: outcome.commissionAmount })
+  return { success: true }
+}
+
+/**
+ * Called from the Lemon Squeezy payment webhook after a plan activates. Most
+ * paying users were never referred, so "not referred" is the expected common
+ * case and is not logged as an error.
+ */
+export async function creditReferralCommissionFromPayment(
+  referredUserId: string,
+  planName: string,
+  amountPaid: number
+): Promise<{ credited: boolean }> {
+  const outcome = await applyReferralPayment(referredUserId, planName, amountPaid)
+  if (outcome.credited) {
+    log.info("referrals.commission_credited", { referredUserId, planName, commissionAmount: outcome.commissionAmount })
+  }
+  return { credited: outcome.credited }
+}
+
+// ── Payouts ─────────────────────────────────────────────────────────────────
+
+export const MIN_PAYOUT_PKR = 1000
+const PAYOUT_METHODS = new Set(["jazzcash", "easypaisa", "bank"])
+
+export type PayoutBalance = {
+  totalCommission: number
+  pendingPayout: number
+  paidOut: number
+  availableBalance: number
+}
+
+export type PayoutRow = {
+  id: string
+  amount: number
+  status: "pending" | "processing" | "paid" | "rejected"
+  paymentMethod: string
+  accountDetails: string
+  paymentReference: string | null
+  adminNote: string | null
+  createdAt: string
+  processedAt: string | null
+}
+
+async function getReferrerReferralIds(referrerId: string, referrerEmail?: string | null): Promise<string[]> {
+  const supabase = createServiceClient()
+  const email = referrerEmail?.trim().toLowerCase()
+  const orFilter = email
+    ? `referrer_user_id.eq.${referrerId},referrer_email.eq.${email}`
+    : `referrer_user_id.eq.${referrerId}`
+
+  const { data } = await supabase.from("referrals").select("id").or(orFilter)
+  return (data || []).map((r) => r.id)
+}
+
+export async function getPayoutBalance(referrerId: string, referrerEmail?: string | null): Promise<PayoutBalance> {
+  const supabase = createServiceClient()
+  const referralIds = await getReferrerReferralIds(referrerId, referrerEmail)
+
+  let totalCommission = 0
+  if (referralIds.length > 0) {
+    const { data: uses } = await supabase
+      .from("referral_uses")
+      .select("commission_amount")
+      .in("referral_id", referralIds)
+      .eq("status", "paid")
+    totalCommission = (uses || []).reduce((sum, u) => sum + Number(u.commission_amount ?? 0), 0)
+  }
+
+  const { data: payouts } = await supabase
+    .from("referral_payouts")
+    .select("amount, status")
+    .eq("referrer_user_id", referrerId)
+
+  let pendingPayout = 0
+  let paidOut = 0
+  for (const payout of payouts || []) {
+    const amount = Number(payout.amount ?? 0)
+    if (payout.status === "pending" || payout.status === "processing") pendingPayout += amount
+    else if (payout.status === "paid") paidOut += amount
+  }
+
+  const availableBalance = Math.max(0, totalCommission - pendingPayout - paidOut)
+  return { totalCommission, pendingPayout, paidOut, availableBalance }
+}
+
+export async function getPayouts(referrerId: string): Promise<PayoutRow[]> {
+  const supabase = createServiceClient()
+  const { data } = await supabase
+    .from("referral_payouts")
+    .select("id, amount, status, payment_method, account_details, payment_reference, admin_note, created_at, processed_at")
+    .eq("referrer_user_id", referrerId)
+    .order("created_at", { ascending: false })
+
+  return (data || []).map((p) => ({
+    id: p.id,
+    amount: Number(p.amount ?? 0),
+    status: p.status as PayoutRow["status"],
+    paymentMethod: p.payment_method,
+    accountDetails: p.account_details,
+    paymentReference: p.payment_reference,
+    adminNote: p.admin_note,
+    createdAt: p.created_at,
+    processedAt: p.processed_at,
+  }))
+}
+
+export type RequestPayoutResult = { success: boolean; payoutId?: string; error?: string }
+
+/**
+ * Balance check and insert happen atomically in the request_referral_payout()
+ * RPC (migration 0063) - concurrent requests from the same referrer are
+ * serialized by an advisory lock inside the function so a burst of requests
+ * can no longer all read the same pre-insert balance and over-withdraw.
+ */
+export async function requestPayout(
+  referrerId: string,
+  referrerEmail: string | null | undefined,
+  amount: number,
+  paymentMethod: string,
+  accountDetails: string
+): Promise<RequestPayoutResult> {
+  if (!Number.isFinite(amount) || amount < MIN_PAYOUT_PKR) {
+    return { success: false, error: `Minimum payout is PKR ${MIN_PAYOUT_PKR.toLocaleString("en-PK")}.` }
+  }
+  if (!PAYOUT_METHODS.has(paymentMethod)) {
+    return { success: false, error: "Choose a valid payment method." }
+  }
+  const details = accountDetails.trim()
+  if (!details) {
+    return { success: false, error: "Account details are required." }
+  }
+
+  const referralIds = await getReferrerReferralIds(referrerId, referrerEmail)
+
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc("request_referral_payout", {
+    p_referrer_id: referrerId,
+    p_referral_ids: referralIds,
+    p_amount: amount,
+    p_payment_method: paymentMethod,
+    p_account_details: details,
+  })
+
+  if (error) {
+    if (error.message?.includes("insufficient_balance")) {
+      return { success: false, error: "Requested amount exceeds your available balance." }
+    }
+    log.error("referrals.request_payout_failed", { error: error.message })
+    return { success: false, error: "Could not submit payout request. Please try again." }
+  }
+
+  log.info("referrals.payout_requested", { referrerId, amount })
+  return { success: true, payoutId: data as string }
+}
+
+export type AdminPayoutRow = PayoutRow & {
+  referrerUserId: string
+  referrerName: string
+  referrerEmail: string
+}
+
+export async function getAdminPayoutQueue(): Promise<AdminPayoutRow[]> {
+  const supabase = createServiceClient()
+  const { data: payouts } = await supabase
+    .from("referral_payouts")
+    .select("id, referrer_user_id, amount, status, payment_method, account_details, payment_reference, admin_note, created_at, processed_at")
+    .order("created_at", { ascending: false })
+
+  const rows = payouts || []
+  if (rows.length === 0) return []
+
+  const userIds = [...new Set(rows.map((p) => p.referrer_user_id))]
+  const { data: users } = await supabase.from("users").select("id, email, full_name").in("id", userIds)
+  const userById = new Map((users || []).map((u) => [u.id, u]))
+
+  return rows.map((p) => {
+    const user = userById.get(p.referrer_user_id)
+    return {
+      id: p.id,
+      referrerUserId: p.referrer_user_id,
+      referrerName: user?.full_name || user?.email || "Unknown",
+      referrerEmail: user?.email || "",
+      amount: Number(p.amount ?? 0),
+      status: p.status as PayoutRow["status"],
+      paymentMethod: p.payment_method,
+      accountDetails: p.account_details,
+      paymentReference: p.payment_reference,
+      adminNote: p.admin_note,
+      createdAt: p.created_at,
+      processedAt: p.processed_at,
+    }
+  })
+}
+
+export type PayoutActionResult = { success: boolean; error?: string }
+
+/** pending -> processing. Signals the admin has picked this up to action manually. */
+export async function approvePayout(payoutId: string): Promise<PayoutActionResult> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from("referral_payouts")
+    .update({ status: "processing" })
+    .eq("id", payoutId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    log.error("referrals.approve_payout_failed", { error: error.message })
+    return { success: false, error: "Could not approve payout." }
+  }
+  if (!data) return { success: false, error: "Payout is not pending." }
+  log.info("referrals.payout_approved", { payoutId })
+  return { success: true }
+}
+
+/** pending/processing -> rejected. Releases the amount back into the referrer's available balance. */
+export async function rejectPayout(payoutId: string, adminNote?: string): Promise<PayoutActionResult> {
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from("referral_payouts")
+    .update({ status: "rejected", admin_note: adminNote?.trim() || null, processed_at: new Date().toISOString() })
+    .eq("id", payoutId)
+    .in("status", ["pending", "processing"])
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    log.error("referrals.reject_payout_failed", { error: error.message })
+    return { success: false, error: "Could not reject payout." }
+  }
+  if (!data) return { success: false, error: "Payout is not pending or processing." }
+  log.info("referrals.payout_rejected", { payoutId })
+  return { success: true }
+}
+
+/** processing -> paid. Requires the manual transfer reference the admin just sent. */
+export async function markPayoutPaid(payoutId: string, paymentReference: string): Promise<PayoutActionResult> {
+  const reference = paymentReference.trim()
+  if (!reference) return { success: false, error: "Payment reference is required." }
+
+  const supabase = createServiceClient()
+  const { data, error } = await supabase
+    .from("referral_payouts")
+    .update({ status: "paid", payment_reference: reference, processed_at: new Date().toISOString() })
+    .eq("id", payoutId)
+    .in("status", ["pending", "processing"])
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    log.error("referrals.mark_payout_paid_failed", { error: error.message })
+    return { success: false, error: "Could not mark payout as paid." }
+  }
+  if (!data) return { success: false, error: "Payout is not pending or processing." }
+  log.info("referrals.payout_paid", { payoutId })
   return { success: true }
 }

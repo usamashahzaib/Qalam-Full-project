@@ -12,8 +12,6 @@ export const env = {
   linkedInClientId: read("LINKEDIN_CLIENT_ID"),
   linkedInClientSecret: read("LINKEDIN_CLIENT_SECRET"),
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
-  googleClientId: read("GOOGLE_CLIENT_ID"),
-  googleClientSecret: read("GOOGLE_CLIENT_SECRET"),
   geminiApiKey: read("GEMINI_API_KEY"),
   groqApiKey: read("GROQ_API_KEY"),
   mistralApiKey: read("MISTRAL_API_KEY"),
@@ -39,6 +37,8 @@ export const env = {
   qstashToken: read("QSTASH_TOKEN"),
   qstashCurrentSigningKey: read("QSTASH_CURRENT_SIGNING_KEY"),
   qstashNextSigningKey: read("QSTASH_NEXT_SIGNING_KEY"),
+  // 0 (unset) means no cap enforced - AI generation still works, it just isn't cost-capped.
+  aiDailySpendCapUsd: Number(read("AI_DAILY_SPEND_CAP_USD")) || 0,
 }
 
 export const requireSupabaseEnv = () => {

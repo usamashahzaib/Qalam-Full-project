@@ -88,62 +88,72 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === "loading") return
-    if (status !== "authenticated" || !session?.user?.email) {
-      const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
-      router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
-      setWorkspaceId(null)
-      setResolveError("auth_required")
-      setIsResolving(false)
-      return
-    }
-
-    const cached = sessionStorage.getItem(workspaceCacheKey(clientParam))
-    setWorkspaceId(cached)
-
-    // Restore billing from cache immediately so plan is never "Free" on first render
-    try {
-      const cachedBilling = sessionStorage.getItem(billingCacheKey(clientParam))
-      if (cachedBilling) {
-        const parsed = JSON.parse(cachedBilling) as Partial<WorkspaceBilling>
-        if (parsed.plan && VALID_PLAN_NAMES.includes(parsed.plan)) {
-          setServerBilling(parsed)
-        }
-      }
-    } catch {}
-
-    setIsResolving(true)
-    setResolveError(null)
-    const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
-
-    fetch(url)
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
-        setWorkspaceId(data.workspaceId)
-        const rawPlan = data.plan as string | undefined
-        const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
-        if (normalizedPlan && VALID_PLAN_NAMES.includes(normalizedPlan)) {
-          const freshBilling: Partial<WorkspaceBilling> = {
-            plan: normalizedPlan as WorkspaceBilling["plan"] & PlanTier,
-            overrideActive: Boolean(data.overrideActive),
-            complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
-            overridePlan: data.overridePlan || null,
-            planExpired: Boolean(data.planExpired),
-            limits: data.limits,
-            featureFlags: data.featureFlags || {},
-          }
-          setServerBilling(freshBilling)
-          // Persist so next refresh shows the correct plan instantly
-          try { sessionStorage.setItem(billingCacheKey(clientParam), JSON.stringify(freshBilling)) } catch {}
-        }
-        try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
-        setResolveError(null)
-      })
-      .catch((error) => {
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      if (status !== "authenticated" || !session?.user?.email) {
+        const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+        router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
         setWorkspaceId(null)
-        setResolveError((error as Error).message || "Failed to resolve workspace")
-      })
-      .finally(() => setIsResolving(false))
+        setResolveError("auth_required")
+        setIsResolving(false)
+        return
+      }
+
+      const cached = sessionStorage.getItem(workspaceCacheKey(clientParam))
+      setWorkspaceId(cached)
+
+      // Restore billing from cache immediately so plan is never "Free" on first render
+      try {
+        const cachedBilling = sessionStorage.getItem(billingCacheKey(clientParam))
+        if (cachedBilling) {
+          const parsed = JSON.parse(cachedBilling) as Partial<WorkspaceBilling>
+          if (parsed.plan && VALID_PLAN_NAMES.includes(parsed.plan)) {
+            setServerBilling(parsed)
+          }
+        }
+      } catch {}
+
+      setIsResolving(true)
+      setResolveError(null)
+      const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
+
+      fetch(url, { signal: controller.signal })
+        .then(async (res) => {
+          const data = await res.json().catch(() => ({}))
+          if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
+          setWorkspaceId(data.workspaceId)
+          const rawPlan = data.plan as string | undefined
+          const normalizedPlan = rawPlan ? rawPlan.charAt(0).toUpperCase() + rawPlan.slice(1).toLowerCase() : null
+          if (normalizedPlan && VALID_PLAN_NAMES.includes(normalizedPlan)) {
+            const freshBilling: Partial<WorkspaceBilling> = {
+              plan: normalizedPlan as WorkspaceBilling["plan"] & PlanTier,
+              overrideActive: Boolean(data.overrideActive),
+              complimentaryTrialBanner: Boolean(data.complimentaryTrialBanner),
+              overridePlan: data.overridePlan || null,
+              planExpired: Boolean(data.planExpired),
+              limits: data.limits,
+              featureFlags: data.featureFlags || {},
+            }
+            setServerBilling(freshBilling)
+            // Persist so next refresh shows the correct plan instantly
+            try { sessionStorage.setItem(billingCacheKey(clientParam), JSON.stringify(freshBilling)) } catch {}
+          }
+          try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
+          setResolveError(null)
+        })
+        .catch((error) => {
+          if ((error as Error).name === "AbortError") return
+          setWorkspaceId(null)
+          setResolveError((error as Error).message || "Failed to resolve workspace")
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setIsResolving(false)
+        })
+    }, 0)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   // Intentionally exclude `pathname` and `searchParams` from deps - only the
   // client workspace key and auth state should trigger a re-fetch. Including
   // pathname/searchParams would re-fetch the workspace on every page navigation.

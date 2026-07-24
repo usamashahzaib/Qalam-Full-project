@@ -20,14 +20,13 @@ import {
   copyText,
   todayInput,
   nowTimeInput,
-  scheduleValidationError,
 } from "@/lib/hooks/useWriterLogic"
 import { HookCard } from "@/components/writer/HookCard"
 import { WriterScheduleModal } from "@/components/writer/WriterScheduleModal"
 import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
 import { QueueOverlay } from "@/components/QueueOverlay"
 
-import type { Role, FormatKey, HookStyle, HookItem, SlideItem, ScoreData } from "@/lib/hooks/useWriterLogic"
+import type { Role, FormatKey, ScoreData } from "@/lib/hooks/useWriterLogic"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -110,7 +109,7 @@ export default function WriterPage() {
     onExportText, onExportPdf,
     onRewriteCta, applyCtaAlt,
     loadVersion, deleteVersion,
-    onGenerateCarousel, onSaveCarousel,
+    onGenerateCarousel: generateCarousel, onSaveCarousel,
     demand,
   } = w
 
@@ -121,9 +120,10 @@ export default function WriterPage() {
   const [mobileTab, setMobileTab] = useState<"writer" | "score" | "slides">("writer")
   const [isPdfDownloading, setIsPdfDownloading] = useState(false)
 
-  useEffect(() => {
-    if ((slides.length > 0 || isGeneratingSlides) && isCarouselMode) setMobileTab("slides")
-  }, [slides.length, isGeneratingSlides, isCarouselMode])
+  const onGenerateCarousel = async () => {
+    setMobileTab("slides")
+    await generateCarousel()
+  }
 
   const updateSlide = (idx: number, field: "title" | "body", value: string) =>
     setSlides((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
@@ -353,14 +353,14 @@ export default function WriterPage() {
                       <span className="rounded-full bg-teal/10 px-1.5 py-0.5 text-[9px] font-bold text-teal">Voice active</span>
                     )}
                   </div>
-                  <a href="/voice" className="text-[11px] font-semibold text-zinc-400 hover:text-teal transition-colors">Edit</a>
+                  <Link href="/voice" className="text-[11px] font-semibold text-zinc-400 hover:text-teal transition-colors">Edit</Link>
                 </div>
               ) : (
                 <div className="mb-4">
-                  <a href="/voice" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition-colors hover:border-teal hover:text-teal">
+                  <Link href="/voice" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 transition-colors hover:border-teal hover:text-teal">
                     <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                     Set up your profile - posts will match your voice
-                  </a>
+                  </Link>
                 </div>
               )}
 

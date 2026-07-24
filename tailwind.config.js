@@ -102,5 +102,6 @@ module.exports = {
       },
     },
   },
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS config file, no ESM interop here
   plugins: [require("tailwindcss-animate")],
 };

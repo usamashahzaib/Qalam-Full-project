@@ -56,6 +56,7 @@ export async function POST(
         .from("posts")
         .update({ content: version.content, updated_at: new Date().toISOString() })
         .eq("id", postId)
+        .eq("workspace_id", post.workspace_id)
       if (directErr) return NextResponse.json({ error: "restore_failed: " + directErr.message }, { status: 500 })
     }
 

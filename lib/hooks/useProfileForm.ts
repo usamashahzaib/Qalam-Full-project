@@ -24,16 +24,18 @@ export function useProfileForm({ profile, userName = "", saveProfile }: ProfileF
 
   useEffect(() => {
     if (status === "saving") return
-    setDraft({
-      name: profile.name || userName,
-      title: profile.title,
-      linkedinUrl: profile.linkedinUrl,
-      industry: profile.industry,
-      tone: profile.tone,
-      goals: profile.goals.join(", "),
-    })
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profile, userName])
+    const timer = window.setTimeout(() => {
+      setDraft({
+        name: profile.name || userName,
+        title: profile.title,
+        linkedinUrl: profile.linkedinUrl,
+        industry: profile.industry,
+        tone: profile.tone,
+        goals: profile.goals.join(", "),
+      })
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [profile, userName, status])
 
   const onSave = async () => {
     setStatus("saving")

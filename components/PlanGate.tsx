@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useBilling } from "@/lib/hooks/useBilling"
-import { canAccessPlan, getPlanSummary, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { canAccessPlan, getPlanSummary, getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
 interface PlanGateProps {
@@ -14,21 +14,33 @@ interface PlanGateProps {
 }
 
 function LockedState({ requiredPlan, feature, description, currentPlan }: { requiredPlan: PlanTier; feature: string; description?: string; currentPlan: string }) {
-  const planFeatures = getPlanSummary(requiredPlan)
+  const upgradeTarget = getUpgradeTarget(currentPlan, requiredPlan)
+  const planFeatures = upgradeTarget ? getPlanSummary(upgradeTarget) : []
   const [showUpgrade, setShowUpgrade] = useState(false)
+
+  if (!upgradeTarget) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-16 text-center">
+        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-zinc-500">Coming Soon</span>
+        <h2 className="mt-4 text-xl font-bold text-zinc-900">{feature}</h2>
+        <p className="mt-2 text-sm text-zinc-500">
+          {description || "Agency features are in development and are not available for purchase yet."}
+        </p>
+      </div>
+    )
+  }
 
   return (
     <>
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-16 text-center">
         <h2 className="text-xl font-bold text-zinc-900">{feature}</h2>
         <p className="mt-2 text-sm text-zinc-500">
-          {description || `This feature requires the `}
-          <span className="font-semibold text-teal">{requiredPlan}</span> plan or higher.
+          {description || "Move to the next plan to unlock more Qalam features."}
         </p>
 
         <div className="mt-6 w-full rounded-2xl border border-zinc-100 bg-white p-5 text-left shadow-sm">
           <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-            Included with {requiredPlan}
+            Included with {upgradeTarget}
           </p>
           <ul className="space-y-2">
             {planFeatures.map((item) => (
@@ -49,20 +61,23 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
 
         <div className="mt-6 flex flex-col items-center gap-3">
           <button onClick={() => setShowUpgrade(true)} className="rounded-xl bg-teal px-6 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600">
-            Unlock in {requiredPlan}
+            Upgrade to {upgradeTarget}
           </button>
-          <Link href={`/upgrade?plan=${encodeURIComponent(requiredPlan)}`} className="text-xs font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">
+          <Link href={`/upgrade?plan=${encodeURIComponent(upgradeTarget)}`} className="text-xs font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">
             Compare all plans
           </Link>
         </div>
       </div>
-      {showUpgrade ? <UpgradeModal currentPlan={currentPlan} requiredPlan={requiredPlan} reason={`${feature.toLowerCase()} locked`} onClose={() => setShowUpgrade(false)} /> : null}
+      {showUpgrade ? <UpgradeModal currentPlan={currentPlan} requiredPlan={upgradeTarget} reason={`${feature.toLowerCase()} locked`} onClose={() => setShowUpgrade(false)} /> : null}
     </>
   )
 }
 
 export function PlanGate({ requiredPlan, feature, description, children }: PlanGateProps) {
   const { billing } = useBilling()
+  if (requiredPlan === "Agency") {
+    return <LockedState requiredPlan={requiredPlan} feature={feature} description={description} currentPlan={billing.plan} />
+  }
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
   return (
     <LockedState

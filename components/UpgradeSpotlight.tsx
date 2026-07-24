@@ -33,7 +33,7 @@ const LOCKED_FEATURES: LockedFeature[] = [
 const HEADLINES: Record<"Solo" | "Pro", { title: string; sub: string }> = {
   Solo: {
     title: "Unlock Solo and start publishing properly",
-    sub: "30 posts, 4 carousels, scheduling, planner, library, and analytics.",
+    sub: "30 posts, 3 carousels, scheduling, planner, and library.",
   },
   Pro: {
     title: "Unlock Pro and let Qalam learn your voice",

@@ -4,18 +4,14 @@ import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL, APP_URL } from "@/lib/seo"
-import { PLANS, plans, formatPkr } from "@/lib/pricing"
+import { PLANS, formatPkr } from "@/lib/pricing"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
-// Agency is hidden from the public plan cards (waitlist-only), but its real pricing data
-// still belongs in FAQ copy and structured data, so it's read from the unfiltered `plans` list.
-const agencyPlan = plans.find((plan) => plan.name === "Agency")
 const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
 const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 499"
 const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,490"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPrice) : "PKR 7,490"
 
 export const metadata: Metadata = {
   title: `Pricing - AI LinkedIn Writer Plans | Free to ${proPrice}/month`,
@@ -54,7 +50,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Qalam uses PKR-first pricing for the Pakistan market: Solo starts at ${soloPrice}/month, Pro at ${proPrice}/month, and Agency at ${agencyPrice}/month. Annual billing gives up to 5 months free.`,
+        text: `Qalam uses PKR-first pricing for the Pakistan market: Solo starts at ${soloPrice}/month and Pro at ${proPrice}/month. Agency is coming soon. Annual billing gives up to 5 months free.`,
       },
     },
     {
@@ -94,7 +90,7 @@ const pricingFaqSchema = {
       name: "Is Qalam useful for agencies?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes. The Agency plan at ${agencyPrice}/month provides isolated client workspaces, per-client voice profiles, team collaboration, and approval workflows for multi-client LinkedIn content operations.`,
+        text: "The Agency plan is coming soon. It is planned to include isolated client workspaces, per-client voice profiles, team collaboration, and approval workflows.",
       },
     },
   ],
@@ -124,7 +120,7 @@ const productSchema = {
       price: String(soloPlan?.monthlyPkr ?? 499),
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
-      description: "30 AI drafts, 4 carousels, content calendar, post library.",
+      description: "30 AI drafts, 3 carousels, content calendar, post library.",
       url: `${SITE_URL}/pricing`,
     },
     {
@@ -134,15 +130,6 @@ const productSchema = {
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
       description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
-      url: `${SITE_URL}/pricing`,
-    },
-    {
-      "@type": "Offer",
-      name: "Agency Plan",
-      price: String(agencyPlan?.monthlyPrice ?? 7490),
-      priceCurrency: "PKR",
-      availability: "https://schema.org/InStock",
-      description: "Multi-client workspaces, team collaboration, approval workflows.",
       url: `${SITE_URL}/pricing`,
     },
   ],

@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuthApi } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-
-const VALID_ROLES = [
-  "HR Professional",
-  "Marketing Professional",
-  "Founder / Entrepreneur",
-  "Consultant",
-  "Content Creator",
-  "Other",
-]
+import { log } from "@/lib/server/logging"
+import { ACCOUNT_ROLES } from "@/lib/constants"
 
 export async function PUT(req: NextRequest) {
   const { userId, error } = await requireAuthApi(req)
@@ -28,7 +21,7 @@ export async function PUT(req: NextRequest) {
   if (!name || name.length < 2) {
     return NextResponse.json({ error: "Name must be at least 2 characters." }, { status: 400 })
   }
-  if (role !== undefined && role !== "" && !VALID_ROLES.includes(role)) {
+  if (role !== undefined && role !== "" && !ACCOUNT_ROLES.includes(role as typeof ACCOUNT_ROLES[number])) {
     return NextResponse.json({ error: "Invalid role." }, { status: 400 })
   }
 
@@ -45,7 +38,7 @@ export async function PUT(req: NextRequest) {
     .eq("id", userId!)
 
   if (updateErr) {
-    console.error("[update-account] error:", updateErr)
+    log.error("auth.update_account.failed", { userId, error: updateErr.message })
     return NextResponse.json({ error: "Failed to update account." }, { status: 500 })
   }
 

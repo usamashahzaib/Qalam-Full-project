@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useMemo, useState } from "react"
 import type { PlanLimits } from "@/lib/entitlements"
 import type { PlanName } from "@/lib/pricing"
 
@@ -48,10 +48,10 @@ export function BillingProvider({
     ...(serverBilling ?? {}),
   }))
 
-  useEffect(() => {
-    if (!serverBilling?.plan) return
-    setBilling((prev) => ({ ...prev, ...serverBilling }))
-  }, [serverBilling])
+  const resolvedBilling = useMemo(
+    () => ({ ...billing, ...(serverBilling ?? {}) }),
+    [billing, serverBilling]
+  )
 
   const saveBilling = useCallback((input: Partial<WorkspaceBilling>) => {
     setBilling((prev) => ({ ...prev, ...input }))
@@ -62,7 +62,7 @@ export function BillingProvider({
     await onRefresh()
   }, [onRefresh])
 
-  return <BillingContext.Provider value={{ billing, saveBilling, refresh }}>{children}</BillingContext.Provider>
+  return <BillingContext.Provider value={{ billing: resolvedBilling, saveBilling, refresh }}>{children}</BillingContext.Provider>
 }
 
 export function useBilling(): BillingContextValue {

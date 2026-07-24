@@ -73,6 +73,7 @@ node_modules/
 /playwright/.auth/
 
 # Tool artifacts
+/outputs/
 /.playwright-mcp/
 /.codex/
 /.codex-api-start.*

@@ -141,7 +141,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   if (qualityCheck && planLower !== "free") {
     try {
       const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
-      const scoreRaw = await callAi("post-improvement", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
+      const scoreRaw = await callAi("post-scoring", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
       score = parseJson<Record<string, unknown>>(scoreRaw)
     } catch { score = null }
 

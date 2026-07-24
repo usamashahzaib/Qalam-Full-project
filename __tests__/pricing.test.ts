@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { formatPkr, PLANS, PLAN_PRICES, COMPARISON_ROWS } from "@/lib/pricing"
+import { formatPkr, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS } from "@/lib/pricing"
 
 describe("formatPkr", () => {
   it("returns 'Free' for zero", () => {
@@ -22,7 +22,20 @@ describe("formatPkr", () => {
 })
 
 describe("PLANS", () => {
-  it("has exactly 4 public plans (Agency is live, manual onboarding)", () => {
+  it("matches the canonical post and carousel quotas", () => {
+    expect(plans.map(({ name, postsPerMonth, carouselsPerMonth }) => ({
+      name,
+      postsPerMonth,
+      carouselsPerMonth,
+    }))).toEqual([
+      { name: "Free", postsPerMonth: 5, carouselsPerMonth: 1 },
+      { name: "Solo", postsPerMonth: 30, carouselsPerMonth: 3 },
+      { name: "Pro", postsPerMonth: 60, carouselsPerMonth: 10 },
+      { name: "Agency", postsPerMonth: null, carouselsPerMonth: null },
+    ])
+  })
+
+  it("has exactly 4 public plans", () => {
     expect(PLANS).toHaveLength(4)
   })
 
@@ -30,9 +43,10 @@ describe("PLANS", () => {
     expect(PLANS.find((p) => p.plan === "Agency")).toBeDefined()
   })
 
-  it("Agency starts at 7490 PKR/month", () => {
+  it("marks Agency as coming soon without a public price", () => {
     const agency = PLANS.find((p) => p.plan === "Agency")!
-    expect(agency.monthlyPkr).toBe(7490)
+    expect(agency.monthlyPkr).toBeNull()
+    expect(agency.comingSoon).toBe(true)
   })
 
   it("Free plan has zero monthly price and no annual option", () => {
@@ -44,6 +58,7 @@ describe("PLANS", () => {
   it("Solo starts at 499 PKR/month", () => {
     const solo = PLANS.find((p) => p.plan === "Solo")!
     expect(solo.monthlyPkr).toBe(499)
+    expect(solo.features).toContain("3 carousels/month")
   })
 
   it("Pro starts at 1490 PKR/month", () => {

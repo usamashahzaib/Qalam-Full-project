@@ -1,27 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
-import { timingSafeEqual } from "node:crypto"
-import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
+import { requireAdminOps } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getRedis } from "@/lib/server/redis"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
-const requireAdmin = async (request: NextRequest) => {
-  const adminKey = request.headers.get("x-admin-key") || ""
-  const secretKey = process.env.ADMIN_SECRET_KEY || ""
-  const keyBuf = Buffer.from(adminKey)
-  const secretBuf = Buffer.from(secretKey)
-  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-  return { email: session.user.email || "", userId: session.user.id }
-}
-
 export async function GET(request: NextRequest) {
   let admin: { email: string; userId: string }
   try {
-    admin = await requireAdmin(request)
+    admin = await requireAdminOps(request)
   } catch {
     return notFound()
   }

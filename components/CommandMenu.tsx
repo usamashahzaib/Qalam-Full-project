@@ -37,9 +37,11 @@ export function CommandMenu({
 
   useEffect(() => {
     if (!open) return
-    setQuery("")
-    setActiveIndex(0)
-    const raf = requestAnimationFrame(() => inputRef.current?.focus())
+    const raf = requestAnimationFrame(() => {
+      setQuery("")
+      setActiveIndex(0)
+      inputRef.current?.focus()
+    })
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
     return () => {
@@ -97,10 +99,6 @@ export function CommandMenu({
     return list
   }, [query, posts, navItems, onCreatePost, onOpenPost, onClose, router, activeClientId])
 
-  useEffect(() => {
-    setActiveIndex(0)
-  }, [query])
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault()
@@ -134,7 +132,10 @@ export function CommandMenu({
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setActiveIndex(0)
+            }}
             onKeyDown={handleKeyDown}
             placeholder="Search posts, jump to a page..."
             className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"

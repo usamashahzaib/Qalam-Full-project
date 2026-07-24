@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
   },
   projects: [
@@ -17,7 +17,7 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER ? undefined : {
     command: "npm run dev -- --port 3000",
     url: "http://localhost:3000",
     reuseExistingServer: true,

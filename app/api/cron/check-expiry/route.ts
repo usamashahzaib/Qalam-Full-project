@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
 import { sendExpiryReminders } from "@/lib/server/plan-expiry"
-import { env } from "@/lib/server/env"
+import { verifyCronAuth } from "@/lib/server/verify-cron"
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("Authorization")
-  if (!env.cronSecret || authHeader !== `Bearer ${env.cronSecret}`) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

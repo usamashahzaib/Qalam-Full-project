@@ -229,7 +229,7 @@ export default function ChatWorkspace() {
           },
         ])
       }
-    } catch (error) {
+    } catch {
       setMessages((prev) => prev.filter((item) => item.id !== tempId))
       setInput(text)
     } finally {

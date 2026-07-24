@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
       carouselCount: carouselDbCount,
       reviewPressure,
     }
-  }, [analyticsNow, carouselDbCount, drafts, events, jobs, posts, profile, published, rangeDays, scheduled])
+  }, [analyticsNow, carouselDbCount, drafts, events, posts, profile, published, rangeDays, scheduled])
 
   const hasData = posts.length > 0 || events.length > 0 || carouselDbCount > 0
 

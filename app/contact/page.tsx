@@ -9,12 +9,12 @@ import {
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Contact - Support, Agency Onboarding & Plan Upgrades",
-  description: "Contact the Qalam team for support, plan upgrades via JazzCash or Easypaisa, agency onboarding, partnerships, or commercial questions. Response within 24 hours.",
+  title: "Contact - Support & Plan Upgrades",
+  description: "Contact the Qalam team for support, plan upgrades via JazzCash or Easypaisa, partnerships, or commercial questions. Response within 24 hours.",
   alternates: { canonical: "https://www.byqalam.com/contact" },
   openGraph: {
     title: "Contact Qalam",
-    description: "Reach the Qalam team for support, agency onboarding, or plan upgrades. JazzCash and Easypaisa accepted.",
+    description: "Reach the Qalam team for support or plan upgrades. JazzCash and Easypaisa accepted.",
     url: "https://www.byqalam.com/contact",
     type: "website",
   },
@@ -24,7 +24,7 @@ const contactPageSchema = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Contact Qalam",
-  description: "Contact page for Qalam - AI LinkedIn writing system. Support, plan upgrades, agency onboarding, and commercial questions.",
+  description: "Contact page for Qalam - AI LinkedIn writing system. Support, plan upgrades, and commercial questions.",
   url: "https://www.byqalam.com/contact",
   mainEntity: {
     "@type": "Organization",
@@ -49,7 +49,7 @@ export default function ContactPage() {
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Contact</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">Reach the Qalam team</h1>
             <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
-              Public contact routes for support, plan upgrades, agency onboarding, partnerships, and legal questions.
+              Public contact routes for support, plan upgrades, partnerships, and legal questions.
             </p>
           </FadeUp>
         </div>

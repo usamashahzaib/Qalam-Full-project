@@ -7,6 +7,10 @@ export async function DELETE(request: NextRequest) {
   return withAuth(async (_req, user) => {
     const supabase = createServiceClient()
 
+    // delete_user_data() (migration 0053, documented in 0064) removes every
+    // user-linked row except payments/payment_subscriptions, which are
+    // anonymized (user_id set to null) rather than deleted - GDPR Art 17(3)(b)
+    // permits retaining financial records for legal/tax obligations.
     const { error } = await supabase.rpc("delete_user_data", {
       target_user_id: user.id,
     })

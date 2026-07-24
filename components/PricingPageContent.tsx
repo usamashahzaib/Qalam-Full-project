@@ -20,7 +20,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month with 30 posts and 4 carousels. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is PKR 7,490/month with 5 client workspaces and team seats, onboarded manually. Annual billing gives 5 months free.",
+    a: "Solo starts at PKR 499/month with 30 posts and 3 carousels. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is coming soon. Annual billing gives 5 months free.",
   },
   {
     q: "What's the difference between monthly and annual billing?",
@@ -148,7 +148,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const isCurrentPlan = currentPlan != null && plan.plan.toLowerCase() === currentPlan.toLowerCase()
     const noteOverride =
       plan.plan === "Free"
-        ? "Real free. Not a 7-day trial disguised as a free plan."
+        ? "Real free. No card required and no expiry."
         : plan.plan === "Solo" || plan.plan === "Pro"
           ? "Secure card checkout via Lemon Squeezy. Your plan unlocks the moment payment clears."
           : undefined

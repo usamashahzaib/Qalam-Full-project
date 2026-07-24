@@ -19,6 +19,13 @@ export const canAccessPlan = (userPlan: string, requiredPlan: PlanTier): boolean
 
 export const VALID_PLAN_NAMES: readonly string[] = PLAN_ORDER
 
+export const getUpgradeTarget = (currentPlan: string, requiredPlan: PlanTier): "Solo" | "Pro" | null => {
+  if (requiredPlan === "Agency") return null
+  if (currentPlan === "Free") return "Solo"
+  if (currentPlan === "Solo") return "Pro"
+  return null
+}
+
 export type PlanLimits = {
   aiDraftsPerMonth: number | "unlimited"
   carouselGenerationsPerMonth: number | "unlimited"

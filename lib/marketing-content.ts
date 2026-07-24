@@ -840,8 +840,6 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
     title: "Active workflows",
     items: [
       "Paid plan activation via email",
-      "Team and agency onboarding",
-      "Agency workspace setup",
       "JazzCash, Easypaisa, bank billing",
     ],
   },
@@ -849,6 +847,7 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
     title: "Building next",
     items: [
       "Self-serve checkout",
+      "Agency workspaces and team onboarding",
       "Agency analytics rollups",
       "Notification center",
       "Broader collaboration automation",
@@ -875,7 +874,7 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Is there an Agency plan?",
-    a: "Yes - Agency is for multi-client operators who need isolated client workspaces, approval workflows, and per-client publishing. It is launching soon. Contact us to join the waitlist or set up early access.",
+    a: "Agency is coming soon. Isolated client workspaces, approval workflows, and per-client publishing are still in development and are not available for purchase yet.",
   },
   {
     q: "Does Qalam work for any niche?",

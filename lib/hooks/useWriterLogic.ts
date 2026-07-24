@@ -209,44 +209,48 @@ export function useWriterLogic({
   }, [])
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("competitorInsights")
-      if (raw) {
-        setResearchNotes(JSON.parse(raw) as typeof researchNotes)
-        sessionStorage.removeItem("competitorInsights")
-      }
-    } catch { /* ignore */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = window.setTimeout(() => {
+      try {
+        const raw = sessionStorage.getItem("competitorInsights")
+        if (raw) {
+          setResearchNotes(JSON.parse(raw) as typeof researchNotes)
+          sessionStorage.removeItem("competitorInsights")
+        }
+      } catch { /* ignore */ }
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem("writerLoad")
-      if (raw) {
-        sessionStorage.removeItem("writerLoad")
-        const post = JSON.parse(raw) as { id?: string; title?: string; content?: string; type?: string }
-        if (post.title) setTopic(post.title)
-        if (post.id) setEditingId(post.id)
-        if (post.content) {
-          const isCarousel = post.type?.toLowerCase().includes("carousel") || /^\s*\[/.test(post.content)
-          if (isCarousel) {
-            try {
-              const parsed = JSON.parse(post.content) as SlideItem[]
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setSlides(parsed)
-              } else {
+    const timer = window.setTimeout(() => {
+      try {
+        const raw = sessionStorage.getItem("writerLoad")
+        if (raw) {
+          sessionStorage.removeItem("writerLoad")
+          const post = JSON.parse(raw) as { id?: string; title?: string; content?: string; type?: string }
+          if (post.title) setTopic(post.title)
+          if (post.id) setEditingId(post.id)
+          if (post.content) {
+            const isCarousel = post.type?.toLowerCase().includes("carousel") || /^\s*\[/.test(post.content)
+            if (isCarousel) {
+              try {
+                const parsed = JSON.parse(post.content) as SlideItem[]
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setSlides(parsed)
+                } else {
+                  setDraftContent(post.content)
+                }
+              } catch {
                 setDraftContent(post.content)
               }
-            } catch {
+            } else {
               setDraftContent(post.content)
             }
-          } else {
-            setDraftContent(post.content)
           }
         }
-      }
-    } catch { /* ignore */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+      } catch { /* ignore */ }
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -318,7 +322,7 @@ export function useWriterLogic({
     return true
   }, [draftLimitHit, showStatus])
 
-  const useDraftCredit = useCallback((n = 1) => {
+  const consumeDraftCredit = useCallback((n = 1) => {
     setLocalDraftUsage((prev) => prev + n)
     window.dispatchEvent(new Event("qalam:draft-consumed"))
   }, [])
@@ -376,7 +380,7 @@ export function useWriterLogic({
       const items = data.hooks.slice(0, 5)
       if (!items.length) throw new Error("No hooks returned")
       setHooks(items)
-      useDraftCredit(1)
+      consumeDraftCredit(1)
     } catch (e) {
       showStatus((e as Error).message, "error")
     } finally {
@@ -408,7 +412,7 @@ export function useWriterLogic({
       setDraftContent(content)
       setVersions((p) => [...p.slice(-19), { content, timestamp: new Date().toISOString() }])
       setEditingId(null)
-      useDraftCredit(1)
+      consumeDraftCredit(1)
       showStatus("Draft ready. Scoring...", "info", false)
       void autoScore(content)
     } catch (e) {
@@ -439,7 +443,7 @@ export function useWriterLogic({
       setDraftContent(improved)
       setVersions((p) => [...p.slice(-19), { content: improved, timestamp: new Date().toISOString() }])
       if (data.scores) setScores(data.scores)
-      useDraftCredit(1)
+      consumeDraftCredit(1)
       showStatus("Draft improved. Check new scores.", "success")
     } catch (e) {
       showStatus((e as Error).message, "error")
@@ -545,7 +549,7 @@ export function useWriterLogic({
         setEditingId(id)
         showStatus("Published to LinkedIn.", "success")
         break
-      } catch (e) {
+      } catch {
         if (attempt === maxAttempts) {
           showStatus(
             "Published to LinkedIn, but saving the record failed. It will not be re-posted - refresh to check Library.",
@@ -621,7 +625,7 @@ export function useWriterLogic({
     try {
       const data = await apiGenerateCtaAlts({ content: draftContent, role })
       setCtaAlts((data.alternatives || []).slice(0, 3))
-      useDraftCredit(1)
+      consumeDraftCredit(1)
     } catch (e) {
       showStatus((e as Error).message, "error")
       setCtaAltOpen(false)

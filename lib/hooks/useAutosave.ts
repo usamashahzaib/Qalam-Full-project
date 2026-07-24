@@ -9,7 +9,10 @@ export function useAutosave(
   delay = 3000
 ) {
   const onSaveRef = useRef(onSave)
-  onSaveRef.current = onSave
+
+  useEffect(() => {
+    onSaveRef.current = onSave
+  }, [onSave])
 
   useEffect(() => {
     if (!value) return

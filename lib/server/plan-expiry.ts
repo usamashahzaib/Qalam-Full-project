@@ -1,5 +1,5 @@
 import "server-only"
-import { createServiceClient } from "./supabase-rest"
+import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { sendTransactionalEmail } from "./email"
 
 export interface PlanStatus {
@@ -39,10 +39,11 @@ const endOfUtcDay = (iso: string) => {
 
 export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   const supabase = createServiceClient()
+  const safeId = sanitizeOrFilterValue(userId)
   const { data: user } = await supabase
     .from("users")
     .select("id, plan, plan_expires_at, plan_started_at, billing_cycle")
-    .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+    .or(`id.eq.${safeId},external_user_id.eq.${safeId}`)
     .maybeSingle()
 
   if (!user) {
@@ -70,13 +71,14 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
 
 export async function checkAndDowngradeIfExpired(userId: string): Promise<boolean> {
   const supabase = createServiceClient()
+  const safeId = sanitizeOrFilterValue(userId)
   const status = await getPlanStatus(userId)
   if (status.isActive || status.originalPlan === "Free") return false
 
   const { data: userData } = await supabase
     .from("users")
     .select("email, full_name")
-    .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+    .or(`id.eq.${safeId},external_user_id.eq.${safeId}`)
     .maybeSingle()
 
   await supabase
@@ -89,7 +91,7 @@ export async function checkAndDowngradeIfExpired(userId: string): Promise<boolea
       reminder_sent_1d: false,
       updated_at: new Date().toISOString(),
     })
-    .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+    .or(`id.eq.${safeId},external_user_id.eq.${safeId}`)
 
   const user = userData as Pick<UserPlanRow, "email" | "full_name"> | null
   if (user?.email) {

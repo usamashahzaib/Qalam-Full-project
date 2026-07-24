@@ -148,7 +148,7 @@ export function ContactForm() {
                 name="subject"
                 type="text"
                 maxLength={200}
-                placeholder="e.g. Upgrade question, Agency onboarding, Bug report"
+                placeholder="e.g. Upgrade question, Account help, Bug report"
                 className={fieldErrors.subject ? inputErrorClass : inputClass}
                 disabled={state === "loading"}
                 onChange={() => fieldErrors.subject && setFieldErrors((p) => ({ ...p, subject: undefined }))}

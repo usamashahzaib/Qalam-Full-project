@@ -10,6 +10,19 @@ export function createServiceClient() {
   })
 }
 
+/**
+ * PostgREST parses a `.or()`/`.in()` filter argument as a raw, comma-separated
+ * expression list - interpolating an untrusted string into one lets an
+ * attacker terminate the intended clause early and append an arbitrary
+ * `column.operator.value` of their own (e.g. a crafted id turning
+ * `id.eq.<id>,external_user_id.eq.<id>` into an OR against a column and value
+ * the caller never intended to match). Legitimate values here are always
+ * UUIDs, OAuth provider subs, or similar identifiers, none of which
+ * legitimately contain these characters, so stripping them is lossless for
+ * every real caller and closes the injection surface for every other one.
+ */
+export const sanitizeOrFilterValue = (value: string): string => value.replace(/[(),]/g, "")
+
 type RestResponse<T> = {
   data: T
   headers: Headers
@@ -67,6 +80,24 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<Res
     data: payload,
     headers: response.headers,
   }
+}
+
+/**
+ * Row count via a HEAD request + PostgREST's Content-Range header
+ * (Prefer: count=exact) - no rows are transferred or held in memory, unlike
+ * supabaseSelect(table, `${query}&select=id`).length, which is O(rows) over
+ * the wire and in JS just to produce a number.
+ */
+export const supabaseCount = async (table: string, query: string): Promise<number> => {
+  requireSupabaseEnv()
+  const { headers: responseHeaders } = await fetchJson<null>(`${env.supabaseUrl}/rest/v1/${table}?${query}`, {
+    method: "HEAD",
+    headers: headers("count=exact"),
+    cache: "no-store",
+  })
+  const range = responseHeaders.get("content-range") // e.g. "0-24/117" or "*/0"
+  const total = range?.split("/")[1]
+  return total && total !== "*" ? parseInt(total, 10) : 0
 }
 
 export const supabaseSelect = async <T>(table: string, query: string) => {

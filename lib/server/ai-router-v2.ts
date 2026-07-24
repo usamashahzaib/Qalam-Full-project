@@ -4,16 +4,19 @@ import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } fr
 import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callMistral } from "./mistral-client"
-import { createServiceClient } from "./supabase-rest"
+import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
+import { env } from "./env"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 
-type AiProvider = "groq" | "gemini" | "mistral"
+export type AiProvider = "groq" | "gemini" | "mistral"
 export type AiTask =
   | "post-generation"
+  | "post-scoring"
   | "competitor-analysis"
   | "hook-generation"
+  | "cta-rewrite"
   | "carousel-outline"
   | "voice-profile"
   | "chat-strategist"
@@ -137,10 +140,15 @@ async function logAiUsage(
   if (userId === "anonymous") return
   try {
     const supabase = createServiceClient()
+    // Free-tools routes pass userId as `free_${ip}` where ip is a request
+    // header value - sanitize before it reaches the .or() filter string (see
+    // sanitizeOrFilterValue) since this is the one caller of this pattern
+    // where the value isn't already a session/DB-derived internal id.
+    const safeId = sanitizeOrFilterValue(userId)
     const { data: userRow } = await supabase
       .from("users")
       .select("id")
-      .or(`id.eq.${userId},external_user_id.eq.${userId}`)
+      .or(`id.eq.${safeId},external_user_id.eq.${safeId}`)
       .maybeSingle()
     const internalId = userRow?.id
     if (!internalId) return
@@ -157,11 +165,54 @@ async function logAiUsage(
   } catch { void 0 }
 }
 
+// ── Daily spend cap ────────────────────────────────────────────────────────
+// Global (all-users) aggregate, checked once per SPEND_CACHE_TTL_MS window so
+// every AI call doesn't hit the DB. AI_DAILY_SPEND_CAP_USD=0 (unset) disables
+// the cap entirely - existing behavior, no enforcement.
+const SPEND_CACHE_TTL_MS = 60_000
+let spendCache: { day: string; totalUsd: number; checkedAt: number } | null = null
+let alertedForDay: string | null = null
+let lastExceededLogAt = 0
+
+async function getDailySpendUsd(): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10)
+  if (spendCache && spendCache.day === today && Date.now() - spendCache.checkedAt < SPEND_CACHE_TTL_MS) {
+    return spendCache.totalUsd
+  }
+  const supabase = createServiceClient()
+  const { data, error } = await supabase.rpc("get_daily_ai_cost")
+  const totalUsd = error ? 0 : Number(data) || 0
+  spendCache = { day: today, totalUsd, checkedAt: Date.now() }
+  return totalUsd
+}
+
+async function enforceDailySpendCap(): Promise<void> {
+  if (env.aiDailySpendCapUsd <= 0) return
+  const today = new Date().toISOString().slice(0, 10)
+  const spentUsd = await getDailySpendUsd()
+  const ratio = spentUsd / env.aiDailySpendCapUsd
+
+  if (ratio >= 1) {
+    if (Date.now() - lastExceededLogAt > SPEND_CACHE_TTL_MS) {
+      lastExceededLogAt = Date.now()
+      log.error("ai.daily_spend_cap_exceeded", { spentUsd, capUsd: env.aiDailySpendCapUsd })
+    }
+    throw new Error("AI daily spend cap reached. Please try again later.")
+  }
+
+  if (ratio >= 0.8 && alertedForDay !== today) {
+    alertedForDay = today
+    log.error("ai.daily_spend_cap_alert_80pct", { spentUsd, capUsd: env.aiDailySpendCapUsd })
+  }
+}
+
 // ── 1.2: Model mapping per task per provider ──────────────────────────────────
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
+  "post-scoring":          { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.3-70b-versatile" },
   "competitor-analysis":   { gemini:  "gemini-2.5-pro",       groq:   "llama-3.3-70b-versatile", mistral: "mistral-small-latest" },
-  "hook-generation":       { groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest", gemini: "gemini-2.5-flash" },
+  "hook-generation":       { gemini: "gemini-2.5-flash", groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest" },
+  "cta-rewrite":           { gemini: "gemini-2.5-flash", groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest" },
   "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
   "voice-profile":         { mistral: "mistral-medium-2505",  gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
   "chat-strategist":       { gemini:  "gemini-2.5-flash",     mistral: "mistral-small-latest", groq: "llama-3.1-8b-instant" },
@@ -170,16 +221,18 @@ const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
-// Routing: Mistral PRIMARY → Gemini FALLBACK → Groq SPEED ONLY.
-// Competitor/chat tasks lead with Gemini for better reasoning depth.
-const providerOrder: Record<AiTask, AiProvider[]> = {
-  "post-generation":       ["mistral", "gemini", "groq"],
+// Routing is task-specific. Hooks and CTA lead with Gemini.
+// Posts, scoring, improvements, and carousels lead with Groq.
+export const providerOrder: Record<AiTask, AiProvider[]> = {
+  "post-generation":       ["groq",    "gemini", "mistral"],
+  "post-scoring":          ["groq",    "gemini", "mistral"],
   "competitor-analysis":   ["gemini",  "mistral", "groq"],
-  "hook-generation":       ["groq", "mistral", "gemini"],
-  "carousel-outline":      ["mistral", "gemini", "groq"],
+  "hook-generation":       ["gemini",  "groq",    "mistral"],
+  "cta-rewrite":           ["gemini",  "groq",    "mistral"],
+  "carousel-outline":      ["groq",    "gemini",  "mistral"],
   "voice-profile":         ["mistral", "gemini", "groq"],
   "chat-strategist":       ["gemini",  "mistral", "groq"],
-  "post-improvement":      ["mistral", "gemini", "groq"],
+  "post-improvement":      ["groq",    "gemini",  "mistral"],
   "engagement-prediction": ["groq",    "mistral", "gemini"],
 }
 
@@ -225,6 +278,7 @@ async function callProvider(
 
       await recordSuccess(provider)
       await logAiUsage(userId, provider, result.model, result.tokensIn, result.tokensOut)
+      log.info(`[AI Router] provider=${provider}`, { task, model: result.model })
       return sanitizeOutput(result.content)
 
     } catch (error) {
@@ -305,6 +359,8 @@ export async function callAi(
     const cached = await getCachedAiResponse(promptHash)
     if (cached) return cached
   }
+
+  await enforceDailySpendCap()
 
   const order = providerOrder[task]
   const callOptions: CallOptions = { json, temperature, maxTokens }

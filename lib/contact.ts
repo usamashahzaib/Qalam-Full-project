@@ -9,7 +9,7 @@ export const UPGRADES_EMAIL =
 export const CONTACT_INBOXES = [
   {
     title: "Sales and upgrades",
-    desc: "Plan selection, manual upgrades, agency onboarding, and commercial questions.",
+    desc: "Plan selection, manual upgrades, and commercial questions.",
     value: UPGRADES_EMAIL,
     href: `mailto:${UPGRADES_EMAIL}`,
   },

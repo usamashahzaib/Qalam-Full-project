@@ -27,7 +27,7 @@ const UPDATES = [
       "Deleted dead /write redirect folder that competed with the config-level 308 redirect.",
       "Purged committed dev log files from the repository. *.log already excluded in .gitignore.",
       "Fixed import ordering violation in app-session.ts.",
-      "Rate limiter WARNING comment added - known in-memory limitation pending Upstash/KV migration.",
+      "Rate limiting migrated to Upstash Redis so limits persist across instances and restarts.",
     ],
   },
   {

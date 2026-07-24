@@ -598,7 +598,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does Qalam cost in Pakistan?",
-        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 499/month. Pro is PKR 1,490/month with voice memory, analytics, and competitor research. Agency is PKR 7,490/month for multi-client workspaces. Annual billing gives 5 months free.",
+        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 499/month. Pro is PKR 1,490/month with voice memory, analytics, and competitor research. Agency is coming soon. Annual billing gives 5 months free.",
       },
     ],
     related: [

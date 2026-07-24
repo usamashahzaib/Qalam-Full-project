@@ -28,12 +28,34 @@ type ReferralUseDetail = {
   createdAt: string
 }
 
+type AdminPayout = {
+  id: string
+  referrerUserId: string
+  referrerName: string
+  referrerEmail: string
+  amount: number
+  status: "pending" | "processing" | "paid" | "rejected"
+  paymentMethod: string
+  accountDetails: string
+  paymentReference: string | null
+  adminNote: string | null
+  createdAt: string
+  processedAt: string | null
+}
+
 const PLAN_OPTIONS = ["Solo", "Pro", "Agency"] as const
 
 const statusClasses: Record<ReferralUseDetail["status"], string> = {
   pending: "bg-zinc-100 text-zinc-600",
   verified: "bg-amber-100 text-amber-700",
   paid: "bg-emerald-100 text-emerald-700",
+}
+
+const payoutStatusClasses: Record<AdminPayout["status"], string> = {
+  pending: "bg-zinc-100 text-zinc-600",
+  processing: "bg-amber-100 text-amber-700",
+  paid: "bg-emerald-100 text-emerald-700",
+  rejected: "bg-red-100 text-red-700",
 }
 
 const CSV_COLUMNS = ["Name", "Email", "Codes", "Clicks", "Signups", "Paid conversions", "Revenue (PKR)"] as const
@@ -73,6 +95,7 @@ const downloadCsv = (rows: LeaderboardEntry[]) => {
 export function AdminReferralsClient() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[] | null>(null)
   const [referredUsers, setReferredUsers] = useState<ReferralUseDetail[] | null>(null)
+  const [payouts, setPayouts] = useState<AdminPayout[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ colleagueName: "", colleagueEmail: "", department: "", discountPercent: 20 })
   const [creating, setCreating] = useState(false)
@@ -92,8 +115,19 @@ export function AdminReferralsClient() {
       .catch((e) => setError((e as Error).message))
   }
 
+  const loadPayouts = () => {
+    fetch("/api/referrals/admin/payouts")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to load payout queue.")
+        return res.json()
+      })
+      .then((data) => setPayouts(data.payouts || []))
+      .catch((e) => setError((e as Error).message))
+  }
+
   useEffect(() => {
     loadLeaderboard()
+    loadPayouts()
   }, [])
 
   const onCreate = async (e: React.FormEvent) => {
@@ -246,6 +280,26 @@ export function AdminReferralsClient() {
 
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
           <div className="border-b border-zinc-100 px-4 py-3">
+            <h2 className="text-base font-semibold text-zinc-900">Payout requests</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Approve to start processing, then mark paid with a transfer reference once sent.
+            </p>
+          </div>
+          <div className="divide-y divide-zinc-100">
+            {payouts === null && !error && (
+              <div className="px-4 py-8 text-center text-sm text-zinc-400">Loading payout requests...</div>
+            )}
+            {payouts && payouts.length === 0 && (
+              <div className="px-4 py-8 text-center text-sm text-zinc-400">No payout requests yet.</div>
+            )}
+            {payouts?.map((p) => (
+              <PayoutQueueRow key={p.id} payout={p} onChanged={loadPayouts} />
+            ))}
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+          <div className="border-b border-zinc-100 px-4 py-3">
             <h2 className="text-base font-semibold text-zinc-900">Referred users</h2>
             <p className="mt-0.5 text-xs text-zinc-500">
               Verify the payment screenshot manually, then mark it paid once confirmed.
@@ -340,6 +394,102 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
               {submitting ? "Saving..." : "Mark Paid"}
             </button>
           </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function PayoutQueueRow({ payout, onChanged }: { payout: AdminPayout; onChanged: () => void }) {
+  const [reference, setReference] = useState("")
+  const [note, setNote] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [rowError, setRowError] = useState<string | null>(null)
+
+  const runAction = async (path: string, body: Record<string, unknown>) => {
+    setSubmitting(true)
+    setRowError(null)
+    try {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payoutId: payout.id, ...body }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Action failed.")
+      onChanged()
+    } catch (err) {
+      setRowError((err as Error).message)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
+      <div>
+        <p className="font-semibold text-zinc-900">{payout.referrerName}</p>
+        <p className="text-xs text-zinc-500">{payout.referrerEmail}</p>
+        <p className="mt-0.5 text-xs text-zinc-400">
+          PKR {payout.amount.toLocaleString("en-PK")} - {payout.paymentMethod} - {payout.accountDetails}
+        </p>
+        {rowError && <p className="mt-1 text-xs text-red-600">{rowError}</p>}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${payoutStatusClasses[payout.status]}`}>
+          {payout.status}
+        </span>
+
+        {payout.status === "pending" && (
+          <>
+            <button
+              onClick={() => runAction("/api/referrals/admin/payouts/approve", {})}
+              disabled={submitting}
+              className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:opacity-50"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => runAction("/api/referrals/admin/payouts/reject", { adminNote: note })}
+              disabled={submitting}
+              className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </>
+        )}
+
+        {payout.status === "processing" && (
+          <>
+            <input
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Transfer reference"
+              className="w-36 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-900 focus:border-teal focus:outline-none"
+            />
+            <button
+              onClick={() => runAction("/api/referrals/admin/payouts/mark-paid", { paymentReference: reference })}
+              disabled={submitting || !reference.trim()}
+              className="rounded-lg bg-teal px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Mark Paid
+            </button>
+            <button
+              onClick={() => runAction("/api/referrals/admin/payouts/reject", { adminNote: note })}
+              disabled={submitting}
+              className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50"
+            >
+              Reject
+            </button>
+          </>
+        )}
+
+        {payout.status === "paid" && (
+          <span className="text-xs text-zinc-500">ref {payout.paymentReference}</span>
+        )}
+        {payout.status === "rejected" && payout.adminNote && (
+          <span className="text-xs text-zinc-500">{payout.adminNote}</span>
         )}
       </div>
     </div>

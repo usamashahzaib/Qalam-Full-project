@@ -48,7 +48,7 @@ export async function GET(
       </style>
     </head>
     <body>
-      ${(slides || []).map((s: any) => `
+      ${(slides || []).map((s: { slide_number: number; title: string | null; content: string | null; image_prompt: string | null }) => `
         <div class="slide">
           <div class="number">${s.slide_number}</div>
           <div class="title">${s.title || ""}</div>
@@ -66,8 +66,8 @@ export async function GET(
         "Content-Disposition": `attachment; filename="carousel-${id}.html"`,
       },
     });
-  } catch (error: any) {
-    if (error.message === "Unauthorized") {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.json({ error: "Server error" }, { status: 500 });

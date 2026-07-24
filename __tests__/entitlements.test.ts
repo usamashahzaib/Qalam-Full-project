@@ -3,6 +3,7 @@ import {
   canAccessPlan,
   getPlanLimits,
   getPlanSummary,
+  getUpgradeTarget,
   formatLimit,
   PLAN_ORDER,
   PLAN_HIERARCHY,
@@ -41,6 +42,20 @@ describe("canAccessPlan", () => {
   })
 })
 
+describe("getUpgradeTarget", () => {
+  it("uses progressive upgrade messaging", () => {
+    expect(getUpgradeTarget("Free", "Solo")).toBe("Solo")
+    expect(getUpgradeTarget("Free", "Pro")).toBe("Solo")
+    expect(getUpgradeTarget("Solo", "Pro")).toBe("Pro")
+  })
+
+  it("keeps Agency non-purchasable and Pro fully unlocked", () => {
+    expect(getUpgradeTarget("Pro", "Pro")).toBeNull()
+    expect(getUpgradeTarget("Pro", "Agency")).toBeNull()
+    expect(getUpgradeTarget("Free", "Agency")).toBeNull()
+  })
+})
+
 describe("getPlanLimits", () => {
   it("Free: correct limits", () => {
     const limits = getPlanLimits("Free")
@@ -63,7 +78,7 @@ describe("getPlanLimits", () => {
     expect(limits.canExport).toBe(false)
     expect(limits.analyticsDepth).toBe("basic")
     expect(limits.voiceTraining).toBe(false)
-    expect(limits.carouselGenerationsPerMonth).toBe(4)
+    expect(limits.carouselGenerationsPerMonth).toBe(3)
   })
 
   it("Pro: 60 drafts, approvals, export", () => {
@@ -117,7 +132,7 @@ describe("getPlanSummary", () => {
   it("Solo: shows draft cap and carousel count", () => {
     const summary = getPlanSummary("Solo")
     expect(summary).toContain("30 posts/month")
-    expect(summary).toContain("4 carousels/month")
+    expect(summary).toContain("3 carousels/month")
     expect(summary).toContain("LinkedIn publish")
     expect(summary).toContain("Post scheduling")
   })

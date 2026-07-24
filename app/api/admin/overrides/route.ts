@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { timingSafeEqual } from "node:crypto"
-import { getAuthenticatedSession, isAdminEmail } from "@/lib/server/workspace"
+import { requireAdminOps } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
@@ -16,17 +15,6 @@ type OverrideInput = {
 }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
-const requireAdmin = async (request: NextRequest) => {
-  const adminKey = request.headers.get("x-admin-key") || ""
-  const secretKey = process.env.ADMIN_SECRET_KEY || ""
-  const keyBuf = Buffer.from(adminKey)
-  const secretBuf = Buffer.from(secretKey)
-  if (!secretKey || keyBuf.length !== secretBuf.length || !timingSafeEqual(keyBuf, secretBuf)) throw new Error("Forbidden")
-  const session = await getAuthenticatedSession()
-  if (!session?.user?.id) throw new Error("Unauthorized")
-  if (!isAdminEmail(session.user.email)) throw new Error("Forbidden")
-  return { email: session.user.email || "", userId: session.user.id }
-}
 
 const getOldOverride = (userId: string) =>
   supabaseSelect("user_overrides", `user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`).then((rows) => rows?.[0] || null).catch(() => null)
@@ -44,7 +32,7 @@ const writeAudit = (adminEmail: string, targetEmail: string, action: string, old
 export async function POST(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin(request)
+    admin = await requireAdminOps(request)
   } catch {
     return notFound()
   }
@@ -117,7 +105,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin(request)
+    admin = await requireAdminOps(request)
   } catch {
     return notFound()
   }
@@ -176,7 +164,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let admin
   try {
-    admin = await requireAdmin(request)
+    admin = await requireAdminOps(request)
   } catch {
     return notFound()
   }

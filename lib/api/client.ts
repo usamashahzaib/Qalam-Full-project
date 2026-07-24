@@ -75,7 +75,7 @@ export const API_PATHS = {
   dashboardStats: "/api/dashboard/stats",
   hookAlternatives: "/api/generate/hook-alternatives",
   replies: "/api/generate/replies",
-  ctaAlternatives: "/api/generate/cta-alternatives",
+  ctaAlternatives: "/api/generate/cta-rewrite",
   carouselGenerate: "/api/generate/carousel",
 }
 

@@ -23,13 +23,12 @@ export function HookCard({
   selected: boolean
   onSelect: () => void
 }) {
-  const [visible, setVisible] = useState(false)
+  const [visibleHook, setVisibleHook] = useState<string | null>(null)
   const hookStyle = (style as HookStyle) || "DIRECT"
   const colors = STYLE_COLORS[hookStyle] || STYLE_COLORS.DIRECT
 
   useEffect(() => {
-    setVisible(false)
-    const id = window.setTimeout(() => setVisible(true), 0)
+    const id = window.setTimeout(() => setVisibleHook(hook), 0)
     return () => window.clearTimeout(id)
   }, [hook])
 
@@ -41,7 +40,7 @@ export function HookCard({
         flex min-h-[140px] w-64 shrink-0 cursor-pointer flex-col gap-3 rounded-2xl border-2 p-4 text-left
         outline-none transition-all duration-200 focus-visible:ring-2 focus-visible:ring-teal/40
         sm:w-auto
-        ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
+        ${visibleHook === hook ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
         ${selected
           ? `${colors.ring} ${colors.bg} ring-1 shadow-md`
           : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-sm"

@@ -74,7 +74,8 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
   }, [workspaceId])
 
   useEffect(() => {
-    fetchPosts()
+    const timer = window.setTimeout(() => void fetchPosts(), 0)
+    return () => window.clearTimeout(timer)
   }, [fetchPosts])
 
   const saveDraft = useCallback(async ({ id, title, content, type }: { id?: string | null; title: string; content: string; type: string }) => {

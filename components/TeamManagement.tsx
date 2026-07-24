@@ -62,7 +62,10 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
       .finally(() => setIsLoading(false))
   }, [workspaceId])
 
-  useEffect(() => { loadMembers() }, [loadMembers])
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadMembers(), 0)
+    return () => window.clearTimeout(timer)
+  }, [loadMembers])
 
   const handleInvite = async () => {
     if (!inviteEmail.trim()) return

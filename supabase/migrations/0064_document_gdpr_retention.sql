@@ -1,0 +1,22 @@
+-- Documents (no behavior change) why delete_user_data() deliberately does NOT
+-- touch payments/payment_subscriptions rows for the deleted user, so a future
+-- change doesn't "fix" this by deleting financial records.
+--
+-- Audited every table with a user-linked FK (2026-07-23): referral_uses,
+-- referral_clicks, email_verifications, conversation_messages, and every
+-- posts/carousels child table cascade via ON DELETE CASCADE; delete_user_data
+-- explicitly deletes ai_usage, scheduling_notifications, approvals,
+-- post_versions, analytics_snapshots, posts, carousels, voice_profiles,
+-- voice_examples, competitor_analyses, conversations, linkedin_credentials,
+-- publishing_accounts, referrals, plan_usage, user_overrides,
+-- workspace_members, and orphaned workspaces. payments/payment_subscriptions
+-- use ON DELETE SET NULL instead of CASCADE - GDPR Article 17(3)(b) permits
+-- retaining personal data past an erasure request when required for
+-- compliance with a legal obligation (here: financial/tax recordkeeping), so
+-- the transaction rows survive with their user_id link removed rather than
+-- being deleted outright. admin_audit_log similarly retains target_user_email
+-- as free text after deletion - audit trails documenting administrative
+-- actions are a standard compliance exemption (Article 17(3)(b) again) and
+-- are not linked to users via FK, so there is nothing to cascade there either.
+COMMENT ON FUNCTION public.delete_user_data(UUID) IS
+  'GDPR erasure RPC. payments/payment_subscriptions intentionally survive via ON DELETE SET NULL (financial recordkeeping legal obligation, GDPR Art 17(3)(b)) - do not add DELETEs for those tables here.';

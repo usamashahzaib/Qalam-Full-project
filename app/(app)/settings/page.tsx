@@ -18,11 +18,11 @@ import { formatPlanDate } from "@/lib/plan-expiry"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { ReferralCard } from "@/components/ReferralCard"
 
-const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro", "Agency"]
+const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro"]
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "5 posts, 1 carousel/month",
-  Solo: "30 posts, 4 carousels, library, planner",
+  Solo: "30 posts, 3 carousels, library, planner",
   Pro: "60 posts, voice training, analytics, AI Strategist",
   Agency: "Coming soon - multi-workspace, team seats",
 }
@@ -43,7 +43,6 @@ export default function SettingsPage() {
   const { openCheckout, state: checkoutState } = usePlanCheckout()
   const { profile, saveProfile, isLoadingProfile } = useProfile()
   const { posts, drafts, scheduled, postsError } = usePosts()
-  const isLinkedInUser = (session?.user as { provider?: string } | undefined)?.provider === "linkedin"
   const {
     draft: profileDraft,
     setDraft: setProfileDraft,
@@ -54,7 +53,14 @@ export default function SettingsPage() {
   const [billingDraft, setBillingDraft] = useState<WorkspaceBilling>(billing)
   const [disconnecting, setDisconnecting] = useState(false)
   const [linkedinProfile, setLinkedinProfile] = useState<{ name?: string; avatar?: string } | null>(null)
-  const [linkedinStatus, setLinkedinStatus] = useState<string | null>(null)
+  const linkedinResult = searchParams.get("linkedin")
+  const linkedinMessage = searchParams.get("message")
+  const [linkedinStatus, setLinkedinStatus] = useState<string | null>(() => {
+    if (!linkedinResult) return null
+    return linkedinResult === "success" || linkedinResult === "connected"
+      ? "LinkedIn connected successfully."
+      : `LinkedIn connection failed: ${linkedinMessage || "unknown_error"}`
+  })
   const [userData, setUserData] = useState<{ id: string; email: string; name: string; role: string; authProvider: string } | null>(null)
   const [accountDraft, setAccountDraft] = useState({ name: "", role: "", industry: "", goals: "" })
   const [accountStatus, setAccountStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
@@ -79,15 +85,12 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
-    const linkedin = searchParams.get("linkedin")
-    if (!linkedin) return
-    const message = searchParams.get("message")
-    setLinkedinStatus(linkedin === "success" || linkedin === "connected" ? "LinkedIn connected successfully." : `LinkedIn connection failed: ${message || "unknown_error"}`)
-    if (linkedin === "success" || linkedin === "connected") {
+    if (!linkedinResult) return
+    if (linkedinResult === "success" || linkedinResult === "connected") {
       update().catch(() => undefined)
     }
     window.history.replaceState({}, "", "/settings")
-  }, [searchParams, update])
+  }, [linkedinResult, update])
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -218,14 +221,14 @@ export default function SettingsPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to save account.")
       await saveProfile({
-        name: profileDraft.name,
+        name: accountDraft.name.trim(),
         title: profileDraft.title,
         linkedinUrl: profileDraft.linkedinUrl,
         industry: accountDraft.industry.trim(),
         tone: profileDraft.tone,
         goals: accountDraft.goals.split(",").map((item) => item.trim()).filter(Boolean),
       })
-      await update()
+      await update({ name: accountDraft.name.trim() })
       setAccountStatus("saved")
       setTimeout(() => setAccountStatus("idle"), 2500)
     } catch (e) {
@@ -380,6 +383,13 @@ export default function SettingsPage() {
                 <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC[plan]}</p>
               </button>
             ))}
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-left">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-zinc-500">Agency</p>
+                <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-600">Coming Soon</span>
+              </div>
+              <p className="mt-0.5 text-[11px] text-zinc-400">{PLAN_DESC.Agency}</p>
+            </div>
           </div>
 
           {/* Billing cycle */}
@@ -396,7 +406,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Price display for paid plans */}
-          {billingDraft.plan !== "Free" && (
+          {isSelfServePlan(billingDraft.plan) && (
             <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 px-4 py-3">
               <p className="text-sm font-semibold text-teal">{billingDraft.plan}</p>
               <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(displayPrice)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
@@ -497,6 +507,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 {isLinkedInConnected && linkedinProfile?.avatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={linkedinProfile.avatar} alt="LinkedIn Avatar" className="h-10 w-10 rounded-full object-cover ring-2 ring-[#0A66C2]/20" />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A66C2]/15 text-[#0A66C2]">
@@ -537,7 +548,7 @@ export default function SettingsPage() {
             <MiniStat label="Scheduled" value={String(scheduled.length)} />
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is onboarded by our team.</p>
+          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is coming soon.</p>
         </section>
       </div>
       {/* Account + Password */}

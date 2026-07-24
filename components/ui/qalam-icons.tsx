@@ -74,6 +74,16 @@ export const CalendarIcon = (props: IconProps) => (
   </Svg>
 )
 
+export const GiftIcon = (props: IconProps) => (
+  <Svg {...props}>
+    <rect x="3" y="9" width="18" height="4" rx="1" />
+    <path d="M5 13h14v7a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-7Z" />
+    <path d="M12 9v12" />
+    <path d="M12 9c-1.5-3.5-6-3.5-6-1.2C6 9 8 9 12 9Z" />
+    <path d="M12 9c1.5-3.5 6-3.5 6-1.2C18 9 16 9 12 9Z" />
+  </Svg>
+)
+
 export const TeamIcon = (props: IconProps) => (
   <Svg {...props}>
     <circle cx="9" cy="8" r="3" />

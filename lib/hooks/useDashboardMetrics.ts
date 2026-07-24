@@ -99,12 +99,13 @@ export function useDashboardMetrics() {
 
   useEffect(() => {
     const controller = new AbortController()
-    loadAll(controller.signal)
+    const timer = window.setTimeout(() => loadAll(controller.signal), 0)
     const onVisibility = () => {
       if (!document.hidden && Date.now() - lastFetchTime.current > 60_000) loadAll()
     }
     document.addEventListener("visibilitychange", onVisibility)
     return () => {
+      window.clearTimeout(timer)
       controller.abort()
       document.removeEventListener("visibilitychange", onVisibility)
     }

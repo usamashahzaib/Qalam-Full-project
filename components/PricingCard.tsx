@@ -115,10 +115,10 @@ export function PricingCard({
       {isComingSoon ? (
         <button
           disabled
-          title="Agency tier is launching soon. Join the waitlist to get early access."
+          title="Agency tier is launching soon."
           className="w-full cursor-not-allowed rounded-xl border border-zinc-300 py-3 text-center text-sm font-semibold text-zinc-400"
         >
-          Join Waitlist
+          Coming Soon
         </button>
       ) : (
         <Link
@@ -140,10 +140,7 @@ export function PricingCard({
       )}
       {isComingSoon && (
         <p className="mt-3 text-center text-xs text-zinc-400">
-          Launching soon -{" "}
-          <a href="/contact" className="underline hover:text-zinc-600">
-            join the waitlist
-          </a>
+          Not available for purchase yet.
         </p>
       )}
       {note && !isComingSoon && (

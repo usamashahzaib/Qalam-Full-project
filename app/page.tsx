@@ -85,8 +85,8 @@ const FEATURES = [
   },
   {
     icon: TeamIcon,
-    title: "Agency Workflow Preview",
-    desc: "Client isolation, approval workflows, and per-client publishing controls are live. Contact us directly to set up your agency workspace.",
+    title: "Agency Workflow - Coming Soon",
+    desc: "Client isolation, approval workflows, and per-client publishing controls are in development. Agency is not available for purchase yet.",
   },
   {
     icon: CommentIcon,
@@ -212,15 +212,11 @@ function useTypedDraft(variants: DraftVariant[], charDelay = 16, holdMs = 2600) 
   )
 
   useEffect(() => {
-    if (prefersReducedMotion) {
-      setVisibleChars(fullLength)
-      return
-    }
-    if (phase !== "typing") return
-    setVisibleChars(0)
+    if (prefersReducedMotion || phase !== "typing") return
     let raf: number
-    const start = performance.now()
+    let start: number | null = null
     const step = (now: number) => {
+      if (start === null) start = now
       const elapsed = now - start
       const count = Math.min(fullLength, Math.floor(elapsed / charDelay))
       setVisibleChars(count)
@@ -232,7 +228,6 @@ function useTypedDraft(variants: DraftVariant[], charDelay = 16, holdMs = 2600) 
     }
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, variantIndex, fullLength, charDelay, prefersReducedMotion])
 
   useEffect(() => {
@@ -244,7 +239,12 @@ function useTypedDraft(variants: DraftVariant[], charDelay = 16, holdMs = 2600) 
     return () => clearTimeout(t)
   }, [phase, holdMs, variants.length, prefersReducedMotion])
 
-  return { variant: variants[variantIndex], variantIndex, visibleChars, isTyping: phase === "typing" && !prefersReducedMotion }
+  return {
+    variant: variants[variantIndex],
+    variantIndex,
+    visibleChars: prefersReducedMotion ? fullLength : visibleChars,
+    isTyping: phase === "typing" && !prefersReducedMotion,
+  }
 }
 
 function ProductMockup() {

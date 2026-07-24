@@ -73,7 +73,7 @@ export default function CarouselEditorPage() {
   const [bgOverride, setBgOverride] = useState("")
   const [customBg, setCustomBg] = useState("")
   const [authorName, setAuthorName] = useState("")
-  const [authorHandle, setAuthorHandle] = useState("")
+  const [authorHandle] = useState("")
   const [designation, setDesignation] = useState("")
   const [backgroundPhoto, setBackgroundPhoto] = useState<string | undefined>(undefined)
   const [authorPhotoUrl, setAuthorPhotoUrl] = useState<string | undefined>(undefined)
@@ -150,7 +150,7 @@ export default function CarouselEditorPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [id, workspaceId])
+  }, [id, workspaceId, router])
 
   useEffect(() => { fetchCarousel() }, [fetchCarousel])
 

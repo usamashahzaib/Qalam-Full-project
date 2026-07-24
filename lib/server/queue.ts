@@ -157,7 +157,9 @@ export async function getCachedAiResponse(promptHash: string): Promise<string | 
   const r = getRedis()
   if (!r) return null
   try {
-    return await r.get<string>(`ai_cache:${promptHash}`)
+    const cached = await r.get<unknown>(`ai_cache:${promptHash}`)
+    if (cached == null) return null
+    return typeof cached === "string" ? cached : JSON.stringify(cached)
   } catch (e) {
     log.error("redis.cache_read_failed", { error: (e as Error).message })
     return null
