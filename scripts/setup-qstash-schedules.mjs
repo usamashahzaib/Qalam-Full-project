@@ -43,6 +43,7 @@ const dotenv = loadDotEnvLocal()
 const envVar = (name) => process.env[name] || dotenv[name] || ""
 
 const QSTASH_TOKEN = envVar("QSTASH_TOKEN")
+const QSTASH_URL = (envVar("QSTASH_URL") || "https://qstash.upstash.io").replace(/\/$/, "")
 const CRON_SECRET = envVar("CRON_SECRET")
 const ORIGIN = (envVar("FRONTEND_ORIGIN") || envVar("NEXT_PUBLIC_SITE_URL") || "https://byqalam.com").replace(/\/$/, "")
 
@@ -76,7 +77,7 @@ const SCHEDULES = [
 
 async function upsertSchedule({ scheduleId, path, cron }) {
   const destination = `${ORIGIN}${path}`
-  const res = await fetch(`https://qstash.upstash.io/v2/schedules/${destination}`, {
+  const res = await fetch(`${QSTASH_URL}/v2/schedules/${destination}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${QSTASH_TOKEN}`,

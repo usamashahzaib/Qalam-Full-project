@@ -1,15 +1,24 @@
 -- ================================================================
--- schema_final.sql - Qalam Production Schema
+-- Qalam production baseline
 -- ================================================================
 -- Single authoritative file. Run on a clean Supabase project.
 -- Fixes all issues found in the incremental migration sequence:
---   • Correct user-scoped RLS (no USING(true) on user data)
---   • workspaces.owner_email present
---   • Duplicate/obsolete migration files superseded
---   • Consistent plan values across all tables
---   • pgvector support (conditional on extension being enabled)
---   • All RPCs / triggers in one place
+--   - Correct user-scoped RLS
+--   - workspaces.owner_email present
+--   - Duplicate migration files superseded
+--   - Consistent plan values
+--   - Conditional pgvector support
+--   - Core RPCs and triggers
 -- ================================================================
+
+-- Refuse accidental execution against an existing application database.
+DO $$
+BEGIN
+  IF to_regclass('public.users') IS NOT NULL THEN
+    RAISE EXCEPTION 'production baseline requires an empty public schema';
+  END IF;
+END
+$$;
 
 -- ----------------------------------------------------------------
 -- 0. Drop orphaned tables from failed/partial previous runs
