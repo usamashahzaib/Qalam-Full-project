@@ -344,10 +344,16 @@ export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; bi
   "1929064": { planName: "Pro", billingCycle: "annual" },
 }
 
+// Real Lemon Squeezy discount (id 1067492 in the byqalam store): 10% off, first
+// invoice only, applies to every paid variant, unlimited redemptions. Referred
+// users get this applied automatically at checkout - see /api/billing/checkout-token,
+// which only returns it when the buyer actually has a referral discount on file.
+export const REFERRAL_DISCOUNT_CODE = "QALAMREF10"
+
 export function getLemonSqueezyCheckoutUrl(
   planName: string,
   billingCycle: BillingCycle,
-  buyer?: { userId?: string | null; email?: string | null; checkoutToken?: string | null }
+  buyer?: { userId?: string | null; email?: string | null; checkoutToken?: string | null; discountCode?: string | null }
 ): string | null {
   const base = LEMONSQUEEZY_CHECKOUT_URLS[planName as PlanName]?.[billingCycle]
   if (!base) return null
@@ -361,6 +367,9 @@ export function getLemonSqueezyCheckoutUrl(
   // session; the webhook trusts ONLY this token to attribute a payment to an account.
   if (buyer?.userId) params.set("checkout[custom][user_id]", buyer.userId)
   if (buyer?.checkoutToken) params.set("checkout[custom][token]", buyer.checkoutToken)
+  // Only ever set from the server's own referral lookup (checkout-token route) -
+  // never accept a client-supplied discount code, or any buyer could self-apply it.
+  if (buyer?.discountCode) params.set("checkout[discount_code]", buyer.discountCode)
   // Stamp plan + cycle into custom_data so the webhook can still resolve the plan on
   // renewal invoices, which do not carry a variant_id. The webhook always prefers the
   // signed variant_id when present, so this is a fallback and never an override vector.

@@ -99,7 +99,7 @@ export async function generateReferralCode(params: {
   const supabase = createServiceClient()
   const namePart = slugify(params.referrerName.split(" ")[0] || params.referrerName)
   const deptPart = slugify(params.department || "REF", 6)
-  const discountPercent = params.discountPercent ?? 20
+  const discountPercent = params.discountPercent ?? 10
   const email = params.referrerEmail.trim().toLowerCase()
 
   const { count } = await supabase

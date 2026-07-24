@@ -7,7 +7,7 @@ import { log } from "@/lib/server/logging"
 const generateLimiter = new TokenBucket(10, 10, 60 * 60 * 1000)
 
 // Pinned server-side - the discount rate must not be attacker-controlled.
-const DISCOUNT_PERCENT = 20
+const DISCOUNT_PERCENT = 10
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {

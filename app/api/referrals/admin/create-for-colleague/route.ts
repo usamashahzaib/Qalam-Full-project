@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   const colleagueName = String(body.colleagueName ?? "").trim()
   const colleagueEmail = String(body.colleagueEmail ?? "").trim().toLowerCase()
   const department = typeof body.department === "string" ? body.department.trim() : undefined
-  const discountPercent = typeof body.discountPercent === "number" ? Math.min(100, Math.max(0, body.discountPercent)) : 20
+  const discountPercent = typeof body.discountPercent === "number" ? Math.min(100, Math.max(0, body.discountPercent)) : 10
   const maxUses = typeof body.maxUses === "number" && body.maxUses > 0 ? Math.floor(body.maxUses) : null
 
   if (!colleagueName || !colleagueEmail) {

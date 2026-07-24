@@ -57,7 +57,7 @@ export class SupabaseVoiceProfileRepository implements IVoiceProfileRepository {
       name: data.name ?? null,
       title: data.title ?? null,
       industry: data.industry ?? null,
-      tone: data.tone ?? null,
+      brand_tone: data.tone ?? null,
       goals: Array.isArray(data.goals) ? data.goals.filter(Boolean) : [],
       sample_posts: Array.isArray(data.samplePosts) ? data.samplePosts : [],
       linkedin_url: data.linkedinUrl?.trim() || null,

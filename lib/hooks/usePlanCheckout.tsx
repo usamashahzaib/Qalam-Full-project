@@ -198,12 +198,17 @@ export function PlanCheckoutProvider({ children }: { children: React.ReactNode }
       // payment to this account, orphaning a real charge.
       let token: string | null = null
       let email: string | null = null
+      let discountCode: string | null = null
       try {
         const [tokenRes, meRes] = await Promise.all([
           fetch("/api/billing/checkout-token", { cache: "no-store" }),
           fetch("/api/auth/me", { cache: "no-store" }),
         ])
-        if (tokenRes.ok) token = (await tokenRes.json())?.token ?? null
+        if (tokenRes.ok) {
+          const tokenData = await tokenRes.json()
+          token = tokenData?.token ?? null
+          discountCode = tokenData?.discountCode ?? null
+        }
         if (meRes.ok) email = (await meRes.json())?.user?.email ?? null
       } catch {
         // Handled by the null-token guard below.
@@ -219,7 +224,7 @@ export function PlanCheckoutProvider({ children }: { children: React.ReactNode }
         return
       }
 
-      const baseUrl = getLemonSqueezyCheckoutUrl(plan, cycle, { email, checkoutToken: token })
+      const baseUrl = getLemonSqueezyCheckoutUrl(plan, cycle, { email, checkoutToken: token, discountCode })
       if (!baseUrl) {
         setState({ phase: "error", targetPlan: plan, message: "Checkout link unavailable." })
         return

@@ -233,15 +233,11 @@ function buildCsp(nonce: string, isDev: boolean): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` + (isDev ? " 'unsafe-eval'" : ""),
-    // Fonts are self-hosted via next/font/google (downloaded at build time,
-    // served from our own origin) - no runtime request to Google ever happens,
-    // so the googleapis/gstatic allowances served no purpose and are dropped.
-    // 'nonce-<value>' + 'unsafe-inline' together is the standard CSP2 migration
-    // pattern: browsers that understand nonce-source ignore 'unsafe-inline' for
-    // this directive (so they get real nonce enforcement), browsers that don't
-    // fall back to 'unsafe-inline' unchanged - never a regression either way,
-    // PROVIDED every inline <style> Next actually emits carries this nonce.
-    `style-src 'self' 'nonce-${nonce}' 'unsafe-inline'`,
+    // Keep style elements nonce-bound while allowing React and Framer Motion
+    // style attributes. A nonce does not apply to style attributes.
+    `style-src 'self' 'nonce-${nonce}'`,
+    `style-src-elem 'self' 'nonce-${nonce}'` + (isDev ? " 'unsafe-inline'" : ""),
+    "style-src-attr 'unsafe-inline'",
     "font-src 'self'",
     // lemonsqueezy.com entries back the overlay checkout: lemon.js is appended by an
     // already-trusted bundle chunk (so 'strict-dynamic' covers script-src, where a host

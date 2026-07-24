@@ -84,7 +84,6 @@ Return JSON:
           ...characteristics,
           ...(savedProfessionalContext ? { professionalContext: savedProfessionalContext } : {}),
         },
-        tone: characteristics.tone,
         brand_tone: characteristics.tone,
         example_posts: examplePosts.slice(0, 5000),
         updated_at: new Date().toISOString(),
