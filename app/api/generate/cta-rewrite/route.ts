@@ -8,11 +8,14 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { buildCtaAlternativesPrompt } from "@/lib/prompts/role-aware-system"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { professionalContextPrompt } from "@/lib/professional-context"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try {

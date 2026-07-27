@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId, getWorkspaceSessionContext } from "@/lib/server/workspace"
-import { errorToStatus } from "@/lib/server/roles"
+import { errorToStatus, requireRole } from "@/lib/server/roles"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 
 const postRepo = new SupabasePostRepository()
@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
 
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
     const ctx = await getWorkspaceSessionContext()
 
     const body = await request.json()

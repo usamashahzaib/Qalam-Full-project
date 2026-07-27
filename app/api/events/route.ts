@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
+import { errorToStatus, requireRole } from "@/lib/server/roles"
 
 type AnalyticsEvent = {
   id: string
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       createdAt?: string
     }
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
     const rows = await supabaseInsert<AnalyticsEvent>("analytics_events", {
       workspace_id: workspaceId,
       event_type: body.type || "unknown",
@@ -62,6 +64,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ saved: true, event: rows?.[0] || null })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: errorToStatus(message) })
   }
 }

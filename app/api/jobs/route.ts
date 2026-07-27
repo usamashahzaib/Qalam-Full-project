@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
+import { errorToStatus, requireRole } from "@/lib/server/roles"
 
 type Job = {
   id: string
@@ -69,6 +70,7 @@ export async function POST(request: NextRequest) {
       createdAt?: string
     }
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
     const rows = await supabaseInsert<Job>("jobs", {
       workspace_id: workspaceId,
       type: body.type || "unknown",
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ saved: true, job: rows?.[0] || null })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: errorToStatus(message) })
   }
 }
 
@@ -92,6 +94,7 @@ export async function DELETE(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
 
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
     const url = new URL(request.url)
     const id = url.searchParams.get("id")
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
@@ -101,6 +104,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ deleted: true })
   } catch (error) {
     const message = (error as Error).message || "server_error"
-    return NextResponse.json({ error: message }, { status: (message === "auth_required" || message === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: message }, { status: errorToStatus(message) })
   }
 }

@@ -22,6 +22,17 @@ const FEATURES = [
 
 export { FEATURES }
 
+export const USAGE_FIELDS = [
+  ["ai_drafts_used", "AI Drafts"],
+  ["carousels_used", "Carousels"],
+  ["hooks_used", "Hooks"],
+  ["analyses_used", "Analyses"],
+  ["competitor_runs_used", "Competitor Research"],
+  ["comment_generations_used", "Comment Generator"],
+] as const
+
+export type UsageFieldKey = (typeof USAGE_FIELDS)[number][0]
+
 export const emptyFlags = () =>
   Object.fromEntries(FEATURES.map(([key]) => [key, false])) as Record<string, boolean>
 
@@ -49,6 +60,7 @@ export function useAdminUsers(adminEmail: string) {
   const [selfId, setSelfId] = useState<string | null>(null)
   const [resettingCircuits, setResettingCircuits] = useState(false)
   const [deletingUser, setDeletingUser] = useState(false)
+  const [resettingUsage, setResettingUsage] = useState(false)
 
   const [form, setForm] = useState<AdminFormState>({
     planOverride: "",
@@ -71,13 +83,15 @@ export function useAdminUsers(adminEmail: string) {
     const usersData = await usersRes.json().catch(() => ({})) as { users?: AdminUser[]; auditLog?: AuditRow[]; error?: string }
     const statsData = await statsRes.json().catch(() => ({})) as { stats?: Stats; recentUsers?: RecentUser[]; circuits?: CircuitState; selfId?: string; error?: string }
     if (!usersRes.ok) throw new Error(usersData.error || "Admin data unavailable")
-    setUsers(usersData.users || [])
+    const nextUsers = usersData.users || []
+    setUsers(nextUsers)
     setAuditLog(usersData.auditLog || [])
     if (statsData.stats) setStats(statsData.stats)
     if (statsData.circuits) setCircuits(statsData.circuits)
     if (statsData.recentUsers) setRecentUsers(statsData.recentUsers)
     if (statsData.selfId) setSelfId(statsData.selfId)
     setLoading(false)
+    return nextUsers
   }, [adminKey, query])
 
   const setMsg = (text: string, type: "ok" | "err" = "ok") => {
@@ -189,6 +203,25 @@ export function useAdminUsers(adminEmail: string) {
     setMsg("User deleted")
   }
 
+  const resetUsage = async (fields?: UsageFieldKey[]) => {
+    if (!selected) return
+    setResettingUsage(true)
+    setMsg(fields ? "Resetting usage..." : "Resetting all usage...")
+    const res = await fetch("/api/admin/usage/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      body: JSON.stringify({ userId: selected.id, targetEmail: selected.email, fields }),
+    })
+    const data = await res.json().catch(() => ({})) as { error?: string }
+    setResettingUsage(false)
+    if (!res.ok) { setMsg(data.error || "Usage reset failed", "err"); return }
+    const selectedId = selected.id
+    const nextUsers = await load(query)
+    const refreshed = nextUsers.find((u) => u.id === selectedId)
+    if (refreshed) setSelected(refreshed)
+    setMsg(fields ? "Usage reset" : "All usage reset to zero")
+  }
+
   const resetCircuits = async () => {
     setResettingCircuits(true)
     const res = await fetch("/api/admin/reset-circuits", {
@@ -227,6 +260,9 @@ export function useAdminUsers(adminEmail: string) {
     resetCircuits,
     deleteUser,
     deletingUser,
+    resetUsage,
+    resettingUsage,
     FEATURES,
+    USAGE_FIELDS,
   }
 }

@@ -47,8 +47,11 @@ export const plans: Plan[] = [
       "5 posts/month",
       "1 carousel/month",
       "Basic AI Writer",
-      "Hook Generator",
+      "Hook Generator (5/month)",
+      "Content scoring (5/month)",
       "Comment Generator (10/month)",
+      "Basic Voice Profile",
+      "Silent Growth tools",
     ],
     cta: "Start Free",
     badge: "No card required",
@@ -68,8 +71,12 @@ export const plans: Plan[] = [
       "30 posts/month",
       "3 carousels/month",
       "Role-Aware AI Writer",
-      "Hook Generator",
+      "Hook Generator (30/month)",
+      "Content scoring (10/month)",
       "Comment Generator (50/month)",
+      "LinkedIn publishing + scheduling",
+      "Basic analytics",
+      "Basic Voice Profile",
       "Post Library",
     ],
     cta: "Start Solo",
@@ -92,9 +99,12 @@ export const plans: Plan[] = [
       "Voice Training",
       "Push to 90+ quality check",
       "AI Strategist",
+      "Competitor Research (5/month)",
+      "LinkedIn publishing + scheduling",
+      "Approval workflow + PDF export",
       "Comment Generator (150/month)",
       "Priority Queue",
-      "Analytics",
+      "Full analytics",
     ],
     cta: "Start Pro",
     badge: "Best value",
@@ -103,15 +113,17 @@ export const plans: Plan[] = [
     name: "Agency",
     monthlyPrice: null,
     annualPrice: null,
-    postsPerMonth: null,
-    draftsPerMonth: null,
-    carouselsPerMonth: null,
-    researchPerMonth: 0,
+    postsPerMonth: 300,
+    draftsPerMonth: 300,
+    carouselsPerMonth: 50,
+    researchPerMonth: 25,
     voiceProfiles: 5,
     workspaces: 5,
     annualSavingsLabel: "",
     features: [
-      "60 posts x 5 workspaces",
+      "300 posts/month across 5 workspaces",
+      "50 carousels/month",
+      "Competitor Research (25/month)",
       "White-label",
       "Team seats",
       "Approval Workflow",
@@ -181,11 +193,12 @@ export const isComingSoon = (plan: string): boolean => getPlanByName(plan).comin
 export function isFeatureAllowed(plan: string, feature: string): boolean {
   const current = getPlanByName(plan)
   if (feature === "carousel" || feature === "carousel_standard") return (current.carouselsPerMonth ?? 0) > 0
-  if (feature === "voice" || feature === "voiceProfile") return current.voiceProfiles > 0
+  if (feature === "voiceProfile" || feature === "basic_voice") return true
+  if (feature === "voice" || feature === "voiceTraining") return current.voiceProfiles > 0
   if (feature === "research" || feature === "competitorResearch") return current.researchPerMonth > 0
   if (feature === "teamSeats") return current.name === "Agency"
   if (feature === "approvalWorkflow") return current.name === "Pro" || current.name === "Agency"
-  if (feature === "basic_analytics") return current.name === "Pro" || current.name === "Agency"
+  if (feature === "basic_analytics") return current.name !== "Free"
   return current.name !== "Free"
 }
 
@@ -269,6 +282,27 @@ export const COMPARISON_ROWS = [
     agency: "10 x 5 workspaces",
   },
   {
+    label: "Slides per carousel",
+    free: "5",
+    solo: "7",
+    pro: "10",
+    agency: "10",
+  },
+  {
+    label: "Hook generations",
+    free: "5/month",
+    solo: "30/month",
+    pro: "60/month",
+    agency: "300/month",
+  },
+  {
+    label: "Content score analyses",
+    free: "5/month",
+    solo: "10/month",
+    pro: "20/month",
+    agency: "100/month",
+  },
+  {
     label: "AI Writer",
     free: "Basic",
     solo: "Role-Aware",
@@ -277,10 +311,10 @@ export const COMPARISON_ROWS = [
   },
   {
     label: "Voice profiles",
-    free: "-",
-    solo: "-",
-    pro: "1",
-    agency: "5",
+    free: "Basic profile",
+    solo: "Basic profile",
+    pro: "1 trained profile",
+    agency: "5 trained profiles",
   },
   {
     label: "Comment Generator",
@@ -290,18 +324,81 @@ export const COMPARISON_ROWS = [
     agency: "400/month",
   },
   {
+    label: "Personal workspace",
+    free: "1",
+    solo: "1",
+    pro: "1",
+    agency: "Included",
+  },
+  {
     label: "Client workspaces",
+    free: "Not included",
+    solo: "Not included",
+    pro: "Not included",
+    agency: "5",
+  },
+  {
+    label: "Team seats",
     free: "1",
     solo: "1",
     pro: "1",
     agency: "5",
   },
   {
+    label: "LinkedIn publishing",
+    free: "Not included",
+    solo: "Included",
+    pro: "Included",
+    agency: "Included",
+  },
+  {
+    label: "Scheduling",
+    free: "Not included",
+    solo: "Included",
+    pro: "Included",
+    agency: "Included",
+  },
+  {
+    label: "Approval workflow",
+    free: "Not included",
+    solo: "Not included",
+    pro: "Included",
+    agency: "Included",
+  },
+  {
+    label: "PDF export",
+    free: "Not included",
+    solo: "Not included",
+    pro: "Included",
+    agency: "Included",
+  },
+  {
     label: "Analytics",
-    free: "-",
-    solo: "-",
-    pro: "Yes",
-    agency: "Team Analytics",
+    free: "Not included",
+    solo: "Basic",
+    pro: "Full",
+    agency: "Full, 5 workspaces",
+  },
+  {
+    label: "Competitor research",
+    free: "Not included",
+    solo: "Not included",
+    pro: "5/month",
+    agency: "25/month",
+  },
+  {
+    label: "AI Strategist",
+    free: "Not included",
+    solo: "Not included",
+    pro: "Included",
+    agency: "Included",
+  },
+  {
+    label: "Silent Growth tools",
+    free: "Included",
+    solo: "Included",
+    pro: "Included",
+    agency: "Included",
   },
   {
     label: "Monthly price",
@@ -382,7 +479,7 @@ export type PlanFeatureFlags = {
   scheduling: boolean
   approvals: boolean
   canExport: boolean
-  analyticsDepth: "basic" | "full"
+  analyticsDepth: "none" | "basic" | "full"
   voiceTraining: boolean
   competitorResearch: boolean
   clientWorkspaces: number
@@ -399,7 +496,7 @@ export type PlanEnforcement = {
 export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   Free: {
     limits: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
-    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
+    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "none", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
   },
   Solo: {
     limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
@@ -411,6 +508,6 @@ export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   },
   Agency: {
     limits: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: false, clientWorkspaces: 5, seats: 5, researchRuns: 0, carouselSlides: 10 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 5, seats: 5, researchRuns: 25, carouselSlides: 10 },
   },
 }

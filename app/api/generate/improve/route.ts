@@ -8,11 +8,14 @@ import { log } from "@/lib/server/logging"
 import { requirePlan } from "@/lib/server/require-plan"
 import { improvePost } from "@/lib/use-cases/improve-post"
 import { errorToStatus } from "@/lib/errors"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {

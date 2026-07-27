@@ -7,6 +7,15 @@ export interface AdminOverride {
   expires_at?: string | null
 }
 
+export interface AdminUsage {
+  aiDraftsUsed: number
+  carouselsUsed: number
+  hooksUsed: number
+  analysesUsed: number
+  competitorRunsUsed: number
+  commentGenerationsUsed: number
+}
+
 export interface AdminUser {
   id: string
   externalId: string
@@ -18,6 +27,7 @@ export interface AdminUser {
   draftsUsed: number
   workspaces: number
   override: AdminOverride | null
+  usage: AdminUsage
 }
 
 export interface AuditLogEntry {

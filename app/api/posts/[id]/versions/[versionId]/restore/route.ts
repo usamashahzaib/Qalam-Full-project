@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(
   request: NextRequest,
@@ -23,14 +24,8 @@ export async function POST(
 
     if (!post) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
-    const { data: membership } = await supabase
-      .from("workspace_members")
-      .select("role")
-      .eq("workspace_id", post.workspace_id)
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    if (!membership) return NextResponse.json({ error: "forbidden" }, { status: 403 })
+    const roleError = await authorizeRole(req, post.workspace_id, "editor")
+    if (roleError) return roleError
 
     // Fetch the target version
     const { data: version } = await supabase

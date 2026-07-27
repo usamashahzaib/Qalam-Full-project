@@ -12,6 +12,7 @@ import { enqueueRequest } from "@/lib/server/queue"
 import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
 import type { GeneratePostFromHookOutput } from "@/lib/use-cases/generate-post-from-hook"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
     // The inner generatePostFromHook enforces the per-quota limit via incrementUsage.
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {

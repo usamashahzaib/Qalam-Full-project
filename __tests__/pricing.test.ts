@@ -31,7 +31,7 @@ describe("PLANS", () => {
       { name: "Free", postsPerMonth: 5, carouselsPerMonth: 1 },
       { name: "Solo", postsPerMonth: 30, carouselsPerMonth: 3 },
       { name: "Pro", postsPerMonth: 60, carouselsPerMonth: 10 },
-      { name: "Agency", postsPerMonth: null, carouselsPerMonth: null },
+      { name: "Agency", postsPerMonth: 300, carouselsPerMonth: 50 },
     ])
   })
 
@@ -145,5 +145,32 @@ describe("COMPARISON_ROWS integrity", () => {
     expect(priceRow.free).toBe("Free")
     expect(priceRow.solo).toContain("499")
     expect(priceRow.pro).toContain("1,490")
+  })
+
+  it("publishes every enforced plan capability", () => {
+    const labels = COMPARISON_ROWS.map((row) => row.label)
+    expect(labels).toEqual(expect.arrayContaining([
+      "Slides per carousel",
+      "Hook generations",
+      "Content score analyses",
+      "Client workspaces",
+      "Team seats",
+      "LinkedIn publishing",
+      "Scheduling",
+      "Approval workflow",
+      "PDF export",
+      "Analytics",
+      "Competitor research",
+      "AI Strategist",
+      "Silent Growth tools",
+    ]))
+  })
+
+  it("does not mislabel personal workspaces as client workspaces", () => {
+    const row = COMPARISON_ROWS.find((item) => item.label === "Client workspaces")!
+    expect(row.free).toBe("Not included")
+    expect(row.solo).toBe("Not included")
+    expect(row.pro).toBe("Not included")
+    expect(row.agency).toBe("5")
   })
 })

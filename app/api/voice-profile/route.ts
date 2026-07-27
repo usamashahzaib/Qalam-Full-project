@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
 import { SupabaseVoiceProfileRepository } from "@/lib/repositories/supabase/SupabaseVoiceProfileRepository"
+import { errorToStatus, requireRole } from "@/lib/server/roles"
 
 const voiceRepo = new SupabaseVoiceProfileRepository()
 
@@ -40,6 +41,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
     }
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
 
     const profile = await voiceRepo.save(workspaceId, {
       name, title, industry, tone, goals, samplePosts,
@@ -48,6 +50,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ profile })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: (msg === "auth_required" || msg === "Unauthorized") ? 401 : 500 })
+    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
   }
 }

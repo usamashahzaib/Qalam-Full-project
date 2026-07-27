@@ -65,7 +65,7 @@ describe("getPlanLimits", () => {
     expect(limits.scheduling).toBe(false)
     expect(limits.approvals).toBe(false)
     expect(limits.canExport).toBe(false)
-    expect(limits.analyticsDepth).toBe("basic")
+    expect(limits.analyticsDepth).toBe("none")
     expect(limits.seats).toBe(1)
   })
 
@@ -96,7 +96,7 @@ describe("getPlanLimits", () => {
     expect(limits.seats).toBe(5)
     expect(limits.aiDraftsPerMonth).toBe(300)
     expect(limits.carouselGenerationsPerMonth).toBe(50)
-    expect(limits.researchRunsPerMonth).toBe(0)
+    expect(limits.researchRunsPerMonth).toBe(25)
   })
 
   it("unknown plan falls back to Free limits", () => {

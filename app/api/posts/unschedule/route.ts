@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
-import { errorToStatus } from "@/lib/server/roles"
+import { errorToStatus, requireRole } from "@/lib/server/roles"
 import { detachQstashSchedule } from "@/lib/server/qstash"
 
 type DbPost = { id: string; workspace_id: string }
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const workspaceId = await resolveWorkspaceId(request)
+    await requireRole(request, workspaceId, "editor")
 
     const body = await request.json()
     const postId = String(body.postId || "").trim()

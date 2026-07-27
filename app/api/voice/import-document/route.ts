@@ -12,6 +12,7 @@ import {
 import {
   parseImportedProfessionalContext,
 } from "@/lib/professional-context"
+import { authorizeRole } from "@/lib/server/roles"
 
 const ERROR_STATUS: Record<string, number> = {
   resume_pdf_type_invalid: 415,
@@ -31,6 +32,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     const contentLength = Number(req.headers.get("content-length") || 0)
     if (contentLength > MAX_RESUME_MULTIPART_BYTES) {

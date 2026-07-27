@@ -414,7 +414,7 @@ export default function CarouselEditorPage() {
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">
             Export text
           </button>
-          <LockedFeature feature="Export to PDF" requiredPlan="Solo" className="inline-block">
+          <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
             <button
               onClick={() => void handleExportPdf()}
               disabled={pdfExporting || !slides.length}

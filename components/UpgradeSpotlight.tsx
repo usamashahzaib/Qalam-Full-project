@@ -25,7 +25,7 @@ const LOCKED_FEATURES: LockedFeature[] = [
   { label: "Planner", icon: CalendarIcon, plan: "Solo" },
   { label: "Analytics", icon: AnalyticsIcon, plan: "Solo" },
   { label: "Library", icon: LibraryIcon, plan: "Solo" },
-  { label: "Voice Profile", icon: VoiceIcon, plan: "Pro" },
+  { label: "Voice Training", icon: VoiceIcon, plan: "Pro" },
   { label: "AI Strategist", icon: BrainIcon, plan: "Pro" },
   { label: "Research", icon: MicroscopeIcon, plan: "Pro" },
 ]

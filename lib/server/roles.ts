@@ -1,6 +1,6 @@
 import "server-only"
 
-import { NextRequest } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -64,6 +64,20 @@ export const requireRole = async (
     throw new Error("forbidden")
   }
   return membership
+}
+
+export const authorizeRole = async (
+  request: NextRequest,
+  workspaceId: string,
+  requiredRole: WorkspaceRole
+): Promise<NextResponse | null> => {
+  try {
+    await requireRole(request, workspaceId, requiredRole)
+    return null
+  } catch (error) {
+    const message = (error as Error).message
+    return NextResponse.json({ error: message }, { status: errorToStatus(message) })
+  }
 }
 
 export const errorToStatus = (msg: string): number => {

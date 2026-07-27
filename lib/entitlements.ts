@@ -37,7 +37,7 @@ export type PlanLimits = {
   scheduling: boolean
   approvals: boolean
   canExport: boolean
-  analyticsDepth: "basic" | "full"
+  analyticsDepth: "none" | "basic" | "full"
   voiceTraining: boolean
   commentGenerationsPerMonth: number | "unlimited"
 }

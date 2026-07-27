@@ -12,7 +12,7 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Pro")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     if (!planCheck.limits.canExport) {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "export" }, { status: 403 })

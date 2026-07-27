@@ -62,7 +62,7 @@ export const NAV_GROUPS = [
   {
     label: "Intelligence",
     links: [
-      { href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },

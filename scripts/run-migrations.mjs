@@ -64,7 +64,7 @@ async function runViaDbUrl(dbUrl, sql) {
 
 async function getMigrationFiles() {
   return readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.match(/^\d{4}_.*\.sql$/) && !f.startsWith("COMBINED"))
+    .filter((f) => f.match(/^\d+_.*\.sql$/) && !f.startsWith("COMBINED"))
     .sort()
 }
 

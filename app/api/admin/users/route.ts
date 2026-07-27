@@ -9,6 +9,15 @@ type MembershipRow = { user_id: string; workspace_id: string | null }
 type OverrideRow = { user_id: string; plan_override: string | null; draft_limit_override: number | null; workspace_limit_override: number | null; feature_flags: Record<string, boolean> | null; notes: string | null; expires_at: string | null }
 type AuditRow = { id: string; admin_email: string; target_user_email: string; action: string; old_value: unknown; new_value: unknown; created_at: string }
 type PaymentRow = { user_id: string; created_at: string | null; processed_at: string | null }
+type UsageRow = {
+  user_id: string
+  ai_drafts_used: number | null
+  carousels_used: number | null
+  hooks_used: number | null
+  analyses_used: number | null
+  competitor_runs_used: number | null
+  comment_generations_used: number | null
+}
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
@@ -41,6 +50,11 @@ export async function GET(request: NextRequest) {
   const payments = userIds.length
     ? await supabaseSelect<PaymentRow>("payments", `user_id=in.(${userIds.join(",")})&status=eq.paid&select=user_id,created_at,processed_at&order=created_at.desc`).catch(() => [])
     : []
+  const externalIds = filtered.map((user) => user.external_user_id).filter(Boolean) as string[]
+  const usageLookupIds = [...new Set([...userIds, ...externalIds])]
+  const usageRows = usageLookupIds.length
+    ? await supabaseSelect<UsageRow>("plan_usage", `user_id=in.(${usageLookupIds.join(",")})&select=user_id,ai_drafts_used,carousels_used,hooks_used,analyses_used,competitor_runs_used,comment_generations_used`).catch(() => [])
+    : []
 
   const enriched = await Promise.all(filtered.map(async (user) => {
     const workspaceIds = memberships.filter((row) => row.user_id === user.id && row.workspace_id).map((row) => row.workspace_id as string)
@@ -50,6 +64,7 @@ export async function GET(request: NextRequest) {
     // externalId is what plan_usage and user_overrides use as the key
     const externalId = user.external_user_id || user.id
     const payment = payments.find((row) => row.user_id === user.id)
+    const usageRow = usageRows.find((row) => row.user_id === user.id || row.user_id === externalId) || null
     return {
       id: user.id,
       externalId,
@@ -61,6 +76,14 @@ export async function GET(request: NextRequest) {
       draftsUsed,
       workspaces: workspaceIds.length,
       override: overrides.find((o) => o.user_id === user.id || o.user_id === externalId) || null,
+      usage: {
+        aiDraftsUsed: usageRow?.ai_drafts_used ?? 0,
+        carouselsUsed: usageRow?.carousels_used ?? 0,
+        hooksUsed: usageRow?.hooks_used ?? 0,
+        analysesUsed: usageRow?.analyses_used ?? 0,
+        competitorRunsUsed: usageRow?.competitor_runs_used ?? 0,
+        commentGenerationsUsed: usageRow?.comment_generations_used ?? 0,
+      },
     }
   }))
 

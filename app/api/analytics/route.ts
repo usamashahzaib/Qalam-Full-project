@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { authorizeRole } from "@/lib/server/roles"
 
 const createSchema = z.object({
   postId: z.string().uuid().optional(),
@@ -20,9 +21,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
     const { requirePlan } = await import("@/lib/server/plan-limits-v2")
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
-    if (String(planCheck.limits.analyticsDepth) === "none") {
+    if (planCheck.limits.analyticsDepth === "none") {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
 
@@ -53,10 +54,12 @@ export async function POST(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
+    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    if (roleError) return roleError
     const { requirePlan } = await import("@/lib/server/plan-limits-v2")
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
-    if (String(planCheck.limits.analyticsDepth) === "none") {
+    if (planCheck.limits.analyticsDepth === "none") {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
 
@@ -112,10 +115,12 @@ export async function DELETE(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
+    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    if (roleError) return roleError
     const { requirePlan } = await import("@/lib/server/plan-limits-v2")
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
-    if (String(planCheck.limits.analyticsDepth) === "none") {
+    if (planCheck.limits.analyticsDepth === "none") {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
 

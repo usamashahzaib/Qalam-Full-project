@@ -12,6 +12,7 @@ import { enqueueRequest } from "@/lib/server/queue"
 import type { PlanTier } from "@/types/domain"
 import { errorToStatus } from "@/lib/errors"
 import { canAccessPost } from "@/lib/domain/services/authorization"
+import { authorizeRole } from "@/lib/server/roles"
 
 const LINKEDIN_MAX_POST_CHARS = 3000
 
@@ -76,6 +77,8 @@ export async function POST(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
+    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    if (roleError) return roleError
 
     const result = await generatePost({
       ...parsed.data,
@@ -114,6 +117,8 @@ export async function PATCH(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
+    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    if (roleError) return roleError
 
     const supabase = createServiceClient()
 

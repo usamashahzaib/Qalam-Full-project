@@ -64,9 +64,11 @@ export default function WriterPage() {
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
   const canUseSolo = canAccessPlan(billing.plan, "Solo")
-  const canUseCarousel = canUseSolo
-  const currentDraftLimit = getEffectivePlanLimits(billing.plan, billing.limits).aiDraftsPerMonth
-  const carouselLimit = getEffectivePlanLimits(billing.plan, billing.limits).carouselGenerationsPerMonth
+  const effectiveLimits = getEffectivePlanLimits(billing.plan, billing.limits)
+  const canUseCarousel = effectiveLimits.carouselGenerationsPerMonth === "unlimited" || effectiveLimits.carouselGenerationsPerMonth > 0
+  const canExportPdf = effectiveLimits.canExport
+  const currentDraftLimit = effectiveLimits.aiDraftsPerMonth
+  const carouselLimit = effectiveLimits.carouselGenerationsPerMonth
 
   const searchParams = useSearchParams()
   const initialTopic = searchParams.get("topic") || ""
@@ -694,7 +696,7 @@ export default function WriterPage() {
                   >
                     Make Carousel →
                   </button>
-                  {canUseProTools ? (
+                  {canExportPdf ? (
                     <button
                       onClick={() => onExportPdf()}
                       className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50"
@@ -874,13 +876,15 @@ export default function WriterPage() {
                     >
                       {isSaving ? "Saving..." : "Save carousel"}
                     </button>
-                    <button
-                      onClick={() => void onDownloadCarouselPdf()}
-                      disabled={isPdfDownloading}
-                      className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
-                    >
-                      {isPdfDownloading ? "Generating PDF..." : "Download PDF"}
-                    </button>
+                    <LockedFeature feature="Export to PDF" requiredPlan="Pro" className="inline-block">
+                      <button
+                        onClick={() => void onDownloadCarouselPdf()}
+                        disabled={isPdfDownloading}
+                        className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                      >
+                        {isPdfDownloading ? "Generating PDF..." : "Download PDF"}
+                      </button>
+                    </LockedFeature>
                     <button
                       onClick={async () => {
                         const text = slides.map((s) => `Slide ${s.number}: ${s.title}${s.body ? `\n${s.body}` : ""}`).join("\n\n")

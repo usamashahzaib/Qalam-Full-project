@@ -42,7 +42,7 @@ export function GET() {
     "- Carousel Builder: converts posts into branded slide decks exported as 1080x1080 PNG ZIP",
     "- Competitor Research: analyzes competitor LinkedIn post patterns and posting frequency (Pro)",
     "- Approval Workflow: email-based review flow for agency/team content sign-off (Pro)",
-    "- Analytics: post performance tracking within the workspace (Pro+)",
+    "- Analytics: basic workspace tracking on Solo; full analytics on Pro and Agency.",
     "",
     "## Plan fit and pricing (all prices PKR)",
     "",

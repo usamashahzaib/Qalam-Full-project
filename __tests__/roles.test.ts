@@ -1,13 +1,19 @@
 import { describe, it, expect, vi } from "vitest"
 
+const { workspaceContextMock, supabaseSelectMock } = vi.hoisted(() => ({
+  workspaceContextMock: vi.fn(),
+  supabaseSelectMock: vi.fn(),
+}))
+
 // lib/server/roles.ts imports getWorkspaceSessionContext from lib/server/workspace,
 // which in turn pulls in the full @/auth NextAuth config (LinkedIn + Credentials
 // providers). That chain doesn't resolve cleanly under Vitest's Node resolution,
 // so stub the one function this file's pure logic (hasPermission/errorToStatus)
 // never actually calls.
-vi.mock("@/lib/server/workspace", () => ({ getWorkspaceSessionContext: vi.fn() }))
+vi.mock("@/lib/server/workspace", () => ({ getWorkspaceSessionContext: workspaceContextMock }))
+vi.mock("@/lib/server/supabase-rest", () => ({ supabaseSelect: supabaseSelectMock }))
 
-const { hasPermission, errorToStatus } = await import("@/lib/server/roles")
+const { authorizeRole, hasPermission, errorToStatus } = await import("@/lib/server/roles")
 type WorkspaceRole = import("@/lib/server/roles").WorkspaceRole
 
 // Mirrors the ROLE_HIERARCHY order in lib/server/roles.ts, highest privilege first.
@@ -80,5 +86,42 @@ describe("errorToStatus", () => {
   it("falls back to 500 for unrecognized errors", () => {
     expect(errorToStatus("something_else")).toBe(500)
     expect(errorToStatus("")).toBe(500)
+  })
+})
+
+describe("authorizeRole", () => {
+  const request = {} as import("next/server").NextRequest
+
+  it("allows editors to mutate workspace data", async () => {
+    workspaceContextMock.mockResolvedValueOnce({ supabaseUserId: "user-1" })
+    supabaseSelectMock.mockResolvedValueOnce([{ role: "editor", workspace_id: "workspace-1" }])
+
+    await expect(authorizeRole(request, "workspace-1", "editor")).resolves.toBeNull()
+  })
+
+  it("returns 403 for read-only roles", async () => {
+    workspaceContextMock.mockResolvedValueOnce({ supabaseUserId: "user-1" })
+    supabaseSelectMock.mockResolvedValueOnce([{ role: "viewer", workspace_id: "workspace-1" }])
+
+    const response = await authorizeRole(request, "workspace-1", "editor")
+    expect(response?.status).toBe(403)
+    await expect(response?.json()).resolves.toEqual({ error: "forbidden" })
+  })
+
+  it("returns 403 for non-members", async () => {
+    workspaceContextMock.mockResolvedValueOnce({ supabaseUserId: "user-1" })
+    supabaseSelectMock.mockResolvedValueOnce([])
+
+    const response = await authorizeRole(request, "workspace-1", "editor")
+    expect(response?.status).toBe(403)
+    await expect(response?.json()).resolves.toEqual({ error: "unauthorized_workspace" })
+  })
+
+  it("returns 401 without an authenticated session", async () => {
+    workspaceContextMock.mockRejectedValueOnce(new Error("missing"))
+
+    const response = await authorizeRole(request, "workspace-1", "editor")
+    expect(response?.status).toBe(401)
+    await expect(response?.json()).resolves.toEqual({ error: "auth_required" })
   })
 })

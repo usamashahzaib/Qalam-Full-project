@@ -13,6 +13,7 @@ import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server
 import type { PlanTier } from "@/types/domain"
 import type { Hook } from "@/lib/use-cases/generate-hooks"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { authorizeRole } from "@/lib/server/roles"
 
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
@@ -24,6 +25,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: unknown
     try { body = await req.json() } catch {

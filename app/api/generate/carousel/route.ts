@@ -9,6 +9,7 @@ import { incrementUsage, decrementUsage, requirePlan } from "@/lib/server/plan-l
 import { log } from "@/lib/server/logging"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { professionalContextPrompt } from "@/lib/professional-context"
+import { authorizeRole } from "@/lib/server/roles"
 
 type Slide = {
   number: number
@@ -21,6 +22,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     if (planCheck.limits.carouselGenerationsPerMonth === 0) {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "carousel" }, { status: 403 })
     }

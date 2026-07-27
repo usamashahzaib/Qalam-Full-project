@@ -462,7 +462,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 { label: "LinkedIn Ghostwriter", cost: "PKR 20,000-80,000/month", note: "For one person, one voice, inconsistent availability" },
                 { label: "Content Scheduling Tool", cost: "PKR 4,000-8,000/month", note: "No AI, no voice memory, no analytics depth" },
                 { label: "AI Writing Assistant (generic)", cost: "PKR 2,500-5,000/month", note: "No LinkedIn-specific training, no archive, no workflow" },
-                { label: "Analytics + Competitor Research", cost: "PKR 5,000-15,000/month", note: "Separate tool, separate login, separate bill" },
+                { label: "Content Analytics", cost: "PKR 2,000-6,000/month", note: "Basic tracking is included in Solo; Pro adds full analytics" },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
                   <div className="flex items-start justify-between gap-3">

@@ -1,16 +1,26 @@
 "use client"
 
 import Link from "next/link"
-import { useAdminUsers, FEATURES, emptyFlags } from "@/lib/hooks/useAdminUsers"
+import { useAdminUsers, FEATURES, emptyFlags, USAGE_FIELDS } from "@/lib/hooks/useAdminUsers"
 import { formatPlanDate } from "@/lib/plan-expiry"
 import type {
   AdminOverride as Override,
+  AdminUsage,
   AdminUser,
   AuditLogEntry as AuditRow,
   AdminStats as Stats,
   CircuitState,
   RecentUser,
 } from "@/types/admin"
+
+const USAGE_FIELD_TO_KEY: Record<string, keyof AdminUsage> = {
+  ai_drafts_used: "aiDraftsUsed",
+  carousels_used: "carouselsUsed",
+  hooks_used: "hooksUsed",
+  analyses_used: "analysesUsed",
+  competitor_runs_used: "competitorRunsUsed",
+  comment_generations_used: "commentGenerationsUsed",
+}
 
 const PLANS = ["Free", "Solo", "Pro", "Agency"]
 
@@ -60,6 +70,8 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     resetCircuits,
     deleteUser,
     deletingUser,
+    resetUsage,
+    resettingUsage,
   } = useAdminUsers(adminEmail)
 
   return (
@@ -397,6 +409,39 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           rows={2}
                           className="w-full resize-none rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal"
                         />
+                      </div>
+
+                      {/* Usage counters + reset */}
+                      <div>
+                        <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Usage this cycle</label>
+                        <div className="space-y-1.5">
+                          {USAGE_FIELDS.map(([field, label]) => (
+                            <div key={field} className="flex items-center justify-between rounded-lg border border-zinc-100 px-3 py-2 text-xs">
+                              <span className="font-semibold text-zinc-700">{label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-zinc-900">{selected.usage[USAGE_FIELD_TO_KEY[field]]}</span>
+                                <button
+                                  onClick={() => resetUsage([field]).catch(() => undefined)}
+                                  disabled={resettingUsage}
+                                  className="cursor-pointer rounded-full border border-zinc-200 px-2 py-0.5 text-[10px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                                >
+                                  Reset
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Reset ALL usage counters for ${selected.email} to zero?`)) {
+                              resetUsage().catch(() => undefined)
+                            }
+                          }}
+                          disabled={resettingUsage}
+                          className="mt-2 w-full cursor-pointer rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                        >
+                          {resettingUsage ? "Resetting..." : "Reset all usage to zero"}
+                        </button>
                       </div>
 
                       {/* Actions */}

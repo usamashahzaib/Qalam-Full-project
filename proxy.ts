@@ -235,14 +235,14 @@ export const RATE_LIMITED_API_PREFIXES = [
 // 'strict-dynamic' propagates trust to scripts loaded by nonce-bearing scripts,
 // enabling Next.js chunk loading without an allowlist.
 
-function buildCsp(nonce: string, isDev: boolean): string {
+export function buildCsp(nonce: string, isDev: boolean): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` + (isDev ? " 'unsafe-eval'" : ""),
-    // Keep style elements nonce-bound while allowing React and Framer Motion
-    // style attributes. A nonce does not apply to style attributes.
-    `style-src 'self' 'nonce-${nonce}'`,
-    `style-src-elem 'self' 'nonce-${nonce}'` + (isDev ? " 'unsafe-inline'" : ""),
+    // React, Next.js and Framer Motion create runtime style elements without a
+    // nonce. Keep scripts nonce-bound, but allow inline CSS so those styles render.
+    "style-src 'self' 'unsafe-inline'",
+    "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self'",
     // lemonsqueezy.com entries back the overlay checkout: lemon.js is appended by an
@@ -253,9 +253,12 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co https://*.lemonsqueezy.com",
     "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.lemonsqueezy.com",
     "frame-src 'self' https://*.linkedin.com https://*.lemonsqueezy.com",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-  ].join("; ")
+    isDev ? "" : "upgrade-insecure-requests",
+  ].filter(Boolean).join("; ")
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

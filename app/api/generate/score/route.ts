@@ -11,11 +11,14 @@ import { enqueueRequest } from "@/lib/server/queue"
 import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server/cache"
 import type { PlanTier } from "@/types/domain"
 import type { ScorePostOutput } from "@/lib/use-cases/score-post"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {

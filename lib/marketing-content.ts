@@ -834,19 +834,20 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
       "Writer, archive, calendar, analytics, voice settings",
       "Free public tools",
       "Custom session plus LinkedIn OAuth path",
+      "Self-serve Solo and Pro card checkout",
+      "Automatic plan activation after card payment",
     ],
   },
   {
     title: "Active workflows",
     items: [
-      "Paid plan activation via email",
-      "JazzCash, Easypaisa, bank billing",
+      "JazzCash, Easypaisa, and bank transfer verification",
+      "Manual activation for local transfer payments",
     ],
   },
   {
     title: "Building next",
     items: [
-      "Self-serve checkout",
       "Agency workspaces and team onboarding",
       "Agency analytics rollups",
       "Notification center",
