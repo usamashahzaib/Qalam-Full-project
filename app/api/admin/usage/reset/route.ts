@@ -20,6 +20,15 @@ type ResetInput = {
   fields?: UsageField[]
 }
 
+// Agency-plan users also accrue a separate per-workspace counter
+// (workspace_usage, see lib/server/workspace-usage.ts) alongside the
+// account-wide plan_usage row. Both must be zeroed or an Agency user's
+// carousel/draft generation stays blocked after a plan_usage-only reset.
+const WORKSPACE_FIELD_MAP: Partial<Record<UsageField, string>> = {
+  ai_drafts_used: "ai_drafts_used",
+  carousels_used: "carousels_used",
+}
+
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
 const writeAudit = (adminEmail: string, targetEmail: string, action: string, oldValue: unknown, newValue: unknown) =>
@@ -82,6 +91,31 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: "reset_failed" }, { status: 500 })
+  }
+
+  // Mirror the reset onto workspace_usage for every workspace this user
+  // belongs to, so Agency-tier per-workspace allowances don't stay stuck.
+  const workspaceFields = requestedFields
+    .map((field) => WORKSPACE_FIELD_MAP[field])
+    .filter((field): field is string => Boolean(field))
+  if (workspaceFields.length) {
+    try {
+      const { data: memberships } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .in("user_id", targetIds)
+      const workspaceIds = [...new Set((memberships || []).map((row) => row.workspace_id).filter(Boolean))]
+      if (workspaceIds.length) {
+        const now = new Date()
+        const workspaceResetPayload = Object.fromEntries(workspaceFields.map((field) => [field, 0]))
+        await supabase
+          .from("workspace_usage")
+          .update({ ...workspaceResetPayload, updated_at: new Date().toISOString() })
+          .in("workspace_id", workspaceIds)
+          .eq("month", now.getMonth() + 1)
+          .eq("year", now.getFullYear())
+      }
+    } catch { /* non-fatal - plan_usage reset above already succeeded */ }
   }
 
   await writeAudit(admin.email, body.targetEmail, "reset_usage", oldRows || null, { fields: requestedFields })

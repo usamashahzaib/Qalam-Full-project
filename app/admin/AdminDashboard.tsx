@@ -1,17 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { useAdminUsers, FEATURES, emptyFlags, USAGE_FIELDS } from "@/lib/hooks/useAdminUsers"
+import { useAdminUsers, FEATURES, USAGE_FIELDS } from "@/lib/hooks/useAdminUsers"
 import { formatPlanDate } from "@/lib/plan-expiry"
-import type {
-  AdminOverride as Override,
-  AdminUsage,
-  AdminUser,
-  AuditLogEntry as AuditRow,
-  AdminStats as Stats,
-  CircuitState,
-  RecentUser,
-} from "@/types/admin"
+import type { AdminUsage } from "@/types/admin"
 
 const USAGE_FIELD_TO_KEY: Record<string, keyof AdminUsage> = {
   ai_drafts_used: "aiDraftsUsed",
@@ -59,7 +51,6 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     stats, circuits, recentUsers,
     resettingCircuits,
     form, setForm,
-    headers,
     activeOverride,
     load,
     unlock,
