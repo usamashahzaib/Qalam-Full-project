@@ -151,6 +151,7 @@ html, body {
 /* ─── Global resets & base ────────────────────────────────────── */
 
 html {
+  position: relative;
   scroll-behavior: auto;
 }
 
@@ -177,6 +178,7 @@ html {
 }
 
 body {
+  position: relative;
   background: var(--surface-bg);
   color: var(--surface-fg);
   font-family: var(--font-jakarta);

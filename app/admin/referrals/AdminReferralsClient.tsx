@@ -403,7 +403,7 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
 
 function PayoutQueueRow({ payout, onChanged }: { payout: AdminPayout; onChanged: () => void }) {
   const [reference, setReference] = useState("")
-  const [note, setNote] = useState("")
+  const [note] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [rowError, setRowError] = useState<string | null>(null)
 

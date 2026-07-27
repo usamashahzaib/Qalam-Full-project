@@ -105,7 +105,8 @@ export class SupabasePostRepository implements IPostRepository {
         console.warn("[SupabasePostRepository] versioning RPC failed, falling back to plain update:", rpcErr.message)
       } else {
         // Content was handled by the RPC; remove from dbPatch to avoid double-update
-        const { content: _dropped, ...rest } = patch
+        const rest = { ...patch }
+        delete rest.content
         patch = rest
       }
     }

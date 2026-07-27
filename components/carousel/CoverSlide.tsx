@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { CANVAS, fitFont, type CarouselTheme } from "@/lib/carousel-design"
 
 type CoverSlideProps = {
@@ -14,7 +15,7 @@ type CoverSlideProps = {
 
 function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
   if (photoUrl) {
-    return <img src={photoUrl} alt={name} crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+    return <Image src={photoUrl} alt={name} width={size} height={size} unoptimized crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
   }
   const letters = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")
   return (
@@ -42,26 +43,6 @@ export function CoverSlide({ title, accentLabel, authorName, authorHandle, desig
   const v = t.variant
 
   // ── Shared author row helper ───────────────────────────────────────────
-  const AuthorRow = ({ align = "left" }: { align?: "left" | "center" }) => (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, justifyContent: align === "center" ? "center" : "flex-start" }}>
-      {authorName && (
-        <Avatar
-          name={authorName}
-          photoUrl={authorPhotoUrl}
-          size={54}
-          bg={t.accentColor}
-          color={isDark ? "#000" : "#fff"}
-        />
-      )}
-      <div>
-        {authorName && <p style={{ color: t.textPrimary, fontSize: "22px", fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{authorName}</p>}
-        {(designation || authorHandle) && (
-          <p style={{ color: t.textSecondary, fontSize: "18px", margin: "4px 0 0", lineHeight: 1.3 }}>{designation || authorHandle}</p>
-        )}
-      </div>
-    </div>
-  )
-
   // ── VARIANT: editorial ─────────────────────────────────────────────────
   if (v === "editorial") {
     const bgColor = t.bgGradient.startsWith("#") ? t.bgGradient : "#FFFFFF"

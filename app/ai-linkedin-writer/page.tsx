@@ -2,7 +2,7 @@
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
+import { buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
   title: "AI LinkedIn Writer - Create Posts in Your Voice",
@@ -24,8 +24,6 @@ export const metadata: Metadata = buildPageMetadata({
     "Qalam AI writer",
   ],
 })
-
-const pageUrl = absoluteUrl("/ai-linkedin-writer")
 
 const breadcrumbSchema = buildBreadcrumbSchema([
   { name: "Qalam", path: "/" },

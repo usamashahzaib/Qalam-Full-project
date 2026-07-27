@@ -10,7 +10,6 @@ import { analyzeContent } from "@/lib/content-intelligence"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
-type RawJob = { type?: string; status?: string; title?: string; created_at?: string }
 type RangeOption = { label: string; value: number | "all" }
 
 type Snapshot = {
@@ -34,10 +33,9 @@ const parsePostDate = (s: string) => { try { const d = new Date(s); return isNaN
 
 export default function AnalyticsPage() {
   const { activeClientId } = useWorkspace()
-  const { posts, drafts, scheduled, published, loadEvents, loadJobs } = usePosts()
+  const { posts, drafts, scheduled, published, loadEvents } = usePosts()
   const { profile } = useProfile()
   const [events, setEvents] = useState<RawEvent[]>([])
-  const [jobs, setJobs] = useState<RawJob[]>([])
   const [carouselDbCount, setCarouselDbCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [rangeDays, setRangeDays] = useState<number | "all">(30)
@@ -51,13 +49,11 @@ export default function AnalyticsPage() {
     let active = true
     Promise.all([
       loadEvents(500),
-      loadJobs("", 200),
       fetch(withWorkspaceKey("/api/carousel", activeClientId)).then((r) => r.json()).catch(() => ({ carousels: [] })),
       fetch("/api/analytics?limit=20").then((r) => r.json()).catch(() => ({ snapshots: [] })),
-    ]).then(([ev, jb, carouselRes, analyticsRes]) => {
+    ]).then(([ev, carouselRes, analyticsRes]) => {
       if (!active) return
       setEvents(Array.isArray(ev) ? (ev as RawEvent[]) : [])
-      setJobs(Array.isArray(jb) ? (jb as RawJob[]) : [])
       const carousels = (carouselRes as { carousels?: unknown[] }).carousels
       setCarouselDbCount(Array.isArray(carousels) ? carousels.length : 0)
       const snaps = (analyticsRes as { snapshots?: Snapshot[] }).snapshots
@@ -65,10 +61,9 @@ export default function AnalyticsPage() {
     }).catch(() => {
       if (!active) return
       setEvents([])
-      setJobs([])
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [loadEvents, loadJobs, activeClientId])
+  }, [loadEvents, activeClientId])
 
   const analytics = useMemo(() => {
     const analyses = posts

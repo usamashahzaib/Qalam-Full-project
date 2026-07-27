@@ -102,7 +102,7 @@ export default function WriterPage() {
     slides, setSlides, isGeneratingSlides, localCarouselUsage,
     approvalModalOpen, setApprovalModalOpen,
     researchNotes, setResearchNotes, researchNotesOpen, setResearchNotesOpen,
-    status, showStatus, localDraftUsage, draftLimitHit,
+    status, showStatus, draftLimitHit,
     wordCount, currentVersionIdx, draftHookLine, resolveTitle,
     onGenerateHooks, onGeneratePost, onRegenerate,
     onPushTo90, onImproveHook, applyHookAlt,

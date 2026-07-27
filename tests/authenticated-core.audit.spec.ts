@@ -2,6 +2,62 @@ import { expect, test } from "@playwright/test"
 import { encode } from "next-auth/jwt"
 import { createClient } from "@supabase/supabase-js"
 import { PDFDocument, StandardFonts } from "pdf-lib"
+import argon2 from "argon2"
+
+test("local email and password login succeeds", async ({ page }) => {
+  test.skip(process.env.RUN_AUTHENTICATED_AUDIT !== "1", "Requires live Supabase")
+  test.setTimeout(90_000)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service credentials are required")
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+  await supabase.from("users").delete().like("email", "password-audit-%@example.invalid")
+  const auditId = crypto.randomUUID()
+  const email = `password-audit-${auditId}@example.invalid`
+  const password = `Qalam!${auditId}`
+  const passwordHash = await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 65536,
+    timeCost: 3,
+    parallelism: 1,
+  })
+  const { data: user, error } = await supabase
+    .from("users")
+    .insert({
+      email,
+      full_name: "Password Audit",
+      password_hash: passwordHash,
+      email_verified: true,
+      auth_provider: "credentials",
+    })
+    .select("id")
+    .single()
+  if (error || !user) throw error || new Error("Could not create password audit user")
+
+  try {
+    await page.goto("/login")
+    await page.getByLabel("Email").fill(email)
+    await page.getByLabel("Password").fill(password)
+    const authResponsePromise = page.waitForResponse((response) =>
+      response.url().includes("/api/auth/callback/credentials"),
+    )
+    await page.getByRole("button", { name: "Sign in", exact: true }).click()
+    const authResponse = await authResponsePromise
+    const authBody = await authResponse.text()
+    expect(authResponse.ok(), `Credentials callback failed: ${authResponse.status()} ${authBody}`).toBe(true)
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 })
+    const sessionResponse = await page.request.get("/api/auth/session")
+    expect(sessionResponse.status()).toBe(200)
+    const session = await sessionResponse.json()
+    expect(session.user).toMatchObject({ email, name: "Password Audit", provider: "credentials" })
+  } finally {
+    const { error: cleanupError } = await supabase.from("users").delete().eq("id", user.id)
+    if (cleanupError) throw cleanupError
+  }
+})
 
 test("authenticated writer, dashboard, settings, and account deletion", async ({ page, context }) => {
   test.skip(process.env.RUN_AUTHENTICATED_AUDIT !== "1", "Requires live Supabase and AI providers")
@@ -158,8 +214,9 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     await page.evaluate(() => sessionStorage.clear())
     const voiceResponse = await page.goto("/voice")
     expect(voiceResponse?.status()).toBeLessThan(400)
-    await expect(page.getByRole("heading", { name: /Professional context/ })).toBeVisible()
-    await expect(page.getByText("Source deleted", { exact: true })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Your Profile" })).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByRole("heading", { name: /Professional context/ })).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText("Source deleted", { exact: true })).toBeVisible({ timeout: 30_000 })
 
     const pricingResponse = await page.goto("/pricing")
     expect(pricingResponse?.status()).toBeLessThan(400)

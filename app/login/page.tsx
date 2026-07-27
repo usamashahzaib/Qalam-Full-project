@@ -54,7 +54,7 @@ export default function LoginPage() {
           password,
           redirect: false,
         }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("signin_timeout")), 5000)),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("signin_timeout")), 15000)),
       ])
 
       if (result?.error || result?.ok === false) {

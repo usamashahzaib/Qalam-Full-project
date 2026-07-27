@@ -36,7 +36,7 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page,
 
 // ── Helper: check page has at least one visible CTA button ────────────────────
 async function expectCtaPresent(page: import("@playwright/test").Page) {
-  const cta = page.locator("a, button").filter({
+  const cta = page.locator("a:visible, button:visible").filter({
     hasText: /get started|start free|try|sign up|see pricing|view demo|join/i,
   }).first()
   await expect(cta).toBeVisible({ timeout: 8000 })
@@ -364,7 +364,7 @@ test.describe("Page weight sanity", () => {
     }
   })
 
-  test("free-tools page loads in under 10s on 3G (simulated)", async ({ page, context }) => {
+  test("free-tools page loads in under 10s on 3G (simulated)", async ({ page }) => {
     // CDPSession throttling - test load time is reasonable
     const start = Date.now()
     await page.goto("/free-tools", { waitUntil: "domcontentloaded", timeout: 15000 })

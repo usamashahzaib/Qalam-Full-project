@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { CANVAS, fitFont, type CarouselTheme } from "@/lib/carousel-design"
 
 type CTASlideProps = {
@@ -15,7 +16,7 @@ type CTASlideProps = {
 
 function Avatar({ name, photoUrl, size, bg, color }: { name: string; photoUrl?: string; size: number; bg: string; color: string }) {
   if (photoUrl) {
-    return <img src={photoUrl} alt={name} crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+    return <Image src={photoUrl} alt={name} width={size} height={size} unoptimized crossOrigin="anonymous" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
   }
   const letters = name.split(" ").map((w: string) => w[0]).slice(0, 2).join("")
   return (

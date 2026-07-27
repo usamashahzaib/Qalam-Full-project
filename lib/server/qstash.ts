@@ -93,6 +93,7 @@ export async function detachQstashSchedule(postId: string): Promise<void> {
   const existingId = metadata.qstash_message_id as string | undefined
   if (!existingId) return
   await cancelLinkedInPublish(existingId)
-  const { qstash_message_id: _drop, ...rest } = metadata
+  const rest = { ...metadata }
+  delete rest.qstash_message_id
   await supabasePatch("posts", `id=eq.${postId}`, { metadata: rest }).catch(() => undefined)
 }

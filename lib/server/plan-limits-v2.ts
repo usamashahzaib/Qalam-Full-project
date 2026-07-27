@@ -219,9 +219,7 @@ export async function checkPlanLimit(userId: string, feature: Feature) {
 }
 
 // Atomically increment usage using your existing RPC.
-// internalUserId is the Supabase UUID; used as a fallback lookup key when
-// the plan_usage row was created under the internal UUID instead of the external OAuth sub.
-export async function incrementUsage(userId: string, feature: Feature, internalUserId?: string) {
+export async function incrementUsage(userId: string, feature: Feature) {
   const supabase = createServiceClient()
   const plan = (await checkPlanLimit(userId, feature)).plan
   const config = PLAN_CONFIG[plan].limits

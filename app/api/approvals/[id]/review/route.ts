@@ -26,6 +26,7 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const { review_token_hash: _reviewTokenHash, ...safeApproval } = approval
+  const safeApproval = { ...approval }
+  delete safeApproval.review_token_hash
   return NextResponse.json({ approval: safeApproval })
 }

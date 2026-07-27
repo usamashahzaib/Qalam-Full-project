@@ -74,7 +74,9 @@ export class SupabaseVoiceProfileRepository implements IVoiceProfileRepository {
     if (!error) return toClientProfile(rows?.[0] ?? null)
     if (!error.message.includes("linkedin_url")) throw new Error(error.message)
 
-    const { linkedin_url: _lnUrl, ...fallback } = payload
+    const fallback = Object.fromEntries(
+      Object.entries(payload).filter(([key]) => key !== "linkedin_url")
+    ) as Omit<typeof payload, "linkedin_url">
     const retry = await supabase
       .from("voice_profiles")
       .upsert(fallback, { onConflict: "workspace_id" })

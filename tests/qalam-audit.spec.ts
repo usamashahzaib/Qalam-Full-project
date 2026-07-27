@@ -2,15 +2,6 @@ import { expect, test } from "@playwright/test"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const MOBILE = { width: 375, height: 812 }
-const DESKTOP = { width: 1280, height: 800 }
-
-async function noConsoleErrors(page: import("@playwright/test").Page) {
-  const errs: string[] = []
-  page.on("console", (msg) => {
-    if (msg.type() === "error") errs.push(msg.text())
-  })
-  return errs
-}
 
 // ── SECTION 1: Marketing pages ───────────────────────────────────────────────
 
@@ -218,10 +209,9 @@ test.describe("Auth pages", () => {
     }
     const submitBtn = page.getByRole("button", { name: /sign in|log in|continue/i }).first()
     await submitBtn.click()
-    await page.waitForTimeout(2000)
     // Should show error, not crash
     await expect(page.locator("body")).not.toContainText(/unhandled|cannot read|undefined/i)
-    await expect(page.locator("body")).toContainText(/invalid|incorrect|not found|check your/i)
+    await expect(page.locator("body")).toContainText(/invalid|incorrect|not found|check your/i, { timeout: 20_000 })
   })
 
   test("signup page loads and has no Google option", async ({ page }) => {
@@ -245,7 +235,7 @@ test.describe("Auth pages", () => {
   })
 
   test("terms redirect: /terms -> /legal/terms", async ({ page }) => {
-    const res = await page.goto("/terms")
+    await page.goto("/terms")
     // Either redirected or canonical URL should be /legal/terms
     expect(page.url()).toMatch(/\/legal\/terms|\/terms/)
     await expect(page.locator("body")).toContainText(/terms|service|agreement/i)
@@ -268,7 +258,6 @@ test.describe("Auth guards", () => {
     "/approvals",
     "/chat",
     "/agency",
-    "/agency-setup",
   ]
 
   for (const route of protectedRoutes) {
@@ -278,6 +267,25 @@ test.describe("Auth guards", () => {
       expect(page.url()).toMatch(/login|signin/)
     })
   }
+
+  test("/agency-setup redirects unauthenticated visitors to agency pricing", async ({ page }) => {
+    await page.goto("/agency-setup")
+    await expect(page).toHaveURL(/\/pricing#agency$/)
+  })
+
+  test("homepage has no Framer Motion scroll-container warning", async ({ page }) => {
+    const warnings: string[] = []
+    page.on("console", (message) => {
+      if (message.type() === "warning") warnings.push(message.text())
+    })
+    await page.goto("/")
+    await page.waitForLoadState("networkidle")
+    const scrollPosition = await page.evaluate(() => getComputedStyle(document.scrollingElement!).position)
+    expect(
+      warnings.filter((warning) => warning.includes("non-static position")),
+      `scrollingElement position: ${scrollPosition}`,
+    ).toHaveLength(0)
+  })
 })
 
 // ── SECTION 5: Free tools ────────────────────────────────────────────────────

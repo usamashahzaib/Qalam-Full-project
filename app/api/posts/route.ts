@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
   const reqId = crypto.randomUUID()
   try {
     log.info("posts.post.start", { reqId })
-    const userId = await requireAuth()
+    await requireAuth()
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
     const ctx = await getWorkspaceSessionContext()

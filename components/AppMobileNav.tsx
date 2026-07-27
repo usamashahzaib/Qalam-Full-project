@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type MouseEvent } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import {
@@ -16,22 +16,32 @@ import {
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
 import { withClientParam } from "@/lib/workspace-navigation"
+import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { useBilling } from "@/lib/hooks/useBilling"
+import { UpgradeModal } from "@/components/UpgradeModal"
 
-const PRIMARY_LINKS = [
+type MobileLink = {
+  href: string
+  label: string
+  icon: (props: { className?: string }) => React.ReactElement
+  requiredPlan?: PlanTier
+}
+
+export const MOBILE_PRIMARY_LINKS: MobileLink[] = [
   { href: "/dashboard", label: "Home", icon: GrowthIcon },
   { href: "/writer", label: "Write", icon: ComposeIcon },
-  { href: "/calendar", label: "Plan", icon: CalendarIcon },
-  { href: "/analytics", label: "Track", icon: AnalyticsIcon },
+  { href: "/calendar", label: "Plan", icon: CalendarIcon, requiredPlan: "Solo" },
+  { href: "/analytics", label: "Track", icon: AnalyticsIcon, requiredPlan: "Solo" },
 ]
 
-const MORE_LINKS = [
-  { href: "/chat", label: "AI Chat", icon: VoiceIcon },
+export const MOBILE_MORE_LINKS: MobileLink[] = [
+  { href: "/chat", label: "AI Chat", icon: VoiceIcon, requiredPlan: "Pro" },
   { href: "/voice", label: "Voice", icon: VoiceIcon },
-  { href: "/library", label: "Library", icon: LibraryIcon },
+  { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" },
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
-  { href: "/competitors", label: "Research", icon: MicroscopeIcon },
+  { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
   { href: "/silent-growth", label: "Silent Growth", icon: StealthIcon },
-  { href: "/agency", label: "Team", icon: TeamIcon },
+  { href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency" },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]
 
@@ -48,12 +58,24 @@ function MoreIcon({ className }: { className?: string }) {
 export function AppMobileNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const { billing } = useBilling()
   const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
+  const [upgradePrompt, setUpgradePrompt] = useState<{ plan: "Solo" | "Pro"; reason: string } | null>(null)
 
-  const isMoreActive = MORE_LINKS.some(
+  const isMoreActive = MOBILE_MORE_LINKS.some(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`)
   )
+
+  const handleNavigation = (event: MouseEvent<HTMLAnchorElement>, link: MobileLink) => {
+    setMoreOpen(false)
+    if (!link.requiredPlan || link.requiredPlan === "Agency") return
+    if (hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)) return
+    const target = getUpgradeTarget(billing.plan, link.requiredPlan)
+    if (!target) return
+    event.preventDefault()
+    setUpgradePrompt({ plan: target, reason: `${link.label.toLowerCase()} locked` })
+  }
 
   return (
     <>
@@ -62,13 +84,14 @@ export function AppMobileNav() {
       {moreOpen && (
         <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 rounded-2xl border border-zinc-200 bg-white/98 p-3 shadow-xl backdrop-blur-md">
           <div className="grid grid-cols-5 gap-1">
-            {MORE_LINKS.map(({ href, label, icon: Icon }) => {
+            {MOBILE_MORE_LINKS.map((link) => {
+              const { href, label, icon: Icon } = link
               const active = pathname === href || pathname.startsWith(`${href}/`)
               return (
                 <Link
                   key={href}
                   href={withClientParam(href, activeClientId)}
-                  onClick={() => setMoreOpen(false)}
+                  onClick={(event) => handleNavigation(event, link)}
                   className={`flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[11px] font-medium transition-colors ${
                     active ? "bg-teal/8 text-teal" : "text-zinc-500"
                   }`}
@@ -84,13 +107,14 @@ export function AppMobileNav() {
 
       <nav className="qalam-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="mx-auto grid max-w-screen-sm grid-cols-5 px-2 py-2">
-          {PRIMARY_LINKS.map(({ href, label, icon: Icon }) => {
+          {MOBILE_PRIMARY_LINKS.map((link) => {
+            const { href, label, icon: Icon } = link
             const active = pathname === href || pathname.startsWith(`${href}/`)
             return (
               <Link
                 key={href}
                 href={withClientParam(href, activeClientId)}
-                onClick={() => setMoreOpen(false)}
+                onClick={(event) => handleNavigation(event, link)}
                 className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
                   active ? "bg-teal/8 text-teal" : "text-zinc-500"
                 }`}
@@ -115,6 +139,14 @@ export function AppMobileNav() {
           </button>
         </div>
       </nav>
+      {upgradePrompt ? (
+        <UpgradeModal
+          currentPlan={billing.plan}
+          requiredPlan={upgradePrompt.plan}
+          reason={upgradePrompt.reason}
+          onClose={() => setUpgradePrompt(null)}
+        />
+      ) : null}
     </>
   )
 }

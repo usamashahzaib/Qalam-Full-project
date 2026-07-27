@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
@@ -10,7 +10,7 @@ import { supabaseSelect } from "@/lib/server/supabase-rest"
  * workspace has no Agency plan of their own but still needs to see and
  * switch into the workspace they were invited to.
  */
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const ctx = await getWorkspaceSessionContext()
 

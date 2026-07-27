@@ -2,7 +2,7 @@ import "server-only"
 import { cache } from "react"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
-import { getWorkspaceSessionContext, ensureWorkspaceForUser } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { SupabasePlanUsageRepository } from "@/lib/repositories/supabase/SupabasePlanUsageRepository"
 import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
 

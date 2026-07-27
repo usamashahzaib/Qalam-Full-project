@@ -278,8 +278,8 @@ async function trackAndGetDemand(): Promise<DemandInfo> {
 export async function enqueueRequest(
   userId: string,
   plan: PlanTier,
-  _task: string,
-  _payload: unknown,
+  task: string,
+  payload: unknown,
 ): Promise<{
   id: string
   position: number
@@ -290,6 +290,8 @@ export async function enqueueRequest(
   estimatedWaitSeconds: number
   message?: string
 }> {
+  void task
+  void payload
   const [rateLimit, demand] = await Promise.all([
     checkGenerationRateLimit(userId, plan),
     trackAndGetDemand(),
@@ -320,7 +322,8 @@ export async function enqueueRequest(
 // No queue is written, so every requestId is absent - the status route maps
 // null → { status: "completed" }, which is the correct observable behaviour.
 export async function getQueuePosition(
-  _requestId: string,
+  requestId: string,
 ): Promise<{ position: number; estimatedWait: number } | null> {
+  void requestId
   return null
 }

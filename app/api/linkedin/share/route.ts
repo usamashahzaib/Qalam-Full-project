@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
@@ -13,7 +12,6 @@ type ShareRequestBody = {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await requireAuth()
   const { requirePlan } = await import("@/lib/server/plan-limits-v2")
   // Solo and above: PLAN_CONFIG grants linkedinPublish from Solo up, and the
   // flag check below is the real capability gate.

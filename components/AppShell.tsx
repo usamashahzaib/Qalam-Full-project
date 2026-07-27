@@ -323,8 +323,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = activeNavHref === link.href
-                    const agencyComingSoon = link.requiredPlan === "Agency"
-                    const isLocked = agencyComingSoon || (link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags))
+                    const isLocked = link.requiredPlan && link.requiredPlan !== "Agency" && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
                     if (isLocked && link.requiredPlan) {
                       const upgradeTarget = getUpgradeTarget(currentPlan, link.requiredPlan)
                       return (
