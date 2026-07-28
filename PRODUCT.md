@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Founders, consultants, operators, marketing teams, agencies, and HR leaders building professional authority on LinkedIn. They need a focused workflow for writing, reviewing, scheduling, publishing, and reusing content without losing their voice or past work.
+Professionals, job seekers, founders, consultants, operators, agencies, and HR leaders building market visibility and career leverage. They need one accurate professional story across LinkedIn, content, and job applications.
 
 ## Product Purpose
 
-Qalam is a premium, voice-aware LinkedIn publishing system. It turns source material and professional context into credible content, preserves drafts and reusable assets, and supports an operational publishing workflow. Success means faster creation, consistent voice, factual output, and compounding value from prior work.
+Qalam is a Career Visibility OS. It combines LinkedIn positioning, voice-aware content, ATS resume targeting, and career progression in one workflow. A shared Career Vault keeps every output accurate and consistent. Success means stronger recruiter discovery, credible authority, better-fit applications, and measurable career progress.
 
 ## Brand Personality
 

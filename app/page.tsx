@@ -72,8 +72,8 @@ const FEATURES = [
   },
   {
     icon: TeamIcon,
-    title: "Agency Workflow - Coming Soon",
-    desc: "Client isolation, approval workflows, and per-client publishing controls are in development. Agency is not available for purchase yet.",
+    title: "Agency Workflow",
+    desc: "Keep client voices, approvals, content, and publishing controls isolated across five workspaces.",
   },
   {
     icon: CommentIcon,
@@ -523,10 +523,11 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
-  const homepagePlans = PLANS.filter((plan) => !plan.comingSoon).map((plan) => ({
+  const homepagePlans = PLANS.map((plan) => ({
     ...plan,
     price: formatPkr(plan.monthlyPkr),
-    usdReference: plan.annualPkrPerMonth ? `Annual ${formatPkr(plan.annualPkrPerMonth)}/mo` : "PKR early pricing",
+    annualSavings: plan.plan === "Free" ? undefined : `Billed quarterly at ${formatPkr(plan.quarterlyPkr)} - 1 month free`,
+    usdReference: plan.plan === "Free" ? "Free forever" : "Pakistan-first pricing",
   }))
 
   return (
@@ -558,11 +559,11 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
               className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl"
             >
-              You know exactly
+              Turn your career
               <br />
-              what you want to say.
+              into visible proof.
               <br />
-              <span className="text-gold gold-underline">You just never end up posting it.</span>
+              <span className="text-gold gold-underline">Get found. Build trust. Get shortlisted.</span>
             </motion.h1>
 
             <motion.p
@@ -571,7 +572,7 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
               className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
             >
-              Qalam learns how you write and turns the thought you&apos;ve been sitting on into a post that sounds exactly like you - in minutes, not hours.
+              Qalam aligns your LinkedIn profile, content, and ATS resume around one credible professional story - without inventing achievements.
             </motion.p>
 
             <motion.div
@@ -593,7 +594,7 @@ export default function HomePage() {
                   href="#before-after"
                   className="press inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
                 >
-                  See it write in your voice
+                  See the difference
                 </Link>
               </motion.div>
             </motion.div>
@@ -818,7 +819,7 @@ export default function HomePage() {
             </p>
           </FadeUp>
 
-          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4">
             {homepagePlans.map((plan, i) => (
               <FadeUp key={plan.plan} delay={i * 0.1}>
                 <PricingCard {...plan} />

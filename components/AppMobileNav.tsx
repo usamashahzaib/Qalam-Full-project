@@ -37,6 +37,7 @@ export const MOBILE_PRIMARY_LINKS: MobileLink[] = [
 export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/chat", label: "AI Chat", icon: VoiceIcon, requiredPlan: "Pro" },
   { href: "/voice", label: "Voice", icon: VoiceIcon },
+  { href: "/career", label: "Career Hub", icon: ProfileIcon },
   { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" },
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
@@ -61,7 +62,7 @@ export function AppMobileNav() {
   const { billing } = useBilling()
   const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
-  const [upgradePrompt, setUpgradePrompt] = useState<{ plan: "Solo" | "Pro"; reason: string } | null>(null)
+  const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
 
   const isMoreActive = MOBILE_MORE_LINKS.some(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`)
@@ -69,7 +70,7 @@ export function AppMobileNav() {
 
   const handleNavigation = (event: MouseEvent<HTMLAnchorElement>, link: MobileLink) => {
     setMoreOpen(false)
-    if (!link.requiredPlan || link.requiredPlan === "Agency") return
+    if (!link.requiredPlan) return
     if (hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)) return
     const target = getUpgradeTarget(billing.plan, link.requiredPlan)
     if (!target) return

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
-import { PLAN_PRICES, annualFraming, formatPkr, type PlanName } from "@/lib/pricing"
+import { PLAN_PRICES, formatPkr, type PlanName } from "@/lib/pricing"
 import {
   AnalyticsIcon,
   BrainIcon,
@@ -55,8 +55,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
 
   const targetPlan: "Solo" | "Pro" = normalized === "free" ? "Solo" : "Pro"
   const copy = HEADLINES[targetPlan]
-  const prices = PLAN_PRICES[targetPlan] ?? { monthly: 0, annual: 0 }
-  const annualPerMonth = prices.annual > 0 ? Math.round(prices.annual / 12) : 0
+  const prices = PLAN_PRICES[targetPlan] ?? { monthly: 0, quarterly: 0, annual: 0 }
   const isBusy = state.phase === "preparing" && state.targetPlan === targetPlan
 
   return (
@@ -104,20 +103,15 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
             <span className="ml-1 text-sm font-normal text-zinc-500">/mo</span>
           </p>
           <button
-            onClick={() => openCheckout(targetPlan, "monthly")}
+            onClick={() => openCheckout(targetPlan, "quarterly")}
             disabled={isBusy}
             className="mt-3 w-full cursor-pointer rounded-xl bg-teal px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isBusy ? "Opening checkout..." : `Unlock ${targetPlan} now`}
           </button>
-          {annualPerMonth > 0 && (
-            <button
-              onClick={() => openCheckout(targetPlan, "annual")}
-              className="mt-2 w-full cursor-pointer text-xs font-semibold text-teal hover:underline"
-            >
-              Or {formatPkr(annualPerMonth)}/mo annually - {annualFraming}
-            </button>
-          )}
+          <p className="mt-2 text-center text-xs font-semibold text-emerald-700">
+            {formatPkr(prices.quarterly)} quarterly - 1 month free
+          </p>
           <Link
             href={`/upgrade?plan=${targetPlan}`}
             className="mt-3 block text-center text-xs font-semibold text-zinc-500 hover:text-zinc-700 hover:underline"

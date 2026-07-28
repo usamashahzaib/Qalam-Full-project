@@ -5,6 +5,7 @@ export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
 export type Plan = {
   name: PlanName
   monthlyPrice: number | null
+  quarterlyPrice: number | null
   annualPrice?: number | null
   postsPerMonth: number | null
   draftsPerMonth: number | null
@@ -29,13 +30,13 @@ export type ManagedPlan = {
   cta: string
 }
 
-export const annualFraming = "5 months free"
-export const annualSavingsPercent = 42
+export const quarterlyFraming = "1 month free"
 
 export const plans: Plan[] = [
   {
     name: "Free",
     monthlyPrice: 0,
+    quarterlyPrice: 0,
     postsPerMonth: 5,
     draftsPerMonth: 5,
     carouselsPerMonth: 1,
@@ -58,7 +59,8 @@ export const plans: Plan[] = [
   },
   {
     name: "Solo",
-    monthlyPrice: 499,
+    monthlyPrice: 799,
+    quarterlyPrice: 1598,
     annualPrice: 3493,
     postsPerMonth: 30,
     draftsPerMonth: 30,
@@ -66,7 +68,7 @@ export const plans: Plan[] = [
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 2,495",
+    annualSavingsLabel: "Save PKR 799",
     features: [
       "30 posts/month",
       "3 carousels/month",
@@ -78,13 +80,17 @@ export const plans: Plan[] = [
       "Basic analytics",
       "Basic Voice Profile",
       "Post Library",
+      "3 LinkedIn positioning audits/month",
+      "2 ATS resume reviews/month",
+      "1 targeted resume/month",
     ],
     cta: "Start Solo",
     badge: "Most popular",
   },
   {
     name: "Pro",
-    monthlyPrice: 1490,
+    monthlyPrice: 1499,
+    quarterlyPrice: 2998,
     annualPrice: 10433,
     postsPerMonth: 60,
     draftsPerMonth: 60,
@@ -92,7 +98,7 @@ export const plans: Plan[] = [
     researchPerMonth: 5,
     voiceProfiles: 1,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 7,447",
+    annualSavingsLabel: "Save PKR 1,499",
     features: [
       "60 posts/month",
       "10 carousels/month",
@@ -105,13 +111,18 @@ export const plans: Plan[] = [
       "Comment Generator (150/month)",
       "Priority Queue",
       "Full analytics",
+      "20 LinkedIn positioning audits/month",
+      "10 ATS resume reviews/month",
+      "3 targeted resumes/month",
+      "Recruiter visibility + learning cohorts",
     ],
     cta: "Start Pro",
     badge: "Best value",
   },
   {
     name: "Agency",
-    monthlyPrice: null,
+    monthlyPrice: 3999,
+    quarterlyPrice: 7998,
     annualPrice: null,
     postsPerMonth: 300,
     draftsPerMonth: 300,
@@ -119,7 +130,7 @@ export const plans: Plan[] = [
     researchPerMonth: 25,
     voiceProfiles: 5,
     workspaces: 5,
-    annualSavingsLabel: "",
+    annualSavingsLabel: "Save PKR 3,999",
     features: [
       "300 posts/month across 5 workspaces",
       "50 carousels/month",
@@ -129,11 +140,13 @@ export const plans: Plan[] = [
       "Approval Workflow",
       "Comment Generator (400/month)",
       "Team Analytics",
+      "100 LinkedIn positioning audits/month",
+      "50 ATS resume reviews/month",
+      "20 targeted resumes/month",
       "Dedicated Support",
     ],
-    cta: "Coming Soon",
-    badge: "Coming soon",
-    comingSoon: true,
+    cta: "Apply for Agency",
+    badge: "For teams",
   },
 ]
 
@@ -207,6 +220,7 @@ export const hasFeature = isFeatureAllowed
 export interface PricingPlan {
   plan: string
   monthlyPkr: number | null
+  quarterlyPkr: number | null
   annualPkrPerMonth?: number
   period: string
   description: string
@@ -224,7 +238,7 @@ export interface PricingPlan {
 const APP_ORIGIN = (process.env.NEXT_PUBLIC_APP_URL || "https://app.byqalam.com").replace(/\/$/, "")
 
 /** Absolute link to the in-app upgrade route, optionally pre-selecting a plan and cycle. */
-export const upgradeUrl = (plan?: string, cycle?: "monthly" | "annual"): string => {
+export const upgradeUrl = (plan?: string, cycle?: BillingCycle): string => {
   const params = new URLSearchParams()
   if (plan) params.set("plan", plan)
   if (cycle) params.set("cycle", cycle)
@@ -235,8 +249,9 @@ export const upgradeUrl = (plan?: string, cycle?: "monthly" | "annual"): string 
 export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   plan: plan.name,
   monthlyPkr: plan.monthlyPrice,
+  quarterlyPkr: plan.quarterlyPrice,
   annualPkrPerMonth: plan.annualPrice != null ? Math.round(plan.annualPrice / 12) : undefined,
-  period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "mo",
+  period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "month",
   description:
     plan.name === "Free"
       ? "Start with essential LinkedIn writing tools."
@@ -251,15 +266,19 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   // overlay. Logged-out visitors are bounced through login with this as the
   // callback, so the plan they picked survives the round trip. Nothing paid
   // routes to /contact any more - that was sending buyers to an email form.
-  href: plan.name === "Free" ? "/signup" : plan.name === "Agency" ? "/pricing" : upgradeUrl(plan.name),
+  href: plan.name === "Free"
+    ? "/signup"
+    : plan.name === "Agency"
+      ? "/managed/apply?plan=Agency&type=company"
+      : upgradeUrl(plan.name, "quarterly"),
   highlighted: plan.name === "Solo",
   badge: plan.badge,
   featureStatus: plan.comingSoon ? "coming_soon" : "live",
   comingSoon: plan.comingSoon,
 }))
 
-export const PLAN_PRICES: Record<string, { monthly: number; annual: number }> = Object.fromEntries(
-  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice ?? 0, annual: plan.annualPrice ?? 0 }])
+export const PLAN_PRICES: Record<string, { monthly: number; quarterly: number; annual: number }> = Object.fromEntries(
+  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice ?? 0, quarterly: plan.quarterlyPrice ?? 0, annual: plan.annualPrice ?? 0 }])
 )
 
 export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
@@ -401,11 +420,32 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
-    label: "Monthly price",
+    label: "LinkedIn positioning audits",
+    free: "1/month",
+    solo: "3/month",
+    pro: "20/month",
+    agency: "100/month",
+  },
+  {
+    label: "ATS resume reviews",
+    free: "1/month",
+    solo: "2/month",
+    pro: "10/month",
+    agency: "50/month",
+  },
+  {
+    label: "JD-matched resumes",
+    free: "1 lifetime",
+    solo: "1/month",
+    pro: "3/month",
+    agency: "20/month",
+  },
+  {
+    label: "Quarterly price",
     free: "Free",
-    solo: "PKR 499",
-    pro: "PKR 1,490",
-    agency: "Coming soon",
+    solo: "PKR 1,598",
+    pro: "PKR 2,998",
+    agency: "PKR 7,998",
   },
 ]
 
@@ -417,17 +457,23 @@ export const formatPkr = (amount: number | null | undefined): string => {
 
 // ─── Lemon Squeezy checkout ────────────────────────────────────────────────
 
-export type BillingCycle = "monthly" | "annual"
+export type BillingCycle = "monthly" | "quarterly" | "annual"
 
 // Hosted checkout links from the Lemon Squeezy store. Not secret - safe in a shared module.
-export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Record<BillingCycle, string>>> = {
+export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<BillingCycle, string>>>> = {
   Solo: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
     annual: "https://byqalam.lemonsqueezy.com/checkout/buy/0872e475-9487-4430-9590-49e569524553",
+    ...(process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
+      ? { quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL }
+      : {}),
   },
   Pro: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
     annual: "https://byqalam.lemonsqueezy.com/checkout/buy/2f787de4-dc72-40d6-ac70-3544420455f0",
+    ...(process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
+      ? { quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL }
+      : {}),
   },
 }
 
@@ -439,6 +485,12 @@ export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; bi
   "1929048": { planName: "Solo", billingCycle: "annual" },
   "1928922": { planName: "Pro", billingCycle: "monthly" },
   "1929064": { planName: "Pro", billingCycle: "annual" },
+  ...(process.env.LEMONSQUEEZY_SOLO_QUARTERLY_VARIANT_ID
+    ? { [process.env.LEMONSQUEEZY_SOLO_QUARTERLY_VARIANT_ID]: { planName: "Solo" as PlanName, billingCycle: "quarterly" as BillingCycle } }
+    : {}),
+  ...(process.env.LEMONSQUEEZY_PRO_QUARTERLY_VARIANT_ID
+    ? { [process.env.LEMONSQUEEZY_PRO_QUARTERLY_VARIANT_ID]: { planName: "Pro" as PlanName, billingCycle: "quarterly" as BillingCycle } }
+    : {}),
 }
 
 export function getLemonSqueezyCheckoutUrl(

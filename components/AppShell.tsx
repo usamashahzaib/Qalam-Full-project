@@ -63,6 +63,7 @@ export const NAV_GROUPS = [
     label: "Intelligence",
     links: [
       { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
+      { href: "/career", label: "Career Hub", icon: ProfileIcon },
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
@@ -301,7 +302,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
                   ) : (
                     <div className="px-4 py-3 text-xs text-zinc-400">
-                      Add workspace - <span className="font-semibold text-zinc-300">Coming Soon</span>
+                      Add workspace - <span className="font-semibold text-zinc-300">Agency plan</span>
                     </div>
                   )}
                 </div>
@@ -326,7 +327,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {group.links.map((link) => {
                     const Icon = link.icon
                     const active = activeNavHref === link.href
-                    const isLocked = link.requiredPlan && link.requiredPlan !== "Agency" && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
+                    const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
                     if (isLocked && link.requiredPlan) {
                       const upgradeTarget = getUpgradeTarget(currentPlan, link.requiredPlan)
                       return (
@@ -526,7 +527,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
               ) : (
                 <div className="px-3 py-2 text-xs text-zinc-500">
-                  Add workspace - <span className="font-semibold text-zinc-600">Coming Soon</span>
+                  Add workspace - <span className="font-semibold text-zinc-600">Agency plan</span>
                 </div>
               )}
             </div>

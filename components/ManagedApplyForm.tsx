@@ -4,6 +4,11 @@ import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { MANAGED_PLANS } from "@/lib/pricing"
 
+const APPLICATION_PACKAGES = [...MANAGED_PLANS.map((plan) => ({
+  name: plan.name,
+  detail: `${plan.postsPerMonth} posts/month`,
+})), { name: "Agency", detail: "5 client workspaces" }]
+
 type FormState = "idle" | "loading" | "success" | "error"
 
 const inputClass =
@@ -154,8 +159,8 @@ export function ManagedApplyForm({ defaultPackage, defaultAccountType }: { defau
             <div>
               <label htmlFor="managed-package" className={labelClass}>Package</label>
               <select id="managed-package" name="package" defaultValue={defaultPackage || MANAGED_PLANS[0].name} required className={inputClass} disabled={state === "loading"}>
-                {MANAGED_PLANS.map((p) => (
-                  <option key={p.name} value={p.name}>{p.name} - {p.postsPerMonth} posts/month</option>
+                {APPLICATION_PACKAGES.map((p) => (
+                  <option key={p.name} value={p.name}>{p.name} - {p.detail}</option>
                 ))}
               </select>
             </div>

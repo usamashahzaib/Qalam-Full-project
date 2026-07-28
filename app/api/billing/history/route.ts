@@ -5,7 +5,7 @@ import { supabaseSelect } from "@/lib/server/supabase-rest"
 type PaymentRow = {
   id: string
   plan_name: string
-  billing_cycle: "monthly" | "annual"
+  billing_cycle: "monthly" | "quarterly" | "annual"
   amount: number
   currency: string
   status: "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"

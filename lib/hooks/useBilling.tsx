@@ -6,7 +6,7 @@ import type { PlanName } from "@/lib/pricing"
 
 export type WorkspaceBilling = {
   plan: PlanName
-  billingCycle: "monthly" | "annual"
+  billingCycle: "monthly" | "quarterly" | "annual"
   checkoutReady: boolean
   overrideActive?: boolean
   complimentaryTrialBanner?: boolean

@@ -875,7 +875,7 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Is there an Agency plan?",
-    a: "Agency is coming soon. Isolated client workspaces, approval workflows, and per-client publishing are still in development and are not available for purchase yet.",
+    a: "Yes. Agency includes five isolated client workspaces, five seats, per-client voice profiles, approvals, publishing controls, and team analytics.",
   },
   {
     q: "Does Qalam work for any niche?",

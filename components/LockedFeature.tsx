@@ -18,18 +18,6 @@ export function LockedFeature({ feature, requiredPlan, children, className = "",
   const { billing } = useBilling()
   const [showUpgrade, setShowUpgrade] = useState(false)
   const upgradeTarget = getUpgradeTarget(billing.plan, requiredPlan)
-  if (requiredPlan === "Agency") {
-    return (
-      <div className={`relative overflow-hidden rounded-xl ${className}`} title="Coming Soon">
-        <div className="pointer-events-none select-none opacity-45 blur-[2px]">{children}</div>
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/75 px-3 text-center backdrop-blur-[1px]">
-          <span className={`whitespace-nowrap rounded-lg bg-zinc-200 px-3 py-1.5 text-xs font-bold text-zinc-600 ${buttonClassName}`}>
-            Coming Soon
-          </span>
-        </div>
-      </div>
-    )
-  }
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
   if (!upgradeTarget) return <>{children}</>
   const label = `Upgrade to ${upgradeTarget}`

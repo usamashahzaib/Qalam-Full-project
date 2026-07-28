@@ -500,7 +500,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
-        a: "Qalam is significantly more affordable, especially for the Pakistan market. Qalam's Solo plan starts at PKR 499/month (approximately $1.80 USD). Taplio starts at $49/month USD. Qalam also has a free plan with no card required.",
+        a: "Qalam is significantly more affordable for the Pakistan market. Solo is PKR 799 per month, billed quarterly with 1 month free, while Taplio starts at $39 per month. Qalam also has a free plan with no card required.",
       },
     ],
     related: [
@@ -580,7 +580,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Built for the Pakistan market, not adapted for it",
-        body: "Qalam is priced in PKR, not USD. Solo starts at PKR 499/month. Pro at PKR 1,490/month. There is no forced currency conversion, no international payment friction, and no pricing designed for a different market. Pakistani professionals can pay via JazzCash, Easypaisa, or bank transfer.",
+        body: "Qalam is priced in PKR, not USD. Solo is PKR 799 per month and Pro is PKR 1,499 per month. Both are billed quarterly with 1 month free. Pakistani professionals can pay by card, JazzCash, Easypaisa, or bank transfer.",
       },
       {
         heading: "The Pakistani LinkedIn opportunity",
@@ -598,7 +598,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does Qalam cost in Pakistan?",
-        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 499/month. Pro is PKR 1,490/month with voice memory, analytics, and competitor research. Agency is coming soon. Annual billing gives 5 months free.",
+        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 799 per month, Pro is PKR 1,499 per month, and Agency is PKR 3,999 per month. Paid plans are billed quarterly with 1 month free.",
       },
     ],
     related: [

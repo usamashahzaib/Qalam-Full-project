@@ -77,7 +77,7 @@ export default function ContactPage() {
                   <ul className="space-y-1.5 text-sm leading-relaxed text-zinc-600">
                     <li>- Your workspace email</li>
                     <li>- The plan you want</li>
-                    <li>- Monthly or annual billing</li>
+                    <li>- Quarterly billing</li>
                     <li>- Team size if agency access needed</li>
                   </ul>
                 </div>

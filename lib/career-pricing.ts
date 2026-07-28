@@ -1,0 +1,41 @@
+export const CAREER_PLANS = [
+  {
+    name: "Free",
+    monthlyPrice: 0,
+    quarterlyPrice: 0,
+    description: "See what is weakening your profile and resume.",
+    features: ["1 LinkedIn audit", "1 ATS resume review", "Career Vault"],
+    highlighted: false,
+  },
+  {
+    name: "Solo",
+    monthlyPrice: 799,
+    quarterlyPrice: 1598,
+    description: "Build a stronger LinkedIn presence every quarter.",
+    features: ["3 LinkedIn audits/month", "2 ATS reviews/month", "1 JD-matched resume/month", "Career action plan"],
+    highlighted: false,
+  },
+  {
+    name: "Pro",
+    monthlyPrice: 1499,
+    quarterlyPrice: 2998,
+    description: "Align LinkedIn, content, and every job application.",
+    features: ["20 LinkedIn audits/month", "10 ATS reviews/month", "3 JD-matched resumes/month", "Recruiter visibility and career tracking"],
+    highlighted: true,
+  },
+] as const
+
+export const CAREER_ADD_ONS = [
+  { key: "extra_resume", name: "Extra JD-matched resume", price: 399 },
+  { key: "cover_letter", name: "Cover letter", price: 199 },
+  { key: "interview_pack", name: "Mock interview pack", price: 599 },
+  { key: "recruiter_review", name: "Recruiter-style resume review", price: 799 },
+  { key: "linkedin_rewrite", name: "LinkedIn profile rewrite", price: 1199 },
+  { key: "career_consultation", name: "Career consultation", price: 1499 },
+] as const
+
+export const formatQuarterlyPrice = (price: number) =>
+  price === 0 ? "Free" : `PKR ${price.toLocaleString("en-PK")} / quarter`
+
+export const formatMonthlyPrice = (price: number) =>
+  price === 0 ? "Free" : `PKR ${price.toLocaleString("en-PK")} / month`

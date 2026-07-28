@@ -43,10 +43,11 @@ describe("PLANS", () => {
     expect(PLANS.find((p) => p.plan === "Agency")).toBeDefined()
   })
 
-  it("marks Agency as coming soon without a public price", () => {
+  it("publishes Agency with manual onboarding pricing", () => {
     const agency = PLANS.find((p) => p.plan === "Agency")!
-    expect(agency.monthlyPkr).toBeNull()
-    expect(agency.comingSoon).toBe(true)
+    expect(agency.monthlyPkr).toBe(3999)
+    expect(agency.quarterlyPkr).toBe(7998)
+    expect(agency.comingSoon).toBeUndefined()
   })
 
   it("Free plan has zero monthly price and no annual option", () => {
@@ -55,15 +56,15 @@ describe("PLANS", () => {
     expect(free.annualPkrPerMonth).toBeUndefined()
   })
 
-  it("Solo starts at 499 PKR/month", () => {
+  it("Solo starts at 799 PKR/month", () => {
     const solo = PLANS.find((p) => p.plan === "Solo")!
-    expect(solo.monthlyPkr).toBe(499)
+    expect(solo.monthlyPkr).toBe(799)
     expect(solo.features).toContain("3 carousels/month")
   })
 
-  it("Pro starts at 1490 PKR/month", () => {
+  it("Pro starts at 1499 PKR/month", () => {
     const pro = PLANS.find((p) => p.plan === "Pro")!
-    expect(pro.monthlyPkr).toBe(1490)
+    expect(pro.monthlyPkr).toBe(1499)
   })
 
   it("active paid plans have a positive monthly price", () => {
@@ -120,6 +121,12 @@ describe("PLAN_PRICES consistency with PLANS", () => {
     })
   })
 
+  it("quarterly billing charges 2 months for 3 months of access", () => {
+    Object.values(PLAN_PRICES).forEach((prices) => {
+      if (prices.monthly > 0) expect(prices.quarterly).toBe(prices.monthly * 2)
+    })
+  })
+
   it("Free has zero for both monthly and annual", () => {
     expect(PLAN_PRICES.Free.monthly).toBe(0)
     expect(PLAN_PRICES.Free.annual).toBe(0)
@@ -140,11 +147,12 @@ describe("COMPARISON_ROWS integrity", () => {
     })
   })
 
-  it("monthly price row matches current PLANS pricing", () => {
-    const priceRow = COMPARISON_ROWS.find((r) => r.label === "Monthly price")!
+  it("quarterly price row matches current PLANS pricing", () => {
+    const priceRow = COMPARISON_ROWS.find((r) => r.label === "Quarterly price")!
     expect(priceRow.free).toBe("Free")
-    expect(priceRow.solo).toContain("499")
-    expect(priceRow.pro).toContain("1,490")
+    expect(priceRow.solo).toContain("1,598")
+    expect(priceRow.pro).toContain("2,998")
+    expect(priceRow.agency).toContain("7,998")
   })
 
   it("publishes every enforced plan capability", () => {

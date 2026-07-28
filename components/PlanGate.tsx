@@ -18,17 +18,7 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
   const planFeatures = upgradeTarget ? getPlanSummary(upgradeTarget) : []
   const [showUpgrade, setShowUpgrade] = useState(false)
 
-  if (!upgradeTarget) {
-    return (
-      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-16 text-center">
-        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold uppercase tracking-wider text-zinc-500">Coming Soon</span>
-        <h2 className="mt-4 text-xl font-bold text-zinc-900">{feature}</h2>
-        <p className="mt-2 text-sm text-zinc-500">
-          {description || "Agency features are in development and are not available for purchase yet."}
-        </p>
-      </div>
-    )
-  }
+  if (!upgradeTarget) return null
 
   return (
     <>
@@ -75,9 +65,6 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
 
 export function PlanGate({ requiredPlan, feature, description, children }: PlanGateProps) {
   const { billing } = useBilling()
-  if (requiredPlan === "Agency") {
-    return <LockedState requiredPlan={requiredPlan} feature={feature} description={description} currentPlan={billing.plan} />
-  }
   if (hasFeatureAccess(billing.plan, requiredPlan, feature, billing.featureFlags)) return <>{children}</>
   return (
     <LockedState

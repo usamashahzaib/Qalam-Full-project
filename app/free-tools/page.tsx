@@ -216,7 +216,7 @@ export default function FreeToolsPage() {
               </h2>
               <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
                 60 posts a month, trained Voice Profile, scheduler, and performance
-                review. Pro starts at PKR 1,490/month.
+                review. Pro starts at PKR 1,499/month, billed quarterly.
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link

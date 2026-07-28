@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default function AgencySetupPage() {
-  redirect("/pricing#agency")
+  redirect("/managed/apply?plan=Agency&type=company")
 }

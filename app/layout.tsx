@@ -186,12 +186,12 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Qalam is an AI writer and LinkedIn publishing workspace with draft generation, voice memory, scheduling, approvals, archive continuity, and direct publishing. The AI writing tool that learns your voice over time.",
+        "Qalam is a career visibility system for LinkedIn positioning, content, ATS resumes, recruiter discovery, and career progression.",
       publisher: { "@id": `${siteUrl}/#organization` },
-      offers: PLANS.map((plan) => ({
+      offers: PLANS.filter((plan) => plan.quarterlyPkr != null).map((plan) => ({
         "@type": "Offer",
         name: plan.plan,
-        price: String(plan.monthlyPkr),
+        price: String(plan.quarterlyPkr),
         priceCurrency: "PKR",
         description: plan.description,
         availability:

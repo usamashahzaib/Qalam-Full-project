@@ -32,7 +32,7 @@ const SECTIONS = [
   },
   {
     title: "Team and agency workflows",
-    body: "Agency workflows are coming soon. Team approvals, multi-seat publishing, and client isolation are not available for purchase yet.",
+    body: "Agency includes five isolated client workspaces, five seats, per-client voice profiles, team approvals, publishing controls, and analytics.",
   },
 ]
 

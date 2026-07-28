@@ -54,7 +54,7 @@ export function QueueOverlay({
               onClick={onUpgrade}
               className="mt-2 w-full rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors"
             >
-              Upgrade to Solo - PKR 499/mo
+              Upgrade to Solo - PKR 799/month
             </button>
           </div>
         )}
@@ -86,7 +86,7 @@ export function QueueOverlay({
           onClick={onUpgrade}
           className="mt-3 w-full rounded-lg bg-teal px-4 py-2 text-white hover:bg-teal-600 transition-colors"
         >
-          Upgrade to Solo - PKR 499/mo
+          Upgrade to Solo - PKR 799/month
         </button>
       </div>
     </div>

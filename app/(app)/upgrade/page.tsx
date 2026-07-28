@@ -1,10 +1,9 @@
 "use client"
 
-import { useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
-import { PLAN_FEATURES, PLAN_PRICES, annualFraming, formatPkr, type BillingCycle, type PlanName } from "@/lib/pricing"
+import { PLAN_FEATURES, PLAN_PRICES, formatPkr, type BillingCycle, type PlanName } from "@/lib/pricing"
 import { PLAN_HIERARCHY, type PlanTier } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS, upgradesMailUrl } from "@/lib/contact"
 import { CheckIcon } from "@/components/ui/qalam-icons"
@@ -17,11 +16,10 @@ const isValidPlan = (value: string | null): value is PlanName =>
 export default function UpgradePage() {
   const searchParams = useSearchParams()
   const { billing } = useBilling()
-  const { openCheckout, state } = usePlanCheckout()
+  const { openCheckout, isSelfServe, state } = usePlanCheckout()
 
   const requestedPlan = isValidPlan(searchParams.get("plan")) ? (searchParams.get("plan") as PlanName) : null
-  const requestedCycle = searchParams.get("cycle") === "annual" ? "annual" : "monthly"
-  const [cycle, setCycle] = useState<BillingCycle>(requestedCycle)
+  const cycle: BillingCycle = "quarterly"
 
   const currentRank = PLAN_HIERARCHY[billing.plan as PlanTier] ?? 0
   const preparingPlan = state.phase === "preparing" ? state.targetPlan : null
@@ -41,36 +39,17 @@ export default function UpgradePage() {
         </p>
       </header>
 
-      {/* Billing cycle */}
-      <div className="mt-7 flex items-center gap-3">
-        {(["monthly", "annual"] as const).map((option) => (
-          <button
-            key={option}
-            onClick={() => setCycle(option)}
-            aria-pressed={cycle === option}
-            className={`cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-              cycle === option
-                ? "bg-teal text-white"
-                : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"
-            }`}
-          >
-            {option === "monthly" ? "Monthly" : "Annual"}
-          </button>
-        ))}
-        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-          {annualFraming}
-        </span>
-      </div>
+      <div className="mt-7 inline-flex rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white">Quarterly billing</div>
 
       {/* Plans */}
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         {SELF_SERVE_PLANS.map((plan) => {
-          const prices = PLAN_PRICES[plan] ?? { monthly: 0, annual: 0 }
-          const perMonth = cycle === "annual" && prices.annual > 0 ? Math.round(prices.annual / 12) : prices.monthly
+          const prices = PLAN_PRICES[plan] ?? { monthly: 0, quarterly: 0, annual: 0 }
           const rank = PLAN_HIERARCHY[plan as PlanTier] ?? 0
           const isCurrent = billing.plan === plan
           const isDowngrade = rank < currentRank
           const isBusy = preparingPlan === plan
+          const checkoutReady = isSelfServe(plan)
           const highlighted = requestedPlan === plan || (!requestedPlan && plan === "Pro")
 
           return (
@@ -90,13 +69,11 @@ export default function UpgradePage() {
               </div>
 
               <p className="mt-3 text-3xl font-extrabold tabular-nums text-zinc-950">
-                {formatPkr(perMonth)}
-                <span className="ml-1 text-sm font-normal text-zinc-500">/mo</span>
+                {formatPkr(prices.monthly)}
+                <span className="ml-1 text-sm font-normal text-zinc-500">/month</span>
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                {cycle === "annual"
-                  ? `Billed annually at ${formatPkr(prices.annual)}/year`
-                  : "Billed monthly"}
+                {formatPkr(prices.quarterly)} billed quarterly. 1 month free.
               </p>
 
               <ul className="mt-4 flex flex-1 flex-col gap-2">
@@ -110,31 +87,34 @@ export default function UpgradePage() {
 
               <button
                 onClick={() => openCheckout(plan, cycle)}
-                disabled={isCurrent || isDowngrade || isBusy}
+                disabled={isCurrent || isDowngrade || isBusy || !checkoutReady}
                 className="mt-5 cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500"
               >
                 {isCurrent
                   ? "Your current plan"
                   : isDowngrade
                     ? "Included in your plan"
+                    : !checkoutReady
+                      ? "Pay via JazzCash, Easypaisa, or bank transfer"
                     : isBusy
                       ? "Opening checkout..."
                       : `Pay and unlock ${plan}`}
               </button>
               <p className="mt-2 text-center text-[11px] text-zinc-400">
-                Secure card checkout via Lemon Squeezy. Charged in USD.
+                {checkoutReady ? "Secure card checkout via Lemon Squeezy." : "Quarterly card checkout activates after the new variants are configured."}
               </p>
             </section>
           )
         })}
       </div>
 
-      <section className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-        <span className="rounded-full bg-zinc-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-600">Coming Soon</span>
-        <h2 className="mt-3 text-sm font-bold text-zinc-900">Agency</h2>
+      <section className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-5">
+        <span className="rounded-full bg-teal px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">For teams</span>
+        <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
         <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-          Multi-workspace, approvals, and team analytics are in development. Agency is not available for purchase yet.
+          PKR 7,998 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.
         </p>
+        <a href="/managed/apply?plan=Agency&type=company" className="mt-4 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Apply for Agency</a>
       </section>
 
       {/* Manual fallback. Secondary by design - card checkout is the primary path. */}

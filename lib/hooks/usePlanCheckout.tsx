@@ -62,7 +62,7 @@ const PlanCheckoutContext = createContext<PlanCheckoutContextValue | null>(null)
 const IDLE: CheckoutState = { phase: "idle", targetPlan: null, message: null }
 
 export const isSelfServePlan = (plan: string): boolean =>
-  Boolean(LEMONSQUEEZY_CHECKOUT_URLS[plan as PlanName])
+  Boolean(LEMONSQUEEZY_CHECKOUT_URLS[plan as PlanName]?.quarterly)
 
 let lemonJsPromise: Promise<boolean> | null = null
 

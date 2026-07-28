@@ -49,10 +49,10 @@ describe("getUpgradeTarget", () => {
     expect(getUpgradeTarget("Solo", "Pro")).toBe("Pro")
   })
 
-  it("keeps Agency non-purchasable and Pro fully unlocked", () => {
+  it("routes Agency upgrades to manual onboarding", () => {
     expect(getUpgradeTarget("Pro", "Pro")).toBeNull()
-    expect(getUpgradeTarget("Pro", "Agency")).toBeNull()
-    expect(getUpgradeTarget("Free", "Agency")).toBeNull()
+    expect(getUpgradeTarget("Pro", "Agency")).toBe("Agency")
+    expect(getUpgradeTarget("Free", "Agency")).toBe("Agency")
   })
 })
 

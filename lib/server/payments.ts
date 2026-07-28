@@ -38,7 +38,7 @@ export type VerifiedPayment = {
   subscriptionId: string | null
   /** Provider order handle used to link order/refund events to a subscription. */
   orderId: string | null
-  billingCycle: "monthly" | "annual"
+  billingCycle: "monthly" | "quarterly" | "annual"
   /** Only financial events belong in the payments ledger. */
   recordTransaction: boolean
   /** Lifecycle events activate access. Initial order events only record money. */
@@ -59,7 +59,7 @@ type SubscriptionRow = {
   subscription_id: string
   order_id: string | null
   plan_name: PlanName
-  billing_cycle: "monthly" | "annual"
+  billing_cycle: "monthly" | "quarterly" | "annual"
   user_id: string | null
 }
 
@@ -393,7 +393,11 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   const billingCycle: VerifiedPayment["billingCycle"] =
     provider === "lemonsqueezy"
       ? lsPlan?.billingCycle || "monthly"
-      : textValue(metadata.billing_cycle, body.billing_cycle, body.interval).toLowerCase().includes("annual") ? "annual" : "monthly"
+      : textValue(metadata.billing_cycle, body.billing_cycle, body.interval).toLowerCase().includes("annual")
+        ? "annual"
+        : textValue(metadata.billing_cycle, body.billing_cycle, body.interval).toLowerCase().includes("quarter")
+          ? "quarterly"
+          : "monthly"
 
   // Subscription lifecycle events put the subscription on data.id; invoice events carry it
   // as an attribute. One-off orders have neither.

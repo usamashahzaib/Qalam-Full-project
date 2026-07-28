@@ -10,18 +10,20 @@ const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
 const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
-const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 499"
-const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,490"
+const agencyPlan = PLANS.find((plan) => plan.plan === "Agency")
+const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 799"
+const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,499"
+const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 3,999"
 
 export const metadata: Metadata = {
-  title: `Pricing - AI LinkedIn Writer Plans | Free to ${proPrice}/month`,
+  title: `Qalam Pricing | Free to ${soloPrice}/month`,
   description:
-    `Qalam pricing for the Pakistani market. Free plan with ${freeDrafts} - no card, no expiry. Solo at ${soloPrice}/month. Pro at ${proPrice}/month. Pay by card and your plan unlocks instantly. JazzCash, Easypaisa, and bank transfer accepted on request.`,
+    `Pakistan-first career visibility pricing. Solo at ${soloPrice}/month and Pro at ${proPrice}/month, billed quarterly with 1 month free. LinkedIn optimization, ATS resumes, content intelligence, and publishing in one system.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime with instant card checkout.`,
+      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month, billed quarterly with 1 month free.`,
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -29,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month. Start free, upgrade anytime with instant card checkout.`,
+      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month, billed quarterly with 1 month free.`,
   },
 }
 
@@ -50,7 +52,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Qalam uses PKR-first pricing for the Pakistan market: Solo starts at ${soloPrice}/month and Pro at ${proPrice}/month. Agency is coming soon. Annual billing gives up to 5 months free.`,
+        text: `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice} per month, Pro is ${proPrice} per month, and Agency is ${agencyPrice} per month. Every quarterly payment includes 1 month free.`,
       },
     },
     {
@@ -82,7 +84,7 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice}/month includes 60 AI drafts, 10 carousels, voice memory training, AI Strategist chat, competitor research, post analytics, and approval workflows.`,
+        text: `Pro at ${proPrice}/month includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, post intelligence, analytics, and approval workflows. It is billed quarterly with 1 month free.`,
       },
     },
     {
@@ -90,7 +92,7 @@ const pricingFaqSchema = {
       name: "Is Qalam useful for agencies?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The Agency plan is coming soon. It is planned to include isolated client workspaces, per-client voice profiles, team collaboration, and approval workflows.",
+        text: `Agency is ${agencyPrice}/month, billed quarterly. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
       },
     },
   ],
@@ -117,7 +119,7 @@ const productSchema = {
     {
       "@type": "Offer",
       name: "Solo Plan",
-      price: String(soloPlan?.monthlyPkr ?? 499),
+      price: String(soloPlan?.quarterlyPkr ?? 1598),
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
       description: "30 AI drafts, 3 carousels, content calendar, post library.",
@@ -126,10 +128,19 @@ const productSchema = {
     {
       "@type": "Offer",
       name: "Pro Plan",
-      price: String(proPlan?.monthlyPkr ?? 1490),
+      price: String(proPlan?.quarterlyPkr ?? 2998),
       priceCurrency: "PKR",
       availability: "https://schema.org/InStock",
       description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
+      url: `${SITE_URL}/pricing`,
+    },
+    {
+      "@type": "Offer",
+      name: "Agency Plan",
+      price: String(agencyPlan?.quarterlyPkr ?? 7998),
+      priceCurrency: "PKR",
+      availability: "https://schema.org/InStock",
+      description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
       url: `${SITE_URL}/pricing`,
     },
   ],

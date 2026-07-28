@@ -8,7 +8,7 @@ import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { PLAN_PRICES, formatPkr, annualFraming } from "@/lib/pricing"
+import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -24,7 +24,7 @@ const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "5 posts, 1 carousel/month",
   Solo: "30 posts, 3 carousels, library, planner",
   Pro: "60 posts, voice training, analytics, AI Strategist",
-  Agency: "Coming soon - multi-workspace, team seats",
+  Agency: "5 workspaces, 5 seats, approvals, team analytics",
 }
 
 export default function SettingsPage() {
@@ -69,7 +69,7 @@ export default function SettingsPage() {
   const [billingHistory, setBillingHistory] = useState<{
     id: string
     planName: string
-    billingCycle: "monthly" | "annual"
+    billingCycle: "monthly" | "quarterly" | "annual"
     amount: number
     currency: string
     status: "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
@@ -285,11 +285,8 @@ export default function SettingsPage() {
     }
   }
 
-  const selectedPlanPrices = PLAN_PRICES[billingDraft.plan] ?? { monthly: 0, annual: 0 }
-  const annualMonthlyEquiv = selectedPlanPrices.annual > 0 ? Math.round(selectedPlanPrices.annual / 12) : 0
-  const displayPrice = billingDraft.billingCycle === "annual" && annualMonthlyEquiv > 0
-    ? annualMonthlyEquiv
-    : selectedPlanPrices.monthly
+  const selectedPlanPrices = PLAN_PRICES[billingDraft.plan] ?? { monthly: 0, quarterly: 0, annual: 0 }
+  const displayPrice = selectedPlanPrices.quarterly
   const isUpgrade = billingDraft.plan !== billing.plan
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
   const planSummary = getPlanSummary(billing.plan)
@@ -380,52 +377,30 @@ export default function SettingsPage() {
             {PLAN_OPTIONS.map((plan) => (
               <button
                 key={plan}
-                onClick={() => setBillingDraft((prev) => ({ ...prev, plan }))}
+                onClick={() => setBillingDraft((prev) => ({ ...prev, plan, billingCycle: "quarterly" }))}
                 className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${billingDraft.plan === plan ? "border-teal bg-teal/5 shadow-sm" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
               >
                 <p className={`text-sm font-semibold ${billingDraft.plan === plan ? "text-teal" : "text-zinc-900"}`}>{plan}</p>
                 <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC[plan]}</p>
               </button>
             ))}
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-left">
+            <Link href="/managed/apply?plan=Agency&type=company" className="rounded-xl border border-teal/20 bg-teal/5 px-3 py-2.5 text-left hover:border-teal/50">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-zinc-500">Agency</p>
-                <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-600">Coming Soon</span>
+                <p className="text-sm font-semibold text-teal">Agency</p>
+                <span className="rounded-full bg-teal px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Apply</span>
               </div>
-              <p className="mt-0.5 text-[11px] text-zinc-400">{PLAN_DESC.Agency}</p>
-            </div>
+              <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC.Agency}</p>
+            </Link>
           </div>
 
-          {/* Billing cycle */}
-          <div className="mb-4 flex gap-2">
-            {(["monthly", "annual"] as const).map((cycle) => (
-              <button
-                key={cycle}
-                onClick={() => setBillingDraft((prev) => ({ ...prev, billingCycle: cycle }))}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${billingDraft.billingCycle === cycle ? "bg-teal text-white" : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50"}`}
-              >
-                {cycle === "monthly" ? "Monthly" : `Annual (${annualFraming})`}
-              </button>
-            ))}
-          </div>
+          <div className="mb-4 inline-flex rounded-lg bg-teal px-3 py-2 text-sm font-semibold text-white">Quarterly billing</div>
 
           {/* Price display for paid plans */}
           {isSelfServePlan(billingDraft.plan) && (
             <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 px-4 py-3">
               <p className="text-sm font-semibold text-teal">{billingDraft.plan}</p>
-              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(displayPrice)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {billingDraft.billingCycle === "annual" ? (
-                  <>Billed annually at <span className="font-semibold text-teal">{formatPkr(selectedPlanPrices.annual)}/year</span></>
-                ) : (
-                  <>
-                    Billed monthly
-                    {annualMonthlyEquiv > 0 && (
-                      <> - or <span className="font-semibold text-teal">{formatPkr(annualMonthlyEquiv)}/mo</span> on annual ({annualFraming})</>
-                    )}
-                  </>
-                )}
-              </p>
+              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(selectedPlanPrices.monthly)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
+              <p className="mt-0.5 text-xs text-zinc-500">{formatPkr(displayPrice)} billed quarterly. 1 month free.</p>
             </div>
           )}
 
@@ -435,16 +410,14 @@ export default function SettingsPage() {
               <div className="border-b border-amber-200 bg-amber-100/60 px-4 py-3">
                 <p className="text-sm font-bold text-amber-900">Upgrade to {billingDraft.plan}</p>
                 <p className="mt-0.5 text-xs text-amber-700">
-                  {billingDraft.billingCycle === "annual"
-                    ? `${formatPkr(displayPrice)}/month - billed annually at ${formatPkr(selectedPlanPrices.annual)}/year`
-                    : `${formatPkr(displayPrice)}/month - billed monthly`}
+                  {formatPkr(displayPrice)} every 3 months
                 </p>
               </div>
               <div className="p-4">
                 {isSelfServePlan(billingDraft.plan) ? (
                   <>
                     <button
-                      onClick={() => openCheckout(billingDraft.plan, billingDraft.billingCycle)}
+                      onClick={() => openCheckout(billingDraft.plan, "quarterly")}
                       disabled={isCheckoutBusy}
                       className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
                     >
@@ -552,7 +525,7 @@ export default function SettingsPage() {
             <MiniStat label="Scheduled" value={String(scheduled.length)} />
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is coming soon.</p>
+          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is activated after onboarding.</p>
         </section>
       </div>
       {/* Account + Password */}

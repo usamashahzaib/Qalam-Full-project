@@ -15,7 +15,7 @@ const PRODUCT_LINKS = [
   { label: "Hook Generator", href: "/product/hook-generator", desc: "Build stronger openings, archive the best" },
   { label: "Comment Generator", href: "/product/comment-generator", desc: "Stay visible with on-voice replies" },
   { label: "Post Scheduler", href: "/product/post-scheduler", desc: "Plan publishing without losing draft context" },
-  { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Coming soon: separate client voice memory" },
+  { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Separate client voices, approvals, and analytics" },
 ]
 
 const USE_CASE_LINKS = [
@@ -28,6 +28,7 @@ const USE_CASE_LINKS = [
 
 const STATIC_LINKS = [
   { label: "Pricing", href: "/pricing" },
+  { label: "Career Visibility", href: "/career-visibility" },
   { label: "Demo", href: "/demo" },
   { label: "Free Tools", href: "/free-tools" },
   { label: "Blog", href: "/blog" },

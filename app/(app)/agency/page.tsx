@@ -143,7 +143,7 @@ export default function AgencyDashboard() {
   }
 
   return (
-    <PlanGate requiredPlan="Agency" feature="Agency Hub" description="Agency workspaces and team seats are coming soon.">
+    <PlanGate requiredPlan="Agency" feature="Agency Hub" description="Apply for Agency to unlock five client workspaces, team seats, approvals, and analytics.">
     <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10">
       <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
         <div

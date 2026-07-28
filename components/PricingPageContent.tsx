@@ -9,7 +9,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, annualFraming, annualSavingsPercent, formatPkr, upgradeUrl } from "@/lib/pricing"
+import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, upgradeUrl } from "@/lib/pricing"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
 import type { ManagedPlan } from "@/lib/pricing"
 
@@ -20,11 +20,11 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo starts at PKR 499/month with 30 posts and 3 carousels. Pro is PKR 1,490/month with 60 posts, 10 carousels, and voice training. Agency is coming soon. Annual billing gives 5 months free.",
+    a: "Solo is PKR 799/month, Pro is PKR 1,499/month, and Agency is PKR 3,999/month. Plans are billed quarterly. You pay for 2 months and get 3 months.",
   },
   {
-    q: "What's the difference between monthly and annual billing?",
-    a: "Annual Solo is PKR 291/mo (save PKR 2,495), Pro is PKR 869/mo (save PKR 7,447). Each annual plan includes 5 months free.",
+    q: "Why does Qalam use quarterly billing?",
+    a: "Career visibility needs consistent work over several weeks. Quarterly billing keeps the entry price practical while giving enough time to improve LinkedIn, content, and resumes.",
   },
   {
     q: "What does Pro include that Solo doesn't?",
@@ -36,7 +36,7 @@ const PRICING_FAQ = [
   },
   {
     q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan runs PKR 20,000-80,000/month. Qalam gives you AI writing infrastructure, scheduling, scoring, and workflow from PKR 499/month.",
+    a: "A LinkedIn ghostwriter in Pakistan can cost PKR 20,000-80,000 per month. Qalam combines LinkedIn positioning, content, and ATS resumes from PKR 799/month, billed quarterly.",
   },
 ]
 
@@ -123,7 +123,6 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const { data: session, status } = useSession()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly")
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
   const searchParams = useSearchParams()
   const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
@@ -151,21 +150,15 @@ export function PricingPageContent({}: PricingPageContentProps) {
         ? "Real free. No card required and no expiry."
         : plan.plan === "Solo" || plan.plan === "Pro"
           ? "Secure card checkout via Lemon Squeezy. Your plan unlocks the moment payment clears."
-          : undefined
+          : "Agency onboarding is reviewed within one business day."
 
-    const isAnnual = billing === "annual"
-    const hasAnnual = !!plan.annualPkrPerMonth && (plan.monthlyPkr ?? 0) > 0
-    const basePkr = isAnnual && hasAnnual ? plan.annualPkrPerMonth : plan.monthlyPkr
+    const basePkr = plan.monthlyPkr
     const hasDiscount = referralDiscountPercent > 0 && !!basePkr && basePkr > 0
     const price = formatPkr(basePkr)
-    const annualSavings = !isAnnual && hasAnnual
-      ? `Annual: ${formatPkr(plan.annualPkrPerMonth)}/mo - ${annualFraming}`
-      : undefined
-    const usdReference = isAnnual && hasAnnual
-      ? `Save ${annualSavingsPercent}% - billed annually`
-      : hasAnnual
-      ? `Save ${annualSavingsPercent}%`
-      : "Free forever"
+    const annualSavings = plan.plan === "Free"
+      ? undefined
+      : `Billed quarterly at ${formatPkr(plan.quarterlyPkr)} - 1 month free`
+    const usdReference = plan.plan === "Free" ? "Free forever" : "Pakistan launch pricing"
 
     // Paid plans route to the in-app upgrade page, which mints the checkout token at
     // click time and opens the Lemon Squeezy overlay. Logged-out visitors hit the app's
@@ -174,7 +167,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     // this page: without an authenticated session the webhook has no signed token and
     // cannot attribute the payment to an account.
     const href = plan.plan === "Solo" || plan.plan === "Pro"
-      ? upgradeUrl(plan.plan, billing)
+      ? upgradeUrl(plan.plan, "quarterly")
       : plan.href
 
     return {
@@ -192,7 +185,6 @@ export function PricingPageContent({}: PricingPageContentProps) {
   })
 
   const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
-  const maxAnnualSave = annualFraming
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
@@ -229,16 +221,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.monthlyPkr)}/mo` : "Solo"}</strong> Solo
+                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.monthlyPkr)}/month` : "Solo"}</strong> Solo
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                Annual saves <strong className="text-zinc-700">{maxAnnualSave}</strong>
+                Pay for <strong className="text-zinc-700">2 months</strong>, use 3
               </span>
             </div>
 
             <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-700">
-              Annual billing: <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">{annualFraming}</span>
+              Quarterly billing: <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">1 month free</span>
             </div>
             <p className="mt-3 text-xs text-zinc-400">No credit card required for Free. Paid plans start instantly.</p>
           </FadeUp>
@@ -328,41 +320,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
                   </p>
                 </FadeUp>
 
-                <div className="mb-8 flex items-center justify-center gap-3">
-                  <span className={`text-sm font-semibold transition-colors ${billing === "monthly" ? "text-zinc-900" : "text-zinc-400"}`}>
-                    Monthly
-                  </span>
-                  <button
-                    role="switch"
-                    aria-checked={billing === "annual"}
-                    aria-label="Toggle annual billing"
-                    onClick={() => setBilling(billing === "monthly" ? "annual" : "monthly")}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2 ${
-                      billing === "annual" ? "bg-teal" : "bg-zinc-300"
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                        billing === "annual" ? "translate-x-6" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                  <span className={`text-sm font-semibold transition-colors ${billing === "annual" ? "text-zinc-900" : "text-zinc-400"}`}>
-                    Annual
-                  </span>
-                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                    {annualFraming}
-                  </span>
-                </div>
+                <div className="mb-8 flex justify-center"><span className="rounded-full bg-teal px-4 py-2 text-sm font-bold text-white">Quarterly plans</span></div>
 
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={billing}
+                    key="quarterly"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mx-auto grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:max-w-[1000px] lg:grid-cols-3"
+                    className="mx-auto grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
                   >
                     {displayPlans.map((plan, i) => (
                       <motion.div
@@ -452,7 +419,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
             <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 499 replaces</h2>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 799 per month replaces</h2>
             <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
           </FadeUp>
 
@@ -478,7 +445,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 499/month.</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 799/month.</p>
+              <p className="mt-1 text-xs font-semibold text-emerald-700">PKR 1,598 billed quarterly. 1 month free.</p>
               <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
             </div>
           </FadeUp>
