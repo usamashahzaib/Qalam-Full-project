@@ -6,6 +6,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { storeVoiceExamples } from "@/lib/server/embeddings"
 import { requireAuth } from "@/lib/server/workspace"
 import { parseProfessionalContext } from "@/lib/professional-context"
+import { normalizeLinkedInUrl } from "@/lib/validation"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value))
@@ -33,6 +34,10 @@ export async function POST(request: NextRequest) {
   }
 
   const hasVoiceTraining = Boolean(body.examplePosts || body.characteristics)
+  const linkedinUrl = normalizeLinkedInUrl(String(body.linkedinUrl || ""))
+  if (linkedinUrl === null) {
+    return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
+  }
   const rawCharacteristics = isRecord(body.characteristics) ? body.characteristics : null
   const professionalContext = parseProfessionalContext(rawCharacteristics?.professionalContext)
   const characteristics = rawCharacteristics
@@ -56,7 +61,7 @@ export async function POST(request: NextRequest) {
     name: String(body.name || "").trim(),
     title: String(body.title || "").trim(),
     industry: String(body.industry || "").trim(),
-    linkedin_url: String(body.linkedinUrl || "").trim(),
+    linkedin_url: linkedinUrl,
     brand_tone: String(body.brandTone || "").trim(),
     goals: String(body.goals || "").trim(),
     ...(hasVoiceTraining ? {

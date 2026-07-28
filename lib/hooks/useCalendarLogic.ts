@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react"
 import { shareToLinkedIn } from "@/lib/api/client"
-import { openLinkedInComposer } from "@/lib/linkedin-compose"
 import { isCarouselPostType } from "@/lib/post-content"
 import type { WorkspacePost } from "@/types/domain"
 
@@ -163,8 +162,7 @@ export function useCalendarLogic({
       if (!result.postUrn) throw new Error("LinkedIn did not confirm the post.")
       postUrn = normalizeLinkedInUrn(result.postUrn || "") || null
     } catch (error) {
-      await openLinkedInComposer(post.content)
-      setStatus(`${(error as Error).message || "LinkedIn publish failed"} Text copied; LinkedIn composer opened.`)
+      setStatus(`LinkedIn publish failed: ${(error as Error).message || "Reconnect LinkedIn and try again."}`)
       setPublishingId(null)
       return
     }

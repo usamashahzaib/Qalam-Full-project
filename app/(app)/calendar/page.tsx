@@ -54,11 +54,11 @@ export default function CalendarPage() {
 
   useEffect(() => {
     if (!session?.user?.email) return
-    fetch("/api/linkedin/profile")
+    fetch(`/api/linkedin/profile?workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then((res) => res.json())
       .then((data) => setLinkedinConnected(Boolean(data.connected)))
       .catch(() => setLinkedinConnected(false))
-  }, [session?.user?.email])
+  }, [session?.user?.email, workspaceId])
 
   const cal = useCalendarLogic({
     scheduled,

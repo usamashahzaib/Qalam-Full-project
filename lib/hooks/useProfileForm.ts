@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { isValidLinkedInUrl } from "@/lib/validation"
+import { normalizeLinkedInUrl } from "@/lib/validation"
 import type { WorkspaceProfile } from "@/types/domain"
 
 interface ProfileFormDeps {
@@ -41,11 +41,12 @@ export function useProfileForm({ profile, userName = "", saveProfile }: ProfileF
     setStatus("saving")
     setError(null)
     try {
-      if (!isValidLinkedInUrl(draft.linkedinUrl)) throw new Error("Enter a valid LinkedIn profile or company URL.")
+      const linkedinUrl = normalizeLinkedInUrl(draft.linkedinUrl)
+      if (linkedinUrl === null) throw new Error("Enter a valid LinkedIn profile or company URL.")
       await saveProfile({
         name: draft.name.trim(),
         title: draft.title.trim(),
-        linkedinUrl: draft.linkedinUrl.trim(),
+        linkedinUrl,
         industry: draft.industry.trim(),
         tone: draft.tone.trim(),
         goals: draft.goals.split(",").map((item) => item.trim()).filter(Boolean),

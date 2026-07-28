@@ -1,13 +1,19 @@
-export function isValidLinkedInUrl(value: string): boolean {
-  if (!value.trim()) return true
+export function normalizeLinkedInUrl(value: string): string | null {
+  const raw = value.trim()
+  if (!raw) return ""
+  const candidate = /^[a-z][a-z\d+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`
   try {
-    const url = new URL(value.trim())
-    const host = url.hostname.replace(/^www\./, "")
-    return host === "linkedin.com" && /^\/(in|company)\/[A-Za-z0-9-_%]+\/?$/.test(url.pathname)
+    const url = new URL(candidate)
+    const host = url.hostname.toLowerCase().replace(/^www\./, "")
+    const match = url.pathname.match(/^\/(in|company)\/([A-Za-z0-9_%.-]+)\/?$/)
+    if (url.protocol !== "https:" || host !== "linkedin.com" || url.port || url.username || url.password || !match) return null
+    return `https://www.linkedin.com/${match[1]}/${match[2]}`
   } catch {
-    return false
+    return null
   }
 }
+
+export const isValidLinkedInUrl = (value: string): boolean => normalizeLinkedInUrl(value) !== null
 
 export function isValidEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())

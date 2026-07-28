@@ -3,13 +3,16 @@ import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/wor
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
 import { ensureFreshLinkedInPublishingAccount, ensureFreshLinkedInToken } from "@/lib/server/linkedin-credentials"
-import { supabaseInsert } from "@/lib/server/supabase-rest"
+import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 
 type ShareRequestBody = {
   content?: string
   postId?: string | null
   media?: { id?: string; title?: string } | null
 }
+
+const postRepo = new SupabasePostRepository()
 
 export async function POST(request: NextRequest) {
   const { requirePlan } = await import("@/lib/server/plan-limits-v2")
@@ -40,6 +43,30 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const message = (error as Error).message || "auth_required"
     return NextResponse.json({ error: message }, { status: errorToStatus(message) })
+  }
+
+  if (body.postId) {
+    const post = await postRepo.get(body.postId, workspaceId)
+    if (!post) return NextResponse.json({ error: "post_not_found" }, { status: 404 })
+    if ((post.content || "").trim() !== body.content.trim()) {
+      return NextResponse.json({ error: "post_content_changed" }, { status: 409 })
+    }
+    if (post.status === "published" && post.linkedin_post_id) {
+      return NextResponse.json({ shared: true, postUrn: post.linkedin_post_id, alreadyPublished: true })
+    }
+    const prior = await supabaseSelect<{ provider_response?: { postUrn?: string } | null }>(
+      "publish_logs",
+      `post_id=eq.${encodeURIComponent(body.postId)}&status=eq.success&select=provider_response&order=created_at.desc&limit=1`
+    ).catch(() => [])
+    const priorUrn = prior?.[0]?.provider_response?.postUrn
+    if (priorUrn) {
+      await postRepo.update(body.postId, workspaceId, {
+        status: "published",
+        publishedAt: new Date().toISOString(),
+        externalPostUrn: priorUrn,
+      }).catch(() => null)
+      return NextResponse.json({ shared: true, postUrn: priorUrn, alreadyPublished: true })
+    }
   }
 
   const account = await ensureFreshLinkedInPublishingAccount(workspaceId)
@@ -99,6 +126,11 @@ export async function POST(request: NextRequest) {
       },
       "return=minimal"
     ).catch(() => undefined)
+    await postRepo.update(body.postId, workspaceId, {
+      status: "published",
+      publishedAt: new Date().toISOString(),
+      externalPostUrn: shared.postUrn,
+    }).catch(() => null)
   }
 
   return NextResponse.json({ ...shared, tokenNearExpiry })

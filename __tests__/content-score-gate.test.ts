@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { contentScoreCap, freeTierAttemptCap, gateScores } from "@/lib/content-score-gate"
+import { contentScoreCap, freeTierAttemptCap, gateScores, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
 const highScores = {
   hook: 96,
@@ -39,9 +39,9 @@ describe("freeTierAttemptCap", () => {
   const line = "This is a concrete sentence with a real example and clear context."
   const completeContent = Array.from({ length: 10 }, () => line).join("\n\n")
 
-  it("caps the first free-plan draft below 90", () => {
-    expect(freeTierAttemptCap(1)).toBe(80)
-    expect(gateScores(completeContent, highScores, freeTierAttemptCap(1)).overall).toBe(80)
+  it("keeps the first complete free-plan draft at the ready-content floor", () => {
+    expect(freeTierAttemptCap(1)).toBe(MIN_READY_CONTENT_SCORE)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(1)).overall).toBe(MIN_READY_CONTENT_SCORE)
   })
 
   it("allows up to 90 after one regenerate", () => {
@@ -57,5 +57,10 @@ describe("freeTierAttemptCap", () => {
   it("still respects the quality cap even when the attempt cap is higher", () => {
     const thin = Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ")
     expect(gateScores(thin, highScores, freeTierAttemptCap(3)).overall).toBe(68)
+  })
+
+  it("floors a complete scored draft at 82 without inflating unfinished content", () => {
+    const lowScores = { ...highScores, overall: 79 }
+    expect(gateScores(completeContent, lowScores).overall).toBe(MIN_READY_CONTENT_SCORE)
   })
 })

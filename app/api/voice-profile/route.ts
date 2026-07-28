@@ -3,11 +3,9 @@ import { requireAuth, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requirePlan } from "@/lib/server/require-plan"
 import { SupabaseVoiceProfileRepository } from "@/lib/repositories/supabase/SupabaseVoiceProfileRepository"
 import { errorToStatus, requireRole } from "@/lib/server/roles"
+import { normalizeLinkedInUrl } from "@/lib/validation"
 
 const voiceRepo = new SupabaseVoiceProfileRepository()
-
-const isValidLinkedInUrl = (value: string) =>
-  /^https:\/\/(www\.)?linkedin\.com\/(in|company)\/[A-Za-z0-9-_%]+\/?$/.test(value)
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,6 +24,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { name, title, industry, tone, goals, samplePosts, linkedinUrl } = body
     const trimmedLinkedinUrl = typeof linkedinUrl === "string" ? linkedinUrl.trim() : ""
+    const normalizedLinkedinUrl = normalizeLinkedInUrl(trimmedLinkedinUrl)
 
     // Basic identity (name, title, industry, tone, goals, linkedinUrl) is free for all
     // authenticated users. Only actual voice training (sample posts) requires Pro.
@@ -37,7 +36,7 @@ export async function PUT(request: NextRequest) {
       await requireAuth()
     }
 
-    if (trimmedLinkedinUrl && !isValidLinkedInUrl(trimmedLinkedinUrl)) {
+    if (normalizedLinkedinUrl === null) {
       return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
     }
     const workspaceId = await resolveWorkspaceId(request)
@@ -45,7 +44,7 @@ export async function PUT(request: NextRequest) {
 
     const profile = await voiceRepo.save(workspaceId, {
       name, title, industry, tone, goals, samplePosts,
-      linkedinUrl: trimmedLinkedinUrl || null,
+      linkedinUrl: normalizedLinkedinUrl || null,
     })
     return NextResponse.json({ profile })
   } catch (error) {

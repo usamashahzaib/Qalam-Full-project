@@ -76,15 +76,35 @@ const createSharePayload = ({ authorId, content, media }: LinkedInPostPayload) =
   isReshareDisabledByAuthor: false,
 })
 
+const createUgcSharePayload = ({ authorId, content }: LinkedInPostPayload) => ({
+  author: `urn:li:person:${authorId}`,
+  lifecycleState: "PUBLISHED",
+  specificContent: {
+    "com.linkedin.ugc.ShareContent": {
+      shareCommentary: { text: content },
+      shareMediaCategory: "NONE",
+    },
+  },
+  visibility: {
+    "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+  },
+})
+
 export const shareToLinkedIn = async (payload: LinkedInPostPayload) => {
   assertLinkedInLength(payload.content)
   if (!(await checkCircuit(CIRCUIT_KEY))) throw new Error("linkedin_circuit_open")
 
   try {
-    const response = await fetch("https://api.linkedin.com/rest/posts", {
+    // Share on LinkedIn Default Tier grants w_member_social and publishes text
+    // through UGC Posts. The versioned /rest/posts endpoint belongs to the
+    // restricted Marketing APIs and rejects Default Tier applications.
+    const isDocumentPost = Boolean(payload.media?.id)
+    const response = await fetch(isDocumentPost
+      ? "https://api.linkedin.com/rest/posts"
+      : "https://api.linkedin.com/v2/ugcPosts", {
       method: "POST",
       headers: linkedInHeaders(payload.accessToken, true),
-      body: JSON.stringify(createSharePayload(payload)),
+      body: JSON.stringify(isDocumentPost ? createSharePayload(payload) : createUgcSharePayload(payload)),
       cache: "no-store",
     })
 

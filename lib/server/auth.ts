@@ -61,6 +61,7 @@ async function provisionOAuthUser(
         .from("workspace_members")
         .select("workspace_id")
         .eq("user_id", existingUser.id)
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle()
       // Ensure external_user_id is linked
@@ -100,6 +101,7 @@ async function provisionOAuthUser(
       .from("workspace_members")
       .select("workspace_id")
       .eq("user_id", resolvedInternalId)
+      .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle()
 
@@ -182,7 +184,7 @@ export async function requireAuthApi(request: NextRequest) {
         .from("workspace_members")
         .select("workspace_id")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle(),
     ])
@@ -256,7 +258,7 @@ export async function requireAuthApi(request: NextRequest) {
       .from("workspace_members")
       .select("workspace_id")
       .eq("user_id", internalId)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle(),
   ])

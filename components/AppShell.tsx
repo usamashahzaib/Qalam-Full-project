@@ -118,7 +118,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!sessionIdentity) return
     let cancelled = false
-    fetch("/api/linkedin/profile")
+    const url = activeClientId
+      ? `/api/linkedin/profile?workspaceKey=${encodeURIComponent(activeClientId)}`
+      : "/api/linkedin/profile"
+    fetch(url)
       .then((res) => (res.ok ? res.json() : { connected: false }))
       .then((data) => {
         if (!cancelled) setLinkedinConnection({ identity: sessionIdentity, connected: Boolean(data?.connected) })
@@ -127,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (!cancelled) setLinkedinConnection({ identity: sessionIdentity, connected: false })
       })
     return () => { cancelled = true }
-  }, [sessionIdentity])
+  }, [activeClientId, sessionIdentity])
 
   const user = session?.user
     ? {

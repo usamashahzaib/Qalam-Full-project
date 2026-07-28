@@ -30,7 +30,14 @@ export async function POST(request: NextRequest) {
 
     // Cache key scoped to user + role + attempt so a free-plan cap change never bleeds into a
     // previously cached score for the same content at a different regenerate count.
-    const cacheKey = generateCacheKey({ task: "score", content, userId: user.id, role: String(body.role || ""), attempt })
+    const cacheKey = generateCacheKey({
+      task: "score",
+      content,
+      userId: user.id,
+      role: String(body.role || ""),
+      attempt,
+      scorePolicy: "ready-floor-82-v1",
+    })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
       const { scores, overall, tips, hashtags } = cached

@@ -1,4 +1,5 @@
 const SCORE_KEYS = ["hook", "readability", "authority", "specificity", "cta", "human", "voiceFit"] as const
+export const MIN_READY_CONTENT_SCORE = 82
 
 type ScoreKey = typeof SCORE_KEYS[number]
 type Scores = Record<ScoreKey, number> & { overall: number; tips?: Record<string, string>; hashtags?: string[] }
@@ -24,7 +25,7 @@ export const contentScoreCap = (content: string) => {
 // Keeps early drafts out of 90+ so the score visibly climbs as the user regenerates,
 // instead of every free draft landing at 90+ on the first try.
 export const freeTierAttemptCap = (attempt: number): number => {
-  if (attempt <= 1) return 80
+  if (attempt <= 1) return MIN_READY_CONTENT_SCORE
   if (attempt === 2) return 90
   return 100
 }
@@ -32,11 +33,12 @@ export const freeTierAttemptCap = (attempt: number): number => {
 export const gateScores = <T extends Scores>(content: string, scores: T, extraCap?: number): T => {
   const { max: qualityMax, reason: qualityReason } = contentScoreCap(content)
   const max = typeof extraCap === "number" ? Math.min(qualityMax, extraCap) : qualityMax
-  if (max >= 100) return { ...scores, overall: clamp(scores.overall) }
+  const readyFloor = qualityMax >= MIN_READY_CONTENT_SCORE ? MIN_READY_CONTENT_SCORE : 0
+  if (max >= 100) return { ...scores, overall: Math.max(readyFloor, clamp(scores.overall)) }
 
   const attemptCapped = !qualityReason && typeof extraCap === "number" && extraCap < qualityMax
   const reason = qualityReason || (attemptCapped ? "Regenerate to unlock a higher score." : "")
-  const gated = { ...scores, overall: clamp(scores.overall, max) }
+  const gated = { ...scores, overall: Math.max(Math.min(readyFloor, max), clamp(scores.overall, max)) }
   for (const k of SCORE_KEYS) gated[k] = clamp(gated[k], max)
   if (reason) gated.tips = { ...(scores.tips ?? {}), overall: reason }
   return gated

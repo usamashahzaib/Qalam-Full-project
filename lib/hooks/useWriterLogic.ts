@@ -15,7 +15,6 @@ import {
   ApiClientError,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
-import { openLinkedInComposer } from "@/lib/linkedin-compose"
 import type {
   WriterRole as Role,
   PostFormat as FormatKey,
@@ -522,8 +521,17 @@ export function useWriterLogic({
     setIsPublishing(true)
 
     let postUrn: string | null = null
+    let postId = editingId
     try {
-      const shared = await shareToLinkedIn({ content: draftContent, postId: editingId, workspaceKey: workspaceId })
+      postId = await saveDraft({
+        id: editingId,
+        title: resolveTitle(),
+        content: draftContent,
+        type: "LinkedIn - Text post",
+        engagementScore: scores?.overall ?? null,
+      })
+      setEditingId(postId)
+      const shared = await shareToLinkedIn({ content: draftContent, postId, workspaceKey: workspaceId })
       if (!shared.postUrn) throw new Error("LinkedIn did not confirm the post.")
       postUrn = shared.postUrn
     } catch (e) {
@@ -532,8 +540,7 @@ export function useWriterLogic({
       } else if (e instanceof ApiClientError && e.status === 403) {
         showStatus("Publishing to LinkedIn requires a higher plan. Upgrade to continue.", "error")
       } else {
-        await openLinkedInComposer(draftContent)
-        showStatus("Post copied to clipboard. LinkedIn composer opened - paste to publish.", "info")
+        showStatus(`LinkedIn publish failed: ${(e as Error).message || "Try reconnecting LinkedIn."}`, "error")
       }
       setIsPublishing(false)
       return
@@ -545,7 +552,7 @@ export function useWriterLogic({
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         const id = await publishPost({
-          id: editingId,
+          id: postId,
           title: resolveTitle(),
           content: draftContent,
           type: "LinkedIn - Text post",

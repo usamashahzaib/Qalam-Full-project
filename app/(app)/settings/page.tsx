@@ -115,7 +115,11 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    fetch("/api/linkedin/profile")
+    const activeClientId = searchParams.get("client")
+    const url = activeClientId
+      ? `/api/linkedin/profile?workspaceKey=${encodeURIComponent(activeClientId)}`
+      : "/api/linkedin/profile"
+    fetch(url)
       .then((res) => {
         if (res.status === 401) {
           // Token expired - surface the reconnect warning without overwriting an existing status.
@@ -129,7 +133,7 @@ export default function SettingsPage() {
         setLinkedinProfile(data.connected ? data : null)
       })
       .catch(() => setLinkedinProfile(null))
-  }, [user?.email])
+  }, [searchParams, user?.email])
 
   useEffect(() => {
     if (accountStatus === "saving") return

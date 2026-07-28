@@ -155,14 +155,14 @@ export default function CarouselEditorPage() {
   useEffect(() => { fetchCarousel() }, [fetchCarousel])
 
   useEffect(() => {
-    fetch("/api/linkedin/profile")
+    fetch(`/api/linkedin/profile?workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         setLinkedinConnected(Boolean(data?.connected))
         if (data?.connected && data.avatar) setAuthorPhotoUrl(data.avatar)
       })
       .catch(() => {})
-  }, [])
+  }, [workspaceId])
 
   useEffect(() => {
     if (project?.linkedinPostUrn) setPublishedUrn(project.linkedinPostUrn)
