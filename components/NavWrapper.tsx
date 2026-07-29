@@ -11,7 +11,9 @@ const APP_ROUTES = [
   "/agency",
   "/analytics",
   "/approvals",
+  "/billing",
   "/calendar",
+  "/career",
   "/carousels",
   "/chat",
   "/comment-generator",
@@ -24,6 +26,7 @@ const APP_ROUTES = [
   "/settings",
   "/silent-growth",
   "/signup",
+  "/upgrade",
   "/verify-email",
   "/voice",
   "/write",
@@ -32,7 +35,7 @@ const APP_ROUTES = [
 
 export function NavWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isApp = APP_ROUTES.some((r) => pathname.startsWith(r))
+  const isApp = APP_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
 
   if (isApp) return <>{children}</>
 
