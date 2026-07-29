@@ -7,9 +7,12 @@ import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
 import { auth } from "@/auth"
-import { PLAN_PRIORITY } from "@/lib/server/plan-limits-v2"
+import { PLAN_PRIORITY } from "@/lib/server/plan-priority"
 import { env } from "@/lib/server/env"
 import { log } from "@/lib/server/logging"
+import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
+
+export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
 export async function getAuthenticatedSession() {
   return await auth()
@@ -42,115 +45,6 @@ export function toNames(name: string | null, email?: string | null) {
   const firstName = cleanName.split(" ")[0] || "User"
   return { firstName, fullName: cleanName }
 }
-
-export async function ensureSupabaseUser({
-  userId,
-  email,
-  fullName,
-  imageUrl,
-}: {
-  userId: string
-  email: string
-  fullName: string
-  imageUrl: string | null
-}): Promise<string> {
-  const supabase = createServiceClient()
-  
-  const { data: userByExt } = await supabase
-    .from("users")
-    .select("id")
-    .eq("external_user_id", userId)
-    .maybeSingle()
-
-  if (userByExt) return userByExt.id
-
-  const { data: userByEmail } = await supabase
-    .from("users")
-    .select("id, external_user_id")
-    .eq("email", email)
-    .maybeSingle()
-
-  if (userByEmail) {
-    if (!userByEmail.external_user_id) {
-      await supabase
-        .from("users")
-        .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })
-        .eq("id", userByEmail.id)
-    }
-    return userByEmail.id
-  }
-
-  // UPSERT on email to eliminate the check-then-insert race condition
-  const { data: upserted, error } = await supabase
-    .from("users")
-    .upsert(
-      {
-        email,
-        external_user_id: userId,
-        full_name: fullName,
-        image_url: imageUrl,
-        plan: "Free",
-      },
-      { onConflict: "email", ignoreDuplicates: false }
-    )
-    .select("id")
-    .single()
-
-  if (error || !upserted) {
-    throw new Error("failed_to_ensure_user")
-  }
-  return upserted.id
-}
-
-async function getOrCreateWorkspaceForUser(userId: string, ownerEmail?: string) {
-  const supabase = createServiceClient()
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (membership) return membership.workspace_id
-
-  // Direct insert - includes owner_email to satisfy legacy NOT NULL constraint
-  const wsPayload: Record<string, string> = { name: "Personal", owner_id: userId }
-  if (ownerEmail) wsPayload.owner_email = ownerEmail
-
-  const { data: ws, error: wsError } = await supabase
-    .from("workspaces")
-    .insert(wsPayload)
-    .select("id")
-    .single()
-
-  if (wsError || !ws) {
-    log.error("workspace.insert_failed", { error: wsError?.message, details: wsError?.details })
-    return null
-  }
-
-  await supabase
-    .from("workspace_members")
-    .insert({ workspace_id: ws.id, user_id: userId, role: "owner" })
-
-  return ws.id as string
-}
-
-export async function ensureWorkspaceForUser({
-  userId,
-  email,
-}: {
-  userId: string
-  email?: string
-  firstName?: string
-}): Promise<string> {
-  const workspaceId = await getOrCreateWorkspaceForUser(userId, email)
-  if (!workspaceId) {
-    throw new Error("failed_to_ensure_workspace")
-  }
-  return workspaceId
-}
-
 
 export type WorkspacePlanInfo = {
   plan: string

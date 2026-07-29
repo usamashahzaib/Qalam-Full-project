@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { resumeDocumentSchema } from "@/lib/career-resume"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { requirePlan } from "@/lib/server/plan-limits-v2"
+import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import {
   claimExtraResumeCredit,

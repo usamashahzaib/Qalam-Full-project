@@ -27,7 +27,7 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
 
     const { id } = await context.params
@@ -84,7 +84,7 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
 
     const { id } = await context.params
@@ -143,7 +143,7 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Solo")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
 
     const { id } = await context.params

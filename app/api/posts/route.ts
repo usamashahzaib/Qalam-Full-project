@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         )
       }
-      const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+      const { requirePlan } = await import("@/lib/server/require-plan")
       const planCheck = await requirePlan(request, "Solo")
       if (!planCheck.ok) return planCheck.response
       if (!planCheck.limits.scheduling) {
@@ -134,7 +134,7 @@ export async function PATCH(request: NextRequest) {
     }
     // PLAN GATE: transitioning to scheduled requires Solo+
     if (nextStatus === "scheduled" && existing.status !== "scheduled") {
-      const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+      const { requirePlan } = await import("@/lib/server/require-plan")
       const planCheck = await requirePlan(request, "Solo")
       if (!planCheck.ok) return planCheck.response
       if (!planCheck.limits.scheduling) return NextResponse.json({ error: "upgrade_required", requiredFeature: "scheduling" }, { status: 403 })

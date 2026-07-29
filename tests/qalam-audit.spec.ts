@@ -251,8 +251,9 @@ test.describe("Auth guards", () => {
     "/carousels",
     "/analytics",
     "/calendar",
-    "/voice",
-    "/competitors",
+      "/voice",
+      "/career",
+      "/competitors",
     "/library",
     "/settings",
     "/approvals",
@@ -351,6 +352,21 @@ test.describe("Free tools functionality", () => {
         await expect(page.locator("body")).not.toContainText(/\[object Object\]|TypeError/)
       }
     }
+  })
+
+  test("carousel builder - builds a preview without an account", async ({ page }) => {
+    await page.goto("/free-tools/carousel-builder")
+    await page.locator("#carousel-source").fill(
+      "The best leaders make decisions with incomplete information.\n\nThey state the tradeoff clearly.\n\nThey review outcomes without rewriting history.",
+    )
+    await page.getByRole("button", { name: "Build Carousel with AI" }).click()
+    await expect(page.getByText(/Slide 1 of/)).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByRole("button", { name: "Download Slide 1 (PNG)" })).toBeVisible()
+  })
+
+  test("comment generator - preserves its deep link through sign-in", async ({ page }) => {
+    await page.goto("/free-tools/comment-generator")
+    await expect(page).toHaveURL(/\/login\?callbackUrl=%2Ffree-tools%2Fcomment-generator/)
   })
 
   test("free tools page - correct pricing copy (PKR, no trial)", async ({ page }) => {

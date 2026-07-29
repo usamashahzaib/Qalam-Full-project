@@ -9,7 +9,7 @@ type DbPost = { id: string; scheduled_for: string | null; status: string; worksp
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(request, "Solo")
     if (!planCheck.ok) return planCheck.response
     if (!planCheck.limits.scheduling) {

@@ -8,7 +8,8 @@ import { withAuth } from "@/lib/server/auth"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { checkPlanLimit, incrementUsage, decrementUsage, requirePlan } from "@/lib/server/plan-limits-v2"
+import { checkPlanLimit, incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
+import { requirePlan } from "@/lib/server/require-plan"
 import { checkWorkspaceUsage, incrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { CAROUSEL_TONES } from "@/lib/carousel-tones"
@@ -91,6 +92,13 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid carousel input", issues: parsed.error.issues }, { status: 400 })
+    }
+    if (parsed.data.slideCount > planCheck.limits.carouselSlides) {
+      return NextResponse.json({
+        error: "upgrade_required",
+        requiredFeature: "carouselSlides",
+        availableSlides: planCheck.limits.carouselSlides,
+      }, { status: 403 })
     }
 
     // Read-only quota check - decrement only after AI call succeeds

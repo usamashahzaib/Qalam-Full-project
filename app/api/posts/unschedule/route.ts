@@ -9,7 +9,7 @@ type DbPost = { id: string; workspace_id: string }
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(request, "Solo")
     if (!planCheck.ok) return planCheck.response
     if (!planCheck.limits.scheduling) {

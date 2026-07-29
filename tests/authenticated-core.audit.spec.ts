@@ -10,7 +10,6 @@ test("local email and password login succeeds", async ({ page }) => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service credentials are required")
-
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
@@ -54,8 +53,20 @@ test("local email and password login succeeds", async ({ page }) => {
     const session = await sessionResponse.json()
     expect(session.user).toMatchObject({ email, name: "Password Audit", provider: "credentials" })
   } finally {
-    const { error: cleanupError } = await supabase.from("users").delete().eq("id", user.id)
-    if (cleanupError) throw cleanupError
+    await page.close()
+    await new Promise((resolve) => setTimeout(resolve, 2_000))
+    const { data: cleanupUser, error: lookupError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle()
+    if (lookupError) throw lookupError
+    if (cleanupUser?.id) {
+      const { error: cleanupError } = await supabase.rpc("delete_user_data", {
+        target_user_id: cleanupUser.id,
+      })
+      if (cleanupError) throw cleanupError
+    }
   }
 })
 
@@ -67,6 +78,9 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service credentials are required")
+  const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 
   const loginResponse = await page.goto("/login")
   expect(loginResponse?.status()).toBe(200)
@@ -110,8 +124,32 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     const settingsLink = page.getByRole("link", { name: "Settings" }).first()
     await expect(settingsLink).toBeVisible()
     expect(await settingsLink.getAttribute("href")).toContain("/settings")
+    const careerLink = page.getByRole("link", { name: "Career Hub" }).first()
+    await expect(careerLink).toBeVisible()
+    expect(await careerLink.getAttribute("href")).toContain("/career")
     const userMenu = page.getByRole("button", { name: "User menu" })
     await expect(userMenu).toContainText("Audit Runtime")
+
+    const freeGates = [
+      ["/calendar", "Upgrade to Solo"],
+      ["/analytics", "Upgrade to Solo"],
+      ["/library", "Upgrade to Solo"],
+      ["/chat", "Upgrade to Pro"],
+      ["/approvals", "Upgrade to Pro"],
+      ["/competitors", "Upgrade to Pro"],
+      ["/career/network", "Upgrade to Pro"],
+      ["/agency", "Upgrade to Agency"],
+    ] as const
+    for (const [path, upgradeLabel] of freeGates) {
+      const response = await page.goto(path)
+      expect(response?.status(), path).toBeLessThan(400)
+      await expect(page.locator("#main-content").getByRole("button", { name: upgradeLabel }).last(), path).toBeVisible()
+    }
+
+    const careerResponse = await page.goto("/career")
+    expect(careerResponse?.status()).toBeLessThan(400)
+    await expect(page.getByRole("heading", { name: /Build a career profile/ })).toBeVisible()
+    expect((await page.request.get("/api/career-vault")).status()).toBe(200)
 
     const settingsResponse = await page.goto("/settings")
     expect(settingsResponse?.status()).toBeLessThan(400)
@@ -149,9 +187,46 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     const score = await scoreResponse.json()
     expect(score.overall).toBeGreaterThan(0)
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    const carouselResponse = await page.request.post("/api/carousel", {
+      data: {
+        topic,
+        role: "Founder",
+        slideCount: 5,
+        tone: "Authority Playbook",
+        sourceContent: post.content.slice(0, 3000),
+      },
     })
+    expect(carouselResponse.status()).toBe(200)
+    const carousel = await carouselResponse.json()
+    expect(carousel.id).toBeTruthy()
+    expect(carousel.slides).toHaveLength(5)
+
+    const carouselDetail = await page.request.get(`/api/carousel/${carousel.id}`)
+    expect(carouselDetail.status()).toBe(200)
+    const detail = await carouselDetail.json()
+    expect(detail.slides).toHaveLength(5)
+
+    const firstSlide = detail.slides[0]
+    const slideUpdate = await page.request.patch(`/api/carousel/${carousel.id}/slides/${firstSlide.id}`, {
+      data: { title: `${firstSlide.title} audited`, content: firstSlide.content },
+    })
+    expect(slideUpdate.status()).toBe(200)
+
+    const overLimitCarousel = await page.request.post("/api/carousel", {
+      data: {
+        topic,
+        role: "Founder",
+        slideCount: 6,
+        tone: "Authority Playbook",
+        sourceContent: post.content.slice(0, 3000),
+      },
+    })
+    expect(overLimitCarousel.status()).toBe(403)
+    await expect(overLimitCarousel.json()).resolves.toMatchObject({
+      error: "upgrade_required",
+      availableSlides: 5,
+    })
+
     const { data: auditUser, error: auditUserError } = await supabase
       .from("users")
       .select("id")
@@ -163,6 +238,48 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       .update({ plan: "Pro", plan_expires_at: new Date(Date.now() + 86_400_000).toISOString() })
       .eq("id", auditUser.id)
     if (planError) throw planError
+
+    const proRoutes = [
+      "/career",
+      "/career/resumes",
+      "/career/content",
+      "/career/network",
+      "/career/cohorts",
+      "/career/add-ons",
+      "/voice",
+      "/carousels",
+      "/comment-generator",
+      "/silent-growth",
+      "/calendar",
+      "/analytics",
+      "/library",
+      "/chat",
+      "/approvals",
+      "/competitors",
+      "/settings",
+    ]
+    for (const path of proRoutes) {
+      const response = await page.goto(path)
+      expect(response?.status(), path).toBeLessThan(400)
+      await expect(page.locator("body"), path).not.toContainText(/Could not load|Internal server error|Application error/)
+    }
+
+    for (const path of [
+      "/api/career-vault",
+      "/api/career/resumes",
+      "/api/career/content-intelligence",
+      "/api/career/visibility",
+      "/api/career/recruiter-search",
+      "/api/career/cohorts",
+      "/api/career/add-ons",
+      "/api/chat/conversations",
+      "/api/approvals",
+      "/api/analytics",
+      "/api/library",
+    ]) {
+      const response = await page.request.get(path)
+      expect(response.status(), path).toBeLessThan(500)
+    }
 
     const resume = await PDFDocument.create()
     const resumeFont = await resume.embedFont(StandardFonts.Helvetica)
@@ -220,13 +337,24 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
 
     const pricingResponse = await page.goto("/pricing")
     expect(pricingResponse?.status()).toBeLessThan(400)
-    await expect(page.locator("body")).toContainText("PKR 499")
-    await expect(page.locator("body")).toContainText("PKR 1,490")
+    await expect(page.locator("body")).toContainText("PKR 1,598")
+    await expect(page.locator("body")).toContainText("PKR 2,998")
     await expect(page.locator("body")).toContainText("Managed Plans")
   } finally {
+    let deletionStatus: number | null = null
     if (provisioned) {
       const deletion = await page.request.delete("/api/user/delete")
-      expect(deletion.status()).toBe(200)
+      deletionStatus = deletion.status()
     }
+    const { data: residue } = await supabase
+      .from("users")
+      .select("id")
+      .eq("external_user_id", auditId)
+      .maybeSingle()
+    if (residue?.id) {
+      const { error } = await supabase.rpc("delete_user_data", { target_user_id: residue.id })
+      if (error) throw error
+    }
+    if (deletionStatus !== null) expect(deletionStatus).toBe(200)
   }
 })

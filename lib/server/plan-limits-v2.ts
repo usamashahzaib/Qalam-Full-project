@@ -14,9 +14,6 @@ import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 
 export type { Feature }
-export { requirePlan } from "./require-plan"
-
-export const PLAN_PRIORITY: Record<string, number> = { free: 0, solo: 1, pro: 2, agency: 3 }
 
 const normalizePlan = (plan?: string | null): PlanTier => {
   const value = String(plan || "").toLowerCase()

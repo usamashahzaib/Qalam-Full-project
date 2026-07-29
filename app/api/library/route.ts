@@ -25,13 +25,12 @@ export async function GET(request: NextRequest) {
       .from("posts")
       .select("id, title, content, status, scheduled_for, published_at, metadata, created_at, updated_at", { count: "exact" })
       .eq("workspace_id", workspaceId)
-      .is("deleted_at", null)
 
     if (type && type !== "all") {
       if (type === "carousel") {
-        query = query.ilike("type", "%carousel%")
+        query = query.ilike("metadata->>type", "%carousel%")
       } else {
-        query = query.not("type", "ilike", "%carousel%")
+        query = query.or("metadata->>type.is.null,metadata->>type.not.ilike.%carousel%")
       }
     }
 

@@ -26,17 +26,18 @@ async function probeColumn(table: string, column: string): Promise<boolean> {
   }
 }
 
-async function probeRpc(fn: string, body: Record<string, unknown>): Promise<boolean> {
+async function getRpcNames(): Promise<Set<string>> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+      headers: { ...headers, Accept: "application/openapi+json" },
     })
-    // 404 = doesn't exist. Anything else (even 400) = exists with wrong params = OK
-    return res.status !== 404
+    if (!res.ok) return new Set()
+    const spec = await res.json() as { paths?: Record<string, unknown> }
+    return new Set(Object.keys(spec.paths ?? {})
+      .filter((path) => path.startsWith("/rpc/"))
+      .map((path) => path.slice(5)))
   } catch {
-    return false
+    return new Set()
   }
 }
 
@@ -47,7 +48,8 @@ export async function GET(request: NextRequest) {
     return notFound()
   }
 
-  const [tables, rpcs, columns] = await Promise.all([
+  const rpcNames = await getRpcNames()
+  const [tables, columns] = await Promise.all([
     Promise.all([
       ["users", probeTable("users")],
       ["workspaces", probeTable("workspaces")],
@@ -64,20 +66,19 @@ export async function GET(request: NextRequest) {
       ["voice_examples", probeTable("voice_examples")],
     ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
     Promise.all([
-      ["check_plan_limit", probeRpc("check_plan_limit", { p_user_id: "00000000-0000-0000-0000-000000000000", p_feature: "drafts" })],
-      ["increment_usage", probeRpc("increment_usage", { p_user_id: "00000000-0000-0000-0000-000000000000", p_feature: "drafts" })],
-      ["get_plan_status", probeRpc("get_plan_status", { p_user_id: "00000000-0000-0000-0000-000000000000" })],
-      ["activate_plan", probeRpc("activate_plan", { p_organization_id: "00000000-0000-0000-0000-000000000000", p_plan_name: "Pro", p_expires_at: null })],
-      // param name is p_external_id per migration 0031_atomic_provisioning_and_payment_fixes.sql
-      ["provision_oauth_user", probeRpc("provision_oauth_user", { p_external_id: "x", p_email: "x@x.com", p_full_name: "x", p_image_url: null })],
-      ["get_monthly_ai_cost", probeRpc("get_monthly_ai_cost", { p_user_id: "00000000-0000-0000-0000-000000000000" })],
-      ["update_post_with_version", probeRpc("update_post_with_version", { p_post_id: "00000000-0000-0000-0000-000000000000", p_workspace_id: "00000000-0000-0000-0000-000000000000", p_new_content: "x", p_created_by: "00000000-0000-0000-0000-000000000000" })],
-      ["create_personal_workspace", probeRpc("create_personal_workspace", { p_user_id: "00000000-0000-0000-0000-000000000000", p_name: "Personal" })],
-    ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
-    Promise.all([
       ["users.password_version", probeColumn("users", "password_version")],
     ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
   ])
+  const rpcs = [
+    "check_plan_limit",
+    "increment_usage",
+    "get_plan_status",
+    "activate_plan",
+    "provision_oauth_user",
+    "get_monthly_ai_cost",
+    "update_post_with_version",
+    "create_personal_workspace",
+  ].map((name) => ({ name, exists: rpcNames.has(name) }))
 
   const missingTables = tables.filter((t) => !t.exists).map((t) => t.name)
   const missingRpcs = rpcs.filter((r) => !r.exists).map((r) => r.name)
@@ -92,12 +93,12 @@ export async function GET(request: NextRequest) {
     missingTables,
     missingRpcs,
     missingColumns,
-    migrationSqlPath: "/supabase/migrations/COMBINED_NEW_MIGRATIONS.sql",
+    migrationSqlPath: "/supabase/migrations",
     instructions: allGood
       ? "All tables, RPCs, and columns are present."
       : [
-          missingTables.length || missingRpcs.length ? "Run COMBINED_NEW_MIGRATIONS.sql in Supabase Dashboard > SQL Editor." : "",
-          missingColumns.length ? `Run 0040_password_version.sql to add missing columns: ${missingColumns.join(", ")}.` : "",
+          missingTables.length || missingRpcs.length ? "Run npx supabase db push --linked after reviewing the pending migrations." : "",
+          missingColumns.length ? `Deploy the active migration that adds: ${missingColumns.join(", ")}.` : "",
         ].filter(Boolean).join(" "),
   })
 }

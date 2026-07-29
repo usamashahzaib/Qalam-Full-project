@@ -16,6 +16,7 @@ export async function callGemini(
   timeout = 15000
 ): Promise<string> {
   const { json = false, temperature = 0.7, maxTokens = 2048, model = "gemini-2.5-flash" } = options
+  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error("Invalid Gemini model")
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error("Gemini API key not configured")
 
@@ -32,7 +33,7 @@ export async function callGemini(
 
   const response = await withTimeout(
     fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: {

@@ -20,10 +20,7 @@ export const canAccessPlan = (userPlan: string, requiredPlan: PlanTier): boolean
 export const VALID_PLAN_NAMES: readonly string[] = PLAN_ORDER
 
 export const getUpgradeTarget = (currentPlan: string, requiredPlan: PlanTier): "Solo" | "Pro" | "Agency" | null => {
-  if (requiredPlan === "Agency" && currentPlan !== "Agency") return "Agency"
-  if (currentPlan === "Free") return "Solo"
-  if (currentPlan === "Solo") return "Pro"
-  return null
+  return canAccessPlan(currentPlan, requiredPlan) || requiredPlan === "Free" ? null : requiredPlan
 }
 
 export type PlanLimits = {

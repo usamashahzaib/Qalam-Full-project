@@ -43,9 +43,9 @@ describe("canAccessPlan", () => {
 })
 
 describe("getUpgradeTarget", () => {
-  it("uses progressive upgrade messaging", () => {
+  it("targets the plan that actually unlocks the feature", () => {
     expect(getUpgradeTarget("Free", "Solo")).toBe("Solo")
-    expect(getUpgradeTarget("Free", "Pro")).toBe("Solo")
+    expect(getUpgradeTarget("Free", "Pro")).toBe("Pro")
     expect(getUpgradeTarget("Solo", "Pro")).toBe("Pro")
   })
 

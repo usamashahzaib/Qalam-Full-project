@@ -24,14 +24,15 @@ async function checkTable(table) {
   return { status: res.status, ok: res.ok }
 }
 
-async function checkRpc(fn, body = {}) {
-  const res = await fetch(`${URL}/rest/v1/rpc/${fn}`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${KEY}`, apikey: KEY, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+async function getRpcNames() {
+  const res = await fetch(`${URL}/rest/v1/`, {
+    headers: { Authorization: `Bearer ${KEY}`, apikey: KEY, Accept: "application/openapi+json" },
   })
-  const text = await res.text()
-  return { status: res.status, body: text.slice(0, 120) }
+  if (!res.ok) throw new Error(`OpenAPI probe failed (${res.status})`)
+  const spec = await res.json()
+  return new Set(Object.keys(spec.paths || {})
+    .filter((path) => path.startsWith("/rpc/"))
+    .map((path) => path.slice(5)))
 }
 
 console.log("=== TABLE STATUS ===")
@@ -43,17 +44,16 @@ for (const t of tables) {
 
 console.log("\n=== RPC STATUS ===")
 const rpcs = [
-  ["check_plan_limit", { p_user_id: "00000000-0000-0000-0000-000000000000", p_feature: "drafts" }],
-  ["increment_usage", { p_user_id: "00000000-0000-0000-0000-000000000000", p_feature: "drafts" }],
-  ["get_plan_status", { p_user_id: "00000000-0000-0000-0000-000000000000" }],
-  ["activate_plan", { p_organization_id: "00000000-0000-0000-0000-000000000000", p_plan_name: "Pro", p_expires_at: null }],
-  ["provision_oauth_user", { p_external_user_id: "test", p_email: "test@test.com", p_full_name: "Test", p_image_url: null }],
-  ["get_monthly_ai_cost", { p_user_id: "00000000-0000-0000-0000-000000000000" }],
-  ["update_post_with_version", { p_post_id: "00000000-0000-0000-0000-000000000000", p_content: "test", p_author_id: "00000000-0000-0000-0000-000000000000" }],
-  ["create_personal_workspace", { p_user_id: "00000000-0000-0000-0000-000000000000", p_name: "Personal" }],
+  "check_plan_limit",
+  "increment_usage",
+  "get_plan_status",
+  "activate_plan",
+  "provision_oauth_user",
+  "get_monthly_ai_cost",
+  "update_post_with_version",
+  "create_personal_workspace",
 ]
-for (const [fn, body] of rpcs) {
-  const r = await checkRpc(fn, body)
-  const status = r.status === 404 ? "MISS" : r.status === 200 ? "OK  " : `HTTP_${r.status}`
-  console.log(`  ${status} rpc/${fn} - ${r.body.slice(0,80)}`)
+const rpcNames = await getRpcNames()
+for (const fn of rpcs) {
+  console.log(`  ${rpcNames.has(fn) ? "OK  " : "MISS"} rpc/${fn}`)
 }

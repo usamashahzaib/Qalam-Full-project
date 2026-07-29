@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!user.workspaceId) {
       return NextResponse.json({ error: "No workspace found" }, { status: 400 })
     }
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     if (planCheck.limits.analyticsDepth === "none") {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
     const roleError = await authorizeRole(req, user.workspaceId, "editor")
     if (roleError) return roleError
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     if (planCheck.limits.analyticsDepth === "none") {
@@ -117,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     }
     const roleError = await authorizeRole(req, user.workspaceId, "editor")
     if (roleError) return roleError
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     if (planCheck.limits.analyticsDepth === "none") {

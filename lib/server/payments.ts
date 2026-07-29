@@ -7,7 +7,8 @@ import { sendTransactionalEmail } from "@/lib/server/email"
 import { cancelLemonSqueezySubscription } from "@/lib/server/lemonsqueezy-api"
 import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
-import { plans as PRICING_PLANS, LEMONSQUEEZY_VARIANT_PLANS, type PlanName } from "@/lib/pricing"
+import { plans as PRICING_PLANS, type PlanName } from "@/lib/pricing"
+import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
 import {
   creditReferralCommissionFromPayment,
   reverseReferralCommissionFromRefund,

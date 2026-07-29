@@ -5,7 +5,7 @@ import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { requirePlan } from "@/lib/server/plan-limits-v2"
+import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
 

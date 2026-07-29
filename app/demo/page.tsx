@@ -175,7 +175,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
         <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 p-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-teal">Voice Profile</p>
           <p className="mt-2 text-sm leading-relaxed text-teal-800">
-            Demo voice memory is active. In the real workspace, every approved draft and edit sharpens future starting points.
+            Demo voice memory is active. In the real workspace, drafts use the voice profile and writing samples you deliberately save.
           </p>
         </div>
         <div className="space-y-3">
@@ -289,10 +289,10 @@ function VoiceTab({ onStart }: { onStart: () => void }) {
           <h4 className="mb-3 text-sm font-bold text-zinc-900">What voice memory does</h4>
           <ul className="space-y-3 text-sm text-zinc-600">
             {[
-              "Learns from approved posts and edits",
+              "Uses writing samples you choose",
               "Keeps tone consistent across drafts",
-              "Improves with each revision cycle",
-              "Creates real switching cost over time",
+              "Can be retrained when your voice changes",
+              "Keeps professional context reusable",
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 rounded-full bg-gold" />

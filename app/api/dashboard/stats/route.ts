@@ -16,7 +16,7 @@ export async function GET() {
       email: userEmail ?? "",
       fullName: session?.user?.name ?? "",
       imageUrl: session?.user?.image ?? null,
-    }).catch(() => tokenUserId)
+    })
 
     const workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email: userEmail ?? "" })
 

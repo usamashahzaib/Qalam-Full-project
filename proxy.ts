@@ -142,7 +142,7 @@ async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextReq
 
 // ─── Route tables ─────────────────────────────────────────────────────────────
 
-const PROTECTED_ROUTES = [
+export const PROTECTED_ROUTES = [
   "/dashboard",
   "/write",
   "/writer",
@@ -152,6 +152,7 @@ const PROTECTED_ROUTES = [
   "/library",
   "/analytics",
   "/voice",
+  "/career",
   "/settings",
   "/agency",
   "/competitors",
@@ -316,19 +317,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!pathname.startsWith("/api/")) {
     const hostname = request.nextUrl.hostname
     if (MARKETING_HOSTS.has(hostname) && isAppOnlyPath(pathname)) {
-      const url = new URL(request.url)
-      url.hostname = APP_HOST
+      const url = new URL(`${pathname}${request.nextUrl.search}`, `https://${APP_HOST}`)
       return addSecurityHeaders(NextResponse.redirect(url, 308))
     }
     if (hostname === APP_HOST) {
       if (pathname === "/") {
-        const url = new URL(request.url)
-        url.pathname = "/dashboard"
+        const url = new URL("/dashboard", `https://${APP_HOST}`)
         return addSecurityHeaders(NextResponse.redirect(url))
       }
       if (!isAppOnlyPath(pathname)) {
-        const url = new URL(request.url)
-        url.hostname = "www.byqalam.com"
+        const url = new URL(`${pathname}${request.nextUrl.search}`, "https://www.byqalam.com")
         return addSecurityHeaders(NextResponse.redirect(url, 308))
       }
     }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { requirePlan } from "@/lib/server/plan-limits-v2"
+import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { normalizeLinkedInUrl } from "@/lib/validation"
 
@@ -21,7 +21,7 @@ const schema = z.object({
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Free")
+    const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Free")
+    const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError

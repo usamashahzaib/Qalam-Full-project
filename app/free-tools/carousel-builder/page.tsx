@@ -30,7 +30,7 @@ const carouselBuilderSchema = {
       "@type": "HowToStep",
       position: 4,
       name: "Preview and export",
-      text: "Preview each slide, navigate through the deck, then export as a PNG ZIP - one 1080x1080 image per slide, ready to upload to LinkedIn.",
+      text: "Preview the deck and download the cover as a 1080x1080 PNG. Create a free account to export every slide.",
     },
   ],
 }

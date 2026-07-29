@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { requirePlan } from "@/lib/server/require-plan"
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req) => {
+    const planCheck = await requirePlan(req, "Pro")
+    if (!planCheck.ok) return planCheck.response
     const query = new URL(req.url).searchParams.get("q")?.trim().slice(0, 100) || ""
     let search = createServiceClient()
       .from("candidate_visibility")

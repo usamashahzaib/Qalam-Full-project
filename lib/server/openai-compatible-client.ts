@@ -41,6 +41,10 @@ export async function callOpenAiCompatible({
   body = {},
 }: OpenAiCompatibleOptions): Promise<OpenAiCompatibleResult> {
   if (!apiKey) throw new Error(`${provider} API key not configured`)
+  const origin = new URL(endpoint).origin
+  if (!["https://api.groq.com", "https://api.mistral.ai"].includes(origin)) {
+    throw new Error(`${provider} endpoint is not allowed`)
+  }
 
   const response = await withTimeout(
     fetch(endpoint, {

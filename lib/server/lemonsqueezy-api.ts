@@ -2,7 +2,7 @@ import "server-only"
 
 import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
-import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/pricing"
+import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
 
 const LEMONSQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1"
 const LEMONSQUEEZY_STORE_ID = "366761"

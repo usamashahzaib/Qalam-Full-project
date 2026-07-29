@@ -7,6 +7,8 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 import { getPostPreviewText, getPostSourceText } from "@/lib/post-content"
 import { CAROUSEL_TONES, CAROUSEL_TONE_NAMES } from "@/lib/carousel-tones"
+import { useBilling } from "@/lib/hooks/useBilling"
+import { getEffectivePlanLimits } from "@/lib/entitlements"
 
 type CarouselProject = { id: string; topic: string; role: string; tone: string | null; slide_count: number; created_at: string }
 const THEMES = CAROUSEL_TONE_NAMES
@@ -28,6 +30,7 @@ const formatDate = (iso: string) => { try { return new Date(iso).toLocaleDateStr
 
 export default function CarouselsPage() {
   const { workspaceId, activeClientId } = useWorkspace()
+  const { billing } = useBilling()
   const { posts } = usePosts()
   const [carousels, setCarousels] = useState<CarouselProject[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -36,9 +39,10 @@ export default function CarouselsPage() {
   const [selectedPostId, setSelectedPostId] = useState("manual")
   const [theme, setTheme] = useState<string>(THEMES[0])
   const [role, setRole] = useState<string>(ROLE_SUGGESTIONS[0])
-  const [slideCount, setSlideCount] = useState(7)
+  const [slideCount, setSlideCount] = useState(5)
   const [isGenerating, setIsGenerating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const maxSlides = getEffectivePlanLimits(billing.plan, billing.limits).carouselSlides
 
   const carouselSourcePosts = useMemo(() => [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [posts])
   const selectedPost = selectedPostId === "manual" ? null : carouselSourcePosts.find((post) => post.id === selectedPostId) || null
@@ -180,7 +184,7 @@ export default function CarouselsPage() {
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-medium text-zinc-500">Slides ({slideCount})</span>
-                <input type="range" min={5} max={10} value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} className="mt-2 w-full accent-teal" />
+                <input type="range" min={5} max={maxSlides} value={slideCount} onChange={(e) => setSlideCount(Number(e.target.value))} className="mt-2 w-full accent-teal" />
               </label>
             </div>
 

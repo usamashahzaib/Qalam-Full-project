@@ -17,7 +17,7 @@ type ShareRequestBody = {
 const postRepo = new SupabasePostRepository()
 
 export async function POST(request: NextRequest) {
-  const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+  const { requirePlan } = await import("@/lib/server/require-plan")
   // Solo and above: PLAN_CONFIG grants linkedinPublish from Solo up, and the
   // flag check below is the real capability gate.
   const planCheck = await requirePlan(request, "Solo")

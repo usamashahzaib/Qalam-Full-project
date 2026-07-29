@@ -89,7 +89,7 @@ const config: NextAuthConfig = {
       // though they just authorized posting access during login.
       if (account?.provider === "linkedin" && account.access_token && user.email) {
         try {
-          const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/workspace")
+          const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/identity")
           const { storeLinkedInToken, storeLinkedInPublishingAccount } = await import("@/lib/server/linkedin-credentials")
 
           const email = user.email.toLowerCase()

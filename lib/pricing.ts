@@ -477,22 +477,6 @@ export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record
   },
 }
 
-// Maps Lemon Squeezy variant IDs back to a plan + billing cycle - used by the webhook
-// handler so the activated plan is derived from which checkout link was used, not from
-// client-suppliable data.
-export const LEMONSQUEEZY_VARIANT_PLANS: Record<string, { planName: PlanName; billingCycle: BillingCycle }> = {
-  "1928885": { planName: "Solo", billingCycle: "monthly" },
-  "1929048": { planName: "Solo", billingCycle: "annual" },
-  "1928922": { planName: "Pro", billingCycle: "monthly" },
-  "1929064": { planName: "Pro", billingCycle: "annual" },
-  ...(process.env.LEMONSQUEEZY_SOLO_QUARTERLY_VARIANT_ID
-    ? { [process.env.LEMONSQUEEZY_SOLO_QUARTERLY_VARIANT_ID]: { planName: "Solo" as PlanName, billingCycle: "quarterly" as BillingCycle } }
-    : {}),
-  ...(process.env.LEMONSQUEEZY_PRO_QUARTERLY_VARIANT_ID
-    ? { [process.env.LEMONSQUEEZY_PRO_QUARTERLY_VARIANT_ID]: { planName: "Pro" as PlanName, billingCycle: "quarterly" as BillingCycle } }
-    : {}),
-}
-
 export function getLemonSqueezyCheckoutUrl(
   planName: string,
   billingCycle: BillingCycle,
@@ -500,6 +484,12 @@ export function getLemonSqueezyCheckoutUrl(
 ): string | null {
   const base = LEMONSQUEEZY_CHECKOUT_URLS[planName as PlanName]?.[billingCycle]
   if (!base) return null
+  try {
+    const checkout = new URL(base)
+    if (checkout.protocol !== "https:" || checkout.hostname !== "byqalam.lemonsqueezy.com") return null
+  } catch {
+    return null
+  }
 
   const params = new URLSearchParams()
   if (buyer?.email) params.set("checkout[email]", buyer.email)

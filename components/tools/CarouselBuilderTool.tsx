@@ -159,7 +159,7 @@ export function CarouselBuilderTool() {
             </Link>
             <h1 className="mb-3 text-4xl font-extrabold text-zinc-900 sm:text-5xl">LinkedIn Carousel Builder</h1>
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              {themes.length} premium themes. Color picker. Your name, your brand. Export 1080x1080 PNG slides - no account required.
+              {themes.length} premium themes. Color picker. Your name, your brand. Build and preview without an account. Download the cover now or sign up free for the full deck.
             </p>
           </FadeUp>
         </div>
@@ -498,7 +498,7 @@ export function CarouselBuilderTool() {
                       </button>
                     </div>
                     <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-xs text-zinc-500">
-                      <strong className="text-zinc-700">Export tip:</strong> Click &quot;Export PNG ZIP&quot; above. Each slide saves as a 1080x1080 PNG optimized for LinkedIn.
+                      <strong className="text-zinc-700">Export tip:</strong> The free download saves slide 1 as a 1080x1080 PNG. Sign up free to download every slide.
                     </div>
                   </div>
                 </div>

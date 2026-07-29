@@ -8,7 +8,7 @@ const toApprovalRow = <T>(row: T) => row
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const { requirePlan } = await import("@/lib/server/plan-limits-v2")
+    const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
 

@@ -7,7 +7,7 @@ import { buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetad
 export const metadata: Metadata = buildPageMetadata({
   title: "AI LinkedIn Writer - Create Posts in Your Voice",
   description:
-    "The best AI LinkedIn writer that learns your voice. Generate posts, hooks, and carousels that sound like you - not generic AI. Free hook generator included. Start free.",
+    "An AI LinkedIn writer built around your saved voice profile. Generate posts, hooks, and carousels with your professional context. Start free.",
   path: "/ai-linkedin-writer",
   keywords: [
     "AI LinkedIn writer",
@@ -45,7 +45,7 @@ const howToSchema = buildHowToSchema({
     },
     {
       name: "Generate and refine your draft",
-      text: "Qalam produces a draft in your voice. Edit, revise, or regenerate sections. Every edit trains the system further - it gets closer to you with each post.",
+      text: "Qalam produces a draft using your saved voice profile. Edit, revise, or regenerate sections, then update the profile deliberately when your writing direction changes.",
     },
     {
       name: "Schedule or publish directly",
@@ -54,10 +54,10 @@ const howToSchema = buildHowToSchema({
   ],
 })
 
-const faqSchema = buildFaqSchema([
+const FAQS = [
   {
     q: "What is the best AI writer for LinkedIn?",
-    a: "Qalam is the best AI writer for LinkedIn because it learns your voice from real posts, not generic templates. Unlike ChatGPT or Jasper, Qalam remembers your edits, approved drafts, and hook patterns - so every new post sounds more like you than the last.",
+    a: "The right tool depends on your workflow. Qalam is designed for LinkedIn-specific drafting, saved voice profiles, post history, scheduling, and approvals in one workspace.",
   },
   {
     q: "How does an AI LinkedIn writer work?",
@@ -65,7 +65,7 @@ const faqSchema = buildFaqSchema([
   },
   {
     q: "Can AI write LinkedIn posts that sound like me?",
-    a: "Yes - if the AI has voice memory. Qalam trains on your real LinkedIn posts and learns from every edit you make. After 10-20 posts, the drafts are nearly indistinguishable from your natural writing style.",
+    a: "A trained voice profile can make drafts more consistent with your examples, tone, and professional context. You still review every draft, and Qalam does not claim that generated text is indistinguishable from your own writing.",
   },
   {
     q: "Is Qalam better than ChatGPT for LinkedIn writing?",
@@ -79,7 +79,9 @@ const faqSchema = buildFaqSchema([
     q: "Is there a free AI LinkedIn writer?",
     a: "Qalam offers a free plan with 5 posts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
   },
-])
+] as const
+
+const faqSchema = buildFaqSchema([...FAQS])
 
 const FEATURES = [
   {
@@ -144,27 +146,6 @@ const COMPARISONS = [
     qalam: true,
     chatgpt: false,
     jasper: false,
-  },
-]
-
-const TESTIMONIALS = [
-  {
-    quote:
-      "I tried ChatGPT, Jasper, and Copy.ai for my LinkedIn content. They all sounded like someone else. Qalam was the first tool where my posts actually sounded like me.",
-    author: "Founder, SaaS Startup",
-    role: "Using Qalam for 3 months",
-  },
-  {
-    quote:
-      "The hook generator alone saved me 30 minutes per post. But the voice memory is what keeps me paying - month three is easier than month one.",
-    author: "Marketing Consultant",
-    role: "Solo plan subscriber",
-  },
-  {
-    quote:
-      "We run LinkedIn for 8 clients. Qalam's agency workspaces keep every voice separate. No more accidentally posting client A's tone on client B's account.",
-    author: "Content Agency Owner",
-    role: "Agency plan subscriber",
   },
 ]
 
@@ -361,29 +342,6 @@ export default function AiLinkedInWriterPage() {
           </div>
         </section>
 
-        {/* Testimonials */}
-        <section className="px-6 py-20">
-          <div className="mx-auto max-w-[1200px]">
-            <FadeUp className="mb-14 text-center">
-              <h2 className="mb-4 text-4xl font-bold text-zinc-900">What users say about Qalam</h2>
-              <p className="text-lg text-zinc-600">Real feedback from LinkedIn professionals using Qalam daily.</p>
-            </FadeUp>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {TESTIMONIALS.map((t, i) => (
-                <FadeUp key={i} delay={i * 0.08}>
-                  <div className="h-full rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-                    <p className="mb-6 text-sm italic leading-relaxed text-zinc-600">&ldquo;{t.quote}&rdquo;</p>
-                    <div>
-                      <p className="text-sm font-bold text-zinc-900">{t.author}</p>
-                      <p className="text-xs text-zinc-500">{t.role}</p>
-                    </div>
-                  </div>
-                </FadeUp>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* Free Tools CTA */}
         <section className="border-y border-zinc-100 bg-white px-6 py-20">
           <div className="mx-auto max-w-[860px] text-center">
@@ -424,32 +382,7 @@ export default function AiLinkedInWriterPage() {
               <p className="text-lg text-zinc-600">Everything you need to know about AI LinkedIn writing with Qalam.</p>
             </FadeUp>
             <div className="space-y-4">
-              {[
-                {
-                  q: "What is the best AI writer for LinkedIn?",
-                  a: "Qalam is the best AI writer for LinkedIn because it learns your voice from real posts, not generic templates. Unlike ChatGPT or Jasper, Qalam remembers your edits, approved drafts, and hook patterns - so every new post sounds more like you than the last.",
-                },
-                {
-                  q: "How does an AI LinkedIn writer work?",
-                  a: "An AI LinkedIn writer uses large language models trained on professional content to generate post drafts. Qalam goes further by building a voice profile from your actual writing, so outputs match your tone, vocabulary, and structure instead of sounding like generic AI.",
-                },
-                {
-                  q: "Can AI write LinkedIn posts that sound like me?",
-                  a: "Yes - if the AI has voice memory. Qalam trains on your real LinkedIn posts and learns from every edit you make. After 10-20 posts, the drafts are nearly indistinguishable from your natural writing style.",
-                },
-                {
-                  q: "Is Qalam better than ChatGPT for LinkedIn writing?",
-                  a: "Qalam keeps your voice profile, draft history, hook archive, and publishing context in one LinkedIn-specific workflow instead of treating every prompt as a separate task.",
-                },
-                {
-                  q: "Does Qalam work for founders, consultants, and agencies?",
-                  a: "Yes. Founders use Qalam for thought leadership. Consultants build authority archives. Agencies run multi-client workflows with isolated voice profiles and approval flows. Each use case benefits from voice memory and archive continuity.",
-                },
-                {
-                  q: "Is there a free AI LinkedIn writer?",
-                  a: "Qalam offers a free plan with 5 posts per month, voice profile setup, and access to free tools like the LinkedIn Hook Generator and Headline Analyzer. No credit card required.",
-                },
-              ].map((faq, i) => (
+              {FAQS.map((faq, i) => (
                 <FadeUp key={i} delay={i * 0.04}>
                   <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <h3 className="mb-2 text-lg font-bold text-zinc-900">{faq.q}</h3>
