@@ -12,7 +12,6 @@ import {
   CalendarIcon,
   CheckIcon,
   CommentIcon,
-  ComposeIcon,
   GrowthIcon,
   HookIcon,
   LibraryIcon,
@@ -47,58 +46,58 @@ function useCountUp(end: number, duration = 1400) {
 const FEATURES = [
   {
     icon: VoiceIcon,
-    title: "Voice Profile",
-    desc: "Train Qalam on your real posts so the draft starts closer to your actual tone, rhythm, and vocabulary.",
+    title: "LinkedIn Positioning",
+    desc: "Find the gaps weakening your headline, About section, experience, proof, and professional position.",
   },
   {
     icon: AnalyticsIcon,
-    title: "Performance Intelligence",
-    desc: "Review workspace activity, compare patterns, and keep the signals that should shape the next draft.",
+    title: "Content Intelligence",
+    desc: "Write, score, improve, and organize LinkedIn content around your expertise, audience, and career goals.",
   },
   {
     icon: HookIcon,
-    title: "Hook Intelligence",
-    desc: "Generate multiple openings, keep the strong ones, and build a reusable archive of proven structures.",
+    title: "ATS Resume Studio",
+    desc: "Build role-specific resumes from verified experience, measurable proof, and the exact job description.",
   },
   {
     icon: LibraryIcon,
-    title: "Content Capital",
-    desc: "Store frameworks, angles, and finished assets in one system instead of losing them across notes and docs.",
+    title: "Career Vault",
+    desc: "Keep roles, skills, achievements, proof points, and goals in one reusable source of truth.",
   },
   {
     icon: CalendarIcon,
-    title: "Post Scheduler",
-    desc: "Move from draft to planned publishing without breaking the connection between content, timing, and review.",
+    title: "Publishing Workflow",
+    desc: "Move from draft to planned LinkedIn publishing without losing voice, score, version, or approval context.",
   },
   {
     icon: TeamIcon,
-    title: "Agency Workflow",
-    desc: "Keep client voices, approvals, content, and publishing controls isolated across five workspaces.",
+    title: "Agency and Cohorts",
+    desc: "Keep client or learner profiles, career evidence, approvals, and progress separated by workspace.",
   },
   {
     icon: CommentIcon,
-    title: "Comment Generator",
-    desc: "Draft sharp, on-voice replies to other people's posts so you stay visible between your own publishing days.",
+    title: "Recruiter Visibility",
+    desc: "Control a search-ready professional profile without exposing private contact details in public results.",
   },
 ]
 
 const HOW_IT_WORKS = [
   {
     step: "01",
-    title: "Start Writing",
-    desc: "Turn a topic into a structured post draft with hooks, tone, and revision room in one workflow.",
-    icon: ComposeIcon,
+    title: "Assess Your Position",
+    desc: "Review the profile, proof, content, and career signals shaping how the market understands your value.",
+    icon: AnalyticsIcon,
   },
   {
     step: "02",
-    title: "The System Learns",
-    desc: "Approved examples, edits, and outcomes become memory, so Qalam gets closer to the writer over time.",
+    title: "Strengthen Your Story",
+    desc: "Align LinkedIn copy, content, achievements, and role-specific evidence around one credible position.",
     icon: BrainIcon,
   },
   {
     step: "03",
-    title: "Your Archive Compounds",
-    desc: "Drafts, versions, hooks, and results stay attached, so the system becomes more useful the longer it is used.",
+    title: "Build Career Momentum",
+    desc: "Keep improving what the market sees, what you publish, and how clearly you match the opportunities you want.",
     icon: GrowthIcon,
   },
 ]
@@ -136,7 +135,7 @@ const STATUS_META: Record<string, {
 }
 
 const SOLO_PLAN = PLANS.find((plan) => plan.plan === "Solo")
-const SOLO_MONTHLY_PRICE = SOLO_PLAN ? `${formatPkr(SOLO_PLAN.monthlyPkr)}/month` : "Paid plan"
+const SOLO_QUARTERLY_PRICE = SOLO_PLAN ? `${formatPkr(SOLO_PLAN.quarterlyPkr)}/quarter` : "Paid plan"
 
 type DraftSegment = { text: string; bold?: boolean }
 type DraftVariant = { tone: string; segments: DraftSegment[] }
@@ -320,7 +319,7 @@ function ProductMockup() {
       >
         <p className="text-xs font-medium text-zinc-500">Live product</p>
         <p className="text-xl font-bold text-teal">Free to start</p>
-        <p className="text-xs font-medium text-zinc-500">{SOLO_MONTHLY_PRICE} to unlock Solo</p>
+        <p className="text-xs font-medium text-zinc-500">{SOLO_QUARTERLY_PRICE} to unlock Solo</p>
       </motion.div>
     </div>
   )
@@ -512,8 +511,8 @@ const homepageFaqSchema = {
 const homepageHowToSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  name: "How Qalam works: from first post to trained voice",
-  description: "A three-step workflow for building a voice-aware LinkedIn publishing system that compounds with every post.",
+  name: "How Qalam connects LinkedIn authority and career growth",
+  description: "A three-step workflow for assessing professional positioning, strengthening career evidence, and building authority.",
   step: HOW_IT_WORKS.map((step, i) => ({
     "@type": "HowToStep",
     position: i + 1,
@@ -525,9 +524,10 @@ const homepageHowToSchema = {
 export default function HomePage() {
   const homepagePlans = PLANS.map((plan) => ({
     ...plan,
-    price: formatPkr(plan.monthlyPkr),
-    annualSavings: plan.plan === "Free" ? undefined : `Billed quarterly at ${formatPkr(plan.quarterlyPkr)} - 1 month free`,
-    usdReference: plan.plan === "Free" ? "Free forever" : "Pakistan-first pricing",
+    price: formatPkr(plan.quarterlyPkr),
+    period: plan.plan === "Free" ? "" : "quarter",
+    annualSavings: plan.plan === "Free" ? undefined : `Equivalent to ${formatPkr(plan.monthlyPkr)}/month`,
+    usdReference: plan.plan === "Free" ? "No payment card required" : "Billed every three months",
   }))
 
   return (
@@ -586,7 +586,7 @@ export default function HomePage() {
                   href={`${APP_URL}/login`}
                   className="press pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-all hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_8px_28px_rgba(13,74,69,0.4)]"
                 >
-                  Start free - no card needed
+                  Start free
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
@@ -601,7 +601,7 @@ export default function HomePage() {
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-zinc-600">
               <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
-              <span>Your drafts are private - no one reads your content. Pay by card and your plan unlocks instantly. Free plan is real - 5 posts a month. No card. No expiry.</span>
+              <span>Start with 5 posts a month. Build LinkedIn positioning, content, and career evidence from one workspace.</span>
             </motion.div>
           </div>
 
@@ -616,9 +616,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
-              "Your drafts are private - No one at Qalam reads your content. Ever.",
-              "Card checkout unlocks your plan instantly. JazzCash and Easypaisa accepted on request.",
-              "Free plan is real - 5 posts a month. No card. No expiry. No trick.",
+              "See where your professional story is weak",
+              "Improve LinkedIn, content, and resumes together",
+              "Separate supplied evidence from recommendations",
             ].map((block) => (
               <div key={block} className="flex items-center justify-center px-6 py-4 text-center text-sm font-medium leading-relaxed text-zinc-700">
                 {block}
@@ -664,12 +664,12 @@ export default function HomePage() {
       <section className="bg-transparent px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-12 text-center">
-            <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Current Product Surface</span>
+            <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Product truth</span>
             <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              Serious product, <span className="text-gold gold-underline">strictly stated.</span>
+              What you can use now, <span className="text-gold gold-underline">and what comes next.</span>
             </h2>
             <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
-              This is the public truth layer: what is live, what is handled manually, and what is still in rollout.
+              Available tools, controlled workflows, and planned modules stay clearly separated.
             </p>
           </FadeUp>
 
@@ -707,10 +707,10 @@ export default function HomePage() {
           <FadeUp className="mb-16 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Features</span>
             <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              You are not just using a tool. <span className="text-gold gold-underline">You are building an asset.</span>
+              Build authority and career momentum <span className="text-gold gold-underline">in one place.</span>
             </h2>
             <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
-              Every post trains your voice, feeds your archive, and makes the next session more useful than the last one.
+              Start with how the market sees you. Then improve what you publish, how you present your experience, and which roles you target.
             </p>
           </FadeUp>
 
@@ -740,9 +740,9 @@ export default function HomePage() {
           <FadeUp className="mb-16 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">How It Works</span>
             <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              From first post to <span className="text-gold gold-underline">full intelligence</span>
+              From scattered experience to <span className="text-gold gold-underline">clear authority</span>
             </h2>
-            <p className="mx-auto max-w-xl text-xl text-zinc-600">The system keeps context instead of starting over every time you need a draft.</p>
+            <p className="mx-auto max-w-xl text-xl text-zinc-600">The system connects professional positioning, content, proof, and target opportunities.</p>
           </FadeUp>
 
           <div className="relative grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -775,26 +775,25 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Personal onboarding offer */}
+      {/* Methodology */}
       <section className="border-y border-gold/20 bg-gold/5 px-6 py-20">
         <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>
-            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">New Users</span>
+            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">Transparent methodology</span>
             <h2 className="mb-5 mt-2 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              Something no paid plan includes.
+              A score is useful only when you can see how it was built.
             </h2>
             <p className="mb-8 text-xl leading-relaxed text-zinc-600">
-              New users get guided onboarding from the Qalam team. 20 minutes. We set up your voice profile with you and draft your first three posts together.
+              Qalam separates profile signals, content-quality checks, ATS compatibility, supplied evidence, and strategic recommendations. It does not invent recruiter data or guarantee outcomes.
             </p>
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
               <Link
-                href={`${APP_URL}/login`}
+                href="/methodology/linkedin-authority-score"
                 className="inline-flex items-center gap-2 rounded-xl bg-teal px-8 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-colors hover:bg-teal-600"
               >
-                Get started - it&apos;s free to start
+                Read the scoring methodology
               </Link>
             </motion.div>
-            <p className="mt-4 text-sm text-zinc-400">Guided onboarding is offered manually by the Qalam team.</p>
           </FadeUp>
         </div>
       </section>
@@ -802,7 +801,7 @@ export default function HomePage() {
       <section className="bg-white py-20">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <p className="text-lg leading-relaxed text-slate-600">
-            Built for people who post with intention. Qalam helps you show up consistently - without sounding like everyone else. Questions? Reach us at info@byqalam.com
+            Built for professionals who want clearer positioning, stronger proof, and one consistent story across LinkedIn, content, and resumes. Questions? Reach us at info@byqalam.com
           </p>
         </div>
       </section>
@@ -815,7 +814,7 @@ export default function HomePage() {
               Start free. Upgrade when <span className="text-gold gold-underline">the system earns it.</span>
             </h2>
             <p className="mx-auto max-w-xl text-xl text-zinc-600">
-              Free is live now. Paid plans use PKR-first pricing and unlock the moment card payment clears.
+              Start free. Paid plans use Pakistan-first quarterly pricing and activate after confirmed payment.
             </p>
           </FadeUp>
 
@@ -873,7 +872,7 @@ export default function HomePage() {
               Compare Plans
             </Link>
           </div>
-          <p className="mt-5 text-sm text-white/62">No credit card required. No expiry. Your content stays in your workspace.</p>
+          <p className="mt-5 text-sm text-white/62">Start with practical recommendations. Upgrade when you need more capacity.</p>
         </FadeUp>
       </section>
     </>

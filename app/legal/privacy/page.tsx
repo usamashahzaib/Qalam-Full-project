@@ -33,7 +33,7 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">3. Your Content Privacy</h2>
-            <p>Your drafts are private. No one at Qalam reads your content. Your posts and ideas stay within your workspace unless you publish them.</p>
+            <p>Your drafts and posts are handled as account content under this policy. They are not published unless you choose a publishing action.</p>
           </section>
 
           <section>

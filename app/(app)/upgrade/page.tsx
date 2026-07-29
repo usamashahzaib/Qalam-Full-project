@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
@@ -114,7 +115,7 @@ export default function UpgradePage() {
         <p className="mt-1 text-sm leading-relaxed text-zinc-600">
           PKR 7,998 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.
         </p>
-        <a href="/managed/apply?plan=Agency&type=company" className="mt-4 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Apply for Agency</a>
+        <Link href="/managed/apply?plan=Agency&type=company" className="mt-4 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Apply for Agency</Link>
       </section>
 
       {/* Manual fallback. Secondary by design - card checkout is the primary path. */}

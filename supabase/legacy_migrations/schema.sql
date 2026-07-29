@@ -1,3 +1,4 @@
+-- Archived legacy schema. Audit evidence only. Never execute.
 -- Drop old fake tables
 drop table if exists public.workspace_snapshots cascade;
 drop table if exists public.workspace_events cascade;

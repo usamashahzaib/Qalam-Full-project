@@ -268,9 +268,9 @@ test.describe("Auth guards", () => {
     })
   }
 
-  test("/agency-setup redirects unauthenticated visitors to agency pricing", async ({ page }) => {
+  test("/agency-setup redirects visitors to managed agency application", async ({ page }) => {
     await page.goto("/agency-setup")
-    await expect(page).toHaveURL(/\/pricing#agency$/)
+    await expect(page).toHaveURL(/\/managed\/apply\?plan=Agency&type=company$/)
   })
 
   test("homepage has no Framer Motion scroll-container warning", async ({ page }) => {

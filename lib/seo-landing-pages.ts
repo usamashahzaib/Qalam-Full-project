@@ -500,7 +500,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
-        a: "Qalam is significantly more affordable for the Pakistan market. Solo is PKR 799 per month, billed quarterly with 1 month free, while Taplio starts at $39 per month. Qalam also has a free plan with no card required.",
+        a: "Qalam uses Pakistan-first quarterly pricing. Solo is PKR 1,598 per quarter, and a Free plan is available without a payment card.",
       },
     ],
     related: [
@@ -580,7 +580,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Built for the Pakistan market, not adapted for it",
-        body: "Qalam is priced in PKR, not USD. Solo is PKR 799 per month and Pro is PKR 1,499 per month. Both are billed quarterly with 1 month free. Pakistani professionals can pay by card, JazzCash, Easypaisa, or bank transfer.",
+        body: "Qalam is priced in PKR. Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter. Card and assisted local payment workflows are available.",
       },
       {
         heading: "The Pakistani LinkedIn opportunity",
@@ -598,7 +598,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does Qalam cost in Pakistan?",
-        a: "Qalam's Free plan is PKR 0 with 5 AI posts per month and no card required. Solo is PKR 799 per month, Pro is PKR 1,499 per month, and Agency is PKR 3,999 per month. Paid plans are billed quarterly with 1 month free.",
+        a: "Qalam's Free plan includes 5 AI posts per month without a payment card. Solo is PKR 1,598, Pro is PKR 2,998, and Agency is PKR 7,998 per quarter.",
       },
     ],
     related: [

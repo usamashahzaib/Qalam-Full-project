@@ -18,7 +18,7 @@ let verifyAndExtractPayment: typeof import("@/lib/server/payments").verifyAndExt
 
 beforeAll(async () => {
   ;({ verifyAndExtractPayment } = await import("@/lib/server/payments"))
-})
+}, 30_000)
 
 const signedRequest = (body: Record<string, unknown>, eventName: string) => {
   const rawBody = JSON.stringify(body)

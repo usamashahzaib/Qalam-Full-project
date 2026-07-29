@@ -30,6 +30,12 @@ export const freeTierAttemptCap = (attempt: number): number => {
   return 100
 }
 
+export const isReadyContentScore = (score: unknown): score is number =>
+  typeof score === "number" &&
+  Number.isFinite(score) &&
+  score >= MIN_READY_CONTENT_SCORE &&
+  score <= 100
+
 export const gateScores = <T extends Scores>(content: string, scores: T, extraCap?: number): T => {
   const { max: qualityMax, reason: qualityReason } = contentScoreCap(content)
   const max = typeof extraCap === "number" ? Math.min(qualityMax, extraCap) : qualityMax

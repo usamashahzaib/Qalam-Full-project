@@ -188,7 +188,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           </div>
           <p className="text-sm leading-6 text-zinc-600">
             {isSchemaError
-              ? "Supabase is connected, but the app tables are missing in production. Apply supabase/schema.sql to the live project, then reload this page."
+              ? "Supabase is connected, but required migrations are missing. Apply the active supabase/migrations chain, then reload this page."
               : "The app could not resolve your workspace. Reload once. If it still fails, check the Vercel function logs for /api/workspace."}
           </p>
           {resolveError ? <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 px-4 py-3 text-xs text-zinc-100">{resolveError}</pre> : null}

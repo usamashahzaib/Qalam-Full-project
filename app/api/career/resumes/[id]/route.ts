@@ -44,7 +44,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const supabase = createServiceClient()
     const { data: existing } = await supabase.from("resume_documents").select("id").eq("id", id).eq("workspace_id", planCheck.workspaceId).maybeSingle()
     if (!existing) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
-    const { count } = await supabase.from("resume_versions").select("id", { count: "exact", head: true }).eq("resume_id", id)
     const { data, error } = await supabase
       .from("resume_documents")
       .update({
@@ -63,7 +62,12 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       .select("*")
       .single()
     if (error) return NextResponse.json({ error: "Resume could not be saved." }, { status: 500 })
-    await supabase.from("resume_versions").insert({ resume_id: id, version_number: (count || 0) + 1, resume_data: input.resumeData, analysis: input.analysis })
+    const { error: versionError } = await supabase.rpc("append_resume_version", {
+      p_resume_id: id,
+      p_resume_data: input.resumeData,
+      p_analysis: input.analysis,
+    })
+    if (versionError) return NextResponse.json({ error: "Resume saved, but its version history could not be updated." }, { status: 500 })
     return NextResponse.json({ resume: toClient(data) })
   })(request)
 }

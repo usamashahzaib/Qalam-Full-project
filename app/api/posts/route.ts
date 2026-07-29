@@ -4,6 +4,7 @@ import { requireAuth, resolveWorkspaceId, getWorkspaceSessionContext } from "@/l
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 import { attachQstashSchedule, detachQstashSchedule } from "@/lib/server/qstash"
+import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
 const postRepo = new SupabasePostRepository()
 
@@ -52,6 +53,12 @@ export async function POST(request: NextRequest) {
     const scheduleError = validateSchedule(safeStatus, scheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
     if (safeStatus === "scheduled") {
+      if (!isReadyContentScore(engagementScore)) {
+        return NextResponse.json(
+          { error: "content_score_below_minimum", minimum: MIN_READY_CONTENT_SCORE },
+          { status: 409 }
+        )
+      }
       const { requirePlan } = await import("@/lib/server/plan-limits-v2")
       const planCheck = await requirePlan(request, "Solo")
       if (!planCheck.ok) return planCheck.response
@@ -111,8 +118,20 @@ export async function PATCH(request: NextRequest) {
     }
     const nextStatus = status !== undefined && VALID_STATUSES.includes(status) ? status : existing.status
     const nextScheduledTime = scheduledTime !== undefined ? scheduledTime : existing.scheduled_for
+    const contentChanged = content !== undefined && content !== existing.content
+    const nextScore = typeof engagementScore === "number"
+      ? engagementScore
+      : contentChanged
+        ? null
+        : existing.engagement_score
     const scheduleError = validateSchedule(nextStatus, nextScheduledTime)
     if (scheduleError) return NextResponse.json({ error: scheduleError }, { status: 400 })
+    if (nextStatus === "scheduled" && !isReadyContentScore(nextScore)) {
+      return NextResponse.json(
+        { error: "content_score_below_minimum", minimum: MIN_READY_CONTENT_SCORE },
+        { status: 409 }
+      )
+    }
     // PLAN GATE: transitioning to scheduled requires Solo+
     if (nextStatus === "scheduled" && existing.status !== "scheduled") {
       const { requirePlan } = await import("@/lib/server/plan-limits-v2")
@@ -130,6 +149,7 @@ export async function PATCH(request: NextRequest) {
     if (publishedAt !== undefined) patch.publishedAt = publishedAt
     if (externalPostUrn !== undefined) patch.externalPostUrn = externalPostUrn
     if (typeof engagementScore === "number") patch.engagementScore = engagementScore
+    else if (contentChanged) patch.engagementScore = null
 
     const post = await postRepo.update(id, workspaceId, patch)
 

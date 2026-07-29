@@ -22,6 +22,7 @@ export type WorkspacePost = {
   date: string
   scheduledTime: string | null
   externalPostUrn: string | null
+  engagementScore: number | null
   updatedAt: string
 }
 export type ToneMode = "witty" | "professional" | "bold" | "storytelling" | "direct"

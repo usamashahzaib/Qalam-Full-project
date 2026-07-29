@@ -23,7 +23,7 @@ export async function POST(
     const { id: workspaceId } = await context.params
     const supabase = createServiceClient()
 
-    // Owner, admin, or agency_admin can invite - not just the owner. Team leads
+    // Owners and admins can invite. Editors and read-only roles cannot.
     // and agency staff who manage client workspaces need this too.
     try {
       await requireRole(req, workspaceId, "admin")

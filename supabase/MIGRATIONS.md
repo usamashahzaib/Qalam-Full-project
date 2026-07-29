@@ -16,6 +16,9 @@ The local and linked production migration ledgers were reconciled on 2026-07-24.
 
 Files in `supabase/legacy_migrations` are audit evidence only. Never execute them.
 
+`legacy_migrations/schema.sql` is the archived pre-baseline schema. Reconstruct
+the active schema only from `supabase/migrations`.
+
 Reasons:
 
 - duplicate `0002` version

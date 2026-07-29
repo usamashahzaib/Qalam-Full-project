@@ -3,11 +3,12 @@ import "server-only"
 import { shareToLinkedIn, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
 import { ensureFreshLinkedInPublishingAccount } from "@/lib/server/linkedin-credentials"
 import { sendTransactionalEmail } from "@/lib/server/email"
-import { getRedis } from "@/lib/server/redis"
 import { supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 import { supportEnv } from "@/lib/server/env"
 import { isCarouselPostType } from "@/lib/post-content"
+import { isReadyContentScore } from "@/lib/content-score-gate"
+import { acquireLinkedInPublishLock } from "@/lib/server/linkedin-publish-lock"
 
 export type ScheduledPost = {
   id: string
@@ -18,11 +19,11 @@ export type ScheduledPost = {
   type: string | null
   status: string
   scheduled_for: string | null
+  engagement_score: number | null
   metadata?: Record<string, unknown> | null
 }
 
 type UserRow = { id: string; email: string | null; full_name: string | null }
-type LockHandle = { locked: boolean; release: () => Promise<void> }
 
 export type PublishOutcome = { postId: string; status: "published" | "failed" | "skipped"; reason?: string; postUrn?: string | null }
 
@@ -38,20 +39,6 @@ const logPublish = async (postId: string, accountId: string | null, status: "suc
     { post_id: postId, account_id: accountId, status, error_message: error, provider_response: providerResponse },
     "return=minimal"
   ).catch(() => undefined)
-
-const acquirePublishLock = async (postId: string): Promise<LockHandle> => {
-  const redis = getRedis()
-  if (!redis) return { locked: true, release: async () => undefined }
-  const key = `lock:linkedin:publish:${postId}`
-  const token = crypto.randomUUID()
-  const locked = await redis.set(key, token, { nx: true, ex: 300 })
-  return {
-    locked: locked === "OK",
-    release: async () => {
-      if (await redis.get<string>(key) === token) await redis.del(key)
-    },
-  }
-}
 
 const notifyPublishFailure = async (post: ScheduledPost, user: UserRow | undefined, reason: string) => {
   if (!user?.email) return
@@ -112,13 +99,13 @@ const alertOps = async (subject: string, detail: Record<string, unknown>) => {
 export async function publishScheduledPost(postId: string): Promise<PublishOutcome> {
   const rows = await supabaseSelect<ScheduledPost>(
     "posts",
-    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,type,status,scheduled_for,metadata&limit=1`
+    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,type,status,scheduled_for,engagement_score,metadata&limit=1`
   )
   const post = rows?.[0]
   if (!post) return { postId, status: "skipped", reason: "post_not_found" }
   if (post.status !== "scheduled") return { postId, status: "skipped", reason: `not_scheduled:${post.status}` }
 
-  const lock = await acquirePublishLock(postId)
+  const lock = await acquireLinkedInPublishLock(postId)
   if (!lock.locked) return { postId, status: "skipped", reason: "publish_lock_active" }
 
   try {
@@ -151,6 +138,13 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
         await markFailed(post, "scheduled_post_missing_content")
         await logPublish(post.id, account?.id || null, "failed", "scheduled_post_missing_content", null)
         return { postId, status: "failed", reason: "scheduled_post_missing_content" }
+      }
+
+      if (!isReadyContentScore(post.engagement_score)) {
+        await markFailed(post, "content_score_below_minimum")
+        await logPublish(post.id, account?.id || null, "failed", "content_score_below_minimum", null)
+        await notifyPublishFailure(post, user, "content_score_below_minimum")
+        return { postId, status: "failed", reason: "content_score_below_minimum" }
       }
 
       if (isCarouselPostType(post.type)) {
@@ -269,8 +263,13 @@ export async function reconcileStuckPublishing(olderThanMs = 10 * 60 * 1000): Pr
       }).catch(() => undefined)
       finalized++
     } else {
+      const priorStatus = String(post.metadata?.manual_publish_previous_status || "")
+      const restoredStatus = ["draft", "approved", "scheduled", "notified", "failed"].includes(priorStatus)
+        ? priorStatus
+        : "scheduled"
       await supabasePatch("posts", `id=eq.${post.id}&status=eq.publishing`, {
-        status: "scheduled",
+        status: restoredStatus,
+        metadata: { ...(post.metadata || {}), manual_publish_previous_status: undefined },
         updated_at: new Date().toISOString(),
       }).catch(() => undefined)
       reverted++

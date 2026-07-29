@@ -11,19 +11,19 @@ const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
 const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
 const agencyPlan = PLANS.find((plan) => plan.plan === "Agency")
-const soloPrice = soloPlan ? formatPkr(soloPlan.monthlyPkr) : "PKR 799"
-const proPrice = proPlan ? formatPkr(proPlan.monthlyPkr) : "PKR 1,499"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.monthlyPkr) : "PKR 3,999"
+const soloPrice = soloPlan ? formatPkr(soloPlan.quarterlyPkr) : "PKR 1,598"
+const proPrice = proPlan ? formatPkr(proPlan.quarterlyPkr) : "PKR 2,998"
+const agencyPrice = agencyPlan ? formatPkr(agencyPlan.quarterlyPkr) : "PKR 7,998"
 
 export const metadata: Metadata = {
-  title: `Qalam Pricing | Free to ${soloPrice}/month`,
+  title: `Quarterly Pricing | Free to ${soloPrice}`,
   description:
-    `Pakistan-first career visibility pricing. Solo at ${soloPrice}/month and Pro at ${proPrice}/month, billed quarterly with 1 month free. LinkedIn optimization, ATS resumes, content intelligence, and publishing in one system.`,
+    `Pakistan-first quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month, billed quarterly with 1 month free.`,
+      `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Qalam Pricing - AI LinkedIn Writer Plans",
     description:
-      `Free plan with ${freeDrafts}. Solo at ${soloPrice}/month, billed quarterly with 1 month free.`,
+      `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
   },
 }
 
@@ -44,7 +44,7 @@ const pricingFaqSchema = {
       name: "Is there a free plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Qalam's Free plan is PKR 0 forever with 5 AI posts per month and no credit card required.",
+        text: "Yes. Qalam's Free plan includes 5 AI posts per month and does not require a payment card.",
       },
     },
     {
@@ -52,7 +52,7 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice} per month, Pro is ${proPrice} per month, and Agency is ${agencyPrice} per month. Every quarterly payment includes 1 month free.`,
+        text: `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter.`,
       },
     },
     {
@@ -60,7 +60,7 @@ const pricingFaqSchema = {
       name: "Is there a free trial for paid plans?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Yes. Free gives you ${freeDrafts} with no card and no expiry. Upgrade whenever you are ready - card checkout unlocks the plan straight away.`,
+        text: `Free gives you ${freeDrafts} without a payment card. Upgrade when you need more capacity.`,
       },
     },
     {
@@ -68,7 +68,7 @@ const pricingFaqSchema = {
       name: "Can I cancel anytime?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Paid plans can be cancelled - your workspace and drafts stay accessible on the Free tier, and you never lose your content history. If your workspace is onboarded manually, cancellation terms are defined in that onboarding agreement instead.",
+        text: "Paid renewals can be cancelled before the next quarter. Account access and retention follow the terms shown during checkout or assisted onboarding.",
       },
     },
     {
@@ -76,7 +76,7 @@ const pricingFaqSchema = {
       name: "Does Qalam accept JazzCash and Easypaisa?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Card checkout is the fastest route and unlocks your plan instantly. If you would rather pay by JazzCash, Easypaisa, or bank transfer, send us the payment screenshot and we activate your plan manually, normally within 24 hours.",
+        text: "Card checkout is available. JazzCash, Easypaisa, and bank transfer can be verified through the assisted payment workflow.",
       },
     },
     {
@@ -84,7 +84,7 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice}/month includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, post intelligence, analytics, and approval workflows. It is billed quarterly with 1 month free.`,
+        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, content intelligence, analytics, and approval workflows.`,
       },
     },
     {
@@ -92,7 +92,7 @@ const pricingFaqSchema = {
       name: "Is Qalam useful for agencies?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Agency is ${agencyPrice}/month, billed quarterly. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
+        text: `Agency is ${agencyPrice} per quarter. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
       },
     },
   ],

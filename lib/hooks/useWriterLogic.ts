@@ -15,6 +15,7 @@ import {
   ApiClientError,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 import type {
   WriterRole as Role,
   PostFormat as FormatKey,
@@ -134,6 +135,10 @@ export function useWriterLogic({
   const [scores, setScores] = useState<ScoreData | null>(null)
   const [isScoring, setIsScoring] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
+  const onDraftContentChange = useCallback((value: string) => {
+    setDraftContent(value)
+    setScores(null)
+  }, [])
   // Counts fresh-content generations for the current topic (1 = first draft, 2 = after 1
   // regenerate, ...). Free plan uses this to cap the score so it climbs as the user regenerates
   // instead of hitting 90+ on the very first draft. Resets whenever a new topic is generated.
@@ -502,6 +507,10 @@ export function useWriterLogic({
 
   const onSchedule = async () => {
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
+    if (!isReadyContentScore(scores?.overall)) {
+      showStatus(`Wait for a content score of ${MIN_READY_CONTENT_SCORE}+ before scheduling.`, "error")
+      return
+    }
     const err = scheduleValidationError(scheduleDate, scheduleTime)
     if (err) { showStatus(err, "error"); return }
     try {
@@ -518,6 +527,10 @@ export function useWriterLogic({
 
   const onPublish = async () => {
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
+    if (!isReadyContentScore(scores?.overall)) {
+      showStatus(`Wait for a content score of ${MIN_READY_CONTENT_SCORE}+ before publishing.`, "error")
+      return
+    }
     setIsPublishing(true)
 
     let postUrn: string | null = null
@@ -657,6 +670,7 @@ export function useWriterLogic({
       blocks[idx] = altText
       return blocks.join("\n\n")
     })
+    setScores(null)
     setCtaAltOpen(false)
     showStatus("CTA replaced.", "success")
   }
@@ -731,7 +745,7 @@ export function useWriterLogic({
     isGeneratingHooks,
 
     // Draft
-    draftContent, setDraftContent,
+    draftContent, setDraftContent, onDraftContentChange,
     isGeneratingPost,
     versions, editingId,
     scheduleDate, setScheduleDate,

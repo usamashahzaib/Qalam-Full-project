@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { contentScoreCap, freeTierAttemptCap, gateScores, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
+import {
+  contentScoreCap,
+  freeTierAttemptCap,
+  gateScores,
+  isReadyContentScore,
+  MIN_READY_CONTENT_SCORE,
+} from "@/lib/content-score-gate"
 
 const highScores = {
   hook: 96,
@@ -62,5 +68,15 @@ describe("freeTierAttemptCap", () => {
   it("floors a complete scored draft at 82 without inflating unfinished content", () => {
     const lowScores = { ...highScores, overall: 79 }
     expect(gateScores(completeContent, lowScores).overall).toBe(MIN_READY_CONTENT_SCORE)
+  })
+})
+
+describe("isReadyContentScore", () => {
+  it.each([82, 90, 100])("accepts a publish-ready score: %s", (score) => {
+    expect(isReadyContentScore(score)).toBe(true)
+  })
+
+  it.each([undefined, null, 81, 101, Number.NaN, "90"])("rejects an invalid or unready score: %s", (score) => {
+    expect(isReadyContentScore(score)).toBe(false)
   })
 })

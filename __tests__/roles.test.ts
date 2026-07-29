@@ -19,13 +19,10 @@ type WorkspaceRole = import("@/lib/server/roles").WorkspaceRole
 // Mirrors the ROLE_HIERARCHY order in lib/server/roles.ts, highest privilege first.
 const ROLES: WorkspaceRole[] = [
   "owner",
-  "super_admin",
   "admin",
-  "agency_admin",
   "editor",
   "client_reviewer",
   "viewer",
-  "member",
 ]
 
 describe("hasPermission (role hierarchy)", () => {
@@ -49,17 +46,17 @@ describe("hasPermission (role hierarchy)", () => {
   })
 
   it("grants access when the user's role outranks the requirement", () => {
-    expect(hasPermission("owner", "member")).toBe(true)
+    expect(hasPermission("owner", "viewer")).toBe(true)
     expect(hasPermission("admin", "editor")).toBe(true)
   })
 
   it("denies access when the user's role is below the requirement", () => {
-    expect(hasPermission("member", "owner")).toBe(false)
+    expect(hasPermission("viewer", "owner")).toBe(false)
     expect(hasPermission("viewer", "admin")).toBe(false)
   })
 
   it("denies an unknown/unrecognized role regardless of the requirement", () => {
-    expect(hasPermission("not_a_real_role" as WorkspaceRole, "member")).toBe(false)
+    expect(hasPermission("not_a_real_role" as WorkspaceRole, "viewer")).toBe(false)
     expect(hasPermission("not_a_real_role" as WorkspaceRole, "owner")).toBe(false)
   })
 

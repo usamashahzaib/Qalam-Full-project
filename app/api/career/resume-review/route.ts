@@ -7,7 +7,7 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/plan-limits-v2"
 import { authorizeRole } from "@/lib/server/roles"
-import { consumeCareerUsage } from "@/lib/server/career-usage"
+import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -34,10 +34,12 @@ export async function POST(request: NextRequest) {
     if (!usage.allowed) return NextResponse.json({ error: "Your resume review limit is reached for this month." }, { status: 429 })
 
     const input = parsed.data
-    const raw = await callAi(
-      "voice-profile",
-      "You are a senior recruiter and ATS resume specialist. Return strict JSON only. Preserve truth. Never invent experience, metrics, employers, or qualifications.",
-      `Review this resume for ATS compatibility, career progression, clarity, and role relevance.
+    let raw: string
+    try {
+      raw = await callAi(
+        "voice-profile",
+        "You are a senior recruiter and ATS resume specialist. Return strict JSON only. Preserve truth. Never invent experience, metrics, employers, or qualifications.",
+        `Review this resume for ATS compatibility, career progression, clarity, and role relevance.
 
 RESUME:
 ${input.resumeText}
@@ -62,11 +64,18 @@ Return:
   "rewritten_summary": "truthful rewritten professional summary",
   "next_step": "single highest value action"
 }`,
-      { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: planCheck.plan }
-    )
+        { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: planCheck.plan }
+      )
+    } catch (error) {
+      await refundCareerUsage(user.id, "resume_review")
+      throw error
+    }
 
     const parsedAi = safeParseJson(raw)
-    if (!parsedAi || typeof parsedAi !== "object") return NextResponse.json({ error: "The resume review could not be completed." }, { status: 503 })
+    if (!parsedAi || typeof parsedAi !== "object") {
+      await refundCareerUsage(user.id, "resume_review")
+      return NextResponse.json({ error: "The resume review could not be completed." }, { status: 503 })
+    }
     const result = parsedAi as Record<string, unknown>
     result.overall_score = score(result.overall_score)
     if (result.scores && typeof result.scores === "object") {

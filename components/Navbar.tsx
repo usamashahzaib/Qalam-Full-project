@@ -10,11 +10,11 @@ import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { APP_URL } from "@/lib/seo"
 
 const PRODUCT_LINKS = [
-  { label: "Post Writer", href: "/product/post-writer", desc: "Draft and revise in one structured workflow" },
-  { label: "Voice Profile", href: "/product/voice-profile", desc: "Train Qalam on your real writing tone" },
-  { label: "Hook Generator", href: "/product/hook-generator", desc: "Build stronger openings, archive the best" },
-  { label: "Comment Generator", href: "/product/comment-generator", desc: "Stay visible with on-voice replies" },
-  { label: "Post Scheduler", href: "/product/post-scheduler", desc: "Plan publishing without losing draft context" },
+  { label: "Career Visibility", href: "/career-visibility", desc: "Connect LinkedIn, content, resumes, and target roles" },
+  { label: "LinkedIn Optimizer", href: "/linkedin-optimization", desc: "Improve positioning, search relevance, and proof" },
+  { label: "Content Studio", href: "/product/post-writer", desc: "Draft, score, revise, and plan LinkedIn content" },
+  { label: "ATS Resume Builder", href: "/ats-resume-builder", desc: "Build role-specific resumes from verified experience" },
+  { label: "Job Description Match", href: "/job-description-match", desc: "Find evidence, relevance, and keyword gaps" },
   { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Separate client voices, approvals, and analytics" },
 ]
 
@@ -56,6 +56,7 @@ function NavDropdown({
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const panelId = `nav-${label.toLowerCase().replace(/\s+/g, "-")}`
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -66,10 +67,14 @@ function NavDropdown({
   }, [])
 
   return (
-    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onKeyDown={(event) => {
+      if (event.key === "Escape") setOpen(false)
+    }}>
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
+        aria-haspopup="true"
+        aria-controls={panelId}
         className="nav-underline flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
       >
         {label}
@@ -85,6 +90,7 @@ function NavDropdown({
       <AnimatePresence>
         {open && (
           <motion.div
+            id={panelId}
             initial={{ opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
@@ -236,20 +242,20 @@ export function Navbar() {
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
               <span className="truncate">
-                <strong>Coming soon:</strong> <span className="hidden sm:inline">agency workspaces with separate client voice memory</span><span className="sm:hidden">agency workspaces</span>
+                <strong>New:</strong> <span className="hidden sm:inline">Career Visibility connects LinkedIn, content, and ATS resumes</span><span className="sm:hidden">Career Visibility</span>
               </span>
               <Link
-                href="/pricing#agency"
+                href="/career-visibility"
                 className="inline-flex shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
-                <span className="hidden sm:inline">View plans</span><span className="sm:hidden">Plans</span> <ChevronRightIcon className="h-3.5 w-3.5" />
+                Explore <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => {
                   localStorage.setItem("qalam_announce_dismissed", "1")
                   setAnnouncementVisible(false)
                 }}
-                className="absolute right-4 text-lg leading-none text-white/60 transition-colors hover:text-white"
+                className="absolute right-1 flex h-10 w-10 items-center justify-center text-lg leading-none text-white/60 transition-colors hover:text-white sm:right-4"
                 aria-label="Dismiss"
               >
                 <span aria-hidden="true">&times;</span>
@@ -306,6 +312,8 @@ export function Navbar() {
             className="flex flex-col gap-1.5 rounded-lg p-2 transition-colors hover:bg-zinc-100 md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-navigation"
           >
             <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className="block h-0.5 w-5 origin-center rounded-full bg-zinc-700" />
             <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className="block h-0.5 w-5 rounded-full bg-zinc-700" />
@@ -316,6 +324,7 @@ export function Navbar() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
+              id="mobile-navigation"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -326,6 +335,8 @@ export function Navbar() {
                 {/* Product section */}
                 <button
                   onClick={() => setMobileSection(mobileSection === "product" ? null : "product")}
+                  aria-expanded={mobileSection === "product"}
+                  aria-controls="mobile-product-links"
                   className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Product
@@ -335,7 +346,7 @@ export function Navbar() {
                 </button>
                 <AnimatePresence>
                   {mobileSection === "product" && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
+                    <motion.div id="mobile-product-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
                       {PRODUCT_LINKS.map((link) => (
                         <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
                           {link.label}
@@ -348,6 +359,8 @@ export function Navbar() {
                 {/* Use Cases section */}
                 <button
                   onClick={() => setMobileSection(mobileSection === "use-cases" ? null : "use-cases")}
+                  aria-expanded={mobileSection === "use-cases"}
+                  aria-controls="mobile-use-case-links"
                   className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Use Cases
@@ -357,7 +370,7 @@ export function Navbar() {
                 </button>
                 <AnimatePresence>
                   {mobileSection === "use-cases" && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
+                    <motion.div id="mobile-use-case-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
                       {USE_CASE_LINKS.map((link) => (
                         <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
                           {link.label}

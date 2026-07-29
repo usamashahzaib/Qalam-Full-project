@@ -28,9 +28,9 @@ const cormorant = Cormorant_Garamond({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 
-const rootOgTitle = "Qalam - AI LinkedIn Writer & Post Generator with Voice Memory"
+const rootOgTitle = "Qalam | LinkedIn Authority and Career Visibility OS"
 const rootOgDescription =
-  "Qalam is the AI writing tool that learns your voice. Write LinkedIn posts that sound like you - not generic AI. Voice memory, drafts, scheduling, and publishing in one workspace."
+  "Align your LinkedIn profile, professional content, ATS resumes, and target roles around one credible career story."
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
@@ -40,42 +40,18 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Qalam is the AI writer that learns your voice. Create LinkedIn posts, hooks, and carousels that sound exactly like you - not generic AI output. Voice memory, drafts, scheduling, and publishing in one workspace. Free to start.",
+    "Qalam is a Career Visibility OS for LinkedIn positioning, professional content, ATS resumes, job matching, and career progression.",
   keywords: [
     "Qalam",
-    "Qalam AI",
-    "Qalam writer",
-    "Qalam LinkedIn",
-    "AI writer",
-    "AI writing tool",
-    "AI content writer",
-    "LinkedIn AI writer",
-    "LinkedIn post generator",
-    "LinkedIn content creator",
-    "AI LinkedIn posts",
-    "LinkedIn writing assistant",
-    "LinkedIn ghostwriter AI",
-    "voice AI writer",
-    "AI with memory",
-    "personal brand AI tool",
-    "LinkedIn hook generator",
-    "LinkedIn headline optimizer",
-    "LinkedIn carousel maker",
-    "LinkedIn scheduler AI",
-    "founder content tool",
-    "consultant LinkedIn tool",
-    "agency LinkedIn workflow",
-    "HR LinkedIn content",
-    "best AI for LinkedIn",
-    "LinkedIn content system",
-    "AI writing workspace",
-    "content archive software",
-    "brand voice AI",
-    "AI copywriting tool",
-    "LinkedIn post writer",
-    "LinkedIn scheduler",
-    "agency content workflow",
-    "auth",
+    "LinkedIn profile optimization",
+    "LinkedIn authority",
+    "career visibility",
+    "ATS resume builder Pakistan",
+    "job description match",
+    "LinkedIn content intelligence",
+    "professional positioning",
+    "career progression",
+    "recruiter visibility",
   ],
   authors: [{ name: SITE_NAME, url: siteUrl }],
   creator: SITE_NAME,
@@ -97,21 +73,21 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName: SITE_NAME,
-    title: "Qalam | AI LinkedIn Writer with Voice Memory",
+    title: rootOgTitle,
     description: rootOgDescription,
     images: [
       {
         url: buildOgImageUrl(rootOgTitle, rootOgDescription),
         width: 1200,
         height: 630,
-        alt: "Qalam - AI LinkedIn writer with voice memory",
+        alt: "Qalam Career Visibility OS",
       },
     ],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Qalam | AI LinkedIn Writer with Voice Memory",
+    title: rootOgTitle,
     description: rootOgDescription,
     images: [buildOgImageUrl(rootOgTitle, rootOgDescription)],
     creator: "@byqalam",

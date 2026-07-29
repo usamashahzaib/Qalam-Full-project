@@ -5,12 +5,12 @@ import { QalamLogo } from "@/components/QalamLogo"
 
 const FOOTER_LINKS = {
   Product: [
-    { label: "Post Writer", href: "/product/post-writer" },
-    { label: "Voice Profile", href: "/product/voice-profile" },
-    { label: "Hook Generator", href: "/product/hook-generator" },
-    { label: "Comment Generator", href: "/product/comment-generator" },
-    { label: "Post Scheduler", href: "/product/post-scheduler" },
-    { label: "Agency Workspaces", href: "/product/agency-workspaces" },
+    { label: "Career Visibility", href: "/career-visibility" },
+    { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
+    { label: "Content Studio", href: "/product/post-writer" },
+    { label: "ATS Resume Builder", href: "/ats-resume-builder" },
+    { label: "Job Description Match", href: "/job-description-match" },
+    { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
   ],
   "Use Cases": [
     { label: "Founders", href: "/use-cases/founders" },
@@ -65,7 +65,7 @@ export function Footer() {
               textClassName="text-lg font-bold text-white"
             />
             <p className="mb-5 text-sm leading-relaxed text-white/55">
-              The publishing system that learns your voice, stores your archive, and turns ideas into authority over time.
+              The Career Visibility OS for professionals who want to be found, trusted, and shortlisted.
             </p>
             <div className="flex gap-2">
               <SocialLink href="https://www.instagram.com/withqalam" label="Instagram">

@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react"
 import { shareToLinkedIn } from "@/lib/api/client"
 import { isCarouselPostType } from "@/lib/post-content"
+import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 import type { WorkspacePost } from "@/types/domain"
 
 // ─── Helpers (kept local - calendar-specific) ─────────────────────────────────
@@ -28,7 +29,7 @@ export interface CalendarLogicDeps {
   published: WorkspacePost[]
   workspaceId: string
   linkedinMemberId: string | null
-  publishPost: (input: { id: string; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null }) => Promise<string>
+  publishPost: (input: { id: string; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null }) => Promise<string>
   refreshPosts: () => Promise<void>
 }
 
@@ -149,6 +150,10 @@ export function useCalendarLogic({
 
   const onPublishNow = async (post: WorkspacePost) => {
     if (!linkedinMemberId) { setStatus("Connect LinkedIn in settings first"); return }
+    if (!isReadyContentScore(post.engagementScore)) {
+      setStatus(`Improve this post to a content score of ${MIN_READY_CONTENT_SCORE}+ before publishing.`)
+      return
+    }
     if (isCarouselPostType(post.type)) {
       setStatus("Carousels can't be auto-published yet. Export the PDF from Carousels and post it manually on LinkedIn.")
       return
@@ -170,7 +175,15 @@ export function useCalendarLogic({
     // LinkedIn share succeeded - the post is live. From here we only persist the
     // record; never re-attempt shareToLinkedIn or prompt the composer again.
     try {
-      await publishPost({ id: post.id, title: post.title, content: post.content, type: post.type, publishedAt: new Date().toISOString(), externalPostUrn: postUrn })
+      await publishPost({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        type: post.type,
+        publishedAt: new Date().toISOString(),
+        externalPostUrn: postUrn,
+        engagementScore: post.engagementScore,
+      })
       setStatus(`Published: ${post.title}`)
     } catch (error) {
       setStatus(`Published to LinkedIn, but saving the record failed: ${(error as Error).message || "unknown error"}. It will not be re-posted - refresh to check Library.`)

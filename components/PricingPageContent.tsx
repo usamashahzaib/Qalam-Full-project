@@ -16,11 +16,11 @@ import type { ManagedPlan } from "@/lib/pricing"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free is live with no time limit - 5 AI posts per month, 1 carousel per month, hook generator, no scheduling, no voice training, no analytics.",
+    a: "Yes. Free includes 5 AI posts per month, 1 carousel, basic profile and resume checks, and core writing tools. No payment card is required.",
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo is PKR 799/month, Pro is PKR 1,499/month, and Agency is PKR 3,999/month. Plans are billed quarterly. You pay for 2 months and get 3 months.",
+    a: "Solo is PKR 1,598 per quarter, Pro is PKR 2,998 per quarter, and Agency is PKR 7,998 per quarter.",
   },
   {
     q: "Why does Qalam use quarterly billing?",
@@ -32,11 +32,11 @@ const PRICING_FAQ = [
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. Paid plans can be cancelled - your workspace and drafts stay accessible on the Free tier. You never lose your content history.",
+    a: "Paid renewals can be cancelled before the next quarter. Access and retention follow the account terms shown during checkout.",
   },
   {
-    q: "Is Qalam actually worth it compared to hiring a ghostwriter?",
-    a: "A LinkedIn ghostwriter in Pakistan can cost PKR 20,000-80,000 per month. Qalam combines LinkedIn positioning, content, and ATS resumes from PKR 799/month, billed quarterly.",
+    q: "Which plan should I choose?",
+    a: "Choose Solo for consistent LinkedIn publishing and one targeted resume each month. Choose Pro for deeper positioning, more resume versions, content intelligence, and recruiter visibility.",
   },
 ]
 
@@ -113,7 +113,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
             Company
           </Link>
         </div>
-        <p className="mt-3 text-center text-[10px] text-zinc-400">Response within one business day</p>
+        <p className="mt-3 text-center text-[10px] text-zinc-400">Application reviewed before managed service begins</p>
       </motion.div>
     </motion.div>
   )
@@ -147,18 +147,18 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const isCurrentPlan = currentPlan != null && plan.plan.toLowerCase() === currentPlan.toLowerCase()
     const noteOverride =
       plan.plan === "Free"
-        ? "Real free. No card required and no expiry."
+        ? "No payment card required."
         : plan.plan === "Solo" || plan.plan === "Pro"
-          ? "Secure card checkout via Lemon Squeezy. Your plan unlocks the moment payment clears."
-          : "Agency onboarding is reviewed within one business day."
+          ? "Access unlocks after confirmed card payment."
+          : "Agency onboarding is reviewed before activation."
 
-    const basePkr = plan.monthlyPkr
+    const basePkr = plan.quarterlyPkr
     const hasDiscount = referralDiscountPercent > 0 && !!basePkr && basePkr > 0
     const price = formatPkr(basePkr)
     const annualSavings = plan.plan === "Free"
       ? undefined
-      : `Billed quarterly at ${formatPkr(plan.quarterlyPkr)} - 1 month free`
-    const usdReference = plan.plan === "Free" ? "Free forever" : "Pakistan launch pricing"
+      : `Equivalent to ${formatPkr(plan.monthlyPkr)}/month`
+    const usdReference = plan.plan === "Free" ? "Core tools included" : "Billed every three months"
 
     // Paid plans route to the in-app upgrade page, which mints the checkout token at
     // click time and opens the Lemon Squeezy overlay. Logged-out visitors hit the app's
@@ -172,6 +172,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
     return {
       ...plan,
+      period: plan.plan === "Free" ? "" : "quarter",
       description: plan.description,
       note: noteOverride,
       price,
@@ -189,12 +190,6 @@ export function PricingPageContent({}: PricingPageContentProps) {
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
 
-      {/* Urgency / early-access banner */}
-      <div className="bg-teal text-white text-center py-2.5 px-4 text-xs font-semibold tracking-wide">
-        Early-access pricing - rates increase soon.{" "}
-        <span className="text-gold font-bold">Lock your rate now.</span>
-      </div>
-
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
         <div
@@ -205,12 +200,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp>
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
-              Every week without a system,
+              One quarter to build
               {" "}
-              <span className="text-gold gold-underline">someone else builds what you should.</span>
+              <span className="text-gold gold-underline">career visibility that compounds.</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
-              Qalam is what serious LinkedIn professionals use to stay consistent, get better over time, and never start from blank again.
+              Start free. Upgrade for more LinkedIn audits, content capacity, ATS resume versions, and career intelligence.
             </p>
 
             {/* Social proof strip */}
@@ -221,7 +216,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.monthlyPkr)}/month` : "Solo"}</strong> Solo
+                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.quarterlyPkr)}/quarter` : "Solo"}</strong> Solo
               </span>
               <span className="text-zinc-200">|</span>
               <span>
@@ -232,7 +227,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-700">
               Quarterly billing: <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">1 month free</span>
             </div>
-            <p className="mt-3 text-xs text-zinc-400">No credit card required for Free. Paid plans start instantly.</p>
+            <p className="mt-3 text-xs text-zinc-400">No payment card required for Free. Paid access starts after confirmed payment.</p>
           </FadeUp>
         </div>
       </section>
@@ -250,7 +245,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               {
                 icon: ArchiveIcon,
                 label: "Your entire content history, intact",
-                sub: "Drafts, versions, and wins live in your workspace permanently",
+                sub: "Drafts, versions, and evidence stay connected to your workspace",
               },
               {
                 icon: ShieldIcon,
@@ -400,7 +395,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <a href={`mailto:${UPGRADES_EMAIL}`} className="font-semibold text-zinc-700 underline">
               {UPGRADES_EMAIL}
             </a>
-            . We activate manually, normally within 24 hours.
+            . Assisted payments are activated after verification.
           </p>
         </div>
       </div>
@@ -409,27 +404,27 @@ export function PricingPageContent({}: PricingPageContentProps) {
       <div className="border-b border-zinc-100 bg-white px-6 py-5">
         <div className="mx-auto max-w-[860px] text-center">
           <p className="text-xs leading-relaxed text-zinc-400">
-            Your drafts are private. No one at Qalam reads your content. LinkedIn data is used only for publishing - nothing stored beyond what you authorize.
+            Account data and connected services are handled according to the Privacy Policy and the permissions you authorize.
           </p>
         </div>
       </div>
 
-      {/* What this replaces - value anchor */}
+      {/* Value anchor */}
       <section className="border-y border-zinc-100 bg-white px-6 py-16">
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
-            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">The math is obvious</span>
-            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What PKR 799 per month replaces</h2>
-            <p className="mt-2 text-sm text-zinc-500">What professionals typically spend to get what Qalam delivers in one workspace.</p>
+            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">One connected system</span>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900">What your quarterly plan connects</h2>
+            <p className="mt-2 text-sm text-zinc-500">Choose capacity based on the professional workflow you need.</p>
           </FadeUp>
 
           <FadeUp>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
-                { label: "LinkedIn Ghostwriter", cost: "PKR 20,000-80,000/month", note: "For one person, one voice, inconsistent availability" },
-                { label: "Content Scheduling Tool", cost: "PKR 4,000-8,000/month", note: "No AI, no voice memory, no analytics depth" },
-                { label: "AI Writing Assistant (generic)", cost: "PKR 2,500-5,000/month", note: "No LinkedIn-specific training, no archive, no workflow" },
-                { label: "Content Analytics", cost: "PKR 2,000-6,000/month", note: "Basic tracking is included in Solo; Pro adds full analytics" },
+                { label: "LinkedIn positioning", cost: "Profile", note: "Audit clarity, search relevance, credibility, and alignment" },
+                { label: "Content workflow", cost: "Content", note: "Draft, score, revise, plan, and publish from one workspace" },
+                { label: "ATS career engine", cost: "Resume", note: "Review and tailor verified experience to a target job" },
+                { label: "Career intelligence", cost: "Growth", note: "Track evidence, recruiter visibility, and professional progress" },
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -444,10 +439,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
             </div>
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
-              <p className="text-sm text-zinc-600">Qalam replaces all of it.</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 799/month.</p>
-              <p className="mt-1 text-xs font-semibold text-emerald-700">PKR 1,598 billed quarterly. 1 month free.</p>
-              <p className="mt-1 text-xs text-zinc-400">One workspace. Your voice. Every post in one place.</p>
+              <p className="text-sm text-zinc-600">Solo starts at</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 1,598 per quarter</p>
+              <p className="mt-1 text-xs text-zinc-400">One professional story across profile, content, and career assets.</p>
             </div>
           </FadeUp>
         </div>

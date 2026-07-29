@@ -7,7 +7,7 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/plan-limits-v2"
 import { authorizeRole } from "@/lib/server/roles"
-import { consumeCareerUsage } from "@/lib/server/career-usage"
+import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -36,10 +36,12 @@ export async function POST(request: NextRequest) {
     if (!usage.allowed) return NextResponse.json({ error: "Your LinkedIn audit limit is reached for this month." }, { status: 429 })
 
     const input = parsed.data
-    const raw = await callAi(
-      "voice-profile",
-      "You are a senior LinkedIn positioning strategist. Return strict JSON only. Preserve truth. Never invent credentials or results.",
-      `Audit this LinkedIn profile for recruiter discovery, credibility, and conversion.
+    let raw: string
+    try {
+      raw = await callAi(
+        "voice-profile",
+        "You are a senior LinkedIn positioning strategist. Return strict JSON only. Preserve truth. Never invent credentials or results.",
+        `Audit this LinkedIn profile for recruiter discovery, credibility, and conversion.
 
 TARGET ROLE: ${input.targetRole}
 TARGET AUDIENCE: ${input.audience}
@@ -64,11 +66,18 @@ Return:
   "keywords": ["ten relevant keywords"],
   "thirty_day_plan": ["four weekly actions"]
 }`,
-      { json: true, temperature: 0.3, timeout: 30000, userId: user.id, plan: planCheck.plan }
-    )
+        { json: true, temperature: 0.3, timeout: 30000, userId: user.id, plan: planCheck.plan }
+      )
+    } catch (error) {
+      await refundCareerUsage(user.id, "linkedin_audit")
+      throw error
+    }
 
     const parsedAi = safeParseJson(raw)
-    if (!parsedAi || typeof parsedAi !== "object") return NextResponse.json({ error: "The audit could not be completed." }, { status: 503 })
+    if (!parsedAi || typeof parsedAi !== "object") {
+      await refundCareerUsage(user.id, "linkedin_audit")
+      return NextResponse.json({ error: "The audit could not be completed." }, { status: 503 })
+    }
     const result = parsedAi as Record<string, unknown>
     result.overall_score = score(result.overall_score)
     if (result.scores && typeof result.scores === "object") {

@@ -4,7 +4,12 @@ import { resumeDocumentSchema } from "@/lib/career-resume"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/plan-limits-v2"
 import { authorizeRole } from "@/lib/server/roles"
-import { consumeCareerUsage, consumeExtraResumeCredit } from "@/lib/server/career-usage"
+import {
+  claimExtraResumeCredit,
+  consumeCareerUsage,
+  refundCareerUsage,
+  releaseExtraResumeCredit,
+} from "@/lib/server/career-usage"
 
 const toClient = (row: Record<string, unknown>) => ({
   id: row.id,
@@ -50,15 +55,28 @@ export async function POST(request: NextRequest) {
     const parsed = resumeDocumentSchema.safeParse(await req.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "Check the resume fields.", details: parsed.error.flatten() }, { status: 400 })
 
+    let usageConsumed = false
+    let creditOrderId: string | null = null
     if (planCheck.plan === "Free") {
       const { count } = await createServiceClient()
         .from("resume_documents")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
-      if ((count || 0) >= 1 && !(await consumeExtraResumeCredit(user.id))) return NextResponse.json({ error: "Free includes one resume. Upgrade or add an extra resume credit." }, { status: 429 })
+      if ((count || 0) >= 1) {
+        creditOrderId = await claimExtraResumeCredit(user.id)
+        if (!creditOrderId) return NextResponse.json({ error: "Free includes one resume. Upgrade or add an extra resume credit." }, { status: 429 })
+      }
     } else {
       const usage = await consumeCareerUsage(user.id, planCheck.plan, "resume_generation")
-      if (!usage.allowed && !(await consumeExtraResumeCredit(user.id))) return NextResponse.json({ error: "Your monthly resume limit is reached. Add an extra resume credit." }, { status: 429 })
+      usageConsumed = usage.allowed
+      if (!usage.allowed) {
+        creditOrderId = await claimExtraResumeCredit(user.id)
+        if (!creditOrderId) return NextResponse.json({ error: "Your monthly resume limit is reached. Add an extra resume credit." }, { status: 429 })
+      }
+    }
+    const releaseReservation = async () => {
+      if (usageConsumed) await refundCareerUsage(user.id, "resume_generation")
+      if (creditOrderId) await releaseExtraResumeCredit(user.id, creditOrderId)
     }
 
     const input = parsed.data
@@ -80,8 +98,16 @@ export async function POST(request: NextRequest) {
       .select("*")
       .single()
 
-    if (error) return NextResponse.json({ error: "Resume could not be created." }, { status: 500 })
-    await createServiceClient().from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: input.resumeData, analysis: input.analysis })
+    if (error) {
+      await releaseReservation()
+      return NextResponse.json({ error: "Resume could not be created." }, { status: 500 })
+    }
+    const { error: versionError } = await createServiceClient().from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: input.resumeData, analysis: input.analysis })
+    if (versionError) {
+      await createServiceClient().from("resume_documents").delete().eq("id", data.id)
+      await releaseReservation()
+      return NextResponse.json({ error: "Resume could not be versioned." }, { status: 500 })
+    }
     return NextResponse.json({ resume: toClient(data) }, { status: 201 })
   })(request)
 }

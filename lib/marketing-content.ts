@@ -779,7 +779,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
 export const PUBLISHED_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "published")
 export const UPCOMING_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "scheduled")
 
-export const MARKETING_LAST_MODIFIED = "2026-06-26"
+export const MARKETING_LAST_MODIFIED = "2026-07-28"
 
 export const LINKEDIN_NICHES = [
   "Founders",
@@ -830,10 +830,10 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
   {
     title: "Live now",
     items: [
-      "LinkedIn-first auth",
-      "Writer, archive, calendar, analytics, voice settings",
-      "Free public tools",
-      "Custom session plus LinkedIn OAuth path",
+      "Career Vault, LinkedIn audit, and career visibility workspace",
+      "ATS resume review, targeted resume versions, and PDF export",
+      "Writer, archive, planner, analytics, and voice settings",
+      "Free public LinkedIn tools",
       "Self-serve Solo and Pro card checkout",
       "Automatic plan activation after card payment",
     ],
@@ -843,12 +843,12 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
     items: [
       "JazzCash, Easypaisa, and bank transfer verification",
       "Manual activation for local transfer payments",
+      "Agency onboarding and cohort setup",
     ],
   },
   {
     title: "Building next",
     items: [
-      "Agency workspaces and team onboarding",
       "Agency analytics rollups",
       "Notification center",
       "Broader collaboration automation",
@@ -866,8 +866,8 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
     a: "The current product keeps drafts, saved items, and voice settings in your workspace. Commercial retention policy should be treated as an operational detail, not assumed from generic SaaS copy.",
   },
   {
-    q: "How is this different from just using ChatGPT?",
-    a: "ChatGPT resets every session. Qalam keeps approved examples, editing history, hook archive, and workspace continuity so each session starts closer to your actual voice instead of from scratch.",
+    q: "How is this different from a generic AI writing tool?",
+    a: "Qalam connects profile positioning, writing context, approved examples, editing history, career evidence, and target roles instead of treating every prompt as a separate task.",
   },
   {
     q: "Who is the Pro plan for?",

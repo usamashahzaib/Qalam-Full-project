@@ -69,7 +69,7 @@ const faqSchema = buildFaqSchema([
   },
   {
     q: "Is Qalam better than ChatGPT for LinkedIn writing?",
-    a: "ChatGPT resets every session and has no memory of your voice. Qalam keeps your voice profile, draft history, hook archive, and publishing context in one workspace. For serious LinkedIn publishing, Qalam is the stronger system.",
+    a: "Qalam keeps your voice profile, draft history, hook archive, and publishing context in one LinkedIn-specific workflow instead of treating every prompt as a separate task.",
   },
   {
     q: "Does Qalam work for founders, consultants, and agencies?",
@@ -206,7 +206,7 @@ export default function AiLinkedInWriterPage() {
                   </Link>
                 </div>
                 <p className="mt-5 text-sm text-zinc-400">
-                  No credit card. No expiry. Your content stays private.
+                  No payment card required for Free.
                 </p>
               </div>
             </FadeUp>
@@ -439,7 +439,7 @@ export default function AiLinkedInWriterPage() {
                 },
                 {
                   q: "Is Qalam better than ChatGPT for LinkedIn writing?",
-                  a: "ChatGPT resets every session and has no memory of your voice. Qalam keeps your voice profile, draft history, hook archive, and publishing context in one workspace. For serious LinkedIn publishing, Qalam is the stronger system.",
+                  a: "Qalam keeps your voice profile, draft history, hook archive, and publishing context in one LinkedIn-specific workflow instead of treating every prompt as a separate task.",
                 },
                 {
                   q: "Does Qalam work for founders, consultants, and agencies?",
@@ -469,7 +469,7 @@ export default function AiLinkedInWriterPage() {
                 Stop sounding like everyone else on LinkedIn.
               </h2>
               <p className="mb-10 text-xl leading-relaxed text-white/80">
-                Qalam is the AI writer that learns <em>your</em> voice. Start free. No card. No expiry.
+                Qalam is the AI writer that learns <em>your</em> voice. Start with the Free plan.
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
@@ -486,7 +486,7 @@ export default function AiLinkedInWriterPage() {
                 </Link>
               </div>
               <p className="mt-5 text-sm text-white/60">
-                Your drafts are private. No one at Qalam reads your content. Ever.
+                Review the Privacy Policy for how account and content data is handled.
               </p>
             </FadeUp>
           </div>

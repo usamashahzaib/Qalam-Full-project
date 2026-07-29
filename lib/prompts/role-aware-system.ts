@@ -278,7 +278,7 @@ Respond ONLY with valid JSON in this exact shape. No extra text, no markdown:
 }
 
 total_score = average of the 5 scores, rounded to nearest integer.
-is_good_enough = total_score >= 80.
+is_good_enough = total_score >= 82.
 `.trim();
 
   const user = `Score this LinkedIn post written for a ${label}:\n\n${post}`;
@@ -288,7 +288,7 @@ is_good_enough = total_score >= 80.
 
 // ---------------------------------------------------------------------------
 // PASS 3B - REWRITE WITH FEEDBACK PROMPT
-// Use when score < 80. Feed score output into this. temperature: 0.7
+// Use when score < 82. Feed score output into this. temperature: 0.7
 // ---------------------------------------------------------------------------
 export function buildRewritePrompt(
   post: string,

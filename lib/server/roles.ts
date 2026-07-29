@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 
-export type WorkspaceRole = "owner" | "admin" | "super_admin" | "agency_admin" | "editor" | "client_reviewer" | "viewer" | "member"
+export type WorkspaceRole = "owner" | "admin" | "editor" | "client_reviewer" | "viewer"
 
 type MembershipRow = {
   role: WorkspaceRole
@@ -13,13 +13,10 @@ type MembershipRow = {
 
 const ROLE_HIERARCHY: WorkspaceRole[] = [
   "owner",
-  "super_admin",
   "admin",
-  "agency_admin",
   "editor",
   "client_reviewer",
   "viewer",
-  "member",
 ]
 
 export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRole): boolean => {

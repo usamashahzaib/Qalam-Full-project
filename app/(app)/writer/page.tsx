@@ -90,7 +90,7 @@ export default function WriterPage() {
   const {
     topic, setTopic, role, setRole, format, setFormat, goal, setGoal,
     hooks, selectedHook, setSelectedHook, isGeneratingHooks,
-    draftContent, setDraftContent, isGeneratingPost,
+    draftContent, onDraftContentChange, isGeneratingPost,
     versions, editingId, scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, isSaving,
     scores, isScoring, isImproving,
     hookAltOpen, setHookAltOpen, hookAlts, isGeneratingAlts,
@@ -631,7 +631,7 @@ export default function WriterPage() {
                 <textarea
                   ref={draftRef}
                   value={draftContent}
-                  onChange={(e) => setDraftContent(e.target.value)}
+                  onChange={(e) => onDraftContentChange(e.target.value)}
                   placeholder="Your post content..."
                   className="min-h-[360px] w-full resize-none bg-transparent px-5 py-5 text-base leading-[1.8] text-zinc-900 outline-none"
                   style={{ overflow: "hidden" }}

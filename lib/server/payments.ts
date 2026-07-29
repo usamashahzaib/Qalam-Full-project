@@ -629,7 +629,7 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   // Prefer the provider's own period end over a locally computed one so our expiry never
   // drifts from theirs across late deliveries and retries.
   const expiresAt = payment.status === "paid"
-    ? payment.periodEndsAt || addBillingDays(billingCycle === "annual" ? 365 : 30)
+    ? payment.periodEndsAt || addBillingDays(billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30)
     : null
   const existingPayment = payment.recordTransaction
     ? await supabaseSelect<{ status: PaymentStatus }>(

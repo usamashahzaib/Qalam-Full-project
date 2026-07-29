@@ -9,7 +9,12 @@ import { isResumeTemplateKey } from "@/lib/resume-templates"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/plan-limits-v2"
 import { authorizeRole } from "@/lib/server/roles"
-import { consumeCareerUsage, consumeExtraResumeCredit } from "@/lib/server/career-usage"
+import {
+  claimExtraResumeCredit,
+  consumeCareerUsage,
+  refundCareerUsage,
+  releaseExtraResumeCredit,
+} from "@/lib/server/career-usage"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -39,20 +44,35 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServiceClient()
+    let usageConsumed = false
+    let creditOrderId: string | null = null
     if (planCheck.plan === "Free") {
       const { count } = await supabase.from("resume_documents").select("id", { count: "exact", head: true }).eq("user_id", user.id)
-      if ((count || 0) >= 1 && !(await consumeExtraResumeCredit(user.id))) return NextResponse.json({ error: "Free includes one generated resume. Upgrade or add an extra resume credit." }, { status: 429 })
+      if ((count || 0) >= 1) {
+        creditOrderId = await claimExtraResumeCredit(user.id)
+        if (!creditOrderId) return NextResponse.json({ error: "Free includes one generated resume. Upgrade or add an extra resume credit." }, { status: 429 })
+      }
     } else {
       const usage = await consumeCareerUsage(user.id, planCheck.plan, "resume_generation")
-      if (!usage.allowed && !(await consumeExtraResumeCredit(user.id))) return NextResponse.json({ error: "Your monthly resume generation limit is reached." }, { status: 429 })
+      usageConsumed = usage.allowed
+      if (!usage.allowed) {
+        creditOrderId = await claimExtraResumeCredit(user.id)
+        if (!creditOrderId) return NextResponse.json({ error: "Your monthly resume generation limit is reached." }, { status: 429 })
+      }
+    }
+    const releaseReservation = async () => {
+      if (usageConsumed) await refundCareerUsage(user.id, "resume_generation")
+      if (creditOrderId) await releaseExtraResumeCredit(user.id, creditOrderId)
     }
 
     const input = parsed.data
     const { data: vault } = await supabase.from("career_profiles").select("*").eq("workspace_id", planCheck.workspaceId).maybeSingle()
-    const raw = await callAi(
-      "voice-profile",
-      "You are a senior recruiter and ATS resume writer. Return strict JSON only. Preserve facts. Never invent employers, dates, qualifications, job titles, metrics, tools, or achievements.",
-      `Create a targeted ATS resume for this role. Reorder and rewrite only supported facts. Use relevant keywords naturally. Make every bullet action-led and concise.
+    let raw: string
+    try {
+      raw = await callAi(
+        "voice-profile",
+        "You are a senior recruiter and ATS resume writer. Return strict JSON only. Preserve facts. Never invent employers, dates, qualifications, job titles, metrics, tools, or achievements.",
+        `Create a targeted ATS resume for this role. Reorder and rewrite only supported facts. Use relevant keywords naturally. Make every bullet action-led and concise.
 
 TARGET ROLE: ${input.targetRole}
 TARGET COMPANY: ${input.targetCompany || "Not specified"}
@@ -90,12 +110,19 @@ Return:
     "changes": [""]
   }
 }`,
-      { json: true, temperature: 0.2, timeout: 35000, userId: user.id, plan: planCheck.plan }
-    )
+        { json: true, temperature: 0.2, timeout: 35000, userId: user.id, plan: planCheck.plan }
+      )
+    } catch (error) {
+      await releaseReservation()
+      throw error
+    }
 
     const ai = safeParseJson(raw) as { resume?: unknown; analysis?: Record<string, unknown> } | null
     const resumeParsed = resumeDataSchema.safeParse(ai?.resume)
-    if (!resumeParsed.success) return NextResponse.json({ error: "The targeted resume could not be structured safely." }, { status: 503 })
+    if (!resumeParsed.success) {
+      await releaseReservation()
+      return NextResponse.json({ error: "The targeted resume could not be structured safely." }, { status: 503 })
+    }
     const analysis = ai?.analysis || {}
     const atsScore = numberScore((analysis.scores as Record<string, unknown> | undefined)?.ats ?? analysis.overall_score)
     analysis.overall_score = numberScore(analysis.overall_score)
@@ -118,8 +145,16 @@ Return:
       .select("*")
       .single()
 
-    if (error) return NextResponse.json({ error: "The resume could not be saved." }, { status: 500 })
-    await supabase.from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: resumeParsed.data, analysis })
+    if (error) {
+      await releaseReservation()
+      return NextResponse.json({ error: "The resume could not be saved." }, { status: 500 })
+    }
+    const { error: versionError } = await supabase.from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: resumeParsed.data, analysis })
+    if (versionError) {
+      await supabase.from("resume_documents").delete().eq("id", data.id)
+      await releaseReservation()
+      return NextResponse.json({ error: "The resume could not be versioned." }, { status: 500 })
+    }
     return NextResponse.json({ id: data.id, resumeData: resumeParsed.data, analysis, atsScore }, { status: 201 })
   })(request)
 }
