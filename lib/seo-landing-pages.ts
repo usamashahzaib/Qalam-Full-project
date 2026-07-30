@@ -211,7 +211,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     ],
     related: [
       { label: "Post Scheduler", href: "/product/post-scheduler" },
-      { label: "Agency Workspaces", href: "/product/agency-workspaces" },
+      { label: "Approval Workflow", href: "/product/post-writer" },
       { label: "Calendar", href: "/pricing" },
     ],
   },
@@ -260,7 +260,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     ],
     related: [
       { label: "For Agencies", href: "/use-cases/agencies" },
-      { label: "Agency Workspaces", href: "/product/agency-workspaces" },
+      { label: "Managed Services", href: "/managed/apply" },
       { label: "Contact", href: "/contact" },
     ],
   },
@@ -598,7 +598,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does Qalam cost in Pakistan?",
-        a: "Qalam's Free plan includes 5 AI posts per month without a payment card. Solo is PKR 1,598, Pro is PKR 2,998, and Agency is PKR 7,998 per quarter.",
+        a: "Qalam's Free plan includes 5 AI posts per month without a payment card. Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter, both billed as one free month included in the quarter.",
       },
     ],
     related: [

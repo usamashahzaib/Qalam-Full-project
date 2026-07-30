@@ -9,7 +9,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, upgradeUrl } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, upgradeUrl } from "@/lib/pricing"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
 import type { ManagedPlan } from "@/lib/pricing"
 
@@ -20,7 +20,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo is PKR 1,598 per quarter, Pro is PKR 2,998 per quarter, and Agency is PKR 7,998 per quarter.",
+    a: "Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter. Every plan is billed quarterly and includes the equivalent of one free month.",
   },
   {
     q: "Why does Qalam use quarterly billing?",
@@ -457,13 +457,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <FadeUp>
             <div className="overflow-x-auto rounded-2xl border border-zinc-100 shadow-sm">
-              <table className="min-w-[620px] w-full text-sm">
+              <table className={`${AGENCY_PLAN_LIVE ? "min-w-[760px]" : "min-w-[620px]"} w-full text-sm`}>
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="w-[34%] px-5 py-4 text-left font-semibold text-zinc-700">Feature</th>
+                    <th className={`${AGENCY_PLAN_LIVE ? "w-[30%]" : "w-[34%]"} px-5 py-4 text-left font-semibold text-zinc-700`}>Feature</th>
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
                     <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
                     <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
+                    {AGENCY_PLAN_LIVE ? (
+                      <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency</th>
+                    ) : null}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
@@ -480,6 +483,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "-" : row.free}</td>
                       <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "-" : row.solo}</td>
                       <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "-" : row.pro}</span></td>
+                      {AGENCY_PLAN_LIVE ? (
+                        <td className="px-4 py-3.5 text-center text-sm text-zinc-700">{row.agency === "-" ? "-" : row.agency}</td>
+                      ) : null}
                     </motion.tr>
                   ))}
                 </tbody>

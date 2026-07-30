@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 
 export default function AgencySetupPage() {
-  redirect("/managed/apply?plan=Agency&type=company")
+  redirect(AGENCY_PLAN_LIVE ? "/managed/apply?plan=Agency&type=company" : "/pricing")
 }

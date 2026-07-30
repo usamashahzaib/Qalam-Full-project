@@ -1,8 +1,9 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { ManagedApplyForm } from "@/components/ManagedApplyForm"
 import { buildPageMetadata } from "@/lib/seo"
-import { MANAGED_PLANS, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Apply for Managed LinkedIn Services",
@@ -19,7 +20,10 @@ export default async function ManagedApplyPage({
 }) {
   const params = await searchParams
   const requestedPlan = typeof params.plan === "string" ? params.plan : undefined
-  const isAgency = requestedPlan === "Agency"
+  const isAgency = requestedPlan === "Agency" && AGENCY_PLAN_LIVE
+  if (requestedPlan === "Agency" && !AGENCY_PLAN_LIVE) {
+    redirect("/pricing")
+  }
   const defaultPackage = isAgency ? "Agency" : MANAGED_PLANS.find((p) => p.name === requestedPlan)?.name
   const defaultAccountType = params.type === "company" ? "company" : "individual"
 

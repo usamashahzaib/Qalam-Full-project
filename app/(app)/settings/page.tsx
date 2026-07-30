@@ -8,7 +8,7 @@ import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { PLAN_PRICES, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -384,13 +384,15 @@ export default function SettingsPage() {
                 <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC[plan]}</p>
               </button>
             ))}
-            <Link href="/managed/apply?plan=Agency&type=company" className="rounded-xl border border-teal/20 bg-teal/5 px-3 py-2.5 text-left hover:border-teal/50">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-teal">Agency</p>
-                <span className="rounded-full bg-teal px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Apply</span>
-              </div>
-              <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC.Agency}</p>
-            </Link>
+            {AGENCY_PLAN_LIVE ? (
+              <Link href="/managed/apply?plan=Agency&type=company" className="rounded-xl border border-teal/20 bg-teal/5 px-3 py-2.5 text-left hover:border-teal/50">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-teal">Agency</p>
+                  <span className="rounded-full bg-teal px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Apply</span>
+                </div>
+                <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC.Agency}</p>
+              </Link>
+            ) : null}
           </div>
 
           <div className="mb-4 inline-flex rounded-lg bg-teal px-3 py-2 text-sm font-semibold text-white">Quarterly billing</div>

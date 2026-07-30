@@ -61,7 +61,7 @@ export default function PrivacyPage() {
             <p>We use the following sub-processors to operate Qalam. Each receives only the data necessary for their function:</p>
             <ul className="mt-3 list-disc pl-5 space-y-2">
               <li><strong>Supabase</strong> - database and authentication. Your account data, posts, and workspace settings are stored on Supabase-hosted infrastructure (AWS, EU or US region).</li>
-              <li><strong>Groq / Google Gemini</strong> - AI content generation. When you generate a post, your topic, role, and writing preferences are sent to one of these providers to produce draft text. Prompts are not used to train their public models per their enterprise terms.</li>
+              <li><strong>Groq / Google Gemini / Mistral</strong> - AI content generation. When you generate a post, your topic, role, and writing preferences are routed to one of these providers to produce draft text. Prompts are not used to train their public models per their enterprise terms.</li>
               <li><strong>Resend</strong> - transactional email. Your email address is shared with Resend to deliver verification, notification, and password-reset emails.</li>
               <li><strong>Upstash Redis</strong> - rate limiting and caching. Your user ID is used as a rate-limit key; no personal content is stored in Redis.</li>
             </ul>

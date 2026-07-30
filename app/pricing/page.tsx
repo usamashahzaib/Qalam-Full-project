@@ -4,16 +4,16 @@ import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL, APP_URL } from "@/lib/seo"
-import { PLANS, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
 const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
-const agencyPlan = PLANS.find((plan) => plan.plan === "Agency")
+const agencyPlan = ALL_PLANS.find((plan) => plan.name === "Agency")
 const soloPrice = soloPlan ? formatPkr(soloPlan.quarterlyPkr) : "PKR 1,598"
 const proPrice = proPlan ? formatPkr(proPlan.quarterlyPkr) : "PKR 2,998"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.quarterlyPkr) : "PKR 7,998"
+const agencyPrice = agencyPlan ? formatPkr(agencyPlan.quarterlyPrice) : "PKR 7,998"
 
 export const metadata: Metadata = {
   title: `Quarterly Pricing | Free to ${soloPrice}`,
@@ -52,7 +52,9 @@ const pricingFaqSchema = {
       name: "How much does Qalam cost?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter.`,
+        text: AGENCY_PLAN_LIVE
+          ? `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter.`
+          : `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice} per quarter and Pro is ${proPrice} per quarter.`,
       },
     },
     {
@@ -87,14 +89,16 @@ const pricingFaqSchema = {
         text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, content intelligence, analytics, and approval workflows.`,
       },
     },
-    {
-      "@type": "Question",
-      name: "Is Qalam useful for agencies?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `Agency is ${agencyPrice} per quarter. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
-      },
-    },
+    ...(AGENCY_PLAN_LIVE
+      ? [{
+          "@type": "Question",
+          name: "Is Qalam useful for agencies?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: `Agency is ${agencyPrice} per quarter. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
+          },
+        }]
+      : []),
   ],
 }
 
@@ -134,15 +138,17 @@ const productSchema = {
       description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
       url: `${SITE_URL}/pricing`,
     },
-    {
-      "@type": "Offer",
-      name: "Agency Plan",
-      price: String(agencyPlan?.quarterlyPkr ?? 7998),
-      priceCurrency: "PKR",
-      availability: "https://schema.org/InStock",
-      description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
-      url: `${SITE_URL}/pricing`,
-    },
+    ...(AGENCY_PLAN_LIVE
+      ? [{
+          "@type": "Offer",
+          name: "Agency Plan",
+          price: String(agencyPlan?.quarterlyPrice ?? 7998),
+          priceCurrency: "PKR",
+          availability: "https://schema.org/InStock",
+          description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
+          url: `${SITE_URL}/pricing`,
+        }]
+      : []),
   ],
 }
 

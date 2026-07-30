@@ -38,7 +38,6 @@ export function GET() {
     "- Free: PKR 0. Includes 5 posts per month and approved free career checks.",
     "- Solo: PKR 1,598 per quarter.",
     "- Pro: PKR 2,998 per quarter.",
-    "- Agency: PKR 7,998 per quarter.",
     "- Managed services are separate from self-serve software plans.",
     "- Add-ons show their unit price and quantity before purchase.",
     "",

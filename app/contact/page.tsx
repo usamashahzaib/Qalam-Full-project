@@ -6,6 +6,7 @@ import {
   CONTACT_INBOXES,
   MANUAL_UPGRADE_METHODS,
   MANUAL_UPGRADE_SLA,
+  SUPPORT_EMAIL,
 } from "@/lib/contact"
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ const contactPageSchema = {
     "@type": "Organization",
     name: "Qalam",
     url: "https://www.byqalam.com",
-    email: "info@byqalam.com",
+    email: SUPPORT_EMAIL,
     sameAs: [
       "https://www.linkedin.com/company/withqalam",
       "https://www.instagram.com/withqalam",

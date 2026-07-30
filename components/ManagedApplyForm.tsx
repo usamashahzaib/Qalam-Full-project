@@ -2,12 +2,15 @@
 
 import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { MANAGED_PLANS } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
 
-const APPLICATION_PACKAGES = [...MANAGED_PLANS.map((plan) => ({
-  name: plan.name,
-  detail: `${plan.postsPerMonth} posts/month`,
-})), { name: "Agency", detail: "5 client workspaces" }]
+const APPLICATION_PACKAGES = [
+  ...MANAGED_PLANS.map((plan) => ({
+    name: plan.name,
+    detail: `${plan.postsPerMonth} posts/month`,
+  })),
+  ...(AGENCY_PLAN_LIVE ? [{ name: "Agency", detail: "5 client workspaces" }] : []),
+]
 
 type FormState = "idle" | "loading" | "success" | "error"
 

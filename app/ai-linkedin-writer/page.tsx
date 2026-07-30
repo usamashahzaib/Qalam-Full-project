@@ -90,7 +90,7 @@ const FEATURES = [
   },
   {
     title: "Hook Generator",
-    desc: "Generate 10 proven opening lines for any topic. Save the best structures for reuse.",
+    desc: "Generate 5 proven opening lines for any topic. Save the best structures for reuse.",
   },
   {
     title: "Content Archive",
@@ -105,8 +105,8 @@ const FEATURES = [
     desc: "Turn your best posts into LinkedIn carousel assets in one click.",
   },
   {
-    title: "Agency Workspaces",
-    desc: "Run multiple client accounts with isolated voice profiles and approval workflows.",
+    title: "Approval Workflow",
+    desc: "Draft, review, and release in separate steps so nothing goes live before it is signed off.",
   },
 ]
 

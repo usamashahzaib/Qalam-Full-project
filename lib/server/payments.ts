@@ -114,7 +114,9 @@ const verifyGenericHmac = (rawBody: string, signature: string | null, secret: st
 
 // Lemon Squeezy signs the entire raw request body (HMAC-SHA256, hex) via X-Signature -
 // unlike JazzCash/Easypaisa, nothing in the payload can be tampered with independently.
-const verifyLemonSqueezy = (rawBody: string, signature: string | null, secret: string): boolean => {
+// Exported for reuse by lib/server/career-addon-payments.ts, which verifies the same
+// signature scheme for a separate, non-plan class of Lemon Squeezy order.
+export const verifyLemonSqueezy = (rawBody: string, signature: string | null, secret: string): boolean => {
   if (!secret) throw new Error("payment_secret_not_configured")
   if (!signature) return false
   return timingSafeEqual(hmacHex(secret, rawBody), signature)

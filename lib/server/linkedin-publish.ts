@@ -9,6 +9,7 @@ import { supportEnv } from "@/lib/server/env"
 import { isCarouselPostType } from "@/lib/post-content"
 import { isReadyContentScore } from "@/lib/content-score-gate"
 import { acquireLinkedInPublishLock } from "@/lib/server/linkedin-publish-lock"
+import { createNotification } from "@/lib/server/notifications"
 
 export type ScheduledPost = {
   id: string
@@ -41,6 +42,20 @@ const logPublish = async (postId: string, accountId: string | null, status: "suc
   ).catch(() => undefined)
 
 const notifyPublishFailure = async (post: ScheduledPost, user: UserRow | undefined, reason: string) => {
+  if (user?.id) {
+    await createNotification({
+      userId: user.id,
+      workspaceId: post.workspace_id,
+      type: "post_failed",
+      title: `Could not publish "${post.title || "your post"}"`,
+      body: reason === "linkedin_token_expired" || reason === "linkedin_token_invalid"
+        ? "LinkedIn needs to be reconnected in Settings."
+        : reason === "carousel_scheduling_unsupported"
+          ? "Carousel posts can't auto-publish yet - export the PDF and post manually."
+          : "Open the post to review and retry.",
+      link: `/writer?postId=${post.id}`,
+    })
+  }
   if (!user?.email) return
   await sendTransactionalEmail({
     to: user.email,
@@ -196,6 +211,14 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
       // before anything else, then retry the "published" write; never mark
       // this post "failed" past this point.
       await logPublish(post.id, account.id, "success", null, { postUrn: shared.postUrn })
+      await createNotification({
+        userId: post.user_id,
+        workspaceId: post.workspace_id,
+        type: "post_published",
+        title: `"${post.title || "Your post"}" is live on LinkedIn`,
+        body: "Auto-published from your schedule.",
+        link: `/writer?postId=${post.id}`,
+      })
 
       const MARK_PUBLISHED_ATTEMPTS = 3
       for (let attempt = 0; attempt < MARK_PUBLISHED_ATTEMPTS; attempt++) {

@@ -19,6 +19,9 @@ import { withClientParam } from "@/lib/workspace-navigation"
 import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { UpgradeModal } from "@/components/UpgradeModal"
+import { CheckIcon } from "@/components/ui/qalam-icons"
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 type MobileLink = {
   href: string
@@ -40,9 +43,12 @@ export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/career", label: "Career Hub", icon: ProfileIcon },
   { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" },
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
+  { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
-  { href: "/silent-growth", label: "Silent Growth", icon: StealthIcon },
-  { href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency" },
+  ...(SILENT_GROWTH_LIVE ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }] : []),
+  ...(AGENCY_PLAN_LIVE
+    ? [{ href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency" as PlanTier }]
+    : []),
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]
 

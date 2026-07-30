@@ -51,3 +51,49 @@ export function verifyCheckoutToken(token: string): string | null {
     return null
   }
 }
+
+// Domain-separated from the plan-checkout context above so a token minted for
+// one purpose can never be replayed as the other.
+const ADDON_CONTEXT = "lemonsqueezy-career-addon-checkout-v1"
+
+const addonHmac = (payload: string) =>
+  crypto.createHmac("sha256", env.authSecret).update(`${ADDON_CONTEXT}:${payload}`).digest("hex")
+
+/**
+ * Mints a short-lived, signed token binding a Lemon Squeezy add-on checkout to
+ * a specific pending career_addon_orders row AND the authenticated user who
+ * owns it (only ever called server-side, from a withAuth-protected route,
+ * after confirming the order belongs to that user). The webhook trusts this
+ * token, and this token alone, to resolve which order a payment fulfills -
+ * never the buyer-editable checkout[custom] fields.
+ */
+export function signAddonCheckoutToken(userId: string, orderId: string, ttlMs = 30 * 60 * 1000): string {
+  const expiresAt = Date.now() + ttlMs
+  const payload = `${userId}.${orderId}.${expiresAt}`
+  const sig = addonHmac(payload)
+  return Buffer.from(`${payload}.${sig}`, "utf8").toString("base64url")
+}
+
+/** Returns the bound {userId, orderId} if the token is well-formed, unexpired, and signature-valid; otherwise null. */
+export function verifyAddonCheckoutToken(token: string): { userId: string; orderId: string } | null {
+  if (!token) return null
+  try {
+    const decoded = Buffer.from(token, "base64url").toString("utf8")
+    const parts = decoded.split(".")
+    if (parts.length !== 4) return null
+    const [userId, orderId, expiresAtStr, sig] = parts
+    if (!userId || !orderId || !expiresAtStr || !sig) return null
+
+    const expiresAt = Number(expiresAtStr)
+    if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null
+
+    const expectedSig = addonHmac(`${userId}.${orderId}.${expiresAtStr}`)
+    const given = Buffer.from(sig)
+    const expected = Buffer.from(expectedSig)
+    if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null
+
+    return { userId, orderId }
+  } catch {
+    return null
+  }
+}

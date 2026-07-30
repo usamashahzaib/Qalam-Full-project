@@ -4,6 +4,10 @@ import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { PRODUCT_PAGES } from "@/lib/site-content"
 import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+
+const HIDDEN_SLUGS = new Set<string>(AGENCY_PLAN_LIVE ? [] : ["agency-workspaces"])
+const isVisible = (slug: string) => !HIDDEN_SLUGS.has(slug)
 
 type Params = { slug: keyof typeof PRODUCT_PAGES }
 
@@ -17,13 +21,13 @@ const PRODUCT_KEYWORDS: Record<keyof typeof PRODUCT_PAGES, string[]> = {
 }
 
 export function generateStaticParams() {
-  return Object.keys(PRODUCT_PAGES).map((slug) => ({ slug }))
+  return Object.keys(PRODUCT_PAGES).filter(isVisible).map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params
   const page = PRODUCT_PAGES[slug]
-  if (!page) return {}
+  if (!page || !isVisible(slug)) return {}
   return buildPageMetadata({
     title: page.title,
     description: page.summary,
@@ -35,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
 export default async function ProductDetailPage({ params }: { params: Promise<Params> }) {
   const { slug } = await params
   const page = PRODUCT_PAGES[slug]
-  if (!page) notFound()
+  if (!page || !isVisible(slug)) notFound()
 
   const pageUrl = absoluteUrl(`/product/${slug}`)
   const pageSchema = {
@@ -72,7 +76,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
     })),
   }
 
-  const allProducts = Object.entries(PRODUCT_PAGES).filter(([key]) => key !== slug)
+  const allProducts = Object.entries(PRODUCT_PAGES).filter(([key]) => key !== slug && isVisible(key))
 
   return (
     <>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { MARKETING_LAST_MODIFIED } from "@/lib/marketing-content"
 import { SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 
 export type PublicRoute = {
   path: string
@@ -207,7 +208,9 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/agency-setup", priority: 0.76, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
+  ...(AGENCY_PLAN_LIVE
+    ? [{ path: "/agency-setup", priority: 0.76, changeFrequency: "monthly" as const, lastModified: MARKETING_LAST_MODIFIED }]
+    : []),
   { path: "/managed/apply", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/demo", priority: 0.85, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/docs", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
@@ -236,7 +239,7 @@ export const LLM_ROUTES = [
   "/free-tools/engagement-predictor",
   "/about",
   "/contact",
-  "/agency-setup",
+  ...(AGENCY_PLAN_LIVE ? ["/agency-setup"] : []),
   "/blog",
   "/changelog",
   "/product/post-writer",
@@ -244,7 +247,7 @@ export const LLM_ROUTES = [
   "/product/hook-generator",
   "/product/comment-generator",
   "/product/post-scheduler",
-  "/product/agency-workspaces",
+  ...(AGENCY_PLAN_LIVE ? ["/product/agency-workspaces"] : []),
   "/use-cases/founders",
   "/use-cases/marketing-teams",
   "/use-cases/hr-leaders",

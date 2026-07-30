@@ -1,10 +1,29 @@
 import { NextRequest, NextResponse } from "next/server"
 import { recordPaymentWebhook, verifyAndExtractPayment } from "@/lib/server/payments"
+import { isCareerAddonWebhook, handleCareerAddonWebhook } from "@/lib/server/career-addon-payments"
 
 export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
+
+  // Career add-on orders are a separate, simpler Lemon Squeezy event class with no
+  // plan/subscription concept - route them to their own isolated handler before the
+  // plan-billing pipeline below, which would reject an event it cannot resolve to a plan.
+  const eventName = request.headers.get("x-event-name") || ""
+  if (eventName) {
+    let peekedBody: Record<string, unknown> = {}
+    try {
+      peekedBody = JSON.parse(rawBody || "{}")
+    } catch {
+      // Malformed JSON falls through to the plan pipeline's own parsing, which
+      // will reject it with a clear error instead of this route guessing.
+    }
+    if (isCareerAddonWebhook(eventName, peekedBody)) {
+      const result = await handleCareerAddonWebhook(rawBody, request.headers.get("x-signature"))
+      return NextResponse.json(result.body, { status: result.status })
+    }
+  }
 
   try {
     const payment = verifyAndExtractPayment(request, rawBody)

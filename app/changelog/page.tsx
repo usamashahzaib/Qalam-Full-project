@@ -9,6 +9,20 @@ export const metadata = buildPageMetadata({
 
 const UPDATES = [
   {
+    date: "July 2026",
+    title: "Career Hub, publishing hardening, and plan gating",
+    items: [
+      "Shipped Career Hub inside the app: LinkedIn positioning audits, ATS resume reviews, and JD-matched resume generation, all plan-gated per the pricing table.",
+      "Added DOCX and PDF resume parsing on upload so users can bring existing resumes without retyping.",
+      "Fixed marketing navbar and footer leaking into the Career Hub app route.",
+      "Introduced plan priority resolution and identity helper so downgrades, complimentary trials, and admin grants resolve to the correct active plan across every surface.",
+      "Tightened carousel plan gating so Free and Solo cannot bypass the per-plan slide and monthly limits.",
+      "Repaired LinkedIn profile fetch and publishing edge cases surfaced during the visibility suite rollout.",
+      "Added quarterly billing pricing across Solo, Pro, and Agency, with the pricing page and comparison table sourcing values from a single config.",
+      "Lemon Squeezy checkout wired end-to-end with signed custom tokens so webhook attribution cannot be spoofed by editing checkout query params.",
+    ],
+  },
+  {
     date: "May 2026",
     title: "Security hardening and agency hub",
     items: [

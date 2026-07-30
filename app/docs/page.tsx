@@ -31,8 +31,8 @@ const SECTIONS = [
     body: "Current analytics are event-backed app signals, not a full LinkedIn reporting pipeline. Use them as workspace telemetry, not channel truth.",
   },
   {
-    title: "Team and agency workflows",
-    body: "Agency includes five isolated client workspaces, five seats, per-client voice profiles, team approvals, publishing controls, and analytics.",
+    title: "Team and approval workflows",
+    body: "Pro includes the approval workflow so a draft can be reviewed and released as a separate step from writing. Multi-workspace agency tooling is on the roadmap.",
   },
 ]
 

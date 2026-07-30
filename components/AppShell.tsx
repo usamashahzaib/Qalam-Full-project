@@ -33,14 +33,11 @@ import { UpgradeModal } from "@/components/UpgradeModal"
 import { CommandMenu } from "@/components/CommandMenu"
 import { HelpPanel } from "@/components/HelpPanel"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
+import { NotificationBell } from "@/components/NotificationBell"
+import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 // Update launchDate when a feature actually ships - the badge auto-hides 14 days after.
-const NEW_FEATURES: Record<string, { launchDate: string; tooltip: string }> = {
-  "/silent-growth": {
-    launchDate: "2026-07-15",
-    tooltip: "Silent Growth: build visibility and warm relationships on LinkedIn without publishing.",
-  },
-}
+const NEW_FEATURES: Record<string, { launchDate: string; tooltip: string }> = {}
 
 export const NAV_GROUPS = [
   {
@@ -55,7 +52,7 @@ export const NAV_GROUPS = [
     label: "Publishing",
     links: [
       { href: "/calendar", label: "Planner", icon: CalendarIcon, requiredPlan: "Solo" as PlanTier },
-      { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" as PlanTier },
+      { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" as PlanTier, hideWhenLocked: true },
       { href: "/analytics", label: "Analytics", icon: AnalyticsIcon, requiredPlan: "Solo" as PlanTier },
     ],
   },
@@ -68,13 +65,15 @@ export const NAV_GROUPS = [
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/comment-generator", label: "Comment Generator", icon: CommentIcon },
-      { href: "/silent-growth", label: "Silent Growth", icon: StealthIcon },
+      ...(SILENT_GROWTH_LIVE
+        ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }]
+        : []),
     ],
   },
   {
     label: "Account",
     links: [
-      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency" as PlanTier },
+      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency" as PlanTier, hideWhenLocked: true },
       { href: "/settings/referrals", label: "Refer & Earn", icon: GiftIcon },
       { href: "/settings", label: "Settings", icon: ProfileIcon },
     ],
@@ -182,7 +181,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const rawCurrentPlan = billing.plan as string
   const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
   const hasAgencyAccess = useMemo(() => currentPlan.startsWith("Agency"), [currentPlan])
-  const canAddWorkspace = false
+  const canAddWorkspace = hasAgencyAccess
 
   // Every workspace the user belongs to - own account plus any client
   // workspace they were invited into. Not gated on plan: an invited
@@ -192,6 +191,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const clientWorkspaces = useMemo(() => myWorkspaces.filter((w) => !w.isPersonal), [myWorkspaces])
   const showManageClientList = hasAgencyAccess && clientWorkspaces.length > 0
   const showSwitcherList = clientWorkspaces.length > 0
+
+  // Nav groups filtered for command menu: strip links flagged hideWhenLocked
+  // that the current plan can't access, so ⌘K matches the sidebar's visibility.
+  const commandMenuNav = useMemo(
+    () => NAV_GROUPS.map((group) => ({
+      ...group,
+      links: group.links.filter((link) => {
+        if (!("hideWhenLocked" in link) || !link.hideWhenLocked) return true
+        if (!link.requiredPlan) return true
+        return hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
+      }),
+    })),
+    [currentPlan, billing.featureFlags]
+  )
 
   const activeClientName = useMemo(() => {
     if (!activeClientId) return "Personal Workspace"
@@ -300,11 +313,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="flex items-center gap-2 px-4 py-3 text-xs font-semibold text-gold hover:bg-zinc-700"><TeamIcon className="h-3.5 w-3.5" />Manage client list &gt;</Link> : null}
                   {canAddWorkspace ? (
                     <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-3 text-left text-xs font-semibold text-zinc-300 transition-colors hover:bg-zinc-700">Add workspace</button>
-                  ) : (
-                    <div className="px-4 py-3 text-xs text-zinc-400">
-                      Add workspace - <span className="font-semibold text-zinc-300">Agency plan</span>
-                    </div>
-                  )}
+                  ) : null}
                 </div>
               </div>
             )}
@@ -328,6 +337,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     const Icon = link.icon
                     const active = activeNavHref === link.href
                     const isLocked = link.requiredPlan && !hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
+                    if (isLocked && "hideWhenLocked" in link && link.hideWhenLocked) return null
                     if (isLocked && link.requiredPlan) {
                       const upgradeTarget = getUpgradeTarget(currentPlan, link.requiredPlan)
                       return (
@@ -420,6 +430,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link href={withClientParam("/settings", activeClientId)} className="flex items-center gap-2 rounded-full border border-dashed border-zinc-300 hover:border-zinc-400 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition-colors"><LinkedInIcon className="h-3 w-3 text-zinc-400" />Connect LinkedIn</Link>
           )}
           <button onClick={handleCreatePost} className="cursor-pointer rounded-xl bg-teal px-4 py-2 text-xs font-bold text-white hover:bg-teal-600 transition-colors shadow-sm shadow-teal/10">Create Post</button>
+
+          <NotificationBell />
 
           <button
             onClick={() => setHelpOpen(true)}
@@ -525,11 +537,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {showManageClientList ? <Link href={withClientParam("/agency", activeClientId)} onClick={() => setSwitcherOpen(false)} className="block px-4 py-2.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Manage client list &gt;</Link> : null}
               {canAddWorkspace ? (
                 <button onClick={handleAddWorkspace} className="w-full cursor-pointer px-4 py-2.5 text-left text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">Add workspace</button>
-              ) : (
-                <div className="px-3 py-2 text-xs text-zinc-500">
-                  Add workspace - <span className="font-semibold text-zinc-600">Agency plan</span>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         )}
@@ -552,7 +560,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <CommandMenu
         open={commandMenuOpen}
         onClose={() => setCommandMenuOpen(false)}
-        navGroups={NAV_GROUPS}
+        navGroups={commandMenuNav}
         posts={posts}
         activeClientId={activeClientId}
         onOpenPost={handleOpenPost}

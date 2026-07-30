@@ -15,7 +15,6 @@ const PRODUCT_LINKS = [
   { label: "Content Studio", href: "/product/post-writer", desc: "Draft, score, revise, and plan LinkedIn content" },
   { label: "ATS Resume Builder", href: "/ats-resume-builder", desc: "Build role-specific resumes from verified experience" },
   { label: "Job Description Match", href: "/job-description-match", desc: "Find evidence, relevance, and keyword gaps" },
-  { label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Separate client voices, approvals, and analytics" },
 ]
 
 const USE_CASE_LINKS = [

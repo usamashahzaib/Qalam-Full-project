@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { CAREER_ADD_ONS, CAREER_PLANS, formatMonthlyPrice, formatQuarterlyPrice } from "@/lib/career-pricing"
 
-type Tab = "overview" | "vault" | "linkedin" | "resume"
+type Tab = "overview" | "resume" | "linkedin" | "vault"
 type AuditResult = {
   overall_score?: number
   scores?: Record<string, number>
@@ -49,9 +48,9 @@ const emptyVault: Vault = {
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
-  { id: "vault", label: "Career Vault" },
-  { id: "linkedin", label: "LinkedIn Audit" },
   { id: "resume", label: "Resume Review" },
+  { id: "linkedin", label: "LinkedIn Audit" },
+  { id: "vault", label: "Career Vault" },
 ]
 
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/10"
@@ -101,6 +100,7 @@ function ListBlock({ title, items }: { title: string; items?: string[] }) {
 }
 
 export default function CareerPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
   const [tab, setTab] = useState<Tab>("overview")
@@ -115,6 +115,7 @@ export default function CareerPage() {
   const [resumeText, setResumeText] = useState("")
   const [jobDescription, setJobDescription] = useState("")
   const [resumeResult, setResumeResult] = useState<ResumeResult | null>(null)
+  const [uploading, setUploading] = useState(false)
 
   const apiSuffix = useMemo(() => workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : "", [workspaceKey])
 
@@ -159,6 +160,27 @@ export default function CareerPage() {
     if (response.ok) setAudit(data)
     else setMessage(data.error || "Audit failed.")
     setLoading("")
+  }
+
+  const uploadResumeFile = async (file: File) => {
+    setUploading(true)
+    setMessage("")
+    try {
+      const body = new FormData()
+      body.append("file", file)
+      const response = await fetch(`/api/career/resume-parse${apiSuffix}`, { method: "POST", body })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || typeof data.text !== "string") {
+        setMessage(data.error ? `Upload failed: ${data.error}` : "Resume file could not be read.")
+        return
+      }
+      setResumeText(data.text)
+      setMessage("Resume extracted. Review or generate below.")
+    } catch {
+      setMessage("Resume upload failed.")
+    } finally {
+      setUploading(false)
+    }
   }
 
   const runResumeReview = async () => {
@@ -220,57 +242,75 @@ export default function CareerPage() {
           <div className="mt-5 space-y-5">
             <section className="grid gap-4 md:grid-cols-3">
               {[
-                ["Career Vault", "Store your roles, proof, skills, and goals once. Reuse the same truth everywhere.", "vault"],
-                ["LinkedIn Market Position", "Measure discovery, credibility, clarity, and conversion. Then fix the highest-impact gaps.", "linkedin"],
-                ["ATS Resume Review", "Test your resume against recruiter logic and a specific job description before applying.", "resume"],
-              ].map(([title, copy, target], index) => (
-                <button key={title} type="button" onClick={() => setTab(target as Tab)} className="rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">0{index + 1}</span>
-                  <h2 className="mt-5 text-lg font-bold text-zinc-900">{title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
-                </button>
-              ))}
-            </section>
-            <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ["ATS Resume Studio", "12 ATS-safe templates, exact-JD targeting, editing, version history, and PDF export.", "/career/resumes"],
-                ["Post Intelligence", "Import your own posts and metrics to find content worth, gaps, and repeatable patterns.", "/career/content"],
-                ["Career Network", "Opt into recruiter discovery or search candidates who chose to be visible.", "/career/network"],
-                ["Learning Cohorts", "Run LinkedIn and career modules for certifications, universities, and coaching groups.", "/career/cohorts"],
-                ["Career Add-ons", "Add one extra resume, review, cover letter, interview pack, or consultation.", "/career/add-ons"],
-              ].map(([title, copy, href]) => (
-                <Link key={href} href={`${href}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-teal/30 hover:shadow-sm">
-                  <h2 className="font-bold text-zinc-900">{title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
-                  <p className="mt-4 text-xs font-bold text-teal">Open module →</p>
-                </Link>
-              ))}
+                {
+                  title: "Resume Studio",
+                  copy: "12 ATS-safe templates, exact-JD targeting, editing, version history, and PDF export.",
+                  cta: "Open Studio",
+                  href: "/career/resumes",
+                  badge: "Primary",
+                },
+                {
+                  title: "LinkedIn Audit",
+                  copy: "Measure discovery, credibility, clarity, and conversion. Then fix the highest-impact gaps.",
+                  cta: "Run Audit",
+                  tab: "linkedin" as Tab,
+                  badge: "In-app",
+                },
+                {
+                  title: "Post Intelligence",
+                  copy: "Import your own posts and metrics to find content worth, gaps, and repeatable patterns.",
+                  cta: "Open Module",
+                  href: "/career/content",
+                  badge: "Primary",
+                },
+              ].map((tile, index) => {
+                const content = (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">0{index + 1}</span>
+                      <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold-700">{tile.badge}</span>
+                    </div>
+                    <h2 className="mt-5 text-lg font-bold text-zinc-900">{tile.title}</h2>
+                    <p className="mt-2 text-sm leading-6 text-zinc-600">{tile.copy}</p>
+                    <p className="mt-4 text-xs font-bold text-teal">{tile.cta} →</p>
+                  </>
+                )
+                if (tile.href) {
+                  return (
+                    <Link
+                      key={tile.title}
+                      href={`${tile.href}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`}
+                      className="rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md"
+                    >
+                      {content}
+                    </Link>
+                  )
+                }
+                return (
+                  <button
+                    key={tile.title}
+                    type="button"
+                    onClick={() => setTab(tile.tab as Tab)}
+                    className="rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md"
+                  >
+                    {content}
+                  </button>
+                )
+              })}
             </section>
 
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-              <div className="mb-5">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Pakistan launch pricing</p>
-                <h2 className="mt-1 text-2xl font-bold text-zinc-900">Pay for 2 months. Build for 3.</h2>
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                {CAREER_PLANS.map((plan) => (
-                  <div key={plan.name} className={`rounded-2xl border p-5 ${plan.highlighted ? "border-teal bg-teal/[0.035]" : "border-zinc-200"}`}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-zinc-900">{plan.name}</h3>
-                      {plan.highlighted && <span className="rounded-full bg-gold/15 px-2.5 py-1 text-[10px] font-bold uppercase text-gold-700">Best value</span>}
-                    </div>
-                    <p className="mt-3 text-xl font-bold text-teal">{formatMonthlyPrice(plan.monthlyPrice)}</p>
-                    {plan.quarterlyPrice > 0 && <p className="mt-1 text-xs font-semibold text-emerald-700">{formatQuarterlyPrice(plan.quarterlyPrice)} - 1 month free</p>}
-                    <p className="mt-2 min-h-10 text-sm leading-5 text-zinc-500">{plan.description}</p>
-                    <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-                      {plan.features.map((feature) => <li key={feature}>✓ {feature}</li>)}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                {CAREER_ADD_ONS.map((addOn) => (
-                  <span key={addOn.name} className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">{addOn.name} · PKR {addOn.price.toLocaleString("en-PK")}</span>
+            <section>
+              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">More career tools</p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  ["Career Network", "Opt into recruiter discovery or search visible candidates.", "/career/network"],
+                  ["Learning Cohorts", "Run LinkedIn and career modules for certifications and coaching groups.", "/career/cohorts"],
+                  ["Career Add-ons", "Extra resume, review, cover letter, interview pack, or consultation.", "/career/add-ons"],
+                ].map(([title, copy, href]) => (
+                  <Link key={href} href={`${href}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-teal/30 hover:shadow-sm">
+                    <h3 className="text-sm font-bold text-zinc-900">{title}</h3>
+                    <p className="mt-1 text-xs leading-5 text-zinc-500">{copy}</p>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -326,13 +366,58 @@ export default function CareerPage() {
           <div className="mt-5 space-y-5">
             <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-zinc-900">ATS Resume Review</h2>
-              <p className="mt-2 text-sm leading-6 text-zinc-600">Paste the resume and the exact job description. Qalam checks ATS fit, career progression, impact, and recruiter risk.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">Upload your PDF or DOCX resume, or paste the text. Add the exact job description for a targeted review. Qalam checks ATS fit, career progression, impact, and recruiter risk.</p>
               <p className="mt-2 text-xs font-medium text-teal">Your resume and job description are analyzed for this review and are not saved.</p>
+
+              <label className="mt-5 flex flex-col items-start gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-zinc-900">Upload resume file</p>
+                  <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted into the box below - contact details are stripped.</p>
+                </div>
+                <span className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-600">
+                  {uploading ? "Reading file..." : "Choose file"}
+                  <input
+                    type="file"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      event.target.value = ""
+                      if (file) uploadResumeFile(file)
+                    }}
+                  />
+                </span>
+              </label>
+
               <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                <label><span className={labelClass}>Resume text</span><textarea className={`${inputClass} min-h-80 resize-y`} value={resumeText} onChange={(event) => setResumeText(event.target.value)} placeholder="Paste your full resume text" /></label>
+                <label><span className={labelClass}>Resume text</span><textarea className={`${inputClass} min-h-80 resize-y`} value={resumeText} onChange={(event) => setResumeText(event.target.value)} placeholder="Paste your full resume text, or upload above" /></label>
                 <label><span className={labelClass}>Job description, optional</span><textarea className={`${inputClass} min-h-80 resize-y`} value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the exact job description for a targeted review" /></label>
               </div>
-              <button type="button" disabled={loading === "resume"} onClick={runResumeReview} className="mt-6 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-50">{loading === "resume" ? "Reviewing..." : "Review Resume"}</button>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button type="button" disabled={loading === "resume"} onClick={runResumeReview} className="rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-50">{loading === "resume" ? "Reviewing..." : "Review Resume"}</button>
+                <button
+                  type="button"
+                  disabled={!resumeText.trim()}
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("careerResumeHandoff", JSON.stringify({
+                        sourceResume: resumeText,
+                        jobDescription,
+                        targetRole: vault.targetRole || "",
+                      }))
+                    } catch {
+                      // ignore quota / privacy-mode errors, resumes page will just open empty
+                    }
+                    router.push(`/career/resumes${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
+                  }}
+                  className="rounded-xl border border-gold bg-white px-5 py-3 text-sm font-bold text-gold-700 transition hover:bg-gold/5 disabled:cursor-not-allowed disabled:opacity-40"
+                  title={resumeText.trim() ? "Carry this resume and JD into the Studio and build an ATS version." : "Paste your resume first."}
+                >
+                  Generate ATS Resume from this →
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-zinc-500">Review gives you diagnostic feedback. Generate builds a saved ATS-safe resume you can edit and export.</p>
             </section>
             {resumeResult && (
               <>
@@ -343,6 +428,28 @@ export default function CareerPage() {
                   <ListBlock title="Rejection risks" items={resumeResult.risks} />
                   <ListBlock title="Missing keywords" items={resumeResult.missing_keywords} />
                   <div className="rounded-2xl border border-zinc-200 bg-white p-5 md:col-span-2"><h3 className="font-bold text-zinc-900">Rewritten professional summary</h3><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{resumeResult.rewritten_summary}</p></div>
+                </div>
+                <div className="rounded-2xl border border-teal/25 bg-teal/[0.04] p-5">
+                  <h3 className="font-bold text-zinc-900">Next step: build the ATS version</h3>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">Take this same resume and JD into the Studio. Qalam will rewrite it into an ATS-safe template, save it, and let you export a PDF.</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        sessionStorage.setItem("careerResumeHandoff", JSON.stringify({
+                          sourceResume: resumeText,
+                          jobDescription,
+                          targetRole: vault.targetRole || "",
+                        }))
+                      } catch {
+                        // ignore
+                      }
+                      router.push(`/career/resumes${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
+                    }}
+                    className="mt-4 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600"
+                  >
+                    Open in Resume Studio →
+                  </button>
                 </div>
               </>
             )}

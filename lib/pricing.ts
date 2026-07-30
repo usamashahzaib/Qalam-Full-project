@@ -32,6 +32,12 @@ export type ManagedPlan = {
 
 export const quarterlyFraming = "1 month free"
 
+// Master flag for the Agency plan. Flip to true once self-serve Agency
+// activation is fully wired (checkout URL, workspace provisioning, team invites).
+// While false, Agency is hidden from every public surface and every in-app
+// upsell, and the Managed intake API rejects Agency applications.
+export const AGENCY_PLAN_LIVE = false
+
 export const plans: Plan[] = [
   {
     name: "Free",
@@ -147,6 +153,7 @@ export const plans: Plan[] = [
     ],
     cta: "Apply for Agency",
     badge: "For teams",
+    hidden: !AGENCY_PLAN_LIVE,
   },
 ]
 

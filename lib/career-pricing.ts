@@ -34,6 +34,8 @@ export const CAREER_ADD_ONS = [
   { key: "career_consultation", name: "Career consultation", price: 1499 },
 ] as const
 
+export type AddonKey = (typeof CAREER_ADD_ONS)[number]["key"]
+
 export const formatQuarterlyPrice = (price: number) =>
   price === 0 ? "Free" : `PKR ${price.toLocaleString("en-PK")} / quarter`
 

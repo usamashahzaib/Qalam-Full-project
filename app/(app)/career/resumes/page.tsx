@@ -17,15 +17,42 @@ type ResumeListItem = {
 
 const field = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal focus:ring-2 focus:ring-teal/10"
 
+const defaultForm = { title: "", templateKey: "clean", targetRole: "", targetCompany: "", jobDescription: "", sourceResume: "" }
+
+function readResumeHandoff(): { form: typeof defaultForm; open: boolean } {
+  if (typeof window === "undefined") return { form: defaultForm, open: false }
+  try {
+    const raw = sessionStorage.getItem("careerResumeHandoff")
+    if (!raw) return { form: defaultForm, open: false }
+    sessionStorage.removeItem("careerResumeHandoff")
+    const p = JSON.parse(raw) as { sourceResume?: string; jobDescription?: string; targetRole?: string }
+    return {
+      open: true,
+      form: {
+        title: p.targetRole ? `${p.targetRole} resume` : "",
+        templateKey: "clean",
+        targetRole: p.targetRole || "",
+        targetCompany: "",
+        jobDescription: p.jobDescription || "",
+        sourceResume: p.sourceResume || "",
+      },
+    }
+  } catch {
+    return { form: defaultForm, open: false }
+  }
+}
+
 export default function ResumesPage() {
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
   const suffix = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
   const [resumes, setResumes] = useState<ResumeListItem[]>([])
-  const [showCreate, setShowCreate] = useState(false)
+  const [handoff] = useState(readResumeHandoff)
+  const [showCreate, setShowCreate] = useState(handoff.open)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [form, setForm] = useState({ title: "", templateKey: "clean", targetRole: "", targetCompany: "", jobDescription: "", sourceResume: "" })
+  const [form, setForm] = useState(handoff.form)
+  const [uploading, setUploading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/career/resumes${suffix}`)
@@ -33,6 +60,26 @@ export default function ResumesPage() {
       .then((data) => setResumes(data.resumes || []))
       .catch(() => setError("Resumes could not be loaded."))
   }, [suffix])
+
+  const uploadResumeFile = async (file: File) => {
+    setUploading(true)
+    setError("")
+    try {
+      const body = new FormData()
+      body.append("file", file)
+      const response = await fetch(`/api/career/resume-parse${suffix}`, { method: "POST", body })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || typeof data.text !== "string") {
+        setError(data.error ? `Upload failed: ${data.error}` : "Resume file could not be read.")
+        return
+      }
+      setForm((prev) => ({ ...prev, sourceResume: data.text }))
+    } catch {
+      setError("Resume upload failed.")
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const generate = async () => {
     setLoading(true)
@@ -64,16 +111,38 @@ export default function ResumesPage() {
         {showCreate && (
           <section className="mt-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-zinc-900">Generate from an existing resume</h2>
-            <p className="mt-1 text-sm text-zinc-500">Qalam rewrites only supported facts. It will not invent experience or metrics.</p>
+            <p className="mt-1 text-sm text-zinc-500">Upload your PDF or DOCX, or paste the text. Qalam rewrites only supported facts. It will not invent experience or metrics.</p>
+
+            <label className="mt-5 flex flex-col items-start gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold text-zinc-900">Upload resume file</p>
+                <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted into the source field below - contact details are stripped.</p>
+              </div>
+              <span className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-600">
+                {uploading ? "Reading file..." : "Choose file"}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  disabled={uploading}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    event.target.value = ""
+                    if (file) uploadResumeFile(file)
+                  }}
+                />
+              </span>
+            </label>
+
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <input className={field} placeholder="Resume name" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
               <input className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
               <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
               <select className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
-              <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste your existing resume" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
+              <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste your existing resume, or upload above" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
               <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
             </div>
-            <button disabled={loading} onClick={generate} className="mt-5 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{loading ? "Building targeted resume..." : "Generate ATS resume"}</button>
+            <button disabled={loading || uploading} onClick={generate} className="mt-5 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{loading ? "Building targeted resume..." : "Generate ATS resume"}</button>
           </section>
         )}
 

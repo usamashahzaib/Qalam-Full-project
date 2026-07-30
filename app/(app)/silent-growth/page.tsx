@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { StealthIcon } from "@/components/ui/qalam-icons"
+import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { SafetyBanner } from "./_components/SafetyBanner"
 import { DnaAnalyzer } from "./_components/DnaAnalyzer"
 import { PrePostFilter } from "./_components/PrePostFilter"
@@ -19,6 +21,13 @@ type TabId = (typeof TABS)[number]["id"]
 
 export default function SilentGrowthPage() {
   const [tab, setTab] = useState<TabId>("dna")
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!SILENT_GROWTH_LIVE) router.replace("/dashboard")
+  }, [router])
+
+  if (!SILENT_GROWTH_LIVE) return null
 
   return (
     <div className="mx-auto max-w-[900px] px-4 py-8 lg:px-6">

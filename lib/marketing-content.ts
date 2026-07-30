@@ -874,18 +874,18 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
     a: "Pro is for professionals who post consistently and want voice memory, AI quality scoring, competitor research, and analytics in one system. It is the plan for people who treat LinkedIn as a serious channel.",
   },
   {
-    q: "Is there an Agency plan?",
-    a: "Yes. Agency includes five isolated client workspaces, five seats, per-client voice profiles, approvals, publishing controls, and team analytics.",
-  },
-  {
     q: "Does Qalam work for any niche?",
     a: "Yes, when the writer brings real source material from that niche. The system performs best when it learns from authentic examples instead of generic prompts.",
   },
 ]
 
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+
+const HIDDEN_PRODUCT_SLUGS = new Set<string>(AGENCY_PLAN_LIVE ? [] : ["agency-workspaces"])
+
 export const MARKETING_ANSWER_PAGES = [
   ...PUBLISHED_BLOG_POSTS.map((post) => `/blog/${post.slug}`),
-  ...Object.keys(PRODUCT_PAGES).map((slug) => `/product/${slug}`),
+  ...Object.keys(PRODUCT_PAGES).filter((slug) => !HIDDEN_PRODUCT_SLUGS.has(slug)).map((slug) => `/product/${slug}`),
   ...Object.keys(USE_CASE_PAGES).map((slug) => `/use-cases/${slug}`),
 ]
 

@@ -3,9 +3,12 @@ import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { getClientIp, TokenBucket } from "@/lib/server/rate-limit"
 import { UPGRADES_EMAIL } from "@/lib/contact"
-import { MANAGED_PLANS } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
 
-const MANAGED_PACKAGE_NAMES = new Set([...MANAGED_PLANS.map((p) => p.name), "Agency"])
+const MANAGED_PACKAGE_NAMES = new Set([
+  ...MANAGED_PLANS.map((p) => p.name),
+  ...(AGENCY_PLAN_LIVE ? ["Agency"] : []),
+])
 
 // Same shape as contact_submissions - 5 submissions per 15 minutes per IP.
 const applyLimiter = new TokenBucket(5, 5, 15 * 60 * 1000)

@@ -277,9 +277,6 @@ export const generateCtaAlternatives = (data: CtaAlternativesInput) =>
 export const generateCarousel = (data: CarouselInput) =>
   postJson<CarouselOutput, Record<string, unknown>>(API_PATHS.carouselGenerate, data)
 
-export const trainVoice = (data: { examplePosts?: string[]; sampleText?: string }) =>
-  postJson<{ characteristics: unknown }, Record<string, unknown>>("/api/voice/train", data)
-
 export const fetchDashboardStats = () =>
   requestJson<Record<string, unknown>>(API_PATHS.dashboardStats)
 

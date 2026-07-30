@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { verifyCronAuth } from "@/lib/server/verify-cron"
+import { createNotification } from "@/lib/server/notifications"
 import { APP_URL } from "@/lib/seo"
 
 type DuePost = {
@@ -129,6 +130,15 @@ export async function GET(request: NextRequest) {
         `- The Qalam team`,
       ].join("\n"),
     }).catch((err) => console.error(`[cron/schedule] email failed for post ${post.id}:`, err))
+
+    await createNotification({
+      userId: post.user_id,
+      workspaceId: post.workspace_id,
+      type: "post_reminder",
+      title: `"${post.title || "Your post"}" is ready to post`,
+      body: `Scheduled for ${scheduledAt}. LinkedIn isn't connected for auto-publish - post it manually.`,
+      link: `/writer?postId=${post.id}`,
+    })
 
     // Log the notification (best-effort)
     supabase.from("scheduling_notifications").insert({
