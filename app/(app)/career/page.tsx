@@ -175,7 +175,8 @@ export default function CareerPage() {
         return
       }
       setResumeText(data.text)
-      setMessage("Resume extracted. Review or generate below.")
+      setMessage("File extracted. Assessing ATS readiness...")
+      await runResumeReview(data.text)
     } catch {
       setMessage("Resume upload failed.")
     } finally {
@@ -183,14 +184,14 @@ export default function CareerPage() {
     }
   }
 
-  const runResumeReview = async () => {
+  const runResumeReview = async (text = resumeText) => {
     setLoading("resume")
     setMessage("")
     setResumeResult(null)
     const response = await fetch(`/api/career/resume-review${apiSuffix}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceKey, resumeText, jobDescription }),
+      body: JSON.stringify({ workspaceKey, resumeText: text, jobDescription }),
     })
     const data = await response.json().catch(() => ({}))
     if (response.ok) setResumeResult(data)
@@ -366,13 +367,13 @@ export default function CareerPage() {
           <div className="mt-5 space-y-5">
             <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold text-zinc-900">ATS Resume Review</h2>
-              <p className="mt-2 text-sm leading-6 text-zinc-600">Upload your PDF or DOCX resume, or paste the text. Add the exact job description for a targeted review. Qalam checks ATS fit, career progression, impact, and recruiter risk.</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">Upload your LinkedIn profile PDF, resume, or CV. Qalam extracts the text and automatically checks ATS fit, career progression, impact, and recruiter risk. Add a job description for a targeted review.</p>
               <p className="mt-2 text-xs font-medium text-teal">Your resume and job description are analyzed for this review and are not saved.</p>
 
               <label className="mt-5 flex flex-col items-start gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="font-semibold text-zinc-900">Upload resume file</p>
-                  <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted into the box below - contact details are stripped.</p>
+                  <p className="font-semibold text-zinc-900">Upload LinkedIn PDF, resume, or CV</p>
+                  <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted, contact details are stripped, then ATS assessment starts automatically.</p>
                 </div>
                 <span className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-600">
                   {uploading ? "Reading file..." : "Choose file"}
@@ -395,7 +396,7 @@ export default function CareerPage() {
                 <label><span className={labelClass}>Job description, optional</span><textarea className={`${inputClass} min-h-80 resize-y`} value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the exact job description for a targeted review" /></label>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
-                <button type="button" disabled={loading === "resume"} onClick={runResumeReview} className="rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-50">{loading === "resume" ? "Reviewing..." : "Review Resume"}</button>
+                <button type="button" disabled={loading === "resume" || uploading} onClick={() => runResumeReview()} className="rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition hover:bg-teal-600 disabled:opacity-50">{loading === "resume" ? "Reviewing..." : "Review Resume"}</button>
                 <button
                   type="button"
                   disabled={!resumeText.trim()}
