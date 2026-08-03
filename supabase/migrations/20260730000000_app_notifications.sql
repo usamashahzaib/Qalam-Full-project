@@ -26,5 +26,7 @@ alter table public.app_notifications enable row level security;
 revoke all on public.app_notifications from anon, authenticated;
 grant select, insert, update, delete on public.app_notifications to service_role;
 
+drop policy if exists "app_notifications_service_only" on public.app_notifications;
+
 create policy "app_notifications_service_only" on public.app_notifications
   for all to service_role using (true) with check (true);
