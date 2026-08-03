@@ -304,9 +304,14 @@ export default function CareerPage() {
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">More career tools</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
+                  ["Cover Letters", "Generate a letter matched to the exact job description, using a purchased credit.", "/career/cover-letters"],
                   ["Career Network", "Opt into recruiter discovery or search visible candidates.", "/career/network"],
                   ["Learning Cohorts", "Run LinkedIn and career modules for certifications and coaching groups.", "/career/cohorts"],
-                  ["Career Add-ons", "Extra resume, review, cover letter, interview pack, or consultation.", "/career/add-ons"],
+                  ["Interview Practice", "Build a JD-specific question set, evidence bank, and practice scorecard.", "/career/interview-prep"],
+                  ["Deep Resume Review", "Run a detailed recruiter and ATS risk review with exact rewrites.", "/career/deep-resume-review"],
+                  ["LinkedIn Rewrite", "Rewrite your headline, About, experience, keywords, and Featured plan.", "/career/linkedin-rewrite"],
+                  ["Strategy Blueprint", "Build a software-generated 90-day career action system.", "/career/strategy-blueprint"],
+                  ["Career Add-ons", "Purchase software credits and generate every result inside Qalam.", "/career/add-ons"],
                 ].map(([title, copy, href]) => (
                   <Link key={href} href={`${href}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-xl border border-zinc-200 bg-white p-4 transition hover:border-teal/30 hover:shadow-sm">
                     <h3 className="text-sm font-bold text-zinc-900">{title}</h3>

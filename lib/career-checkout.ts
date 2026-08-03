@@ -3,15 +3,14 @@ import type { AddonKey } from "@/lib/career-pricing"
 // Hosted checkout links, one per career add-on product in the Lemon Squeezy store.
 // Not secret - safe in a shared module, same pattern as LEMONSQUEEZY_CHECKOUT_URLS
 // in lib/pricing.ts. Unset (undefined) until the corresponding product exists in
-// the dashboard, in which case checkout for that add-on is simply unavailable and
-// the UI falls back to the manual payment-proof flow.
+// the dashboard, in which case checkout for that add-on is unavailable.
 export const CAREER_ADDON_CHECKOUT_URLS: Partial<Record<AddonKey, string>> = {
   extra_resume: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_EXTRA_RESUME_URL,
   cover_letter: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_COVER_LETTER_URL,
   interview_pack: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_INTERVIEW_PACK_URL,
   recruiter_review: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_RECRUITER_REVIEW_URL,
   linkedin_rewrite: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_LINKEDIN_REWRITE_URL,
-  career_consultation: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_CAREER_CONSULTATION_URL,
+  career_blueprint: process.env.NEXT_PUBLIC_LEMONSQUEEZY_ADDON_CAREER_BLUEPRINT_URL,
 }
 
 export const isAddonSelfServe = (addonKey: string): boolean =>
@@ -39,10 +38,9 @@ export function getCareerAddonCheckoutUrl(
     return null
   }
 
-  const search = new URLSearchParams()
-  search.set("checkout[quantity]", String(Math.max(1, Math.min(20, params.quantity))))
-  if (params.email) search.set("checkout[email]", params.email)
-  search.set("checkout[custom][token]", params.token)
-  search.set("checkout[custom][kind]", "career_addon")
-  return `${base}?${search.toString()}`
+  checkout.searchParams.set("quantity", String(Math.max(1, Math.min(20, params.quantity))))
+  if (params.email) checkout.searchParams.set("checkout[email]", params.email)
+  checkout.searchParams.set("checkout[custom][token]", params.token)
+  checkout.searchParams.set("checkout[custom][kind]", "career_addon")
+  return checkout.toString()
 }

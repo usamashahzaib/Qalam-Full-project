@@ -4,7 +4,7 @@ import { requireAdminRequest } from "@/lib/server/workspace"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 
 const schema = z.object({
-  status: z.enum(["paid", "fulfilled", "cancelled", "refunded"]),
+  status: z.enum(["cancelled", "refunded"]),
   paymentProvider: z.string().trim().max(80).optional(),
   providerReference: z.string().trim().max(200).optional(),
 })

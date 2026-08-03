@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
       // will reject it with a clear error instead of this route guessing.
     }
     if (isCareerAddonWebhook(eventName, peekedBody)) {
-      const result = await handleCareerAddonWebhook(rawBody, request.headers.get("x-signature"))
+      const result = await handleCareerAddonWebhook(rawBody, request.headers.get("x-signature"), eventName)
       return NextResponse.json(result.body, { status: result.status })
     }
   }

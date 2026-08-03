@@ -22,7 +22,7 @@ export const LEMONSQUEEZY_ADDON_VARIANTS: Record<string, AddonKey> = {
   ...(env.lemonSqueezyAddonVariantLinkedinRewrite
     ? { [env.lemonSqueezyAddonVariantLinkedinRewrite]: "linkedin_rewrite" as AddonKey }
     : {}),
-  ...(env.lemonSqueezyAddonVariantCareerConsultation
-    ? { [env.lemonSqueezyAddonVariantCareerConsultation]: "career_consultation" as AddonKey }
+  ...(env.lemonSqueezyAddonVariantCareerBlueprint
+    ? { [env.lemonSqueezyAddonVariantCareerBlueprint]: "career_blueprint" as AddonKey }
     : {}),
 }

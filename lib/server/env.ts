@@ -40,7 +40,7 @@ export const env = {
   lemonSqueezyAddonVariantInterviewPack: read("LEMONSQUEEZY_ADDON_VARIANT_INTERVIEW_PACK"),
   lemonSqueezyAddonVariantRecruiterReview: read("LEMONSQUEEZY_ADDON_VARIANT_RECRUITER_REVIEW"),
   lemonSqueezyAddonVariantLinkedinRewrite: read("LEMONSQUEEZY_ADDON_VARIANT_LINKEDIN_REWRITE"),
-  lemonSqueezyAddonVariantCareerConsultation: read("LEMONSQUEEZY_ADDON_VARIANT_CAREER_CONSULTATION"),
+  lemonSqueezyAddonVariantCareerBlueprint: read("LEMONSQUEEZY_ADDON_VARIANT_CAREER_BLUEPRINT"),
   resendApiKey: read("RESEND_API_KEY"),
   transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
   cronSecret: read("CRON_SECRET"),

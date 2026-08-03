@@ -26,12 +26,12 @@ export const CAREER_PLANS = [
 ] as const
 
 export const CAREER_ADD_ONS = [
-  { key: "extra_resume", name: "Extra JD-matched resume", price: 399 },
-  { key: "cover_letter", name: "Cover letter", price: 199 },
-  { key: "interview_pack", name: "Mock interview pack", price: 599 },
-  { key: "recruiter_review", name: "Recruiter-style resume review", price: 799 },
-  { key: "linkedin_rewrite", name: "LinkedIn profile rewrite", price: 1199 },
-  { key: "career_consultation", name: "Career consultation", price: 1499 },
+  { key: "extra_resume", name: "Extra JD-matched resume", price: 399, route: "/career/resumes", unit: "resume" },
+  { key: "cover_letter", name: "Targeted cover letter", price: 199, route: "/career/cover-letters", unit: "letter" },
+  { key: "interview_pack", name: "AI interview practice pack", price: 599, route: "/career/interview-prep", unit: "pack" },
+  { key: "recruiter_review", name: "Recruiter-style deep resume review", price: 799, route: "/career/deep-resume-review", unit: "review" },
+  { key: "linkedin_rewrite", name: "Complete LinkedIn profile rewrite", price: 1199, route: "/career/linkedin-rewrite", unit: "rewrite" },
+  { key: "career_blueprint", name: "Career strategy blueprint", price: 1499, route: "/career/strategy-blueprint", unit: "blueprint" },
 ] as const
 
 export type AddonKey = (typeof CAREER_ADD_ONS)[number]["key"]

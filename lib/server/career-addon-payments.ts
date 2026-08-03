@@ -25,7 +25,7 @@ type CareerAddonOrderRow = {
  * add-on products and would reject this event, so it must never see it.
  */
 export function isCareerAddonWebhook(eventName: string, body: Record<string, unknown>): boolean {
-  if (eventName !== "order_created") return false
+  if (eventName !== "order_created" && eventName !== "order_refunded") return false
   const meta = (body.meta ?? {}) as Record<string, unknown>
   const customData = (meta.custom_data ?? {}) as Record<string, unknown>
   return customData.kind === "career_addon"
@@ -40,7 +40,8 @@ export function isCareerAddonWebhook(eventName: string, body: Record<string, unk
  */
 export async function handleCareerAddonWebhook(
   rawBody: string,
-  signature: string | null
+  signature: string | null,
+  eventName = "order_created"
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   if (!verifyLemonSqueezy(rawBody, signature, env.lemonSqueezyWebhookSecret)) {
     return { status: 401, body: { ok: false, error: "payment_signature_invalid" } }
@@ -68,9 +69,10 @@ export async function handleCareerAddonWebhook(
   if (!lsOrderId) return { status: 400, body: { ok: false, error: "missing_order_id" } }
 
   const supabase = createServiceClient()
+  const webhookEventId = `${eventName}:${lsOrderId}`
   const { data: claimState, error: claimError } = await supabase.rpc("claim_payment_webhook_v2", {
     p_provider: "lemonsqueezy_career_addon",
-    p_event_id: lsOrderId,
+    p_event_id: webhookEventId,
   })
   if (claimError) return { status: 503, body: { ok: false, error: "payment_webhook_claim_failed" } }
   if (claimState === "busy") return { status: 503, body: { ok: false, error: "payment_webhook_busy" } }
@@ -81,7 +83,7 @@ export async function handleCareerAddonWebhook(
       .from("payment_webhook_events")
       .update({ processing_state: "failed", last_error: reason.slice(0, 2000), updated_at: new Date().toISOString() })
       .eq("provider", "lemonsqueezy_career_addon")
-      .eq("event_id", lsOrderId)
+      .eq("event_id", webhookEventId)
     return { status: 422, body: { ok: false, error: reason } }
   }
 
@@ -90,8 +92,30 @@ export async function handleCareerAddonWebhook(
       .from("payment_webhook_events")
       .update({ processing_state: "completed", processed_at: new Date().toISOString(), last_error: null, updated_at: new Date().toISOString() })
       .eq("provider", "lemonsqueezy_career_addon")
-      .eq("event_id", lsOrderId)
+      .eq("event_id", webhookEventId)
     return { status: 200, body: { ok: true, ...result } }
+  }
+
+  if (eventName === "order_refunded") {
+    const fullyRefunded = status === "refunded" || attributes.refunded === true
+    if (!fullyRefunded) return complete({ ignored: true, reason: "partial_refund" })
+    const verifiedRefund = verifyAddonCheckoutToken(token)
+    const lookup = supabase.from("career_addon_orders").select("id, user_id, workspace_id, addon_key, quantity, status")
+    const { data: refundedOrder } = verifiedRefund
+      ? await lookup.eq("id", verifiedRefund.orderId).eq("user_id", verifiedRefund.userId).maybeSingle<CareerAddonOrderRow>()
+      : await lookup.eq("provider_reference", lsOrderId).maybeSingle<CareerAddonOrderRow>()
+    if (!refundedOrder) return fail("addon_refund_order_not_found")
+    const { error: refundError } = await supabase.from("career_addon_orders").update({ status: "refunded", updated_at: new Date().toISOString() }).eq("id", refundedOrder.id)
+    if (refundError) return fail("addon_refund_update_failed")
+    await createNotification({
+      userId: refundedOrder.user_id,
+      workspaceId: refundedOrder.workspace_id,
+      type: "career_addon_paid",
+      title: "Career add-on refunded",
+      body: "Unused credits from this order are no longer available.",
+      link: "/career/add-ons",
+    })
+    return complete({ orderId: refundedOrder.id, refunded: true })
   }
 
   if (status !== "paid") return complete({ ignored: true, reason: `status_${status || "unknown"}` })
@@ -139,13 +163,14 @@ export async function handleCareerAddonWebhook(
   if (updateError) return fail("addon_order_update_failed")
 
   const addon = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)
+  const link = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)?.route || "/career/add-ons"
   await createNotification({
     userId: order.user_id,
     workspaceId: order.workspace_id,
     type: "career_addon_paid",
     title: "Add-on payment received",
-    body: `${addon?.name || order.addon_key} is confirmed and will be fulfilled shortly.`,
-    link: "/career/add-ons",
+    body: `${addon?.name || order.addon_key} is confirmed. Generate it now inside Qalam.`,
+    link,
   })
 
   return complete({ orderId: order.id })
