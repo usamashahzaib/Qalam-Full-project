@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { formatPkr, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS } from "@/lib/pricing"
+import { formatPkr, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE } from "@/lib/pricing"
 
 describe("formatPkr", () => {
   it("returns 'Free' for zero", () => {
@@ -35,19 +35,20 @@ describe("PLANS", () => {
     ])
   })
 
-  it("has exactly 4 public plans", () => {
-    expect(PLANS).toHaveLength(4)
+  it("has exactly 3 public plans while Agency self-serve is unwired", () => {
+    expect(AGENCY_PLAN_LIVE).toBe(false)
+    expect(PLANS).toHaveLength(3)
   })
 
-  it("includes the Agency plan", () => {
-    expect(PLANS.find((p) => p.plan === "Agency")).toBeDefined()
+  it("does not publish the Agency plan on public surfaces yet", () => {
+    expect(PLANS.find((p) => p.plan === "Agency")).toBeUndefined()
   })
 
-  it("publishes Agency with manual onboarding pricing", () => {
-    const agency = PLANS.find((p) => p.plan === "Agency")!
-    expect(agency.monthlyPkr).toBe(3999)
-    expect(agency.quarterlyPkr).toBe(7998)
-    expect(agency.comingSoon).toBeUndefined()
+  it("keeps Agency's manual onboarding pricing defined even while hidden", () => {
+    const agency = plans.find((p) => p.name === "Agency")!
+    expect(agency.hidden).toBe(true)
+    expect(agency.monthlyPrice).toBe(3999)
+    expect(agency.quarterlyPrice).toBe(7998)
   })
 
   it("Free plan has zero monthly price and no annual option", () => {
