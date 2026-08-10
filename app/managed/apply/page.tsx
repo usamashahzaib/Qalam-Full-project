@@ -39,7 +39,7 @@ export default async function ManagedApplyPage({
             <p className="max-w-2xl text-lg leading-relaxed text-zinc-600">
               {isAgency
                 ? "Agency is PKR 3,999/month and PKR 7,998 billed quarterly. Apply below for workspace activation."
-                : "For founders and executives who want a consistent LinkedIn presence without doing the writing. Apply below and we'll confirm fit, pricing, and a start date within one business day."}
+                : "For founders and executives who want a consistent LinkedIn presence without doing the writing. Discounted monthly pricing is shown below. Apply and we'll confirm fit and a start date within one business day."}
             </p>
           </FadeUp>
         </div>
@@ -52,6 +52,7 @@ export default async function ManagedApplyPage({
               {(isAgency ? [] : MANAGED_PLANS).map((plan) => (
                 <div key={plan.name} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-widest text-gold">{plan.name}</p>
+                  <p className="mt-2 text-sm text-zinc-400"><span className="line-through">{formatPkr(plan.originalMonthlyPrice)}</span> <span className="ml-1 font-semibold text-emerald-700">Discounted</span></p>
                   <p className="mt-1 text-2xl font-bold text-zinc-900">{formatPkr(plan.monthlyPrice)}<span className="text-sm font-medium text-zinc-500">/mo</span></p>
                   <p className="mt-2 text-sm text-zinc-600">{plan.description}</p>
                   <ul className="mt-4 space-y-1.5 text-xs text-zinc-500">

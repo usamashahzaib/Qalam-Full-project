@@ -7,9 +7,74 @@ import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
 const LEMONSQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1"
 const LEMONSQUEEZY_STORE_ID = "366761"
 
+type CareerAddonCheckoutParams = {
+  name: string
+  unit: string
+  unitPricePkr: number
+  quantity: number
+  token: string
+  email?: string | null
+}
+
 export type LemonSqueezyCancelResult = {
   status: string | null
   endsAt: string | null
+}
+
+export const isCareerAddonCheckoutConfigured = () =>
+  Boolean(env.lemonSqueezyApiKey && env.lemonSqueezyCareerAddonBaseVariantId)
+
+export async function createCareerAddonCheckout(params: CareerAddonCheckoutParams): Promise<string> {
+  if (!isCareerAddonCheckoutConfigured()) throw new Error("career_addon_checkout_not_configured")
+  if (!Number.isInteger(params.unitPricePkr) || params.unitPricePkr < 1) throw new Error("invalid_career_addon_price")
+  if (!Number.isInteger(params.quantity) || params.quantity < 1 || params.quantity > 20) throw new Error("invalid_career_addon_quantity")
+
+  const variantId = env.lemonSqueezyCareerAddonBaseVariantId
+  const response = await fetch(`${LEMONSQUEEZY_API_BASE}/checkouts`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.lemonSqueezyApiKey}`,
+      "Content-Type": "application/vnd.api+json",
+      Accept: "application/vnd.api+json",
+    },
+    body: JSON.stringify({
+      data: {
+        type: "checkouts",
+        attributes: {
+          custom_price: params.unitPricePkr * 100,
+          product_options: {
+            name: params.name,
+            description: `One ${params.unit}, generated and saved inside Qalam.`,
+            redirect_url: `${env.frontendOrigin}/career/add-ons?checkout=success`,
+            enabled_variants: [Number(variantId)],
+          },
+          checkout_options: { embed: false, media: false, logo: true, desc: true, discount: false },
+          checkout_data: {
+            ...(params.email ? { email: params.email } : {}),
+            custom: { kind: "career_addon", token: params.token },
+            variant_quantities: [{ variant_id: Number(variantId), quantity: params.quantity }],
+          },
+          expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        },
+        relationships: {
+          store: { data: { type: "stores", id: LEMONSQUEEZY_STORE_ID } },
+          variant: { data: { type: "variants", id: variantId } },
+        },
+      },
+    }),
+  })
+
+  const json = await response.json().catch(() => null) as {
+    data?: { attributes?: { url?: string } }
+    errors?: { detail?: string }[]
+  } | null
+  if (!response.ok) throw new Error(`career_addon_checkout_failed: ${json?.errors?.[0]?.detail || response.statusText}`)
+
+  const rawUrl = json?.data?.attributes?.url
+  if (!rawUrl) throw new Error("career_addon_checkout_url_missing")
+  const url = new URL(rawUrl)
+  if (url.protocol !== "https:" || url.hostname !== "byqalam.lemonsqueezy.com") throw new Error("career_addon_checkout_url_invalid")
+  return url.toString()
 }
 
 export async function createReferralDiscountCode(discountPercent: number): Promise<string> {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest"
-import { formatPkr, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE } from "@/lib/pricing"
+import { formatPkr, getQuarterlyMonthlyEquivalent, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
+import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 describe("formatPkr", () => {
   it("returns 'Free' for zero", () => {
@@ -18,6 +19,11 @@ describe("formatPkr", () => {
   it("formats numbers over 1000 with comma separator", () => {
     const result = formatPkr(1990)
     expect(result).toContain("1,990")
+  })
+
+  it("shows the effective monthly cost of a quarterly payment", () => {
+    expect(getQuarterlyMonthlyEquivalent(1598)).toBe(533)
+    expect(getQuarterlyMonthlyEquivalent(2998)).toBe(999)
   })
 })
 
@@ -51,6 +57,13 @@ describe("PLANS", () => {
     expect(agency.quarterlyPrice).toBe(7998)
   })
 
+  it("keeps managed launch pricing and original anchors aligned", () => {
+    const basic = MANAGED_PLANS.find((plan) => plan.name === "Basic Management")!
+    const premium = MANAGED_PLANS.find((plan) => plan.name === "Premium Management")!
+    expect([basic.monthlyPrice, basic.originalMonthlyPrice]).toEqual([5000, 7500])
+    expect([premium.monthlyPrice, premium.originalMonthlyPrice]).toEqual([10000, 15000])
+  })
+
   it("Free plan has zero monthly price and no annual option", () => {
     const free = PLANS.find((p) => p.plan === "Free")!
     expect(free.monthlyPkr).toBe(0)
@@ -60,7 +73,7 @@ describe("PLANS", () => {
   it("Solo starts at 799 PKR/month", () => {
     const solo = PLANS.find((p) => p.plan === "Solo")!
     expect(solo.monthlyPkr).toBe(799)
-    expect(solo.features).toContain("3 carousels/month")
+    expect(solo.features.some((feature) => feature.includes("3 carousels"))).toBe(true)
   })
 
   it("Pro starts at 1499 PKR/month", () => {
@@ -171,8 +184,13 @@ describe("COMPARISON_ROWS integrity", () => {
       "Analytics",
       "Competitor research",
       "AI Strategist",
-      "Silent Growth tools",
     ]))
+    expect(labels.includes("Silent Growth tools")).toBe(SILENT_GROWTH_LIVE)
+  })
+
+  it("never advertises disabled Silent Growth tools in plan cards", () => {
+    const advertised = PLANS.some((plan) => plan.features.some((feature) => feature.includes("Silent Growth")))
+    expect(advertised).toBe(SILENT_GROWTH_LIVE)
   })
 
   it("does not mislabel personal workspaces as client workspaces", () => {

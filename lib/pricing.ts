@@ -1,4 +1,5 @@
 import type { PlanTier } from "@/types/domain"
+import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
 
@@ -14,6 +15,8 @@ export type Plan = {
   voiceProfiles: number
   workspaces: number
   annualSavingsLabel: string
+  audience: string
+  featureLead: string
   features: string[]
   cta: string
   badge: string
@@ -24,6 +27,7 @@ export type Plan = {
 export type ManagedPlan = {
   name: string
   monthlyPrice: number
+  originalMonthlyPrice: number
   postsPerMonth: number
   description: string
   features: string[]
@@ -50,15 +54,17 @@ export const plans: Plan[] = [
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "",
+    audience: "Explore Qalam before paying",
+    featureLead: "A complete starting point",
     features: [
-      "5 posts/month",
-      "1 carousel/month",
-      "Basic AI Writer",
-      "Hook Generator (5/month)",
-      "Content scoring (5/month)",
-      "Comment Generator (10/month)",
+      "5 AI posts + 5 hook sets/month",
+      "1 carousel + 5 content scores/month",
+      "10 smart comments/month",
       "Basic Voice Profile",
-      "Silent Growth tools",
+      "Career Vault",
+      "1 LinkedIn positioning audit/month",
+      "1 ATS review + 1 targeted resume",
+      ...(SILENT_GROWTH_LIVE ? ["Silent Growth tools"] : []),
     ],
     cta: "Start Free",
     badge: "No card required",
@@ -75,20 +81,17 @@ export const plans: Plan[] = [
     voiceProfiles: 0,
     workspaces: 1,
     annualSavingsLabel: "Save PKR 799",
+    audience: "Publish consistently on LinkedIn",
+    featureLead: "Everything in Free, plus",
     features: [
-      "30 posts/month",
-      "3 carousels/month",
-      "Role-Aware AI Writer",
-      "Hook Generator (30/month)",
-      "Content scoring (10/month)",
-      "Comment Generator (50/month)",
-      "LinkedIn publishing + scheduling",
-      "Basic analytics",
-      "Basic Voice Profile",
-      "Post Library",
+      "30 AI posts + 30 hook sets/month",
+      "3 carousels + 10 content scores/month",
+      "Role-aware writing + 50 smart comments/month",
+      "Plan, publish, and schedule on LinkedIn",
+      "Post Library + version history",
+      "Basic performance analytics",
       "3 LinkedIn positioning audits/month",
-      "2 ATS resume reviews/month",
-      "1 targeted resume/month",
+      "2 ATS reviews + 1 targeted resume/month",
     ],
     cta: "Start Solo",
     badge: "Most popular",
@@ -105,25 +108,21 @@ export const plans: Plan[] = [
     voiceProfiles: 1,
     workspaces: 1,
     annualSavingsLabel: "Save PKR 1,499",
+    audience: "Build authority and career leverage",
+    featureLead: "Everything in Solo, plus",
     features: [
-      "60 posts/month",
-      "10 carousels/month",
-      "Voice Training",
-      "Push to 90+ quality check",
-      "AI Strategist",
-      "Competitor Research (5/month)",
-      "LinkedIn publishing + scheduling",
+      "60 AI posts + 10 carousels/month",
+      "Trained voice + Push to 90+ improvement",
+      "AI Strategist + 5 competitor research runs/month",
+      "Full analytics + priority generation",
       "Approval workflow + PDF export",
-      "Comment Generator (150/month)",
-      "Priority Queue",
-      "Full analytics",
+      "150 smart comments/month",
       "20 LinkedIn positioning audits/month",
-      "10 ATS resume reviews/month",
-      "3 targeted resumes/month",
-      "Recruiter visibility + learning cohorts",
+      "10 ATS reviews + 3 targeted resumes/month",
+      "Recruiter visibility + career cohorts",
     ],
     cta: "Start Pro",
-    badge: "Best value",
+    badge: "Most powerful",
   },
   {
     name: "Agency",
@@ -137,6 +136,8 @@ export const plans: Plan[] = [
     voiceProfiles: 5,
     workspaces: 5,
     annualSavingsLabel: "Save PKR 3,999",
+    audience: "Run multiple client workspaces",
+    featureLead: "Everything in Pro, plus",
     features: [
       "300 posts/month across 5 workspaces",
       "50 carousels/month",
@@ -163,28 +164,35 @@ export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 export const MANAGED_PLANS: ManagedPlan[] = [
   {
     name: "Basic Management",
-    monthlyPrice: 2999,
+    monthlyPrice: 5000,
+    originalMonthlyPrice: 7500,
     postsPerMonth: 12,
-    description: "We write and post 3x/week on your behalf. 1 revision per post.",
+    description: "A Qalam writer turns your expertise into three approved LinkedIn posts each week.",
     features: [
-      "12 posts/month",
+      "12 expert-written posts/month",
+      "Monthly discovery interview",
+      "Voice brief built from your Career Vault",
       "Client approval flow",
       "1 revision per post",
-      "Monthly report",
+      "Publishing + scheduling",
+      "Monthly performance summary",
     ],
     cta: "Apply Now",
   },
   {
     name: "Premium Management",
-    monthlyPrice: 6999,
+    monthlyPrice: 10000,
+    originalMonthlyPrice: 15000,
     postsPerMonth: 20,
-    description: "Full LinkedIn management - posts, carousels, voice, strategy.",
+    description: "Positioning, voice, content, and publishing managed as one LinkedIn growth system.",
     features: [
-      "20 posts/month",
+      "20 expert-written posts/month",
       "2 carousels/month",
-      "Voice training",
-      "Engagement strategy",
-      "Analytics report",
+      "Monthly positioning strategy",
+      "Voice training + content pillars",
+      "Publishing + scheduling",
+      "Approval flow + 2 revisions per post",
+      "Monthly analytics review",
       "WhatsApp support",
     ],
     cta: "Apply Now",
@@ -231,6 +239,8 @@ export interface PricingPlan {
   annualPkrPerMonth?: number
   period: string
   description: string
+  audience: string
+  featureLead: string
   features: string[]
   cta: string
   href: string
@@ -261,12 +271,14 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "month",
   description:
     plan.name === "Free"
-      ? "Start with essential LinkedIn writing tools."
+      ? "Test the full career visibility loop before paying."
       : plan.name === "Solo"
-        ? "For creators ready to publish consistently."
+        ? "Create, plan, and publish a consistent professional presence."
         : plan.name === "Pro"
-          ? "For creators who need voice, strategy, analytics, and more output."
+          ? "Turn trained voice, data, and career signals into an operating advantage."
           : "For teams managing multiple workspaces and approvals.",
+  audience: plan.audience,
+  featureLead: plan.featureLead,
   features: plan.features,
   cta: plan.cta,
   // Paid plans go to the in-app upgrade route, which opens the Lemon Squeezy
@@ -294,6 +306,7 @@ export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
 
 export const COMPARISON_ROWS = [
   {
+    group: "Creation",
     label: "Posts per month",
     free: "5",
     solo: "30",
@@ -301,6 +314,7 @@ export const COMPARISON_ROWS = [
     agency: "60 x 5 workspaces",
   },
   {
+    group: "Creation",
     label: "Carousels per month",
     free: "1",
     solo: "3",
@@ -308,6 +322,7 @@ export const COMPARISON_ROWS = [
     agency: "10 x 5 workspaces",
   },
   {
+    group: "Creation",
     label: "Slides per carousel",
     free: "5",
     solo: "7",
@@ -315,6 +330,7 @@ export const COMPARISON_ROWS = [
     agency: "10",
   },
   {
+    group: "Creation",
     label: "Hook generations",
     free: "5/month",
     solo: "30/month",
@@ -322,6 +338,7 @@ export const COMPARISON_ROWS = [
     agency: "300/month",
   },
   {
+    group: "Creation",
     label: "Content score analyses",
     free: "5/month",
     solo: "10/month",
@@ -329,6 +346,7 @@ export const COMPARISON_ROWS = [
     agency: "100/month",
   },
   {
+    group: "Creation",
     label: "AI Writer",
     free: "Basic",
     solo: "Role-Aware",
@@ -336,6 +354,7 @@ export const COMPARISON_ROWS = [
     agency: "Full",
   },
   {
+    group: "Creation",
     label: "Voice profiles",
     free: "Basic profile",
     solo: "Basic profile",
@@ -343,6 +362,7 @@ export const COMPARISON_ROWS = [
     agency: "5 trained profiles",
   },
   {
+    group: "Creation",
     label: "Comment Generator",
     free: "10/month",
     solo: "50/month",
@@ -350,6 +370,7 @@ export const COMPARISON_ROWS = [
     agency: "400/month",
   },
   {
+    group: "Workspace",
     label: "Personal workspace",
     free: "1",
     solo: "1",
@@ -357,6 +378,7 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
+    group: "Workspace",
     label: "Client workspaces",
     free: "Not included",
     solo: "Not included",
@@ -364,6 +386,7 @@ export const COMPARISON_ROWS = [
     agency: "5",
   },
   {
+    group: "Workspace",
     label: "Team seats",
     free: "1",
     solo: "1",
@@ -371,6 +394,7 @@ export const COMPARISON_ROWS = [
     agency: "5",
   },
   {
+    group: "Publishing",
     label: "LinkedIn publishing",
     free: "Not included",
     solo: "Included",
@@ -378,6 +402,7 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
+    group: "Publishing",
     label: "Scheduling",
     free: "Not included",
     solo: "Included",
@@ -385,6 +410,7 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
+    group: "Publishing",
     label: "Approval workflow",
     free: "Not included",
     solo: "Not included",
@@ -392,6 +418,7 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
+    group: "Publishing",
     label: "PDF export",
     free: "Not included",
     solo: "Not included",
@@ -399,6 +426,7 @@ export const COMPARISON_ROWS = [
     agency: "Included",
   },
   {
+    group: "Intelligence",
     label: "Analytics",
     free: "Not included",
     solo: "Basic",
@@ -406,6 +434,7 @@ export const COMPARISON_ROWS = [
     agency: "Full, 5 workspaces",
   },
   {
+    group: "Intelligence",
     label: "Competitor research",
     free: "Not included",
     solo: "Not included",
@@ -413,20 +442,23 @@ export const COMPARISON_ROWS = [
     agency: "25/month",
   },
   {
+    group: "Intelligence",
     label: "AI Strategist",
     free: "Not included",
     solo: "Not included",
     pro: "Included",
     agency: "Included",
   },
-  {
+  ...(SILENT_GROWTH_LIVE ? [{
+    group: "Intelligence",
     label: "Silent Growth tools",
     free: "Included",
     solo: "Included",
     pro: "Included",
     agency: "Included",
-  },
+  }] : []),
   {
+    group: "Career",
     label: "LinkedIn positioning audits",
     free: "1/month",
     solo: "3/month",
@@ -434,6 +466,7 @@ export const COMPARISON_ROWS = [
     agency: "100/month",
   },
   {
+    group: "Career",
     label: "ATS resume reviews",
     free: "1/month",
     solo: "2/month",
@@ -441,6 +474,7 @@ export const COMPARISON_ROWS = [
     agency: "50/month",
   },
   {
+    group: "Career",
     label: "JD-matched resumes",
     free: "1 lifetime",
     solo: "1/month",
@@ -448,6 +482,7 @@ export const COMPARISON_ROWS = [
     agency: "20/month",
   },
   {
+    group: "Price",
     label: "Quarterly price",
     free: "Free",
     solo: "PKR 1,598",
@@ -461,6 +496,9 @@ export const formatPkr = (amount: number | null | undefined): string => {
   if (amount === 0) return "Free"
   return `PKR ${amount.toLocaleString("en-PK")}`
 }
+
+export const getQuarterlyMonthlyEquivalent = (quarterlyPrice: number | null | undefined): number | null =>
+  quarterlyPrice == null ? null : Math.round(quarterlyPrice / 3)
 
 // ─── Lemon Squeezy checkout ────────────────────────────────────────────────
 

@@ -6,7 +6,10 @@ import { CAREER_ADDON_TOOLS } from "@/lib/career-addon-tools"
 
 const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260803000000_software_only_career_addons.sql"), "utf8")
 const checkout = readFileSync(resolve(process.cwd(), "lib/career-checkout.ts"), "utf8")
+const lemonApi = readFileSync(resolve(process.cwd(), "lib/server/lemonsqueezy-api.ts"), "utf8")
 const payment = readFileSync(resolve(process.cwd(), "lib/server/career-addon-payments.ts"), "utf8")
+const orderRoute = readFileSync(resolve(process.cwd(), "app/api/career/add-ons/route.ts"), "utf8")
+const marketplace = readFileSync(resolve(process.cwd(), "app/(app)/career/add-ons/page.tsx"), "utf8")
 
 describe("software-only career add-ons", () => {
   it("maps every catalog item to an in-app route", () => {
@@ -29,9 +32,24 @@ describe("software-only career add-ons", () => {
   })
 
   it("uses Lemon Squeezy quantity and refund events", () => {
-    expect(checkout).toContain('searchParams.set("quantity"')
-    expect(checkout).not.toContain('search.set("checkout[quantity]"')
+    expect(checkout).toContain("NEXT_PUBLIC_CAREER_ADDON_CHECKOUT_LIVE")
+    expect(lemonApi).toContain("variant_quantities")
+    expect(lemonApi).toContain("custom_price: params.unitPricePkr * 100")
     expect(payment).toContain('eventName === "order_refunded"')
     expect(payment).toContain('status: "refunded"')
+  })
+
+  it("blocks unconfigured checkout before creating an order", () => {
+    expect(orderRoute.indexOf("isCareerAddonCheckoutConfigured")).toBeLessThan(orderRoute.indexOf('.from("career_addon_orders").insert'))
+    expect(orderRoute).toContain("Card checkout is not configured")
+    expect(marketplace).toContain('disabled={!checkoutReady || payingKey === item.key}')
+  })
+
+  it("verifies shared variant, PKR subtotal, quantity, and discount before fulfillment", () => {
+    expect(payment).toContain("lemonSqueezyCareerAddonBaseVariantId")
+    expect(payment).toContain('currency !== "PKR"')
+    expect(payment).toContain("subtotal !== order.amount_pkr * 100")
+    expect(payment).toContain("discountTotal !== 0")
+    expect(payment.indexOf("addon_amount_mismatch")).toBeLessThan(payment.indexOf('status: "paid"'))
   })
 })

@@ -12,6 +12,8 @@ interface PricingCardProps {
   usdReference: string
   period: string
   description: string
+  audience?: string
+  featureLead?: string
   features: string[]
   cta: string
   href: string
@@ -25,7 +27,7 @@ interface PricingCardProps {
 
 function badgeClasses(badge: string): string {
   if (badge === "Most popular") return "bg-gold text-white"
-  if (badge === "Best value") return "bg-gold text-white"
+  if (badge === "Most powerful") return "bg-teal text-white"
   if (badge === "Coming Soon") return "bg-zinc-100 text-zinc-600"
   if (badge === "Current plan") return "bg-emerald-100 text-emerald-700"
   return "bg-zinc-100 text-zinc-600"
@@ -39,6 +41,8 @@ export function PricingCard({
   usdReference,
   period,
   description,
+  audience,
+  featureLead,
   features,
   cta,
   href,
@@ -96,9 +100,11 @@ export function PricingCard({
           </p>
         )}
         <p className={`mt-2 text-xs ${highlighted ? "text-teal-100/80" : "text-zinc-400"}`}>{usdReference}</p>
-        <p className={`mt-2 text-sm leading-relaxed ${highlighted ? "text-teal-100" : "text-zinc-600"}`}>{description}</p>
+        {audience && <p className={`mt-4 text-sm font-bold ${highlighted ? "text-white" : "text-zinc-900"}`}>{audience}</p>}
+        <p className={`mt-1 text-sm leading-relaxed ${highlighted ? "text-teal-100" : "text-zinc-600"}`}>{description}</p>
       </div>
 
+      {featureLead && <p className={`mb-3 text-[11px] font-bold uppercase tracking-[0.14em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{featureLead}</p>}
       <ul className="mb-8 flex flex-1 flex-col gap-3">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2.5">

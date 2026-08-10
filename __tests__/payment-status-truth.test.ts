@@ -21,4 +21,12 @@ describe("public payment status truth", () => {
   it("does not present self-serve checkout as future work", () => {
     expect(byTitle["Building next"]).not.toContain("Self-serve checkout")
   })
+
+  it("marks notifications and referrals live", () => {
+    expect(byTitle["Live now"]).toEqual(expect.arrayContaining([
+      "Notification center with unread status and history",
+      "Refer and Earn codes, discounts, commissions, and payouts",
+    ]))
+    expect(byTitle["Building next"]).not.toContain("Notification center")
+  })
 })

@@ -31,16 +31,7 @@ export const env = {
   easyPaisaWebhookSecret: read("EASYPAISA_WEBHOOK_SECRET"),
   lemonSqueezyWebhookSecret: read("LEMONSQUEEZY_WEBHOOK_SECRET"),
   lemonSqueezyApiKey: read("LEMONSQUEEZY_API_KEY"),
-  // Career add-on variant IDs, one per product in CAREER_ADD_ONS. Server-only -
-  // the webhook resolves which add-on was bought from this trusted mapping, never
-  // from buyer-editable checkout[custom] fields. Unset until the add-on products
-  // are created in the Lemon Squeezy dashboard.
-  lemonSqueezyAddonVariantExtraResume: read("LEMONSQUEEZY_ADDON_VARIANT_EXTRA_RESUME"),
-  lemonSqueezyAddonVariantCoverLetter: read("LEMONSQUEEZY_ADDON_VARIANT_COVER_LETTER"),
-  lemonSqueezyAddonVariantInterviewPack: read("LEMONSQUEEZY_ADDON_VARIANT_INTERVIEW_PACK"),
-  lemonSqueezyAddonVariantRecruiterReview: read("LEMONSQUEEZY_ADDON_VARIANT_RECRUITER_REVIEW"),
-  lemonSqueezyAddonVariantLinkedinRewrite: read("LEMONSQUEEZY_ADDON_VARIANT_LINKEDIN_REWRITE"),
-  lemonSqueezyAddonVariantCareerBlueprint: read("LEMONSQUEEZY_ADDON_VARIANT_CAREER_BLUEPRINT"),
+  lemonSqueezyCareerAddonBaseVariantId: read("LEMONSQUEEZY_CAREER_ADDON_BASE_VARIANT_ID"),
   resendApiKey: read("RESEND_API_KEY"),
   transactionalEmailFrom: read("TRANSACTIONAL_EMAIL_FROM") || "Qalam <info@byqalam.com>",
   cronSecret: read("CRON_SECRET"),

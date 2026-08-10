@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { signAddonCheckoutToken } from "@/lib/server/checkout-token"
-import { getCareerAddonCheckoutUrl } from "@/lib/career-checkout"
+import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { createCareerAddonCheckout, isCareerAddonCheckoutConfigured } from "@/lib/server/lemonsqueezy-api"
 import { getClientIp, TokenBucket } from "@/lib/server/rate-limit"
 
 const checkoutLimiter = new TokenBucket(10, 10, 15 * 60 * 1000)
@@ -33,14 +34,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "This order is not awaiting payment." }, { status: 400 })
     }
 
-    const token = signAddonCheckoutToken(user.id, order.id)
-    const url = getCareerAddonCheckoutUrl(order.addon_key, {
-      quantity: order.quantity,
-      token,
-      email: user.email,
-    })
-    if (!url) {
+    if (!isCareerAddonCheckoutConfigured()) {
       return NextResponse.json({ error: "Card checkout is not set up for this add-on yet." }, { status: 503 })
+    }
+
+    const addon = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)
+    if (!addon) return NextResponse.json({ error: "Unknown career add-on." }, { status: 400 })
+
+    const token = signAddonCheckoutToken(user.id, order.id)
+    let url: string
+    try {
+      url = await createCareerAddonCheckout({
+        name: addon.name,
+        unit: addon.unit,
+        unitPricePkr: addon.price,
+        quantity: order.quantity,
+        token,
+        email: user.email,
+      })
+    } catch {
+      return NextResponse.json({ error: "Card checkout could not be created." }, { status: 502 })
     }
 
     return NextResponse.json({ url })

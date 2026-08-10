@@ -44,9 +44,12 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    load()
+    const initial = window.setTimeout(load, 0)
     const interval = setInterval(load, POLL_MS)
-    return () => clearInterval(interval)
+    return () => {
+      window.clearTimeout(initial)
+      clearInterval(interval)
+    }
   }, [])
 
   useEffect(() => {

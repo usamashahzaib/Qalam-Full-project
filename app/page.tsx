@@ -11,16 +11,17 @@ import {
   BrainIcon,
   CalendarIcon,
   CheckIcon,
-  CommentIcon,
   GrowthIcon,
+  GiftIcon,
   HookIcon,
   LibraryIcon,
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
-import { PLANS, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
+import { PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
+import { CAREER_ADD_ONS } from "@/lib/career-pricing"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -46,38 +47,39 @@ function useCountUp(end: number, duration = 1400) {
 const FEATURES = [
   {
     icon: VoiceIcon,
-    title: "LinkedIn Positioning",
-    desc: "Find the gaps weakening your headline, About section, experience, proof, and professional position.",
+    title: "LinkedIn Positioning + ATS Review",
+    desc: "Find the gaps weakening recruiter discovery, credibility, job fit, and the evidence behind your professional story.",
+    tier: "Free",
   },
   {
     icon: AnalyticsIcon,
-    title: "Content Intelligence",
-    desc: "Write, score, improve, and organize LinkedIn content around your expertise, audience, and career goals.",
+    title: "AI Posts + Carousel Studio",
+    desc: "Turn your expertise into scored LinkedIn posts, stronger hooks, carousels, and thoughtful comments.",
+    tier: "Free",
   },
   {
     icon: HookIcon,
-    title: "ATS Resume Studio",
-    desc: "Build role-specific resumes from verified experience, measurable proof, and the exact job description.",
+    title: "Career Vault + Voice Profile",
+    desc: "Store verified roles, skills, achievements, goals, and voice context once. Reuse them across every output.",
+    tier: "Free",
   },
   {
     icon: LibraryIcon,
-    title: "Career Vault",
-    desc: "Keep roles, skills, achievements, proof points, and goals in one reusable source of truth.",
+    title: "Plan, Publish + Analyze",
+    desc: "Move from draft to scheduled LinkedIn post with a library, version history, and performance feedback.",
+    tier: "Solo",
   },
   {
     icon: CalendarIcon,
-    title: "Publishing Workflow",
-    desc: "Move from draft to planned LinkedIn publishing without losing voice, score, version, or approval context.",
+    title: "Voice Training + Push to 90+",
+    desc: "Train Qalam on your real writing, then improve weak drafts without flattening the voice that makes them yours.",
+    tier: "Pro",
   },
   {
     icon: TeamIcon,
-    title: "Agency and Cohorts",
-    desc: "Keep client or learner profiles, career evidence, approvals, and progress separated by workspace.",
-  },
-  {
-    icon: CommentIcon,
-    title: "Recruiter Visibility",
-    desc: "Control a search-ready professional profile without exposing private contact details in public results.",
+    title: "Strategist + Competitor Research",
+    desc: "Ask strategic questions, study content patterns, unlock deeper analytics, and build recruiter visibility.",
+    tier: "Pro",
   },
 ]
 
@@ -526,7 +528,7 @@ export default function HomePage() {
     ...plan,
     price: formatPkr(plan.quarterlyPkr),
     period: plan.plan === "Free" ? "" : "quarter",
-    annualSavings: plan.plan === "Free" ? undefined : `Equivalent to ${formatPkr(plan.monthlyPkr)}/month`,
+    annualSavings: plan.plan === "Free" ? undefined : `${formatPkr(getQuarterlyMonthlyEquivalent(plan.quarterlyPkr))}/month effective`,
     usdReference: plan.plan === "Free" ? "No payment card required" : "Billed every three months",
   }))
 
@@ -723,7 +725,10 @@ export default function HomePage() {
                     <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <h3 className="mb-2 text-lg font-bold text-zinc-900">{feature.title}</h3>
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-bold text-zinc-900">{feature.title}</h3>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${feature.tier === "Free" ? "bg-emerald-50 text-emerald-700" : feature.tier === "Solo" ? "bg-teal-50 text-teal" : "bg-gold-50 text-gold-700"}`}>{feature.tier}</span>
+                    </div>
                     <p className="text-sm leading-relaxed text-zinc-600">{feature.desc}</p>
                   </motion.div>
                 </FadeUp>
@@ -731,6 +736,46 @@ export default function HomePage() {
             })}
           </div>
         </div>
+      </section>
+
+      <section className="border-y border-zinc-100 bg-white px-6 py-24">
+        <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+          <FadeUp>
+            <span className="chip border-gold/30 bg-gold-50 text-gold-700">Career toolkit</span>
+            <h2 className="mt-5 text-4xl font-bold leading-tight text-zinc-900 sm:text-5xl">Go beyond profile checks and resume scores.</h2>
+            <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-600">Prepare the complete application: targeted resumes, cover letters, interview practice, recruiter review, LinkedIn rewrites, and a 90-day career strategy.</p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-teal px-6 py-3.5 text-sm font-bold text-white">Explore Career Hub</Link>
+              <Link href="/pricing" className="rounded-xl border border-zinc-300 px-6 py-3.5 text-sm font-bold text-zinc-700">See plans and add-ons</Link>
+            </div>
+          </FadeUp>
+
+          <FadeUp delay={0.08}>
+            <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/60">
+              {CAREER_ADD_ONS.map((item, index) => (
+                <div key={item.key} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-200 px-5 py-4 last:border-b-0 sm:px-6">
+                  <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900">{item.name}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">Software-generated inside Qalam</p>
+                  </div>
+                  <span className="text-sm font-bold text-teal">From {formatPkr(item.price)}</span>
+                </div>
+              ))}
+            </div>
+          </FadeUp>
+        </div>
+
+        <FadeUp className="mx-auto mt-10 flex max-w-[1200px] flex-col gap-5 rounded-2xl bg-teal-800 px-7 py-6 text-white sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-gold"><GiftIcon className="h-5 w-5" /></span>
+            <div>
+              <h3 className="text-lg font-bold">Refer and Earn is live.</h3>
+              <p className="mt-1 text-sm text-white/65">Your referral gets 10% off. You earn 10% commission after confirmed payment.</p>
+            </div>
+          </div>
+          <Link href={`${APP_URL}/login?callbackUrl=/settings/referrals`} className="shrink-0 rounded-xl bg-gold px-5 py-3 text-center text-sm font-bold text-white">Get my referral code</Link>
+        </FadeUp>
       </section>
 
       <VoiceMemorySection />
@@ -818,7 +863,7 @@ export default function HomePage() {
             </p>
           </FadeUp>
 
-          <div className="grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mx-auto grid max-w-[1100px] grid-cols-1 items-start gap-6 md:grid-cols-3">
             {homepagePlans.map((plan, i) => (
               <FadeUp key={plan.plan} delay={i * 0.1}>
                 <PricingCard {...plan} />
@@ -832,7 +877,7 @@ export default function HomePage() {
               <div>
                 <h3 className="mb-2 text-xl font-bold text-zinc-700">Want a writer to handle it, or managing content for clients?</h3>
                 <p className="max-w-lg text-sm leading-relaxed text-zinc-500">
-                  Managed plans start at {formatPkr(MANAGED_PLANS[0].monthlyPrice)}/mo, and agencies get isolated client workspaces.
+                  Managed plans start at a discounted {formatPkr(MANAGED_PLANS[0].monthlyPrice)}/mo. Agencies get isolated client workspaces.
                 </p>
               </div>
               <div className="flex shrink-0 gap-3">

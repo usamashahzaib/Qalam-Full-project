@@ -3,6 +3,7 @@ import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { isCareerAddonCheckoutConfigured } from "@/lib/server/lemonsqueezy-api"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
     const parsed = schema.safeParse(await req.json().catch(() => null))
     if (!parsed.success || parsed.data.items.some((item) => !keys.includes(item.key as typeof keys[number]))) {
       return NextResponse.json({ error: "Check the selected add-ons." }, { status: 400 })
+    }
+    if (!isCareerAddonCheckoutConfigured()) {
+      return NextResponse.json({ error: "Card checkout is not configured for one or more selected add-ons." }, { status: 503 })
     }
     const rows = parsed.data.items.map((item) => {
       const product = CAREER_ADD_ONS.find((entry) => entry.key === item.key)!

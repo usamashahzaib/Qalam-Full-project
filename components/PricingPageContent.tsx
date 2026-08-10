@@ -9,8 +9,11 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, upgradeUrl } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent, upgradeUrl } from "@/lib/pricing"
+import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { isAddonSelfServe } from "@/lib/career-checkout"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
+import { APP_URL } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -28,7 +31,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Pro adds more carousels (10/month vs Solo's 3), voice training so Qalam learns your tone, Push to 90+ quality improvement, AI Strategist, and analytics.",
+    a: "Solo gives you the complete publishing workflow. Pro adds trained voice, Push to 90+ improvement, AI Strategist, competitor research, full analytics, approvals, and deeper career tools.",
   },
   {
     q: "Can I cancel anytime?",
@@ -38,6 +41,14 @@ const PRICING_FAQ = [
     q: "Which plan should I choose?",
     a: "Choose Solo for consistent LinkedIn publishing and one targeted resume each month. Choose Pro for deeper positioning, more resume versions, content intelligence, and recruiter visibility.",
   },
+  {
+    q: "Can I buy a career tool without changing my plan?",
+    a: "Yes. Career add-ons are one-time software credits for a targeted resume, cover letter, interview pack, deep resume review, LinkedIn rewrite, or career strategy blueprint. Checkout is shown only when that product is configured for card payment.",
+  },
+  {
+    q: "How does Refer and Earn work?",
+    a: "Create a referral code inside Qalam. A referred customer gets 10% off their first paid purchase, and you earn 10% commission after their payment is confirmed.",
+  },
 ]
 
 type PricingPageContentProps = {
@@ -45,7 +56,8 @@ type PricingPageContentProps = {
 }
 
 function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
-  const isPremium = plan.monthlyPrice >= 5000
+  const isPremium = plan.name === "Premium Management"
+  const monthlySaving = plan.originalMonthlyPrice - plan.monthlyPrice
 
   return (
     <motion.div
@@ -72,12 +84,17 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
 
         <div className="mb-6 pt-2">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
+          <div className="mb-1 flex items-center gap-2 text-sm">
+            <span className="text-zinc-400 line-through">{formatPkr(plan.originalMonthlyPrice)}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Save {formatPkr(monthlySaving)}</span>
+          </div>
           <div className="mb-2 flex items-end gap-1.5">
             <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
               {formatPkr(plan.monthlyPrice)}
             </span>
             <span className="mb-2 text-sm font-medium text-zinc-500">/mo</span>
           </div>
+          <p className="mb-2 text-xs font-semibold text-emerald-700">Discounted monthly price</p>
           <p className="text-xs font-semibold text-gold">{plan.postsPerMonth} posts/month</p>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{plan.description}</p>
         </div>
@@ -155,9 +172,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
     const basePkr = plan.quarterlyPkr
     const hasDiscount = referralDiscountPercent > 0 && !!basePkr && basePkr > 0
     const price = formatPkr(basePkr)
+    const monthlyEquivalent = getQuarterlyMonthlyEquivalent(plan.quarterlyPkr)
     const annualSavings = plan.plan === "Free"
       ? undefined
-      : `Equivalent to ${formatPkr(plan.monthlyPkr)}/month`
+      : `${formatPkr(monthlyEquivalent)}/month effective`
     const usdReference = plan.plan === "Free" ? "Core tools included" : "Billed every three months"
 
     // Paid plans route to the in-app upgrade page, which mints the checkout token at
@@ -199,13 +217,13 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="relative z-10 mx-auto max-w-[1200px] text-center">
           <FadeUp>
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
-            <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">
-              One quarter to build
+            <h1 className="mb-5 text-4xl font-extrabold text-zinc-900 sm:text-6xl">
+              One system for
               {" "}
-              <span className="text-gold gold-underline">career visibility that compounds.</span>
+              <span className="text-gold gold-underline">profile, content, and career growth.</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
-              Start free. Upgrade for more LinkedIn audits, content capacity, ATS resume versions, and career intelligence.
+              Start with the complete loop. Upgrade for a repeatable publishing workflow, then advanced voice and intelligence.
             </p>
 
             {/* Social proof strip */}
@@ -239,18 +257,18 @@ export function PricingPageContent({}: PricingPageContentProps) {
             {[
               {
                 icon: VoiceIcon,
-                label: "AI that learns your voice",
-                sub: "Not a template machine - a memory layer that gets sharper with every post",
+                label: "Trained voice on Pro",
+                sub: "Your examples, tone, and editing patterns become reusable writing context",
               },
               {
                 icon: ArchiveIcon,
-                label: "Your entire content history, intact",
-                sub: "Drafts, versions, and evidence stay connected to your workspace",
+                label: "Full workflow on Solo",
+                sub: "Draft, plan, publish, schedule, and keep every version connected",
               },
               {
                 icon: ShieldIcon,
-                label: "PKR-first, honest pricing",
-                sub: "No USD conversion guesswork. Real features, real status.",
+                label: "Career tools on every tier",
+                sub: "LinkedIn audits, ATS reviews, and one connected Career Vault",
               },
             ].map((item) => {
               const Icon = item.icon
@@ -324,7 +342,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mx-auto grid grid-cols-1 items-start gap-6 sm:grid-cols-2 xl:grid-cols-4"
+                    className="mx-auto grid max-w-[1100px] grid-cols-1 items-start gap-6 md:grid-cols-3"
                   >
                     {displayPlans.map((plan, i) => (
                       <motion.div
@@ -351,6 +369,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                   <p className="mx-auto max-w-2xl text-lg font-medium text-zinc-600">
                     We do the writing for you. A dedicated Qalam writer creates and posts content on your behalf - you just approve before it goes live.
                   </p>
+                  <p className="mt-3 text-sm font-semibold text-emerald-700">Limited discounted monthly pricing is shown below.</p>
                   <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-4 text-sm text-zinc-500">
                     <span className="flex items-center gap-1.5">
                       <CheckIcon className="h-4 w-4 text-gold" />
@@ -375,12 +394,55 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
                 <FadeUp className="mt-8 text-center">
                   <p className="text-sm text-zinc-400">
-                    Managed plans are handled by the Qalam team. Response within 4 hours.
+                    Managed plans are capacity-limited and begin after a fit review.
                   </p>
                 </FadeUp>
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+      </section>
+
+      <section className="border-y border-zinc-100 bg-white px-6 py-20">
+        <div className="mx-auto max-w-[1100px]">
+          <FadeUp className="mb-10 max-w-3xl">
+            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-700">Career add-ons</span>
+            <h2 className="mt-3 text-3xl font-bold text-zinc-900 sm:text-4xl">Buy the exact career output you need.</h2>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-zinc-600">One-time software credits. Your result is generated and saved inside Qalam. No plan upgrade required.</p>
+          </FadeUp>
+
+          <div className="overflow-hidden rounded-2xl border border-zinc-200">
+            {CAREER_ADD_ONS.map((item, index) => {
+              const checkoutReady = isAddonSelfServe(item.key)
+              return (
+                <article key={item.key} className="grid gap-3 border-b border-zinc-100 px-5 py-5 last:border-b-0 sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center sm:px-6">
+                  <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                  <div>
+                    <h3 className="font-semibold text-zinc-900">{item.name}</h3>
+                    <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside your Qalam workspace</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 sm:justify-end">
+                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+                      {checkoutReady ? "Card checkout live" : "Checkout coming soon"}
+                    </span>
+                    <strong className="min-w-24 text-right text-sm text-teal">{formatPkr(item.price)}</strong>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+
+          <FadeUp className="mt-8 flex flex-col gap-5 rounded-2xl bg-teal-800 p-7 text-white sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Refer and Earn</p>
+              <h3 className="mt-2 text-2xl font-bold">Give 10% off. Earn 10% commission.</h3>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-3">
+              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
+              <Link href={`${APP_URL}/login?callbackUrl=/settings/referrals`} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
+            </div>
+          </FadeUp>
         </div>
       </section>
 
@@ -452,7 +514,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
         <div className="mx-auto max-w-[1100px]">
           <FadeUp className="mb-10 text-center">
             <h2 className="text-3xl font-bold text-zinc-900">Compare all plans</h2>
-            <p className="mt-2 text-sm text-zinc-500">Live surfaces first. Everything else follows.</p>
+            <p className="mt-2 text-sm text-zinc-500">Free proves the value. Solo runs the workflow. Pro adds intelligence.</p>
           </FadeUp>
 
           <FadeUp>
@@ -462,32 +524,38 @@ export function PricingPageContent({}: PricingPageContentProps) {
                   <tr className="border-b border-zinc-100 bg-zinc-50">
                     <th className={`${AGENCY_PLAN_LIVE ? "w-[30%]" : "w-[34%]"} px-5 py-4 text-left font-semibold text-zinc-700`}>Feature</th>
                     <th className="px-4 py-4 text-center font-semibold text-zinc-500">Free</th>
-                    <th className="px-4 py-4 text-center font-semibold text-teal">Solo</th>
-                    <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Pro</th>
+                    <th className="bg-teal-50/50 px-4 py-4 text-center font-semibold text-teal">Solo</th>
+                    <th className="px-4 py-4 text-center font-semibold text-zinc-700">Pro</th>
                     {AGENCY_PLAN_LIVE ? (
                       <th className="px-4 py-4 text-center font-semibold text-zinc-700">Agency</th>
                     ) : null}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {COMPARISON_ROWS.map((row, i) => (
-                    <motion.tr
-                      key={row.label}
-                      initial={{ opacity: 0, x: -12 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.4, delay: i * 0.03 }}
-                      className="transition-colors hover:bg-zinc-50/50"
-                    >
-                      <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-300">{row.free === "-" ? "-" : row.free}</td>
-                      <td className="px-4 py-3.5 text-center text-sm text-zinc-600">{row.solo === "-" ? "-" : row.solo}</td>
-                      <td className="bg-teal-50/30 px-4 py-3.5 text-center text-sm"><span className="font-semibold text-teal">{row.pro === "-" ? "-" : row.pro}</span></td>
-                      {AGENCY_PLAN_LIVE ? (
-                        <td className="px-4 py-3.5 text-center text-sm text-zinc-700">{row.agency === "-" ? "-" : row.agency}</td>
-                      ) : null}
-                    </motion.tr>
-                  ))}
+                  {COMPARISON_ROWS.map((row, i) => {
+                    const startsGroup = i === 0 || COMPARISON_ROWS[i - 1].group !== row.group
+                    return [
+                      startsGroup ? (
+                        <tr key={`${row.group}-group`} className="border-y border-zinc-100 bg-zinc-50/80">
+                          <th colSpan={AGENCY_PLAN_LIVE ? 5 : 4} className="px-5 py-2.5 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{row.group}</th>
+                        </tr>
+                      ) : null,
+                      <motion.tr
+                        key={row.label}
+                        initial={{ opacity: 0, x: -12 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: i * 0.03 }}
+                        className="transition-colors hover:bg-zinc-50/50"
+                      >
+                        <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
+                        <td className="px-4 py-3.5 text-center text-sm text-zinc-400">{row.free}</td>
+                        <td className="bg-teal-50/40 px-4 py-3.5 text-center text-sm font-semibold text-teal">{row.solo}</td>
+                        <td className="px-4 py-3.5 text-center text-sm font-semibold text-zinc-700">{row.pro}</td>
+                        {AGENCY_PLAN_LIVE ? <td className="px-4 py-3.5 text-center text-sm text-zinc-700">{row.agency}</td> : null}
+                      </motion.tr>,
+                    ]
+                  })}
                 </tbody>
               </table>
             </div>

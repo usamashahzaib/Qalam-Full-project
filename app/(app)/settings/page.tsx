@@ -21,9 +21,9 @@ import { ReferralCard } from "@/components/ReferralCard"
 const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro"]
 
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
-  Free: "5 posts, 1 carousel/month",
-  Solo: "30 posts, 3 carousels, library, planner",
-  Pro: "60 posts, voice training, analytics, AI Strategist",
+  Free: "5 posts, 1 carousel, Career Vault, core career checks",
+  Solo: "30 posts, publishing workflow, library, basic analytics",
+  Pro: "60 posts, trained voice, strategist, research, full analytics",
   Agency: "5 workspaces, 5 seats, approvals, team analytics",
 }
 

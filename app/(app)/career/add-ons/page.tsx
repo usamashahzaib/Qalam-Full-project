@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { isAddonSelfServe } from "@/lib/career-checkout"
 
 type Order = {
   id: string
@@ -24,6 +25,7 @@ export default function CareerAddOnsPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
   const [payingKey, setPayingKey] = useState<string | null>(null)
+  const liveCheckoutCount = CAREER_ADD_ONS.filter((item) => isAddonSelfServe(item.key)).length
 
   useEffect(() => {
     fetch("/api/career/add-ons")
@@ -75,8 +77,8 @@ export default function CareerAddOnsPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="grid overflow-hidden rounded-3xl bg-[#073f3b] text-white md:grid-cols-[1.45fr_0.55fr]">
-          <div className="px-7 py-8 md:px-10 md:py-10"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Career add-ons</p><h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">Purchase a credit. Generate the result inside Qalam.</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Every product is software-delivered. No calls, emailed files, payment proof, or later fulfillment.</p></div>
-          <div className="flex items-end border-t border-white/10 bg-white/[0.04] p-7 md:border-l md:border-t-0"><p className="text-sm leading-6 text-white/65">Select quantity, pay by card, then open the tool. Paid credits appear automatically after the webhook confirms payment.</p></div>
+          <div className="px-7 py-8 md:px-10 md:py-10"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Career add-ons</p><h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">Choose a credit. Generate the result inside Qalam.</h1><p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Every product is software-delivered. No calls, emailed files, payment proof, or later fulfillment.</p></div>
+          <div className="flex items-end border-t border-white/10 bg-white/[0.04] p-7 md:border-l md:border-t-0"><p className="text-sm leading-6 text-white/65">{liveCheckoutCount > 0 ? "Select quantity, pay by card, then open the tool. Credits appear after payment confirmation." : "Card checkout is being configured. You can review every tool now, but no payment can be taken yet."}</p></div>
         </header>
 
         {error ? <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
@@ -86,12 +88,13 @@ export default function CareerAddOnsPage() {
             {CAREER_ADD_ONS.map((item, index) => {
               const quantity = quantities[item.key] || 1
               const credits = availableCredits(item.key)
+              const checkoutReady = isAddonSelfServe(item.key)
               return <article key={item.key} className="grid gap-5 p-5 md:grid-cols-[2rem_minmax(0,1fr)_auto] md:items-center md:p-6">
                 <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
                 <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-bold text-zinc-900">{item.name}</h2>{credits > 0 ? <span className="rounded-full bg-teal/10 px-2.5 py-1 text-[10px] font-bold uppercase text-teal">{credits} available</span> : null}</div><p className="mt-1 text-sm font-semibold text-teal">PKR {item.price.toLocaleString("en-PK")} per {item.unit}</p><Link href={`${item.route}${suffix}`} className="mt-2 inline-flex text-xs font-bold text-zinc-500 underline decoration-zinc-300 underline-offset-4">Open software tool</Link></div>
                 <div className="flex flex-wrap items-center gap-3 md:justify-end">
                   <div className="flex items-center rounded-xl border border-zinc-200"><button aria-label={`Decrease ${item.name} quantity`} onClick={() => setQuantities({ ...quantities, [item.key]: Math.max(1, quantity - 1) })} className="h-11 w-11 text-lg text-zinc-600 active:scale-[0.96]">-</button><span className="w-9 text-center text-sm font-bold text-zinc-900">{quantity}</span><button aria-label={`Increase ${item.name} quantity`} onClick={() => setQuantities({ ...quantities, [item.key]: Math.min(20, quantity + 1) })} className="h-11 w-11 text-lg text-zinc-600 active:scale-[0.96]">+</button></div>
-                  <button onClick={() => purchase(item.key)} disabled={payingKey === item.key} className="min-w-36 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-50">{payingKey === item.key ? "Opening checkout..." : `Purchase PKR ${(item.price * quantity).toLocaleString("en-PK")}`}</button>
+                  <button onClick={() => purchase(item.key)} disabled={!checkoutReady || payingKey === item.key} className="min-w-36 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500">{!checkoutReady ? "Checkout coming soon" : payingKey === item.key ? "Opening checkout..." : `Purchase PKR ${(item.price * quantity).toLocaleString("en-PK")}`}</button>
                 </div>
               </article>
             })}

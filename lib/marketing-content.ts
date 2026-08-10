@@ -779,7 +779,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
 export const PUBLISHED_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "published")
 export const UPCOMING_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "scheduled")
 
-export const MARKETING_LAST_MODIFIED = "2026-07-28"
+export const MARKETING_LAST_MODIFIED = "2026-08-10"
 
 export const LINKEDIN_NICHES = [
   "Founders",
@@ -833,6 +833,9 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
       "Career Vault, LinkedIn audit, and career visibility workspace",
       "ATS resume review, targeted resume versions, and PDF export",
       "Writer, archive, planner, analytics, and voice settings",
+      "Notification center with unread status and history",
+      "Refer and Earn codes, discounts, commissions, and payouts",
+      "Interview practice, cover letters, profile rewrites, and career strategy tools",
       "Free public LinkedIn tools",
       "Self-serve Solo and Pro card checkout",
       "Automatic plan activation after card payment",
@@ -850,7 +853,6 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
     title: "Building next",
     items: [
       "Agency analytics rollups",
-      "Notification center",
       "Broader collaboration automation",
     ],
   },

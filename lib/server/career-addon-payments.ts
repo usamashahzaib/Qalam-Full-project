@@ -4,7 +4,6 @@ import { env } from "@/lib/server/env"
 import { verifyLemonSqueezy } from "@/lib/server/payments"
 import { verifyAddonCheckoutToken } from "@/lib/server/checkout-token"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
-import { LEMONSQUEEZY_ADDON_VARIANTS } from "@/lib/server/lemon-variant-addons"
 import { CAREER_ADD_ONS } from "@/lib/career-pricing"
 import { createNotification } from "@/lib/server/notifications"
 import { log } from "@/lib/server/logging"
@@ -15,6 +14,7 @@ type CareerAddonOrderRow = {
   workspace_id: string
   addon_key: string
   quantity: number
+  amount_pkr: number
   status: string
 }
 
@@ -65,6 +65,9 @@ export async function handleCareerAddonWebhook(
   const status = String(attributes.status || "").toLowerCase()
   const variantId = String(firstOrderItem.variant_id ?? attributes.variant_id ?? "")
   const lsQuantity = Number(firstOrderItem.quantity ?? 1)
+  const currency = String(attributes.currency || "").toUpperCase()
+  const subtotal = Number(attributes.subtotal)
+  const discountTotal = Number(attributes.discount_total ?? 0)
 
   if (!lsOrderId) return { status: 400, body: { ok: false, error: "missing_order_id" } }
 
@@ -100,7 +103,7 @@ export async function handleCareerAddonWebhook(
     const fullyRefunded = status === "refunded" || attributes.refunded === true
     if (!fullyRefunded) return complete({ ignored: true, reason: "partial_refund" })
     const verifiedRefund = verifyAddonCheckoutToken(token)
-    const lookup = supabase.from("career_addon_orders").select("id, user_id, workspace_id, addon_key, quantity, status")
+    const lookup = supabase.from("career_addon_orders").select("id, user_id, workspace_id, addon_key, quantity, amount_pkr, status")
     const { data: refundedOrder } = verifiedRefund
       ? await lookup.eq("id", verifiedRefund.orderId).eq("user_id", verifiedRefund.userId).maybeSingle<CareerAddonOrderRow>()
       : await lookup.eq("provider_reference", lsOrderId).maybeSingle<CareerAddonOrderRow>()
@@ -123,29 +126,24 @@ export async function handleCareerAddonWebhook(
   const verified = verifyAddonCheckoutToken(token)
   if (!verified) return fail("addon_token_invalid_or_expired")
 
-  // The variant id is signed by Lemon Squeezy as part of the whole payload, so it
-  // cannot be edited by the buyer - unlike checkout[custom][*], which is theirs to
-  // rewrite before paying. It is the only trustworthy signal for which add-on this
-  // payment is for; custom_data's token only ever identifies which order to update.
-  const trustedAddonKey = LEMONSQUEEZY_ADDON_VARIANTS[variantId]
-  if (!trustedAddonKey) {
+  if (!env.lemonSqueezyCareerAddonBaseVariantId || variantId !== env.lemonSqueezyCareerAddonBaseVariantId) {
     log.error("career_addon_payment.unknown_variant", { variantId, lsOrderId })
     return fail("addon_variant_unrecognized")
   }
 
   const rows = await supabaseSelect<CareerAddonOrderRow>(
     "career_addon_orders",
-    `id=eq.${encodeURIComponent(verified.orderId)}&user_id=eq.${encodeURIComponent(verified.userId)}&select=id,user_id,workspace_id,addon_key,quantity,status&limit=1`
+    `id=eq.${encodeURIComponent(verified.orderId)}&user_id=eq.${encodeURIComponent(verified.userId)}&select=id,user_id,workspace_id,addon_key,quantity,amount_pkr,status&limit=1`
   )
   const order = rows?.[0]
   if (!order) return fail("addon_order_not_found")
-  if (order.addon_key !== trustedAddonKey) {
-    log.error("career_addon_payment.addon_mismatch", { orderId: order.id, expected: order.addon_key, paidFor: trustedAddonKey })
-    return fail("addon_order_mismatch")
-  }
   if (order.quantity !== lsQuantity) {
     log.error("career_addon_payment.quantity_mismatch", { orderId: order.id, expected: order.quantity, paidFor: lsQuantity })
     return fail("addon_quantity_mismatch")
+  }
+  if (currency !== "PKR" || subtotal !== order.amount_pkr * 100 || discountTotal !== 0) {
+    log.error("career_addon_payment.amount_mismatch", { orderId: order.id, currency, subtotal, discountTotal })
+    return fail("addon_amount_mismatch")
   }
   if (order.status !== "pending") return complete({ alreadyProcessed: true, orderId: order.id })
 
