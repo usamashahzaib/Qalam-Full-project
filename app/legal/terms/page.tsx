@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { buildPageMetadata } from "@/lib/seo"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata: Metadata = buildPageMetadata({
   title: "Terms of Service",
@@ -72,13 +73,13 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">7. Account Responsibility</h2>
-            <p>You are responsible for maintaining the security of your Qalam account credentials. You must not share your account with other individuals. You are responsible for all activity that occurs under your account. Notify us immediately at <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a> if you suspect unauthorized access.</p>
+            <p>You are responsible for maintaining the security of your Qalam account credentials. You must not share your account with other individuals. You are responsible for all activity that occurs under your account. Notify us immediately at <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline">{SUPPORT_EMAIL}</a> if you suspect unauthorized access.</p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">8. Payments and Refunds</h2>
             <p>Paid plans are sold as recurring subscriptions and are processed by our payment provider, Lemon Squeezy, which acts as merchant of record. Card payments activate the plan automatically. Where payment is instead made by JazzCash, Easypaisa, or bank transfer, the plan is activated manually after we verify receipt. Prices and card transactions are charged in Pakistani Rupees (PKR). Subscriptions renew on the cycle agreed at the time of purchase until cancelled.</p>
-            <p className="mt-3">Refunds are not automatically guaranteed. We will consider refund requests on a case-by-case basis for documented technical failures on our part. Contact <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a> within 7 days of a payment dispute. Dissatisfaction with AI output quality or a decision to stop using the service does not entitle you to a refund.</p>
+            <p className="mt-3">Refunds are not automatically guaranteed. We will consider refund requests on a case-by-case basis for documented technical failures on our part. Contact <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline">{SUPPORT_EMAIL}</a> within 7 days of a payment dispute. Dissatisfaction with AI output quality or a decision to stop using the service does not entitle you to a refund.</p>
           </section>
 
           <section>
@@ -119,7 +120,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-xl font-bold text-zinc-900">15. Contact</h2>
-            <p>For any questions about these terms, contact us at <a href="mailto:info@byqalam.com" className="text-teal underline">info@byqalam.com</a>.</p>
+            <p>For any questions about these terms, contact us at <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline">{SUPPORT_EMAIL}</a>.</p>
           </section>
 
         </div>

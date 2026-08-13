@@ -203,7 +203,7 @@ export function AdminReferralsClient() {
               type="email"
               value={form.colleagueEmail}
               onChange={(e) => setForm((prev) => ({ ...prev, colleagueEmail: e.target.value }))}
-              placeholder="colleague@byqalam.com"
+              placeholder="colleague@company.com"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
             <input

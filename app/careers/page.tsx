@@ -1,5 +1,6 @@
 import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata } from "@/lib/seo"
+import { UPGRADES_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
   title: "Careers",
@@ -30,10 +31,10 @@ export default function CareersPage() {
                 Send a concise note, your role focus, and links to relevant work.
               </p>
               <a
-                href="mailto:business@byqalam.com"
+                href={`mailto:${UPGRADES_EMAIL}`}
                 className="inline-flex items-center justify-center rounded-xl bg-teal px-6 py-3 font-semibold text-white transition-colors hover:bg-teal-600"
               >
-                business@byqalam.com
+                {UPGRADES_EMAIL}
               </a>
             </div>
           </FadeUp>

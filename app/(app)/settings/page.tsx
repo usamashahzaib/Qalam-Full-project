@@ -10,7 +10,7 @@ import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { AGENCY_PLAN_LIVE, PLAN_PRICES, formatPkr } from "@/lib/pricing"
 import { getPlanSummary } from "@/lib/entitlements"
-import { UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
+import { SUPPORT_EMAIL, UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
 import { isValidLinkedInUrl } from "@/lib/validation"
 import { useProfileForm } from "@/lib/hooks/useProfileForm"
@@ -722,7 +722,7 @@ export default function SettingsPage() {
           </div>
           <p className="mt-3 text-xs text-zinc-400">
             Records reflect automated Lemon Squeezy checkouts. For manual payments, contact{" "}
-            <a href="mailto:info@byqalam.com" className="underline hover:text-zinc-600">info@byqalam.com</a>.
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline hover:text-zinc-600">{SUPPORT_EMAIL}</a>.
           </p>
         </section>
       </div>

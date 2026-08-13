@@ -846,7 +846,8 @@ export default function HomePage() {
       <section className="bg-white py-20">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <p className="text-lg leading-relaxed text-slate-600">
-            Built for professionals who want clearer positioning, stronger proof, and one consistent story across LinkedIn, content, and resumes. Questions? Reach us at info@byqalam.com
+            Built for professionals who want clearer positioning, stronger proof, and one consistent story across LinkedIn, content, and resumes. Questions? Reach us at{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline underline-offset-2">{SUPPORT_EMAIL}</a>
           </p>
         </div>
       </section>
