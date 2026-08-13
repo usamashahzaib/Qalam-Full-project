@@ -7,6 +7,7 @@ import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
+import { GoogleAnalytics } from "@/components/GoogleAnalytics"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
@@ -203,6 +204,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
+        <GoogleAnalytics nonce={nonce} />
         {/* suppressHydrationWarning: browsers hide the nonce attribute from the
             DOM after parsing, so the client always sees "" vs the server value. */}
         <script type="application/ld+json" nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />

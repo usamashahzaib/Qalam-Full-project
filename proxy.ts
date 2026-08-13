@@ -251,8 +251,13 @@ export function buildCsp(nonce: string, isDev: boolean): string {
     // allowlist would be ignored anyway), but the checkout itself renders in an iframe
     // and the script talks back to its own origin. Without frame-src and connect-src
     // here the overlay fails silently and no one can pay.
-    "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co https://*.lemonsqueezy.com",
-    "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.lemonsqueezy.com",
+    // google-analytics/googletagmanager entries back the GA4 tag: gtag.js itself is a
+    // nonce-bearing tag in the layout head, but the hits it sends go to collect
+    // endpoints on separate hosts, and GA falls back to an image pixel when fetch and
+    // sendBeacon are unavailable. Without connect-src and img-src here the tag loads
+    // and reports nothing.
+    "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co https://*.lemonsqueezy.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+    "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.lemonsqueezy.com https://*.google-analytics.com https://*.googletagmanager.com",
     "frame-src 'self' https://*.linkedin.com https://*.lemonsqueezy.com",
     "frame-ancestors 'none'",
     "object-src 'none'",
