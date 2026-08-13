@@ -74,9 +74,14 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Notify support inbox
+  // Notify support inbox. The display name is user-supplied, so strip anything
+  // that could break out of the header (quotes, angle brackets, newlines) before
+  // it reaches Resend. The email itself is already regex-validated above.
+  const replyToName = name.replace(/[<>"\r\n,;:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 78)
+
   await sendTransactionalEmail({
     to: supportEnv.email,
+    replyTo: replyToName ? `"${replyToName}" <${email}>` : email,
     subject: `[Qalam Contact] ${subject}`,
     text: [
       `New contact form submission`,

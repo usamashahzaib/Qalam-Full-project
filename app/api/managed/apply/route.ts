@@ -76,8 +76,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Display name is user-supplied - strip header-breaking characters before it
+  // reaches Resend. The email itself is already regex-validated above.
+  const replyToName = name.replace(/[<>"\r\n,;:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 78)
+
   await sendTransactionalEmail({
     to: UPGRADES_EMAIL,
+    replyTo: replyToName ? `"${replyToName}" <${email}>` : email,
     subject: `[Managed Services - ${accountType === "company" ? "Company" : "Individual"}] ${pkg} - ${name}`,
     text: [
       `New Managed Services application (${accountType})`,

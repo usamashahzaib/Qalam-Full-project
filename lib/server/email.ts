@@ -6,9 +6,18 @@ type EmailInput = {
   to: string
   subject: string
   text: string
+  /*
+    Where replies should land. Omit it and replies go to the support inbox, which
+    is what we want for system mail (verification, invites, receipts) - the from
+    address is a sending identity, not a monitored mailbox.
+
+    Pass it explicitly for forwarded messages (contact form, lead forms) so that
+    hitting reply answers the person who wrote in rather than ourselves.
+  */
+  replyTo?: string
 }
 
-export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput): Promise<{ ok: boolean; error?: string }> => {
+export const sendTransactionalEmail = async ({ to, subject, text, replyTo }: EmailInput): Promise<{ ok: boolean; error?: string }> => {
   const recipient = to.trim().toLowerCase()
   if (!recipient) return { ok: false, error: "no_recipient" }
 
@@ -31,6 +40,7 @@ export const sendTransactionalEmail = async ({ to, subject, text }: EmailInput):
     body: JSON.stringify({
       from: env.transactionalEmailFrom || supportEnv.email,
       to: recipient,
+      reply_to: (replyTo || "").trim() || supportEnv.email,
       subject,
       text,
     }),
