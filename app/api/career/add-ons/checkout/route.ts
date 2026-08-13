@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
     let url: string
     try {
       url = await createCareerAddonCheckout({
+        addonKey: addon.key,
         name: addon.name,
         unit: addon.unit,
         unitPricePkr: addon.price,

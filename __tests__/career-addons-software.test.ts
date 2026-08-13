@@ -34,7 +34,7 @@ describe("software-only career add-ons", () => {
   it("uses Lemon Squeezy quantity and refund events", () => {
     expect(checkout).toContain("NEXT_PUBLIC_CAREER_ADDON_CHECKOUT_LIVE")
     expect(lemonApi).toContain("variant_quantities")
-    expect(lemonApi).toContain("custom_price: params.unitPricePkr * 100")
+    expect(lemonApi).toContain("getCareerAddonVariantId(params.addonKey)")
     expect(payment).toContain('eventName === "order_refunded"')
     expect(payment).toContain('status: "refunded"')
   })
@@ -45,8 +45,9 @@ describe("software-only career add-ons", () => {
     expect(marketplace).toContain('disabled={!checkoutReady || payingKey === item.key}')
   })
 
-  it("verifies shared variant, PKR subtotal, quantity, and discount before fulfillment", () => {
-    expect(payment).toContain("lemonSqueezyCareerAddonBaseVariantId")
+  it("verifies add-on variant, PKR subtotal, quantity, and discount before fulfillment", () => {
+    expect(payment).toContain("getCareerAddonKeyForVariantId")
+    expect(payment).toContain("addon_variant_mismatch")
     expect(payment).toContain('currency !== "PKR"')
     expect(payment).toContain("subtotal !== order.amount_pkr * 100")
     expect(payment).toContain("discountTotal !== 0")

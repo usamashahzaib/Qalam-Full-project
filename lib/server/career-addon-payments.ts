@@ -7,6 +7,7 @@ import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 import { CAREER_ADD_ONS } from "@/lib/career-pricing"
 import { createNotification } from "@/lib/server/notifications"
 import { log } from "@/lib/server/logging"
+import { getCareerAddonKeyForVariantId } from "@/lib/server/career-addon-variants"
 
 type CareerAddonOrderRow = {
   id: string
@@ -126,7 +127,8 @@ export async function handleCareerAddonWebhook(
   const verified = verifyAddonCheckoutToken(token)
   if (!verified) return fail("addon_token_invalid_or_expired")
 
-  if (!env.lemonSqueezyCareerAddonBaseVariantId || variantId !== env.lemonSqueezyCareerAddonBaseVariantId) {
+  const paidAddonKey = getCareerAddonKeyForVariantId(variantId)
+  if (!paidAddonKey) {
     log.error("career_addon_payment.unknown_variant", { variantId, lsOrderId })
     return fail("addon_variant_unrecognized")
   }
@@ -137,6 +139,10 @@ export async function handleCareerAddonWebhook(
   )
   const order = rows?.[0]
   if (!order) return fail("addon_order_not_found")
+  if (order.addon_key !== paidAddonKey) {
+    log.error("career_addon_payment.variant_mismatch", { orderId: order.id, expected: order.addon_key, paidFor: paidAddonKey })
+    return fail("addon_variant_mismatch")
+  }
   if (order.quantity !== lsQuantity) {
     log.error("career_addon_payment.quantity_mismatch", { orderId: order.id, expected: order.quantity, paidFor: lsQuantity })
     return fail("addon_quantity_mismatch")
@@ -161,14 +167,14 @@ export async function handleCareerAddonWebhook(
   if (updateError) return fail("addon_order_update_failed")
 
   const addon = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)
-  const link = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)?.route || "/career/add-ons"
+  if (!addon) return fail("addon_catalog_item_missing")
   await createNotification({
     userId: order.user_id,
     workspaceId: order.workspace_id,
     type: "career_addon_paid",
     title: "Add-on payment received",
-    body: `${addon?.name || order.addon_key} is confirmed. Generate it now inside Qalam.`,
-    link,
+    body: `${addon.name} is confirmed. Generate it now inside Qalam.`,
+    link: addon.route,
   })
 
   return complete({ orderId: order.id })

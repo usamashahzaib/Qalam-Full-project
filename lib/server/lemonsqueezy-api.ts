@@ -3,11 +3,14 @@ import "server-only"
 import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
 import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
+import { getCareerAddonVariantId, getCareerAddonVariantReadiness } from "@/lib/server/career-addon-variants"
+import type { AddonKey } from "@/lib/career-pricing"
 
 const LEMONSQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1"
 const LEMONSQUEEZY_STORE_ID = "366761"
 
 type CareerAddonCheckoutParams = {
+  addonKey: AddonKey
   name: string
   unit: string
   unitPricePkr: number
@@ -22,14 +25,15 @@ export type LemonSqueezyCancelResult = {
 }
 
 export const isCareerAddonCheckoutConfigured = () =>
-  Boolean(env.lemonSqueezyApiKey && env.lemonSqueezyCareerAddonBaseVariantId)
+  Boolean(env.lemonSqueezyApiKey && getCareerAddonVariantReadiness().ready)
 
 export async function createCareerAddonCheckout(params: CareerAddonCheckoutParams): Promise<string> {
   if (!isCareerAddonCheckoutConfigured()) throw new Error("career_addon_checkout_not_configured")
   if (!Number.isInteger(params.unitPricePkr) || params.unitPricePkr < 1) throw new Error("invalid_career_addon_price")
   if (!Number.isInteger(params.quantity) || params.quantity < 1 || params.quantity > 20) throw new Error("invalid_career_addon_quantity")
 
-  const variantId = env.lemonSqueezyCareerAddonBaseVariantId
+  const variantId = getCareerAddonVariantId(params.addonKey)
+  if (!variantId) throw new Error("career_addon_variant_not_configured")
   const response = await fetch(`${LEMONSQUEEZY_API_BASE}/checkouts`, {
     method: "POST",
     headers: {
@@ -41,7 +45,6 @@ export async function createCareerAddonCheckout(params: CareerAddonCheckoutParam
       data: {
         type: "checkouts",
         attributes: {
-          custom_price: params.unitPricePkr * 100,
           product_options: {
             name: params.name,
             description: `One ${params.unit}, generated and saved inside Qalam.`,

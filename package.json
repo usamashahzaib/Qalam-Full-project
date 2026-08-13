@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "prepare": "node scripts/setup-git-hooks.mjs",
+    "prebuild": "node scripts/check-career-addon-readiness.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "check:dashes": "node scripts/check-no-dashes.mjs",
     "check:rls": "node scripts/check-rls.mjs",
+    "check:career-addons": "node scripts/check-career-addon-readiness.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
