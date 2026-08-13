@@ -2,23 +2,26 @@
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
+import { alphabetical } from "@/lib/sort"
+
+const byLabel = (link: { label: string }) => link.label
 
 const FOOTER_LINKS = {
-  Product: [
+  Product: alphabetical([
     { label: "Career Visibility", href: "/career-visibility" },
     { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
     { label: "Content Studio", href: "/product/post-writer" },
     { label: "ATS Resume Builder", href: "/ats-resume-builder" },
     { label: "Job Description Match", href: "/job-description-match" },
     { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
-  ],
-  "Use Cases": [
+  ], byLabel),
+  "Use Cases": alphabetical([
     { label: "Founders", href: "/use-cases/founders" },
     { label: "Marketing Teams", href: "/use-cases/marketing-teams" },
     { label: "HR Leaders", href: "/use-cases/hr-leaders" },
     { label: "Consultants", href: "/use-cases/consultants" },
     { label: "Agencies", href: "/use-cases/agencies" },
-  ],
+  ], byLabel),
   Resources: [
     { label: "Documentation", href: "/docs" },
     { label: "Blog", href: "/blog" },

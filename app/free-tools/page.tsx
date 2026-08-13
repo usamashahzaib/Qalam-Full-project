@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/qalam-icons"
 import { APP_URL } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
+import { alphabetical } from "@/lib/sort"
 
 export const metadata: Metadata = {
   title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More",
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
   },
 }
 
-const TOOLS = [
+const TOOLS = alphabetical([
   {
     icon: HookIcon,
     title: "Hook Generator",
@@ -90,7 +91,7 @@ const TOOLS = [
     badgeColor: "",
     href: "/free-tools/engagement-predictor",
   },
-]
+], (tool) => tool.title)
 
 const freeToolsSchema = {
   "@context": "https://schema.org",

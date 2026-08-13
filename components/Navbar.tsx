@@ -8,22 +8,23 @@ import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { APP_URL } from "@/lib/seo"
+import { alphabetical } from "@/lib/sort"
 
-const PRODUCT_LINKS = [
+const PRODUCT_LINKS = alphabetical([
   { label: "Career Visibility", href: "/career-visibility", desc: "Connect LinkedIn, content, resumes, and target roles" },
   { label: "LinkedIn Optimizer", href: "/linkedin-optimization", desc: "Improve positioning, search relevance, and proof" },
   { label: "Content Studio", href: "/product/post-writer", desc: "Draft, score, revise, and plan LinkedIn content" },
   { label: "ATS Resume Builder", href: "/ats-resume-builder", desc: "Build role-specific resumes from verified experience" },
   { label: "Job Description Match", href: "/job-description-match", desc: "Find evidence, relevance, and keyword gaps" },
-]
+], (link) => link.label)
 
-const USE_CASE_LINKS = [
+const USE_CASE_LINKS = alphabetical([
   { label: "Founders", href: "/use-cases/founders", desc: "Consistent thought leadership without a ghostwriter" },
   { label: "Marketing Teams", href: "/use-cases/marketing-teams", desc: "Shared workflow, consistent brand voice" },
   { label: "HR Leaders", href: "/use-cases/hr-leaders", desc: "Employer brand and culture publishing" },
   { label: "Consultants", href: "/use-cases/consultants", desc: "Frameworks and expertise that compounds" },
   { label: "Agencies", href: "/use-cases/agencies", desc: "Multi-client content operations at scale" },
-]
+], (link) => link.label)
 
 const STATIC_LINKS = [
   { label: "Pricing", href: "/pricing" },
