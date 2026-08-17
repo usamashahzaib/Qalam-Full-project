@@ -94,9 +94,9 @@ function WritingPromptsCard() {
 
 const QUICK_ACTIONS = [
   {
-    label: "Write Post",
-    href: "/writer",
-    desc: "AI-powered drafts",
+    label: "Check ATS score",
+    href: "/free-tools/ats-resume-checker",
+    desc: "Find parsing and relevance gaps",
     icon: (
       <path
         strokeLinecap="round"
@@ -107,9 +107,9 @@ const QUICK_ACTIONS = [
     ),
   },
   {
-    label: "Create Carousel",
-    href: "/writer?mode=carousel",
-    desc: "Slide decks",
+    label: "Build targeted resume",
+    href: "/career/resumes",
+    desc: "Match a resume to one job",
     icon: (
       <path
         strokeLinecap="round"
@@ -120,9 +120,9 @@ const QUICK_ACTIONS = [
     ),
   },
   {
-    label: "Train Voice",
-    href: "/voice",
-    desc: "Teach the AI your tone",
+    label: "Track applications",
+    href: "/career/applications",
+    desc: "Manage roles and outcomes",
     icon: (
       <path
         strokeLinecap="round"
@@ -133,9 +133,9 @@ const QUICK_ACTIONS = [
     ),
   },
   {
-    label: "Post Library",
-    href: "/library",
-    desc: "All your posts",
+    label: "Add career evidence",
+    href: "/career/evidence",
+    desc: "Save verified achievements",
     icon: (
       <path
         strokeLinecap="round"
@@ -151,7 +151,7 @@ function QuickActionsCard() {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">
-        Quick actions
+        Career actions
       </h2>
       <div className="space-y-2">
         {QUICK_ACTIONS.map(({ label, href, desc, icon }) => (
@@ -217,9 +217,11 @@ export default async function DashboardPage() {
             {greeting}
           </h1>
         </div>
+        <div className="flex flex-wrap gap-2">
+        <Link href="/career/resumes" className="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal hover:text-teal">Build resume</Link>
         <Link
           href="/writer"
-          className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-colors"
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors"
           style={{ backgroundColor: "var(--ws-brand, #0d4a45)" }}
         >
           <svg
@@ -237,6 +239,7 @@ export default async function DashboardPage() {
           </svg>
           Write new post
         </Link>
+        </div>
       </header>
 
       {/* Static sections - render immediately, no data dependency */}

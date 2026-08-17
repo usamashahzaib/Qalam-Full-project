@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { CommentIcon } from "@/components/ui/qalam-icons"
 import { APP_URL } from "@/lib/seo"
+import { PLAN_LIMITS } from "@/lib/entitlements"
 
 const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 
@@ -85,7 +86,8 @@ function CommentGeneratorInner() {
       }
 
       setComments(data.comments)
-      void loadUsage()
+      if (data.usage && typeof data.usage.current === "number") setUsage(data.usage)
+      else void loadUsage()
     } catch {
       setError("Network error. Please check your connection and try again.")
     } finally {
@@ -140,6 +142,7 @@ function CommentGeneratorInner() {
                   : `${Math.max(0, usage.limit - usage.current)} of ${usage.limit} comment generations left this month`}
               </p>
             )}
+            {!usage && <p className="mt-3 text-sm font-medium text-zinc-500">Free includes {PLAN_LIMITS.Free.commentGenerationsPerMonth} comment generations per month. Sign in to see your live balance.</p>}
           </FadeUp>
         </div>
       </section>

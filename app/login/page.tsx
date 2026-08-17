@@ -1,7 +1,7 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
@@ -28,7 +28,6 @@ function LinkedInIcon({ className }: { className?: string }) {
 
 export default function LoginPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"))
   const errorParam = searchParams.get("error")
   const verified = searchParams.get("verified") === "1"
@@ -68,7 +67,7 @@ export default function LoginPage() {
         setFormError("Incorrect email or password.")
         setSubmitting(false)
       } else {
-        router.push(callbackUrl)
+        window.location.assign(callbackUrl)
       }
     } catch {
       setFormError("Incorrect email or password.")
@@ -200,7 +199,7 @@ export default function LoginPage() {
               <LinkedInIcon className="h-4 w-4 text-[#0A66C2]" />
               {socialLoading === "linkedin" ? "Redirecting to LinkedIn..." : "Continue with LinkedIn"}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-400 sm:hidden">Opens LinkedIn app if installed</p>
+            <p className="mt-2 text-center text-xs text-zinc-400">Your Qalam session stays signed in on this device for up to 30 days.</p>
           </div>
 
           {/* Sign up link */}

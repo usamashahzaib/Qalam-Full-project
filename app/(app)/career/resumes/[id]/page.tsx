@@ -31,6 +31,7 @@ export default function ResumeEditorPage() {
   const [document, setDocument] = useState<ResumeDocument | null>(null)
   const [message, setMessage] = useState("")
   const [saving, setSaving] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     fetch(`/api/career/resumes/${params.id}${suffix}`)
@@ -61,6 +62,33 @@ export default function ResumeEditorPage() {
     setSaving(false)
   }
 
+  const downloadPdf = async () => {
+    if (!document) return
+    setDownloading(true)
+    setMessage("")
+    try {
+      const response = await fetch(`/api/career/resumes/${params.id}/pdf${suffix}`)
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        throw new Error(body.error || "PDF could not be generated.")
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = window.document.createElement("a")
+      anchor.href = url
+      anchor.download = `${document.title.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") || "ats-resume"}.pdf`
+      window.document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(url)
+      setMessage("ATS-safe PDF downloaded.")
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "PDF could not be downloaded.")
+    } finally {
+      setDownloading(false)
+    }
+  }
+
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading resume..."}</main>
   const data = document.resumeData || emptyResumeData
 
@@ -77,7 +105,7 @@ export default function ResumeEditorPage() {
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
-          <div className="flex gap-2"><button onClick={() => window.print()} className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700">Export PDF</button><button onClick={save} disabled={saving} className="rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
+          <div className="flex flex-wrap gap-2"><button onClick={downloadPdf} disabled={downloading} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 

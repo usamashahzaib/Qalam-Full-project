@@ -53,6 +53,7 @@ export default function ResumesPage() {
   const [error, setError] = useState("")
   const [form, setForm] = useState(handoff.form)
   const [uploading, setUploading] = useState(false)
+  const [sourceLabel, setSourceLabel] = useState("")
 
   useEffect(() => {
     fetch(`/api/career/resumes${suffix}`)
@@ -61,7 +62,7 @@ export default function ResumesPage() {
       .catch(() => setError("Resumes could not be loaded."))
   }, [suffix])
 
-  const uploadResumeFile = async (file: File) => {
+  const uploadResumeFile = async (file: File, source: "resume" | "linkedin") => {
     setUploading(true)
     setError("")
     try {
@@ -74,6 +75,7 @@ export default function ResumesPage() {
         return
       }
       setForm((prev) => ({ ...prev, sourceResume: data.text }))
+      setSourceLabel(source === "linkedin" ? `LinkedIn profile imported: ${file.name}` : `Resume imported: ${file.name}`)
     } catch {
       setError("Resume upload failed.")
     } finally {
@@ -111,15 +113,16 @@ export default function ResumesPage() {
         {showCreate && (
           <section className="mt-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-zinc-900">Generate from an existing resume</h2>
-            <p className="mt-1 text-sm text-zinc-500">Upload your PDF or DOCX, or paste the text. Qalam rewrites only supported facts. It will not invent experience or metrics.</p>
+            <p className="mt-1 text-sm text-zinc-500">Import a resume or your LinkedIn profile PDF. Qalam rewrites only supported facts. It will not invent experience or metrics.</p>
 
-            <label className="mt-5 flex flex-col items-start gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label className="flex min-h-32 flex-col items-start justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm">
               <div>
-                <p className="font-semibold text-zinc-900">Upload resume file</p>
-                <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted into the source field below - contact details are stripped.</p>
+                <p className="font-semibold text-zinc-900">Import resume</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">Upload a PDF or DOCX up to 5 MB. Review the extracted text before generation.</p>
               </div>
-              <span className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-600">
-                {uploading ? "Reading file..." : "Choose file"}
+              <span className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 text-xs font-bold text-white transition hover:bg-teal-600">
+                {uploading ? "Reading file..." : "Choose resume"}
                 <input
                   type="file"
                   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -128,18 +131,34 @@ export default function ResumesPage() {
                   onChange={(event) => {
                     const file = event.target.files?.[0]
                     event.target.value = ""
-                    if (file) uploadResumeFile(file)
+                    if (file) void uploadResumeFile(file, "resume")
                   }}
                 />
               </span>
             </label>
+            <label className="flex min-h-32 flex-col items-start justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm">
+              <div>
+                <p className="font-semibold text-zinc-900">Import LinkedIn profile</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">On LinkedIn, open More, choose Save to PDF, then upload that file here.</p>
+              </div>
+              <span className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-teal px-4 text-xs font-bold text-teal transition hover:bg-teal/5">
+                {uploading ? "Reading file..." : "Choose LinkedIn PDF"}
+                <input type="file" accept=".pdf,application/pdf" className="hidden" disabled={uploading} onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ""
+                  if (file) void uploadResumeFile(file, "linkedin")
+                }} />
+              </span>
+            </label>
+            </div>
+            {sourceLabel && <p className="mt-3 rounded-lg bg-teal/5 px-3 py-2 text-xs font-semibold text-teal">{sourceLabel}</p>}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <input className={field} placeholder="Resume name" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
               <input className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
               <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
               <select className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
-              <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste your existing resume, or upload above" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
+              <textarea className={`${field} min-h-64 resize-y`} placeholder="Imported source appears here, or paste your resume or LinkedIn profile text" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
               <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
             </div>
             <button disabled={loading || uploading} onClick={generate} className="mt-5 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{loading ? "Building targeted resume..." : "Generate ATS resume"}</button>

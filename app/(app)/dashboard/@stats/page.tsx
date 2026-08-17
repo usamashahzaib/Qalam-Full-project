@@ -28,12 +28,6 @@ function StatCard({
   value: string | number
   accent: "teal" | "amber" | "zinc"
 }) {
-  const borderColor =
-    accent === "teal"
-      ? "border-l-teal"
-      : accent === "amber"
-        ? "border-l-amber-400"
-        : "border-l-zinc-300"
   const valueColor =
     accent === "teal"
       ? "text-teal"
@@ -43,7 +37,7 @@ function StatCard({
 
   return (
     <div
-      className={`rounded-2xl border border-zinc-200 border-l-[3px] bg-white p-5 shadow-sm ${borderColor}`}
+      className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
     >
       <p className="text-sm text-zinc-500">{label}</p>
       <p className={`mt-2 text-3xl font-bold tabular-nums ${valueColor}`}>{value}</p>
@@ -59,7 +53,7 @@ function LockedStatCard({
   upgradeText: string
 }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 border-l-[3px] border-l-zinc-200 bg-white p-5 shadow-sm">
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <p className="text-sm text-zinc-500">{label}</p>
       <p className="mt-2 select-none text-3xl font-bold text-zinc-200">--</p>
       <div className="absolute inset-0 flex items-center justify-center bg-white/85 backdrop-blur-[1px]">
@@ -390,7 +384,7 @@ export default async function StatsPage() {
               (label) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-zinc-200 border-l-[3px] border-l-zinc-300 bg-white p-5 shadow-sm"
+                  className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm"
                 >
                   <p className="text-sm text-zinc-500">{label}</p>
                   <p className="mt-2 text-3xl font-bold text-zinc-400">-</p>

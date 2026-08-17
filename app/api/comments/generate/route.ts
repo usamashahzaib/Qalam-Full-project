@@ -19,13 +19,13 @@ export async function GET(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
-
     const limits = getPlanLimits(planCheck.plan)
+
     if (limits.commentGenerationsPerMonth === "unlimited") {
-      return NextResponse.json({ current: 0, limit: "unlimited" })
+      return NextResponse.json({ current: 0, remaining: "unlimited", limit: "unlimited" })
     }
     const usage = await getCommentUsage(user.id, limits.commentGenerationsPerMonth)
-    return NextResponse.json(usage)
+    return NextResponse.json({ ...usage, remaining: Math.max(0, usage.limit - usage.current) })
   })(request)
 }
 
@@ -39,6 +39,17 @@ export async function POST(request: NextRequest) {
         { error: "plan_expired", message: "Your plan has expired. Please renew to continue." },
         { status: 403 }
       )
+    }
+
+    const limits = getPlanLimits(planCheck.plan)
+    if (limits.commentGenerationsPerMonth !== "unlimited") {
+      const usage = await getCommentUsage(user.id, limits.commentGenerationsPerMonth)
+      if (usage.current >= usage.limit) {
+        return NextResponse.json(
+          { error: "monthly_limit_reached", featureName: "comment_generations", limit: usage.limit, current: usage.current, remaining: 0 },
+          { status: 403 }
+        )
+      }
     }
 
     let body: Record<string, unknown>
@@ -99,7 +110,11 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
     }
 
     // Quota is only spent on a successful generation - a failed AI call never costs the user a credit.
-    const limits = getPlanLimits(planCheck.plan)
+    let responseUsage: { current: number; limit: number | "unlimited"; remaining: number | "unlimited" } = {
+      current: 0,
+      limit: "unlimited",
+      remaining: "unlimited",
+    }
     if (limits.commentGenerationsPerMonth !== "unlimited") {
       const usage = await checkAndIncrementCommentUsage(user.id, limits.commentGenerationsPerMonth)
       if (!usage.allowed) {
@@ -108,6 +123,7 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
           { status: 403 }
         )
       }
+      responseUsage = { ...usage, remaining: Math.max(0, usage.limit - usage.current) }
     }
 
     log.info("comments.generate.done", { userId: user.id, profile, count: comments.length })
@@ -116,6 +132,7 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
       comments: comments.slice(0, 3),
       profile,
       postPreview: postText.slice(0, 200),
+      usage: responseUsage,
     })
   })(request)
 }

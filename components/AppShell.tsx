@@ -363,8 +363,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       <Link
                         key={link.href}
                         href={withClientParam(link.href, activeClientId)}
-                        className={`flex cursor-pointer items-center gap-3 rounded-xl py-2 pl-3 pr-3 text-sm transition-all group ${active ? "border-l-2 bg-teal-50/50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}
-                        style={active ? { borderColor: "var(--ws-brand, #0d9488)" } : undefined}
+                        className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all group ${active ? "bg-teal-50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}
                       >
                         <Icon
                           className="h-4 w-4 shrink-0 transition-colors text-zinc-600 group-hover:text-zinc-300"
@@ -504,18 +503,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <header className="qalam-app-header-mobile flex md:hidden flex-col border-b border-zinc-200 bg-white/90 backdrop-blur fixed top-0 inset-x-0 z-30" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
-        <div className="flex h-14 w-full items-center justify-between px-4">
+        <div className="flex h-16 w-full items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
           <div className="flex items-center gap-2">
-            <span className="max-w-[120px] truncate rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal">{activeClientName}</span>
-            <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
-            <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
-            <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-8 w-8 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+            <span className="hidden max-w-[120px] truncate rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal min-[400px]:inline-flex">{activeClientName}</span>
+            <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+            <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
+            <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
           </div>
         </div>
 
         {searchFocused && (
-          <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
+          <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
             <div className="relative flex items-center">
               <input type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
               <button onClick={() => { setSearchFocused(false); setSearchQuery("") }} className="absolute right-3 text-xs text-zinc-400 font-bold hover:text-zinc-600">Close</button>
@@ -525,7 +524,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         )}
 
         {switcherOpen && (
-          <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(3.5rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
+          <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
             <button onClick={() => handleSwitchWorkspace(null)} className={`block w-full cursor-pointer px-4 py-2.5 text-left text-xs font-bold transition-colors ${!activeClientId ? "bg-teal/5 text-teal" : "text-zinc-700 hover:bg-zinc-50"}`}>Personal Workspace</button>
             {showSwitcherList ? (

@@ -91,8 +91,8 @@ export function AppMobileNav() {
       {moreOpen && <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden="true" />}
 
       {moreOpen && (
-        <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 rounded-2xl border border-zinc-200 bg-white/98 p-3 shadow-xl backdrop-blur-md">
-          <div className="grid grid-cols-5 gap-1">
+        <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 max-h-[62dvh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
+          <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
             {MOBILE_MORE_LINKS.map((link) => {
               const { href, label, icon: Icon } = link
               const active = pathname === href || pathname.startsWith(`${href}/`)
@@ -101,7 +101,7 @@ export function AppMobileNav() {
                   key={href}
                   href={withClientParam(href, activeClientId)}
                   onClick={(event) => handleNavigation(event, link)}
-                  className={`flex flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[11px] font-medium transition-colors ${
                     active ? "bg-teal/8 text-teal" : "text-zinc-500"
                   }`}
                 >
@@ -124,7 +124,7 @@ export function AppMobileNav() {
                 key={href}
                 href={withClientParam(href, activeClientId)}
                 onClick={(event) => handleNavigation(event, link)}
-                className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
+                className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
                   active ? "bg-teal/8 text-teal" : "text-zinc-500"
                 }`}
               >

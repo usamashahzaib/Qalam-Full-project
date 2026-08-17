@@ -283,12 +283,12 @@ export default function AnalyticsPage() {
             {analytics.byStatus.total === 0 ? <p className="text-sm text-zinc-400">No posts to score yet.</p> : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: "Strong", count: analytics.scoreBuckets.strong, bar: "bg-teal", border: "border-l-teal", range: "90-100", valueColor: "text-teal" },
-                  { label: "Solid", count: analytics.scoreBuckets.solid, bar: "bg-teal/50", border: "border-l-teal/50", range: "75-89", valueColor: "text-teal/80" },
-                  { label: "Needs polish", count: analytics.scoreBuckets.needsPolish, bar: "bg-amber-400", border: "border-l-amber-400", range: "60-74", valueColor: "text-amber-700" },
-                  { label: "Weak", count: analytics.scoreBuckets.weak, bar: "bg-zinc-300", border: "border-l-zinc-300", range: "0-59", valueColor: "text-zinc-500" },
+                  { label: "Strong", count: analytics.scoreBuckets.strong, bar: "bg-teal", range: "90-100", valueColor: "text-teal" },
+                  { label: "Solid", count: analytics.scoreBuckets.solid, bar: "bg-teal/50", range: "75-89", valueColor: "text-teal/80" },
+                  { label: "Needs polish", count: analytics.scoreBuckets.needsPolish, bar: "bg-amber-400", range: "60-74", valueColor: "text-amber-700" },
+                  { label: "Weak", count: analytics.scoreBuckets.weak, bar: "bg-zinc-300", range: "0-59", valueColor: "text-zinc-500" },
                 ].map((bucket) => (
-                  <div key={bucket.label} className={`rounded-xl border border-zinc-100 border-l-[3px] bg-zinc-50/60 p-4 ${bucket.border}`}>
+                  <div key={bucket.label} className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-semibold text-zinc-600">{bucket.label}</span>
                       <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold text-zinc-500">{bucket.range}</span>
@@ -428,10 +428,9 @@ function InsightRow({ label, value }: { label: string; value: string }) {
 }
 
 function Stat({ label, value, note, accent }: { label: string; value: number; note: string; accent: "teal" | "amber" | "zinc" | "blue" | "red" }) {
-  const borderColor = accent === "teal" ? "border-l-teal" : accent === "amber" ? "border-l-amber-400" : accent === "blue" ? "border-l-blue-400" : accent === "red" ? "border-l-red-400" : "border-l-zinc-300"
   const valueColor = accent === "teal" ? "text-teal" : accent === "amber" ? "text-amber-700" : accent === "blue" ? "text-blue-700" : accent === "red" ? "text-red-600" : "text-zinc-900"
   return (
-    <div className={`rounded-xl border border-zinc-200 border-l-[3px] bg-white p-4 ${borderColor}`}>
+    <div className="rounded-xl border border-zinc-200 bg-white p-4">
       <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
       <p className={`mt-1.5 text-3xl font-bold ${valueColor}`}>{value}</p>
       <p className="mt-0.5 text-[10px] uppercase tracking-wider text-zinc-400">{note}</p>

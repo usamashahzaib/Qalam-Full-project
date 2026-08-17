@@ -7,6 +7,7 @@
   --bg-ripple-2: rgba(201, 135, 31, 0.05);
   --bg-ripple-3: rgba(13, 74, 69, 0.04);
   --bg-glow: rgba(245, 247, 246, 0.9);
+  color-scheme: light;
 }
 
 html, body {
@@ -17,10 +18,7 @@ html, body {
 
 .app-shell {
   background-color: #f5f7f6;
-  background-image:
-    radial-gradient(ellipse at 10% 15%, rgba(13, 74, 69, 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse at 90% 85%, rgba(201, 135, 31, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 55% 45%, rgba(13, 74, 69, 0.03) 0%, transparent 65%);
+  background-image: none;
   background-attachment: scroll;
   background-size: cover;
   min-height: 100vh;
@@ -37,16 +35,7 @@ html, body {
 }
 
 .app-shell::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(13, 74, 69, 0.06) 0%, transparent 45%),
-    radial-gradient(circle at 80% 70%, rgba(201, 135, 31, 0.04) 0%, transparent 40%);
-  animation: breathe 10s ease-in-out infinite;
-  will-change: opacity;
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 /* Ensure content sits above background */
@@ -66,18 +55,15 @@ html, body {
   }
 }
 
-/* Card styling - frosted glass */
+/* Solid product cards */
 .qalam-card,
 .content-card {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(13, 74, 69, 0.08);
+  background: #ffffff;
+  border: 1px solid #e4e4e7;
   border-radius: 16px;
   box-shadow:
     0 4px 6px -1px rgba(13, 74, 69, 0.04),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 @theme {
@@ -167,7 +153,7 @@ html {
 /* Dark mode is only supported inside the authenticated app shell (.qalam-app-canvas).
    Marketing pages are a deliberately light/warm editorial theme and always render light,
    since their components aren't retrofitted with dark: variants. */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
   :root:has(.qalam-app-canvas) {
     --surface-bg: #111113;
     --surface-fg: #f1f1f1;
@@ -198,7 +184,7 @@ body {
    .qalam-app-header-desktop lives as a sibling of .qalam-app-canvas (not a child), so every
    selector group below is applied to both - otherwise the desktop header's background darkens
    while its text stays dark-on-dark. */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
   .qalam-app-canvas {
     background: var(--surface-bg);
   }
@@ -458,14 +444,12 @@ input, textarea, select {
 /* Glassmorphism nav - solid fallback first so unsupported/degraded
    backdrop-filter never lets page content show through the nav bar */
 .glass {
-  background: rgba(250, 250, 248, 0.97);
+  background: #fafaf8;
 }
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   .glass {
-    background: rgba(250, 250, 248, 0.82);
-    backdrop-filter: blur(18px) saturate(200%);
-    -webkit-backdrop-filter: blur(18px) saturate(200%);
+    background: #fafaf8;
   }
 }
 
@@ -619,23 +603,20 @@ input, textarea, select {
   border-color: #C9871F;
 }
 
-/* Frosted glass card - warm ambient background shows through */
+/* Solid app cards keep contrast stable across devices */
 .app-content :is(section, article, div).bg-white:is(.rounded-2xl, .rounded-3xl):is(.border, [class*="border-"]) {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-color: rgba(200, 190, 180, 0.2);
+  background: #ffffff;
+  border-color: #e4e4e7;
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .qalam-app-canvas {
   position: relative;
   min-height: 100dvh;
   /* Mobile: header height + status bar safe area at top; bottom nav + home indicator at bottom */
-  padding-top: calc(3.5rem + env(safe-area-inset-top, 0px));
+  padding-top: calc(4rem + env(safe-area-inset-top, 0px));
   padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   overflow-x: clip;
 }

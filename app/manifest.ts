@@ -2,11 +2,11 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    id: "/",
-    name: "Qalam",
+    id: "/dashboard",
+    name: "Qalam Career Visibility OS",
     short_name: "Qalam",
     description:
-      "AI LinkedIn writer with voice memory, better drafts, scheduling, and direct publishing.",
+      "Career visibility workspace for LinkedIn content, ATS resumes, applications, and professional evidence.",
     start_url: "/dashboard",
     scope: "/",
     display: "standalone",

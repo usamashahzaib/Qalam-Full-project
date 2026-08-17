@@ -35,7 +35,6 @@ const rootOgDescription =
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
-  manifest: "/manifest.webmanifest",
   title: {
     default: rootOgTitle,
     template: `%s | ${SITE_NAME}`,
@@ -114,11 +113,6 @@ export const metadata: Metadata = {
     },
   },
   category: "technology",
-  appleWebApp: {
-    capable: true,
-    title: "Qalam",
-    statusBarStyle: "black-translucent",
-  },
 }
 
 export const viewport: Viewport = {
@@ -185,6 +179,8 @@ export default async function RootLayout({
 }: { children: React.ReactNode }) {
   const [session, headersList] = await Promise.all([auth(), headers()])
   const nonce = headersList.get("x-nonce") ?? undefined
+  const host = (headersList.get("x-forwarded-host") || headersList.get("host") || "").split(":")[0].toLowerCase()
+  const pwaEnabled = host === "app.byqalam.com" || host === "localhost" || host === "127.0.0.1"
 
   const app = (
     <SessionProvider session={session}>
@@ -197,13 +193,17 @@ export default async function RootLayout({
       >
         <NavWrapper>{children}</NavWrapper>
       </GridGlowBackground>
-      <PwaRegistration />
+      <PwaRegistration enabled={pwaEnabled} />
     </SessionProvider>
   )
 
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
+        {pwaEnabled ? <link rel="manifest" href="/manifest.webmanifest" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-capable" content="yes" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-title" content="Qalam" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-status-bar-style" content="default" /> : null}
         <GoogleAnalytics nonce={nonce} />
         {/* suppressHydrationWarning: browsers hide the nonce attribute from the
             DOM after parsing, so the client always sees "" vs the server value. */}

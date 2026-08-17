@@ -2,9 +2,15 @@
 
 import { useEffect } from "react"
 
-export function PwaRegistration() {
+export function PwaRegistration({ enabled }: { enabled: boolean }) {
   useEffect(() => {
-    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && !enabled) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => void registration.unregister())
+      }).catch(() => undefined)
+      return
+    }
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && enabled) {
       const onLoad = () => {
         navigator.serviceWorker
           .register("/sw.js")
@@ -28,7 +34,7 @@ export function PwaRegistration() {
       window.addEventListener("load", onLoad)
       return () => window.removeEventListener("load", onLoad)
     }
-  }, [])
+  }, [enabled])
 
   return null
 }
