@@ -6,9 +6,9 @@ export const metadata: Metadata = { title: "Career Network" }
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <PlanGate
-      requiredPlan="Pro"
+      requiredPlan="Free"
       feature="Career Network"
-      description="Upgrade to Pro to publish recruiter visibility and search opted-in candidates."
+      description="Create an opt-in candidate profile. Verified recruiter search requires Pro."
     >
       {children}
     </PlanGate>

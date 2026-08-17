@@ -11,15 +11,16 @@ export const metadata: Metadata = {
 }
 
 const modules = [
-  ["Career Vault", "Keep roles, skills, achievements, goals, and proof in one reusable source of truth."],
+  ["Evidence Vault", "Keep roles, skills, achievements, credentials, goals, and proof in one permissioned source of truth."],
   ["LinkedIn Market Position", "Review searchability, credibility, clarity, conversion, and professional positioning."],
   ["Post Intelligence", "Use your content and supplied metrics to find patterns, gaps, and stronger publishing decisions."],
   ["ATS Resume Studio", "Create exact-JD resumes from verified experience with ATS-safe templates and version history."],
+  ["Application Outcomes", "Link each opportunity to the submitted resume version, stage history, interviews, and offers."],
   ["Cover Letter Studio", "Generate role-specific cover letters from the job description and your verified experience."],
   ["Interview Practice", "Build likely questions, answer frameworks, evidence prompts, and a practice scorecard."],
   ["Deep Resume Review", "Run a recruiter-style review with ATS risks, keyword gaps, exact rewrites, and priorities."],
   ["LinkedIn Rewrite", "Rewrite the headline, About, experience, keywords, and Featured plan around one position."],
-  ["Career Network", "Opt into recruiter discovery without exposing private contact details in search results."],
+  ["Career Network", "Opt into discovery by verified recruiters without exposing private contact details in search results."],
   ["Career Strategy", "Generate a 90-day system for positioning, skills, employers, networking, applications, and content."],
   ["Learning Cohorts", "Give certification, university, and coaching learners one practical improvement workflow."],
 ] as const
@@ -31,7 +32,7 @@ export default function CareerVisibilityPage() {
         <div className="mx-auto max-w-6xl">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">Qalam Career Visibility OS</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight sm:text-6xl">Get found. Build trust. Get shortlisted.</h1>
-          <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, and interview story should use the same credible evidence. Qalam connects the complete workflow.</p>
+          <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, applications, and interview story should use the same credible evidence. Qalam connects the complete outcome workflow.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-gold px-6 py-4 font-bold text-white">Start free</Link>
             <Link href="/pricing" className="rounded-xl border border-white/25 px-6 py-4 font-bold text-white">See plans and add-ons</Link>
@@ -90,7 +91,7 @@ export default function CareerVisibilityPage() {
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold text-zinc-900">Stop presenting a different version of yourself everywhere.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Build the evidence once. Adapt it for the platform, audience, and job without changing the truth.</p>
-          <Link href={`${APP_URL}/login?callbackUrl=/career`} className="mt-8 inline-flex rounded-xl bg-teal px-7 py-4 font-bold text-white">Build your Career Vault</Link>
+          <Link href={`${APP_URL}/login?callbackUrl=/career/evidence`} className="mt-8 inline-flex rounded-xl bg-teal px-7 py-4 font-bold text-white">Build your Evidence Vault</Link>
         </div>
       </section>
     </main>

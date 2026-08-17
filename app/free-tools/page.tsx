@@ -15,26 +15,34 @@ import { SITE_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
 
 export const metadata: Metadata = {
-  title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer & More",
+  title: "Free ATS Resume Checker and Career Tools | Qalam",
   description:
-    "Free AI tools for LinkedIn: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Most need no account. Built by Qalam, the AI LinkedIn writer.",
+    "Start with Qalam's free ATS Resume Checker, then improve your LinkedIn profile, writing, carousels, and engagement. Most tools need no account.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
-    title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
+    title: "Free ATS Resume Checker and Career Tools | Qalam",
     description:
-      "Seven free AI-powered LinkedIn tools to help you write better posts, comment smarter, optimize your profile, and predict engagement. Most work with no sign-in.",
+      "Start with a recruiter-grade ATS resume check, then use seven focused LinkedIn tools. Most work with no sign-in.",
     url: `${SITE_URL}/free-tools`,
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Free LinkedIn AI Tools - Hook Generator, Headline Analyzer | Qalam",
+    title: "Free ATS Resume Checker and Career Tools | Qalam",
     description:
-      "Hook generator, comment generator, headline analyzer, profile optimizer, viral checker. Most need no account. Built by Qalam.",
+      "Free ATS resume check, profile analysis, writing tools, and engagement checks. Most need no account.",
   },
 }
 
 const TOOLS = alphabetical([
+  {
+    icon: MicroscopeIcon,
+    title: "ATS Resume Checker",
+    desc: "Get a recruiter-grade review across ATS parsing, exact role fit, evidence, progression, skills, clarity, and rejection risk. No account required.",
+    badge: "Main free tool",
+    badgeColor: "bg-teal text-white",
+    href: "/free-tools/ats-resume-checker",
+  },
   {
     icon: HookIcon,
     title: "Hook Generator",
@@ -93,12 +101,16 @@ const TOOLS = alphabetical([
   },
 ], (tool) => tool.title)
 
+const DISPLAY_TOOLS = [...TOOLS].sort((a, b) =>
+  Number(b.href === "/free-tools/ats-resume-checker") - Number(a.href === "/free-tools/ats-resume-checker")
+)
+
 const freeToolsSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Free LinkedIn AI Tools by Qalam",
+  name: "Free ATS Resume and LinkedIn Tools by Qalam",
   description:
-    "Seven free AI-powered LinkedIn tools: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Most need no account.",
+    "Eight free career tools led by an ATS Resume Checker, plus LinkedIn writing, profile, carousel, and engagement tools.",
   url: "https://www.byqalam.com/free-tools",
   mainEntity: {
     "@type": "ItemList",
@@ -136,13 +148,12 @@ export default function FreeToolsPage() {
               Free tools · most need no account
             </span>
             <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">
-              Free LinkedIn
+              Check your resume first.
               <br />
-              <span className="text-gold gold-underline">workflow tools</span>
+              <span className="text-gold gold-underline">Then strengthen your visibility.</span>
             </h1>
             <p className="mb-8 max-w-2xl font-cormorant text-2xl italic leading-relaxed text-zinc-500">
-              Seven focused tools to help you write better, comment sharper, profile
-              stronger, and pressure-test ideas before they hit the feed.
+              Start with the free ATS Resume Checker. Then use focused tools to improve your LinkedIn profile, writing, and visibility.
             </p>
             <div className="flex flex-wrap gap-3">
               {["Most need no sign-up", "Instant results", "Real routes", "Zero cost"].map(
@@ -164,11 +175,11 @@ export default function FreeToolsPage() {
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {TOOLS.map((tool, i) => {
+            {DISPLAY_TOOLS.map((tool, i) => {
               const Icon = tool.icon
               return (
-                <FadeUp key={tool.title} delay={i * 0.08}>
-                  <div className="group flex h-full flex-col rounded-2xl border border-zinc-100 bg-white p-7 shadow-sm transition-all duration-[220ms] hover:-translate-y-1.5 hover:border-gold/30 hover:shadow-[0_20px_48px_rgba(13,74,69,0.12)]">
+                <FadeUp key={tool.title} delay={i * 0.08} className={tool.href === "/free-tools/ats-resume-checker" ? "sm:col-span-2 lg:col-span-3" : ""}>
+                  <div className={`group flex h-full flex-col rounded-2xl border bg-white p-7 shadow-sm transition-all duration-[220ms] hover:-translate-y-1.5 hover:border-gold/30 hover:shadow-[0_20px_48px_rgba(13,74,69,0.12)] ${tool.href === "/free-tools/ats-resume-checker" ? "border-teal/30 lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center lg:gap-6" : "border-zinc-100"}`}>
                     <div className="mb-5 flex items-start justify-between">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal transition-colors group-hover:bg-teal group-hover:text-white">
                         <Icon className="h-6 w-6" />
@@ -180,14 +191,16 @@ export default function FreeToolsPage() {
                       )}
                     </div>
 
-                    <h3 className="mb-2 text-xl font-bold text-zinc-900">{tool.title}</h3>
-                    <p className="mb-6 flex-1 text-sm leading-relaxed text-zinc-500">{tool.desc}</p>
+                    <div>
+                      <h3 className="mb-2 text-xl font-bold text-zinc-900">{tool.title}</h3>
+                      <p className="mb-6 flex-1 text-sm leading-relaxed text-zinc-500 lg:mb-0">{tool.desc}</p>
+                    </div>
 
                     <Link
                       href={tool.href}
-                      className="group/btn flex items-center justify-between rounded-xl bg-teal-50 px-5 py-3 text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-white"
+                      className="group/btn flex min-h-11 items-center justify-between gap-6 rounded-xl bg-teal-50 px-5 py-3 text-sm font-semibold text-teal transition-all hover:bg-teal hover:text-white"
                     >
-                      Try Free
+                      {tool.href === "/free-tools/ats-resume-checker" ? "Check Resume Free" : "Try Free"}
                       <span className="text-base transition-transform group-hover/btn:translate-x-1">→</span>
                     </Link>
                   </div>

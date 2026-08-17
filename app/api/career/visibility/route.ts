@@ -21,7 +21,7 @@ const schema = z.object({
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Pro")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Pro")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
@@ -42,7 +42,8 @@ export async function PUT(request: NextRequest) {
     const input = parsed.data
     const linkedinUrl = input.linkedinUrl ? normalizeLinkedInUrl(input.linkedinUrl) : ""
     if (linkedinUrl === null) return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
-    const { error } = await createServiceClient().from("candidate_visibility").upsert({
+    const supabase = createServiceClient()
+    const { error } = await supabase.from("candidate_visibility").upsert({
       workspace_id: planCheck.workspaceId,
       user_id: user.id,
       is_searchable: input.isSearchable,
@@ -57,6 +58,8 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }, { onConflict: "workspace_id" })
     if (error) return NextResponse.json({ error: "Visibility settings could not be saved." }, { status: 500 })
+    const now = new Date().toISOString()
+    await supabase.from("career_consents").upsert({ workspace_id: planCheck.workspaceId, user_id: user.id, purpose: "recruiter_discovery", granted: input.isSearchable, policy_version: "2026-08-17", granted_at: input.isSearchable ? now : null, revoked_at: input.isSearchable ? null : now, updated_at: now }, { onConflict: "user_id,purpose" })
     return NextResponse.json({ success: true })
   })(request)
 }

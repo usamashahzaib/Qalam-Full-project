@@ -15,6 +15,7 @@ import {
   GiftIcon,
   HookIcon,
   LibraryIcon,
+  MicroscopeIcon,
   TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
@@ -136,35 +137,32 @@ const STATUS_META: Record<string, {
   },
 }
 
-const SOLO_PLAN = PLANS.find((plan) => plan.plan === "Solo")
-const SOLO_QUARTERLY_PRICE = SOLO_PLAN ? `${formatPkr(SOLO_PLAN.quarterlyPkr)}/quarter` : "Paid plan"
-
 type DraftSegment = { text: string; bold?: boolean }
 type DraftVariant = { tone: string; segments: DraftSegment[] }
 
 const DRAFT_VARIANTS: DraftVariant[] = [
   {
-    tone: "Witty",
+    tone: "ATS parse",
     segments: [
-      { text: "I spent three years testing LinkedIn advice that looked smart but produced nothing durable.\n\n" },
-      { text: "What changed was not another prompt.\n\n" },
-      { text: "It was the system that remembered what I kept, what I edited, and what I wanted the next draft to inherit.", bold: true },
+      { text: "Standard headings and readable chronology are strong.\n\n" },
+      { text: "The skills section is visible, but three terms lack evidence in recent experience.\n\n" },
+      { text: "Priority: connect each target skill to a credible achievement.", bold: true },
     ],
   },
   {
-    tone: "Professional",
+    tone: "Recruiter read",
     segments: [
-      { text: "Most LinkedIn advice optimizes for the algorithm instead of the reader.\n\n" },
-      { text: "We rebuilt the process around one question: would a specific person stop scrolling for this.\n\n" },
-      { text: "The result was fewer posts, more replies, and a pipeline that did not depend on going viral.", bold: true },
+      { text: "The target role is clear within six seconds.\n\n" },
+      { text: "Recent scope is credible, but the strongest result is buried below routine responsibilities.\n\n" },
+      { text: "Priority: lead with scale, ownership, and outcome.", bold: true },
     ],
   },
   {
-    tone: "Bold",
+    tone: "Role fit",
     segments: [
-      { text: "Delete your content calendar.\n\n" },
-      { text: "Nobody remembers a post that sounded like every other post in their feed that week.\n\n" },
-      { text: "Write the one sentence you would actually say out loud, then build the post backward from there.", bold: true },
+      { text: "Core responsibilities match the target job.\n\n" },
+      { text: "Two required tools appear in the skills list without supporting project or work evidence.\n\n" },
+      { text: "Priority: prove depth or remove unsupported keywords.", bold: true },
     ],
   },
 ]
@@ -253,7 +251,7 @@ function ProductMockup() {
             <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-gold/15">
               <div className="h-2 w-2 rounded-full bg-gold" />
             </div>
-            <span className="text-sm font-semibold text-white/90">Qalam · Workspace Preview</span>
+            <span className="text-sm font-semibold text-white/90">Qalam · ATS Review Preview</span>
           </div>
           <div className="flex gap-1.5">
             <div className="h-3 w-3 rounded-full bg-white/15" />
@@ -281,8 +279,8 @@ function ProductMockup() {
               SC
             </div>
             <div>
-              <p className="text-xs font-semibold text-zinc-900">Sample workspace draft</p>
-              <p className="text-xs text-zinc-400">Live surface preview</p>
+              <p className="text-xs font-semibold text-zinc-900">Sample resume review</p>
+              <p className="text-xs text-zinc-400">Recruiter and ATS decision lens</p>
             </div>
           </div>
           <p className="min-h-[104px] whitespace-pre-line text-xs leading-relaxed text-zinc-700">
@@ -290,21 +288,21 @@ function ProductMockup() {
             {isTyping && <span className="ml-0.5 inline-block h-3 w-[2px] -mb-0.5 animate-pulse bg-teal align-middle" />}
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Draft saved</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Voice settings attached</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Archive ready</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Schedule path available</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">ATS parsing 84</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Role alignment 76</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Evidence 62</span>
+            <span className="rounded-lg bg-zinc-50 px-2 py-1">Clarity 81</span>
           </div>
         </div>
 
         <div className="mx-5 mb-3 flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3 py-2">
-          <VoiceIcon className="h-4 w-4 text-gold" />
-          <span className="text-xs font-medium text-white/85">Voice profile attached to current workspace</span>
+          <MicroscopeIcon className="h-4 w-4 text-gold" />
+          <span className="text-xs font-medium text-white/85">High priority: prove achievement scale and outcome</span>
         </div>
 
         <div className="flex gap-2 px-5 pb-4">
-          <button className="flex-1 rounded-xl bg-gold py-2 text-xs font-semibold text-white">Copy Draft</button>
-          <button className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-white/75">Save</button>
+          <div className="flex-1 rounded-xl bg-gold py-2 text-center text-xs font-semibold text-white">Full recruiter report</div>
+          <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-white/75">Sample score 76</div>
         </div>
       </motion.div>
 
@@ -319,9 +317,9 @@ function ProductMockup() {
         }}
         className="absolute -right-4 top-8 hidden rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl sm:block"
       >
-        <p className="text-xs font-medium text-zinc-500">Live product</p>
-        <p className="text-xl font-bold text-teal">Free to start</p>
-        <p className="text-xs font-medium text-zinc-500">{SOLO_QUARTERLY_PRICE} to unlock Solo</p>
+        <p className="text-xs font-medium text-zinc-500">Public checker</p>
+        <p className="text-xl font-bold text-teal">Free. No sign-in.</p>
+        <p className="text-xs font-medium text-zinc-500">One full resume monthly after sign-in</p>
       </motion.div>
     </div>
   )
@@ -551,7 +549,7 @@ export default function HomePage() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
               <span className="chip mb-6 inline-flex border-teal/20 bg-white/80 text-teal shadow-sm backdrop-blur">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
-                Live product. Honest status.
+                Free ATS resume checker. No account.
               </span>
             </motion.div>
 
@@ -561,11 +559,11 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
               className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl"
             >
-              Turn your career
+              Check your resume
               <br />
-              into visible proof.
+              before recruiters do.
               <br />
-              <span className="text-gold gold-underline">Get found. Build trust. Get shortlisted.</span>
+              <span className="text-gold gold-underline">Fix every avoidable rejection risk.</span>
             </motion.h1>
 
             <motion.p
@@ -574,7 +572,7 @@ export default function HomePage() {
               transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
               className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
             >
-              Qalam aligns your LinkedIn profile, content, and ATS resume around one credible professional story - without inventing achievements.
+              Get an ATS and recruiter-style review across parsing, job fit, proof, progression, skills, clarity, and professional risk. Free for everyone.
             </motion.p>
 
             <motion.div
@@ -585,25 +583,25 @@ export default function HomePage() {
             >
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
-                  href={`${APP_URL}/login`}
+                  href="/free-tools/ats-resume-checker"
                   className="press pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-all hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_8px_28px_rgba(13,74,69,0.4)]"
                 >
-                  Start free
+                  Check my resume free
                 </Link>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
-                  href="#before-after"
+                  href={`${APP_URL}/login?callbackUrl=/career/resumes`}
                   className="press inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
                 >
-                  See the difference
+                  Build one free resume monthly
                 </Link>
               </motion.div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-zinc-600">
               <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
-              <span>Start with 5 posts a month. Build LinkedIn positioning, content, and career evidence from one workspace.</span>
+              <span>No sign-in for the checker. Sign in to build and export one full ATS-safe resume every month.</span>
             </motion.div>
           </div>
 
@@ -618,9 +616,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
-              "See where your professional story is weak",
-              "Improve LinkedIn, content, and resumes together",
-              "Separate supplied evidence from recommendations",
+              "Eight recruiter and ATS decision angles",
+              "Exact job description matching",
+              "No invented skills, metrics, or experience",
             ].map((block) => (
               <div key={block} className="flex items-center justify-center px-6 py-4 text-center text-sm font-medium leading-relaxed text-zinc-700">
                 {block}

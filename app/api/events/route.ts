@@ -4,6 +4,15 @@ import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus, requireRole } from "@/lib/server/roles"
+import { z } from "zod"
+
+const eventSchema = z.object({
+  id: z.string().max(100).optional(),
+  workspaceKey: z.string().uuid().optional(),
+  type: z.string().trim().min(1).max(80).regex(/^[a-z0-9_.]+$/),
+  payload: z.record(z.string(), z.unknown()).default({}),
+  createdAt: z.string().datetime().optional(),
+})
 
 type AnalyticsEvent = {
   id: string
@@ -42,22 +51,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await requireAuth()
-    const planCheck = await requirePlan(request, "Solo")
+    const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
 
-    const body = (await request.json()) as {
-      id?: string
-      workspaceKey?: string
-      type?: string
-      payload?: Record<string, unknown>
-      createdAt?: string
-    }
+    const parsed = eventSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return NextResponse.json({ error: "invalid_event" }, { status: 400 })
+    const body = parsed.data
+    if (JSON.stringify(body.payload).length > 8000) return NextResponse.json({ error: "event_payload_too_large" }, { status: 413 })
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
     const rows = await supabaseInsert<AnalyticsEvent>("analytics_events", {
       workspace_id: workspaceId,
-      event_type: body.type || "unknown",
-      metrics: body.payload || {},
+      event_type: body.type,
+      metrics: body.payload,
       recorded_at: body.createdAt || new Date().toISOString(),
     }, "return=representation")
     

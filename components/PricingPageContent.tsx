@@ -19,7 +19,7 @@ import type { ManagedPlan } from "@/lib/pricing"
 const PRICING_FAQ = [
   {
     q: "Is there a free plan?",
-    a: "Yes. Free includes 5 AI posts per month, 1 carousel, basic profile and resume checks, and core writing tools. No payment card is required.",
+    a: "Yes. Free includes unlimited public ATS checks with abuse protection, 1 targeted resume per month, 10 active applications, a 15-item Evidence Vault, 5 AI posts, and core writing tools. No payment card is required.",
   },
   {
     q: "How much does Qalam cost?",
@@ -31,7 +31,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Solo gives you the complete publishing workflow. Pro adds trained voice, Push to 90+ improvement, AI Strategist, competitor research, full analytics, approvals, and deeper career tools.",
+    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, unlimited application tracking, publishing, and basic analytics. Pro adds 10 resumes, advanced outcome intelligence, featured recruiter visibility, cohorts, trained voice, research, and full analytics.",
   },
   {
     q: "Can I cancel anytime?",
@@ -39,7 +39,7 @@ const PRICING_FAQ = [
   },
   {
     q: "Which plan should I choose?",
-    a: "Choose Solo for consistent LinkedIn publishing and one targeted resume each month. Choose Pro for deeper positioning, more resume versions, content intelligence, and recruiter visibility.",
+    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows.",
   },
   {
     q: "Can I buy a career tool without changing my plan?",

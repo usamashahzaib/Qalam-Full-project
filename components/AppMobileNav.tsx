@@ -41,6 +41,8 @@ export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/chat", label: "AI Chat", icon: VoiceIcon, requiredPlan: "Pro" },
   { href: "/voice", label: "Voice", icon: VoiceIcon },
   { href: "/career", label: "Career Hub", icon: ProfileIcon },
+  { href: "/career/applications", label: "Applications", icon: GrowthIcon },
+  { href: "/career/evidence", label: "Evidence", icon: CheckIcon },
   { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" },
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
   { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" },

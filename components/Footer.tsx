@@ -12,6 +12,7 @@ const FOOTER_LINKS = {
     { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
     { label: "Content Studio", href: "/product/post-writer" },
     { label: "ATS Resume Builder", href: "/ats-resume-builder" },
+    { label: "ATS Scoring Methodology", href: "/methodology/ats-resume-readiness" },
     { label: "Job Description Match", href: "/job-description-match" },
     { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
   ], byLabel),
@@ -23,6 +24,7 @@ const FOOTER_LINKS = {
     { label: "Agencies", href: "/use-cases/agencies" },
   ], byLabel),
   Resources: [
+    { label: "Free ATS Resume Checker", href: "/free-tools/ats-resume-checker" },
     { label: "Documentation", href: "/docs" },
     { label: "Blog", href: "/blog" },
     { label: "Free Tools", href: "/free-tools" },

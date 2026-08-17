@@ -244,10 +244,10 @@ export default function CareerPage() {
             <section className="grid gap-4 md:grid-cols-3">
               {[
                 {
-                  title: "Resume Studio",
-                  copy: "12 ATS-safe templates, exact-JD targeting, editing, version history, and PDF export.",
-                  cta: "Open Studio",
-                  href: "/career/resumes",
+                  title: "Application Outcomes",
+                  copy: "Link each job to the exact resume version, stage changes, interviews, and offers.",
+                  cta: "Open Ledger",
+                  href: "/career/applications",
                   badge: "Primary",
                 },
                 {
@@ -258,10 +258,10 @@ export default function CareerPage() {
                   badge: "In-app",
                 },
                 {
-                  title: "Post Intelligence",
-                  copy: "Import your own posts and metrics to find content worth, gaps, and repeatable patterns.",
-                  cta: "Open Module",
-                  href: "/career/content",
+                  title: "Evidence Vault",
+                  copy: "Store achievements, credentials, skills, and work samples behind every career asset.",
+                  cta: "Build Evidence",
+                  href: "/career/evidence",
                   badge: "Primary",
                 },
               ].map((tile, index) => {
@@ -304,6 +304,8 @@ export default function CareerPage() {
               <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">More career tools</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
+                  ["Resume Studio", "Build JD-matched resumes from verified evidence with ATS-safe templates.", "/career/resumes"],
+                  ["Post Intelligence", "Import your own posts and metrics to find repeatable professional signals.", "/career/content"],
                   ["Cover Letters", "Generate a letter matched to the exact job description, using a purchased credit.", "/career/cover-letters"],
                   ["Career Network", "Opt into recruiter discovery or search visible candidates.", "/career/network"],
                   ["Learning Cohorts", "Run LinkedIn and career modules for certifications and coaching groups.", "/career/cohorts"],

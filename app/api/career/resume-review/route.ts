@@ -8,17 +8,13 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
+import { buildResumeReviewPrompt, normalizeResumeReview } from "@/lib/career-resume-review"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
   resumeText: z.string().trim().min(200).max(20000),
   jobDescription: z.string().trim().max(12000).default(""),
 })
-
-const score = (value: unknown) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : 0
-}
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -38,32 +34,8 @@ export async function POST(request: NextRequest) {
     try {
       raw = await callAi(
         "voice-profile",
-        "You are a senior recruiter and ATS resume specialist. Return strict JSON only. Preserve truth. Never invent experience, metrics, employers, or qualifications.",
-        `Review this resume for ATS compatibility, career progression, clarity, and role relevance.
-
-RESUME:
-${input.resumeText}
-
-JOB DESCRIPTION:
-${input.jobDescription || "No job description supplied. Review for general market readiness."}
-
-Return:
-{
-  "overall_score": 0,
-  "scores": {
-    "ats": 0,
-    "impact": 0,
-    "relevance": 0,
-    "clarity": 0,
-    "career_progression": 0
-  },
-  "verdict": "short recruiter verdict",
-  "risks": ["specific rejection risks"],
-  "missing_keywords": ["keywords supported by the candidate context"],
-  "priority_fixes": ["five prioritized fixes"],
-  "rewritten_summary": "truthful rewritten professional summary",
-  "next_step": "single highest value action"
-}`,
+        "Return strict JSON only. Preserve candidate truth and evaluate only job-relevant evidence.",
+        buildResumeReviewPrompt(input.resumeText, input.jobDescription),
         { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: planCheck.plan }
       )
     } catch (error) {
@@ -71,27 +43,27 @@ Return:
       throw error
     }
 
-    const parsedAi = safeParseJson(raw)
-    if (!parsedAi || typeof parsedAi !== "object") {
+    const result = normalizeResumeReview(safeParseJson(raw))
+    if (!result) {
       await refundCareerUsage(user.id, "resume_review")
       return NextResponse.json({ error: "The resume review could not be completed." }, { status: 503 })
     }
-    const result = parsedAi as Record<string, unknown>
-    result.overall_score = score(result.overall_score)
-    if (result.scores && typeof result.scores === "object") {
-      result.scores = Object.fromEntries(Object.entries(result.scores).map(([key, value]) => [key, score(value)]))
+    const responseResult = {
+      ...result,
+      risks: result.risks.map((risk) => `${risk.issue}: ${risk.why}`),
+      missing_keywords: result.missing_keywords.map((item) => `${item.keyword} (${item.evidence_status})`),
+      priority_fixes: result.priority_fixes.map((fix) => `${fix.section}: ${fix.action} Example: ${fix.example}`),
     }
-
     const { error } = await createServiceClient().from("resume_reviews").insert({
       workspace_id: planCheck.workspaceId,
       user_id: user.id,
       resume_text: "",
       job_description: "",
-      result,
-      overall_score: result.overall_score,
+      result: responseResult,
+      overall_score: responseResult.overall_score,
     })
     if (error) console.error("resume_review_save_failed", error)
 
-    return NextResponse.json(result)
+    return NextResponse.json(responseResult)
   })(request)
 }

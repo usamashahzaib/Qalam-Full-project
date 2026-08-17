@@ -4,7 +4,7 @@ export const CAREER_PLANS = [
     monthlyPrice: 0,
     quarterlyPrice: 0,
     description: "See what is weakening your profile and resume.",
-    features: ["1 LinkedIn audit", "1 ATS resume review", "Career Vault"],
+    features: ["1 LinkedIn audit/month", "1 ATS review/month", "1 targeted resume/month", "10 active applications", "15 evidence items"],
     highlighted: false,
   },
   {
@@ -12,7 +12,7 @@ export const CAREER_PLANS = [
     monthlyPrice: 799,
     quarterlyPrice: 1598,
     description: "Build a stronger LinkedIn presence every quarter.",
-    features: ["3 LinkedIn audits/month", "2 ATS reviews/month", "1 JD-matched resume/month", "Career action plan"],
+    features: ["5 LinkedIn audits/month", "5 ATS reviews/month", "3 targeted resumes/month", "Unlimited applications", "100 evidence items"],
     highlighted: false,
   },
   {
@@ -20,7 +20,7 @@ export const CAREER_PLANS = [
     monthlyPrice: 1499,
     quarterlyPrice: 2998,
     description: "Align LinkedIn, content, and every job application.",
-    features: ["20 LinkedIn audits/month", "10 ATS reviews/month", "3 JD-matched resumes/month", "Recruiter visibility and career tracking"],
+    features: ["20 LinkedIn audits/month", "20 ATS reviews/month", "10 targeted resumes/month", "Advanced outcome intelligence", "Featured recruiter visibility and cohorts"],
     highlighted: true,
   },
 ] as const

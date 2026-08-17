@@ -4,8 +4,8 @@ import { APP_URL, SITE_URL } from "@/lib/seo"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 
 export const metadata: Metadata = {
-  title: "Free ATS Resume Builder for Pakistan | 12 Templates",
-  description: "Create one free ATS resume, target it to an exact job description, edit every line, and export to PDF.",
+  title: "1 Free ATS Resume Every Month | 12 Safe Templates",
+  description: "Sign in and create one full ATS-safe resume free every month. Target an exact job description, edit every line, and export to PDF.",
   alternates: { canonical: `${SITE_URL}/ats-resume-builder` },
 }
 
@@ -16,6 +16,7 @@ const included = [
   "PDF export",
   "12 professional templates",
   "Truth-preserving AI rules",
+  "One full resume generation every month on Free",
 ]
 
 export default function AtsResumeBuilderPage() {
@@ -24,10 +25,14 @@ export default function AtsResumeBuilderPage() {
       <section className="border-b border-zinc-100 px-6 py-24">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">ATS Resume Studio</p>
-            <h1 className="mt-4 text-5xl font-extrabold leading-tight text-zinc-900">One free resume. Built for the exact job.</h1>
-            <p className="mt-5 text-xl leading-8 text-zinc-600">Paste your current resume and target JD. Qalam improves relevance, ATS keywords, impact, and career progression without inventing experience.</p>
-            <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-8 inline-flex rounded-xl bg-teal px-7 py-4 font-bold text-white">Build your free resume</Link>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">One free generation every month</p>
+            <h1 className="mt-4 text-5xl font-extrabold leading-tight text-zinc-900">Build a full ATS-safe resume for the exact job.</h1>
+            <p className="mt-5 text-xl leading-8 text-zinc-600">Sign in, paste your current resume and target JD, then edit and export a complete role-specific resume. Qalam improves relevance, keywords, proof, and clarity without inventing experience.</p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 font-bold text-white">Build my monthly free resume</Link>
+              <Link href="/free-tools/ats-resume-checker" className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-300 px-7 font-bold text-zinc-700">Check my resume first</Link>
+            </div>
+            <p className="mt-3 text-sm text-zinc-500">Free plan. No payment card required. One resume generation per calendar month.</p>
           </div>
           <div className="rounded-3xl bg-[#073f3b] p-8 text-white">
             <p className="text-sm font-bold text-gold">Included</p>

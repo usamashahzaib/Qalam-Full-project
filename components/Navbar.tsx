@@ -27,9 +27,8 @@ const USE_CASE_LINKS = alphabetical([
 ], (link) => link.label)
 
 const STATIC_LINKS = [
+  { label: "Free ATS Check", href: "/free-tools/ats-resume-checker" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Career Visibility", href: "/career-visibility" },
-  { label: "Demo", href: "/demo" },
   { label: "Free Tools", href: "/free-tools" },
   { label: "Blog", href: "/blog" },
 ]
@@ -242,13 +241,13 @@ export function Navbar() {
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
               <span className="truncate">
-                <strong>New:</strong> <span className="hidden sm:inline">Career Visibility connects LinkedIn, content, and ATS resumes</span><span className="sm:hidden">Career Visibility</span>
+                <strong>Free:</strong> <span className="hidden sm:inline">Check your resume like an ATS and recruiter</span><span className="sm:hidden">ATS resume check</span>
               </span>
               <Link
-                href="/career-visibility"
+                href="/free-tools/ats-resume-checker"
                 className="inline-flex shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
-                Explore <ChevronRightIcon className="h-3.5 w-3.5" />
+                Check now <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => {

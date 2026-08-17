@@ -29,6 +29,7 @@ const PRIVATE_ROUTES = [
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
+      { userAgent: "OAI-SearchBot", allow: "/", disallow: PRIVATE_ROUTES },
       { userAgent: "GPTBot", allow: "/", disallow: PRIVATE_ROUTES },
       { userAgent: "PerplexityBot", allow: "/", disallow: PRIVATE_ROUTES },
       { userAgent: "ClaudeBot", allow: "/", disallow: PRIVATE_ROUTES },

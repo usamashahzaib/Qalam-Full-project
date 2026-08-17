@@ -61,6 +61,8 @@ export const NAV_GROUPS = [
     links: [
       { href: "/voice", label: "Voice Profile", icon: VoiceIcon },
       { href: "/career", label: "Career Hub", icon: ProfileIcon },
+      { href: "/career/applications", label: "Applications", icon: GrowthIcon },
+      { href: "/career/evidence", label: "Evidence Vault", icon: CheckIcon },
       { href: "/library", label: "Library", icon: LibraryIcon, requiredPlan: "Solo" as PlanTier },
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },

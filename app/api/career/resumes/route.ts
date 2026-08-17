@@ -57,22 +57,11 @@ export async function POST(request: NextRequest) {
 
     let usageConsumed = false
     let creditOrderId: string | null = null
-    if (planCheck.plan === "Free") {
-      const { count } = await createServiceClient()
-        .from("resume_documents")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-      if ((count || 0) >= 1) {
-        creditOrderId = await claimExtraResumeCredit(user.id)
-        if (!creditOrderId) return NextResponse.json({ error: "Free includes one resume. Upgrade or add an extra resume credit." }, { status: 429 })
-      }
-    } else {
-      const usage = await consumeCareerUsage(user.id, planCheck.plan, "resume_generation")
-      usageConsumed = usage.allowed
-      if (!usage.allowed) {
-        creditOrderId = await claimExtraResumeCredit(user.id)
-        if (!creditOrderId) return NextResponse.json({ error: "Your monthly resume limit is reached. Add an extra resume credit." }, { status: 429 })
-      }
+    const usage = await consumeCareerUsage(user.id, planCheck.plan, "resume_generation")
+    usageConsumed = usage.allowed
+    if (!usage.allowed) {
+      creditOrderId = await claimExtraResumeCredit(user.id)
+      if (!creditOrderId) return NextResponse.json({ error: "Your monthly resume limit is reached. Upgrade or add an extra resume credit." }, { status: 429 })
     }
     const releaseReservation = async () => {
       if (usageConsumed) await refundCareerUsage(user.id, "resume_generation")

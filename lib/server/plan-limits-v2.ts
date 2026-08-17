@@ -12,6 +12,7 @@ import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-
 import { log } from "./logging"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
+import { getCareerEntitlements } from "@/lib/career-entitlements"
 
 export type { Feature }
 
@@ -171,6 +172,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
 
   return {
     plan,
+    career: getCareerEntitlements(plan),
     overrideActive,
     drafts: {
       used: usage?.ai_drafts_used || 0,
