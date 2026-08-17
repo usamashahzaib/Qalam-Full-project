@@ -39,6 +39,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
   ])
   const faqSchema = buildFaqSchema(page.faqs)
   const toolHref = page.tool?.href ? resolvePublicHref(page.tool.href) : undefined
+  const toolUrl = toolHref?.startsWith("http") ? toolHref : absoluteUrl(toolHref)
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -54,7 +55,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
       name: page.tool.label,
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      url: absoluteUrl(page.tool.href),
+      url: toolUrl,
       isAccessibleForFree: page.tool.href.startsWith("/free-tools/"),
     } : {
       "@type": "SoftwareApplication",
@@ -148,7 +149,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
                   <h2 className="mb-4 text-lg font-bold text-zinc-900">Related pages</h2>
                   <div className="grid gap-3">
                     {page.related.map((item) => (
-                      <Link key={item.href} href={item.href} className="rounded-xl border border-zinc-100 px-4 py-3 text-sm font-semibold text-teal transition-colors hover:border-teal/30 hover:bg-teal/5">
+                      <Link key={item.href} href={resolvePublicHref(item.href)} className="rounded-xl border border-zinc-100 px-4 py-3 text-sm font-semibold text-teal transition-colors hover:border-teal/30 hover:bg-teal/5">
                         {item.label}
                       </Link>
                     ))}
