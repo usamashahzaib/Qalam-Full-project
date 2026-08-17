@@ -4,7 +4,10 @@ const { loadEnvConfig } = nextEnv
 
 loadEnvConfig(process.cwd())
 
-if (process.env.NEXT_PUBLIC_CAREER_ADDON_CHECKOUT_LIVE !== "true") process.exit(0)
+const liveRequested = process.env.NEXT_PUBLIC_CAREER_ADDON_CHECKOUT_LIVE === "true"
+const readyRequested = process.env.NEXT_PUBLIC_CAREER_ADDON_CHECKOUT_READY === "true"
+
+if (!liveRequested && !readyRequested) process.exit(0)
 
 const mappings = {
   extra_resume: process.env.LEMONSQUEEZY_CAREER_ADDON_EXTRA_RESUME_VARIANT_ID,
@@ -21,6 +24,12 @@ const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== ind
 
 if (!process.env.LEMONSQUEEZY_API_KEY?.trim()) missing.unshift("LEMONSQUEEZY_API_KEY")
 if (missing.length || duplicates.length) {
+  // A stale public live flag must never block deployment. The UI additionally
+  // requires the explicit readiness flag and remains in coming-soon mode.
+  if (!readyRequested) {
+    console.warn(`Career add-on checkout remains disabled. Missing or invalid: ${missing.join(", ") || "none"}. Duplicate variant IDs: ${duplicates.join(", ") || "none"}.`)
+    process.exit(0)
+  }
   console.error(`Career add-on checkout is not production-ready. Missing or invalid: ${missing.join(", ") || "none"}. Duplicate variant IDs: ${duplicates.join(", ") || "none"}.`)
   process.exit(1)
 }
