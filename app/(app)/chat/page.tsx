@@ -286,8 +286,8 @@ export default function ChatWorkspace() {
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1">
           {conversations.length === 0 ? (
             <div className="mt-6 px-2 text-center">
-              <p className="text-xs text-zinc-600">No conversations yet.</p>
-              <p className="mt-1 text-[10px] text-zinc-700">Start a new chat above.</p>
+              <p className="text-xs text-zinc-400">No conversations yet.</p>
+              <p className="mt-1 text-[10px] text-zinc-500">Start a new chat above.</p>
             </div>
           ) : (
             conversations.map(conv => (
@@ -309,7 +309,7 @@ export default function ChatWorkspace() {
                     ) : (
                       <>
                         <div className={`truncate text-sm font-medium ${activeConvId === conv.id ? "text-white" : "text-zinc-300"}`}>{conv.title}</div>
-                        <div className="text-[10px] text-zinc-600 mt-0.5">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                        <div className="text-[10px] text-zinc-400 mt-0.5">{new Date(conv.updated_at).toLocaleDateString()}</div>
                       </>
                     )}
                   </button>

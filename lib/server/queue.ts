@@ -196,7 +196,7 @@ const getForgotLimiter = () => {
   return forgotLimiter
 }
 
-export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-password") {
+export async function checkAuthRateLimit(ip: string, action: "signup" | "forgot-password" | "resend-verification") {
   const r = getRedis()
   // If Redis is unavailable, fail open for auth - blocking signup is too disruptive
   if (!r) {

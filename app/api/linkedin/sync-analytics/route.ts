@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { pollLinkedInAnalytics } from "@/lib/server/linkedin"
 import { ensureFreshLinkedInToken, getAllLinkedInTokens } from "@/lib/server/linkedin-credentials"
 import { supabaseInsert, supabaseSelect, createServiceClient } from "@/lib/server/supabase-rest"
+import { verifyCronAuth } from "@/lib/server/verify-cron"
 
 const CONCURRENCY = 3
 
@@ -32,10 +33,9 @@ async function processBatch<T, R>(
  */
 export async function GET(request: Request) {
   try {
-    // Verify cron secret (Vercel injects this header for cron jobs).
-    // Guard against an unset CRON_SECRET - otherwise "Bearer undefined" would pass.
-    const cronSecret = process.env.CRON_SECRET
-    if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+    // Verify cron secret (Vercel injects this header for cron jobs). Constant-time
+    // comparison via the shared helper; fails closed when CRON_SECRET is unset.
+    if (!verifyCronAuth(request)) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 })
     }
 

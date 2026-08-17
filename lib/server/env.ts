@@ -60,8 +60,14 @@ export const requireSupabaseEnv = () => {
 }
 
 export function requireAiEnv(): void {
-  if (!env.groqApiKey && !env.geminiApiKey && !env.mistralApiKey && !env.cerebrasApiKey && !env.openrouterApiKey) {
-    throw new Error("At least one AI provider key is required")
+  // Only the providers actually wired into the router (ai-router-v2.ts: groq | gemini
+  // | mistral) count toward this check. CEREBRAS_API_KEY / OPENROUTER_API_KEY can be
+  // present in the environment but have no client in the routing path, so a deploy
+  // configured with only those keys would pass this check and then fail every callAi()
+  // with "All AI services unavailable". Do not add them back here until they are wired
+  // into providerOrder / taskModelMap / callProvider.
+  if (!env.groqApiKey && !env.geminiApiKey && !env.mistralApiKey) {
+    throw new Error("At least one wired AI provider key (GROQ_API_KEY, GEMINI_API_KEY, or MISTRAL_API_KEY) is required")
   }
 }
 

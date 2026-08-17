@@ -4,6 +4,7 @@ import Link from "next/link"
 import { PLAN_FEATURES, PLAN_PRICES, formatPkr, type PlanName } from "@/lib/pricing"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import type { PlanTier } from "@/lib/entitlements"
+import { Dialog } from "@/components/ui/Dialog"
 
 type UpgradeModalProps = {
   currentPlan: string
@@ -25,24 +26,22 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
 
   if (isAgency) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
-        <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
-          <span className="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal-800">
-            For teams
-          </span>
-          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            PKR 7,998 billed quarterly. Includes 5 workspaces, 5 seats, approvals, publishing, and team analytics.
-          </p>
-          <Link
-            href="/managed/apply?plan=Agency&type=company"
-            onClick={onClose}
-            className="mt-5 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600"
-          >
-            Apply for Agency
-          </Link>
-        </div>
-      </div>
+      <Dialog onClose={onClose} labelledBy="upgrade-modal-title">
+        <span className="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal-800">
+          For teams
+        </span>
+        <h2 id="upgrade-modal-title" className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+          PKR 7,998 billed quarterly. Includes 5 workspaces, 5 seats, approvals, publishing, and team analytics.
+        </p>
+        <Link
+          href="/managed/apply?plan=Agency&type=company"
+          onClick={onClose}
+          className="mt-5 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600"
+        >
+          Apply for Agency
+        </Link>
+      </Dialog>
     )
   }
 
@@ -51,9 +50,8 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
   const isBusy = state.phase === "preparing" && state.targetPlan === requiredPlan
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-center shadow-xl">
-        <h2 className="text-lg font-bold text-zinc-900">
+    <Dialog onClose={onClose} labelledBy="upgrade-modal-title">
+        <h2 id="upgrade-modal-title" className="text-lg font-bold text-zinc-900">
           You&apos;re on {currentPlan} ({usageLabel || reason})
         </h2>
         <p className="mt-2 text-sm font-semibold text-zinc-700">Upgrade to {requiredPlan} for {formatPkr(prices.monthly)}/month</p>
@@ -86,7 +84,6 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
           <span className="text-zinc-200">|</span>
           <Link href="/upgrade" onClick={onClose} className="font-semibold text-zinc-500 hover:text-zinc-700 hover:underline">Compare plans</Link>
         </div>
-      </div>
-    </div>
+    </Dialog>
   )
 }

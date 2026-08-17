@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 import { publishScheduledPost, reconcileStuckPublishing, type ScheduledPost } from "@/lib/server/linkedin-publish"
+import { verifyCronAuth } from "@/lib/server/verify-cron"
 
 export const maxDuration = 60
 
@@ -18,8 +19,7 @@ export const maxDuration = 60
  * in one run since QStash already handles that in real time.
  */
 export async function GET(request: Request) {
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 

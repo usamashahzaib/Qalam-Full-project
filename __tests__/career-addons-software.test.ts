@@ -46,13 +46,19 @@ describe("software-only career add-ons", () => {
     expect(marketplace).toContain('disabled={!checkoutReady || payingKey === item.key}')
   })
 
-  it("verifies add-on variant, PKR subtotal, quantity, and discount before fulfillment", () => {
+  it("verifies add-on variant, PKR subtotal, and quantity before fulfillment", () => {
     expect(payment).toContain("getCareerAddonKeyForVariantId")
     expect(payment).toContain("addon_variant_mismatch")
     expect(payment).toContain('currency !== "PKR"')
     expect(payment).toContain("subtotal !== order.amount_pkr * 100")
-    expect(payment).toContain("discountTotal !== 0")
     expect(payment.indexOf("addon_amount_mismatch")).toBeLessThan(payment.indexOf('supabase.rpc("fulfill_career_purchase"'))
+  })
+
+  it("fulfills discounted orders - a coupon lowers total, never the pre-discount subtotal", () => {
+    // The integrity check compares the pre-discount subtotal to the catalog price, so a
+    // merchant coupon must still fulfil. Rejecting on a non-zero discount_total would charge
+    // the customer and never grant credits (orphan payment), so that guard must NOT exist.
+    expect(payment).not.toContain("discountTotal !== 0")
   })
 
   it("supports discounted packs and weighted plan credits atomically", () => {

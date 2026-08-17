@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 import { scorePost } from "@/lib/use-cases/score-post"
+import { verifyCronAuth } from "@/lib/server/verify-cron"
 
 export const maxDuration = 60
 
@@ -36,8 +37,7 @@ async function processBatch<T, R>(items: T[], fn: (item: T) => Promise<R>, concu
  * until it reports remaining: 0, then this route can be left in place unused.
  */
 export async function POST(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET
-  if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+  if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 

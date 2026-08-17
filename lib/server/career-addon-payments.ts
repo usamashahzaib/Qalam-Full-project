@@ -147,7 +147,11 @@ export async function handleCareerAddonWebhook(
     log.error("career_addon_payment.quantity_mismatch", { orderId: order.id, expected: order.quantity, paidFor: lsQuantity })
     return fail("addon_quantity_mismatch")
   }
-  if (currency !== "PKR" || subtotal !== order.amount_pkr * 100 || discountTotal !== 0) {
+  // Compare the pre-discount subtotal (not the post-discount total) against the catalog
+  // price: this verifies the buyer checked out the correctly-priced LS variant and cannot
+  // downgrade the amount. A merchant-issued coupon lowers discount_total/total but never
+  // subtotal, so discounted orders must still fulfil - do NOT reject on discountTotal.
+  if (currency !== "PKR" || subtotal !== order.amount_pkr * 100) {
     log.error("career_addon_payment.amount_mismatch", { orderId: order.id, currency, subtotal, discountTotal })
     return fail("addon_amount_mismatch")
   }
