@@ -48,7 +48,14 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
     dateModified: page.updatedAt,
     inLanguage: "en",
     about: page.keywords.map((name) => ({ "@type": "Thing", name })),
-    mainEntity: {
+    mainEntity: page.tool ? {
+      "@type": "SoftwareApplication",
+      name: page.tool.label,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: absoluteUrl(page.tool.href),
+      isAccessibleForFree: page.tool.href.startsWith("/free-tools/"),
+    } : {
       "@type": "SoftwareApplication",
       name: "Qalam",
       applicationCategory: "BusinessApplication",
@@ -71,16 +78,32 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
               <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">{page.h1}</h1>
               <p className="max-w-3xl text-xl leading-relaxed text-zinc-600">{page.summary}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href={`${APP_URL}/login`} className="inline-flex justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
-                  Start free
+                <Link href={page.tool?.href || `${APP_URL}/login`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
+                  {page.tool?.label || "Start free"}
                 </Link>
-                <Link href="/ai-linkedin-writer" className="inline-flex justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
-                  See AI LinkedIn Writer
+                <Link href={page.methodology?.href || "/career-visibility"} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
+                  {page.methodology?.label || "Explore Career Visibility"}
                 </Link>
               </div>
             </FadeUp>
           </div>
         </section>
+
+        {page.tool ? (
+          <section className="border-b border-teal/15 bg-teal-50/40 px-6 py-12">
+            <div className="mx-auto grid max-w-[960px] gap-6 md:grid-cols-[1.35fr_.65fr] md:items-end">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Working Qalam tool</p>
+                <h2 className="mt-3 text-3xl font-bold text-zinc-900">{page.tool.label}</h2>
+                <p className="mt-3 max-w-2xl leading-7 text-zinc-600">{page.tool.description}</p>
+                <p className="mt-3 text-sm font-medium text-zinc-500">{page.tool.detail}</p>
+              </div>
+              <Link href={page.tool.href} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-6 font-bold text-white transition-colors hover:bg-teal-600">
+                Open the tool
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         <section className="px-6 py-16">
           <div className="mx-auto grid max-w-[960px] gap-6 md:grid-cols-[1.4fr_.8fr]">
@@ -93,6 +116,15 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
                   </article>
                 </FadeUp>
               ))}
+              {page.example ? (
+                <FadeUp delay={page.sections.length * 0.06}>
+                  <article className="rounded-2xl border border-gold/25 bg-gold-50/45 p-7">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Example</p>
+                    <h2 className="mt-3 text-2xl font-bold text-zinc-900">{page.example.heading}</h2>
+                    <p className="mt-3 leading-relaxed text-zinc-700">{page.example.body}</p>
+                  </article>
+                </FadeUp>
+              ) : null}
             </div>
 
             <aside className="space-y-6">

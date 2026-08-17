@@ -1,6 +1,7 @@
 import { CONTENT_LAST_UPDATED, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_METHODOLOGY_UPDATED, ATS_METHODOLOGY_VERSION } from "@/lib/ats-methodology"
+import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
 
 // llms-full.txt: the emerging companion convention to llms.txt. Where llms.txt
 // is an index, this serves the complete published article corpus as plain
@@ -63,6 +64,15 @@ export function GET() {
     "",
     "Qalam connects a permissioned Evidence Vault, JD-matched resume versions, application stages, interviews, offers, and opt-in recruiter discovery. The public ATS checker is free. A signed-in Free user can create one targeted resume each month, track 10 active applications, and store 15 evidence items. Paid plans add capacity, outcome intelligence, and professional network workflows.",
     "",
+    "## High-intent answer pages",
+    "",
+    ...Object.values(SEO_LANDING_PAGES).flatMap((page) => [
+      `### ${page.title}`,
+      "",
+      `- URL: ${SITE_URL}/${page.slug}`,
+      page.summary,
+      "",
+    ]),
     "---",
     "",
     articles,

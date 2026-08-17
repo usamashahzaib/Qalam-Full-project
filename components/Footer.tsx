@@ -25,6 +25,9 @@ const FOOTER_LINKS = {
   ], byLabel),
   Resources: [
     { label: "Free ATS Resume Checker", href: "/free-tools/ats-resume-checker" },
+    { label: "ATS Resume Score", href: "/ats-resume-score" },
+    { label: "Resume Keyword Match", href: "/resume-keyword-match" },
+    { label: "LinkedIn Headline Examples", href: "/linkedin-headline-examples" },
     { label: "Documentation", href: "/docs" },
     { label: "Blog", href: "/blog" },
     { label: "Free Tools", href: "/free-tools" },

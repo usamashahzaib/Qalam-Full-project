@@ -575,6 +575,10 @@ export default function HomePage() {
               Get an ATS and recruiter-style review across parsing, job fit, proof, progression, skills, clarity, and professional risk. Free for everyone.
             </motion.p>
 
+            <p className="mb-8 max-w-xl text-sm leading-6 text-zinc-600">
+              Qalam is a Career Visibility OS that connects a free ATS Resume Checker, ATS Resume Builder, LinkedIn Profile Optimization, and an AI LinkedIn Writer around one credible professional story.
+            </p>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -603,6 +607,11 @@ export default function HomePage() {
               <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
               <span>No sign-in for the checker. Sign in to build and export one full ATS-safe resume every month.</span>
             </motion.div>
+            <nav aria-label="Career tools" className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-teal">
+              <Link href="/ats-resume-builder" className="hover:underline">ATS Resume Builder</Link>
+              <Link href="/linkedin-optimization" className="hover:underline">LinkedIn Profile Optimization</Link>
+              <Link href="/ai-linkedin-writer" className="hover:underline">AI LinkedIn Writer</Link>
+            </nav>
           </div>
 
           <div className="flex justify-center lg:justify-end">

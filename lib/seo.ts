@@ -188,7 +188,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     path,
     priority: 0.91,
     changeFrequency: "weekly" as const,
-    lastModified: "2026-06-11",
+    lastModified: "2026-08-17",
   })),
   { path: "/ai-linkedin-writer", priority: 0.96, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/pricing", priority: 0.95, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
