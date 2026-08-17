@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { signAddonCheckoutToken } from "@/lib/server/checkout-token"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { getCareerProduct } from "@/lib/career-pricing"
 import { createCareerAddonCheckout, isCareerAddonCheckoutConfigured } from "@/lib/server/lemonsqueezy-api"
 import { getClientIp, TokenBucket } from "@/lib/server/rate-limit"
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Card checkout is not set up for this add-on yet." }, { status: 503 })
     }
 
-    const addon = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)
+    const addon = getCareerProduct(order.addon_key)
     if (!addon) return NextResponse.json({ error: "Unknown career add-on." }, { status: 400 })
 
     const token = signAddonCheckoutToken(user.id, order.id)

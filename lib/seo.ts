@@ -16,6 +16,8 @@ export const SITE_NAME = "Qalam"
 export const SITE_DOMAIN_LABEL = "byqalam.com"
 
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
+export const resolvePublicHref = (href: string) =>
+  /^\/(?:login|signup)(?:[/?]|$)/.test(href) ? `${APP_URL}${href}` : href
 
 export const buildOgImageUrl = (title: string, description: string, tag?: string) => {
   const params = new URLSearchParams({ title, description })

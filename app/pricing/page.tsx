@@ -5,7 +5,7 @@ import { PricingPageContent } from "@/components/PricingPageContent"
 import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL, APP_URL } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_PRODUCTS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
@@ -16,7 +16,7 @@ const agencyPlan = ALL_PLANS.find((plan) => plan.name === "Agency")
 const soloPrice = soloPlan ? formatPkr(soloPlan.quarterlyPkr) : "PKR 1,598"
 const proPrice = proPlan ? formatPkr(proPlan.quarterlyPkr) : "PKR 2,998"
 const agencyPrice = agencyPlan ? formatPkr(agencyPlan.quarterlyPrice) : "PKR 7,998"
-const liveCareerAddons = CAREER_ADD_ONS.filter((addon) => isAddonSelfServe(addon.key))
+const liveCareerAddons = CAREER_PRODUCTS.filter((addon) => isAddonSelfServe(addon.key))
 
 export const metadata: Metadata = {
   title: `Quarterly Pricing | Free to ${soloPrice}`,
@@ -89,7 +89,7 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, content intelligence, analytics, and approval workflows.`,
+        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, three flexible career credits per quarter, content intelligence, analytics, and approval workflows.`,
       },
     },
     {
@@ -97,7 +97,7 @@ const pricingFaqSchema = {
       name: "Can I buy one career tool without upgrading?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Qalam offers one-time software credits for targeted resumes, cover letters, interview practice, deep resume reviews, LinkedIn rewrites, and career strategy blueprints. Checkout is offered only when the selected product is configured for payment.",
+        text: "Yes. Qalam offers individual software credits and discounted Application, Job-Win, Career Reset, and Executive Career Reset packs. Each output is generated and saved inside Qalam.",
       },
     },
     {

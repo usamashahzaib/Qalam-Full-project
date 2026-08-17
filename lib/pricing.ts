@@ -95,6 +95,7 @@ export const plans: Plan[] = [
       "Basic performance analytics",
       "5 LinkedIn audits + 5 ATS reviews/month",
       "3 targeted resumes/month",
+      "1 flexible career credit/quarter",
       "Unlimited application tracking + 100 evidence items",
     ],
     cta: "Start Solo",
@@ -123,6 +124,7 @@ export const plans: Plan[] = [
       "150 smart comments/month",
       "20 LinkedIn positioning audits/month",
       "20 ATS reviews + 10 targeted resumes/month",
+      "3 flexible career credits/quarter",
       "Outcome intelligence + featured recruiter visibility",
       "Recruiter search + career cohorts",
     ],
@@ -488,6 +490,14 @@ export const COMPARISON_ROWS = [
   },
   {
     group: "Career",
+    label: "Flexible career credits",
+    free: "Not included",
+    solo: "1/quarter",
+    pro: "3/quarter",
+    agency: "Custom",
+  },
+  {
+    group: "Career",
     label: "Active applications",
     free: formatCareerLimit(CAREER_PLAN_CONFIG.Free.activeApplications),
     solo: formatCareerLimit(CAREER_PLAN_CONFIG.Solo.activeApplications),
@@ -545,17 +555,17 @@ export type BillingCycle = "monthly" | "quarterly" | "annual"
 export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<BillingCycle, string>>>> = {
   Solo: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
+    // Quarterly product (PKR 1,598 every 3 months). Env var still overrides if set.
+    quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
+      || "https://byqalam.lemonsqueezy.com/checkout/buy/a1e289b6-9c8b-42f5-b2ad-b9b36b7aff3b",
     annual: "https://byqalam.lemonsqueezy.com/checkout/buy/0872e475-9487-4430-9590-49e569524553",
-    ...(process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
-      ? { quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL }
-      : {}),
   },
   Pro: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
+    // Quarterly product (PKR 2,998 every 3 months). Env var still overrides if set.
+    quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
+      || "https://byqalam.lemonsqueezy.com/checkout/buy/c3036b23-7f98-4a58-ad09-c2ddbe2483c2",
     annual: "https://byqalam.lemonsqueezy.com/checkout/buy/2f787de4-dc72-40d6-ac70-3544420455f0",
-    ...(process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
-      ? { quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL }
-      : {}),
   },
 }
 

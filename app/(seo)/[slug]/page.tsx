@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
-import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
+import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata, resolvePublicHref, APP_URL } from "@/lib/seo"
 
 type Params = { slug: keyof typeof SEO_LANDING_PAGES }
 
@@ -38,6 +38,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
     { name: page.title, path: `/${slug}` },
   ])
   const faqSchema = buildFaqSchema(page.faqs)
+  const toolHref = page.tool?.href ? resolvePublicHref(page.tool.href) : undefined
   const webPageSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -78,7 +79,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
               <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">{page.h1}</h1>
               <p className="max-w-3xl text-xl leading-relaxed text-zinc-600">{page.summary}</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href={page.tool?.href || `${APP_URL}/login`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
+                <Link href={toolHref || `${APP_URL}/login`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
                   {page.tool?.label || "Start free"}
                 </Link>
                 <Link href={page.methodology?.href || "/career-visibility"} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
@@ -98,7 +99,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
                 <p className="mt-3 max-w-2xl leading-7 text-zinc-600">{page.tool.description}</p>
                 <p className="mt-3 text-sm font-medium text-zinc-500">{page.tool.detail}</p>
               </div>
-              <Link href={page.tool.href} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-6 font-bold text-white transition-colors hover:bg-teal-600">
+              <Link href={toolHref || page.tool.href} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-6 font-bold text-white transition-colors hover:bg-teal-600">
                 Open the tool
               </Link>
             </div>

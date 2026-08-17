@@ -1,16 +1,21 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
-import { CAREER_ADD_ONS, type AddonKey } from "@/lib/career-pricing"
+import { CAREER_ADD_ONS, CAREER_PRODUCTS, type CareerProductKey } from "@/lib/career-pricing"
 
-const variantIds: Record<AddonKey, string> = {
+const variantIds: Record<CareerProductKey, string> = {
   extra_resume: "101",
   cover_letter: "102",
   interview_pack: "103",
   recruiter_review: "104",
   linkedin_rewrite: "105",
   career_blueprint: "106",
+  application_pack: "107",
+  job_win_pack: "108",
+  career_reset_pack: "109",
+  executive_career_reset: "110",
 }
-let currentAddonKey: AddonKey = "extra_resume"
+let currentAddonKey: CareerProductKey = "extra_resume"
 const updates: { table: string; payload: Record<string, unknown> }[] = []
+const rpcCalls: { name: string; args: Record<string, unknown> }[] = []
 const createNotification = vi.fn()
 
 vi.mock("@/lib/server/env", () => ({
@@ -32,11 +37,14 @@ vi.mock("@/lib/server/supabase-rest", () => ({
     workspace_id: "workspace-1",
     addon_key: currentAddonKey,
     quantity: 1,
-    amount_pkr: CAREER_ADD_ONS.find(({ key }) => key === currentAddonKey)!.price,
+    amount_pkr: CAREER_PRODUCTS.find(({ key }) => key === currentAddonKey)!.price,
     status: "pending",
   }],
   createServiceClient: () => ({
-    rpc: () => Promise.resolve({ data: "claimed", error: null }),
+    rpc: (name: string, args: Record<string, unknown>) => {
+      rpcCalls.push({ name, args })
+      return Promise.resolve({ data: name === "claim_payment_webhook_v2" ? "claimed" : true, error: null })
+    },
     from: (table: string) => ({
       update: (payload: Record<string, unknown>) => {
         updates.push({ table, payload })
@@ -58,6 +66,7 @@ beforeAll(async () => {
 
 beforeEach(() => {
   updates.length = 0
+  rpcCalls.length = 0
   createNotification.mockClear()
 })
 
@@ -68,7 +77,7 @@ const payload = (variantId: string, id: string) => JSON.stringify({
     attributes: {
       status: "paid",
       currency: "PKR",
-      subtotal: CAREER_ADD_ONS.find(({ key }) => key === currentAddonKey)!.price * 100,
+      subtotal: CAREER_PRODUCTS.find(({ key }) => key === currentAddonKey)!.price * 100,
       discount_total: 0,
       first_order_item: { variant_id: variantId, quantity: 1 },
     },
@@ -81,11 +90,24 @@ describe("career add-on webhook fulfillment", () => {
     const result = await handleCareerAddonWebhook(payload(variantIds[addon.key], `ls-${addon.key}`), "signature")
 
     expect(result).toMatchObject({ status: 200, body: { ok: true, orderId: "order-1" } })
-    expect(updates).toContainEqual({
-      table: "career_addon_orders",
-      payload: expect.objectContaining({ status: "paid", payment_provider: "lemonsqueezy" }),
+    expect(rpcCalls).toContainEqual({
+      name: "fulfill_career_purchase",
+      args: expect.objectContaining({ p_order_id: "order-1", p_credit_keys: [] }),
     })
     expect(createNotification).toHaveBeenCalledWith(expect.objectContaining({ link: addon.route }))
+  })
+
+  it("grants every Job-Win Pack tool through one atomic fulfillment", async () => {
+    currentAddonKey = "job_win_pack"
+    const result = await handleCareerAddonWebhook(payload(variantIds.job_win_pack, "ls-job-win"), "signature")
+
+    expect(result).toMatchObject({ status: 200, body: { ok: true, orderId: "order-1" } })
+    expect(rpcCalls).toContainEqual({
+      name: "fulfill_career_purchase",
+      args: expect.objectContaining({
+        p_credit_keys: ["recruiter_review", "extra_resume", "cover_letter", "interview_pack"],
+      }),
+    })
   })
 
   it("rejects a paid variant that does not match the pending software order", async () => {

@@ -5,6 +5,7 @@ import { env } from "@/lib/server/env"
 import { supabaseSelect, supabaseUpsert, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { cancelLemonSqueezySubscription } from "@/lib/server/lemonsqueezy-api"
+import { grantCareerPlanCredits, revokeCareerPlanCredits } from "@/lib/server/career-plan-credits"
 import { verifyCheckoutToken } from "@/lib/server/checkout-token"
 import { log } from "@/lib/server/logging"
 import { plans as PRICING_PLANS, type PlanName } from "@/lib/pricing"
@@ -717,6 +718,7 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
       return { updated: false, stale: true, user, organizationId }
     }
     await revokePlan(user.id, organizationId, now)
+    await revokeCareerPlanCredits(user.id, payment.status === "refunded" ? "refunded" : "cancelled")
     if (payment.status === "refunded") {
       await reverseReferralCommissionFromRefund(user.id)
     }
@@ -849,6 +851,14 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
       .upsert({ user_id: user.id, plan: planName.toLowerCase(), cycle_start: now, cycle_end: expiresAt, updated_at: now }, { onConflict: "user_id" })
       .then(undefined, (err: unknown) => log.error("payments.plan_usage_upsert_failed", { error: (err as Error).message }))
   }
+
+  await grantCareerPlanCredits({
+    userId: user.id,
+    plan: planName,
+    billingCycle,
+    sourceReference: `${payment.provider}:${payment.transactionId}`,
+    expiresAt,
+  })
 
   // Fire-and-forget confirmation email - never block the payment response on this
   sendTransactionalEmail({

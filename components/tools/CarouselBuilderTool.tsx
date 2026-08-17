@@ -7,7 +7,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { CoverSlide } from "@/components/carousel/CoverSlide"
 import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
-import { APP_URL } from "@/lib/seo"
+import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import {
   CANVAS,
   CAROUSEL_THEMES,
@@ -462,7 +462,7 @@ export function CarouselBuilderTool() {
                         <p className="text-sm font-bold text-white">Slide {activeSlide + 1} locked</p>
                         <p className="text-xs text-white/70">Sign up free to get all {slides.length} slides as PNGs.</p>
                         <Link
-                          href="/signup"
+                          href={resolvePublicHref("/signup")}
                           className="mt-1 rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white shadow-lg transition-colors hover:bg-teal-600"
                         >
                           Get all slides free

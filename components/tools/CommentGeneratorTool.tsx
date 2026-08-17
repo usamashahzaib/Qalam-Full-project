@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
-import { RequireAuth } from "@/components/providers/RequireAuth"
 import { CommentIcon } from "@/components/ui/qalam-icons"
 import { APP_URL } from "@/lib/seo"
 
@@ -240,9 +239,5 @@ function CommentGeneratorInner() {
 }
 
 export function CommentGeneratorTool() {
-  return (
-    <RequireAuth>
-      <CommentGeneratorInner />
-    </RequireAuth>
-  )
+  return <CommentGeneratorInner />
 }

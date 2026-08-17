@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { absoluteUrl } from "@/lib/seo"
+import { absoluteUrl, resolvePublicHref } from "@/lib/seo"
 
 export type CareerAnswerPageData = {
   path: string
@@ -41,6 +41,8 @@ const jsonLd = (page: CareerAnswerPageData) => ({
 })
 
 export function CareerAnswerPage({ page }: { page: CareerAnswerPageData }) {
+  const primaryHref = resolvePublicHref(page.primaryCta.href)
+
   return (
     <main className="bg-[#fafaf8] pb-24 pt-28 text-zinc-900">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(page)).replace(/</g, "\\u003c") }} />
@@ -57,7 +59,7 @@ export function CareerAnswerPage({ page }: { page: CareerAnswerPageData }) {
             <h1 className="mt-5 max-w-[18ch] text-4xl font-extrabold leading-[1.05] tracking-[-0.04em] sm:text-6xl">{page.title}</h1>
             <p className="mt-7 max-w-[64ch] text-lg leading-8 text-zinc-600 sm:text-xl">{page.summary}</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={page.primaryCta.href} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-teal px-6 py-3 text-sm font-bold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal">
+              <Link href={primaryHref} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-teal px-6 py-3 text-sm font-bold text-white hover:bg-teal-600 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal">
                 {page.primaryCta.label}
               </Link>
               <Link href={page.secondaryCta.href} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-zinc-300 bg-white px-6 py-3 text-sm font-bold text-zinc-800 hover:border-teal/40 hover:text-teal focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal">

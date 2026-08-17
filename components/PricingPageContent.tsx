@@ -10,10 +10,10 @@ import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent, upgradeUrl } from "@/lib/pricing"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
-import { APP_URL } from "@/lib/seo"
+import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -31,7 +31,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, unlimited application tracking, publishing, and basic analytics. Pro adds 10 resumes, advanced outcome intelligence, featured recruiter visibility, cohorts, trained voice, research, and full analytics.",
+    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, 1 flexible career credit per quarter, publishing, and basic analytics. Pro adds 10 resumes, 3 career credits per quarter, advanced outcome intelligence, featured recruiter visibility, cohorts, trained voice, research, and full analytics.",
   },
   {
     q: "Can I cancel anytime?",
@@ -186,7 +186,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     // cannot attribute the payment to an account.
     const href = plan.plan === "Solo" || plan.plan === "Pro"
       ? upgradeUrl(plan.plan, "quarterly")
-      : plan.href
+      : resolvePublicHref(plan.href)
 
     return {
       ...plan,
@@ -410,6 +410,19 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <h2 className="mt-3 text-3xl font-bold text-zinc-900 sm:text-4xl">Buy the exact career output you need.</h2>
             <p className="mt-3 max-w-2xl text-base leading-7 text-zinc-600">One-time software credits. Your result is generated and saved inside Qalam. No plan upgrade required.</p>
           </FadeUp>
+
+          <div className="mb-5 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Recommended one-time offer</p>
+              <h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Deep recruiter review, JD-matched resume, targeted cover letter, and interview practice for one serious application.</p>
+            </div>
+            <div className="sm:text-right">
+              <p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
+              <p className="mt-1 text-2xl font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
+              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
+            </div>
+          </div>
 
           <div className="overflow-hidden rounded-2xl border border-zinc-200">
             {CAREER_ADD_ONS.map((item, index) => {

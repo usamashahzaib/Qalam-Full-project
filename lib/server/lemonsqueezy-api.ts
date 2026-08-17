@@ -4,13 +4,13 @@ import crypto from "node:crypto"
 import { env } from "@/lib/server/env"
 import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
 import { getCareerAddonVariantId, getCareerAddonVariantReadiness } from "@/lib/server/career-addon-variants"
-import type { AddonKey } from "@/lib/career-pricing"
+import type { CareerProductKey } from "@/lib/career-pricing"
 
 const LEMONSQUEEZY_API_BASE = "https://api.lemonsqueezy.com/v1"
 const LEMONSQUEEZY_STORE_ID = "366761"
 
 type CareerAddonCheckoutParams = {
-  addonKey: AddonKey
+  addonKey: CareerProductKey
   name: string
   unit: string
   unitPricePkr: number

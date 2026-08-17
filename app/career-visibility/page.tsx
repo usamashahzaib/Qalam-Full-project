@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
 import { formatPkr } from "@/lib/pricing"
 import { APP_URL, SITE_URL } from "@/lib/seo"
 
@@ -72,7 +72,12 @@ export default function CareerVisibilityPage() {
             <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="w-fit rounded-xl bg-teal px-6 py-4 font-bold text-white">Open career add-ons</Link>
           </div>
 
-          <div className="mt-10 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+          <div className="mt-10 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
+            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
+            <div className="sm:text-right"><p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
+          </div>
+
+          <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
             {CAREER_ADD_ONS.map((item, index) => (
               <div key={item.key} className="grid gap-3 border-b border-zinc-100 px-5 py-5 last:border-b-0 sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center sm:px-6">
                 <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>

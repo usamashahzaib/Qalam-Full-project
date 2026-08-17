@@ -18,7 +18,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   const parsed = schema.safeParse(await request.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: "Invalid add-on status." }, { status: 400 })
   const { id } = await context.params
-  const { data, error } = await createServiceClient().from("career_addon_orders").update({
+  const client = createServiceClient()
+  if (parsed.data.status === "refunded") {
+    const { data: refunded, error } = await client.rpc("refund_career_purchase", { p_order_id: id })
+    if (error || !refunded) return NextResponse.json({ error: "Add-on order not found." }, { status: 404 })
+    const { data: order } = await client.from("career_addon_orders").select("*").eq("id", id).maybeSingle()
+    return NextResponse.json({ order })
+  }
+  const { data, error } = await client.from("career_addon_orders").update({
     status: parsed.data.status,
     payment_provider: parsed.data.paymentProvider || null,
     provider_reference: parsed.data.providerReference || null,

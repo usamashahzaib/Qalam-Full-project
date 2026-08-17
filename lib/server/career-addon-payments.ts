@@ -4,7 +4,7 @@ import { env } from "@/lib/server/env"
 import { verifyLemonSqueezy } from "@/lib/server/payments"
 import { verifyAddonCheckoutToken } from "@/lib/server/checkout-token"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_PACKS, getCareerProduct } from "@/lib/career-pricing"
 import { createNotification } from "@/lib/server/notifications"
 import { log } from "@/lib/server/logging"
 import { getCareerAddonKeyForVariantId } from "@/lib/server/career-addon-variants"
@@ -109,8 +109,8 @@ export async function handleCareerAddonWebhook(
       ? await lookup.eq("id", verifiedRefund.orderId).eq("user_id", verifiedRefund.userId).maybeSingle<CareerAddonOrderRow>()
       : await lookup.eq("provider_reference", lsOrderId).maybeSingle<CareerAddonOrderRow>()
     if (!refundedOrder) return fail("addon_refund_order_not_found")
-    const { error: refundError } = await supabase.from("career_addon_orders").update({ status: "refunded", updated_at: new Date().toISOString() }).eq("id", refundedOrder.id)
-    if (refundError) return fail("addon_refund_update_failed")
+    const { data: refunded, error: refundError } = await supabase.rpc("refund_career_purchase", { p_order_id: refundedOrder.id })
+    if (refundError || !refunded) return fail("addon_refund_update_failed")
     await createNotification({
       userId: refundedOrder.user_id,
       workspaceId: refundedOrder.workspace_id,
@@ -127,8 +127,8 @@ export async function handleCareerAddonWebhook(
   const verified = verifyAddonCheckoutToken(token)
   if (!verified) return fail("addon_token_invalid_or_expired")
 
-  const paidAddonKey = getCareerAddonKeyForVariantId(variantId)
-  if (!paidAddonKey) {
+  const paidProductKey = getCareerAddonKeyForVariantId(variantId)
+  if (!paidProductKey) {
     log.error("career_addon_payment.unknown_variant", { variantId, lsOrderId })
     return fail("addon_variant_unrecognized")
   }
@@ -139,8 +139,8 @@ export async function handleCareerAddonWebhook(
   )
   const order = rows?.[0]
   if (!order) return fail("addon_order_not_found")
-  if (order.addon_key !== paidAddonKey) {
-    log.error("career_addon_payment.variant_mismatch", { orderId: order.id, expected: order.addon_key, paidFor: paidAddonKey })
+  if (order.addon_key !== paidProductKey) {
+    log.error("career_addon_payment.variant_mismatch", { orderId: order.id, expected: order.addon_key, paidFor: paidProductKey })
     return fail("addon_variant_mismatch")
   }
   if (order.quantity !== lsQuantity) {
@@ -151,30 +151,23 @@ export async function handleCareerAddonWebhook(
     log.error("career_addon_payment.amount_mismatch", { orderId: order.id, currency, subtotal, discountTotal })
     return fail("addon_amount_mismatch")
   }
-  if (order.status !== "pending") return complete({ alreadyProcessed: true, orderId: order.id })
+  const product = getCareerProduct(order.addon_key)
+  if (!product) return fail("addon_catalog_item_missing")
+  const pack = CAREER_PACKS.find((item) => item.key === order.addon_key)
+  const { data: fulfilled, error: updateError } = await supabase.rpc("fulfill_career_purchase", {
+    p_order_id: order.id,
+    p_provider_reference: lsOrderId,
+    p_credit_keys: pack ? [...pack.items] : [],
+  })
+  if (updateError || !fulfilled) return fail("addon_order_update_failed")
 
-  const { error: updateError } = await supabase
-    .from("career_addon_orders")
-    .update({
-      status: "paid",
-      payment_provider: "lemonsqueezy",
-      provider_reference: lsOrderId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", order.id)
-    .eq("status", "pending")
-
-  if (updateError) return fail("addon_order_update_failed")
-
-  const addon = CAREER_ADD_ONS.find((item) => item.key === order.addon_key)
-  if (!addon) return fail("addon_catalog_item_missing")
   await createNotification({
     userId: order.user_id,
     workspaceId: order.workspace_id,
     type: "career_addon_paid",
     title: "Add-on payment received",
-    body: `${addon.name} is confirmed. Generate it now inside Qalam.`,
-    link: addon.route,
+    body: `${product.name} is confirmed. Generate it now inside Qalam.`,
+    link: product.route,
   })
 
   return complete({ orderId: order.id })

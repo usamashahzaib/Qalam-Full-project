@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { LLM_ROUTES, PUBLIC_ROUTES } from "@/lib/seo"
+import { APP_URL, LLM_ROUTES, PUBLIC_ROUTES, resolvePublicHref } from "@/lib/seo"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
 
 const discoverySlugs = [
@@ -36,5 +36,11 @@ describe("SEO discovery sprint", () => {
       expect(publicPaths).toContain(`/${slug}`)
       expect(llmPaths).toContain(`/${slug}`)
     }
+  })
+
+  it("sends auth CTAs directly to the app host without crawl-time redirects", () => {
+    expect(resolvePublicHref("/login?callbackUrl=/career")).toBe(`${APP_URL}/login?callbackUrl=/career`)
+    expect(resolvePublicHref("/signup")).toBe(`${APP_URL}/signup`)
+    expect(resolvePublicHref("/free-tools/ats-resume-checker")).toBe("/free-tools/ats-resume-checker")
   })
 })

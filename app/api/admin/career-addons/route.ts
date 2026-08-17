@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   }
   const { data, error } = await createServiceClient()
     .from("career_addon_orders")
-    .select("id, user_id, addon_key, amount_pkr, quantity, credits_consumed, status, payment_provider, provider_reference, consumed_at, created_at")
+    .select("id, user_id, addon_key, product_key, source_type, parent_order_id, amount_pkr, quantity, credits_consumed, status, payment_provider, provider_reference, expires_at, consumed_at, created_at")
     .order("created_at", { ascending: false })
     .limit(200)
   if (error) return NextResponse.json({ error: "Orders could not be loaded." }, { status: 500 })

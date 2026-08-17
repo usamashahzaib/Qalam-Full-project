@@ -5,6 +5,7 @@ import { CAREER_ADD_ONS } from "@/lib/career-pricing"
 import { CAREER_ADDON_TOOLS } from "@/lib/career-addon-tools"
 
 const migration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260803000000_software_only_career_addons.sql"), "utf8")
+const commerceMigration = readFileSync(resolve(process.cwd(), "supabase/migrations/20260817100306_career_commerce_credits_and_packs.sql"), "utf8")
 const checkout = readFileSync(resolve(process.cwd(), "lib/career-checkout.ts"), "utf8")
 const lemonApi = readFileSync(resolve(process.cwd(), "lib/server/lemonsqueezy-api.ts"), "utf8")
 const payment = readFileSync(resolve(process.cwd(), "lib/server/career-addon-payments.ts"), "utf8")
@@ -36,7 +37,7 @@ describe("software-only career add-ons", () => {
     expect(lemonApi).toContain("variant_quantities")
     expect(lemonApi).toContain("getCareerAddonVariantId(params.addonKey)")
     expect(payment).toContain('eventName === "order_refunded"')
-    expect(payment).toContain('status: "refunded"')
+    expect(payment).toContain('supabase.rpc("refund_career_purchase"')
   })
 
   it("blocks unconfigured checkout before creating an order", () => {
@@ -51,6 +52,13 @@ describe("software-only career add-ons", () => {
     expect(payment).toContain('currency !== "PKR"')
     expect(payment).toContain("subtotal !== order.amount_pkr * 100")
     expect(payment).toContain("discountTotal !== 0")
-    expect(payment.indexOf("addon_amount_mismatch")).toBeLessThan(payment.indexOf('status: "paid"'))
+    expect(payment.indexOf("addon_amount_mismatch")).toBeLessThan(payment.indexOf('supabase.rpc("fulfill_career_purchase"'))
+  })
+
+  it("supports discounted packs and weighted plan credits atomically", () => {
+    expect(commerceMigration).toContain("p_credit_keys text[]")
+    expect(commerceMigration).toContain("addon_key = 'career_credit'")
+    expect(commerceMigration).toContain("when 'linkedin_rewrite' then 3")
+    expect(commerceMigration).toContain("on conflict (user_id, source_type, source_reference) do nothing")
   })
 })

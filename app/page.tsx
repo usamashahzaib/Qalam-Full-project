@@ -5,7 +5,7 @@ import Link from "next/link"
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
-import { APP_URL } from "@/lib/seo"
+import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import {
   AnalyticsIcon,
   BrainIcon,
@@ -22,7 +22,7 @@ import {
 import { PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -524,6 +524,7 @@ const homepageHowToSchema = {
 export default function HomePage() {
   const homepagePlans = PLANS.map((plan) => ({
     ...plan,
+    href: resolvePublicHref(plan.href),
     price: formatPkr(plan.quarterlyPkr),
     period: plan.plan === "Free" ? "" : "quarter",
     annualSavings: plan.plan === "Free" ? undefined : `${formatPkr(getQuarterlyMonthlyEquivalent(plan.quarterlyPkr))}/month effective`,
@@ -759,6 +760,11 @@ export default function HomePage() {
 
           <FadeUp delay={0.08}>
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/60">
+              <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 bg-zinc-900 px-5 py-5 text-white sm:px-6">
+                <span className="text-xs font-bold text-gold">TOP</span>
+                <div><p className="text-sm font-bold">Job-Win Pack</p><p className="mt-0.5 text-xs text-white/55">Review, resume, cover letter, and interview practice</p></div>
+                <span className="text-sm font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</span>
+              </div>
               {CAREER_ADD_ONS.map((item, index) => (
                 <div key={item.key} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-200 px-5 py-4 last:border-b-0 sm:px-6">
                   <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>

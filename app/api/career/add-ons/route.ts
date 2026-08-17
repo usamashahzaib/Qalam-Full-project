@@ -2,21 +2,26 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
-import { CAREER_ADD_ONS } from "@/lib/career-pricing"
+import { CAREER_PRODUCTS, getCareerProduct } from "@/lib/career-pricing"
 import { isCareerAddonCheckoutConfigured } from "@/lib/server/lemonsqueezy-api"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
-const keys = CAREER_ADD_ONS.map((item) => item.key)
+const keys = CAREER_PRODUCTS.map((item) => item.key)
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
-  items: z.array(z.object({ key: z.string(), quantity: z.number().int().min(1).max(20) })).min(1).max(6),
+  items: z.array(z.object({ key: z.string(), quantity: z.number().int().min(1).max(20) })).length(1),
 })
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const { data } = await createServiceClient().from("career_addon_orders").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(30)
-    return NextResponse.json({ orders: data || [] })
+    const supabase = createServiceClient()
+    const [{ data }, { data: creditOrders }, { data: account }] = await Promise.all([
+      supabase.from("career_addon_orders").select("*").eq("user_id", user.id).is("parent_order_id", null).order("created_at", { ascending: false }).limit(50),
+      supabase.from("career_addon_orders").select("id, addon_key, product_key, quantity, credits_consumed, status, source_type, eligible_addons, expires_at, parent_order_id").eq("user_id", user.id).in("status", ["paid", "partially_consumed", "fulfilled"]).or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`).order("created_at", { ascending: true }).limit(100),
+      supabase.from("users").select("plan, billing_cycle").eq("id", user.id).maybeSingle<{ plan: string; billing_cycle: string }>(),
+    ])
+    return NextResponse.json({ orders: data || [], creditOrders: creditOrders || [], plan: account?.plan || "Free", billingCycle: account?.billing_cycle || "monthly" })
   })(request)
 }
 
@@ -34,14 +39,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Card checkout is not configured for one or more selected add-ons." }, { status: 503 })
     }
     const rows = parsed.data.items.map((item) => {
-      const product = CAREER_ADD_ONS.find((entry) => entry.key === item.key)!
+      const product = getCareerProduct(item.key)!
       return {
         workspace_id: planCheck.workspaceId,
         user_id: user.id,
         addon_key: product.key,
+        product_key: product.key,
         amount_pkr: product.price * item.quantity,
         quantity: item.quantity,
         status: "pending",
+        source_type: "purchase",
       }
     })
     const { data, error } = await createServiceClient().from("career_addon_orders").insert(rows).select("id, addon_key, amount_pkr, quantity, status")

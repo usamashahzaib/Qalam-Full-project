@@ -16,6 +16,10 @@ const mappings = {
   recruiter_review: process.env.LEMONSQUEEZY_CAREER_ADDON_RECRUITER_REVIEW_VARIANT_ID,
   linkedin_rewrite: process.env.LEMONSQUEEZY_CAREER_ADDON_LINKEDIN_REWRITE_VARIANT_ID,
   career_blueprint: process.env.LEMONSQUEEZY_CAREER_ADDON_CAREER_BLUEPRINT_VARIANT_ID,
+  application_pack: process.env.LEMONSQUEEZY_CAREER_PACK_APPLICATION_VARIANT_ID,
+  job_win_pack: process.env.LEMONSQUEEZY_CAREER_PACK_JOB_WIN_VARIANT_ID,
+  career_reset_pack: process.env.LEMONSQUEEZY_CAREER_PACK_CAREER_RESET_VARIANT_ID,
+  executive_career_reset: process.env.LEMONSQUEEZY_CAREER_PACK_EXECUTIVE_RESET_VARIANT_ID,
 }
 const valid = (value) => /^[1-9]\d*$/.test(value || "")
 const missing = Object.entries(mappings).filter(([, id]) => !valid(id)).map(([key]) => key)
