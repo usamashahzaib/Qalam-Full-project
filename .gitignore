@@ -74,9 +74,12 @@ node_modules/
 
 # Tool artifacts
 /outputs/
+/output/
 /.playwright-mcp/
 /.codex/
+/.codex-temp/
 /.codex-api-start.*
+/.fallow/
 *.png
 !public/brand/linkedin/*.png
 !public/brand/source/qalam-guide-reference.png
