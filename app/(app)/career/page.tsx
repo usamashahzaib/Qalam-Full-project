@@ -120,6 +120,11 @@ export default function CareerPage() {
   const apiSuffix = useMemo(() => workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : "", [workspaceKey])
 
   useEffect(() => {
+    const requestedTab = searchParams.get("tab")
+    if (requestedTab && tabs.some((item) => item.id === requestedTab)) setTab(requestedTab as Tab)
+  }, [searchParams])
+
+  useEffect(() => {
     fetch(`/api/career-vault${apiSuffix}`)
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {

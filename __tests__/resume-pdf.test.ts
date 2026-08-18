@@ -5,7 +5,7 @@ import {
   MAX_RESUME_PDF_PAGES,
 } from "@/lib/server/resume-pdf"
 
-async function createPdf(pages = 1) {
+async function createPdf(pages = 1, type = "application/pdf") {
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
   for (let index = 0; index < pages; index += 1) {
@@ -21,7 +21,7 @@ async function createPdf(pages = 1) {
       page.drawText(line, { x: 40, y: 720 - lineIndex * 24, size: 12, font })
     })
   }
-  return new File([await pdf.save()], "resume.pdf", { type: "application/pdf" })
+  return new File([await pdf.save()], "resume.pdf", { type })
 }
 
 describe("resume PDF extraction", () => {
@@ -30,6 +30,11 @@ describe("resume PDF extraction", () => {
     expect(result.totalPages).toBe(1)
     expect(result.text).toContain("Head of People")
     expect(result.text).toContain("scaled the team")
+  })
+
+  it("accepts a PDF filename when mobile browsers omit the MIME type", async () => {
+    const result = await extractResumePdfText(await createPdf(1, ""))
+    expect(result.text).toContain("Head of People")
   })
 
   it("rejects a fake PDF with the correct MIME type", async () => {

@@ -20,16 +20,46 @@ const scoreLabels: Record<ResumeReviewScoreKey, string> = {
 
 const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length
 const scoreTone = (score: number) => score >= 80 ? "text-emerald-700" : score >= 60 ? "text-gold-700" : "text-red-700"
+const uploadError = (code: string) => ({
+  resume_pdf_too_large: "This file is over 5 MB. Upload a smaller PDF or DOCX.",
+  resume_pdf_too_many_pages: "This file has more than 15 pages. Upload a shorter resume.",
+  resume_pdf_text_missing: "This PDF appears to be scanned or image-only. Upload a text-based PDF or DOCX.",
+  resume_docx_text_missing: "This DOCX has too little readable text to review.",
+  resume_file_type_unsupported: "Upload a PDF or DOCX resume.",
+} as Record<string, string>)[code] || code
 
 export function AtsResumeCheckerTool() {
   const [resumeText, setResumeText] = useState("")
   const [jobDescription, setJobDescription] = useState("")
   const [result, setResult] = useState<ResumeReviewResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [sourceName, setSourceName] = useState("")
   const [error, setError] = useState("")
 
+  const uploadResume = async (file: File) => {
+    setUploading(true)
+    setError("")
+    setResult(null)
+    try {
+      const body = new FormData()
+      body.append("file", file)
+      const response = await fetch("/api/free-tools/ats-resume-checker/parse", { method: "POST", body })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || typeof data.text !== "string") {
+        throw new Error(uploadError(data.error || "This file could not be read. Upload a text-based PDF or DOCX."))
+      }
+      setResumeText(data.text)
+      setSourceName(file.name)
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Resume upload failed.")
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const checkResume = async () => {
-    if (resumeText.trim().length < 200) return setError("Paste at least 200 characters from your resume.")
+    if (resumeText.trim().length < 200) return setError("Upload a text-based PDF or DOCX, or add at least 200 characters of resume text.")
     setLoading(true)
     setError("")
     setResult(null)
@@ -72,11 +102,33 @@ export function AtsResumeCheckerTool() {
       <section className="px-6 py-12 sm:py-16">
         <div className="mx-auto grid max-w-[1100px] gap-8 lg:grid-cols-[1fr_320px]">
           <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="grid gap-6 md:grid-cols-2">
+            <label className="flex min-h-36 flex-col justify-between gap-4 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] p-5 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm font-bold text-zinc-900">Upload your resume first</p>
+                <p className="mt-1 max-w-xl text-xs leading-5 text-zinc-600">PDF or DOCX, up to 5 MB. Qalam extracts the text, then scores that exact content. LinkedIn profile PDFs also work.</p>
+              </div>
+              <span className="inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-teal px-4 text-sm font-bold text-white transition hover:bg-teal-600">
+                {uploading ? "Reading file..." : "Choose resume"}
+                <input
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  disabled={uploading || loading}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    event.target.value = ""
+                    if (file) void uploadResume(file)
+                  }}
+                />
+              </span>
+            </label>
+            {sourceName ? <p className="mt-3 rounded-lg bg-teal/5 px-3 py-2 text-xs font-semibold text-teal">Imported: {sourceName}. Review the extracted text before scoring.</p> : null}
+
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
               <label className="block">
                 <span className="text-sm font-bold text-zinc-900">Your resume</span>
-                <span className="mt-1 block text-xs text-zinc-500">Required. Paste the complete text.</span>
-                <textarea value={resumeText} onChange={(event) => setResumeText(event.target.value)} rows={16} maxLength={20000} placeholder="Paste resume text here..." className="mt-3 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm leading-6 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20" />
+                <span className="mt-1 block text-xs text-zinc-500">Required. Upload above, then correct extraction only if needed.</span>
+                <textarea value={resumeText} onChange={(event) => { setResumeText(event.target.value); setSourceName("") }} rows={16} maxLength={20000} placeholder="Upload a resume, LinkedIn PDF, or paste complete resume text..." className="mt-3 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm leading-6 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20" />
                 <span className="mt-2 block text-xs text-zinc-400">{wordCount(resumeText)} words</span>
               </label>
               <label className="block">
@@ -88,7 +140,7 @@ export function AtsResumeCheckerTool() {
             </div>
             <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-zinc-100 pt-6 sm:flex-row sm:items-center">
               <p className="max-w-xl text-xs leading-5 text-zinc-500">Qalam evaluates job-relevant evidence only. Scores are independent diagnostics, not an employer ATS result or hiring guarantee.</p>
-              <button onClick={checkResume} disabled={loading || resumeText.trim().length < 200} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal px-6 text-sm font-bold text-white transition hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500">
+              <button onClick={checkResume} disabled={loading || uploading || resumeText.trim().length < 200} className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal px-6 text-sm font-bold text-white transition hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500">
                 <MicroscopeIcon className="h-4 w-4" />{loading ? "Running recruiter review..." : "Check my resume free"}
               </button>
             </div>
