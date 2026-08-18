@@ -419,6 +419,9 @@ html {
   left: 1rem;
   z-index: 9999;
   padding: 0.5rem 1rem;
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
   background: #0D4A45;
   color: white;
   font-weight: 700;

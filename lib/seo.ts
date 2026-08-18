@@ -186,6 +186,8 @@ export const buildPageMetadata = ({
 
 export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/features", priority: 0.95, changeFrequency: "weekly", lastModified: "2026-08-18" },
+  { path: "/industries", priority: 0.9, changeFrequency: "weekly", lastModified: "2026-08-18" },
   ...SEO_LANDING_ROUTES.map((path) => ({
     path,
     priority: 0.91,
@@ -227,6 +229,8 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
 
 export const LLM_ROUTES = [
   "/",
+  "/features",
+  "/industries",
   "/ai-linkedin-writer",
   ...SEO_LANDING_ROUTES,
   "/pricing",
@@ -255,6 +259,10 @@ export const LLM_ROUTES = [
   "/product/post-scheduler",
   ...(AGENCY_PLAN_LIVE ? ["/product/agency-workspaces"] : []),
   "/use-cases/founders",
+  "/use-cases/job-seekers",
+  "/use-cases/recruiters",
+  "/use-cases/career-coaches",
+  "/use-cases/universities",
   "/use-cases/marketing-teams",
   "/use-cases/hr-leaders",
   "/use-cases/consultants",

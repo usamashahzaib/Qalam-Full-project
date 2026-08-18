@@ -8,6 +8,8 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getPlanLimits } from "@/lib/entitlements"
 import { checkAndIncrementCommentUsage, getCommentUsage } from "@/lib/server/comment-usage"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { professionalContextPrompt } from "@/lib/professional-context"
 import { log } from "@/lib/server/logging"
 
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
@@ -73,12 +75,46 @@ export async function POST(request: NextRequest) {
     }
     const profile = profileInput as Profile
 
-    const system = `You are a LinkedIn expert helping a ${profile} write authentic, engaging comments on other people's posts.
-Generate exactly 3 comments, one for each style:
-- "insightful": adds a thoughtful perspective or observation
-- "supportive": shows genuine encouragement
-- "engaging": asks a follow-up question to spark discussion
-Each comment must be 1 to 3 sentences, genuine, and written in a professional but human voice. Do not use hashtags or emoji.
+    // Pull the user's trained voice + resume-derived professional context so comments
+    // sound like this specific person, not a generic "LinkedIn expert". Never fatal - a
+    // user with no voice profile still gets comments, just without personalization.
+    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const profContext = professionalContextPrompt(voiceProfile?.professionalContext)
+
+    const voiceBlock = voiceProfile
+      ? `WRITE IN THIS PERSON'S OWN VOICE:
+Tone: ${voiceProfile.tone || "natural and direct"}
+Typical sentence length: ${voiceProfile.sentenceLength || "short"}
+Phrases they actually use (weave in only where it fits naturally): ${(voiceProfile.vocabulary ?? []).join(", ") || "none on file"}
+Speech patterns: ${(voiceProfile.patterns ?? []).join(", ") || "none on file"}${
+          voiceProfile.examples?.length
+            ? `\n\nHOW THEY ACTUALLY WRITE (match the rhythm and word choice, do NOT copy the content):\n${voiceProfile.examples.slice(0, 3).map((ex) => `- ${ex.replace(/\s+/g, " ").trim().slice(0, 280)}`).join("\n")}`
+            : ""
+        }`
+      : ""
+
+    const system = `You help a real person write short, authentic LinkedIn comments on someone else's post. You are NOT writing a post or a paragraph - you are writing a quick human reply that sounds like this person dashed it off in ten seconds.
+
+WHO THIS PERSON IS:
+${profContext || `A ${profile}.`}
+
+${voiceBlock}
+
+Generate exactly 3 comments, one per style:
+- "insightful": add ONE sharp, specific observation or angle. One point, not a lecture.
+- "supportive": genuine, warm encouragement in their own words. Not gushing.
+- "engaging": react to the post, then ask ONE natural follow-up question. Casual, not interview-style.
+
+HARD RULES (breaking these makes it read as AI):
+- Each comment is 1 to 2 sentences and never more than ~35 words. Short is the entire point.
+- Sound like a person typing on their phone. Contractions, plain words, a real reaction.
+- React to the SPECIFIC thing in this post - reference an actual detail from it. No generic praise.
+- Do not restate the post back at them. Add something of your own.
+- No em dashes and no en dashes. Use a plain hyphen or split into two sentences.
+- Never use these words: delve, leverage, elevate, seamless, unlock, empower, resonate, insightful, thought-provoking, holistic, game-changer.
+- Never use these filler openers: "Great post", "Well said", "Couldn't agree more", "Spot on", "This resonates", "Thanks for sharing", "Love this", "As a ${profile}".
+- No hashtags. No emoji.
+
 Return JSON only, no other text: { "comments": [{ "style": "insightful" | "supportive" | "engaging", "text": "string" }] }`
 
     const userMsg = `Post to comment on:\n${postText.slice(0, 1200)}`
@@ -87,8 +123,8 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
     try {
       const raw = await callAi("chat-strategist", system, userMsg, {
         json: true,
-        temperature: 0.85,
-        maxTokens: 400,
+        temperature: 0.7,
+        maxTokens: 320,
         userId: user.id,
         plan: planCheck.plan,
         cache: false,

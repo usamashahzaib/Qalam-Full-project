@@ -190,6 +190,106 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
 }
 
 export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
+  "job-seekers": {
+    eyebrow: "Industry Workflow",
+    title: "Qalam for Job Seekers",
+    summary: "Turn verified experience into a clearer LinkedIn profile, an ATS-safe resume, and stronger role-specific applications.",
+    description:
+      "Job seekers often maintain separate versions of the same career story across LinkedIn, resumes, and applications. Qalam keeps the evidence connected, identifies gaps, and helps each output match the role without inventing experience.",
+    bullets: [
+      "Free ATS resume analysis with actionable findings",
+      "Role-specific keyword and evidence matching",
+      "LinkedIn positioning aligned with target roles",
+      "One verified career record across every output",
+    ],
+    updatedAt: "2026-08-18",
+    audience: "Students, career switchers, returning professionals, and active job seekers",
+    faqs: [
+      {
+        q: "Can Qalam tailor a resume without fabricating experience?",
+        a: "Yes. Qalam works from user-supplied facts, separates verified evidence from suggested wording, and flags unsupported requirements instead of inventing them.",
+      },
+      {
+        q: "Does Qalam replace an employer ATS?",
+        a: "No. Qalam provides an independent readiness diagnostic based on parsing, role alignment, recruiter readability, evidence, and professional hygiene.",
+      },
+    ],
+  },
+  recruiters: {
+    eyebrow: "Industry Workflow",
+    title: "Qalam for Recruiters",
+    summary: "Help candidates present evidence clearly while building an informed, credible recruiting voice on LinkedIn.",
+    description:
+      "Recruiters work across candidate quality, employer narrative, and public credibility. Qalam supports structured resume feedback, repeatable content workflows, and clearer communication without claiming access to private hiring systems.",
+    bullets: [
+      "Evidence-first resume review structure",
+      "Reusable hiring and employer-brand narratives",
+      "LinkedIn drafts grounded in real recruiting expertise",
+      "Clear separation between diagnostic findings and recommendations",
+    ],
+    updatedAt: "2026-08-18",
+    audience: "Internal recruiters, talent partners, recruitment consultants, and sourcing leaders",
+    faqs: [
+      {
+        q: "Can recruiters use Qalam to review candidate resumes?",
+        a: "Yes. The ATS checker provides a consistent evidence-first review across parsing, alignment, readability, achievements, skills credibility, and hygiene.",
+      },
+      {
+        q: "Does Qalam expose private recruiter or LinkedIn data?",
+        a: "No. Qalam uses supplied content and transparent diagnostics. It does not claim private platform access or hidden recruiter activity.",
+      },
+    ],
+  },
+  "career-coaches": {
+    eyebrow: "Industry Workflow",
+    title: "Qalam for Career Coaches",
+    summary: "Deliver repeatable career audits and tailored assets while keeping every client story accurate and distinct.",
+    description:
+      "Career coaches need rigor without turning each engagement into manual document production. Qalam provides a shared diagnostic structure, verified career evidence, and role-specific outputs that remain reviewable by the coach and client.",
+    bullets: [
+      "Consistent ATS and LinkedIn assessment framework",
+      "Client-specific evidence and voice separation",
+      "Faster resume, profile, and interview preparation",
+      "Clear findings coaches can explain and prioritize",
+    ],
+    updatedAt: "2026-08-18",
+    audience: "Independent career coaches, outplacement teams, and professional development practices",
+    faqs: [
+      {
+        q: "Can a coach keep different client profiles separate?",
+        a: "Qalam is designed around distinct professional context and verified evidence. Coaches should use dedicated client workspaces wherever team access is enabled.",
+      },
+      {
+        q: "Will Qalam replace career coaching judgment?",
+        a: "No. It accelerates diagnostics and asset creation. The coach remains responsible for strategy, context, review, and client decisions.",
+      },
+    ],
+  },
+  universities: {
+    eyebrow: "Industry Workflow",
+    title: "Qalam for Universities",
+    summary: "Give students a practical system for career evidence, ATS readiness, LinkedIn positioning, and application preparation.",
+    description:
+      "Career centers need support that can scale beyond one-to-one appointments. Qalam gives students a structured starting point while keeping methodology visible and leaving institutional guidance in control.",
+    bullets: [
+      "Self-serve ATS readiness before advisor review",
+      "Career evidence capture for students with limited experience",
+      "LinkedIn profile and professional content guidance",
+      "Consistent preparation across programs and cohorts",
+    ],
+    updatedAt: "2026-08-18",
+    audience: "University career centers, employability teams, bootcamps, and training providers",
+    faqs: [
+      {
+        q: "Is Qalam useful for students with little work experience?",
+        a: "Yes. Students can document projects, coursework, volunteering, internships, and measurable contributions without presenting them as employment they did not hold.",
+      },
+      {
+        q: "Can Qalam support a full student cohort?",
+        a: "Institutional workflows can be discussed with Qalam. Public plan limits and available team capabilities remain visible before purchase.",
+      },
+    ],
+  },
   founders: {
     eyebrow: "Use Case",
     title: "For Founders",

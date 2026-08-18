@@ -8,6 +8,7 @@ const byLabel = (link: { label: string }) => link.label
 
 const FOOTER_LINKS = {
   Product: alphabetical([
+    { label: "All Features", href: "/features" },
     { label: "Career Visibility", href: "/career-visibility" },
     { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
     { label: "Content Studio", href: "/product/post-writer" },
@@ -17,6 +18,11 @@ const FOOTER_LINKS = {
     { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
   ], byLabel),
   "Use Cases": alphabetical([
+    { label: "All Industries", href: "/industries" },
+    { label: "Job Seekers", href: "/use-cases/job-seekers" },
+    { label: "Recruiters", href: "/use-cases/recruiters" },
+    { label: "Career Coaches", href: "/use-cases/career-coaches" },
+    { label: "Universities", href: "/use-cases/universities" },
     { label: "Founders", href: "/use-cases/founders" },
     { label: "Marketing Teams", href: "/use-cases/marketing-teams" },
     { label: "HR Leaders", href: "/use-cases/hr-leaders" },
@@ -69,7 +75,7 @@ export function Footer() {
             <QalamLogo
               href="/"
               size={36}
-              containerClassName="mb-4 flex items-center gap-2"
+              containerClassName="mb-4 flex min-h-11 items-center gap-2"
               textClassName="text-lg font-bold text-white"
             />
             <p className="mb-5 text-sm leading-relaxed text-white/55">
@@ -91,7 +97,7 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="inline-flex min-h-7 items-center text-sm text-white/55 transition-colors hover:text-gold">
+                    <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-gold">
                       {link.label}
                     </Link>
                   </li>
@@ -104,13 +110,13 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
           <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/legal/privacy" className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
+            <Link href="/legal/privacy" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
               Privacy
             </Link>
-            <Link href="/legal/terms" className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
+            <Link href="/legal/terms" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
               Terms
             </Link>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-7 items-center transition-colors hover:text-white/60">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-white/60">
               {SUPPORT_EMAIL}
             </a>
           </div>

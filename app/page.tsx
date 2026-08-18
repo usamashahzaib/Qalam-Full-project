@@ -4,20 +4,16 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
+import { CapabilityShowcase } from "@/components/marketing/CapabilityShowcase"
 import { PricingCard } from "@/components/PricingCard"
 import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import {
   AnalyticsIcon,
   BrainIcon,
-  CalendarIcon,
   CheckIcon,
   GrowthIcon,
   GiftIcon,
-  HookIcon,
-  LibraryIcon,
   MicroscopeIcon,
-  TeamIcon,
-  VoiceIcon,
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
@@ -44,45 +40,6 @@ function useCountUp(end: number, duration = 1400) {
 
   return { count, ref }
 }
-
-const FEATURES = [
-  {
-    icon: VoiceIcon,
-    title: "LinkedIn Positioning + ATS Review",
-    desc: "Find the gaps weakening recruiter discovery, credibility, job fit, and the evidence behind your professional story.",
-    tier: "Free",
-  },
-  {
-    icon: AnalyticsIcon,
-    title: "AI Posts + Carousel Studio",
-    desc: "Turn your expertise into scored LinkedIn posts, stronger hooks, carousels, and thoughtful comments.",
-    tier: "Free",
-  },
-  {
-    icon: HookIcon,
-    title: "Career Vault + Voice Profile",
-    desc: "Store verified roles, skills, achievements, goals, and voice context once. Reuse them across every output.",
-    tier: "Free",
-  },
-  {
-    icon: LibraryIcon,
-    title: "Plan, Publish + Analyze",
-    desc: "Move from draft to scheduled LinkedIn post with a library, version history, and performance feedback.",
-    tier: "Solo",
-  },
-  {
-    icon: CalendarIcon,
-    title: "Voice Training + Push to 90+",
-    desc: "Train Qalam on your real writing, then improve weak drafts without flattening the voice that makes them yours.",
-    tier: "Pro",
-  },
-  {
-    icon: TeamIcon,
-    title: "Strategist + Competitor Research",
-    desc: "Ask strategic questions, study content patterns, unlock deeper analytics, and build recruiter visibility.",
-    tier: "Pro",
-  },
-]
 
 const HOW_IT_WORKS = [
   {
@@ -714,34 +671,20 @@ export default function HomePage() {
 
       <section id="features" className="grid-bg px-6 py-28">
         <div className="mx-auto max-w-[1200px]">
-          <FadeUp className="mb-16 text-center">
+          <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Features</span>
             <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              Build authority and career momentum <span className="text-gold gold-underline">in one place.</span>
+              See every major workflow <span className="text-gold gold-underline">before you sign in.</span>
             </h2>
             <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
-              Start with how the market sees you. Then improve what you publish, how you present your experience, and which roles you target.
+              Explore the real decisions Qalam helps you make across ATS resumes, target roles, LinkedIn positioning, content, and career progress.
             </p>
           </FadeUp>
-
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((feature, i) => {
-              const Icon = feature.icon
-              return (
-                <FadeUp key={feature.title} delay={i * 0.08}>
-                  <motion.div whileHover={{ y: -6, boxShadow: "0 20px 48px rgba(13,74,69,0.12)", borderColor: "#C9871F", transition: { duration: 0.22 } }} className="h-full cursor-default rounded-2xl border border-zinc-200 bg-white p-7 shadow-sm transition-colors">
-                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="mb-2 flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-bold text-zinc-900">{feature.title}</h3>
-                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${feature.tier === "Free" ? "bg-emerald-50 text-emerald-700" : feature.tier === "Solo" ? "bg-teal-50 text-teal" : "bg-gold-50 text-gold-700"}`}>{feature.tier}</span>
-                    </div>
-                    <p className="text-sm leading-relaxed text-zinc-600">{feature.desc}</p>
-                  </motion.div>
-                </FadeUp>
-              )
-            })}
+          <CapabilityShowcase compact />
+          <div className="mt-8 text-center">
+            <Link href="/features" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-teal/25 bg-white px-6 text-sm font-bold text-teal transition-colors hover:bg-teal/5">
+              Explore all features and methods
+            </Link>
           </div>
         </div>
       </section>

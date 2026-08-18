@@ -1,4 +1,5 @@
 import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
+import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
 
 export function GET() {
@@ -25,6 +26,14 @@ export function GET() {
     "- Content Intelligence: drafts and improves LinkedIn content using voice context, hooks, versions, planning, and quality checks.",
     "- ATS Career Engine: reviews resumes, builds targeted versions from supplied career facts, and compares evidence with a job description.",
     "- Professional Growth: keeps career evidence, goals, recruiter visibility controls, learning cohorts, and progress in one workspace.",
+    "",
+    "## Major capabilities",
+    "",
+    ...CAPABILITIES.map((capability) => `- ${capability.title}: ${capability.description} Canonical page: ${SITE_URL}${capability.href}`),
+    "",
+    "## Audiences and industries",
+    "",
+    ...INDUSTRIES.map((industry) => `- ${industry.name}: ${industry.outcome} Canonical page: ${SITE_URL}/use-cases/${industry.slug}`),
     "",
     "## Evidence policy",
     "",

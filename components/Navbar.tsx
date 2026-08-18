@@ -11,6 +11,7 @@ import { APP_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
 
 const PRODUCT_LINKS = alphabetical([
+  { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
   { label: "Career Visibility", href: "/career-visibility", desc: "Connect LinkedIn, content, resumes, and target roles" },
   { label: "LinkedIn Optimizer", href: "/linkedin-optimization", desc: "Improve positioning, search relevance, and proof" },
   { label: "Content Studio", href: "/product/post-writer", desc: "Draft, score, revise, and plan LinkedIn content" },
@@ -19,6 +20,11 @@ const PRODUCT_LINKS = alphabetical([
 ], (link) => link.label)
 
 const USE_CASE_LINKS = alphabetical([
+  { label: "All Industries", href: "/industries", desc: "Find the Qalam workflow for your work" },
+  { label: "Job Seekers", href: "/use-cases/job-seekers", desc: "ATS resumes, job matching, and LinkedIn positioning" },
+  { label: "Recruiters", href: "/use-cases/recruiters", desc: "Evidence-first review and recruiting authority" },
+  { label: "Career Coaches", href: "/use-cases/career-coaches", desc: "Repeatable client diagnostics and career assets" },
+  { label: "Universities", href: "/use-cases/universities", desc: "Scalable student career readiness" },
   { label: "Founders", href: "/use-cases/founders", desc: "Consistent thought leadership without a ghostwriter" },
   { label: "Marketing Teams", href: "/use-cases/marketing-teams", desc: "Shared workflow, consistent brand voice" },
   { label: "HR Leaders", href: "/use-cases/hr-leaders", desc: "Employer brand and culture publishing" },
@@ -74,7 +80,7 @@ function NavDropdown({
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={panelId}
-        className="nav-underline flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
+        className="nav-underline flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
       >
         {label}
         <motion.span
@@ -94,9 +100,9 @@ function NavDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 top-full z-50 mt-1 w-64 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl"
+            className={`absolute left-0 top-full z-50 mt-1 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl ${links.length > 7 ? "w-[34rem]" : "w-64"}`}
           >
-            <div className="p-2">
+            <div className={`p-2 ${links.length > 7 ? "grid grid-cols-2" : ""}`}>
               {links.map((link) => (
                 <Link
                   key={link.href}
@@ -134,7 +140,7 @@ function UserMenu({ session }: { session: SessionData }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-xl p-1 transition-colors hover:bg-zinc-100"
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl p-1 transition-colors hover:bg-zinc-100"
         aria-label="Account menu"
       >
         {session.user?.image ? (
@@ -231,12 +237,12 @@ export function Navbar() {
       <AnimatePresence>
         {showAnnouncement && (
           <motion.div
-            initial={{ height: 40, opacity: 1 }}
+            initial={{ height: 44, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="overflow-hidden bg-[#1f5e57]"
           >
-            <div className="relative flex h-10 items-center justify-center gap-2 px-10 text-sm font-medium text-white sm:gap-3 sm:px-4">
+            <div className="relative flex h-11 items-center justify-center gap-2 px-12 text-sm font-medium text-white sm:gap-3 sm:px-4">
               <span className="hidden h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 sm:inline-flex">
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
@@ -245,7 +251,7 @@ export function Navbar() {
               </span>
               <Link
                 href="/free-tools/ats-resume-checker"
-                className="inline-flex shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
                 Check now <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
@@ -254,7 +260,7 @@ export function Navbar() {
                   localStorage.setItem("qalam_announce_dismissed", "1")
                   setAnnouncementVisible(false)
                 }}
-                className="absolute right-1 flex h-10 w-10 items-center justify-center text-lg leading-none text-white/60 transition-colors hover:text-white sm:right-4"
+                className="absolute right-0 flex h-11 w-11 items-center justify-center text-lg leading-none text-white/60 transition-colors hover:text-white sm:right-4"
                 aria-label="Dismiss"
               >
                 <span aria-hidden="true">&times;</span>
@@ -273,7 +279,7 @@ export function Navbar() {
         }`}
       >
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
-          <QalamLogo href="/" size={32} />
+          <QalamLogo href="/" size={32} containerClassName="flex min-h-11 select-none items-center gap-2" />
 
           <div className="hidden items-center gap-1 md:flex">
             <NavDropdown label="Product" links={PRODUCT_LINKS} />
@@ -282,7 +288,7 @@ export function Navbar() {
               <Link
                 key={link.label}
                 href={link.href}
-                className="nav-underline rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
+                className="nav-underline inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-all duration-150 hover:bg-teal/10 hover:text-teal"
               >
                 {link.label}
               </Link>
@@ -296,10 +302,10 @@ export function Navbar() {
               <UserMenu session={session} />
             ) : (
               <>
-                <Link href={`${APP_URL}/login`} className="nav-underline px-2 py-2 text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
+                <Link href={`${APP_URL}/login`} className="nav-underline inline-flex min-h-11 items-center px-2 py-2 text-sm font-medium text-zinc-600 hover:text-teal">Log in</Link>
                 <Link
                   href={`${APP_URL}/signup`}
-                  className="press rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 hover:shadow-md"
+                  className="press inline-flex min-h-11 items-center rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 hover:shadow-md"
                 >
                   Start free
                 </Link>
@@ -308,7 +314,7 @@ export function Navbar() {
           </div>
 
           <button
-            className="flex flex-col gap-1.5 rounded-lg p-2 transition-colors hover:bg-zinc-100 md:hidden"
+            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-zinc-100 md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -336,7 +342,7 @@ export function Navbar() {
                   onClick={() => setMobileSection(mobileSection === "product" ? null : "product")}
                   aria-expanded={mobileSection === "product"}
                   aria-controls="mobile-product-links"
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
+                  className="flex min-h-11 items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Product
                   <motion.span animate={{ rotate: mobileSection === "product" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
@@ -347,7 +353,7 @@ export function Navbar() {
                   {mobileSection === "product" && (
                     <motion.div id="mobile-product-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
                       {PRODUCT_LINKS.map((link) => (
-                        <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
+                        <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
                           {link.label}
                         </Link>
                       ))}
@@ -360,7 +366,7 @@ export function Navbar() {
                   onClick={() => setMobileSection(mobileSection === "use-cases" ? null : "use-cases")}
                   aria-expanded={mobileSection === "use-cases"}
                   aria-controls="mobile-use-case-links"
-                  className="flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
+                  className="flex min-h-11 items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal"
                 >
                   Use Cases
                   <motion.span animate={{ rotate: mobileSection === "use-cases" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
@@ -371,7 +377,7 @@ export function Navbar() {
                   {mobileSection === "use-cases" && (
                     <motion.div id="mobile-use-case-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
                       {USE_CASE_LINKS.map((link) => (
-                        <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
+                        <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-zinc-600 hover:text-teal">
                           {link.label}
                         </Link>
                       ))}
@@ -380,7 +386,7 @@ export function Navbar() {
                 </AnimatePresence>
 
                 {STATIC_LINKS.map((link) => (
-                  <Link key={link.label} href={link.href} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal">
+                  <Link key={link.label} href={link.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-all hover:bg-teal/10 hover:text-teal">
                     {link.label}
                   </Link>
                 ))}
@@ -402,19 +408,19 @@ export function Navbar() {
                           <p className="text-xs text-zinc-400">{session.user?.email}</p>
                         </div>
                       </div>
-                      <Link href={`${APP_URL}/settings`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Settings</Link>
-                      <Link href={`${APP_URL}/dashboard`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Dashboard</Link>
-                      <button onClick={() => signOut({ callbackUrl: "/" })} className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-600">
+                      <Link href={`${APP_URL}/settings`} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Settings</Link>
+                      <Link href={`${APP_URL}/dashboard`} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 hover:bg-teal/10 hover:text-teal">Dashboard</Link>
+                      <button onClick={() => signOut({ callbackUrl: "/" })} className="min-h-11 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-zinc-600 hover:bg-red-50 hover:text-red-600">
                         Log out
                       </button>
                     </>
                   ) : (
                     <>
-                      <Link href={`${APP_URL}/login`} onClick={() => setMobileOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
+                      <Link href={`${APP_URL}/login`} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-700 hover:bg-teal/10 hover:text-teal">Log in</Link>
                       <Link
                         href={`${APP_URL}/signup`}
                         onClick={() => setMobileOpen(false)}
-                        className="rounded-lg bg-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
+                        className="flex min-h-11 items-center justify-center rounded-lg bg-teal px-3 py-2.5 text-center text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600"
                       >
                         Start free
                       </Link>

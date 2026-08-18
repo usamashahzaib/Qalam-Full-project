@@ -2,6 +2,7 @@ import { CONTENT_LAST_UPDATED, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-cont
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_METHODOLOGY_UPDATED, ATS_METHODOLOGY_VERSION } from "@/lib/ats-methodology"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
+import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 
 // llms-full.txt: the emerging companion convention to llms.txt. Where llms.txt
 // is an index, this serves the complete published article corpus as plain
@@ -71,6 +72,26 @@ export function GET() {
       "",
       `- URL: ${SITE_URL}/${page.slug}`,
       page.summary,
+      "",
+    ]),
+    "## Capability directory",
+    "",
+    ...CAPABILITIES.flatMap((capability) => [
+      `### ${capability.title}`,
+      "",
+      `- URL: ${SITE_URL}${capability.href}`,
+      capability.description,
+      "",
+    ]),
+    "## Audience and industry directory",
+    "",
+    ...INDUSTRIES.flatMap((industry) => [
+      `### ${industry.name}`,
+      "",
+      `- URL: ${SITE_URL}/use-cases/${industry.slug}`,
+      `- Audience: ${industry.audience}`,
+      `- Outcome: ${industry.outcome}`,
+      industry.qalamFit,
       "",
     ]),
     "---",
