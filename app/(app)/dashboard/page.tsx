@@ -95,7 +95,7 @@ function WritingPromptsCard() {
 const QUICK_ACTIONS = [
   {
     label: "Check ATS score",
-    href: "/free-tools/ats-resume-checker",
+    href: "/career?tab=resume",
     desc: "Find parsing and relevance gaps",
     icon: (
       <path

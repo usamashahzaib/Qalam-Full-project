@@ -15,7 +15,7 @@ export type ResumePdfText = {
 }
 
 export async function extractResumePdfText(file: File): Promise<ResumePdfText> {
-  if (file.type !== "application/pdf") throw new Error("resume_pdf_type_invalid")
+  if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) throw new Error("resume_pdf_type_invalid")
   if (file.size < PDF_SIGNATURE.length) throw new Error("resume_pdf_empty")
   if (file.size > MAX_RESUME_PDF_BYTES) throw new Error("resume_pdf_too_large")
 
