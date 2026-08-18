@@ -10,11 +10,13 @@ import { PLAN_LIMITS } from "@/lib/entitlements"
 
 const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 
-const STYLE_LABELS: Record<string, string> = {
-  insightful: "Insightful",
-  supportive: "Supportive",
-  engaging: "Engaging",
-}
+const STYLES = [
+  { value: "insightful", label: "Insightful", hint: "Add a sharp, specific take" },
+  { value: "supportive", label: "Supportive", hint: "Warm, genuine encouragement" },
+  { value: "engaging", label: "Engaging", hint: "React and ask a follow-up" },
+] as const
+
+type StyleValue = (typeof STYLES)[number]["value"]
 
 const MAX_POST_LENGTH = 5000
 
@@ -24,6 +26,7 @@ type Usage = { current: number; limit: number | "unlimited" }
 function CommentGeneratorInner() {
   const [postText, setPostText] = useState("")
   const [profile, setProfile] = useState<(typeof PROFILES)[number]>("Founder")
+  const [style, setStyle] = useState<StyleValue>("insightful")
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +62,7 @@ function CommentGeneratorInner() {
       const res = await fetch("/api/comments/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText: trimmed, profile }),
+        body: JSON.stringify({ postText: trimmed, profile, style }),
       })
 
       if (res.status === 401) {
@@ -133,7 +136,7 @@ function CommentGeneratorInner() {
               LinkedIn Comment Generator
             </h1>
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              Paste a post you want to comment on, pick your professional angle, and get 3 tailored comment styles ready to post.
+              Paste a post, pick the style you want, and get comment options written in your own voice, ready to post.
             </p>
             {usage && (
               <p className="mt-3 text-sm font-medium text-zinc-500">
@@ -152,8 +155,9 @@ function CommentGeneratorInner() {
           <FadeUp>
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
               <div className="border-b border-zinc-100 p-6">
-                <label className="mb-2 block text-sm font-semibold text-zinc-800">Post you want to comment on</label>
+                <label htmlFor="public-comment-post" className="mb-2 block text-sm font-semibold text-zinc-800">Post you want to comment on</label>
                 <textarea
+                  id="public-comment-post"
                   value={postText}
                   onChange={(e) => setPostText(e.target.value.slice(0, MAX_POST_LENGTH))}
                   placeholder="Paste the LinkedIn post text here..."
@@ -165,8 +169,32 @@ function CommentGeneratorInner() {
                   <span className="text-xs text-zinc-400">{postText.length}/{MAX_POST_LENGTH}</span>
                 </div>
 
-                <label className="mb-2 mt-4 block text-sm font-semibold text-zinc-800">Your profile</label>
+                <fieldset className="mt-4" disabled={loading}>
+                  <legend className="mb-2 text-sm font-semibold text-zinc-800">Comment style</legend>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {STYLES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setStyle(s.value)}
+                      disabled={loading}
+                      aria-pressed={style === s.value}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition-all disabled:opacity-60 ${
+                        style === s.value
+                          ? "border-teal bg-teal-50 ring-1 ring-teal/40"
+                          : "border-zinc-200 bg-white hover:border-zinc-300"
+                      }`}
+                    >
+                      <span className={`block text-sm font-semibold ${style === s.value ? "text-teal" : "text-zinc-800"}`}>{s.label}</span>
+                      <span className="mt-0.5 block text-[11px] leading-tight text-zinc-500">{s.hint}</span>
+                    </button>
+                  ))}
+                  </div>
+                </fieldset>
+
+                <label htmlFor="public-comment-profile" className="mb-2 mt-4 block text-sm font-semibold text-zinc-800">Your profile</label>
                 <select
+                  id="public-comment-profile"
                   value={profile}
                   onChange={(e) => setProfile(e.target.value as (typeof PROFILES)[number])}
                   disabled={loading}
@@ -196,7 +224,7 @@ function CommentGeneratorInner() {
                       </svg>
                       Generating...
                     </span>
-                  ) : "Generate 3 Comments"}
+                  ) : `Generate 3 ${STYLES.find((s) => s.value === style)?.label ?? ""} variations`}
                 </motion.button>
               </div>
 
@@ -217,7 +245,7 @@ function CommentGeneratorInner() {
                     <div key={i} className="px-6 py-5">
                       <div className="mb-2 flex items-center justify-between">
                         <span className="rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal">
-                          {STYLE_LABELS[c.style] || c.style}
+                          {(STYLES.find((s) => s.value === c.style)?.label ?? c.style)} · Option {i + 1}
                         </span>
                         <button
                           onClick={() => void handleCopy(c.text, i)}

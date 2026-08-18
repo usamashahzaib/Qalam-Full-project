@@ -15,6 +15,19 @@ import { log } from "@/lib/server/logging"
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 type Profile = (typeof VALID_PROFILES)[number]
 
+const VALID_STYLES = ["insightful", "supportive", "engaging"] as const
+type Style = (typeof VALID_STYLES)[number]
+
+// One comment style per generation - the user picks what they want, we return a few
+// variations of that single style instead of all three styles at once.
+const STYLE_GUIDES: Record<Style, string> = {
+  insightful: "Add ONE sharp, specific observation or angle that builds on the post. One point, not a lecture.",
+  supportive: "Genuine, warm encouragement in their own words. Specific about what landed. Not gushing.",
+  engaging: "React to the post, then ask ONE natural follow-up question. Casual, not interview-style.",
+}
+
+const VARIATIONS_PER_GENERATION = 3
+
 const MAX_POST_LENGTH = 5000
 
 export async function GET(request: NextRequest) {
@@ -63,6 +76,8 @@ export async function POST(request: NextRequest) {
 
     const postText = String(body.postText || "").trim()
     const profileInput = String(body.profile || "").trim()
+    // Default to "insightful" when the caller omits a style so older clients keep working.
+    const styleInput = String(body.style || "insightful").trim().toLowerCase()
 
     if (!postText || postText.length < 10) {
       return NextResponse.json({ error: "postText must be at least 10 characters" }, { status: 400 })
@@ -73,7 +88,11 @@ export async function POST(request: NextRequest) {
     if (!(VALID_PROFILES as readonly string[]).includes(profileInput)) {
       return NextResponse.json({ error: `profile must be one of: ${VALID_PROFILES.join(", ")}` }, { status: 400 })
     }
+    if (!(VALID_STYLES as readonly string[]).includes(styleInput)) {
+      return NextResponse.json({ error: `style must be one of: ${VALID_STYLES.join(", ")}` }, { status: 400 })
+    }
     const profile = profileInput as Profile
+    const style = styleInput as Style
 
     // Pull the user's trained voice + resume-derived professional context so comments
     // sound like this specific person, not a generic "LinkedIn expert". Never fatal - a
@@ -100,10 +119,9 @@ ${profContext || `A ${profile}.`}
 
 ${voiceBlock}
 
-Generate exactly 3 comments, one per style:
-- "insightful": add ONE sharp, specific observation or angle. One point, not a lecture.
-- "supportive": genuine, warm encouragement in their own words. Not gushing.
-- "engaging": react to the post, then ask ONE natural follow-up question. Casual, not interview-style.
+Write exactly ${VARIATIONS_PER_GENERATION} comments, all in ONE style the person chose: "${style}".
+${style} means: ${STYLE_GUIDES[style]}
+Give ${VARIATIONS_PER_GENERATION} genuinely different takes on this one style - different angle, opening, and wording each time. Not minor rewrites of the same sentence.
 
 HARD RULES (breaking these makes it read as AI):
 - Each comment is 1 to 2 sentences and never more than ~35 words. Short is the entire point.
@@ -115,7 +133,7 @@ HARD RULES (breaking these makes it read as AI):
 - Never use these filler openers: "Great post", "Well said", "Couldn't agree more", "Spot on", "This resonates", "Thanks for sharing", "Love this", "As a ${profile}".
 - No hashtags. No emoji.
 
-Return JSON only, no other text: { "comments": [{ "style": "insightful" | "supportive" | "engaging", "text": "string" }] }`
+Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
 
     const userMsg = `Post to comment on:\n${postText.slice(0, 1200)}`
 
@@ -123,15 +141,17 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
     try {
       const raw = await callAi("chat-strategist", system, userMsg, {
         json: true,
-        temperature: 0.7,
+        temperature: 0.8,
         maxTokens: 320,
         userId: user.id,
         plan: planCheck.plan,
         cache: false,
       })
-      const parsed = safeParseJson<{ comments?: Array<{ style: string; text: string }> }>(raw)
+      const parsed = safeParseJson<{ comments?: Array<{ style?: string; text: string }> }>(raw)
       comments = Array.isArray(parsed?.comments)
-        ? parsed.comments.filter((c) => c && typeof c.text === "string" && c.text.trim().length > 0)
+        ? parsed.comments
+            .filter((c) => c && typeof c.text === "string" && c.text.trim().length > 0)
+            .map((c) => ({ style, text: c.text }))
         : []
     } catch (err) {
       log.warn("comments.generate.ai_failed", { userId: user.id, error: (err as Error).message })
@@ -162,11 +182,12 @@ Return JSON only, no other text: { "comments": [{ "style": "insightful" | "suppo
       responseUsage = { ...usage, remaining: Math.max(0, usage.limit - usage.current) }
     }
 
-    log.info("comments.generate.done", { userId: user.id, profile, count: comments.length })
+    log.info("comments.generate.done", { userId: user.id, profile, style, count: comments.length })
 
     return NextResponse.json({
-      comments: comments.slice(0, 3),
+      comments: comments.slice(0, VARIATIONS_PER_GENERATION),
       profile,
+      style,
       postPreview: postText.slice(0, 200),
       usage: responseUsage,
     })
