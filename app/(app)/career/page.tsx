@@ -103,7 +103,8 @@ export default function CareerPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
-  const [tab, setTab] = useState<Tab>("overview")
+  const requestedTab = searchParams.get("tab")
+  const tab = tabs.some((item) => item.id === requestedTab) ? requestedTab as Tab : "overview"
   const [vault, setVault] = useState<Vault>(emptyVault)
   const [skillsText, setSkillsText] = useState("")
   const [message, setMessage] = useState("")
@@ -119,10 +120,11 @@ export default function CareerPage() {
 
   const apiSuffix = useMemo(() => workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : "", [workspaceKey])
 
-  useEffect(() => {
-    const requestedTab = searchParams.get("tab")
-    if (requestedTab && tabs.some((item) => item.id === requestedTab)) setTab(requestedTab as Tab)
-  }, [searchParams])
+  const setTab = (nextTab: Tab) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("tab", nextTab)
+    router.replace(`/career?${params.toString()}`, { scroll: false })
+  }
 
   useEffect(() => {
     fetch(`/api/career-vault${apiSuffix}`)
