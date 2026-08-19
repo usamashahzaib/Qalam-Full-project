@@ -38,18 +38,29 @@ export default function AboutPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-teal-900 pt-24">
-      <section className="px-6 py-24">
-        <div className="mx-auto max-w-[860px] text-center">
-          <FadeUp>
-            <span className="chip mb-6 inline-flex border-white/20 bg-white/5 text-white/70">
+      <section className="qlx qlx-surface relative overflow-hidden px-6 py-24">
+        <div className="qlx-grain" aria-hidden />
+        <div
+          className="absolute -left-32 -top-32 h-[480px] w-[480px] rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.55) 0%, transparent 70%)" }}
+          aria-hidden
+        />
+        <div
+          className="absolute -right-24 top-0 h-[400px] w-[400px] rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }}
+          aria-hidden
+        />
+        <div className="relative z-10 mx-auto max-w-[860px] text-center">
+          <FadeUp duration={0.5}>
+            <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">
               About Qalam
             </span>
             <h1 className="mb-6 text-5xl font-extrabold leading-tight text-white sm:text-6xl">
               A publishing system for people who need
               {" "}
-              <span className="text-gold gold-underline">authority, not filler.</span>
+              <span className="gold-underline" style={{ color: "oklch(0.85 0.05 85)" }}>authority, not filler.</span>
             </h1>
-            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/60">
+            <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/65">
               Qalam is being built as a serious LinkedIn publishing desk: voice memory, post
               history, content assets, scheduling, and performance feedback in one system.
             </p>

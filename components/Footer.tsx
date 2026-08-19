@@ -11,6 +11,7 @@ const FOOTER_LINKS = {
     { label: "All Features", href: "/features" },
     { label: "Career Visibility", href: "/career-visibility" },
     { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
+    { label: "LinkedIn Extension", href: "/linkedin-extension" },
     { label: "Content Studio", href: "/product/post-writer" },
     { label: "ATS Resume Builder", href: "/ats-resume-builder" },
     { label: "ATS Scoring Methodology", href: "/methodology/ats-resume-readiness" },
@@ -59,7 +60,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/40 transition-all duration-200 hover:border-gold/40 hover:bg-gold/10 hover:text-gold"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/40 transition-all duration-200 hover:border-white/20 hover:bg-white/8 hover:text-[oklch(0.85_0.05_85)]"
     >
       {children}
     </a>
@@ -68,7 +69,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
 
 export function Footer() {
   return (
-    <footer className="border-t border-[#153a37] bg-[#041514]">
+    <footer className="qlx qlx-surface border-t border-white/10">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="mb-12 grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
           <div className="col-span-2 sm:col-span-3 lg:col-span-1">
@@ -97,7 +98,7 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-gold">
+                    <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-[oklch(0.85_0.05_85)]">
                       {link.label}
                     </Link>
                   </li>

@@ -42,6 +42,10 @@ const PRICING_FAQ = [
     a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows.",
   },
   {
+    q: "Is the Qalam LinkedIn extension included?",
+    a: "Yes. Free, Solo, and Pro include the Qalam LinkedIn extension. It uses the same smart comment allowance: 10 per month on Free, 50 on Solo, and 150 on Pro. Qalam suggests comments only and never posts automatically.",
+  },
+  {
     q: "Can I buy a career tool without changing my plan?",
     a: "Yes. Career add-ons are one-time software credits for a targeted resume, cover letter, interview pack, deep resume review, LinkedIn rewrite, or career strategy blueprint. Checkout is shown only when that product is configured for card payment.",
   },
@@ -209,44 +213,67 @@ export function PricingPageContent({}: PricingPageContentProps) {
     <div className="min-h-screen bg-zinc-50 pt-24">
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
+      <section className="qlx qlx-surface relative overflow-hidden px-6 py-20">
+        <div className="qlx-grain" aria-hidden />
         <div
-          className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.25) 0%, transparent 70%)" }}
+          className="pointer-events-none absolute -left-32 -top-32 h-[520px] w-[520px] rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.55) 0%, transparent 70%)" }}
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -right-24 top-0 h-[440px] w-[440px] rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }}
+          aria-hidden
         />
         <div className="relative z-10 mx-auto max-w-[1200px] text-center">
-          <FadeUp>
-            <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>
-            <h1 className="mb-5 text-4xl font-extrabold text-zinc-900 sm:text-6xl">
-              One system for
-              {" "}
-              <span className="text-gold gold-underline">profile, content, and career growth.</span>
-            </h1>
-            <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
-              Start with the complete loop. Upgrade for a repeatable publishing workflow, then advanced voice and intelligence.
-            </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 300, damping: 28 }}>
+            <span className="chip mb-5 inline-flex border-white/15 bg-white/8 text-white/85 backdrop-blur">Pricing</span>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.08 }}
+            className="mb-5 text-4xl font-extrabold text-white sm:text-6xl"
+          >
+            One system for
+            {" "}
+            <span className="gold-underline" style={{ color: "oklch(0.85 0.05 85)" }}>profile, content, and career growth.</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.16 }}
+            className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-white/70"
+          >
+            Start with the complete loop. Upgrade for a repeatable publishing workflow, then advanced voice and intelligence.
+          </motion.p>
 
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.24 }}
+          >
             {/* Social proof strip */}
-            <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-500">
+            <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-white/60">
               <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <strong className="text-zinc-700">PKR 0</strong> to start
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <strong className="text-white/90">PKR 0</strong> to start
               </span>
-              <span className="text-zinc-200">|</span>
+              <span className="text-white/20">|</span>
               <span>
-                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.quarterlyPkr)}/quarter` : "Solo"}</strong> Solo
+                <strong className="text-white/90">{soloPlan ? `${formatPkr(soloPlan.quarterlyPkr)}/quarter` : "Solo"}</strong> Solo
               </span>
-              <span className="text-zinc-200">|</span>
+              <span className="text-white/20">|</span>
               <span>
-                Pay for <strong className="text-zinc-700">2 months</strong>, use 3
+                Pay for <strong className="text-white/90">2 months</strong>, use 3
               </span>
             </div>
 
-            <div className="inline-flex items-center gap-2 rounded-xl bg-zinc-100 px-5 py-3 text-sm font-semibold text-zinc-700">
-              Quarterly billing: <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-xs font-bold text-emerald-700">1 month free</span>
+            <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/8 px-5 py-3 text-sm font-semibold text-white/85">
+              Quarterly billing: <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 text-xs font-bold text-emerald-300">1 month free</span>
             </div>
-            <p className="mt-3 text-xs text-zinc-400">No payment card required for Free. Paid access starts after confirmed payment.</p>
-          </FadeUp>
+            <p className="mt-3 text-xs text-white/40">No payment card required for Free. Paid access starts after confirmed payment.</p>
+          </motion.div>
         </div>
       </section>
 
