@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { APP_URL } from "@/lib/seo"
+import { RESUME_HANDOFF_KEY } from "@/lib/resume-signals"
 import type { ResumeReviewResult, ResumeReviewScoreKey } from "@/lib/career-resume-review"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_STEPS } from "@/lib/ats-methodology"
 import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
@@ -36,6 +37,20 @@ export function AtsResumeCheckerTool() {
   const [uploading, setUploading] = useState(false)
   const [sourceName, setSourceName] = useState("")
   const [error, setError] = useState("")
+
+  // The homepage hero runs an instant structural read, then hands the resume
+  // here so the visitor never re-uploads to get the full review.
+  useEffect(() => {
+    try {
+      const handoff = sessionStorage.getItem(RESUME_HANDOFF_KEY)
+      if (handoff) {
+        setResumeText(handoff)
+        sessionStorage.removeItem(RESUME_HANDOFF_KEY)
+      }
+    } catch {
+      // sessionStorage can be unavailable in private browsing; the form still works.
+    }
+  }, [])
 
   const uploadResume = async (file: File) => {
     setUploading(true)

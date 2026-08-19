@@ -1,10 +1,12 @@
 ﻿"use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { AnimatePresence, motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
+import { motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { CapabilityShowcase } from "@/components/marketing/CapabilityShowcase"
+import { HeroChecker } from "@/components/home/HeroChecker"
+import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { PricingCard } from "@/components/PricingCard"
 import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import {
@@ -92,194 +94,6 @@ const STATUS_META: Record<string, {
     headerClass: "border-zinc-100 bg-zinc-50/60",
     borderClass: "border-zinc-200",
   },
-}
-
-type DraftSegment = { text: string; bold?: boolean }
-type DraftVariant = { tone: string; segments: DraftSegment[] }
-
-const DRAFT_VARIANTS: DraftVariant[] = [
-  {
-    tone: "ATS parse",
-    segments: [
-      { text: "Standard headings and readable chronology are strong.\n\n" },
-      { text: "The skills section is visible, but three terms lack evidence in recent experience.\n\n" },
-      { text: "Priority: connect each target skill to a credible achievement.", bold: true },
-    ],
-  },
-  {
-    tone: "Recruiter read",
-    segments: [
-      { text: "The target role is clear within six seconds.\n\n" },
-      { text: "Recent scope is credible, but the strongest result is buried below routine responsibilities.\n\n" },
-      { text: "Priority: lead with scale, ownership, and outcome.", bold: true },
-    ],
-  },
-  {
-    tone: "Role fit",
-    segments: [
-      { text: "Core responsibilities match the target job.\n\n" },
-      { text: "Two required tools appear in the skills list without supporting project or work evidence.\n\n" },
-      { text: "Priority: prove depth or remove unsupported keywords.", bold: true },
-    ],
-  },
-]
-
-function renderTypedSegments(segments: DraftSegment[], visibleChars: number) {
-  let consumed = 0
-  const nodes: React.ReactNode[] = []
-  for (let i = 0; i < segments.length; i++) {
-    if (consumed >= visibleChars) break
-    const seg = segments[i]
-    const slice = seg.text.slice(0, visibleChars - consumed)
-    nodes.push(
-      seg.bold ? (
-        <span key={i} className="font-semibold text-teal">{slice}</span>
-      ) : (
-        <span key={i}>{slice}</span>
-      )
-    )
-    consumed += seg.text.length
-  }
-  return nodes
-}
-
-function useTypedDraft(variants: DraftVariant[], charDelay = 16, holdMs = 2600) {
-  const prefersReducedMotion = useReducedMotion()
-  const [variantIndex, setVariantIndex] = useState(0)
-  const [visibleChars, setVisibleChars] = useState(0)
-  const [phase, setPhase] = useState<"typing" | "holding">(prefersReducedMotion ? "holding" : "typing")
-
-  const fullLength = useMemo(
-    () => variants[variantIndex].segments.reduce((sum, s) => sum + s.text.length, 0),
-    [variants, variantIndex]
-  )
-
-  useEffect(() => {
-    if (prefersReducedMotion || phase !== "typing") return
-    let raf: number
-    let start: number | null = null
-    const step = (now: number) => {
-      if (start === null) start = now
-      const elapsed = now - start
-      const count = Math.min(fullLength, Math.floor(elapsed / charDelay))
-      setVisibleChars(count)
-      if (count < fullLength) {
-        raf = requestAnimationFrame(step)
-      } else {
-        setPhase("holding")
-      }
-    }
-    raf = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(raf)
-  }, [phase, variantIndex, fullLength, charDelay, prefersReducedMotion])
-
-  useEffect(() => {
-    if (prefersReducedMotion || phase !== "holding") return
-    const t = setTimeout(() => {
-      setVariantIndex((i) => (i + 1) % variants.length)
-      setPhase("typing")
-    }, holdMs)
-    return () => clearTimeout(t)
-  }, [phase, holdMs, variants.length, prefersReducedMotion])
-
-  return {
-    variant: variants[variantIndex],
-    variantIndex,
-    visibleChars: prefersReducedMotion ? fullLength : visibleChars,
-    isTyping: phase === "typing" && !prefersReducedMotion,
-  }
-}
-
-function ProductMockup() {
-  const { variant, variantIndex, visibleChars, isTyping } = useTypedDraft(DRAFT_VARIANTS)
-
-  return (
-    <div className="relative" style={{ perspective: "1200px" }}>
-      <motion.div
-        initial={{ opacity: 0, rotateX: 8, rotateY: -8, y: 30 }}
-        animate={{ opacity: 1, rotateX: 4, rotateY: -4, y: 0 }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-        style={{ transformStyle: "preserve-3d" }}
-        whileHover={{ rotateX: 2, rotateY: -2, y: -4, transition: { duration: 0.4 } }}
-        className="w-full max-w-[430px] overflow-hidden rounded-3xl border border-white/10 bg-[#0b221f] shadow-[0_32px_80px_rgba(13,74,69,0.45)]"
-      >
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-4 w-4 items-center justify-center rounded-sm bg-gold/15">
-              <div className="h-2 w-2 rounded-full bg-gold" />
-            </div>
-            <span className="text-sm font-semibold text-white/90">Qalam · ATS Review Preview</span>
-          </div>
-          <div className="flex gap-1.5">
-            <div className="h-3 w-3 rounded-full bg-white/15" />
-            <div className="h-3 w-3 rounded-full bg-white/15" />
-            <div className="h-3 w-3 rounded-full bg-white/15" />
-          </div>
-        </div>
-
-        <div className="flex gap-2 px-5 pb-2 pt-4">
-          {DRAFT_VARIANTS.map((v, i) => (
-            <span
-              key={v.tone}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-300 ${
-                i === variantIndex ? "border-gold bg-gold text-white" : "border-white/15 text-white/55"
-              }`}
-            >
-              {v.tone}
-            </span>
-          ))}
-        </div>
-
-        <div className="mx-5 mb-4 rounded-2xl bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal text-xs font-bold text-white">
-              SC
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-zinc-900">Sample resume review</p>
-              <p className="text-xs text-zinc-400">Recruiter and ATS decision lens</p>
-            </div>
-          </div>
-          <p className="min-h-[104px] whitespace-pre-line text-xs leading-relaxed text-zinc-700">
-            {renderTypedSegments(variant.segments, visibleChars)}
-            {isTyping && <span className="ml-0.5 inline-block h-3 w-[2px] -mb-0.5 animate-pulse bg-teal align-middle" />}
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-500">
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">ATS parsing 84</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Role alignment 76</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Evidence 62</span>
-            <span className="rounded-lg bg-zinc-50 px-2 py-1">Clarity 81</span>
-          </div>
-        </div>
-
-        <div className="mx-5 mb-3 flex items-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3 py-2">
-          <MicroscopeIcon className="h-4 w-4 text-gold" />
-          <span className="text-xs font-medium text-white/85">High priority: prove achievement scale and outcome</span>
-        </div>
-
-        <div className="flex gap-2 px-5 pb-4">
-          <div className="flex-1 rounded-xl bg-gold py-2 text-center text-xs font-semibold text-white">Full recruiter report</div>
-          <div className="rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-white/75">Sample score 76</div>
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.8, x: 20 }}
-        animate={{ opacity: 1, scale: 1, x: 0, y: [0, -5, 0] }}
-        transition={{
-          opacity: { duration: 0.5, delay: 0.9 },
-          scale: { duration: 0.5, delay: 0.9 },
-          x: { duration: 0.5, delay: 0.9 },
-          y: { duration: 3.5, delay: 1.4, repeat: Infinity, ease: "easeInOut" },
-        }}
-        className="absolute -right-4 top-8 hidden rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-xl sm:block"
-      >
-        <p className="text-xs font-medium text-zinc-500">Public checker</p>
-        <p className="text-xl font-bold text-teal">Free. No sign-in.</p>
-        <p className="text-xs font-medium text-zinc-500">One full resume monthly after sign-in</p>
-      </motion.div>
-    </div>
-  )
 }
 
 function VoiceStatCard({
@@ -401,8 +215,6 @@ function VoiceMemorySection() {
 }
 
 function FAQSection() {
-  const [open, setOpen] = useState<number | null>(0)
-
   return (
     <section id="faq" className="bg-transparent px-6 py-24">
       <div className="mx-auto max-w-[760px]">
@@ -419,37 +231,7 @@ function FAQSection() {
           </p>
         </FadeUp>
 
-        <div className="flex flex-col gap-3">
-          {LANDING_FAQ.map((item, i) => (
-            <FadeUp key={item.q} delay={i * 0.05}>
-              <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-colors hover:border-teal/30">
-                <button className="flex w-full items-center justify-between px-6 py-4 text-left" onClick={() => setOpen(open === i ? null : i)}>
-                  <span className="text-base font-semibold text-zinc-900">{item.q}</span>
-                  <motion.span
-                    animate={{ rotate: open === i ? 45 : 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="ml-4 flex h-5 w-5 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
-                  >
-                    +
-                  </motion.span>
-                </button>
-                <AnimatePresence>
-                  {open === i && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                      <p className="px-6 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
+        <FaqAccordion items={LANDING_FAQ} />
       </div>
     </section>
   )
@@ -493,20 +275,32 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageHowToSchema).replace(/</g, "\\u003c") }} />
 
-      <section className="relative flex min-h-screen items-center overflow-hidden border-b border-zinc-200 bg-[radial-gradient(circle_at_12%_18%,rgba(13,74,69,0.08),transparent_20%),radial-gradient(circle_at_84%_16%,rgba(201,135,31,0.12),transparent_18%),radial-gradient(circle_at_78%_76%,rgba(13,74,69,0.06),transparent_20%),linear-gradient(to_bottom,#fcfcfa,#f6f5f1)] pb-16 pt-28">
+      <section className="qlx qlx-surface relative flex min-h-screen items-center overflow-hidden pb-16 pt-28">
+        <div className="qlx-grain" aria-hidden />
         <div
-          className="absolute inset-0 opacity-70"
+          className="absolute -left-40 -top-40 h-[560px] w-[560px] rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.55) 0%, transparent 70%)" }}
+          aria-hidden
+        />
+        <div
+          className="absolute -right-32 top-10 h-[480px] w-[480px] rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }}
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 opacity-[0.35]"
           style={{
             backgroundImage:
-              "linear-gradient(rgba(13,74,69,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(13,74,69,0.06) 1px, transparent 1px)",
+              "linear-gradient(oklch(1 0.02 196 / 0.05) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0.02 196 / 0.05) 1px, transparent 1px)",
             backgroundSize: "54px 54px",
           }}
+          aria-hidden
         />
         <div className="relative z-10 mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2">
           <div>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: "easeOut" }}>
-              <span className="chip mb-6 inline-flex border-teal/20 bg-white/80 text-teal shadow-sm backdrop-blur">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-gold" />
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 300, damping: 28 }}>
+              <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85 backdrop-blur">
+                <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.85 0.05 85)" }} />
                 Free ATS resume checker. No account.
               </span>
             </motion.div>
@@ -514,39 +308,39 @@ export default function HomePage() {
             <motion.h1
               initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-              className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl"
+              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.08 }}
+              className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
             >
               Check your resume
               <br />
               before recruiters do.
               <br />
-              <span className="text-gold gold-underline">Fix every avoidable rejection risk.</span>
+              <span className="gold-underline" style={{ color: "oklch(0.85 0.05 85)" }}>Fix every avoidable rejection risk.</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-              className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-zinc-600"
+              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.16 }}
+              className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-white/75"
             >
               Get an ATS and recruiter-style review across parsing, job fit, proof, progression, skills, clarity, and professional risk. Free for everyone.
             </motion.p>
 
-            <p className="mb-8 max-w-xl text-sm leading-6 text-zinc-600">
+            <p className="mb-8 max-w-xl text-sm leading-6 text-white/55">
               Qalam is a Career Visibility OS that connects a free ATS Resume Checker, ATS Resume Builder, LinkedIn Profile Optimization, and an AI LinkedIn Writer around one credible professional story.
             </p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: "easeOut", delay: 0.3 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.24 }}
               className="mb-10 flex flex-col gap-3 sm:flex-row"
             >
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href="/free-tools/ats-resume-checker"
-                  className="press pulse-gold inline-flex items-center gap-2 rounded-xl bg-teal px-7 py-4 text-base font-semibold text-white shadow-[0_4px_24px_rgba(13,74,69,0.35)] transition-all hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_8px_28px_rgba(13,74,69,0.4)]"
+                  className="qlx-champagne-btn press inline-flex items-center gap-2 rounded-xl px-7 py-4 text-base font-semibold transition-transform hover:-translate-y-0.5"
                 >
                   Check my resume free
                 </Link>
@@ -554,26 +348,26 @@ export default function HomePage() {
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Link
                   href={`${APP_URL}/login?callbackUrl=/career/resumes`}
-                  className="press inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white/75 px-7 py-4 text-base font-semibold text-zinc-700 shadow-sm transition-all hover:border-teal/30 hover:bg-white"
+                  className="press inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-7 py-4 text-base font-semibold text-white/90 transition-all hover:border-white/30 hover:bg-white/10"
                 >
                   Build one free resume monthly
                 </Link>
               </motion.div>
             </motion.div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-zinc-600">
-              <CheckIcon className="h-4 w-4 shrink-0 text-gold" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-white/55">
+              <CheckIcon className="h-4 w-4 shrink-0" style={{ color: "oklch(0.85 0.05 85)" }} />
               <span>No sign-in for the checker. Sign in to build and export one full ATS-safe resume every month.</span>
             </motion.div>
-            <nav aria-label="Career tools" className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-teal">
-              <Link href="/ats-resume-builder" className="hover:underline">ATS Resume Builder</Link>
-              <Link href="/linkedin-optimization" className="hover:underline">LinkedIn Profile Optimization</Link>
-              <Link href="/ai-linkedin-writer" className="hover:underline">AI LinkedIn Writer</Link>
+            <nav aria-label="Career tools" className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-white/70">
+              <Link href="/ats-resume-builder" className="hover:text-white hover:underline">ATS Resume Builder</Link>
+              <Link href="/linkedin-optimization" className="hover:text-white hover:underline">LinkedIn Profile Optimization</Link>
+              <Link href="/ai-linkedin-writer" className="hover:text-white hover:underline">AI LinkedIn Writer</Link>
             </nav>
           </div>
 
           <div className="flex justify-center lg:justify-end">
-            <ProductMockup />
+            <HeroChecker />
           </div>
         </div>
       </section>
@@ -852,29 +646,30 @@ export default function HomePage() {
 
       <FAQSection />
 
-      <section className="relative overflow-hidden bg-teal px-6 py-28">
-        <div className="absolute left-[-10%] top-[-30%] h-[500px] w-[500px] rounded-full opacity-25" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%)" }} />
-        <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-22" style={{ background: "radial-gradient(circle, rgba(201,135,31,0.35) 0%, transparent 70%)" }} />
+      <section className="qlx qlx-surface relative overflow-hidden px-6 py-28">
+        <div className="qlx-grain" aria-hidden />
+        <div className="absolute left-[-10%] top-[-30%] h-[500px] w-[500px] rounded-full opacity-25 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.5) 0%, transparent 70%)" }} aria-hidden />
+        <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }} aria-hidden />
 
         <FadeUp className="relative z-10 mx-auto max-w-[720px] text-center">
-          <span className="chip mb-6 inline-flex border-white/20 bg-white/8 text-gold-200">Start building your content advantage</span>
+          <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">Start building your content advantage</span>
           <h2 className="mb-6 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-            The thought you&apos;ve been sitting on <span className="text-gold">is already a post.</span>
+            The thought you&apos;ve been sitting on <span style={{ color: "oklch(0.85 0.05 85)" }}>is already a post.</span>
           </h2>
           <p className="mb-10 font-cormorant text-2xl italic leading-relaxed text-white/78">
             Qalam just finishes it.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link href={`${APP_URL}/login`} className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+              <Link href={`${APP_URL}/login`} className="qlx-champagne-btn inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-bold">
                 Start free - 5 posts, no card
               </Link>
             </motion.div>
-            <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/35 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
+            <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/25 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
               Compare Plans
             </Link>
           </div>
-          <p className="mt-5 text-sm text-white/62">Start with practical recommendations. Upgrade when you need more capacity.</p>
+          <p className="mt-5 text-sm text-white/55">Start with practical recommendations. Upgrade when you need more capacity.</p>
         </FadeUp>
       </section>
     </>
