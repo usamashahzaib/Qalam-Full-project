@@ -127,6 +127,8 @@ export const getPlanSummary = (plan: string): string[] => {
   if (limits.linkedinPublish) items.push("LinkedIn publish")
   if (limits.scheduling) items.push("Post scheduling")
   if (limits.approvals) items.push("Approval workflow")
+  if (limits.commentGenerationsPerMonth === "unlimited") items.push("Unlimited smart comments")
+  else items.push(`${limits.commentGenerationsPerMonth} smart comments/month`)
   if (typeof limits.clientWorkspaces === "number" && limits.clientWorkspaces > 0) {
     items.push(`${limits.clientWorkspaces} client workspace${limits.clientWorkspaces > 1 ? "s" : ""}`)
   } else if (limits.clientWorkspaces === "unlimited") {

@@ -9,7 +9,7 @@ import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { AGENCY_PLAN_LIVE, PLAN_PRICES, formatPkr } from "@/lib/pricing"
-import { getPlanSummary } from "@/lib/entitlements"
+import { getPlanLimits, getPlanSummary } from "@/lib/entitlements"
 import { SUPPORT_EMAIL, UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
 import { isValidLinkedInUrl } from "@/lib/validation"
@@ -290,6 +290,7 @@ export default function SettingsPage() {
   const isUpgrade = billingDraft.plan !== billing.plan
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
   const planSummary = getPlanSummary(billing.plan)
+  const commentAllowance = getPlanLimits(billing.plan).commentGenerationsPerMonth
   const isLinkedInConnected = Boolean(linkedinProfile)
 
   const mailHref = upgradesMailUrl(billingDraft.plan, user?.email || "")
@@ -360,6 +361,19 @@ export default function SettingsPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="mb-5 rounded-xl border border-teal/20 bg-teal/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Qalam for LinkedIn</p>
+                <p className="mt-1 text-xs leading-5 text-zinc-600">{commentAllowance === "unlimited" ? "Unlimited" : `${commentAllowance} smart comments/month`} on LinkedIn. Qalam never posts automatically.</p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2">
+                <a href="/downloads/qalam-linkedin-extension.zip" className="inline-flex min-h-11 items-center rounded-lg border border-teal/30 bg-white px-3 text-xs font-semibold text-teal transition-colors hover:bg-teal/10">Download</a>
+                <Link href="/extension/connect" className="inline-flex min-h-11 items-center rounded-lg bg-teal px-3 text-xs font-semibold text-white transition-colors hover:bg-teal-600">Connect</Link>
+              </div>
+            </div>
           </div>
 
           {/* Usage */}
