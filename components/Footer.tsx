@@ -71,8 +71,8 @@ export function Footer() {
   return (
     <footer className="qlx qlx-surface border-t border-white/10">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
-        <div className="mb-12 grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-6">
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+        <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="sm:col-span-3 lg:col-span-1">
             <QalamLogo
               href="/"
               size={36}
@@ -94,16 +94,34 @@ export function Footer() {
 
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
             <div key={section}>
-              <h4 className="mb-4 text-sm font-semibold text-white/90">{section}</h4>
-              <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link.label}>
-                    <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-[oklch(0.85_0.05_85)]">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <div className="hidden sm:block">
+                <h4 className="mb-4 text-sm font-semibold text-white/90">{section}</h4>
+                <ul className="space-y-2.5">
+                  {links.map((link) => (
+                    <li key={link.label}>
+                      <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-[oklch(0.85_0.05_85)]">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <details className="group border-t border-white/10 sm:hidden">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-semibold text-white/90">
+                  {section}
+                  <span className="text-xl font-light text-white/45 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <ul className="pb-3">
+                  {links.map((link) => (
+                    <li key={link.label}>
+                      <Link href={link.href} className="inline-flex min-h-11 min-w-11 items-center text-sm text-white/55 transition-colors hover:text-[oklch(0.85_0.05_85)]">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
             </div>
           ))}
         </div>

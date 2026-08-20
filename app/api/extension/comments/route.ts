@@ -18,7 +18,7 @@ const styleGuide: Record<Style, string> = {
 const identityFor = (request: NextRequest) => readExtensionToken(request.headers.get("authorization"))
 
 export async function GET(request: NextRequest) {
-  const identity = identityFor(request)
+  const identity = await identityFor(request)
   if (!identity) return NextResponse.json({ error: "extension_auth_required" }, { status: 401 })
   const status = await getPlanStatus(identity.userId)
   const limit = getPlanLimits(status.plan).commentGenerationsPerMonth
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const identity = identityFor(request)
+  const identity = await identityFor(request)
   if (!identity) return NextResponse.json({ error: "extension_auth_required" }, { status: 401 })
   const status = await getPlanStatus(identity.userId)
   if (!status.isActive) return NextResponse.json({ error: "plan_expired", message: "Renew your Qalam plan to continue." }, { status: 403 })

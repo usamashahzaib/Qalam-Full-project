@@ -41,14 +41,21 @@ export function AtsResumeCheckerTool() {
   // The homepage hero runs an instant structural read, then hands the resume
   // here so the visitor never re-uploads to get the full review.
   useEffect(() => {
+    let handoffTimer: ReturnType<typeof setTimeout> | undefined
     try {
       const handoff = sessionStorage.getItem(RESUME_HANDOFF_KEY)
       if (handoff) {
-        setResumeText(handoff)
-        sessionStorage.removeItem(RESUME_HANDOFF_KEY)
+        handoffTimer = setTimeout(() => {
+          setResumeText(handoff)
+          sessionStorage.removeItem(RESUME_HANDOFF_KEY)
+        }, 0)
       }
     } catch {
       // sessionStorage can be unavailable in private browsing; the form still works.
+    }
+
+    return () => {
+      if (handoffTimer) clearTimeout(handoffTimer)
     }
   }, [])
 

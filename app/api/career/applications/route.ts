@@ -72,6 +72,10 @@ export async function POST(request: NextRequest) {
 
     const input = parsed.data
     const supabase = createServiceClient()
+    const { data: ownedResume } = input.resumeId
+      ? await supabase.from("resume_documents").select("id").eq("id", input.resumeId).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+      : { data: null }
+    if (input.resumeId && !ownedResume) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
     const { data: resumeVersion } = input.resumeId
       ? await supabase.from("resume_versions").select("id").eq("resume_id", input.resumeId).order("version_number", { ascending: false }).limit(1).maybeSingle()
       : { data: null }

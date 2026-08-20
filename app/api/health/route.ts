@@ -7,14 +7,13 @@ export async function GET() {
     pingRedis(),
     (async () => {
       const client = createServiceClient()
-      const start = Date.now()
       const { error } = await client.from("users").select("id").limit(1).maybeSingle()
-      return { ok: !error, latencyMs: Date.now() - start, error: error?.message }
+      return { ok: !error }
     })(),
   ])
 
-  const redisResult = redis.status === "fulfilled" ? redis.value : { ok: false, error: String(redis.reason) }
-  const supabaseResult = supabase.status === "fulfilled" ? supabase.value : { ok: false, error: String(supabase.reason) }
+  const redisResult = { ok: redis.status === "fulfilled" && redis.value.ok }
+  const supabaseResult = { ok: supabase.status === "fulfilled" && supabase.value.ok }
 
   const allOk = redisResult.ok && supabaseResult.ok
 

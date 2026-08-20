@@ -17,7 +17,9 @@ export const SITE_DOMAIN_LABEL = "byqalam.com"
 
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
 export const resolvePublicHref = (href: string) =>
-  /^\/(?:login|signup)(?:[/?]|$)/.test(href) ? `${APP_URL}${href}` : href
+  /^\/(?:login|signup|dashboard|settings|career)(?:[/?]|$)/.test(href)
+    ? process.env.NODE_ENV === "development" ? href : `${APP_URL}${href}`
+    : href
 
 export const buildOgImageUrl = (title: string, description: string, tag?: string) => {
   const params = new URLSearchParams({ title, description })

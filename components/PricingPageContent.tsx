@@ -13,7 +13,7 @@ import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, get
 import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
-import { APP_URL, resolvePublicHref } from "@/lib/seo"
+import { resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 
 const PRICING_FAQ = [
@@ -323,8 +323,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp className="mb-10 text-center">
             <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
               <button
+                type="button"
                 onClick={() => setPricingTab("selfserve")}
-                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
                     ? "bg-teal text-white shadow-sm"
                     : "text-zinc-500 hover:text-zinc-800"
@@ -333,8 +334,9 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 Self-serve Plans
               </button>
               <button
+                type="button"
                 onClick={() => setPricingTab("managed")}
-                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
                     ? "bg-gold text-white shadow-sm"
                     : "text-zinc-500 hover:text-zinc-800"
@@ -447,7 +449,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="sm:text-right">
               <p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
               <p className="mt-1 text-2xl font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
-              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
             </div>
           </div>
 
@@ -479,8 +481,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
-              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
-              <Link href={`${APP_URL}/login?callbackUrl=/settings/referrals`} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/settings/referrals")} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
             </div>
           </FadeUp>
         </div>

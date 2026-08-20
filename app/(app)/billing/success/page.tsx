@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import type { PlanName } from "@/lib/pricing"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 
 const isValidPlan = (value: string | null): value is PlanName =>
   value === "Solo" || value === "Pro" || value === "Agency"
@@ -16,8 +17,9 @@ const isValidPlan = (value: string | null): value is PlanName =>
  */
 export default function BillingSuccessPage() {
   const searchParams = useSearchParams()
-  const { awaitActivation } = usePlanCheckout()
+  const { awaitActivation, state } = usePlanCheckout()
   const started = useRef(false)
+  const conversionTracked = useRef(false)
 
   // The Lemon Squeezy redirect does not necessarily carry a plan hint. Passing null
   // then means "wait for any paid plan" rather than guessing a specific one and
@@ -30,6 +32,12 @@ export default function BillingSuccessPage() {
     started.current = true
     awaitActivation(plan)
   }, [awaitActivation, plan])
+
+  useEffect(() => {
+    if (state.phase !== "activated" || conversionTracked.current) return
+    conversionTracked.current = true
+    trackMarketingEvent("paid_conversion", { plan: state.targetPlan || plan || "unknown" })
+  }, [plan, state.phase, state.targetPlan])
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">

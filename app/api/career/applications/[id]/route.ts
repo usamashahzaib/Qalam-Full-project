@@ -22,6 +22,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const payload: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (input.status !== undefined) payload.status = input.status
     if (input.resumeId !== undefined) {
+      const { data: ownedResume } = input.resumeId
+        ? await supabase.from("resume_documents").select("id").eq("id", input.resumeId).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+        : { data: null }
+      if (input.resumeId && !ownedResume) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
       payload.resume_id = input.resumeId
       const { data: version } = input.resumeId ? await supabase.from("resume_versions").select("id").eq("resume_id", input.resumeId).order("version_number", { ascending: false }).limit(1).maybeSingle() : { data: null }
       payload.resume_version_id = version?.id || null

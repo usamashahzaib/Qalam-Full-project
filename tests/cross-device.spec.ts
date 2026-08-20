@@ -128,7 +128,7 @@ test.describe("Tablet UX (768px iPad Mini)", () => {
   test("pricing page shows plans side by side or stacked cleanly", async ({ page }) => {
     await page.goto("/pricing")
     await expectNoHorizontalOverflow(page)
-    const planText = page.getByText(/free|solo|pro/i).first()
+    const planText = page.getByText(/^(Free|Solo|Pro)$/).first()
     await expect(planText).toBeVisible({ timeout: 10000 })
   })
 

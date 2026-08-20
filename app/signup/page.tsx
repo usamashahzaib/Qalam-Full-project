@@ -3,12 +3,13 @@
 import { useState } from "react"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
-import { QalamLogo } from "@/components/QalamLogo"
+import { AuthShell, PasswordField } from "@/components/auth/AuthScene"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
 import { ReferralBanner, readPendingReferralCode, clearPendingReferralCode } from "@/components/ReferralBanner"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { SITE_URL } from "@/lib/seo"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 
 const ROLES = [
   "Consultant",
@@ -27,6 +28,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
+  const [passwordActive, setPasswordActive] = useState(false)
+  const [confirmActive, setConfirmActive] = useState(false)
   const [role, setRole] = useState("")
   const [agreed, setAgreed] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +62,7 @@ export default function SignupPage() {
         setError(data.error || "Something went wrong. Please try again.")
       } else {
         clearPendingReferralCode()
+        trackMarketingEvent("signup_complete", { method: "credentials", verification_email_sent: !data.emailFailed })
         setPageState(data.emailFailed ? "email_failed" : "success")
       }
     } catch {
@@ -78,12 +82,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 pt-28 pb-16 sm:pt-16">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex justify-center">
-          <QalamLogo href="/" size={28} textClassName="text-xl font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
-        </div>
-
+    <AuthShell
+      watching={passwordActive || confirmActive}
+      eyebrow="Start with proof"
+      headline="Build one credible professional story from the work you have already done."
+      points={[
+        "Start free with no payment card.",
+        "Keep every draft and career asset under your control.",
+        "Qalam never invents experience or posts automatically.",
+      ]}
+    >
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
           {pageState === "email_failed" ? (
             <div className="text-center">
@@ -177,42 +185,27 @@ export default function SignupPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="signup-password">
-                    Password
-                  </label>
-                  <input
-                    id="signup-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal focus:bg-white focus:ring-2 focus:ring-teal/10"
-                    placeholder="Min. 8 characters"
-                  />
-                </div>
+                <PasswordField
+                  id="signup-password"
+                  label="Password"
+                  value={password}
+                  onChange={setPassword}
+                  onActiveChange={setPasswordActive}
+                  autoComplete="new-password"
+                  minLength={8}
+                  placeholder="Min. 8 characters"
+                />
 
-                <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="confirm">
-                    Confirm password
-                  </label>
-                  <input
-                    id="confirm"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    className={`w-full rounded-xl border bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:bg-white focus:ring-2 ${
-                      confirm && confirm !== password
-                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
-                        : "border-zinc-200 focus:border-teal focus:ring-teal/10"
-                    }`}
-                    placeholder="Re-enter password"
-                  />
-                </div>
+                <PasswordField
+                  id="confirm"
+                  label="Confirm password"
+                  value={confirm}
+                  onChange={setConfirm}
+                  onActiveChange={setConfirmActive}
+                  autoComplete="new-password"
+                  invalid={Boolean(confirm && confirm !== password)}
+                  placeholder="Re-enter password"
+                />
 
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="role">
@@ -287,7 +280,6 @@ export default function SignupPage() {
             </>
           )}
         </div>
-      </div>
-    </div>
+    </AuthShell>
   )
 }

@@ -20,7 +20,7 @@ type CareerAddonOrderRow = {
 }
 
 /**
- * Cheap, unauthenticated peek used to decide routing before signature
+ * Cheap body peek used to decide routing before the handler verifies the signature.
  * verification: is this a career add-on order, or a plan-billing event? The
  * plan-billing pipeline in lib/server/payments.ts has no concept of one-off
  * add-on products and would reject this event, so it must never see it.
@@ -56,6 +56,10 @@ export async function handleCareerAddonWebhook(
   }
 
   const meta = (body.meta ?? {}) as Record<string, unknown>
+  const signedEventName = typeof meta.event_name === "string" ? meta.event_name : ""
+  if (!signedEventName || signedEventName !== eventName) {
+    return { status: 400, body: { ok: false, error: "event_name_mismatch" } }
+  }
   const data = (body.data ?? {}) as Record<string, unknown>
   const attributes = (data.attributes ?? {}) as Record<string, unknown>
   const customData = (meta.custom_data ?? {}) as Record<string, unknown>

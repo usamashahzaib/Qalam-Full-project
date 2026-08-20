@@ -71,7 +71,7 @@ beforeEach(() => {
 })
 
 const payload = (variantId: string, id: string) => JSON.stringify({
-  meta: { custom_data: { kind: "career_addon", token: "trusted" } },
+  meta: { event_name: "order_created", custom_data: { kind: "career_addon", token: "trusted" } },
   data: {
     id,
     attributes: {

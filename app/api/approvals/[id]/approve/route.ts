@@ -20,14 +20,14 @@ export async function POST(
 
   const { data: approval } = await supabase
     .from("approvals")
-    .select("id, post_id, requester_id, reviewer_email, post_title, status, review_token_hash")
+    .select("id, post_id, requester_id, reviewer_email, post_title, status, review_token_hash, review_token_expires_at")
     .eq("id", id)
     .maybeSingle()
 
   if (!approval) {
     return NextResponse.json({ error: "Approval request not found" }, { status: 404 })
   }
-  if (!approval.review_token_hash || hashToken(token) !== approval.review_token_hash) {
+  if (!approval.review_token_hash || !approval.review_token_expires_at || new Date(approval.review_token_expires_at).getTime() <= Date.now() || hashToken(token) !== approval.review_token_hash) {
     return NextResponse.json({ error: "Approval request not found" }, { status: 404 })
   }
 
@@ -40,6 +40,8 @@ export async function POST(
     .update({
       status: "approved",
       comment: comment || null,
+      review_token_hash: null,
+      review_token_expires_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

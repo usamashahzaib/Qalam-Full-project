@@ -9,17 +9,17 @@ import { HeroChecker } from "@/components/home/HeroChecker"
 import { InteractiveQalamGuide } from "@/components/home/InteractiveQalamGuide"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { PricingCard } from "@/components/PricingCard"
-import { APP_URL, resolvePublicHref } from "@/lib/seo"
+import { resolvePublicHref } from "@/lib/seo"
 import {
   AnalyticsIcon,
   BrainIcon,
   GrowthIcon,
-  GiftIcon,
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
-import { LIVE_SURFACE, LANDING_FAQ } from "@/lib/marketing-content"
+import { LANDING_FAQ } from "@/lib/marketing-content"
 import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 
 function useCountUp(end: number, duration = 1400) {
   const [count, setCount] = useState(0)
@@ -62,38 +62,6 @@ const HOW_IT_WORKS = [
     icon: GrowthIcon,
   },
 ]
-
-const STATUS_META: Record<string, {
-  label: string
-  dotClass: string
-  pillClass: string
-  headerClass: string
-  borderClass: string
-  animate?: boolean
-}> = {
-  "Live now": {
-    label: "Operational",
-    dotClass: "bg-emerald-500",
-    pillClass: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-    headerClass: "border-emerald-100 bg-emerald-50/40",
-    borderClass: "border-emerald-200/70",
-    animate: true,
-  },
-  "Active workflows": {
-    label: "Manual",
-    dotClass: "bg-gold",
-    pillClass: "bg-gold-50 text-gold-700 border border-gold-200",
-    headerClass: "border-gold/15 bg-gold/5",
-    borderClass: "border-gold/25",
-  },
-  "Building next": {
-    label: "Planned",
-    dotClass: "bg-zinc-400",
-    pillClass: "bg-zinc-100 text-zinc-500 border border-zinc-200",
-    headerClass: "border-zinc-100 bg-zinc-50/60",
-    borderClass: "border-zinc-200",
-  },
-}
 
 function VoiceStatCard({
   label,
@@ -234,7 +202,7 @@ function FAQSection() {
           </h2>
           <p className="text-lg text-zinc-600">
             Need something specific?{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline underline-offset-2">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center align-middle text-teal underline underline-offset-2">
               Email us
             </a>
           </p>
@@ -270,8 +238,13 @@ const homepageHowToSchema = {
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    trackMarketingEvent("homepage_view")
+  }, [])
+
   const homepagePlans = PLANS.map((plan) => ({
     ...plan,
+    features: plan.features.slice(0, 5),
     href: resolvePublicHref(plan.href),
     price: formatPkr(plan.quarterlyPkr),
     period: plan.plan === "Free" ? "" : "quarter",
@@ -294,53 +267,56 @@ export default function HomePage() {
             <div>
               <span className="chip mb-7 border-teal/15 bg-white/55 text-teal shadow-sm backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-gold" />
-                Career Visibility OS for serious professionals
+                One professional story. Built from real evidence.
               </span>
             </div>
 
             <h1
               className="text-[clamp(3.25rem,7vw,6.2rem)] font-extrabold leading-[0.95] tracking-[-0.055em] text-teal"
             >
-              Write with
+              Turn experience into
               <br />
-              <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">authority.</span>
+              {" "}
+              <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">visible proof.</span>
             </h1>
 
             <p
               className="mt-7 max-w-[590px] font-cormorant text-2xl font-medium leading-relaxed text-teal/75 sm:text-3xl"
             >
-              Be seen for what you know.
+              Be easier to trust, shortlist, and remember.
             </p>
 
             <p
               className="mt-5 max-w-xl text-base leading-7 text-zinc-600 sm:text-lg"
             >
-              Qalam connects intelligent writing, LinkedIn positioning, career proof, and ATS-ready resumes around one credible professional story.
+              Qalam turns the experience you already have into ATS-ready resumes, clearer LinkedIn positioning, and voice-aware content without inventing a single achievement.
             </p>
 
             <div
               className="mt-9 flex flex-col gap-3 sm:flex-row"
             >
               <Link
-                href={`${APP_URL}/signup`}
+                href={resolvePublicHref("/signup")}
+                onClick={() => trackMarketingEvent("homepage_primary_cta_click", { placement: "hero" })}
                 className="press inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(13,74,69,0.2)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_16px_34px_rgba(13,74,69,0.24)]"
               >
-                Start writing free
+                Build my professional story free
               </Link>
               <Link
-                href="/career-visibility"
+                href="#free-resume-check"
+                onClick={() => trackMarketingEvent("resume_check_start", { placement: "hero", method: "anchor" })}
                 className="press inline-flex min-h-12 items-center justify-center rounded-xl border border-teal/20 bg-white/60 px-7 py-3.5 text-sm font-semibold text-teal transition-[transform,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:border-teal/35 hover:bg-white"
               >
-                See how Qalam works
+                Check my resume free
               </Link>
             </div>
 
             <div
               className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/50"
             >
-              <span>Intelligent writing</span>
-              <span>Career proof</span>
-              <span>Professional visibility</span>
+              <span>No payment card</span>
+              <span>No automatic posting</span>
+              <span>No invented experience</span>
             </div>
           </div>
 
@@ -358,7 +334,7 @@ export default function HomePage() {
             <p className="mt-5 text-base leading-7 text-zinc-600">
               Drop in your resume for an immediate structural read. No account, no invented claims, and nothing stored.
             </p>
-            <Link href="/free-tools/ats-resume-checker" className="mt-6 inline-flex text-sm font-semibold text-teal underline decoration-gold/60 decoration-2 underline-offset-4">
+            <Link href="/free-tools/ats-resume-checker" onClick={() => trackMarketingEvent("resume_check_start", { placement: "inline_checker", method: "full_checker_link" })} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-teal underline decoration-gold/60 decoration-2 underline-offset-4">
               Open the full free checker
             </Link>
           </div>
@@ -374,9 +350,9 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid grid-cols-1 divide-y divide-zinc-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             {[
-              "Eight recruiter and ATS decision angles",
-              "Exact job description matching",
-              "No invented skills, metrics, or experience",
+              "Start with a useful result before creating an account",
+              "Keep resumes, LinkedIn, and content aligned to the same evidence",
+              "Nothing posts until you explicitly approve it",
             ].map((block) => (
               <div key={block} className="flex items-center justify-center px-6 py-4 text-center text-sm font-medium leading-relaxed text-zinc-700">
                 {block}
@@ -390,8 +366,9 @@ export default function HomePage() {
       <section id="before-after" className="border-b border-zinc-100 bg-zinc-50 px-6 py-24">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-12 text-center">
+            <span className="chip mb-4 border-gold/25 bg-gold-50 text-gold-700">Illustrative transformation</span>
             <h2 className="mb-3 text-4xl font-bold text-zinc-900 sm:text-5xl">This is what the difference looks like.</h2>
-            <p className="mx-auto max-w-2xl text-xl text-zinc-600">Same idea. One written without Qalam. One written with it.</p>
+            <p className="mx-auto max-w-2xl text-xl text-zinc-600">The same supplied experience, first as generic copy and then as a specific, evidence-led story.</p>
           </FadeUp>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <FadeUp delay={0.05}>
@@ -407,7 +384,7 @@ export default function HomePage() {
               <div className="flex h-full flex-col rounded-2xl border border-teal/30 bg-teal-50/40 p-8 shadow-sm">
                 <span className="mb-4 inline-flex self-start rounded-full bg-teal px-3 py-1 text-xs font-semibold uppercase tracking-widest text-white">With Qalam</span>
                 <p className="flex-1 text-sm leading-relaxed text-zinc-700">
-                  &ldquo;I once sent a salary offer without checking the currency. Told a candidate PKR when I meant USD. She accepted before I caught it. That mistake cost the company 3x what the role was budgeted for - and cost me 3 months of trust with the CEO. The most expensive HR errors aren&apos;t policy failures. They&apos;re one unconsidered line in an email. I learned to slow down that day.&rdquo;
+                  &ldquo;Our weekly project review used to take 90 minutes and still end without clear owners. I replaced the slide deck with three questions: what changed, what is blocked, and who decides next. Within a month, the meeting was down to 35 minutes and every action had an owner. Better communication is not more talking. It is making the next decision obvious.&rdquo;
                 </p>
                 <span className="mt-6 inline-flex self-start rounded-full border border-teal/30 bg-teal/10 px-3 py-1 text-xs font-semibold text-teal">Sounds like you. Gets saved, shared, and remembered.</span>
               </div>
@@ -416,47 +393,6 @@ export default function HomePage() {
           <FadeUp className="mt-10 text-center">
             <p className="text-lg font-semibold text-zinc-700">Qalam doesn&apos;t replace your voice. It finally lets it out.</p>
           </FadeUp>
-        </div>
-      </section>
-
-      <section className="bg-transparent px-6 py-20">
-        <div className="mx-auto max-w-[1200px]">
-          <FadeUp className="mb-12 text-center">
-            <span className="chip mb-4 border-teal/30 bg-teal/10 text-teal">Product truth</span>
-            <h2 className="mb-4 mt-3 text-4xl font-bold text-zinc-900 sm:text-5xl">
-              What you can use now, <span className="text-gold gold-underline">and what comes next.</span>
-            </h2>
-            <p className="mx-auto max-w-2xl text-xl leading-relaxed text-zinc-600">
-              Available tools, controlled workflows, and planned modules stay clearly separated.
-            </p>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {LIVE_SURFACE.map((group, i) => {
-              const status = STATUS_META[group.title] ?? STATUS_META["Building next"]
-              return (
-                <FadeUp key={group.title} delay={i * 0.08}>
-                  <div className={`h-full overflow-hidden rounded-2xl border bg-white shadow-sm ${status.borderClass}`}>
-                    <div className={`flex items-center justify-between border-b px-7 py-4 ${status.headerClass}`}>
-                      <h3 className="text-base font-bold text-zinc-900">{group.title}</h3>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider ${status.pillClass}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${status.animate ? "animate-pulse" : ""}`} />
-                        {status.label}
-                      </span>
-                    </div>
-                    <ul className="space-y-3 p-7 text-sm leading-relaxed text-zinc-600">
-                      {group.items.map((item) => (
-                        <li key={item} className="flex gap-3">
-                          <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${status.dotClass}`} />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </FadeUp>
-              )
-            })}
-          </div>
         </div>
       </section>
 
@@ -487,7 +423,7 @@ export default function HomePage() {
             <h2 className="mt-5 text-4xl font-bold leading-tight text-zinc-900 sm:text-5xl">Go beyond profile checks and resume scores.</h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-zinc-600">Prepare the complete application: targeted resumes, cover letters, interview practice, recruiter review, LinkedIn rewrites, and a 90-day career strategy.</p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-teal px-6 py-3.5 text-sm font-bold text-white">Explore Career Hub</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/career")} className="rounded-xl bg-teal px-6 py-3.5 text-sm font-bold text-white">Explore Career Hub</Link>
               <Link href="/pricing" className="rounded-xl border border-zinc-300 px-6 py-3.5 text-sm font-bold text-zinc-700">See plans and add-ons</Link>
             </div>
           </FadeUp>
@@ -513,16 +449,6 @@ export default function HomePage() {
           </FadeUp>
         </div>
 
-        <FadeUp className="mx-auto mt-10 flex max-w-[1200px] flex-col gap-5 rounded-2xl bg-teal-800 px-7 py-6 text-white sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 text-gold"><GiftIcon className="h-5 w-5" /></span>
-            <div>
-              <h3 className="text-lg font-bold">Refer and Earn is live.</h3>
-              <p className="mt-1 text-sm text-white/65">Your referral gets 10% off. You earn 10% commission after confirmed payment.</p>
-            </div>
-          </div>
-          <Link href={`${APP_URL}/login?callbackUrl=/settings/referrals`} className="shrink-0 rounded-xl bg-gold px-5 py-3 text-center text-sm font-bold text-white">Get my referral code</Link>
-        </FadeUp>
       </section>
 
       <VoiceMemorySection />
@@ -594,7 +520,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-3xl px-6 text-center">
           <p className="text-lg leading-relaxed text-slate-600">
             Built for professionals who want clearer positioning, stronger proof, and one consistent story across LinkedIn, content, and resumes. Questions? Reach us at{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-teal underline underline-offset-2">{SUPPORT_EMAIL}</a>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center align-middle text-teal underline underline-offset-2">{SUPPORT_EMAIL}</a>
           </p>
         </div>
       </section>
@@ -617,6 +543,12 @@ export default function HomePage() {
                 <PricingCard {...plan} />
               </FadeUp>
             ))}
+          </div>
+
+          <div className="mt-8 text-center">
+            <Link href="/pricing" className="inline-flex min-h-11 items-center rounded-xl border border-teal/20 bg-white px-5 text-sm font-semibold text-teal transition-colors hover:border-teal/40 hover:bg-teal/5">
+              Compare every plan feature
+            </Link>
           </div>
 
           {/* Managed / agency plans - full detail lives on /pricing, not duplicated here */}
@@ -649,24 +581,24 @@ export default function HomePage() {
         <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }} aria-hidden />
 
         <FadeUp className="relative z-10 mx-auto max-w-[720px] text-center">
-          <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">Start building your content advantage</span>
+          <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">Your experience already contains the proof</span>
           <h2 className="mb-6 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
-            The thought you&apos;ve been sitting on <span style={{ color: "oklch(0.85 0.05 85)" }}>is already a post.</span>
+            Make your professional story <span style={{ color: "oklch(0.85 0.05 85)" }}>easier to trust.</span>
           </h2>
           <p className="mb-10 font-cormorant text-2xl italic leading-relaxed text-white/78">
-            Qalam just finishes it.
+            One evidence base for your resume, LinkedIn, and content.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-              <Link href={`${APP_URL}/login`} className="qlx-champagne-btn inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-bold">
-                Start free - 5 posts, no card
+              <Link href={resolvePublicHref("/login")} onClick={() => trackMarketingEvent("homepage_primary_cta_click", { placement: "final_cta" })} className="qlx-champagne-btn inline-flex items-center gap-2 rounded-xl px-8 py-4 text-lg font-bold">
+                Build my professional story free
               </Link>
             </motion.div>
-            <Link href="/pricing" className="inline-flex items-center gap-2 rounded-xl border-2 border-white/25 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
-              Compare Plans
+            <Link href="#free-resume-check" onClick={() => trackMarketingEvent("resume_check_start", { placement: "final_cta", method: "anchor" })} className="inline-flex items-center gap-2 rounded-xl border-2 border-white/25 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-white/10">
+              Check my resume free
             </Link>
           </div>
-          <p className="mt-5 text-sm text-white/55">Start with practical recommendations. Upgrade when you need more capacity.</p>
+          <p className="mt-5 text-sm text-white/55">No payment card. No automatic posting. No invented achievements.</p>
         </FadeUp>
       </section>
     </>

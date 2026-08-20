@@ -7,8 +7,9 @@ import { AnimatePresence, motion } from "framer-motion"
 import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
-import { APP_URL } from "@/lib/seo"
+import { resolvePublicHref } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
+import { MORPH_SPRING } from "@/lib/motion"
 
 const PRODUCT_LINKS = alphabetical([
   { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
@@ -56,9 +57,11 @@ function UserAvatar({ name, imageUrl }: { name: string; imageUrl: string | null 
 function NavDropdown({
   label,
   links,
+  light,
 }: {
   label: string
   links: { label: string; href: string; desc: string }[]
+  light: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -81,7 +84,7 @@ function NavDropdown({
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={panelId}
-        className="qlx-link flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium"
+        className={`flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}
       >
         {label}
         <motion.span
@@ -89,7 +92,7 @@ function NavDropdown({
           transition={{ duration: 0.18 }}
           className="inline-flex"
         >
-          <ChevronDownIcon className="h-3.5 w-3.5 text-white/40" />
+          <ChevronDownIcon className={`h-3.5 w-3.5 ${light ? "text-zinc-400" : "text-white/40"}`} />
         </motion.span>
       </button>
 
@@ -100,7 +103,7 @@ function NavDropdown({
             initial={{ opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            transition={MORPH_SPRING}
             className={`qlx-panel absolute left-0 top-full z-50 mt-2 overflow-hidden rounded-2xl ${links.length > 7 ? "w-[34rem]" : "w-64"}`}
           >
             <div className={`p-2 ${links.length > 7 ? "grid grid-cols-2" : ""}`}>
@@ -125,7 +128,7 @@ function NavDropdown({
 
 type SessionData = { user?: { id?: string | null; name?: string | null; email?: string | null; image?: string | null } | null }
 
-function UserMenu({ session }: { session: SessionData }) {
+function UserMenu({ session, light }: { session: SessionData; light: boolean }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -141,7 +144,7 @@ function UserMenu({ session }: { session: SessionData }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl p-1 transition-colors hover:bg-white/8"
+        className={`flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl p-1 transition-colors ${light ? "hover:bg-teal/8" : "hover:bg-white/8"}`}
         aria-label="Account menu"
       >
         {session.user?.image ? (
@@ -155,7 +158,7 @@ function UserMenu({ session }: { session: SessionData }) {
           transition={{ duration: 0.18 }}
           className="inline-flex"
         >
-          <ChevronDownIcon className="h-3.5 w-3.5 text-white/40" />
+          <ChevronDownIcon className={`h-3.5 w-3.5 ${light ? "text-zinc-400" : "text-white/40"}`} />
         </motion.span>
       </button>
 
@@ -165,7 +168,7 @@ function UserMenu({ session }: { session: SessionData }) {
             initial={{ opacity: 0, y: 6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ type: "spring", stiffness: 420, damping: 32 }}
+            transition={MORPH_SPRING}
             className="qlx-panel absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl"
           >
             <div className="border-b border-white/10 px-4 py-3">
@@ -180,7 +183,7 @@ function UserMenu({ session }: { session: SessionData }) {
                 </svg>
                 Settings
               </Link>
-              <Link href={`${APP_URL}/dashboard`} onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/75 transition-colors hover:bg-white/8 hover:text-[oklch(0.88_0.04_90)]">
+              <Link href={resolvePublicHref("/dashboard")} onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/75 transition-colors hover:bg-white/8 hover:text-[oklch(0.88_0.04_90)]">
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -211,6 +214,14 @@ export function Navbar() {
   const [announcementReady, setAnnouncementReady] = useState(false)
   const { data: session, status } = useSession()
   const pathname = usePathname()
+  const light = [
+    "/linkedin-extension",
+    "/features",
+    "/industries",
+    "/ats-resume-builder",
+    "/linkedin-optimization",
+    "/job-description-match",
+  ].includes(pathname) || ["/free-tools", "/methodology", "/blog", "/use-cases"].some((prefix) => pathname.startsWith(prefix))
   // Pricing has its own early-access urgency banner - stacking the global
   // announcement on top of it doubles up on urgency messaging.
   // Gated on announcementReady so repeat visitors (who already dismissed it) never
@@ -272,8 +283,8 @@ export function Navbar() {
       </AnimatePresence>
 
       <nav
-        className={`qlx-glass border-b transition-all duration-300 ${
-          scrolled ? "border-white/10 shadow-[0_2px_32px_oklch(0_0_0/0.35)]" : "border-transparent"
+        className={`border-b transition-all duration-300 ${light ? "bg-white/90 backdrop-blur-xl" : "qlx-glass"} ${
+          scrolled ? light ? "border-teal/10 shadow-[0_12px_32px_rgba(13,74,69,0.12)]" : "border-white/10 shadow-[0_2px_32px_oklch(0_0_0/0.35)]" : "border-transparent"
         }`}
       >
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
@@ -281,17 +292,17 @@ export function Navbar() {
             href="/"
             size={32}
             containerClassName="flex min-h-11 select-none items-center gap-2"
-            textClassName="text-xl font-bold tracking-tight text-white"
+            textClassName={`text-xl font-bold tracking-tight ${light ? "text-teal" : "text-white"}`}
           />
 
           <div className="hidden items-center gap-1 lg:flex">
-            <NavDropdown label="Product" links={PRODUCT_LINKS} />
-            <NavDropdown label="Use Cases" links={USE_CASE_LINKS} />
+            <NavDropdown label="Product" links={PRODUCT_LINKS} light={light} />
+            <NavDropdown label="Use Cases" links={USE_CASE_LINKS} light={light} />
             {STATIC_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="qlx-link inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium"
+                className={`inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}
               >
                 {link.label}
               </Link>
@@ -300,14 +311,14 @@ export function Navbar() {
 
           <div className="hidden items-center gap-3 lg:flex">
             {status === "loading" ? (
-              <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+              <div className={`h-8 w-8 animate-pulse rounded-full ${light ? "bg-teal/10" : "bg-white/10"}`} />
             ) : session?.user?.id ? (
-              <UserMenu session={session} />
+              <UserMenu session={session} light={light} />
             ) : (
               <>
-                <Link href={`${APP_URL}/login`} className="qlx-link inline-flex min-h-11 items-center rounded-lg px-2 py-2 text-sm font-medium">Log in</Link>
+                <Link href={resolvePublicHref("/login")} className={`inline-flex min-h-11 items-center rounded-lg px-2 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}>Log in</Link>
                 <Link
-                  href={`${APP_URL}/signup`}
+                  href={resolvePublicHref("/signup")}
                   className="qlx-champagne-btn press inline-flex min-h-11 items-center rounded-lg px-4 py-2 text-sm font-semibold"
                 >
                   Start free
@@ -317,15 +328,15 @@ export function Navbar() {
           </div>
 
           <button
-            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-white/8 lg:hidden"
+            className={`flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors lg:hidden ${light ? "hover:bg-teal/8" : "hover:bg-white/8"}`}
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
           >
-            <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className="block h-0.5 w-5 origin-center rounded-full bg-white/80" />
-            <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className="block h-0.5 w-5 rounded-full bg-white/80" />
-            <motion.span animate={mobileOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className="block h-0.5 w-5 origin-center rounded-full bg-white/80" />
+            <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
+            <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className={`block h-0.5 w-5 rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
+            <motion.span animate={mobileOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
           </button>
         </div>
 
@@ -411,17 +422,17 @@ export function Navbar() {
                           <p className="text-xs text-white/40">{session.user?.email}</p>
                         </div>
                       </div>
-                      <Link href={`${APP_URL}/settings`} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Settings</Link>
-                      <Link href={`${APP_URL}/dashboard`} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Dashboard</Link>
+                      <Link href={resolvePublicHref("/settings")} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Settings</Link>
+                      <Link href={resolvePublicHref("/dashboard")} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Dashboard</Link>
                       <button onClick={() => signOut({ callbackUrl: "/" })} className="min-h-11 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-white/60 hover:bg-red-500/10 hover:text-red-400">
                         Log out
                       </button>
                     </>
                   ) : (
                     <>
-                      <Link href={`${APP_URL}/login`} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Log in</Link>
+                      <Link href={resolvePublicHref("/login")} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Log in</Link>
                       <Link
-                        href={`${APP_URL}/signup`}
+                        href={resolvePublicHref("/signup")}
                         onClick={() => setMobileOpen(false)}
                         className="qlx-champagne-btn flex min-h-11 items-center justify-center rounded-lg px-3 py-2.5 text-center text-sm font-semibold"
                       >

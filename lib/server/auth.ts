@@ -165,10 +165,11 @@ export async function requireAuthApi(request: NextRequest) {
     }
 
     // Invalidate sessions when password has changed since this JWT was issued.
-    // Only enforced when the column exists (both sides are a number).
+    // A credentials token without the current version is stale too. This also
+    // revokes tokens issued before password-version tracking was introduced.
     const dbPwVersion = (user as unknown as { password_version?: number }).password_version
     const tokenPwVersion = (session.user as { passwordVersion?: number }).passwordVersion
-    if (typeof dbPwVersion === "number" && typeof tokenPwVersion === "number" && dbPwVersion !== tokenPwVersion) {
+    if (typeof dbPwVersion !== "number" || typeof tokenPwVersion !== "number" || dbPwVersion !== tokenPwVersion) {
       log.warn("auth.password_version_mismatch", { userId: tokenId })
       return {
         userId: null,

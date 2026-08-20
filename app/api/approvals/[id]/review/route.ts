@@ -13,7 +13,7 @@ export async function GET(
 
   const { data: approval } = await supabase
     .from("approvals")
-    .select("id, post_title, post_content, status, message, comment, created_at, updated_at, review_token_hash")
+    .select("id, post_title, post_content, status, message, comment, created_at, updated_at, review_token_hash, review_token_expires_at")
     .eq("id", id)
     .maybeSingle()
 
@@ -22,11 +22,12 @@ export async function GET(
   }
   // Require a valid token always. A null hash means the row was created without
   // token generation - treat as inaccessible rather than world-readable.
-  if (!approval.review_token_hash || hashToken(token) !== approval.review_token_hash) {
+  if (!approval.review_token_hash || !approval.review_token_expires_at || new Date(approval.review_token_expires_at).getTime() <= Date.now() || hashToken(token) !== approval.review_token_hash) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
   const safeApproval = { ...approval }
   delete safeApproval.review_token_hash
+  delete safeApproval.review_token_expires_at
   return NextResponse.json({ approval: safeApproval })
 }

@@ -11,15 +11,17 @@ import { PLAN_PRIORITY } from "@/lib/server/plan-priority"
 import { env } from "@/lib/server/env"
 import { log } from "@/lib/server/logging"
 import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
+import { isSessionCurrent } from "@/lib/server/session-revocation"
 
 export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
 export async function getAuthenticatedSession() {
-  return await auth()
+  const session = await auth()
+  return await isSessionCurrent(session) ? session : null
 }
 
 export async function requireAuth(): Promise<string> {
-  const session = await auth()
+  const session = await getAuthenticatedSession()
   const id = session?.user?.id
   if (!id) throw new Error("auth_required")
   return id

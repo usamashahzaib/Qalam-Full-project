@@ -42,9 +42,10 @@ export async function POST(
     }
 
     const { email, role } = parsed.data
+    const normalizedEmail = email.toLowerCase().trim()
 
     // Prevent self-invite
-    if (email.toLowerCase() === (user.email ?? "").toLowerCase()) {
+    if (normalizedEmail === (user.email ?? "").toLowerCase()) {
       return NextResponse.json({ error: "cannot_invite_yourself" }, { status: 400 })
     }
 
@@ -52,8 +53,22 @@ export async function POST(
     const { data: invitee } = await supabase
       .from("users")
       .select("id, email, full_name")
-      .eq("email", email.toLowerCase().trim())
+      .eq("email", normalizedEmail)
       .maybeSingle()
+
+    const [{ count: memberCount }, { count: pendingCount }] = await Promise.all([
+      supabase.from("workspace_members").select("user_id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+      supabase.from("workspace_invites").select("email", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId).gt("expires_at", new Date().toISOString()).neq("email", normalizedEmail),
+    ])
+    const seats = planCheck.limits.seats
+    const reservedSeats = (memberCount ?? 0) + (pendingCount ?? 0)
+    if (seats !== "unlimited" && reservedSeats >= seats) {
+      return NextResponse.json(
+        { error: "seat_limit_reached", featureName: "seats", limit: seats, current: reservedSeats },
+        { status: 403 }
+      )
+    }
 
     if (!invitee) {
       // User doesn't have a Qalam account yet - save a pending invite and send an email.
@@ -65,13 +80,16 @@ export async function POST(
         .maybeSingle()
 
       const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      await supabase
-        .from("workspace_invites")
-        .upsert(
-          { workspace_id: workspaceId, email: email.toLowerCase().trim(), role, invited_by: user.id, expires_at: inviteExpiresAt, created_at: new Date().toISOString() },
-          { onConflict: "workspace_id,email" }
-        )
-        .then(undefined, () => undefined)
+      const { data: reserved, error: reserveError } = await supabase.rpc("reserve_workspace_invite_with_limit", {
+        p_workspace_id: workspaceId,
+        p_email: normalizedEmail,
+        p_role: role,
+        p_invited_by: user.id,
+        p_expires_at: inviteExpiresAt,
+        p_seat_limit: seats === "unlimited" ? null : seats,
+      })
+      if (reserveError) return NextResponse.json({ error: "invite_reservation_failed" }, { status: 500 })
+      if (!reserved) return NextResponse.json({ error: "seat_limit_reached", featureName: "seats", limit: seats }, { status: 403 })
 
       await sendTransactionalEmail({
         to: email,
@@ -100,26 +118,15 @@ export async function POST(
       return NextResponse.json({ error: "already_a_member", currentRole: existing.role }, { status: 409 })
     }
 
-    const { count } = await supabase
-      .from("workspace_members")
-      .select("user_id", { count: "exact", head: true })
-      .eq("workspace_id", workspaceId)
-    const seats = planCheck.limits.seats
-    if (seats !== "unlimited" && (count ?? 0) >= seats) {
-      return NextResponse.json(
-        { error: "seat_limit_reached", featureName: "seats", limit: seats, current: count ?? 0 },
-        { status: 403 }
-      )
-    }
-
     // Add to workspace
-    const { error: insertErr } = await supabase
-      .from("workspace_members")
-      .insert({ workspace_id: workspaceId, user_id: invitee.id, role })
-
-    if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 })
-    }
+    const { data: added, error: insertErr } = await supabase.rpc("add_workspace_member_with_limit", {
+      p_workspace_id: workspaceId,
+      p_user_id: invitee.id,
+      p_role: role,
+      p_seat_limit: seats === "unlimited" ? null : seats,
+    })
+    if (insertErr) return NextResponse.json({ error: "workspace_member_add_failed" }, { status: 500 })
+    if (!added) return NextResponse.json({ error: "seat_limit_reached", featureName: "seats", limit: seats }, { status: 403 })
 
     // Notify the invitee
     const { data: workspace } = await supabase

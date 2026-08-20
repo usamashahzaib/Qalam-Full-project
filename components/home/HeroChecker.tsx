@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, useReducedMotion } from "framer-motion"
 import { analyzeResume, MIN_RESUME_CHARS, RESUME_HANDOFF_KEY, type SignalState } from "@/lib/resume-signals"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 
 const UPLOAD_ERRORS: Record<string, string> = {
   resume_pdf_too_large: "That file is over 5 MB. Try a smaller PDF or DOCX.",
@@ -43,6 +44,7 @@ export function HeroChecker() {
   )
 
   const uploadResume = async (file: File) => {
+    trackMarketingEvent("resume_check_start", { placement: "inline_checker", method: "upload" })
     setUploading(true)
     setError("")
     try {
@@ -157,7 +159,10 @@ export function HeroChecker() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => setPasting(true)}
+                  onClick={() => {
+                    trackMarketingEvent("resume_check_start", { placement: "inline_checker", method: "paste" })
+                    setPasting(true)
+                  }}
                   className="min-h-11 text-sm font-medium text-white/70 underline underline-offset-4 transition-colors hover:text-white"
                 >
                   or paste the text
