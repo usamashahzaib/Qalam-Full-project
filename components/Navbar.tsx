@@ -271,10 +271,7 @@ export function Navbar() {
         )}
       </AnimatePresence>
 
-      <motion.nav
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+      <nav
         className={`qlx-glass border-b transition-all duration-300 ${
           scrolled ? "border-white/10 shadow-[0_2px_32px_oklch(0_0_0/0.35)]" : "border-transparent"
         }`}
@@ -287,7 +284,7 @@ export function Navbar() {
             textClassName="text-xl font-bold tracking-tight text-white"
           />
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 lg:flex">
             <NavDropdown label="Product" links={PRODUCT_LINKS} />
             <NavDropdown label="Use Cases" links={USE_CASE_LINKS} />
             {STATIC_LINKS.map((link) => (
@@ -301,7 +298,7 @@ export function Navbar() {
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             {status === "loading" ? (
               <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
             ) : session?.user?.id ? (
@@ -320,7 +317,7 @@ export function Navbar() {
           </div>
 
           <button
-            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-white/8 md:hidden"
+            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors hover:bg-white/8 lg:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -340,7 +337,7 @@ export function Navbar() {
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="overflow-hidden border-t border-white/10 md:hidden"
+              className="overflow-hidden border-t border-white/10 bg-[#242a28] lg:hidden"
             >
               <div className="flex flex-col gap-1 px-6 py-4">
                 {/* Product section */}
@@ -437,7 +434,7 @@ export function Navbar() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.nav>
+      </nav>
     </div>
   )
 }

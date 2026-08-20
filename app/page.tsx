@@ -2,20 +2,19 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { motion, useInView, useReducedMotion, useScroll, useSpring } from "framer-motion"
+import { motion, useInView, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { CapabilityShowcase } from "@/components/marketing/CapabilityShowcase"
 import { HeroChecker } from "@/components/home/HeroChecker"
+import { InteractiveQalamGuide } from "@/components/home/InteractiveQalamGuide"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { PricingCard } from "@/components/PricingCard"
 import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import {
   AnalyticsIcon,
   BrainIcon,
-  CheckIcon,
   GrowthIcon,
   GiftIcon,
-  MicroscopeIcon,
 } from "@/components/ui/qalam-icons"
 import { PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
 import { SUPPORT_EMAIL } from "@/lib/contact"
@@ -139,7 +138,6 @@ function VoiceMemoryConnector({ stages }: { stages: { label: string }[] }) {
   const sectionRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start 85%", "end 65%"] })
   const pathLength = useSpring(scrollYProgress, { stiffness: 110, damping: 26, mass: 0.4 })
-  const prefersReducedMotion = useReducedMotion()
 
   return (
     <div ref={sectionRef} className="relative mb-3 hidden h-10 md:block">
@@ -153,7 +151,18 @@ function VoiceMemoryConnector({ stages }: { stages: { label: string }[] }) {
           stroke="#C9871F"
           strokeWidth="2"
           strokeLinecap="round"
-          style={prefersReducedMotion ? undefined : { pathLength }}
+          style={{ pathLength }}
+          className="motion-reduce:hidden"
+        />
+        <line
+          x1="75"
+          y1="20"
+          x2="825"
+          y2="20"
+          stroke="#C9871F"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className="hidden motion-reduce:block"
         />
         {stages.map((stage, i) => {
           const cx = 75 + (i * (825 - 75)) / (stages.length - 1)
@@ -275,98 +284,86 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageHowToSchema).replace(/</g, "\\u003c") }} />
 
-      <section className="qlx qlx-surface relative flex min-h-screen items-center overflow-hidden pb-16 pt-28">
-        <div className="qlx-grain" aria-hidden />
-        <div
-          className="absolute -left-40 -top-40 h-[560px] w-[560px] rounded-full opacity-40 blur-3xl"
-          style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.55) 0%, transparent 70%)" }}
-          aria-hidden
-        />
-        <div
-          className="absolute -right-32 top-10 h-[480px] w-[480px] rounded-full opacity-30 blur-3xl"
-          style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }}
-          aria-hidden
-        />
-        <div
-          className="absolute inset-0 opacity-[0.35]"
-          style={{
-            backgroundImage:
-              "linear-gradient(oklch(1 0.02 196 / 0.05) 1px, transparent 1px), linear-gradient(90deg, oklch(1 0.02 196 / 0.05) 1px, transparent 1px)",
-            backgroundSize: "54px 54px",
-          }}
-          aria-hidden
-        />
-        <div className="relative z-10 mx-auto grid max-w-[1200px] grid-cols-1 items-center gap-12 px-6 lg:grid-cols-2">
-          <div>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 300, damping: 28 }}>
-              <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85 backdrop-blur">
-                <span className="h-2 w-2 animate-pulse rounded-full" style={{ background: "oklch(0.85 0.05 85)" }} />
-                Free ATS resume checker. No account.
+      <section className="relative flex min-h-screen items-center overflow-hidden bg-[#f7f3ea] pb-20 pt-36 text-teal">
+        <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#dce9df]/75 blur-3xl" aria-hidden />
+        <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-[#f0ddb9]/65 blur-3xl" aria-hidden />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal/15 to-transparent" aria-hidden />
+
+        <div className="relative z-10 mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(430px,0.84fr)] lg:gap-12">
+          <div className="max-w-[650px]">
+            <div>
+              <span className="chip mb-7 border-teal/15 bg-white/55 text-teal shadow-sm backdrop-blur">
+                <span className="h-2 w-2 rounded-full bg-gold" />
+                Career Visibility OS for serious professionals
               </span>
-            </motion.div>
+            </div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.08 }}
-              className="mb-5 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl"
+            <h1
+              className="text-[clamp(3.25rem,7vw,6.2rem)] font-extrabold leading-[0.95] tracking-[-0.055em] text-teal"
             >
-              Check your resume
+              Write with
               <br />
-              before recruiters do.
-              <br />
-              <span className="gold-underline" style={{ color: "oklch(0.85 0.05 85)" }}>Fix every avoidable rejection risk.</span>
-            </motion.h1>
+              <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">authority.</span>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.16 }}
-              className="mb-8 max-w-xl font-cormorant text-2xl italic leading-relaxed text-white/75"
+            <p
+              className="mt-7 max-w-[590px] font-cormorant text-2xl font-medium leading-relaxed text-teal/75 sm:text-3xl"
             >
-              Get an ATS and recruiter-style review across parsing, job fit, proof, progression, skills, clarity, and professional risk. Free for everyone.
-            </motion.p>
-
-            <p className="mb-8 max-w-xl text-sm leading-6 text-white/55">
-              Qalam is a Career Visibility OS that connects a free ATS Resume Checker, ATS Resume Builder, LinkedIn Profile Optimization, and an AI LinkedIn Writer around one credible professional story.
+              Be seen for what you know.
             </p>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 26, delay: 0.24 }}
-              className="mb-10 flex flex-col gap-3 sm:flex-row"
+            <p
+              className="mt-5 max-w-xl text-base leading-7 text-zinc-600 sm:text-lg"
             >
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                <Link
-                  href="/free-tools/ats-resume-checker"
-                  className="qlx-champagne-btn press inline-flex items-center gap-2 rounded-xl px-7 py-4 text-base font-semibold transition-transform hover:-translate-y-0.5"
-                >
-                  Check my resume free
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  href={`${APP_URL}/login?callbackUrl=/career/resumes`}
-                  className="press inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-7 py-4 text-base font-semibold text-white/90 transition-all hover:border-white/30 hover:bg-white/10"
-                >
-                  Build one free resume monthly
-                </Link>
-              </motion.div>
-            </motion.div>
+              Qalam connects intelligent writing, LinkedIn positioning, career proof, and ATS-ready resumes around one credible professional story.
+            </p>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.45 }} className="flex items-center gap-2 text-sm text-white/55">
-              <CheckIcon className="h-4 w-4 shrink-0" style={{ color: "oklch(0.85 0.05 85)" }} />
-              <span>No sign-in for the checker. Sign in to build and export one full ATS-safe resume every month.</span>
-            </motion.div>
-            <nav aria-label="Career tools" className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-white/70">
-              <Link href="/ats-resume-builder" className="hover:text-white hover:underline">ATS Resume Builder</Link>
-              <Link href="/linkedin-optimization" className="hover:text-white hover:underline">LinkedIn Profile Optimization</Link>
-              <Link href="/ai-linkedin-writer" className="hover:text-white hover:underline">AI LinkedIn Writer</Link>
-            </nav>
+            <div
+              className="mt-9 flex flex-col gap-3 sm:flex-row"
+            >
+              <Link
+                href={`${APP_URL}/signup`}
+                className="press inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(13,74,69,0.2)] transition-[transform,background-color,box-shadow] duration-200 hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_16px_34px_rgba(13,74,69,0.24)]"
+              >
+                Start writing free
+              </Link>
+              <Link
+                href="/career-visibility"
+                className="press inline-flex min-h-12 items-center justify-center rounded-xl border border-teal/20 bg-white/60 px-7 py-3.5 text-sm font-semibold text-teal transition-[transform,background-color,border-color] duration-200 hover:-translate-y-0.5 hover:border-teal/35 hover:bg-white"
+              >
+                See how Qalam works
+              </Link>
+            </div>
+
+            <div
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/50"
+            >
+              <span>Intelligent writing</span>
+              <span>Career proof</span>
+              <span>Professional visibility</span>
+            </div>
           </div>
 
-          <div className="flex justify-center lg:justify-end">
+          <InteractiveQalamGuide />
+        </div>
+      </section>
+
+      <section id="free-resume-check" className="bg-[#f7f3ea] px-6 pb-24 pt-6">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-10 rounded-[2rem] border border-teal/10 bg-[#e8f0eb] p-6 shadow-[0_18px_60px_rgba(13,74,69,0.08)] sm:p-10 lg:grid-cols-[0.82fr_1.18fr] lg:p-12">
+          <div className="max-w-md">
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Start with something useful</span>
+            <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-teal sm:text-4xl">
+              See what recruiters and ATS systems see first.
+            </h2>
+            <p className="mt-5 text-base leading-7 text-zinc-600">
+              Drop in your resume for an immediate structural read. No account, no invented claims, and nothing stored.
+            </p>
+            <Link href="/free-tools/ats-resume-checker" className="mt-6 inline-flex text-sm font-semibold text-teal underline decoration-gold/60 decoration-2 underline-offset-4">
+              Open the full free checker
+            </Link>
+          </div>
+
+          <div className="qlx rounded-[1.5rem] bg-[#123f3b] p-4 shadow-[0_20px_50px_rgba(13,74,69,0.18)] sm:p-7">
             <HeroChecker />
           </div>
         </div>
