@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -27,10 +27,9 @@ export async function GET(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("career_content_imports")
       .select("id, source_url, content, metrics, analysis, created_at")
-      .eq("workspace_id", planCheck.workspaceId)
       .order("created_at", { ascending: false })
       .limit(50)
     if (error) return NextResponse.json({ error: "Content history could not be loaded." }, { status: 500 })
@@ -80,8 +79,7 @@ Return:
     if (!analysis || typeof analysis !== "object") return NextResponse.json({ error: "Content analysis failed." }, { status: 503 })
     const normalized = analysis as Record<string, unknown>
     normalized.engagement_rate = engagementRate
-    const { data, error } = await createServiceClient().from("career_content_imports").insert({
-      workspace_id: planCheck.workspaceId,
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("career_content_imports").insert({
       user_id: user.id,
       source_type: "manual",
       source_url: input.sourceUrl || null,
@@ -91,6 +89,7 @@ Return:
       ownership_confirmed: true,
     }).select("id").single()
     if (error) return NextResponse.json({ error: "Analysis could not be saved." }, { status: 500 })
-    return NextResponse.json({ id: data.id, analysis: normalized })
+    const saved = data as unknown as { id: string }
+    return NextResponse.json({ id: saved.id, analysis: normalized })
   })(request)
 }

@@ -3,7 +3,7 @@ import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { requireRole } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 
 const patchSchema = z.object({
   role: z.enum(["editor", "viewer", "client_reviewer"]),
@@ -37,11 +37,9 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
-    const { error } = await supabase
+    const { error } = await createScopedClient(workspaceId)
       .from("workspace_members")
       .update({ role: parsed.data.role })
-      .eq("workspace_id", workspaceId)
       .eq("user_id", targetUserId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -65,11 +63,9 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "cannot_remove_self" }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
-    const { error } = await supabase
+    const { error } = await createScopedClient(workspaceId)
       .from("workspace_members")
       .delete()
-      .eq("workspace_id", workspaceId)
       .eq("user_id", targetUserId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

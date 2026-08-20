@@ -4,6 +4,8 @@ import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_METHODOLOGY_UPDATED, ATS_
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 
+export const dynamic = "force-static"
+
 // llms-full.txt: the emerging companion convention to llms.txt. Where llms.txt
 // is an index, this serves the complete published article corpus as plain
 // markdown so LLM crawlers can ingest every article in a single fetch.

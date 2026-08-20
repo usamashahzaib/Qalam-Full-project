@@ -176,9 +176,16 @@ export function createScopedClient(workspaceId: string) {
 
   function from(table: string) {
     return {
-      /** SELECT - workspace_id filter is the first constraint; caller can chain more */
-      select: (columns = "*") =>
-        supabase.from(table).select(columns).eq("workspace_id", workspaceId),
+      /**
+       * SELECT - workspace_id filter is the first constraint; caller can chain more.
+       * Untyped columns (same as calling supabase.from(table).select(...) with a
+       * non-literal string directly) - a generic signature here previously blew
+       * up the TS compiler by combining with supabase-js's own literal-parsing
+       * generics. Callers that need row typing should annotate their own
+       * `const { data } = await ... as { data: MyRow[] | null; error: ... }`.
+       */
+      select: (columns = "*", options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }) =>
+        supabase.from(table).select(columns, options).eq("workspace_id", workspaceId),
 
       /** INSERT - forces workspace_id onto every row */
       insert: (data: Record<string, unknown> | Record<string, unknown>[]) => {
@@ -187,6 +194,18 @@ export function createScopedClient(workspaceId: string) {
           workspace_id: workspaceId,
         }))
         return supabase.from(table).insert(rows)
+      },
+
+      /** UPSERT - forces workspace_id onto every row, same as insert */
+      upsert: (
+        data: Record<string, unknown> | Record<string, unknown>[],
+        options?: { onConflict?: string; ignoreDuplicates?: boolean }
+      ) => {
+        const rows = (Array.isArray(data) ? data : [data]).map((r) => ({
+          ...r,
+          workspace_id: workspaceId,
+        }))
+        return supabase.from(table).upsert(rows, options)
       },
 
       /** UPDATE - forces workspace_id WHERE clause */

@@ -1,8 +1,6 @@
 ﻿import type { Metadata } from "next"
 import { Suspense } from "react"
-import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
-import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL, APP_URL } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
 import { CAREER_PRODUCTS } from "@/lib/career-pricing"
@@ -180,16 +178,13 @@ const productSchema = {
   ],
 }
 
-export default async function PricingPage() {
-  const headerStore = await headers()
-  const pricingCurrency = resolvePricingCurrency(headerStore)
-
+export default function PricingPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema).replace(/</g, "\\u003c") }} />
       <Suspense fallback={null}>
-        <PricingPageContent pricingCurrency={pricingCurrency} />
+        <PricingPageContent />
       </Suspense>
     </>
   )

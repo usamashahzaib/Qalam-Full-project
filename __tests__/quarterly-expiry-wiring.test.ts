@@ -1,11 +1,17 @@
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
-
-const source = readFileSync(resolve(process.cwd(), "lib/server/payments.ts"), "utf8")
+import { billingCycleDays } from "@/lib/server/payments"
 
 describe("quarterly payment expiry", () => {
-  it("uses a 90-day fallback when the provider omits period end", () => {
-    expect(source).toContain('billingCycle === "quarterly" ? 90 : 30')
+  it("uses a 90-day fallback when the provider omits period end for a quarterly cycle", () => {
+    expect(billingCycleDays("quarterly")).toBe(90)
+  })
+
+  it("uses a 30-day fallback for monthly and any other/unset cycle", () => {
+    expect(billingCycleDays("monthly")).toBe(30)
+    expect(billingCycleDays("")).toBe(30)
+  })
+
+  it("uses a 365-day fallback for annual", () => {
+    expect(billingCycleDays("annual")).toBe(365)
   })
 })

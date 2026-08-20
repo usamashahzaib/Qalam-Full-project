@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { parseProfessionalContext } from "@/lib/professional-context"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -69,20 +69,19 @@ Return JSON:
 
     // Persist to voice_profiles so generation routes pick it up automatically
     if (user.workspaceId) {
-      const supabase = createServiceClient()
-      const { data: existing } = await supabase
+      const supabase = createScopedClient(user.workspaceId)
+      const { data: existingRaw } = await supabase
         .from("voice_profiles")
         .select("id, characteristics")
-        .eq("workspace_id", user.workspaceId)
         .limit(1)
         .maybeSingle()
+      const existing = existingRaw as unknown as { id: string; characteristics: unknown } | null
       const savedProfessionalContext = parseProfessionalContext(
         (existing?.characteristics as { professionalContext?: unknown } | null)?.professionalContext
       )
 
       const profilePayload = {
         user_id: user.id,
-        workspace_id: user.workspaceId,
         characteristics: {
           ...characteristics,
           ...(savedProfessionalContext ? { professionalContext: savedProfessionalContext } : {}),

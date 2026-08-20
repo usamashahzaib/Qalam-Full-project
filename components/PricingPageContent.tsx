@@ -55,10 +55,6 @@ const PRICING_FAQ = [
   },
 ]
 
-type PricingPageContentProps = {
-  pricingCurrency?: { currencyCode?: string; label?: string }
-}
-
 function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   const isPremium = plan.name === "Premium Management"
   const monthlySaving = plan.originalMonthlyPrice - plan.monthlyPrice
@@ -140,7 +136,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   )
 }
 
-export function PricingPageContent({}: PricingPageContentProps) {
+export function PricingPageContent() {
   const { data: session, status } = useSession()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)

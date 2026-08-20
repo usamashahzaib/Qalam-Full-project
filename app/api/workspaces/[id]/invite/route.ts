@@ -3,7 +3,7 @@ import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { requireRole } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { APP_URL } from "@/lib/seo"
 
@@ -21,7 +21,11 @@ export async function POST(
     if (!planCheck.ok) return planCheck.response
 
     const { id: workspaceId } = await context.params
+    // rpc calls and lookups against tables with no workspace_id column
+    // (users, workspaces) stay on the raw client; workspace_members and
+    // workspace_invites queries below use the workspace-scoped one.
     const supabase = createServiceClient()
+    const scoped = createScopedClient(workspaceId)
 
     // Owners and admins can invite. Editors and read-only roles cannot.
     // and agency staff who manage client workspaces need this too.
@@ -57,9 +61,9 @@ export async function POST(
       .maybeSingle()
 
     const [{ count: memberCount }, { count: pendingCount }] = await Promise.all([
-      supabase.from("workspace_members").select("user_id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-      supabase.from("workspace_invites").select("email", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId).gt("expires_at", new Date().toISOString()).neq("email", normalizedEmail),
+      scoped.from("workspace_members").select("user_id", { count: "exact", head: true }),
+      scoped.from("workspace_invites").select("email", { count: "exact", head: true })
+        .gt("expires_at", new Date().toISOString()).neq("email", normalizedEmail),
     ])
     const seats = planCheck.limits.seats
     const reservedSeats = (memberCount ?? 0) + (pendingCount ?? 0)
@@ -107,12 +111,12 @@ export async function POST(
     }
 
     // Check if already a member
-    const { data: existing } = await supabase
+    const { data: existingRaw } = await scoped
       .from("workspace_members")
       .select("role")
-      .eq("workspace_id", workspaceId)
       .eq("user_id", invitee.id)
       .maybeSingle()
+    const existing = existingRaw as unknown as { role: string } | null
 
     if (existing) {
       return NextResponse.json({ error: "already_a_member", currentRole: existing.role }, { status: 409 })

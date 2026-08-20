@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 
 export async function GET(request: NextRequest) {
   try {
     const workspaceId = await resolveWorkspaceId(request)
-    const supabase = createServiceClient()
 
-    const { data, error } = await supabase
+    const { data, error } = await createScopedClient(workspaceId)
       .from("posts")
       .select("id,title,content,engagement_score,status,created_at")
-      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(5)
 
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest) {
       created_at: string
     }
 
-    const posts = (data ?? []).map((row: Row) => ({
+    const posts = ((data ?? []) as unknown as Row[]).map((row: Row) => ({
       id: row.id,
       title: (row.title || row.content || "Untitled post").split("\n")[0].slice(0, 100),
       date: row.created_at,

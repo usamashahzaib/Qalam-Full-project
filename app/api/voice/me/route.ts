@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: (err as Error).message || "server_error" }, { status: 401 })
   }
 
+  // Not createScopedClient: its auto workspace_id filter would AND against
+  // the .or() below, breaking the legacy-row fallback (a NULL workspace_id
+  // row can never equal workspaceId). This query's .or() already encodes the
+  // correct scoping rule itself.
   const supabase = createServiceClient()
   const { data, error } = await supabase
     .from("voice_profiles")

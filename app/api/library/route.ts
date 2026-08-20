@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { errorToStatus } from "@/lib/server/roles"
 
 const PER_PAGE = 20
+
+type LibraryPostRow = {
+  id: string
+  title: string | null
+  content: string | null
+  status: string
+  scheduled_for: string | null
+  published_at: string | null
+  metadata: { type?: string } | null
+  created_at: string
+  updated_at: string
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,11 +32,10 @@ export async function GET(request: NextRequest) {
     const from = url.searchParams.get("from") || ""
     const to = url.searchParams.get("to") || ""
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     let query = supabase
       .from("posts")
       .select("id, title, content, status, scheduled_for, published_at, metadata, created_at, updated_at", { count: "exact" })
-      .eq("workspace_id", workspaceId)
 
     if (type && type !== "all") {
       if (type === "carousel") {
@@ -55,7 +66,7 @@ export async function GET(request: NextRequest) {
     const { data, count, error } = await query
     if (error) throw new Error(error.message)
 
-    const posts = (data || []).map((p) => ({
+    const posts = ((data || []) as unknown as LibraryPostRow[]).map((p) => ({
       id: p.id,
       title: p.title,
       content: (p.content || "").slice(0, 200),

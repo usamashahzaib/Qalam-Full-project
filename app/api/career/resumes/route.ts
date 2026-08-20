@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { resumeDocumentSchema } from "@/lib/career-resume"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import {
@@ -33,15 +33,15 @@ export async function GET(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
 
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("resume_documents")
       .select("*")
-      .eq("workspace_id", planCheck.workspaceId)
       .neq("status", "archived")
       .order("updated_at", { ascending: false })
 
     if (error) return NextResponse.json({ error: "Resumes could not be loaded." }, { status: 500 })
-    return NextResponse.json({ resumes: (data || []).map(toClient) })
+    const rows = (data || []) as unknown as Record<string, unknown>[]
+    return NextResponse.json({ resumes: rows.map(toClient) })
   })(request)
 }
 
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data
-    const { data, error } = await createServiceClient()
+    const scoped = createScopedClient(planCheck.workspaceId)
+    const { data, error } = await scoped
       .from("resume_documents")
       .insert({
-        workspace_id: planCheck.workspaceId,
         user_id: user.id,
         title: input.title,
         template_key: input.templateKey,
@@ -91,12 +91,15 @@ export async function POST(request: NextRequest) {
       await releaseReservation()
       return NextResponse.json({ error: "Resume could not be created." }, { status: 500 })
     }
-    const { error: versionError } = await createServiceClient().from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: input.resumeData, analysis: input.analysis })
+    const savedResume = data as unknown as { id: string }
+    // resume_versions has no workspace_id column of its own (scoped
+    // indirectly via resume_id, just created above) - use .raw.
+    const { error: versionError } = await scoped.from("resume_versions").raw.insert({ resume_id: savedResume.id, version_number: 1, resume_data: input.resumeData, analysis: input.analysis })
     if (versionError) {
-      await createServiceClient().from("resume_documents").delete().eq("id", data.id)
+      await scoped.from("resume_documents").delete().eq("id", savedResume.id)
       await releaseReservation()
       return NextResponse.json({ error: "Resume could not be versioned." }, { status: 500 })
     }
-    return NextResponse.json({ resume: toClient(data) }, { status: 201 })
+    return NextResponse.json({ resume: toClient(data as unknown as Record<string, unknown>) }, { status: 201 })
   })(request)
 }

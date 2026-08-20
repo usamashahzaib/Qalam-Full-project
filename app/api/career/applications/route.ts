@@ -2,7 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import { applicationCreateSchema } from "@/lib/career-outcomes"
 import { getCareerEntitlements } from "@/lib/career-entitlements"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
+
+type ApplicationRow = {
+  id: string
+  status: string
+  resume?: { id: string; title: string } | null
+  [key: string]: unknown
+}
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -15,15 +22,14 @@ export async function GET(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
 
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("career_applications")
       .select("*, job:career_jobs(*), resume:resume_documents(id,title,ats_score,updated_at)")
-      .eq("workspace_id", planCheck.workspaceId)
       .neq("status", "archived")
       .order("updated_at", { ascending: false })
 
     if (error) return NextResponse.json({ error: error.message === "schema_not_applied" ? "schema_not_applied" : "Applications could not be loaded." }, { status: 500 })
-    const applications = data || []
+    const applications = (data || []) as unknown as ApplicationRow[]
     const entitlements = getCareerEntitlements(planCheck.plan)
     const metrics = {
       total: applications.length,
@@ -58,11 +64,11 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: "Check the application fields.", details: parsed.error.flatten() }, { status: 400 })
 
     const entitlements = getCareerEntitlements(planCheck.plan)
+    const scoped = createScopedClient(planCheck.workspaceId)
     if (entitlements.activeApplications !== "unlimited" && activeStatuses.includes(parsed.data.status)) {
-      const { count, error: countError } = await createServiceClient()
+      const { count, error: countError } = await scoped
         .from("career_applications")
         .select("id", { count: "exact", head: true })
-        .eq("workspace_id", planCheck.workspaceId)
         .in("status", activeStatuses)
       if (countError) return NextResponse.json({ error: "Application limit could not be checked." }, { status: 500 })
       if ((count || 0) >= entitlements.activeApplications) {
@@ -71,16 +77,17 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data
-    const supabase = createServiceClient()
     const { data: ownedResume } = input.resumeId
-      ? await supabase.from("resume_documents").select("id").eq("id", input.resumeId).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+      ? await scoped.from("resume_documents").select("id").eq("id", input.resumeId).maybeSingle()
       : { data: null }
     if (input.resumeId && !ownedResume) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
+    // resume_versions has no workspace_id column of its own (scoped indirectly
+    // via resume_id -> resume_documents, already verified above) - use .raw.
     const { data: resumeVersion } = input.resumeId
-      ? await supabase.from("resume_versions").select("id").eq("resume_id", input.resumeId).order("version_number", { ascending: false }).limit(1).maybeSingle()
+      ? await scoped.from("resume_versions").raw.select("id").eq("resume_id", input.resumeId).order("version_number", { ascending: false }).limit(1).maybeSingle()
       : { data: null }
-    const { data: job, error: jobError } = await supabase.from("career_jobs").insert({
-      workspace_id: planCheck.workspaceId,
+    const resumeVersionRow = resumeVersion as unknown as { id: string } | null
+    const { data: job, error: jobError } = await scoped.from("career_jobs").insert({
       user_id: user.id,
       title: input.title,
       company: input.company,
@@ -91,13 +98,13 @@ export async function POST(request: NextRequest) {
       description: input.description,
     }).select("*").single()
     if (jobError || !job) return NextResponse.json({ error: "Job could not be saved." }, { status: 500 })
+    const jobRow = job as unknown as { id: string }
 
-    const { data: application, error } = await supabase.from("career_applications").insert({
-      workspace_id: planCheck.workspaceId,
+    const { data: application, error } = await scoped.from("career_applications").insert({
       user_id: user.id,
-      job_id: job.id,
+      job_id: jobRow.id,
       resume_id: input.resumeId || null,
-      resume_version_id: resumeVersion?.id || null,
+      resume_version_id: resumeVersionRow?.id || null,
       status: input.status,
       excitement: input.excitement ?? null,
       applied_at: input.appliedAt || (input.status === "applied" ? new Date().toISOString() : null),
@@ -106,11 +113,12 @@ export async function POST(request: NextRequest) {
       notes: input.notes,
     }).select("*").single()
     if (error || !application) {
-      await supabase.from("career_jobs").delete().eq("id", job.id).eq("workspace_id", planCheck.workspaceId)
+      await scoped.from("career_jobs").delete().eq("id", jobRow.id)
       return NextResponse.json({ error: "Application could not be created." }, { status: 500 })
     }
+    const applicationRow = application as unknown as { id: string }
 
-    await supabase.from("career_application_events").insert({ application_id: application.id, workspace_id: planCheck.workspaceId, user_id: user.id, event_type: "created", to_status: input.status, metadata: { resume_id: input.resumeId || null, resume_version_id: resumeVersion?.id || null } })
+    await scoped.from("career_application_events").insert({ application_id: applicationRow.id, user_id: user.id, event_type: "created", to_status: input.status, metadata: { resume_id: input.resumeId || null, resume_version_id: resumeVersionRow?.id || null } })
     return NextResponse.json({ application: { ...application, job } }, { status: 201 })
   })(request)
 }

@@ -46,12 +46,12 @@ describe("analytics tags", () => {
   })
 
   it("reads the measurement ID from the environment with no fallback value", () => {
-    const src = readFileSync(join(ROOT, "components", "GoogleAnalytics.tsx"), "utf-8")
+    const src = readFileSync(join(ROOT, "lib", "csp-inline-scripts.ts"), "utf-8")
 
     expect(src).toContain('process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || ""')
     // Renders nothing outside production, and nothing without a valid ID.
-    expect(src).toContain('process.env.NODE_ENV !== "production"')
-    expect(src).toContain("isValidMeasurementId(GA_MEASUREMENT_ID)")
+    expect(src).toContain('process.env.NODE_ENV === "production"')
+    expect(src).toContain("isValidGaMeasurementId(GA_MEASUREMENT_ID)")
   })
 
   it("ships no real measurement ID in .env.example", () => {

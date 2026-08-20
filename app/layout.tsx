@@ -1,17 +1,14 @@
 ﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
-import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
 import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
-import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
-import { auth } from "@/auth"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -174,16 +171,16 @@ const appSchema = {
   ],
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: { children: React.ReactNode }) {
-  const [session, headersList] = await Promise.all([auth(), headers()])
-  const nonce = headersList.get("x-nonce") ?? undefined
-  const host = (headersList.get("x-forwarded-host") || headersList.get("host") || "").split(":")[0].toLowerCase()
-  const pwaEnabled = host === "app.byqalam.com" || host === "localhost" || host === "127.0.0.1"
-
+  // No server-side session fetch here: SessionProvider (no initial `session`
+  // prop) fetches client-side on mount instead. That keeps this layout free
+  // of dynamic APIs so marketing/SEO pages stay statically generated - only
+  // the auth-gated app segment (app/(app)/layout.tsx) forces dynamic
+  // rendering, and only it needs the PWA manifest/meta tags.
   const app = (
-    <SessionProvider session={session}>
+    <SessionProvider>
       <ContentProtection />
       <GridGlowBackground
         glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
@@ -193,21 +190,14 @@ export default async function RootLayout({
       >
         <NavWrapper>{children}</NavWrapper>
       </GridGlowBackground>
-      <PwaRegistration enabled={pwaEnabled} />
     </SessionProvider>
   )
 
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
-        {pwaEnabled ? <link rel="manifest" href="/manifest.webmanifest" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-capable" content="yes" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-title" content="Qalam" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-status-bar-style" content="default" /> : null}
-        <GoogleAnalytics nonce={nonce} />
-        {/* suppressHydrationWarning: browsers hide the nonce attribute from the
-            DOM after parsing, so the client always sees "" vs the server value. */}
-        <script type="application/ld+json" nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
+        <GoogleAnalytics />
+        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {app}

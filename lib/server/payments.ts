@@ -515,6 +515,9 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   return extracted
 }
 
+export const billingCycleDays = (billingCycle: string): number =>
+  billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30
+
 const addBillingDays = (days: number) => {
   const expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
   expiry.setUTCHours(23, 59, 59, 999)
@@ -633,7 +636,7 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   // Prefer the provider's own period end over a locally computed one so our expiry never
   // drifts from theirs across late deliveries and retries.
   const expiresAt = payment.status === "paid"
-    ? payment.periodEndsAt || addBillingDays(billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30)
+    ? payment.periodEndsAt || addBillingDays(billingCycleDays(billingCycle))
     : null
   const existingPayment = payment.recordTransaction
     ? await supabaseSelect<{ status: PaymentStatus }>(

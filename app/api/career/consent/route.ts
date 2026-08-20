@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { consentSchema } from "@/lib/career-outcomes"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -17,9 +17,10 @@ export async function GET(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
-    const { data, error } = await createServiceClient().from("career_consents").select("purpose,granted,updated_at").eq("workspace_id", planCheck.workspaceId)
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("career_consents").select("purpose,granted,updated_at")
     if (error) return NextResponse.json({ error: "Privacy choices could not be loaded." }, { status: 500 })
-    const consents = Object.fromEntries(Object.entries(purposeMap).map(([key, purpose]) => [key, Boolean(data?.find((item) => item.purpose === purpose)?.granted)]))
+    const rows = data as unknown as { purpose: string; granted: boolean }[] | null
+    const consents = Object.fromEntries(Object.entries(purposeMap).map(([key, purpose]) => [key, Boolean(rows?.find((item) => item.purpose === purpose)?.granted)]))
     return NextResponse.json({ consents, policyVersion: "2026-08-17" })
   })(request)
 }
@@ -35,9 +36,9 @@ export async function PUT(request: NextRequest) {
     const now = new Date().toISOString()
     const rows = Object.entries(purposeMap).map(([key, purpose]) => {
       const granted = parsed.data[key as keyof typeof purposeMap]
-      return { workspace_id: planCheck.workspaceId, user_id: user.id, purpose, granted, policy_version: "2026-08-17", granted_at: granted ? now : null, revoked_at: granted ? null : now, updated_at: now }
+      return { user_id: user.id, purpose, granted, policy_version: "2026-08-17", granted_at: granted ? now : null, revoked_at: granted ? null : now, updated_at: now }
     })
-    const { error } = await createServiceClient().from("career_consents").upsert(rows, { onConflict: "user_id,purpose" })
+    const { error } = await createScopedClient(planCheck.workspaceId).from("career_consents").upsert(rows, { onConflict: "user_id,purpose" })
     if (error) return NextResponse.json({ error: "Privacy choices could not be saved." }, { status: 500 })
     return NextResponse.json({ success: true, consents: parsed.data })
   })(request)

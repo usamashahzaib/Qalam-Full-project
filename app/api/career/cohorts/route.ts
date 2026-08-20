@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -46,9 +46,13 @@ export async function POST(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
     const code = crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()
-    const { data, error } = await supabase.from("career_cohorts").insert({ workspace_id: planCheck.workspaceId, owner_user_id: user.id, name: parsed.data.name, description: parsed.data.description, code }).select("id, name, code").single()
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("career_cohorts").insert({ owner_user_id: user.id, name: parsed.data.name, description: parsed.data.description, code }).select("id, name, code").single()
     if (error) return NextResponse.json({ error: "Cohort could not be created." }, { status: 500 })
-    await supabase.from("career_cohort_members").insert({ cohort_id: data.id, user_id: user.id, role: "instructor" })
+    const cohort = data as unknown as { id: string }
+    // career_cohort_members has no workspace_id column - cohort membership is
+    // cross-workspace by design (a learner can join a cohort outside their
+    // own workspace via its code, see the join branch above).
+    await supabase.from("career_cohort_members").insert({ cohort_id: cohort.id, user_id: user.id, role: "instructor" })
     return NextResponse.json({ cohort: data }, { status: 201 })
   })(request)
 }

@@ -3,7 +3,7 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { CAROUSEL_THEMES, DEFAULT_THEME_ID, resolveTheme, type CarouselThemeId } from "@/lib/carousel-design"
 import { buildCarouselPdf, type CarouselPdfSlide } from "@/lib/server/carousel-pdf"
 
@@ -35,16 +35,15 @@ export async function POST(
     const customAccent = typeof body.customAccent === "string" && body.customAccent ? body.customAccent : undefined
     const theme = resolveTheme(themeId, customAccent)
 
-    const supabase = createServiceClient()
-    const { data, error } = await supabase
+    const { data: dataRaw, error } = await createScopedClient(workspaceId)
       .from("carousels")
       .select("id, topic, role, tone, slides, created_at")
       .eq("id", id)
-      .eq("workspace_id", workspaceId)
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    if (!data) return NextResponse.json({ error: "Carousel not found" }, { status: 404 })
+    if (!dataRaw) return NextResponse.json({ error: "Carousel not found" }, { status: 404 })
+    const data = dataRaw as unknown as { slides: unknown }
 
     const rawSlides: CarouselPdfSlide[] = Array.isArray(data.slides) ? data.slides : []
     if (!rawSlides.length) return NextResponse.json({ error: "No slides found" }, { status: 404 })

@@ -2,6 +2,8 @@ import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } fr
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
 
+export const dynamic = "force-static"
+
 export function GET() {
   const body = [
     "# Qalam",

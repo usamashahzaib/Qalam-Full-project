@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAuth, getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { requirePlan } from "@/lib/server/require-plan"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { shareToLinkedIn, uploadLinkedInDocument, LinkedInApiError, LINKEDIN_MAX_POST_CHARS } from "@/lib/server/linkedin"
 import { ensureFreshLinkedInPublishingAccount, ensureFreshLinkedInToken } from "@/lib/server/linkedin-credentials"
 
@@ -58,16 +58,16 @@ export async function POST(
     return NextResponse.json({ error: "carousel_pdf_too_large" }, { status: 400 })
   }
 
-  const supabase = createServiceClient()
-  const { data: carousel, error: loadError } = await supabase
+  const supabase = createScopedClient(workspaceId)
+  const { data: carouselRaw, error: loadError } = await supabase
     .from("carousels")
     .select("id, topic")
     .eq("id", id)
-    .eq("workspace_id", workspaceId)
     .maybeSingle()
 
   if (loadError) return NextResponse.json({ error: loadError.message }, { status: 500 })
-  if (!carousel) return NextResponse.json({ error: "Carousel not found" }, { status: 404 })
+  if (!carouselRaw) return NextResponse.json({ error: "Carousel not found" }, { status: 404 })
+  const carousel = carouselRaw as unknown as { id: string; topic: string | null }
 
   const account = await ensureFreshLinkedInPublishingAccount(workspaceId)
   const legacyCred = account ? null : await ensureFreshLinkedInToken(ctx.supabaseUserId)
@@ -121,7 +121,6 @@ export async function POST(
     .from("carousels")
     .update({ linkedin_post_urn: shared.postUrn, published_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("workspace_id", workspaceId)
   if (markError) console.error("[carousel publish] failed to record publish state:", markError.message)
 
   return NextResponse.json({ ...shared, documentUrn })

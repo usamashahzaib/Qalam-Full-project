@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi } from "@/lib/server/ai-router-v2"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { claimCoverLetterCredit, releaseCoverLetterCredit } from "@/lib/server/career-usage"
@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data
-    const supabase = createServiceClient()
-    const { data: vault } = await supabase.from("career_profiles").select("*").eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const supabase = createScopedClient(planCheck.workspaceId)
+    const { data: vault } = await supabase.from("career_profiles").select("*").maybeSingle()
 
     let content: string
     try {
@@ -77,7 +77,6 @@ ${input.sourceResume || "Use only the career vault above."}`,
     const { data, error } = await supabase
       .from("cover_letter_documents")
       .insert({
-        workspace_id: planCheck.workspaceId,
         user_id: user.id,
         order_id: creditOrderId,
         title: input.title,
@@ -95,6 +94,7 @@ ${input.sourceResume || "Use only the career vault above."}`,
       await releaseCoverLetterCredit(user.id, creditOrderId)
       return NextResponse.json({ error: "The cover letter could not be saved." }, { status: 500 })
     }
-    return NextResponse.json({ id: data.id, content: trimmed }, { status: 201 })
+    const saved = data as unknown as { id: string }
+    return NextResponse.json({ id: saved.id, content: trimmed }, { status: 201 })
   })(request)
 }

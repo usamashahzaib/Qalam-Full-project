@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import Image from "next/image"
 import {
   motion,
@@ -10,46 +10,61 @@ import {
   useSpring,
 } from "framer-motion"
 
-const SPRING = { mass: 1, stiffness: 100, damping: 10 }
+const HEAD_SPRING = { mass: 1, stiffness: 100, damping: 10 }
+const HEAD_MASK = "radial-gradient(ellipse 19.5% 17.5% at 51% 13.5%, #000 98%, transparent 100%)"
+const BODY_MASK = "radial-gradient(ellipse 18% 16% at 51% 13.5%, transparent 98%, #000 100%)"
+const PORTRAIT_FADE = "linear-gradient(to bottom, #000 0%, #000 70%, transparent 100%)"
+
+const rabbitImageProps = {
+  src: "/brand/qalam-film/qalam-rabbit.png",
+  width: 1024,
+  height: 1536,
+  sizes: "(max-width: 640px) 118vw, 650px",
+}
 
 export function InteractiveQalamGuide() {
+  const guideRef = useRef<HTMLDivElement>(null)
   const prefersReducedMotion = useReducedMotion()
-  const targetX = useMotionValue(0)
-  const targetY = useMotionValue(0)
-  const targetRotate = useMotionValue(0)
+  const targetHeadX = useMotionValue(0)
+  const targetHeadY = useMotionValue(0)
+  const targetHeadRotate = useMotionValue(0)
   const targetGlintX = useMotionValue(0)
   const targetGlintY = useMotionValue(0)
 
-  const x = useSpring(targetX, SPRING)
-  const y = useSpring(targetY, SPRING)
-  const rotate = useSpring(targetRotate, SPRING)
-  const glintX = useSpring(targetGlintX, SPRING)
-  const glintY = useSpring(targetGlintY, SPRING)
+  const headX = useSpring(targetHeadX, HEAD_SPRING)
+  const headY = useSpring(targetHeadY, HEAD_SPRING)
+  const headRotate = useSpring(targetHeadRotate, HEAD_SPRING)
+  const glintX = useSpring(targetGlintX, HEAD_SPRING)
+  const glintY = useSpring(targetGlintY, HEAD_SPRING)
 
-  const characterTransform = useMotionTemplate`translate3d(${x}px, ${y}px, 0) rotate(${rotate}deg)`
+  const headTransform = useMotionTemplate`perspective(900px) rotateX(${headY}deg) rotateY(${headX}deg) rotateZ(${headRotate}deg)`
   const glintTransform = useMotionTemplate`translate3d(${glintX}px, ${glintY}px, 0)`
 
   useEffect(() => {
     const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)")
 
     const resetPose = () => {
-      targetX.set(0)
-      targetY.set(0)
-      targetRotate.set(0)
+      targetHeadX.set(0)
+      targetHeadY.set(0)
+      targetHeadRotate.set(0)
       targetGlintX.set(0)
       targetGlintY.set(0)
     }
 
     const followPointer = (event: PointerEvent) => {
-      if (prefersReducedMotion || !finePointer.matches || event.pointerType === "touch") return
+      const guide = guideRef.current
+      if (!guide || prefersReducedMotion || !finePointer.matches || event.pointerType === "touch") return
 
-      const normalizedX = (event.clientX / window.innerWidth - 0.5) * 2
-      const normalizedY = (event.clientY / window.innerHeight - 0.5) * 2
+      const bounds = guide.getBoundingClientRect()
+      const centerX = bounds.left + bounds.width * 0.52
+      const centerY = bounds.top + bounds.height * 0.2
+      const normalizedX = Math.max(-1, Math.min(1, (event.clientX - centerX) / (window.innerWidth * 0.42)))
+      const normalizedY = Math.max(-1, Math.min(1, (event.clientY - centerY) / (window.innerHeight * 0.52)))
 
-      targetX.set(normalizedX * 20)
-      targetY.set(normalizedY * 12)
-      targetRotate.set(normalizedX * 2.4)
-      targetGlintX.set(normalizedX * 4.5)
+      targetHeadX.set(normalizedX * 3.2)
+      targetHeadY.set(normalizedY * -2.6)
+      targetHeadRotate.set(normalizedX * 1.4)
+      targetGlintX.set(normalizedX * 4)
       targetGlintY.set(normalizedY * 3)
     }
 
@@ -60,64 +75,78 @@ export function InteractiveQalamGuide() {
 
     window.addEventListener("pointermove", followPointer, { passive: true })
     window.addEventListener("blur", resetPose)
+    document.addEventListener("mouseleave", resetPose)
 
     return () => {
       window.removeEventListener("pointermove", followPointer)
       window.removeEventListener("blur", resetPose)
+      document.removeEventListener("mouseleave", resetPose)
     }
   }, [
     prefersReducedMotion,
     targetGlintX,
     targetGlintY,
-    targetRotate,
-    targetX,
-    targetY,
+    targetHeadRotate,
+    targetHeadX,
+    targetHeadY,
   ])
 
   return (
     <div
-      className="relative isolate mx-auto min-h-[500px] w-full max-w-[560px] overflow-visible sm:min-h-[640px] lg:min-h-[700px]"
+      ref={guideRef}
+      className="relative isolate mx-auto min-h-[460px] w-full max-w-[560px] overflow-hidden sm:min-h-[520px] lg:min-h-[590px]"
       aria-label="Interactive Qalam rabbit guide"
     >
       <div
-        className="absolute bottom-[8%] right-[1%] h-[72%] w-[72%] rounded-full bg-[radial-gradient(circle_at_50%_50%,rgba(220,233,223,0.95),rgba(220,233,223,0.38)_58%,transparent_72%)] blur-sm"
+        className="absolute bottom-[-6%] right-[-5%] h-[86%] w-[86%] rounded-[46%] bg-[radial-gradient(circle_at_50%_42%,rgba(220,233,223,0.98),rgba(220,233,223,0.44)_60%,transparent_76%)] blur-sm"
         aria-hidden="true"
       />
       <div
-        className="absolute bottom-[9%] right-[3%] h-[66%] w-[66%] rounded-full border border-teal/10"
+        className="absolute bottom-[-7%] right-[-3%] h-[80%] w-[80%] rounded-[46%] border border-teal/10"
         aria-hidden="true"
       />
-      <div className="absolute bottom-[2%] right-[5%] h-16 w-[74%] rounded-[50%] bg-teal/[0.12] blur-xl" aria-hidden="true" />
 
-      <div className="absolute right-[1%] top-[12%] z-0 text-right" aria-hidden="true">
+      <div className="absolute right-[1%] top-[12%] z-30 text-right" aria-hidden="true">
         <p className="text-[0.62rem] font-bold uppercase tracking-[0.28em] text-teal/35">Qalam guide</p>
         <p className="mt-2 font-cormorant text-lg italic text-gold-700/70">Present. Attentive. Yours.</p>
       </div>
 
-      <motion.div
-        style={{ transform: characterTransform, transformOrigin: "54% 82%" }}
-        className="absolute -bottom-[1%] right-[-4%] z-10 h-[98%] w-[96%] will-change-transform sm:right-[-2%]"
+      <div
+        className="absolute -right-[10%] top-0 z-10 w-[118%] sm:-right-[8%] sm:w-[116%]"
+        style={{ WebkitMaskImage: PORTRAIT_FADE, maskImage: PORTRAIT_FADE }}
       >
         <Image
-          src="/brand/qalam-film/qalam-rabbit.png"
+          {...rabbitImageProps}
           alt="Qalam's black rabbit guide wearing a teal overshirt and ivory trousers"
-          fill
           priority
-          sizes="(max-width: 640px) 96vw, 560px"
-          className="object-contain object-bottom-right drop-shadow-[0_24px_30px_rgba(13,74,69,0.16)]"
+          className="h-auto w-full"
+          style={{ WebkitMaskImage: BODY_MASK, maskImage: BODY_MASK }}
         />
 
-        <motion.span
-          style={{ transform: glintTransform }}
-          className="absolute left-[49.8%] top-[17.3%] h-1.5 w-1.5 rounded-full bg-[#fff4cf]/90 shadow-[0_0_8px_rgba(255,244,207,0.85)]"
+        <motion.div
+          style={{ transform: headTransform, transformOrigin: "51% 30%" }}
+          className="pointer-events-none absolute inset-0 will-change-transform"
           aria-hidden="true"
-        />
-        <motion.span
-          style={{ transform: glintTransform }}
-          className="absolute left-[56.1%] top-[17.5%] h-1.5 w-1.5 rounded-full bg-[#fff4cf]/90 shadow-[0_0_8px_rgba(255,244,207,0.85)]"
-          aria-hidden="true"
-        />
-      </motion.div>
+        >
+          <Image
+            {...rabbitImageProps}
+            alt=""
+            priority
+            className="h-auto w-full"
+            style={{ WebkitMaskImage: HEAD_MASK, maskImage: HEAD_MASK }}
+          />
+
+          <motion.span
+            style={{ transform: glintTransform }}
+            className="absolute left-[46.8%] top-[16.5%] h-1.5 w-1.5 rounded-full bg-[#fff4cf]/90 shadow-[0_0_8px_rgba(255,244,207,0.85)]"
+          />
+          <motion.span
+            style={{ transform: glintTransform }}
+            className="absolute left-[54.2%] top-[16.7%] h-1.5 w-1.5 rounded-full bg-[#fff4cf]/90 shadow-[0_0_8px_rgba(255,244,207,0.85)]"
+          />
+        </motion.div>
+      </div>
+
     </div>
   )
 }

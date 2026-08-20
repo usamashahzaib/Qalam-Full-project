@@ -1,5 +1,7 @@
 import { getIndexNowKey } from "@/lib/server/indexnow"
 
+export const dynamic = "force-static"
+
 export function GET() {
   const key = getIndexNowKey()
   return key
