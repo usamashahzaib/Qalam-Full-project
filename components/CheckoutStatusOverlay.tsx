@@ -47,7 +47,7 @@ export function CheckoutStatusOverlay() {
             </span>
             <h2 className="mt-4 text-lg font-bold text-zinc-900">{plan} is live</h2>
             <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-left">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Now unlocked</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Now unlocked</p>
               <ul className="mt-2 space-y-1.5">
                 {getPlanSummary(plan || "Solo").map((item) => (
                   <li key={item} className="flex items-center gap-2 text-sm text-zinc-700">

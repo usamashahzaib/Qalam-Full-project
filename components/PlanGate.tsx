@@ -29,7 +29,7 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
         </p>
 
         <div className="mt-6 w-full rounded-2xl border border-zinc-100 bg-white p-5 text-left shadow-sm">
-          <p className="mb-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-zinc-400">
             Included with {upgradeTarget}
           </p>
           <ul className="space-y-2">

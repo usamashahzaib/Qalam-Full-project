@@ -85,7 +85,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
           <div className="mb-1 flex items-center gap-2 text-sm">
             <span className="text-zinc-400 line-through">{formatPkr(plan.originalMonthlyPrice)}</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Save {formatPkr(monthlySaving)}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700">Save {formatPkr(monthlySaving)}</span>
           </div>
           <div className="mb-2 flex items-end gap-1.5">
             <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
@@ -129,7 +129,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
             Company
           </Link>
         </div>
-        <p className="mt-3 text-center text-[10px] text-zinc-400">Application reviewed before managed service begins</p>
+        <p className="mt-3 text-center text-[11px] text-zinc-400">Application reviewed before managed service begins</p>
       </motion.div>
     </motion.div>
   )
@@ -474,7 +474,7 @@ export function PricingPageContent() {
                     <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside your Qalam workspace</p>
                   </div>
                   <div className="flex items-center justify-between gap-4 sm:justify-end">
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
                       {checkoutReady ? "Card checkout live" : "Checkout coming soon"}
                     </span>
                     <strong className="min-w-24 text-right text-sm text-teal">{formatPkr(item.price)}</strong>
@@ -656,11 +656,17 @@ export function PricingPageContent() {
                   >
                     <span className="text-base font-semibold text-zinc-900">{item.q}</span>
                     <motion.span
-                      animate={{ rotate: openFaq === i ? 45 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
+                      aria-hidden="true"
+                      animate={{ rotate: openFaq === i ? 180 : 0 }}
+                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      className="relative ml-4 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-zinc-500"
                     >
-                      +
+                      <span className="absolute h-0.5 w-2.5 rounded-full bg-current" />
+                      <motion.span
+                        className="absolute h-2.5 w-0.5 rounded-full bg-current"
+                        animate={{ scaleY: openFaq === i ? 0 : 1 }}
+                        transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      />
                     </motion.span>
                   </button>
                   <AnimatePresence>

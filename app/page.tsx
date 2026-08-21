@@ -258,8 +258,8 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageHowToSchema).replace(/</g, "\\u003c") }} />
 
       <section className="relative flex min-h-screen items-center overflow-hidden bg-[#f7f3ea] pb-20 pt-36 text-teal">
-        <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#dce9df]/75 blur-3xl" aria-hidden />
-        <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-[#f0ddb9]/65 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hero-wash" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hero-field" aria-hidden />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal/15 to-transparent" aria-hidden />
 
         <div className="relative z-10 mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(430px,0.84fr)] lg:gap-12">
@@ -577,8 +577,17 @@ export default function HomePage() {
 
       <section data-nav-ground="dark" className="qlx qlx-surface relative overflow-hidden px-6 py-28">
         <div className="qlx-grain" aria-hidden />
-        <div className="absolute left-[-10%] top-[-30%] h-[500px] w-[500px] rounded-full opacity-25 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.5) 0%, transparent 70%)" }} aria-hidden />
-        <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }} aria-hidden />
+        {/* One wash instead of two blurred circles. A radial gradient is
+            already soft, so blur-3xl on top of it was a filter pass over
+            two 500px areas that changed almost nothing. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 46% 62% at 6% -8%, oklch(0.4 0.05 196 / 0.16), transparent 70%), radial-gradient(ellipse 44% 58% at 96% 108%, oklch(0.85 0.05 85 / 0.14), transparent 72%)",
+          }}
+          aria-hidden
+        />
 
         <FadeUp className="relative z-10 mx-auto max-w-[720px] text-center">
           <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">Your experience already contains the proof</span>

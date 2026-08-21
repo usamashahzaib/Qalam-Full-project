@@ -90,7 +90,7 @@ function ListBlock({ title, items }: { title: string; items?: string[] }) {
       <ol className="mt-3 space-y-2">
         {items.map((item, index) => (
           <li key={`${item}-${index}`} className="flex gap-3 text-sm leading-6 text-zinc-600">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-[10px] font-bold text-gold-700">{index + 1}</span>
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold-700">{index + 1}</span>
             {item}
           </li>
         ))}
@@ -276,7 +276,7 @@ export default function CareerPage() {
                   <>
                     <div className="flex items-center justify-between">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">0{index + 1}</span>
-                      <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gold-700">{tile.badge}</span>
+                      <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-gold-700">{tile.badge}</span>
                     </div>
                     <h2 className="mt-5 text-lg font-bold text-zinc-900">{tile.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">{tile.copy}</p>

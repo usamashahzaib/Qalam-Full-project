@@ -140,7 +140,7 @@ export function CommandMenu({
             placeholder="Search posts, jump to a page..."
             className="w-full bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
           />
-          <kbd className="hidden shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-400 sm:inline">esc</kbd>
+          <kbd className="hidden shrink-0 rounded border border-zinc-200 bg-zinc-50 px-1.5 py-0.5 text-[11px] font-semibold text-zinc-400 sm:inline">esc</kbd>
         </div>
 
         <div className="qalam-scrollbar max-h-80 overflow-y-auto p-2">

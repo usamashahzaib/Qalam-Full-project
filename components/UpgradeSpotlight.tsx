@@ -89,7 +89,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
                   {unlockedHere ? (
                     <CheckIcon className="h-3 w-3" />
                   ) : (
-                    <span className="text-[10px] font-bold uppercase tracking-wide">{feature.plan}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wide">{feature.plan}</span>
                   )}
                 </li>
               )

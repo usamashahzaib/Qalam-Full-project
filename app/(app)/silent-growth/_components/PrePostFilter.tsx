@@ -82,7 +82,7 @@ export function PrePostFilter() {
       {result && (
         <div className="grid grid-cols-1 divide-y divide-zinc-50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="px-6 py-5">
-            <p className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-600">
+            <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-600">
               Attracts
             </p>
             <ul className="space-y-2">
@@ -94,7 +94,7 @@ export function PrePostFilter() {
             </ul>
           </div>
           <div className="px-6 py-5">
-            <p className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.24em] text-red-500">
+            <p className="mb-3 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.24em] text-red-500">
               Repels
             </p>
             <ul className="space-y-2">

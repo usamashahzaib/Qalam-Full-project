@@ -40,7 +40,7 @@ function StatusBadge({ status }: { status: string }) {
     status === "scheduled" ? "bg-amber-100 text-amber-700" :
     status === "published" ? "bg-emerald-100 text-emerald-700" :
     "bg-zinc-100 text-zinc-500"
-  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${cls}`}>{status}</span>
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${cls}`}>{status}</span>
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -146,7 +146,7 @@ export default function CalendarPage() {
                 <h2 className="text-sm font-bold text-zinc-900">{monthLabel(monthCursor)}</h2>
                 <button
                   onClick={goToToday}
-                  className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-bold text-zinc-500 hover:bg-zinc-100"
+                  className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[11px] font-bold text-zinc-500 hover:bg-zinc-100"
                 >
                   Today
                 </button>
@@ -155,7 +155,7 @@ export default function CalendarPage() {
             </div>
 
             <div className="px-3 pb-3 pt-2">
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-zinc-400 pb-1">
+              <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wide text-zinc-400 pb-1">
                 {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => <div key={d}>{d}</div>)}
               </div>
               <div className="grid grid-cols-7 gap-1">
@@ -289,11 +289,11 @@ export default function CalendarPage() {
                     <div key={post.id} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-100 p-3">
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
-                        <p className="text-[10px] text-zinc-400">{post.date}{post.scheduledTime ? ` · ${post.scheduledTime.slice(11, 16)}` : ""}</p>
+                        <p className="text-[11px] text-zinc-400">{post.date}{post.scheduledTime ? ` · ${post.scheduledTime.slice(11, 16)}` : ""}</p>
                       </div>
                       <button
                         onClick={() => goToWriter(router, activeClientId, post, post.date)}
-                        className="shrink-0 cursor-pointer text-[10px] font-bold text-teal hover:text-teal-700"
+                        className="shrink-0 cursor-pointer text-[11px] font-bold text-teal hover:text-teal-700"
                       >
                         Edit
                       </button>
@@ -329,10 +329,10 @@ export default function CalendarPage() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Title</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Type</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Scheduled</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-wider text-zinc-400">Status</th>
+                    <th className="px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Title</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Type</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Scheduled</th>
+                    <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Status</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>
@@ -343,7 +343,7 @@ export default function CalendarPage() {
                         <p className="max-w-xs truncate text-sm font-medium text-zinc-900">{post.title}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-500">
+                        <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">
                           {post.type.toLowerCase().includes("carousel") ? "Carousel" : "Text"}
                         </span>
                       </td>
@@ -389,7 +389,7 @@ const getContentPreview = (post: WorkspacePost): string => getPostPreviewText(po
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
       <p className="mt-1 text-xl font-bold text-zinc-900">{value}</p>
     </div>
   )
@@ -412,14 +412,14 @@ function PlannerBlock({
 }) {
   if (!items.length) return (
     <div className="mb-3 last:mb-0">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-zinc-400">{title}</p>
+      <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-400">{title}</p>
       <p className="rounded-xl bg-zinc-50 px-3 py-2.5 text-xs text-zinc-400">{empty}</p>
     </div>
   )
 
   return (
     <div className="mb-3 last:mb-0">
-      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400">{title} ({items.length})</p>
+      <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-400">{title} ({items.length})</p>
       <div className="space-y-2">
         {items.map((post) => (
           <div
@@ -432,17 +432,17 @@ function PlannerBlock({
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
-                <p className="mt-0.5 line-clamp-1 text-[10px] text-zinc-400">{getContentPreview(post)}</p>
+                <p className="mt-0.5 line-clamp-1 text-[11px] text-zinc-400">{getContentPreview(post)}</p>
               </div>
               <div className="flex shrink-0 items-center gap-1.5">
-                <button onClick={() => onEdit(post)} className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[10px] font-semibold text-zinc-600 hover:bg-zinc-50">
+                <button onClick={() => onEdit(post)} className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50">
                   Edit
                 </button>
                 {onPublish && (
                   <button
                     onClick={() => onPublish(post)}
                     disabled={!canPublish || publishingId === post.id}
-                    className="cursor-pointer rounded-lg bg-teal px-2 py-1 text-[10px] font-semibold text-white hover:bg-teal-600 disabled:opacity-50"
+                    className="cursor-pointer rounded-lg bg-teal px-2 py-1 text-[11px] font-semibold text-white hover:bg-teal-600 disabled:opacity-50"
                   >
                     {publishingId === post.id ? "..." : "Publish"}
                   </button>
@@ -450,7 +450,7 @@ function PlannerBlock({
                 {onUnschedule && (
                   <button
                     onClick={() => onUnschedule(post.id)}
-                    className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[10px] font-semibold text-zinc-400 hover:text-zinc-700"
+                    className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[11px] font-semibold text-zinc-400 hover:text-zinc-700"
                     title="Move back to drafts"
                   >
                     ✕

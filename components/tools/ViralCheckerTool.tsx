@@ -82,7 +82,7 @@ export function ViralCheckerTool() {
               <div className="mt-5 grid gap-2 sm:grid-cols-5">
                 {Object.entries(result.breakdown || {}).map(([key, value]) => (
                   <div key={key} className="rounded-xl bg-zinc-50 p-3">
-                    <p className="text-[10px] font-bold uppercase text-zinc-400">{key}</p>
+                    <p className="text-[11px] font-bold uppercase text-zinc-400">{key}</p>
                     <p className="mt-1 text-lg font-bold">{value}</p>
                   </div>
                 ))}

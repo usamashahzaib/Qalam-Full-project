@@ -144,7 +144,7 @@ export function ProfessionalProfileImport({
                 <h3 className="text-sm font-bold text-zinc-900">Review extracted profile</h3>
                 <p className="text-xs text-zinc-500">Nothing below is active until you save your profile.</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
                 Source deleted
               </span>
             </div>
@@ -178,7 +178,7 @@ function ContextField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+    <label className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
       {label}
       <input
         value={value}
@@ -199,7 +199,7 @@ function ContextArea({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="block text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+    <label className="block text-[11px] font-bold uppercase tracking-wide text-zinc-400">
       {label}
       <textarea
         value={value}

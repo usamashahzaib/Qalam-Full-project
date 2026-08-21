@@ -625,7 +625,7 @@ export default function CarouselEditorPage() {
                     <p className="mt-0.5 truncate text-[11px] text-zinc-400">{slide.content?.slice(0, 50) || "-"}</p>
                   </div>
                 </div>
-                {saveStatus[slide.id] ? <p className={`mt-1.5 text-[10px] font-medium ${saveStatus[slide.id] === "saved" ? "text-emerald-600" : saveStatus[slide.id] === "saving" ? "text-zinc-400" : "text-red-500"}`}>{saveStatus[slide.id]}</p> : null}
+                {saveStatus[slide.id] ? <p className={`mt-1.5 text-[11px] font-medium ${saveStatus[slide.id] === "saved" ? "text-emerald-600" : saveStatus[slide.id] === "saving" ? "text-zinc-400" : "text-red-500"}`}>{saveStatus[slide.id]}</p> : null}
               </button>
             ))}
           </div>

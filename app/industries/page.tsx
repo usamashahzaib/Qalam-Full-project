@@ -77,7 +77,7 @@ export default function IndustriesPage() {
             <article key={industry.slug} className="group grid gap-5 py-8 md:grid-cols-[3rem_0.72fr_1.28fr_auto] md:items-start md:gap-8">
               <span className="text-xs font-bold text-gold-700">{String(index + 1).padStart(2, "0")}</span>
               <div><h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 group-hover:text-teal">{industry.name}</h2><p className="mt-2 text-xs leading-5 text-zinc-500">{industry.audience}</p></div>
-              <div><p className="text-sm font-bold text-zinc-800">{industry.outcome}</p><p className="mt-3 text-sm leading-7 text-zinc-600">{industry.qalamFit}</p><div className="mt-4 flex flex-wrap gap-2">{industry.workflows.map((workflow) => <span key={workflow} className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-bold text-zinc-600">{workflow}</span>)}</div></div>
+              <div><p className="text-sm font-bold text-zinc-800">{industry.outcome}</p><p className="mt-3 text-sm leading-7 text-zinc-600">{industry.qalamFit}</p><div className="mt-4 flex flex-wrap gap-2">{industry.workflows.map((workflow) => <span key={workflow} className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-zinc-600">{workflow}</span>)}</div></div>
               <Link href={`/use-cases/${industry.slug}`} className="press inline-flex min-h-11 w-fit items-center rounded-xl border border-teal/20 bg-teal-50 px-4 py-2.5 text-xs font-bold text-teal hover:bg-teal hover:text-white">View workflow</Link>
             </article>
           ))}

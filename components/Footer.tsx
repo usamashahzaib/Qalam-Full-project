@@ -113,7 +113,7 @@ export function Footer() {
               <details className="group border-t border-white/10 sm:hidden">
                 <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-semibold text-white/90">
                   {section}
-                  <span className="text-xl font-light text-white/45 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                  <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-white/70 transition-transform duration-300 group-open:rotate-180" aria-hidden="true"><span className="absolute h-0.5 w-2.5 rounded-full bg-current" /><span className="absolute h-2.5 w-0.5 rounded-full bg-current transition-transform duration-300 group-open:scale-y-0" /></span>
                 </summary>
                 <ul className="pb-3">
                   {links.map((link) => (

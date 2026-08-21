@@ -151,7 +151,7 @@ export default function VoicePage() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Voice &amp; Identity</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Voice &amp; Identity</p>
           <h1 className="mt-1 text-2xl font-bold text-zinc-900">Your Profile</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Set your identity so every post is written as you. Pro users can also train your writing voice.
@@ -177,7 +177,7 @@ export default function VoicePage() {
                 </div>
                 <div className="grid gap-4 p-5 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Name</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Name</label>
                     <input
                       value={profile.name}
                       onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
@@ -186,7 +186,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Job Title</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Job Title</label>
                     <input
                       value={profile.title}
                       onChange={(e) => setProfile((p) => ({ ...p, title: e.target.value }))}
@@ -195,7 +195,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Industry</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Industry</label>
                     <input
                       value={profile.industry}
                       onChange={(e) => setProfile((p) => ({ ...p, industry: e.target.value }))}
@@ -204,7 +204,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">LinkedIn URL</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">LinkedIn URL</label>
                     <input
                       value={profile.linkedinUrl}
                       onChange={(e) => setProfile((p) => ({ ...p, linkedinUrl: e.target.value }))}
@@ -214,7 +214,7 @@ export default function VoicePage() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Brand Tone</label>
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Brand Tone</label>
                     <div className="flex flex-wrap gap-2">
                       {BRAND_TONES.map((tone) => (
                         <button
@@ -234,7 +234,7 @@ export default function VoicePage() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
                       Goals <span className="font-normal normal-case text-zinc-400">(optional)</span>
                     </label>
                     <textarea
@@ -319,7 +319,7 @@ export default function VoicePage() {
                 <div className="border-b border-zinc-100 bg-zinc-50/60 px-4 py-3.5">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Voice Characteristics</h2>
-                    {isAnalyzing && <span className="animate-pulse text-[10px] font-semibold text-teal">Analyzing...</span>}
+                    {isAnalyzing && <span className="animate-pulse text-[11px] font-semibold text-teal">Analyzing...</span>}
                   </div>
                 </div>
 
@@ -333,19 +333,19 @@ export default function VoicePage() {
                 ) ? (
                   <div className="divide-y divide-zinc-100">
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Tone</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Tone</p>
                       <p className="mt-1 text-sm font-semibold text-zinc-900">{characteristics.tone}</p>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Sentence Length</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Sentence Length</p>
                       <p className="mt-1 text-sm font-semibold capitalize text-zinc-900">{characteristics.sentenceLength}</p>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Vocabulary</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Vocabulary</p>
                       <p className="mt-1 text-sm font-semibold capitalize text-zinc-900">{characteristics.vocabulary}</p>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Common Phrases</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Common Phrases</p>
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {(characteristics.commonPhrases || []).map((phrase) => (
                           <span key={phrase} className="rounded-full border border-teal/20 bg-teal/5 px-2 py-0.5 text-xs text-teal">{phrase}</span>
@@ -353,7 +353,7 @@ export default function VoicePage() {
                       </div>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Transition Words</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Transition Words</p>
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         {(characteristics.transitions || []).map((t) => (
                           <span key={t} className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-xs text-zinc-600">{t}</span>
@@ -361,7 +361,7 @@ export default function VoicePage() {
                       </div>
                     </div>
                     <div className="px-4 py-3">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">CTA Style</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">CTA Style</p>
                       <p className="mt-1 text-sm font-semibold capitalize text-zinc-900">{characteristics.ctaStyle}</p>
                     </div>
                   </div>
@@ -369,7 +369,7 @@ export default function VoicePage() {
                   <div className="p-4 space-y-3">
                     {["Tone", "Sentence Length", "Vocabulary", "Common Phrases", "Transitions", "CTA Style"].map((label) => (
                       <div key={label}>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-300">{label}</p>
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-300">{label}</p>
                         <div className="mt-1 h-4 w-3/4 rounded bg-zinc-100" />
                       </div>
                     ))}
@@ -389,7 +389,7 @@ export default function VoicePage() {
               )}
 
               <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Writer integration</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Writer integration</p>
                 <ul className="mt-2 space-y-2 text-xs text-zinc-600">
                   <li className="flex items-start gap-2">
                     <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-teal" />

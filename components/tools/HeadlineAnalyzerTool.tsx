@@ -68,7 +68,7 @@ export function HeadlineAnalyzerTool() {
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Headline score</p>
               <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.headline_score}/100</p>
               <p className="mt-2 text-sm font-semibold text-teal">{result.verdict}</p>
-              <div className="mt-5 grid gap-2 sm:grid-cols-5">{Object.entries(result.breakdown || {}).map(([k, v]) => <div key={k} className="rounded-xl bg-zinc-50 p-3"><p className="text-[10px] font-bold uppercase text-zinc-400">{k}</p><p className="mt-1 text-lg font-bold">{v}</p></div>)}</div>
+              <div className="mt-5 grid gap-2 sm:grid-cols-5">{Object.entries(result.breakdown || {}).map(([k, v]) => <div key={k} className="rounded-xl bg-zinc-50 p-3"><p className="text-[11px] font-bold uppercase text-zinc-400">{k}</p><p className="mt-1 text-lg font-bold">{v}</p></div>)}</div>
               <ul className="mt-5 space-y-2">{(result.specific_feedback || []).map((item) => <li key={item} className="text-sm text-zinc-700">- {item}</li>)}</ul>
               <div className="mt-5 space-y-2">{(result.rewritten_headlines || []).map((item) => <p key={item} className="rounded-xl bg-teal/5 p-3 text-sm text-zinc-800">{item}</p>)}</div>
             </div>

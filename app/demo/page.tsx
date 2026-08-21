@@ -361,7 +361,7 @@ function ArchiveTab({ onStart }: { onStart: () => void }) {
                 <Metric label="Reactions" value={post.reactions} />
                 <Metric label="Comments" value={post.comments} />
               </div>
-              <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
+              <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
                 Sample data
               </span>
             </div>
