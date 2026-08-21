@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useSyncExternalStore } from "react"
 import { useSession } from "next-auth/react"
-import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
@@ -136,15 +135,30 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   )
 }
 
+// The ?tab=managed deep link is read through useSyncExternalStore rather than
+// useSearchParams. That hook opts the whole route out of static prerendering,
+// and because app/pricing/page.tsx wraps this component in
+// <Suspense fallback={null}>, the bailout meant the served HTML contained no
+// pricing body at all: no headline, no plan names, no prices, nothing for a
+// crawler or a reader with slow JS. useSyncExternalStore is SSR-safe, so the
+// page prerenders in full and the deep link still resolves on the client.
+const subscribeToUrl = (onStoreChange: () => void) => {
+  window.addEventListener("popstate", onStoreChange)
+  return () => window.removeEventListener("popstate", onStoreChange)
+}
+const readTabParam = () => new URLSearchParams(window.location.search).get("tab")
+const readTabParamOnServer = () => null
+
 export function PricingPageContent() {
   const { data: session, status } = useSession()
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
-  const searchParams = useSearchParams()
-  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
-    searchParams.get("tab") === "managed" ? "managed" : "selfserve"
-  )
+
+  // A tab the visitor picked wins over the one the URL asked for.
+  const urlTab = useSyncExternalStore(subscribeToUrl, readTabParam, readTabParamOnServer)
+  const [chosenTab, setChosenTab] = useState<"selfserve" | "managed" | null>(null)
+  const pricingTab = chosenTab ?? (urlTab === "managed" ? "managed" : "selfserve")
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.id) return
@@ -320,7 +334,7 @@ export function PricingPageContent() {
             <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
               <button
                 type="button"
-                onClick={() => setPricingTab("selfserve")}
+                onClick={() => setChosenTab("selfserve")}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
                     ? "bg-teal text-white shadow-sm"
@@ -331,7 +345,7 @@ export function PricingPageContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setPricingTab("managed")}
+                onClick={() => setChosenTab("managed")}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
                     ? "bg-gold text-white shadow-sm"

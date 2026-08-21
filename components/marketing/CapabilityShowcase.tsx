@@ -163,7 +163,17 @@ const previews: Record<CapabilityKey, () => React.ReactNode> = {
   "career-hub": CareerHubPreview,
 }
 
-export function CapabilityShowcase({ compact = false }: { compact?: boolean }) {
+export function CapabilityShowcase({
+  compact = false,
+  headingLevel = 3,
+}: {
+  compact?: boolean
+  /* Rank for the active panel title. The component is used both under a
+     section h2 (homepage) and directly under a page h1 (/features), so a
+     fixed level skips a rank on one of them. */
+  headingLevel?: 2 | 3
+}) {
+  const PanelHeading = `h${headingLevel}` as "h2" | "h3"
   const [activeKey, setActiveKey] = useState<CapabilityKey>("ats-checker")
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
   const reducedMotion = useReducedMotion()
@@ -230,7 +240,7 @@ export function CapabilityShowcase({ compact = false }: { compact?: boolean }) {
               <div className="grid min-w-0 gap-7 xl:grid-cols-[0.78fr_1.22fr] xl:items-center">
                 <div>
                   <div className="flex flex-wrap items-center gap-2"><span className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal">{active.eyebrow}</span><span className="rounded-full border border-gold/30 bg-gold-50 px-2.5 py-1 text-[10px] font-bold text-gold-700">{active.availability}</span></div>
-                  <h3 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-zinc-900 sm:text-4xl">{active.title}</h3>
+                  <PanelHeading className="mt-4 text-3xl font-extrabold leading-tight tracking-tight text-zinc-900 sm:text-4xl">{active.title}</PanelHeading>
                   <p className="mt-4 max-w-[60ch] text-sm leading-7 text-zinc-600">{active.description}</p>
                   <ul className="mt-5 space-y-3">{active.benefits.map((benefit) => <li key={benefit} className="flex gap-3 text-sm text-zinc-700"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal text-white"><CheckIcon className="h-3 w-3" /></span><span>{benefit}</span></li>)}</ul>
                   <Link href={active.href} className="press mt-7 inline-flex items-center rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-600">{active.cta}</Link>

@@ -55,6 +55,18 @@ html, body {
   }
 }
 
+/* Without scripting, framer-motion writes its `initial` state inline and then
+   never runs the `animate` step, so every element that fades in from
+   opacity 0 stays invisible permanently. The pricing hero, headline included,
+   was blank in that state. */
+@media (scripting: none) {
+  [style*="opacity:0"],
+  [style*="opacity: 0"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* Global reduced-motion net. The blocks further down disable specific
    animations, which left every transition and any newly added animation
    uncovered. Durations collapse to near-zero rather than to 0 so that

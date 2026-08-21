@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
-  title: "Docs",
+  title: "Docs: Setup, Voice Profile, and Publishing Workflows",
   description: "Public Qalam docs for onboarding, voice setup, drafting, scheduling, and workspace operations.",
   path: "/docs",
 })

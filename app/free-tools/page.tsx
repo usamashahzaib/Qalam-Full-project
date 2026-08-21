@@ -15,7 +15,7 @@ import { SITE_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
 
 export const metadata: Metadata = {
-  title: "Free ATS Resume Checker and Career Tools | Qalam",
+  title: "Free ATS Resume Checker and Career Tools",
   description:
     "Start with Qalam's free ATS Resume Checker, then improve your LinkedIn profile, writing, carousels, and engagement. Most tools need no account.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
@@ -192,7 +192,7 @@ export default function FreeToolsPage() {
                     </div>
 
                     <div>
-                      <h3 className="mb-2 text-xl font-bold text-zinc-900">{tool.title}</h3>
+                      <h2 className="mb-2 text-xl font-bold text-zinc-900">{tool.title}</h2>
                       <p className="mb-6 flex-1 text-sm leading-relaxed text-zinc-500 lg:mb-0">{tool.desc}</p>
                     </div>
 

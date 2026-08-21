@@ -3,7 +3,7 @@ import { buildPageMetadata } from "@/lib/seo"
 import { UPGRADES_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
-  title: "Careers",
+  title: "Careers: Building the Career Visibility OS",
   description: "Public careers contact for Qalam while a formal hiring portal is not active.",
   path: "/careers",
 })

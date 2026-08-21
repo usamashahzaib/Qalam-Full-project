@@ -4,7 +4,7 @@ import { INDUSTRIES, DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
 import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const title = "Industries and Professionals Qalam Helps"
-const description = "See how Qalam supports job seekers, recruiters, career coaches, universities, founders, consultants, agencies, and marketing teams with connected career visibility workflows."
+const description = "See how Qalam supports job seekers, recruiters, career coaches, universities, founders, consultants, and agencies with connected career workflows."
 
 export const metadata: Metadata = buildPageMetadata({
   title,

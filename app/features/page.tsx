@@ -5,7 +5,7 @@ import { CAPABILITIES, DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
 import { APP_URL, SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const title = "Career Visibility OS Features and Product Views"
-const description = "See how Qalam checks ATS resumes, builds targeted resumes, matches job descriptions, improves LinkedIn profiles, creates professional content, and connects career evidence."
+const description = "See how Qalam checks ATS resumes, builds targeted resumes, matches job descriptions, improves LinkedIn profiles, and connects career evidence."
 
 export const metadata: Metadata = buildPageMetadata({
   title,
@@ -84,7 +84,7 @@ export default function FeaturesPage() {
       </section>
 
       <section className="px-0 py-16 sm:py-24">
-        <CapabilityShowcase />
+        <CapabilityShowcase headingLevel={2} />
       </section>
 
       <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6 sm:py-20">

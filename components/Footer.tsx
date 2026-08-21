@@ -95,7 +95,10 @@ export function Footer() {
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
             <div key={section}>
               <div className="hidden sm:block">
-                <h4 className="mb-4 text-sm font-semibold text-white/90">{section}</h4>
+                {/* h2, not h4. These are the top-level headings inside the
+                    footer landmark, and pages usually end on an h2, so h4
+                    skipped a rank on every route in the site. */}
+                <h2 className="mb-4 text-sm font-semibold text-white/90">{section}</h2>
                 <ul className="space-y-2.5">
                   {links.map((link) => (
                     <li key={link.label}>

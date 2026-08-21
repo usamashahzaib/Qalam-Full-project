@@ -2,7 +2,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "Changelog",
+  title: "Changelog: Product Updates and Release Notes",
   description: "Public product notes for Qalam changes that affect positioning, trust, workflow, or behavior.",
   path: "/changelog",
 })

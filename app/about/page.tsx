@@ -4,7 +4,7 @@ import { buildPageMetadata, buildOrganizationSchema, SITE_URL } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
   title: "About - AI LinkedIn Writing System",
-  description: "Qalam is built as a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders, consultants, HR leaders, and agencies.",
+  description: "Qalam is a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders and agencies.",
   path: "/about",
   keywords: ["about Qalam", "Qalam AI writer", "LinkedIn writing system", "Qalam product principles"],
 })
