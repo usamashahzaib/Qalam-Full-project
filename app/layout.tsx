@@ -16,12 +16,20 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 })
 
+// "optional" rather than "swap". Cormorant is the display accent, and its
+// italic is a high-contrast serif no system fallback matches in width. On a
+// throttled connection the swap re-wrapped the hero h1 by a full line at
+// 2.9s, moving everything below it and accounting for 0.1333 of a 0.14 CLS.
+// With "optional" the browser uses the font when it arrives inside the first
+// paint budget and otherwise keeps the fallback for that visit, so the line
+// count is decided once and never changes. Repeat visits hit the cache and
+// get the real face immediately.
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
-  display: "swap",
+  display: "optional",
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"

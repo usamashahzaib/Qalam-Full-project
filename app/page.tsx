@@ -271,12 +271,24 @@ export default function HomePage() {
               </span>
             </div>
 
+            {/* Line breaks are explicit rather than left to wrapping. This is
+                the LCP element, and when the webfont replaced the fallback the
+                line count changed, growing the headline by a full line and
+                pushing everything below it down. That single reflow was 0.1333
+                of a 0.14 CLS, on three runs out of four. Fixing the breaks
+                makes the box height depend only on the font size, which the
+                clamp already controls, so metrics can no longer move it. It
+                also matches the composition the design already rendered at
+                every width. */}
             <h1
               className="text-[clamp(3.25rem,7vw,6.2rem)] font-extrabold leading-[0.95] tracking-[-0.055em] text-teal"
             >
-              Turn experience into
+              Turn
               <br />
-              {" "}
+              experience
+              <br />
+              into
+              <br />
               <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">visible proof.</span>
             </h1>
 
