@@ -30,11 +30,11 @@ export default function CareerVisibilityPage() {
     <main className="bg-white pt-24">
       <section className="border-b border-zinc-100 bg-[#073f3b] px-6 py-24 text-white">
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">Qalam Career Visibility OS</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Qalam Career Visibility OS</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight sm:text-6xl">Get found. Build trust. Get shortlisted.</h1>
           <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, applications, and interview story should use the same credible evidence. Qalam connects the complete outcome workflow.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-gold px-6 py-4 font-bold text-white">Start free</Link>
+            <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-gold px-6 py-4 font-bold text-teal-900">Start free</Link>
             <Link href="/pricing" className="rounded-xl border border-white/25 px-6 py-4 font-bold text-white">See plans and add-ons</Link>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default function CareerVisibilityPage() {
           <div className="mt-10 grid gap-x-8 gap-y-0 border-y border-zinc-200 md:grid-cols-2">
             {modules.map(([title, copy], index) => (
               <article key={title} className="grid grid-cols-[2.25rem_1fr] gap-4 border-b border-zinc-100 py-6 md:[&:nth-last-child(-n+2)]:border-b-0">
-                <span className="text-xs font-bold text-gold">{String(index + 1).padStart(2, "0")}</span>
+                <span className="text-xs font-bold text-gold-700">{String(index + 1).padStart(2, "0")}</span>
                 <div>
                   <h3 className="text-lg font-bold text-zinc-900">{title}</h3>
                   <p className="mt-2 text-sm leading-6 text-zinc-600">{copy}</p>
@@ -65,7 +65,7 @@ export default function CareerVisibilityPage() {
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">One-time career add-ons</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">One-time career add-ons</p>
               <h2 className="mt-3 text-4xl font-bold text-zinc-900">Pay for the output, not another subscription.</h2>
               <p className="mt-4 text-base leading-7 text-zinc-600">Each credit generates and saves the result inside your Qalam workspace. Card checkout appears only for configured products.</p>
             </div>
@@ -73,14 +73,14 @@ export default function CareerVisibilityPage() {
           </div>
 
           <div className="mt-10 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
-            <div className="sm:text-right"><p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
+            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
+            <div className="sm:text-right"><p className="text-xs text-white/60 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
           </div>
 
           <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
             {CAREER_ADD_ONS.map((item, index) => (
               <div key={item.key} className="grid gap-3 border-b border-zinc-100 px-5 py-5 last:border-b-0 sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center sm:px-6">
-                <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                <span className="text-xs font-bold text-zinc-400">0{index + 1}</span>
                 <div>
                   <h3 className="font-semibold text-zinc-900">{item.name}</h3>
                   <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside Qalam</p>

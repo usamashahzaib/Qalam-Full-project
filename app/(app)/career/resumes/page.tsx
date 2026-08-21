@@ -104,8 +104,8 @@ export default function ResumesPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 rounded-3xl bg-[#073f3b] px-7 py-8 text-white sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, match the exact JD, edit every line, and export an ATS-safe PDF.</p></div>
-          <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">{showCreate ? "Close" : "Create targeted resume"}</button>
+          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, match the exact JD, edit every line, and export an ATS-safe PDF.</p></div>
+          <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">{showCreate ? "Close" : "Create targeted resume"}</button>
         </header>
 
         {error && <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
@@ -173,7 +173,7 @@ export default function ResumesPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {resumes.map((resume) => (
                 <Link key={resume.id} href={`/career/resumes/${resume.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
-                  <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 text-[10px] font-bold uppercase text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold">{resume.atsScore}/100</span>}</div>
+                  <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 text-[11px] font-bold uppercase text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold-700">{resume.atsScore}/100</span>}</div>
                   <h3 className="mt-5 font-bold text-zinc-900">{resume.title}</h3>
                   <p className="mt-1 text-sm text-zinc-500">{resume.targetRole}{resume.targetCompany ? ` at ${resume.targetCompany}` : ""}</p>
                   <p className="mt-4 text-xs text-zinc-400">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>

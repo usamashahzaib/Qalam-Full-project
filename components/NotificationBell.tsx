@@ -126,7 +126,7 @@ export function NotificationBell() {
                       <p className="text-xs font-bold text-zinc-900">{n.title}</p>
                     </div>
                     {n.body ? <p className="text-xs leading-relaxed text-zinc-600">{n.body}</p> : null}
-                    <p className="mt-0.5 text-[10px] text-zinc-400">{timeAgo(n.created_at)}</p>
+                    <p className="mt-0.5 text-[11px] text-zinc-400">{timeAgo(n.created_at)}</p>
                   </div>
                 )
                 return n.link ? (

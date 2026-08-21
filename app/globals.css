@@ -55,6 +55,35 @@ html, body {
   }
 }
 
+/* Without scripting, framer-motion writes its `initial` state inline and then
+   never runs the `animate` step, so every element that fades in from
+   opacity 0 stays invisible permanently. The pricing hero, headline included,
+   was blank in that state. */
+@media (scripting: none) {
+  [style*="opacity:0"],
+  [style*="opacity: 0"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Global reduced-motion net. The blocks further down disable specific
+   animations, which left every transition and any newly added animation
+   uncovered. Durations collapse to near-zero rather than to 0 so that
+   transitionend and animationend listeners still fire and no state machine
+   waiting on them stalls. Smooth scrolling is dropped here too, since it is
+   a common migraine and vestibular trigger. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Solid product cards */
 .qalam-card,
 .content-card {
@@ -67,6 +96,19 @@ html, body {
 }
 
 @theme {
+  /* Motion defaults. Every `transition-*` utility inherits these, so the
+     whole site moves on one curve instead of Tailwind's stock ease-in-out,
+     which more than fifty elements were still using.
+
+     The curve is expo-out, the same [0.16, 1, 0.3, 1] the codebase already
+     passes to framer-motion in a dozen components. It leaves fast and
+     settles slowly, so a hover reads as something arriving rather than
+     something being interpolated. 220ms because the stock 150ms is too
+     brief for the eye to register the deceleration that makes it feel
+     considered. */
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 220ms;
+
   --color-teal: #0D4A45;
   --color-teal-50: #eef7f6;
   --color-teal-100: #cce8e6;
@@ -76,7 +118,35 @@ html, body {
   --color-teal-700: #082e2b;
   --color-teal-800: #051f1c;
   --color-teal-900: #030f0e;
-  --color-gold: #C9871F;
+  /* Warm neutrals, replacing Tailwind's stock zinc.
+
+     Two reasons. Tailwind's zinc is a cool blue-grey (#a1a1aa), and on this
+     site's cream ground (#f7f3ea) a cool grey reads as dirty rather than
+     quiet, which is most of why the secondary text looked washed out. And
+     the two steps used for body copy were far too light to read: zinc-400
+     at 12px measured 2.6:1 on white, against a 4.5:1 requirement, across
+     roughly 390 usages.
+
+     The two text steps below are darkened to clear 4.5:1 on white and on
+     cream, and given a slight green bias so they sit under the teal rather
+     than fighting it. The 200 and 300 steps hold their luminance, since
+     they are hairlines and dividers, and only pick up the same warmth.
+
+     Safe to do globally: the dark-mode blocks in this file are gated on
+     `(prefers-color-scheme: dark) and (prefers-color-scheme: light)`, a
+     query that can never match, so every surface in the product is light. */
+  --color-zinc-200: #e5e6e2;
+  --color-zinc-300: #d6d8d3;
+  --color-zinc-400: #656d6a;
+  --color-zinc-500: #555c5a;
+
+  /* Deepened from #C9871F. That value measured 2.88:1 against the cream
+     ground, just under the 3:1 large-text floor, wherever gold carried a
+     display heading. The deeper bronze clears 3.4:1, and on cream it also
+     reads richer than the original yellow-leaning gold, which went slightly
+     acidic against the warm paper. Small gold text still uses gold-700:
+     no gold saturated enough to stay gold will reach 4.5:1 here. */
+  --color-gold: #B87A16;
   --color-gold-50: #fef6e8;
   --color-gold-100: #fce9c3;
   --color-gold-200: #f9d387;
@@ -139,6 +209,11 @@ html, body {
 html {
   position: relative;
   scroll-behavior: auto;
+  /* Anchors must clear the fixed header or they land underneath it. The
+     navbar publishes its real height into --header-h, which changes when
+     the announcement bar is dismissed; the fallback covers the tallest
+     case for the first paint and for anyone whose JS never runs. */
+  scroll-padding-top: var(--header-h, 7rem);
 }
 
 /* Do not redeclare --font-jakarta here. next/font sets it on <html> via its
@@ -431,7 +506,7 @@ html {
   font-size: 0.875rem;
   border-radius: 0 0 8px 8px;
   text-decoration: none;
-  transition: top 0.1s;
+  transition: top 160ms var(--default-transition-timing-function);
 }
 .skip-link:focus {
   top: 0;
@@ -442,22 +517,10 @@ html {
 /* Smooth focus transitions on every form field so existing focus:ring/focus:border
    utilities animate instead of snapping */
 input, textarea, select {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: border-color 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
 }
 
 /* ─── Reusable utility classes ────────────────────────────────── */
-
-/* Glassmorphism nav - solid fallback first so unsupported/degraded
-   backdrop-filter never lets page content show through the nav bar */
-.glass {
-  background: #fafaf8;
-}
-
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    background: #fafaf8;
-  }
-}
 
 /* Grid-line background pattern (80 px) */
 .grid-bg {
@@ -465,6 +528,32 @@ input, textarea, select {
     linear-gradient(rgba(13, 74, 69, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(13, 74, 69, 0.06) 1px, transparent 1px);
   background-size: 80px 80px;
+}
+
+/* ─── Hero ground ──────────────────────────────────────────────
+   Replaces the pair of large blurred colour circles the hero used to
+   carry. Two reasons to drop them. They are the single most recognisable
+   decoration of 2020-era product pages, and this brand is about evidence
+   and structure, so soft blurred shapes argue against the copy sitting on
+   top of them. And `blur-3xl` is a real filter over an 800px area, paid
+   on every paint, where a radial gradient costs nothing.
+
+   The wash keeps the same warm-to-green colour turn; the ruled field
+   underneath it reads as measurement rather than atmosphere, and is
+   masked so it never reaches a hard edge. */
+.hero-wash {
+  background:
+    radial-gradient(ellipse 58% 48% at 10% 26%, oklch(0.9 0.035 168 / 0.62), transparent 70%),
+    radial-gradient(ellipse 54% 44% at 90% 80%, oklch(0.93 0.045 88 / 0.55), transparent 72%);
+}
+
+.hero-field {
+  background-image:
+    linear-gradient(oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
+  mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
 }
 
 /* Particle float */
@@ -564,7 +653,7 @@ input, textarea, select {
 
 /* Press feedback - brief scale-down on click/tap for buttons and primary links */
 .press {
-  transition: transform 0.15s ease;
+  transition: transform 120ms var(--default-transition-timing-function);
 }
 .press:active {
   transform: scale(0.98);
@@ -591,7 +680,7 @@ input, textarea, select {
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.2s ease;
+  transition: transform 260ms var(--default-transition-timing-function);
   opacity: 0.55;
 }
 .nav-underline:hover::after,
@@ -601,7 +690,7 @@ input, textarea, select {
 
 /* Card hover lift */
 .card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: transform 260ms var(--default-transition-timing-function), box-shadow 260ms var(--default-transition-timing-function), border-color 260ms var(--default-transition-timing-function);
 }
 .card-hover:hover {
   transform: translateY(-4px);
@@ -776,15 +865,55 @@ input, textarea, select {
 .qlx-surface { background: var(--qlx-surface); }
 .qlx-raised { background: var(--qlx-surface-raised); box-shadow: var(--qlx-elevation-2); }
 
-/* Navbar glass: solid fallback first, blur layered on top */
+/* Navbar glass. Two rules, in this order, for two reasons that are both
+   easy to get wrong and were both wrong here.
+
+   1. The feature query tests ONLY the standard property. Adding
+      `or (-webkit-backdrop-filter: ...)` looks safer but is the bug:
+      current Chromium has dropped the -webkit- alias while still passing
+      the standard half of the `or`. The browser therefore took the
+      translucent background that is meant to sit behind a blur, and got
+      no blur, so page content read straight through the navbar.
+
+   2. The standard property is declared LAST. Lightning CSS collapses
+      prefixed and unprefixed declarations of one property and keeps the
+      final one, so writing the prefix last deletes `backdrop-filter`
+      from the build output entirely. Prefix first, standard last. */
 .qlx-glass {
-  background: oklch(0.12 0.014 196 / 0.92);
+  /* Fully opaque: a browser that lands here has no blur to hide behind,
+     so any alpha at all lets high-contrast text bleed through. */
+  background: oklch(0.12 0.014 196);
 }
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+
+@supports (backdrop-filter: blur(1px)) {
   .qlx-glass {
     background: oklch(0.13 0.015 196 / 0.72);
-    backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+/* Light counterpart, for the navbar sitting over paper grounds. Same two
+   authoring rules as above: test only the standard property, prefix first.
+
+   Deliberately warm rather than plain white. The marketing ground is
+   #f7f3ea cream, and a neutral white bar reads as a separate grey slab
+   floating on it. Carrying a little of the cream's hue lets the bar read
+   as the same paper, lit from above. */
+.qlx-glass-light {
+  background: oklch(0.985 0.008 92);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .qlx-glass-light {
+    /* 0.86 rather than a more glassy 0.72. The bar also travels over inset
+       dark cards, which are not grounds worth flipping the whole navbar for,
+       and at 0.72 those pushed the teal link colour to 3.99:1. This holds the
+       links above 4.5:1 against anything behind them, and over the cream
+       ground it is visually indistinguishable since the tint matches. */
+    background: oklch(0.987 0.009 92 / 0.86);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
   }
 }
 
@@ -796,7 +925,7 @@ input, textarea, select {
     inset 0 -2px 4px oklch(0.42 0.08 196 / 0.28),
     0 1px 2px oklch(0.04 0.02 196 / 0.46),
     0 6px 18px oklch(0.06 0.024 196 / 0.4);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), transform 220ms var(--default-transition-timing-function);
 }
 .qlx-champagne-btn:hover {
   background: var(--qlx-champagne-hover);
@@ -818,13 +947,63 @@ input, textarea, select {
 }
 
 .qlx-link {
-  color: var(--qlx-fg-muted);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  color: var(--nav-fg);
+  transition: color 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
 }
 .qlx-link:hover,
 .qlx-link[aria-expanded="true"] {
-  color: oklch(0.88 0.04 90);
-  background-color: oklch(1 0.02 196 / 0.08);
+  color: var(--nav-fg-strong);
+  background-color: var(--nav-hover-bg);
+}
+
+/* ─── Navbar palette ───────────────────────────────────────────
+   Every navbar colour resolves through these tokens, so the whole bar
+   flips ground with one attribute instead of a conditional on each
+   element. That matters for more than tidiness: it lets plain CSS paint
+   the correct theme before React hydrates, which a per-element ternary
+   cannot do.
+
+   Light is the default because almost every marketing ground is paper. */
+.qlx-nav {
+  --nav-fg: oklch(0.44 0.042 190);
+  --nav-fg-strong: #0d4a45;
+  --nav-fg-mute: oklch(0.6 0.032 190);
+  --nav-hover-bg: oklch(0.44 0.042 190 / 0.09);
+  --nav-border: oklch(0.44 0.042 190 / 0.14);
+  --nav-shadow: 0 10px 30px -12px oklch(0.35 0.06 175 / 0.22);
+}
+
+.qlx-nav[data-ground="dark"] {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+}
+
+/* Pre-hydration ground. A page whose first section is dark marks it with
+   data-nav-hero, and until the navbar mounts and stamps its own
+   data-ground, this paints the dark palette straight from the server
+   markup. Without it, such pages served a light bar with deep teal links
+   sitting on a near-black hero for the whole hydration window, and
+   permanently for anyone whose JS never arrives. */
+body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+  background: oklch(0.12 0.014 196);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+    background: oklch(0.13 0.015 196 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
 }
 
 /* Fine grain texture for the hero, breaks up flat gradient banding */

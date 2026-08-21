@@ -74,7 +74,7 @@ export default function ContactPage() {
                   </a>
                 ))}
                 <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold">Before you write</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold-700">Before you write</p>
                   <ul className="space-y-1.5 text-sm leading-relaxed text-zinc-600">
                     <li>- Your workspace email</li>
                     <li>- The plan you want</li>
@@ -130,7 +130,7 @@ export default function ContactPage() {
           </div>
           <Link
             href="/pricing"
-            className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
+            className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 transition-colors hover:bg-gold-600"
           >
             See pricing
           </Link>

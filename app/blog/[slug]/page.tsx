@@ -181,7 +181,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
               <div className="grid gap-4 md:grid-cols-2">
                 {relatedPosts.map((related) => (
                   <Link key={related.slug} href={`/blog/${related.slug}`} className="rounded-2xl border border-white/15 bg-white/5 p-5 transition-colors hover:bg-white/10">
-                    <p className="text-sm font-semibold text-gold">{related.tag}</p>
+                    <p className="text-sm font-semibold text-gold-700">{related.tag}</p>
                     <p className="mt-2 text-lg font-bold">{related.title}</p>
                     <p className="mt-2 text-sm leading-relaxed text-white/75">{related.excerpt}</p>
                   </Link>

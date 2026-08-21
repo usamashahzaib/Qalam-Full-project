@@ -511,7 +511,7 @@ export default function SettingsPage() {
                   <h3 className="text-sm font-bold text-zinc-900">{isLinkedInConnected ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
                   <p className="text-xs text-zinc-500">{isLinkedInConnected ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
                   {user?.linkedinTokenExpiresAt && (
-                    <p className="mt-1 text-[10px] text-zinc-400">
+                    <p className="mt-1 text-[11px] text-zinc-400">
                       Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
                     </p>
                   )}

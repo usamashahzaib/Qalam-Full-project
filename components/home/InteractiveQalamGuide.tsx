@@ -107,8 +107,8 @@ export function InteractiveQalamGuide() {
       />
 
       <div className="absolute right-[1%] top-[12%] z-30 text-right" aria-hidden="true">
-        <p className="text-[0.62rem] font-bold uppercase tracking-[0.28em] text-teal/35">Qalam guide</p>
-        <p className="mt-2 font-cormorant text-lg italic text-gold-700/70">Present. Attentive. Yours.</p>
+        <p className="text-[0.7rem] font-bold uppercase tracking-[0.28em] text-teal/75">Qalam guide</p>
+        <p className="mt-2 font-cormorant text-lg italic text-gold-700">Present. Attentive. Yours.</p>
       </div>
 
       <div

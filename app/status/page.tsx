@@ -2,14 +2,14 @@ import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "Status",
+  title: "Status: Service Reliability and Incident History",
   description: "Current public operating note for Qalam reliability, incidents, and support escalation.",
   path: "/status",
 })
 
 export default function StatusPage() {
   return (
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-10 text-center">

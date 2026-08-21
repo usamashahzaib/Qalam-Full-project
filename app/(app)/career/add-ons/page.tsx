@@ -125,15 +125,15 @@ export default function CareerAddOnsPage() {
         <header className="overflow-hidden rounded-[2rem] bg-[#073f3b] text-white">
           <div className="grid md:grid-cols-[1.35fr_0.65fr]">
             <div className="px-7 py-9 md:px-10 md:py-12">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Career commerce</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Career commerce</p>
               <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-5xl">Buy the outcome your next move needs.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Every purchase becomes verified in-app credits. Generate, edit, and save the work inside Qalam.</p>
             </div>
             <div className="border-t border-white/10 bg-white/[0.045] px-7 py-8 md:border-l md:border-t-0 md:px-8 md:py-12">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/50">{plan} plan</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/65">{plan} plan</p>
               <p className="mt-2 text-4xl font-bold text-gold">{loading ? "..." : planCredits}</p>
               <p className="mt-1 text-sm text-white/70">career credits available</p>
-              <p className="mt-5 text-xs leading-5 text-white/50">Billing cycle: {billingCycle}. Purchased credits do not expire. Plan credits expire with the paid period.</p>
+              <p className="mt-5 text-xs leading-5 text-white/65">Billing cycle: {billingCycle}. Purchased credits do not expire. Plan credits expire with the paid period.</p>
             </div>
           </div>
         </header>
@@ -144,7 +144,7 @@ export default function CareerAddOnsPage() {
         <section className="mt-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Outcome packs</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">Outcome packs</p>
               <h2 className="mt-2 text-3xl font-bold text-zinc-900">One checkout. A complete workflow.</h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-zinc-500">Job-Win is the recommended path for one high-priority application. Every included tool unlocks separately.</p>
@@ -156,17 +156,17 @@ export default function CareerAddOnsPage() {
               return <article key={pack.key} className={featured ? "row-span-3 rounded-3xl bg-zinc-900 p-7 text-white lg:p-9" : "border-t border-zinc-300 py-5 lg:px-2"}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="max-w-xl">
-                    {featured ? <span className="rounded-full bg-gold px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white">Recommended</span> : null}
+                    {featured ? <span className="rounded-full bg-gold px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-teal-900">Recommended</span> : null}
                     <h3 className={`font-bold ${featured ? "mt-5 text-3xl" : "text-xl text-zinc-900"}`}>{pack.name}</h3>
                     <p className={`mt-2 text-sm leading-6 ${featured ? "text-white/65" : "text-zinc-500"}`}>{pack.description}</p>
                   </div>
                   <div className={featured ? "text-left sm:text-right" : "text-right"}>
-                    <p className={`text-xs line-through ${featured ? "text-white/40" : "text-zinc-400"}`}>{money(pack.originalPrice)}</p>
+                    <p className={`text-xs line-through ${featured ? "text-white/60" : "text-zinc-400"}`}>{money(pack.originalPrice)}</p>
                     <p className={`mt-1 text-xl font-bold ${featured ? "text-gold" : "text-teal"}`}>{money(pack.price)}</p>
                   </div>
                 </div>
                 {featured ? <div className="mt-8 grid gap-3 border-y border-white/10 py-6 sm:grid-cols-2">{pack.items.map((key) => <span key={key} className="text-sm text-white/75">{getCareerProduct(key)?.name}</span>)}</div> : null}
-                <button onClick={() => purchase(pack.key)} disabled={!checkoutReady || payingKey === pack.key} className={`mt-6 min-h-12 rounded-xl px-6 text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 ${featured ? "bg-gold text-white" : "bg-teal text-white"}`}>
+                <button onClick={() => purchase(pack.key)} disabled={!checkoutReady || payingKey === pack.key} className={`mt-6 min-h-12 rounded-xl px-6 text-sm font-bold transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-500 ${featured ? "bg-gold text-teal-900" : "bg-teal text-white"}`}>
                   {!checkoutReady ? "Checkout setup pending" : payingKey === pack.key ? "Opening secure checkout..." : `Buy ${pack.name}`}
                 </button>
               </article>
@@ -186,12 +186,12 @@ export default function CareerAddOnsPage() {
               const quantity = quantities[item.key] || 1
               const specificCredits = purchasedCredits(item.key)
               return <article key={item.key} className="grid gap-5 py-6 md:grid-cols-[2rem_minmax(0,1fr)_auto] md:items-center">
-                <span className="text-xs font-bold text-zinc-300">{String(index + 1).padStart(2, "0")}</span>
+                <span className="text-xs font-bold text-zinc-400">{String(index + 1).padStart(2, "0")}</span>
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-bold text-zinc-900">{item.name}</h3>
-                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-bold uppercase text-zinc-600">{item.creditCost} plan {item.creditCost === 1 ? "credit" : "credits"}</span>
-                    {specificCredits > 0 ? <span className="rounded-full bg-teal/10 px-2.5 py-1 text-[10px] font-bold uppercase text-teal">{specificCredits} purchased</span> : null}
+                    <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold uppercase text-zinc-600">{item.creditCost} plan {item.creditCost === 1 ? "credit" : "credits"}</span>
+                    {specificCredits > 0 ? <span className="rounded-full bg-teal/10 px-2.5 py-1 text-[11px] font-bold uppercase text-teal">{specificCredits} purchased</span> : null}
                   </div>
                   <p className="mt-1 text-sm font-semibold text-teal">{money(item.price)} per {item.unit}</p>
                   <Link href={`${item.route}${suffix}`} className="mt-2 inline-flex text-xs font-bold text-zinc-500 underline decoration-zinc-300 underline-offset-4">Open tool</Link>
@@ -216,7 +216,7 @@ export default function CareerAddOnsPage() {
             <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">Order history</p><h2 className="mt-1 font-bold text-zinc-900">Payments and plan grants</h2></div>
             <span className="text-xs text-zinc-400">{orders.length} records</span>
           </div>
-          {loading ? <div className="mt-5 h-12 animate-pulse rounded-xl bg-zinc-100" /> : orders.length ? <div className="mt-5 divide-y divide-zinc-100 border-y border-zinc-100">{orders.map((order) => { const product = getCareerProduct(order.product_key || order.addon_key); return <div key={order.id} className="flex flex-col gap-2 py-4 text-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-zinc-800">{product?.name || (order.source_type === "plan_credit" ? `${plan} plan credits` : order.addon_key.replaceAll("_", " "))}{order.quantity > 1 ? ` x${order.quantity}` : ""}</p><p className="mt-1 text-xs text-zinc-400">{order.amount_pkr > 0 ? money(order.amount_pkr) : "Included with plan"} · {Number(order.credits_consumed || 0)} used</p></div><span className="w-fit rounded-full bg-zinc-100 px-2.5 py-1 text-[10px] font-bold uppercase text-zinc-600">{order.status.replaceAll("_", " ")}</span></div>})}</div> : <p className="mt-5 text-sm text-zinc-500">No purchases or plan credits yet.</p>}
+          {loading ? <div className="mt-5 h-12 animate-pulse rounded-xl bg-zinc-100" /> : orders.length ? <div className="mt-5 divide-y divide-zinc-100 border-y border-zinc-100">{orders.map((order) => { const product = getCareerProduct(order.product_key || order.addon_key); return <div key={order.id} className="flex flex-col gap-2 py-4 text-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-zinc-800">{product?.name || (order.source_type === "plan_credit" ? `${plan} plan credits` : order.addon_key.replaceAll("_", " "))}{order.quantity > 1 ? ` x${order.quantity}` : ""}</p><p className="mt-1 text-xs text-zinc-400">{order.amount_pkr > 0 ? money(order.amount_pkr) : "Included with plan"} · {Number(order.credits_consumed || 0)} used</p></div><span className="w-fit rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-bold uppercase text-zinc-600">{order.status.replaceAll("_", " ")}</span></div>})}</div> : <p className="mt-5 text-sm text-zinc-500">No purchases or plan credits yet.</p>}
         </section>
       </div>
     </main>

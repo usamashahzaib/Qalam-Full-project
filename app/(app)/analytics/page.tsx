@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
             <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-5">
               {(["impressions", "reactions", "comments", "reposts", "followerDelta"] as const).map((field) => (
                 <div key={field}>
-                  <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-zinc-400">
+                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-zinc-400">
                     {field === "followerDelta" ? "Follower change" : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <input
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
               ))}
             </div>
             <div className="mt-3">
-              <label className="mb-1 block text-[10px] font-bold uppercase tracking-wide text-zinc-400">Notes (optional)</label>
+              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-zinc-400">Notes (optional)</label>
               <input
                 type="text"
                 value={snapshotForm.notes}
@@ -379,7 +379,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-[80px_repeat(4,minmax(0,1fr))] gap-1.5">
                 <div />
-                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center text-[10px] font-bold uppercase tracking-wider text-zinc-400">{label}</div>)}
+                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center text-[11px] font-bold uppercase tracking-wider text-zinc-400">{label}</div>)}
                 {DAYS.map((day, row) => (
                   <div key={day} className="contents">
                     <div className="flex items-center text-xs font-semibold text-zinc-500">{day}</div>
@@ -421,7 +421,7 @@ export default function AnalyticsPage() {
 function InsightRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
       <p className="mt-1 text-sm leading-relaxed text-zinc-700">{value}</p>
     </div>
   )
@@ -431,9 +431,9 @@ function Stat({ label, value, note, accent }: { label: string; value: number; no
   const valueColor = accent === "teal" ? "text-teal" : accent === "amber" ? "text-amber-700" : accent === "blue" ? "text-blue-700" : accent === "red" ? "text-red-600" : "text-zinc-900"
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
       <p className={`mt-1.5 text-3xl font-bold ${valueColor}`}>{value}</p>
-      <p className="mt-0.5 text-[10px] uppercase tracking-wider text-zinc-400">{note}</p>
+      <p className="mt-0.5 text-[11px] uppercase tracking-wider text-zinc-400">{note}</p>
     </div>
   )
 }

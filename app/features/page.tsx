@@ -5,7 +5,7 @@ import { CAPABILITIES, DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
 import { APP_URL, SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const title = "Career Visibility OS Features and Product Views"
-const description = "See how Qalam checks ATS resumes, builds targeted resumes, matches job descriptions, improves LinkedIn profiles, creates professional content, and connects career evidence."
+const description = "See how Qalam checks ATS resumes, builds targeted resumes, matches job descriptions, improves LinkedIn profiles, and connects career evidence."
 
 export const metadata: Metadata = buildPageMetadata({
   title,
@@ -84,14 +84,14 @@ export default function FeaturesPage() {
       </section>
 
       <section className="px-0 py-16 sm:py-24">
-        <CapabilityShowcase />
+        <CapabilityShowcase headingLevel={2} />
       </section>
 
       <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-[1100px]">
           <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">One evidence chain</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">One evidence chain</p>
               <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-zinc-900">The output changes. The truth does not.</h2>
               <p className="mt-4 text-sm leading-7 text-zinc-600">Your target role and verified evidence stay attached as Qalam adapts the format for an ATS, recruiter, LinkedIn search, professional audience, or interview.</p>
             </div>
@@ -103,7 +103,7 @@ export default function FeaturesPage() {
                 ["04", "Keep the outcome connected", "Versions, applications, revisions, approvals, and later results stay in one career workspace."],
               ].map(([number, step, copy]) => (
                 <li key={number} className="grid gap-3 py-5 sm:grid-cols-[3rem_11rem_1fr] sm:items-start">
-                  <span className="text-xs font-bold text-gold">{number}</span>
+                  <span className="text-xs font-bold text-gold-700">{number}</span>
                   <h3 className="font-bold text-zinc-900">{step}</h3>
                   <p className="text-sm leading-6 text-zinc-600">{copy}</p>
                 </li>
@@ -122,7 +122,7 @@ export default function FeaturesPage() {
           </div>
           <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#073f3b] p-7 text-white sm:flex-row sm:items-center">
             <div><h2 className="text-2xl font-extrabold">Start with the free ATS Resume Checker.</h2><p className="mt-2 text-sm text-white/65">No account. Upload a PDF or DOCX and get specific findings.</p></div>
-            <div className="flex flex-wrap gap-3"><Link href="/free-tools/ats-resume-checker" className="press shrink-0 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Check a resume free</Link><Link href={`${APP_URL}/signup`} className="press shrink-0 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white">Create a free account</Link></div>
+            <div className="flex flex-wrap gap-3"><Link href="/free-tools/ats-resume-checker" className="press shrink-0 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">Check a resume free</Link><Link href={`${APP_URL}/signup`} className="press shrink-0 rounded-xl border border-white/20 px-5 py-3 text-sm font-bold text-white">Create a free account</Link></div>
           </div>
         </div>
       </section>

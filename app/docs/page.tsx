@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
-  title: "Docs",
+  title: "Docs: Setup, Voice Profile, and Publishing Workflows",
   description: "Public Qalam docs for onboarding, voice setup, drafting, scheduling, and workspace operations.",
   path: "/docs",
 })
@@ -38,7 +38,7 @@ const SECTIONS = [
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>

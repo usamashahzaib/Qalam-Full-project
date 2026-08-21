@@ -111,7 +111,7 @@ export default function UpgradePage() {
 
       {AGENCY_PLAN_LIVE ? (
         <section className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-5">
-          <span className="rounded-full bg-teal px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">For teams</span>
+          <span className="rounded-full bg-teal px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">For teams</span>
           <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
             PKR 7,998 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.

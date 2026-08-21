@@ -99,7 +99,7 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
                   {status.tables.map((t) => (
                     <div key={t.name} className="flex items-center justify-between">
                       <span className="font-mono text-xs text-zinc-700">{t.name}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${t.exists ? "bg-teal-100 text-teal-700" : "bg-red-100 text-red-700"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${t.exists ? "bg-teal-100 text-teal-700" : "bg-red-100 text-red-700"}`}>
                         {t.exists ? "OK" : "MISSING"}
                       </span>
                     </div>
@@ -113,7 +113,7 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
                   {status.rpcs.map((r) => (
                     <div key={r.name} className="flex items-center justify-between">
                       <span className="font-mono text-xs text-zinc-700">{r.name}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${r.exists ? "bg-teal-100 text-teal-700" : "bg-red-100 text-red-700"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase ${r.exists ? "bg-teal-100 text-teal-700" : "bg-red-100 text-red-700"}`}>
                         {r.exists ? "OK" : "MISSING"}
                       </span>
                     </div>

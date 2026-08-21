@@ -28,7 +28,7 @@ export default function CohortsPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Learning cohorts</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Learning cohorts</p>
           <h1 className="mt-2 text-3xl font-bold">Turn career development into a practical module.</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70">CHRP, CHRMP, universities, and career coaches can give learners one shared workflow for LinkedIn and resumes.</p>
         </header>
@@ -52,7 +52,7 @@ export default function CohortsPage() {
           <div className="grid gap-3 md:grid-cols-3">
             {cohorts.map((cohort) => (
               <article key={cohort.id} className="rounded-xl border border-zinc-200 bg-white p-5">
-                <div className="flex justify-between"><span className="rounded-full bg-teal/10 px-2 py-1 text-[10px] font-bold uppercase text-teal">{cohort.role}</span><span className="font-mono text-xs font-bold text-gold">{cohort.code}</span></div>
+                <div className="flex justify-between"><span className="rounded-full bg-teal/10 px-2 py-1 text-[11px] font-bold uppercase text-teal">{cohort.role}</span><span className="font-mono text-xs font-bold text-gold-700">{cohort.code}</span></div>
                 <h3 className="mt-4 font-bold text-zinc-900">{cohort.name}</h3>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">{cohort.description}</p>
                 <Link href={`/career/cohorts/${cohort.id}`} className="mt-4 inline-flex text-xs font-bold text-teal">Open progress</Link>

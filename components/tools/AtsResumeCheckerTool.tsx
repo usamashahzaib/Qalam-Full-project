@@ -173,8 +173,8 @@ export function AtsResumeCheckerTool() {
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">After your check</p>
             <h2 className="mt-3 text-2xl font-bold">Build one ATS resume free every month.</h2>
             <p className="mt-3 text-sm leading-6 text-white/70">Sign in to target an exact job, edit every line, choose from 12 ATS-safe templates, and export to PDF.</p>
-            <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-white transition hover:bg-gold-600">Build my monthly free resume</Link>
-            <p className="mt-3 text-center text-xs text-white/50">Free plan. One generation per month.</p>
+            <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-teal-900 transition hover:bg-gold-600">Build my monthly free resume</Link>
+            <p className="mt-3 text-center text-xs text-white/65">Free plan. One generation per month.</p>
           </aside>
         </div>
 
@@ -232,7 +232,7 @@ export function AtsResumeCheckerTool() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">Truth-preserving rewrite</p>
               <h2 className="mt-2 text-2xl font-bold">Professional summary</h2>
               <p className="mt-4 max-w-4xl leading-7 text-white/80">{result.rewritten_summary}</p>
-              <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-white">Build the full resume free</Link>
+              <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-teal-900">Build the full resume free</Link>
             </section>
           </div>
         ) : null}

@@ -138,7 +138,7 @@ export function HeroChecker() {
               <p className="text-base font-semibold text-white">
                 {busy ? "Reading your resume" : "Drop your resume here"}
               </p>
-              <p className="max-w-[36ch] text-sm leading-relaxed text-white/55">
+              <p className="max-w-[36ch] text-sm leading-relaxed text-white/80">
                 PDF or DOCX. It is read in your browser session for the instant check, and nothing is
                 stored.
               </p>
@@ -196,7 +196,7 @@ export function HeroChecker() {
             <button
               type="button"
               onClick={reset}
-              className="shrink-0 text-xs font-medium text-white/50 underline underline-offset-4 transition-colors hover:text-white"
+              className="shrink-0 text-xs font-medium text-white/65 underline underline-offset-4 transition-colors hover:text-white"
             >
               Clear
             </button>
@@ -219,7 +219,7 @@ export function HeroChecker() {
                   />
                   <span className="truncate text-sm text-white/85">{signal.label}</span>
                 </span>
-                <span className="shrink-0 text-xs tabular-nums text-white/50">
+                <span className="shrink-0 text-xs tabular-nums text-white/65">
                   <span className="sr-only">{STATE_LABEL[signal.state]}. </span>
                   {signal.detail}
                 </span>

@@ -60,7 +60,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/40 transition-all duration-200 hover:border-white/20 hover:bg-white/8 hover:text-[oklch(0.85_0.05_85)]"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/60 transition-all duration-200 hover:border-white/20 hover:bg-white/8 hover:text-[oklch(0.85_0.05_85)]"
     >
       {children}
     </a>
@@ -69,7 +69,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
 
 export function Footer() {
   return (
-    <footer className="qlx qlx-surface border-t border-white/10">
+    <footer data-nav-ground="dark" className="qlx qlx-surface border-t border-white/10">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
           <div className="sm:col-span-3 lg:col-span-1">
@@ -95,7 +95,10 @@ export function Footer() {
           {Object.entries(FOOTER_LINKS).map(([section, links]) => (
             <div key={section}>
               <div className="hidden sm:block">
-                <h4 className="mb-4 text-sm font-semibold text-white/90">{section}</h4>
+                {/* h2, not h4. These are the top-level headings inside the
+                    footer landmark, and pages usually end on an h2, so h4
+                    skipped a rank on every route in the site. */}
+                <h2 className="mb-4 text-sm font-semibold text-white/90">{section}</h2>
                 <ul className="space-y-2.5">
                   {links.map((link) => (
                     <li key={link.label}>
@@ -110,7 +113,7 @@ export function Footer() {
               <details className="group border-t border-white/10 sm:hidden">
                 <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between text-sm font-semibold text-white/90">
                   {section}
-                  <span className="text-xl font-light text-white/45 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                  <span className="relative flex h-5 w-5 shrink-0 items-center justify-center text-white/70 transition-transform duration-300 group-open:rotate-180" aria-hidden="true"><span className="absolute h-0.5 w-2.5 rounded-full bg-current" /><span className="absolute h-2.5 w-0.5 rounded-full bg-current transition-transform duration-300 group-open:scale-y-0" /></span>
                 </summary>
                 <ul className="pb-3">
                   {links.map((link) => (
@@ -127,15 +130,15 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/legal/privacy" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
+          <p className="text-sm text-white/60">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-sm text-white/60">
+            <Link href="/legal/privacy" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white">
               Privacy
             </Link>
-            <Link href="/legal/terms" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
+            <Link href="/legal/terms" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white">
               Terms
             </Link>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-white/60">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-white">
               {SUPPORT_EMAIL}
             </a>
           </div>

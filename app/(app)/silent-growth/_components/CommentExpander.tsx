@@ -81,7 +81,7 @@ export function CommentExpander() {
       {post && (
         <div className="px-6 py-5">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Draft Post</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Draft Post</p>
             <CopyButton text={post} />
           </div>
           <p className="whitespace-pre-wrap rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 text-sm leading-relaxed text-zinc-700">

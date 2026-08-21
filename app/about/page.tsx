@@ -4,7 +4,7 @@ import { buildPageMetadata, buildOrganizationSchema, SITE_URL } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
   title: "About - AI LinkedIn Writing System",
-  description: "Qalam is built as a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders, consultants, HR leaders, and agencies.",
+  description: "Qalam is a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders and agencies.",
   path: "/about",
   keywords: ["about Qalam", "Qalam AI writer", "LinkedIn writing system", "Qalam product principles"],
 })
@@ -37,7 +37,7 @@ export default function AboutPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema).replace(/</g, "\\u003c") }} />
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="qlx qlx-surface relative overflow-hidden px-6 py-24">
         <div className="qlx-grain" aria-hidden />
         <div
@@ -117,7 +117,7 @@ export default function AboutPage() {
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
+                  className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 transition-colors hover:bg-gold-600"
                 >
                   Compare Plans
                 </Link>

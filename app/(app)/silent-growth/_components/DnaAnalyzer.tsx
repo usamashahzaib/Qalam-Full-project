@@ -96,7 +96,7 @@ export function DnaAnalyzer() {
       {result && (
         <div className="divide-y divide-zinc-50">
           <div className="px-6 py-5">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Target DNA Profile</p>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Target DNA Profile</p>
             <dl className="space-y-3 text-sm">
               <div>
                 <dt className="font-semibold text-zinc-800">Hook patterns</dt>
@@ -118,7 +118,7 @@ export function DnaAnalyzer() {
           </div>
 
           <div className="px-6 py-5">
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">3 Custom Comment Suggestions</p>
+            <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">3 Custom Comment Suggestions</p>
             <div className="space-y-3">
               {result.comments.map((c, i) => (
                 <div key={i} className="flex items-start justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50/50 p-3">
@@ -131,7 +131,7 @@ export function DnaAnalyzer() {
 
           <div className="px-6 py-5">
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Post Template</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Post Template</p>
               <CopyButton text={result.template} />
             </div>
             <p className="whitespace-pre-wrap rounded-xl border border-zinc-100 bg-zinc-50/50 p-3 text-sm leading-relaxed text-zinc-700">

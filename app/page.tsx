@@ -258,8 +258,8 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(homepageHowToSchema).replace(/</g, "\\u003c") }} />
 
       <section className="relative flex min-h-screen items-center overflow-hidden bg-[#f7f3ea] pb-20 pt-36 text-teal">
-        <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-[#dce9df]/75 blur-3xl" aria-hidden />
-        <div className="absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-[#f0ddb9]/65 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hero-wash" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hero-field" aria-hidden />
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal/15 to-transparent" aria-hidden />
 
         <div className="relative z-10 mx-auto grid w-full max-w-[1200px] grid-cols-1 items-center gap-8 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(430px,0.84fr)] lg:gap-12">
@@ -271,12 +271,24 @@ export default function HomePage() {
               </span>
             </div>
 
+            {/* Line breaks are explicit rather than left to wrapping. This is
+                the LCP element, and when the webfont replaced the fallback the
+                line count changed, growing the headline by a full line and
+                pushing everything below it down. That single reflow was 0.1333
+                of a 0.14 CLS, on three runs out of four. Fixing the breaks
+                makes the box height depend only on the font size, which the
+                clamp already controls, so metrics can no longer move it. It
+                also matches the composition the design already rendered at
+                every width. */}
             <h1
               className="text-[clamp(3.25rem,7vw,6.2rem)] font-extrabold leading-[0.95] tracking-[-0.055em] text-teal"
             >
-              Turn experience into
+              Turn
               <br />
-              {" "}
+              experience
+              <br />
+              into
+              <br />
               <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">visible proof.</span>
             </h1>
 
@@ -312,7 +324,7 @@ export default function HomePage() {
             </div>
 
             <div
-              className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/50"
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/80"
             >
               <span>No payment card</span>
               <span>No automatic posting</span>
@@ -431,13 +443,13 @@ export default function HomePage() {
           <FadeUp delay={0.08}>
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/60">
               <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 bg-zinc-900 px-5 py-5 text-white sm:px-6">
-                <span className="text-xs font-bold text-gold">TOP</span>
+                <span className="text-xs font-bold text-gold-200">TOP</span>
                 <div><p className="text-sm font-bold">Job-Win Pack</p><p className="mt-0.5 text-xs text-white/55">Review, resume, cover letter, and interview practice</p></div>
-                <span className="text-sm font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</span>
+                <span className="text-sm font-bold text-gold-200">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</span>
               </div>
               {CAREER_ADD_ONS.map((item, index) => (
                 <div key={item.key} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-200 px-5 py-4 last:border-b-0 sm:px-6">
-                  <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                  <span className="text-xs font-bold text-zinc-400">0{index + 1}</span>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900">{item.name}</p>
                     <p className="mt-0.5 text-xs text-zinc-500">Software-generated inside Qalam</p>
@@ -497,7 +509,7 @@ export default function HomePage() {
       <section className="border-y border-gold/20 bg-gold/5 px-6 py-20">
         <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>
-            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">Transparent methodology</span>
+            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold-700">Transparent methodology</span>
             <h2 className="mb-5 mt-2 text-4xl font-bold text-zinc-900 sm:text-5xl">
               A score is useful only when you can see how it was built.
             </h2>
@@ -561,7 +573,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-3">
-                <Link href="/pricing?tab=managed" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
+                <Link href="/pricing?tab=managed" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3.5 text-sm font-semibold text-teal-900 transition-colors hover:bg-gold-600">
                   See managed plans
                 </Link>
                 <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">
@@ -575,10 +587,19 @@ export default function HomePage() {
 
       <FAQSection />
 
-      <section className="qlx qlx-surface relative overflow-hidden px-6 py-28">
+      <section data-nav-ground="dark" className="qlx qlx-surface relative overflow-hidden px-6 py-28">
         <div className="qlx-grain" aria-hidden />
-        <div className="absolute left-[-10%] top-[-30%] h-[500px] w-[500px] rounded-full opacity-25 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.5) 0%, transparent 70%)" }} aria-hidden />
-        <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }} aria-hidden />
+        {/* One wash instead of two blurred circles. A radial gradient is
+            already soft, so blur-3xl on top of it was a filter pass over
+            two 500px areas that changed almost nothing. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 46% 62% at 6% -8%, oklch(0.4 0.05 196 / 0.16), transparent 70%), radial-gradient(ellipse 44% 58% at 96% 108%, oklch(0.85 0.05 85 / 0.14), transparent 72%)",
+          }}
+          aria-hidden
+        />
 
         <FadeUp className="relative z-10 mx-auto max-w-[720px] text-center">
           <span className="chip mb-6 inline-flex border-white/15 bg-white/8 text-white/85">Your experience already contains the proof</span>

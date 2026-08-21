@@ -217,10 +217,10 @@ export default function AgencyDashboard() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-medium text-zinc-900">{client.client_name}</h3>
-                          {active ? <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Active</span> : null}
+                          {active ? <span className="rounded-full bg-teal px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white">Active</span> : null}
                         </div>
                         <p className="text-xs text-zinc-500">{client.plan} Plan{client.role ? ` - ${client.role.replaceAll("_", " ")}` : ""} - {client.teamCount ?? 1} member{(client.teamCount ?? 1) !== 1 ? "s" : ""}</p>
-                        <p className="mt-0.5 text-[10px] font-medium text-zinc-400">Expires {fmtDate(client.planExpiresAt)}</p>
+                        <p className="mt-0.5 text-[11px] font-medium text-zinc-400">Expires {fmtDate(client.planExpiresAt)}</p>
                       </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -231,7 +231,7 @@ export default function AgencyDashboard() {
 
                     {client.draftsLimit ? (
                       <div className="mt-3">
-                        <div className="mb-1 flex items-center justify-between text-[10px] text-zinc-400">
+                        <div className="mb-1 flex items-center justify-between text-[11px] text-zinc-400">
                           <span>{client.draftsUsed ?? 0} of {client.draftsLimit} drafts this month</span>
                         </div>
                         <div className="h-1 overflow-hidden rounded-full bg-zinc-100">

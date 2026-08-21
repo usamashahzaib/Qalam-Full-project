@@ -3,14 +3,14 @@ import { buildPageMetadata } from "@/lib/seo"
 import { UPGRADES_EMAIL } from "@/lib/contact"
 
 export const metadata = buildPageMetadata({
-  title: "Careers",
+  title: "Careers: Building the Career Visibility OS",
   description: "Public careers contact for Qalam while a formal hiring portal is not active.",
   path: "/careers",
 })
 
 export default function CareersPage() {
   return (
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-10 text-center">
