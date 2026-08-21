@@ -55,6 +55,23 @@ html, body {
   }
 }
 
+/* Global reduced-motion net. The blocks further down disable specific
+   animations, which left every transition and any newly added animation
+   uncovered. Durations collapse to near-zero rather than to 0 so that
+   transitionend and animationend listeners still fire and no state machine
+   waiting on them stalls. Smooth scrolling is dropped here too, since it is
+   a common migraine and vestibular trigger. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Solid product cards */
 .qalam-card,
 .content-card {
@@ -67,6 +84,19 @@ html, body {
 }
 
 @theme {
+  /* Motion defaults. Every `transition-*` utility inherits these, so the
+     whole site moves on one curve instead of Tailwind's stock ease-in-out,
+     which more than fifty elements were still using.
+
+     The curve is expo-out, the same [0.16, 1, 0.3, 1] the codebase already
+     passes to framer-motion in a dozen components. It leaves fast and
+     settles slowly, so a hover reads as something arriving rather than
+     something being interpolated. 220ms because the stock 150ms is too
+     brief for the eye to register the deceleration that makes it feel
+     considered. */
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 220ms;
+
   --color-teal: #0D4A45;
   --color-teal-50: #eef7f6;
   --color-teal-100: #cce8e6;
@@ -436,7 +466,7 @@ html {
   font-size: 0.875rem;
   border-radius: 0 0 8px 8px;
   text-decoration: none;
-  transition: top 0.1s;
+  transition: top 160ms var(--default-transition-timing-function);
 }
 .skip-link:focus {
   top: 0;
@@ -447,7 +477,7 @@ html {
 /* Smooth focus transitions on every form field so existing focus:ring/focus:border
    utilities animate instead of snapping */
 input, textarea, select {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: border-color 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
 }
 
 /* ─── Reusable utility classes ────────────────────────────────── */
@@ -557,7 +587,7 @@ input, textarea, select {
 
 /* Press feedback - brief scale-down on click/tap for buttons and primary links */
 .press {
-  transition: transform 0.15s ease;
+  transition: transform 120ms var(--default-transition-timing-function);
 }
 .press:active {
   transform: scale(0.98);
@@ -584,7 +614,7 @@ input, textarea, select {
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.2s ease;
+  transition: transform 260ms var(--default-transition-timing-function);
   opacity: 0.55;
 }
 .nav-underline:hover::after,
@@ -594,7 +624,7 @@ input, textarea, select {
 
 /* Card hover lift */
 .card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: transform 260ms var(--default-transition-timing-function), box-shadow 260ms var(--default-transition-timing-function), border-color 260ms var(--default-transition-timing-function);
 }
 .card-hover:hover {
   transform: translateY(-4px);
@@ -829,7 +859,7 @@ input, textarea, select {
     inset 0 -2px 4px oklch(0.42 0.08 196 / 0.28),
     0 1px 2px oklch(0.04 0.02 196 / 0.46),
     0 6px 18px oklch(0.06 0.024 196 / 0.4);
-  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), transform 220ms var(--default-transition-timing-function);
 }
 .qlx-champagne-btn:hover {
   background: var(--qlx-champagne-hover);
@@ -852,7 +882,7 @@ input, textarea, select {
 
 .qlx-link {
   color: var(--nav-fg);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  transition: color 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
 }
 .qlx-link:hover,
 .qlx-link[aria-expanded="true"] {
