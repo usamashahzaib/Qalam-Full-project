@@ -209,7 +209,7 @@ export function PricingPageContent() {
     <div className="min-h-screen bg-zinc-50 pt-24">
 
       {/* Hero */}
-      <section className="qlx qlx-surface relative overflow-hidden px-6 py-20">
+      <section data-nav-ground="dark" data-nav-hero="dark" className="qlx qlx-surface relative overflow-hidden px-6 py-20">
         <div className="qlx-grain" aria-hidden />
         <div
           className="pointer-events-none absolute -left-32 -top-32 h-[520px] w-[520px] rounded-full opacity-40 blur-3xl"

@@ -73,7 +73,7 @@ const UPDATES = [
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-14">

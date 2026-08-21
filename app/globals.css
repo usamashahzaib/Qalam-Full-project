@@ -792,6 +792,30 @@ input, textarea, select {
   }
 }
 
+/* Light counterpart, for the navbar sitting over paper grounds. Same two
+   authoring rules as above: test only the standard property, prefix first.
+
+   Deliberately warm rather than plain white. The marketing ground is
+   #f7f3ea cream, and a neutral white bar reads as a separate grey slab
+   floating on it. Carrying a little of the cream's hue lets the bar read
+   as the same paper, lit from above. */
+.qlx-glass-light {
+  background: oklch(0.985 0.008 92);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .qlx-glass-light {
+    /* 0.86 rather than a more glassy 0.72. The bar also travels over inset
+       dark cards, which are not grounds worth flipping the whole navbar for,
+       and at 0.72 those pushed the teal link colour to 3.99:1. This holds the
+       links above 4.5:1 against anything behind them, and over the cream
+       ground it is visually indistinguishable since the tint matches. */
+    background: oklch(0.987 0.009 92 / 0.86);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
 .qlx-champagne-btn {
   background: var(--qlx-champagne);
   color: oklch(0.22 0.02 196);
@@ -822,13 +846,63 @@ input, textarea, select {
 }
 
 .qlx-link {
-  color: var(--qlx-fg-muted);
+  color: var(--nav-fg);
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 .qlx-link:hover,
 .qlx-link[aria-expanded="true"] {
-  color: oklch(0.88 0.04 90);
-  background-color: oklch(1 0.02 196 / 0.08);
+  color: var(--nav-fg-strong);
+  background-color: var(--nav-hover-bg);
+}
+
+/* ─── Navbar palette ───────────────────────────────────────────
+   Every navbar colour resolves through these tokens, so the whole bar
+   flips ground with one attribute instead of a conditional on each
+   element. That matters for more than tidiness: it lets plain CSS paint
+   the correct theme before React hydrates, which a per-element ternary
+   cannot do.
+
+   Light is the default because almost every marketing ground is paper. */
+.qlx-nav {
+  --nav-fg: oklch(0.44 0.042 190);
+  --nav-fg-strong: #0d4a45;
+  --nav-fg-mute: oklch(0.6 0.032 190);
+  --nav-hover-bg: oklch(0.44 0.042 190 / 0.09);
+  --nav-border: oklch(0.44 0.042 190 / 0.14);
+  --nav-shadow: 0 10px 30px -12px oklch(0.35 0.06 175 / 0.22);
+}
+
+.qlx-nav[data-ground="dark"] {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+}
+
+/* Pre-hydration ground. A page whose first section is dark marks it with
+   data-nav-hero, and until the navbar mounts and stamps its own
+   data-ground, this paints the dark palette straight from the server
+   markup. Without it, such pages served a light bar with deep teal links
+   sitting on a near-black hero for the whole hydration window, and
+   permanently for anyone whose JS never arrives. */
+body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+  background: oklch(0.12 0.014 196);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+    background: oklch(0.13 0.015 196 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
 }
 
 /* Fine grain texture for the hero, breaks up flat gradient banding */

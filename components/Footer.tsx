@@ -69,7 +69,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
 
 export function Footer() {
   return (
-    <footer className="qlx qlx-surface border-t border-white/10">
+    <footer data-nav-ground="dark" className="qlx qlx-surface border-t border-white/10">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
         <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
           <div className="sm:col-span-3 lg:col-span-1">

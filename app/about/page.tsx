@@ -37,7 +37,7 @@ export default function AboutPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutSchema).replace(/</g, "\\u003c") }} />
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="qlx qlx-surface relative overflow-hidden px-6 py-24">
         <div className="qlx-grain" aria-hidden />
         <div

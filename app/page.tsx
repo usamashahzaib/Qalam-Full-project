@@ -575,7 +575,7 @@ export default function HomePage() {
 
       <FAQSection />
 
-      <section className="qlx qlx-surface relative overflow-hidden px-6 py-28">
+      <section data-nav-ground="dark" className="qlx qlx-surface relative overflow-hidden px-6 py-28">
         <div className="qlx-grain" aria-hidden />
         <div className="absolute left-[-10%] top-[-30%] h-[500px] w-[500px] rounded-full opacity-25 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.4 0.05 196 / 0.5) 0%, transparent 70%)" }} aria-hidden />
         <div className="absolute bottom-[-35%] right-[-10%] h-[500px] w-[500px] rounded-full opacity-30 blur-3xl" style={{ background: "radial-gradient(circle, oklch(0.85 0.05 85 / 0.4) 0%, transparent 70%)" }} aria-hidden />

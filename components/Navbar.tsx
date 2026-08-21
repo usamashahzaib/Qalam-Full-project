@@ -57,11 +57,9 @@ function UserAvatar({ name, imageUrl }: { name: string; imageUrl: string | null 
 function NavDropdown({
   label,
   links,
-  light,
 }: {
   label: string
   links: { label: string; href: string; desc: string }[]
-  light: boolean
 }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -84,7 +82,7 @@ function NavDropdown({
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={panelId}
-        className={`flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}
+        className="flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors qlx-link"
       >
         {label}
         <motion.span
@@ -92,7 +90,7 @@ function NavDropdown({
           transition={{ duration: 0.18 }}
           className="inline-flex"
         >
-          <ChevronDownIcon className={`h-3.5 w-3.5 ${light ? "text-zinc-400" : "text-white/40"}`} />
+          <ChevronDownIcon className="h-3.5 w-3.5 text-[var(--nav-fg-mute)]" />
         </motion.span>
       </button>
 
@@ -128,7 +126,7 @@ function NavDropdown({
 
 type SessionData = { user?: { id?: string | null; name?: string | null; email?: string | null; image?: string | null } | null }
 
-function UserMenu({ session, light }: { session: SessionData; light: boolean }) {
+function UserMenu({ session }: { session: SessionData }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -144,7 +142,7 @@ function UserMenu({ session, light }: { session: SessionData; light: boolean }) 
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl p-1 transition-colors ${light ? "hover:bg-teal/8" : "hover:bg-white/8"}`}
+        className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl p-1 transition-colors hover:bg-[var(--nav-hover-bg)]"
         aria-label="Account menu"
       >
         {session.user?.image ? (
@@ -158,7 +156,7 @@ function UserMenu({ session, light }: { session: SessionData; light: boolean }) 
           transition={{ duration: 0.18 }}
           className="inline-flex"
         >
-          <ChevronDownIcon className={`h-3.5 w-3.5 ${light ? "text-zinc-400" : "text-white/40"}`} />
+          <ChevronDownIcon className="h-3.5 w-3.5 text-[var(--nav-fg-mute)]" />
         </motion.span>
       </button>
 
@@ -214,14 +212,23 @@ export function Navbar() {
   const [announcementReady, setAnnouncementReady] = useState(false)
   const { data: session, status } = useSession()
   const pathname = usePathname()
-  const light = [
-    "/linkedin-extension",
-    "/features",
-    "/industries",
-    "/ats-resume-builder",
-    "/linkedin-optimization",
-    "/job-description-match",
-  ].includes(pathname) || ["/free-tools", "/methodology", "/blog", "/use-cases"].some((prefix) => pathname.startsWith(prefix))
+  const navRef = useRef<HTMLElement>(null)
+  // The navbar reads dark only while a dark section is actually behind it.
+  // This replaced a hardcoded allowlist of routes, which silently mismatched
+  // every page nobody remembered to register, including the homepage.
+  // null means "not measured yet", which is what lets CSS paint the first
+  // frame from the page's own data-nav-hero marker.
+  const [ground, setGround] = useState<"light" | "dark" | null>(null)
+
+  // Client-side navigation swaps the page under a navbar that never
+  // unmounts, so a stale reading would carry across routes. Reset it during
+  // render rather than in an effect, so the new page never paints one frame
+  // wearing the previous page's ground.
+  const [measuredPath, setMeasuredPath] = useState(pathname)
+  if (measuredPath !== pathname) {
+    setMeasuredPath(pathname)
+    setGround(null)
+  }
   // Pricing has its own early-access urgency banner - stacking the global
   // announcement on top of it doubles up on urgency messaging.
   // Gated on announcementReady so repeat visitors (who already dismissed it) never
@@ -243,6 +250,52 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
+
+  // Watch every dark section on the page and flip the navbar whenever one is
+  // physically under it. The observation root is narrowed to exactly the nav
+  // row, so the announcement bar above it never counts as ground.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+
+    // No dark sections on this page: leave ground unmeasured. It renders
+    // light either way, and the CSS pre-hydration rule cannot match here
+    // because data-nav-hero only ever appears alongside a dark ground.
+    const grounds = Array.from(document.querySelectorAll("[data-nav-ground='dark']"))
+    if (grounds.length === 0) return
+
+    const covering = new Set<Element>()
+    let observer: IntersectionObserver | null = null
+
+    const build = () => {
+      observer?.disconnect()
+      covering.clear()
+      const rect = nav.getBoundingClientRect()
+      // Negative margins crop the viewport down to the nav row itself.
+      const top = Math.max(0, rect.top)
+      const bottom = Math.max(0, window.innerHeight - rect.bottom)
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) covering.add(entry.target)
+            else covering.delete(entry.target)
+          }
+          setGround(covering.size > 0 ? "dark" : "light")
+        },
+        { rootMargin: `-${top}px 0px -${bottom}px 0px`, threshold: 0 },
+      )
+      for (const ground of grounds) observer.observe(ground)
+    }
+
+    build()
+    window.addEventListener("resize", build)
+    return () => {
+      window.removeEventListener("resize", build)
+      observer?.disconnect()
+    }
+    // showAnnouncement matters because dismissing the banner moves the nav row
+    // up by its height, which invalidates the cropped root.
+  }, [pathname, showAnnouncement])
 
   return (
     <div className="qlx fixed left-0 right-0 top-0 z-50 flex flex-col">
@@ -283,8 +336,18 @@ export function Navbar() {
       </AnimatePresence>
 
       <nav
-        className={`border-b transition-all duration-300 ${light ? "bg-white/90 backdrop-blur-xl" : "qlx-glass"} ${
-          scrolled ? light ? "border-teal/10 shadow-[0_12px_32px_rgba(13,74,69,0.12)]" : "border-white/10 shadow-[0_2px_32px_oklch(0_0_0/0.35)]" : "border-transparent"
+        ref={navRef}
+        // Left unset until the observer has actually looked at the page, so
+        // the CSS pre-hydration rule can own the first paint. Stamping it
+        // during render would defeat that and reintroduce the light-bar-on-
+        // dark-hero flash.
+        data-ground={ground ?? undefined}
+        className={`qlx-nav border-b transition-[background-color,border-color,box-shadow] duration-300 ${
+          ground === "dark" ? "qlx-glass" : "qlx-glass-light"
+        } ${
+          scrolled
+            ? "border-[var(--nav-border)] shadow-[var(--nav-shadow)]"
+            : "border-transparent"
         }`}
       >
         <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
@@ -292,17 +355,17 @@ export function Navbar() {
             href="/"
             size={32}
             containerClassName="flex min-h-11 select-none items-center gap-2"
-            textClassName={`text-xl font-bold tracking-tight ${light ? "text-teal" : "text-white"}`}
+            textClassName="text-xl font-bold tracking-tight text-[var(--nav-fg-strong)]"
           />
 
           <div className="hidden items-center gap-1 lg:flex">
-            <NavDropdown label="Product" links={PRODUCT_LINKS} light={light} />
-            <NavDropdown label="Use Cases" links={USE_CASE_LINKS} light={light} />
+            <NavDropdown label="Product" links={PRODUCT_LINKS} />
+            <NavDropdown label="Use Cases" links={USE_CASE_LINKS} />
             {STATIC_LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className={`inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}
+                className={`inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors qlx-link`}
               >
                 {link.label}
               </Link>
@@ -311,12 +374,12 @@ export function Navbar() {
 
           <div className="hidden items-center gap-3 lg:flex">
             {status === "loading" ? (
-              <div className={`h-8 w-8 animate-pulse rounded-full ${light ? "bg-teal/10" : "bg-white/10"}`} />
+              <div className={`h-8 w-8 animate-pulse rounded-full bg-[var(--nav-hover-bg)]`} />
             ) : session?.user?.id ? (
-              <UserMenu session={session} light={light} />
+              <UserMenu session={session} />
             ) : (
               <>
-                <Link href={resolvePublicHref("/login")} className={`inline-flex min-h-11 items-center rounded-lg px-2 py-2 text-sm font-medium transition-colors ${light ? "text-zinc-600 hover:bg-teal/8 hover:text-teal" : "qlx-link"}`}>Log in</Link>
+                <Link href={resolvePublicHref("/login")} className={`inline-flex min-h-11 items-center rounded-lg px-2 py-2 text-sm font-medium transition-colors qlx-link`}>Log in</Link>
                 <Link
                   href={resolvePublicHref("/signup")}
                   className="qlx-champagne-btn press inline-flex min-h-11 items-center rounded-lg px-4 py-2 text-sm font-semibold"
@@ -328,15 +391,15 @@ export function Navbar() {
           </div>
 
           <button
-            className={`flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors lg:hidden ${light ? "hover:bg-teal/8" : "hover:bg-white/8"}`}
+            className={`flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors lg:hidden hover:bg-[var(--nav-hover-bg)]`}
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
           >
-            <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
-            <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className={`block h-0.5 w-5 rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
-            <motion.span animate={mobileOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full ${light ? "bg-teal/80" : "bg-white/80"}`} />
+            <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)]`} />
+            <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className={`block h-0.5 w-5 rounded-full bg-[var(--nav-fg-strong)]`} />
+            <motion.span animate={mobileOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)]`} />
           </button>
         </div>
 
