@@ -139,6 +139,11 @@ html, body {
 html {
   position: relative;
   scroll-behavior: auto;
+  /* Anchors must clear the fixed header or they land underneath it. The
+     navbar publishes its real height into --header-h, which changes when
+     the announcement bar is dismissed; the fallback covers the tallest
+     case for the first paint and for anyone whose JS never runs. */
+  scroll-padding-top: var(--header-h, 7rem);
 }
 
 /* Do not redeclare --font-jakarta here. next/font sets it on <html> via its

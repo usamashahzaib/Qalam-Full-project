@@ -213,6 +213,7 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const pathname = usePathname()
   const navRef = useRef<HTMLElement>(null)
+  const shellRef = useRef<HTMLDivElement>(null)
   // The navbar reads dark only while a dark section is actually behind it.
   // This replaced a hardcoded allowlist of routes, which silently mismatched
   // every page nobody remembered to register, including the homepage.
@@ -249,6 +250,22 @@ export function Navbar() {
     const onScroll = () => setScrolled(window.scrollY > 16)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  // Publish the header's real height so anchor targets can clear it. A
+  // ResizeObserver rather than a one-off measurement because the banner
+  // collapses with an animation, and because the row wraps at narrow widths.
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty("--header-h", `${Math.round(shell.offsetHeight)}px`)
+    })
+    observer.observe(shell)
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty("--header-h")
+    }
   }, [])
 
   // Watch every dark section on the page and flip the navbar whenever one is
@@ -298,7 +315,7 @@ export function Navbar() {
   }, [pathname, showAnnouncement])
 
   return (
-    <div className="qlx fixed left-0 right-0 top-0 z-50 flex flex-col">
+    <div ref={shellRef} className="qlx fixed left-0 right-0 top-0 z-50 flex flex-col">
       <AnimatePresence>
         {showAnnouncement && (
           <motion.div
