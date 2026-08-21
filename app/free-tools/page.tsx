@@ -48,7 +48,7 @@ const TOOLS = alphabetical([
     title: "Hook Generator",
     desc: "Generate five opening lines for any topic in seconds. No account required.",
     badge: "Most Used",
-    badgeColor: "bg-gold text-white",
+    badgeColor: "bg-gold text-teal-900",
     href: "/free-tools/hook-generator",
   },
   {
@@ -226,7 +226,7 @@ export default function FreeToolsPage() {
                 Want the full system?
               </p>
               <h2 className="mb-4 text-4xl font-extrabold text-white">
-                Unlock the full <span className="text-gold">Qalam platform</span>
+                Unlock the full <span className="text-gold-200">Qalam platform</span>
               </h2>
               <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
                 60 posts a month, trained Voice Profile, scheduler, and performance
@@ -235,7 +235,7 @@ export default function FreeToolsPage() {
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href={`${APP_URL}/login`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600"
                 >
                   Start free - no card needed
                 </Link>

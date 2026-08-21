@@ -516,7 +516,7 @@ export function CarouselBuilderTool() {
               </p>
               <Link
                 href={`${APP_URL}/login`}
-                className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
+                className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600"
               >
                 Start free {"->"}
               </Link>

@@ -81,7 +81,7 @@ export default function SoftwareAddonPage({ config }: { config: AddonToolConfig 
       <div className="mx-auto max-w-7xl">
         <header className="grid overflow-hidden rounded-3xl bg-[#073f3b] text-white md:grid-cols-[1.45fr_0.55fr]">
           <div className="px-6 py-8 md:px-10 md:py-10">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">{config.eyebrow}</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">{config.eyebrow}</p>
             <h1 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight sm:text-4xl">{config.title}</h1>
             <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">{config.description}</p>
           </div>
@@ -102,7 +102,7 @@ export default function SoftwareAddonPage({ config }: { config: AddonToolConfig 
                   : <input className={fieldClass} value={form[field.key]} placeholder={field.placeholder} onChange={(event) => setForm({ ...form, [field.key]: event.target.value })} />}</label>)}
               </div>
               {credits > 0 ? <button onClick={generate} disabled={generating} className="mt-5 w-full rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white transition active:scale-[0.98] disabled:opacity-50">{generating ? "Generating and saving..." : config.generateLabel}</button>
-                : <Link href={`/career/add-ons${appSuffix}`} className="mt-5 block rounded-xl bg-gold px-5 py-3 text-center text-sm font-bold text-white transition active:scale-[0.98]">Purchase credit</Link>}
+                : <Link href={`/career/add-ons${appSuffix}`} className="mt-5 block rounded-xl bg-gold px-5 py-3 text-center text-sm font-bold text-teal-900 transition active:scale-[0.98]">Purchase credit</Link>}
             </section>
 
             <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">

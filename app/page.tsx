@@ -312,7 +312,7 @@ export default function HomePage() {
             </div>
 
             <div
-              className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/50"
+              className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold uppercase tracking-[0.12em] text-teal/80"
             >
               <span>No payment card</span>
               <span>No automatic posting</span>
@@ -431,13 +431,13 @@ export default function HomePage() {
           <FadeUp delay={0.08}>
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50/60">
               <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 bg-zinc-900 px-5 py-5 text-white sm:px-6">
-                <span className="text-xs font-bold text-gold">TOP</span>
+                <span className="text-xs font-bold text-gold-200">TOP</span>
                 <div><p className="text-sm font-bold">Job-Win Pack</p><p className="mt-0.5 text-xs text-white/55">Review, resume, cover letter, and interview practice</p></div>
-                <span className="text-sm font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</span>
+                <span className="text-sm font-bold text-gold-200">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</span>
               </div>
               {CAREER_ADD_ONS.map((item, index) => (
                 <div key={item.key} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-zinc-200 px-5 py-4 last:border-b-0 sm:px-6">
-                  <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                  <span className="text-xs font-bold text-zinc-400">0{index + 1}</span>
                   <div>
                     <p className="text-sm font-semibold text-zinc-900">{item.name}</p>
                     <p className="mt-0.5 text-xs text-zinc-500">Software-generated inside Qalam</p>
@@ -497,7 +497,7 @@ export default function HomePage() {
       <section className="border-y border-gold/20 bg-gold/5 px-6 py-20">
         <div className="mx-auto max-w-[760px] text-center">
           <FadeUp>
-            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold">Transparent methodology</span>
+            <span className="mb-4 inline-block text-xs font-bold uppercase tracking-[0.2em] text-gold-700">Transparent methodology</span>
             <h2 className="mb-5 mt-2 text-4xl font-bold text-zinc-900 sm:text-5xl">
               A score is useful only when you can see how it was built.
             </h2>
@@ -561,7 +561,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-3">
-                <Link href="/pricing?tab=managed" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gold-600">
+                <Link href="/pricing?tab=managed" className="inline-flex items-center gap-2 rounded-xl bg-gold px-6 py-3.5 text-sm font-semibold text-teal-900 transition-colors hover:bg-gold-600">
                   See managed plans
                 </Link>
                 <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl border-2 border-zinc-300 px-6 py-3.5 text-sm font-semibold text-zinc-600 transition-colors hover:border-zinc-400 hover:bg-zinc-100">

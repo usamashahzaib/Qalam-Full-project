@@ -407,7 +407,7 @@ export default function AiLinkedInWriterPage() {
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href={`${APP_URL}/login`}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-white shadow-lg transition-colors hover:bg-gold-600"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gold px-8 py-4 text-lg font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600"
                 >
                   Start free - 5 posts
                 </Link>

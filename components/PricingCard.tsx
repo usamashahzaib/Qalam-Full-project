@@ -26,7 +26,7 @@ interface PricingCardProps {
 }
 
 function badgeClasses(badge: string): string {
-  if (badge === "Most popular") return "bg-gold text-white"
+  if (badge === "Most popular") return "bg-gold text-teal-900"
   if (badge === "Most powerful") return "bg-teal text-white"
   if (badge === "Coming Soon") return "bg-zinc-100 text-zinc-600"
   if (badge === "Current plan") return "bg-emerald-100 text-emerald-700"
@@ -95,7 +95,7 @@ export function PricingCard({
           </p>
         )}
         {annualSavings && (
-          <p className={`mt-1 text-xs font-semibold ${highlighted ? "text-emerald-300" : "text-emerald-600"}`}>
+          <p className={`mt-1 text-xs font-semibold ${highlighted ? "text-emerald-300" : "text-emerald-700"}`}>
             {annualSavings}
           </p>
         )}
@@ -131,7 +131,7 @@ export function PricingCard({
           href={href}
           className={`w-full rounded-xl border py-3 text-center text-sm font-semibold transition-all duration-200 ${
             highlighted
-              ? "border-transparent bg-gold text-white shadow-sm hover:bg-gold-600"
+              ? "border-transparent bg-gold text-teal-900 shadow-sm hover:bg-gold-600"
               : "border-teal/30 bg-teal-50 text-teal hover:border-teal hover:bg-teal hover:text-white"
           }`}
         >

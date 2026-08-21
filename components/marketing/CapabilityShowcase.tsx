@@ -52,7 +52,7 @@ function AtsPreview() {
       <div className="grid gap-4 p-4 sm:grid-cols-[0.8fr_1.2fr] sm:p-6">
         <div className="rounded-2xl bg-[#073f3b] p-5 text-white">
           <p className="text-xs font-semibold text-white/60">Overall readiness</p>
-          <div className="mt-3 flex items-end gap-2"><strong className="text-5xl">76</strong><span className="pb-1 text-sm text-white/50">/100</span></div>
+          <div className="mt-3 flex items-end gap-2"><strong className="text-5xl">76</strong><span className="pb-1 text-sm text-white/65">/100</span></div>
           <p className="mt-5 text-xs leading-5 text-white/70">Strong structure. Improve evidence depth and match three role-critical requirements.</p>
         </div>
         <div className="space-y-3 rounded-2xl border border-zinc-100 p-4">

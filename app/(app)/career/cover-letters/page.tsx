@@ -60,11 +60,11 @@ export default function CoverLettersPage() {
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 rounded-3xl bg-[#073f3b] px-7 py-8 text-white sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Cover Letters</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Cover Letters</p>
             <h1 className="mt-2 text-3xl font-bold">Matched to the exact job description.</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/70">Paste the JD, Qalam writes a targeted letter from your real experience. One credit is used per letter.</p>
           </div>
-          <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">{showCreate ? "Close" : "Generate cover letter"}</button>
+          <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">{showCreate ? "Close" : "Generate cover letter"}</button>
         </header>
 
         {error && (

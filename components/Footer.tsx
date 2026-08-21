@@ -60,7 +60,7 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       target="_blank"
       rel="noopener noreferrer"
       aria-label={label}
-      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/40 transition-all duration-200 hover:border-white/20 hover:bg-white/8 hover:text-[oklch(0.85_0.05_85)]"
+      className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 text-white/60 transition-all duration-200 hover:border-white/20 hover:bg-white/8 hover:text-[oklch(0.85_0.05_85)]"
     >
       {children}
     </a>
@@ -130,15 +130,15 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
-          <p className="text-sm text-white/35">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-sm text-white/35">
-            <Link href="/legal/privacy" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
+          <p className="text-sm text-white/60">© {new Date().getFullYear()} Qalam. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-sm text-white/60">
+            <Link href="/legal/privacy" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white">
               Privacy
             </Link>
-            <Link href="/legal/terms" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white/60">
+            <Link href="/legal/terms" className="inline-flex min-h-11 min-w-11 items-center transition-colors hover:text-white">
               Terms
             </Link>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-white/60">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center transition-colors hover:text-white">
               {SUPPORT_EMAIL}
             </a>
           </div>

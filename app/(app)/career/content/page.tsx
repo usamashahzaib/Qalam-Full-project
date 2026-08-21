@@ -53,7 +53,7 @@ export default function ContentIntelligencePage() {
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Post Intelligence</p><h1 className="mt-2 text-3xl font-bold">Know what your content is worth.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Import your own post and real metrics. Qalam finds the positioning, performance patterns, weaknesses, and next angles.</p></header>
+        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Post Intelligence</p><h1 className="mt-2 text-3xl font-bold">Know what your content is worth.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Import your own post and real metrics. Qalam finds the positioning, performance patterns, weaknesses, and next angles.</p></header>
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
             <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste your LinkedIn post" value={content} onChange={(event) => setContent(event.target.value)} />

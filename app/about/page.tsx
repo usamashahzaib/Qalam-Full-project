@@ -117,7 +117,7 @@ export default function AboutPage() {
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link
                   href="/pricing"
-                  className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
+                  className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 transition-colors hover:bg-gold-600"
                 >
                   Compare Plans
                 </Link>

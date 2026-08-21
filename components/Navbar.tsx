@@ -171,7 +171,7 @@ function UserMenu({ session }: { session: SessionData }) {
           >
             <div className="border-b border-white/10 px-4 py-3">
               <p className="truncate text-sm font-semibold text-white/90">{session.user?.name || "Account"}</p>
-              <p className="truncate text-xs text-white/40">{session.user?.email}</p>
+              <p className="truncate text-xs text-white/60">{session.user?.email}</p>
             </div>
             <div className="p-2">
               <Link href="/settings" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/75 transition-colors hover:bg-white/8 hover:text-[oklch(0.88_0.04_90)]">
@@ -342,7 +342,7 @@ export function Navbar() {
                   localStorage.setItem("qalam_announce_dismissed", "1")
                   setAnnouncementVisible(false)
                 }}
-                className="absolute right-0 flex h-11 w-11 items-center justify-center text-lg leading-none text-white/60 transition-colors hover:text-white sm:right-4"
+                className="absolute right-0 flex h-11 w-11 items-center justify-center text-lg leading-none text-white/80 transition-colors hover:text-white sm:right-4"
                 aria-label="Dismiss"
               >
                 <span aria-hidden="true">&times;</span>
@@ -499,7 +499,7 @@ export function Navbar() {
                         )}
                         <div>
                           <p className="text-sm font-semibold text-white/90">{session.user?.name}</p>
-                          <p className="text-xs text-white/40">{session.user?.email}</p>
+                          <p className="text-xs text-white/60">{session.user?.email}</p>
                         </div>
                       </div>
                       <Link href={resolvePublicHref("/settings")} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">Settings</Link>

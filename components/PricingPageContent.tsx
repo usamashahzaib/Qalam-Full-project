@@ -94,7 +94,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
             <span className="mb-2 text-sm font-medium text-zinc-500">/mo</span>
           </div>
           <p className="mb-2 text-xs font-semibold text-emerald-700">Discounted monthly price</p>
-          <p className="text-xs font-semibold text-gold">{plan.postsPerMonth} posts/month</p>
+          <p className="text-xs font-semibold text-gold-700">{plan.postsPerMonth} posts/month</p>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{plan.description}</p>
         </div>
 
@@ -112,7 +112,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
             href={`/managed/apply?plan=${encodeURIComponent(plan.name)}&type=individual`}
             className={`rounded-xl py-3.5 text-center text-sm font-bold transition-all duration-200 ${
               isPremium
-                ? "bg-gold text-white shadow-sm hover:bg-amber-600"
+                ? "bg-gold text-teal-900 shadow-sm hover:bg-amber-600"
                 : "bg-teal-50 text-teal hover:bg-teal hover:text-white"
             }`}
           >
@@ -269,11 +269,11 @@ export function PricingPageContent() {
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
                 <strong className="text-white/90">PKR 0</strong> to start
               </span>
-              <span className="text-white/20">|</span>
+              <span className="text-white/65">|</span>
               <span>
                 <strong className="text-white/90">{soloPlan ? `${formatPkr(soloPlan.quarterlyPkr)}/quarter` : "Solo"}</strong> Solo
               </span>
-              <span className="text-white/20">|</span>
+              <span className="text-white/65">|</span>
               <span>
                 Pay for <strong className="text-white/90">2 months</strong>, use 3
               </span>
@@ -282,7 +282,7 @@ export function PricingPageContent() {
             <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/8 px-5 py-3 text-sm font-semibold text-white/85">
               Quarterly billing: <span className="rounded-md bg-emerald-400/15 px-1.5 py-0.5 text-xs font-bold text-emerald-300">1 month free</span>
             </div>
-            <p className="mt-3 text-xs text-white/40">No payment card required for Free. Paid access starts after confirmed payment.</p>
+            <p className="mt-3 text-xs text-white/60">No payment card required for Free. Paid access starts after confirmed payment.</p>
           </motion.div>
         </div>
       </section>
@@ -348,7 +348,7 @@ export function PricingPageContent() {
                 onClick={() => setChosenTab("managed")}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
-                    ? "bg-gold text-white shadow-sm"
+                    ? "bg-gold text-teal-900 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-800"
                 }`}
               >
@@ -452,14 +452,14 @@ export function PricingPageContent() {
 
           <div className="mb-5 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Recommended one-time offer</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Recommended one-time offer</p>
               <h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Deep recruiter review, JD-matched resume, targeted cover letter, and interview practice for one serious application.</p>
             </div>
             <div className="sm:text-right">
-              <p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
+              <p className="text-xs text-white/60 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
               <p className="mt-1 text-2xl font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
-              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">Open Job-Win Pack</Link>
             </div>
           </div>
 
@@ -468,7 +468,7 @@ export function PricingPageContent() {
               const checkoutReady = isAddonSelfServe(item.key)
               return (
                 <article key={item.key} className="grid gap-3 border-b border-zinc-100 px-5 py-5 last:border-b-0 sm:grid-cols-[2rem_minmax(0,1fr)_auto] sm:items-center sm:px-6">
-                  <span className="text-xs font-bold text-zinc-300">0{index + 1}</span>
+                  <span className="text-xs font-bold text-zinc-400">0{index + 1}</span>
                   <div>
                     <h3 className="font-semibold text-zinc-900">{item.name}</h3>
                     <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside your Qalam workspace</p>
@@ -486,12 +486,12 @@ export function PricingPageContent() {
 
           <FadeUp className="mt-8 flex flex-col gap-5 rounded-2xl bg-teal-800 p-7 text-white sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Refer and Earn</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">Refer and Earn</p>
               <h3 className="mt-2 text-2xl font-bold">Give 10% off. Earn 10% commission.</h3>
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
-              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
+              <Link href={resolvePublicHref("/login?callbackUrl=/career/add-ons")} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">Open career add-ons</Link>
               <Link href={resolvePublicHref("/login?callbackUrl=/settings/referrals")} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
             </div>
           </FadeUp>
@@ -527,7 +527,7 @@ export function PricingPageContent() {
       <section className="border-y border-zinc-100 bg-white px-6 py-16">
         <div className="mx-auto max-w-[860px]">
           <FadeUp className="mb-10 text-center">
-            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-600">One connected system</span>
+            <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-700">One connected system</span>
             <h2 className="mt-3 text-3xl font-bold text-zinc-900">What your quarterly plan connects</h2>
             <p className="mt-2 text-sm text-zinc-500">Choose capacity based on the professional workflow you need.</p>
           </FadeUp>
@@ -546,7 +546,7 @@ export function PricingPageContent() {
                       <p className="text-sm font-semibold text-zinc-800">{item.label}</p>
                       <p className="mt-0.5 text-xs text-zinc-400 leading-relaxed">{item.note}</p>
                     </div>
-                    <span className="shrink-0 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-600 whitespace-nowrap">{item.cost}</span>
+                    <span className="shrink-0 rounded-lg bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 whitespace-nowrap">{item.cost}</span>
                   </div>
                 </div>
               ))}
@@ -628,7 +628,7 @@ export function PricingPageContent() {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href="/contact" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                <Link href="/contact" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-teal-900 transition-colors hover:bg-gold-600">
                   Get in Touch
                 </Link>
               </div>

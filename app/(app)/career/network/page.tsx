@@ -89,7 +89,7 @@ export default function CareerNetworkPage() {
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Career Network</p><h1 className="mt-2 text-3xl font-bold">Be searchable without exposing everything.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Candidates opt in. Recruiters search professional signals. Contact details stay private in search results.</p></header>
+        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Career Network</p><h1 className="mt-2 text-3xl font-bold">Be searchable without exposing everything.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Candidates opt in. Recruiters search professional signals. Contact details stay private in search results.</p></header>
         {message && <p className="mt-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700">{message}</p>}
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">

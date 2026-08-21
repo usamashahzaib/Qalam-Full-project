@@ -118,7 +118,35 @@ html, body {
   --color-teal-700: #082e2b;
   --color-teal-800: #051f1c;
   --color-teal-900: #030f0e;
-  --color-gold: #C9871F;
+  /* Warm neutrals, replacing Tailwind's stock zinc.
+
+     Two reasons. Tailwind's zinc is a cool blue-grey (#a1a1aa), and on this
+     site's cream ground (#f7f3ea) a cool grey reads as dirty rather than
+     quiet, which is most of why the secondary text looked washed out. And
+     the two steps used for body copy were far too light to read: zinc-400
+     at 12px measured 2.6:1 on white, against a 4.5:1 requirement, across
+     roughly 390 usages.
+
+     The two text steps below are darkened to clear 4.5:1 on white and on
+     cream, and given a slight green bias so they sit under the teal rather
+     than fighting it. The 200 and 300 steps hold their luminance, since
+     they are hairlines and dividers, and only pick up the same warmth.
+
+     Safe to do globally: the dark-mode blocks in this file are gated on
+     `(prefers-color-scheme: dark) and (prefers-color-scheme: light)`, a
+     query that can never match, so every surface in the product is light. */
+  --color-zinc-200: #e5e6e2;
+  --color-zinc-300: #d6d8d3;
+  --color-zinc-400: #656d6a;
+  --color-zinc-500: #555c5a;
+
+  /* Deepened from #C9871F. That value measured 2.88:1 against the cream
+     ground, just under the 3:1 large-text floor, wherever gold carried a
+     display heading. The deeper bronze clears 3.4:1, and on cream it also
+     reads richer than the original yellow-leaning gold, which went slightly
+     acidic against the warm paper. Small gold text still uses gold-700:
+     no gold saturated enough to stay gold will reach 4.5:1 here. */
+  --color-gold: #B87A16;
   --color-gold-50: #fef6e8;
   --color-gold-100: #fce9c3;
   --color-gold-200: #f9d387;

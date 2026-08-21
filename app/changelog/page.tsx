@@ -90,7 +90,7 @@ export default function ChangelogPage() {
             {UPDATES.map((update, i) => (
               <FadeUp key={update.title} delay={i * 0.08}>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-                  <p className="mb-3 text-sm font-semibold text-gold">{update.date}</p>
+                  <p className="mb-3 text-sm font-semibold text-gold-200">{update.date}</p>
                   <h2 className="mb-4 text-2xl font-bold text-white">{update.title}</h2>
                   <ul className="space-y-3 text-sm leading-relaxed text-white/55">
                     {update.items.map((item) => (

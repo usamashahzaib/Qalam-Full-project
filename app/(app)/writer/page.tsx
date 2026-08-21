@@ -834,7 +834,7 @@ export default function WriterPage() {
                               placeholder="Slide title..."
                               rows={2}
                               className={`w-full resize-none bg-transparent text-[15px] font-bold leading-snug outline-none ${
-                                isFirst || isLast ? "text-white placeholder:text-white/40" : "text-zinc-900 placeholder:text-zinc-300"
+                                isFirst || isLast ? "text-white placeholder:text-white/60" : "text-zinc-900 placeholder:text-zinc-300"
                               }`}
                             />
                             <textarea

@@ -89,7 +89,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
         <section className="border-b border-zinc-100 bg-white px-6 py-20">
           <div className="mx-auto max-w-[900px]">
             <FadeUp>
-              <span className="chip mb-5 inline-flex border-gold/40 bg-gold/5 text-gold">{page.eyebrow}</span>
+              <span className="chip mb-5 inline-flex border-gold/40 bg-gold/5 text-gold-700">{page.eyebrow}</span>
               <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">{page.title}</h1>
               <p className="max-w-2xl text-xl leading-relaxed text-zinc-600">{page.summary}</p>
             </FadeUp>
@@ -101,11 +101,11 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
             <div className="mx-auto max-w-[900px] overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-950 text-white shadow-sm">
               <div className="grid gap-8 p-8 md:grid-cols-[0.9fr_1.1fr] md:p-10">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold">From problem to proof</p>
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">From problem to proof</p>
                   <h2 className="mt-3 text-3xl font-bold">A connected Qalam workflow</h2>
                   <p className="mt-4 text-sm leading-7 text-white/65">{industry.problem}</p>
                   <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-                    <p className="text-xs font-bold uppercase tracking-wider text-white/40">Target outcome</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/60">Target outcome</p>
                     <p className="mt-2 text-sm leading-6 text-white/85">{industry.outcome}</p>
                   </div>
                 </div>
@@ -171,7 +171,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
                     href={`/use-cases/${key}`}
                     className="group rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:border-gold/40 hover:shadow"
                   >
-                    <p className="text-sm font-bold text-zinc-900 group-hover:text-gold">{useCase.title}</p>
+                    <p className="text-sm font-bold text-zinc-900 group-hover:text-gold-700">{useCase.title}</p>
                     <p className="mt-1 text-xs leading-relaxed text-zinc-500">{useCase.summary}</p>
                   </Link>
                 ))}
