@@ -447,18 +447,6 @@ input, textarea, select {
 
 /* ─── Reusable utility classes ────────────────────────────────── */
 
-/* Glassmorphism nav - solid fallback first so unsupported/degraded
-   backdrop-filter never lets page content show through the nav bar */
-.glass {
-  background: #fafaf8;
-}
-
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    background: #fafaf8;
-  }
-}
-
 /* Grid-line background pattern (80 px) */
 .grid-bg {
   background-image:
@@ -776,15 +764,31 @@ input, textarea, select {
 .qlx-surface { background: var(--qlx-surface); }
 .qlx-raised { background: var(--qlx-surface-raised); box-shadow: var(--qlx-elevation-2); }
 
-/* Navbar glass: solid fallback first, blur layered on top */
+/* Navbar glass. Two rules, in this order, for two reasons that are both
+   easy to get wrong and were both wrong here.
+
+   1. The feature query tests ONLY the standard property. Adding
+      `or (-webkit-backdrop-filter: ...)` looks safer but is the bug:
+      current Chromium has dropped the -webkit- alias while still passing
+      the standard half of the `or`. The browser therefore took the
+      translucent background that is meant to sit behind a blur, and got
+      no blur, so page content read straight through the navbar.
+
+   2. The standard property is declared LAST. Lightning CSS collapses
+      prefixed and unprefixed declarations of one property and keeps the
+      final one, so writing the prefix last deletes `backdrop-filter`
+      from the build output entirely. Prefix first, standard last. */
 .qlx-glass {
-  background: oklch(0.12 0.014 196 / 0.92);
+  /* Fully opaque: a browser that lands here has no blur to hide behind,
+     so any alpha at all lets high-contrast text bleed through. */
+  background: oklch(0.12 0.014 196);
 }
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+
+@supports (backdrop-filter: blur(1px)) {
   .qlx-glass {
     background: oklch(0.13 0.015 196 / 0.72);
-    backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
   }
 }
 
