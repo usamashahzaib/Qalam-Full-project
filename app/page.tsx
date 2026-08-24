@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { CareerSignalMap } from "@/components/home/CareerSignalMap"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
@@ -52,6 +53,27 @@ const proofRules = [
 ]
 
 const focusedFaq = LANDING_FAQ.slice(0, 4)
+
+const productScreens = [
+  {
+    src: "/product/qalam-writer-demo.png",
+    alt: "Qalam demo workspace showing the LinkedIn writer, hook choices, voice profile, and editable draft",
+    title: "Write from a real point",
+    copy: "Choose a hook, edit the full draft, and keep the voice context visible while you work.",
+  },
+  {
+    src: "/product/qalam-voice-demo.png",
+    alt: "Qalam demo voice profile showing sample tone, style, and approved writing examples",
+    title: "Keep voice context explicit",
+    copy: "See what the demo voice profile contains and which sample writing informs the draft.",
+  },
+  {
+    src: "/product/qalam-archive-demo.png",
+    alt: "Qalam demo archive showing clearly labelled sample LinkedIn posts and activity fields",
+    title: "Build a reusable archive",
+    copy: "Return to prior ideas and clearly labelled sample records without losing the original context.",
+  },
+]
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -169,6 +191,43 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Inside Qalam</p>
+              <h2 className="t-h2 mt-4 text-teal">See the working product before you sign up.</h2>
+            </div>
+            <div>
+              <p className="t-lead text-zinc-600">These captures come from Qalam&apos;s interactive demo. The interface is real and every example is clearly labelled demo or sample data.</p>
+              <Link href="/demo" className="mt-5 inline-flex min-h-11 items-center font-bold text-teal underline decoration-gold decoration-2 underline-offset-4">
+                Open the interactive demo
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+            {productScreens.map((screen, index) => (
+              <figure key={screen.src} className={`overflow-hidden rounded-2xl border border-zinc-200 bg-[#f7f3ea] shadow-[0_18px_50px_rgba(13,74,69,0.08)] ${index === 0 ? "lg:col-span-2" : ""}`}>
+                <Image
+                  src={screen.src}
+                  alt={screen.alt}
+                  width={1440}
+                  height={1050}
+                  sizes={index === 0 ? "(max-width: 1200px) 100vw, 1200px" : "(max-width: 1024px) 100vw, 600px"}
+                  className="h-auto w-full border-b border-zinc-200"
+                />
+                <figcaption className="p-6">
+                  <p className="text-lg font-bold text-zinc-900">{screen.title}</p>
+                  <p className="mt-2 text-sm leading-6 text-zinc-600">{screen.copy}</p>
+                  <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-700">Interactive demo with sample data</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="free-resume-check" className="bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto grid max-w-[1200px] overflow-hidden rounded-[2rem] border border-teal/12 bg-[#e8f0eb] shadow-[0_24px_70px_rgba(13,74,69,0.09)] lg:grid-cols-[0.78fr_1.22fr]">
           <div className="flex flex-col justify-center p-7 sm:p-12">
@@ -266,7 +325,7 @@ export default function HomePage() {
               const effective = plan.plan === "Free" ? "No payment card" : `${formatPkr(getQuarterlyMonthlyEquivalent(plan.quarterlyPkr))}/month effective`
               return (
                 <article key={plan.plan} className={`relative flex flex-col rounded-2xl border p-7 sm:p-8 ${highlighted ? "border-teal bg-teal text-white shadow-[0_20px_50px_rgba(13,74,69,0.2)]" : "border-zinc-200 bg-white text-zinc-900"}`}>
-                  {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-teal">Most popular</span>}
+                  {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-teal-900">Most popular</span>}
                   <p className={`text-xs font-bold uppercase tracking-[0.17em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{plan.plan}</p>
                   <p className="mt-5 text-4xl font-extrabold tracking-tight">{price}</p>
                   <p className={`mt-2 text-xs ${highlighted ? "text-white/65" : "text-zinc-500"}`}>{plan.plan === "Free" ? effective : `Billed quarterly. ${effective}.`}</p>
@@ -279,7 +338,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={plan.href} className={`inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold transition-colors ${highlighted ? "bg-gold text-teal hover:bg-gold-600" : "border border-teal/25 bg-teal/5 text-teal hover:bg-teal hover:text-white"}`}>
+                  <Link href={plan.href} className={`inline-flex min-h-12 items-center justify-center rounded-xl px-5 text-sm font-bold transition-colors ${highlighted ? "bg-gold text-teal-900 hover:bg-gold-600" : "border border-teal/25 bg-teal/5 text-teal hover:bg-teal hover:text-white"}`}>
                     {plan.cta}
                   </Link>
                 </article>

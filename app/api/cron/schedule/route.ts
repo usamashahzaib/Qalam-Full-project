@@ -9,6 +9,7 @@ import { sendTransactionalEmail } from "@/lib/server/email"
 import { verifyCronAuth } from "@/lib/server/verify-cron"
 import { createNotification } from "@/lib/server/notifications"
 import { APP_URL } from "@/lib/seo"
+import { alertIfExpiryCronIsStale, runTrackedCron } from "@/lib/server/cron-health"
 
 type DuePost = {
   id: string
@@ -26,7 +27,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const supabase = createServiceClient()
+  return runTrackedCron("schedule", async () => {
+    await alertIfExpiryCronIsStale().catch((error) => {
+      console.error("[cron/schedule] expiry health alert failed:", (error as Error).message)
+    })
+
+    const supabase = createServiceClient()
 
   // Find posts that are due and haven't been notified yet
   const { data: duePosts, error } = await supabase
@@ -151,5 +157,6 @@ export async function GET(request: NextRequest) {
     notified++
   }
 
-  return NextResponse.json({ notified, autoPublishSkipped })
+    return NextResponse.json({ notified, autoPublishSkipped })
+  })
 }

@@ -48,7 +48,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
     selected,
     status,
     loading,
-    stats, circuits, recentUsers,
+    stats, circuits, recentUsers, cronRuns,
     resettingCircuits,
     form, setForm,
     activeOverride,
@@ -97,7 +97,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
         {/* Unlock form */}
         {!unlocked && (
           <section className="max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-            <h2 className="text-sm font-bold text-zinc-900">Enter admin key to unlock</h2>
+            <h2 className="text-sm font-bold text-zinc-900">Enter admin key to continue</h2>
             <p className="mt-1 text-xs text-zinc-500">Set <code className="rounded bg-zinc-100 px-1">ADMIN_SECRET_KEY</code> in Vercel environment variables.</p>
             <input
               value={adminKey}
@@ -112,7 +112,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
               disabled={loading || !adminKey.trim()}
               className="mt-3 w-full cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"
             >
-              {loading ? "Verifying..." : "Unlock admin panel"}
+              {loading ? "Verifying..." : "Open admin panel"}
             </button>
             {status && (
               <p className={`mt-3 rounded-xl px-3 py-2 text-xs ${status.type === "err" ? "bg-red-50 text-red-700" : "bg-zinc-50 text-zinc-600"}`}>
@@ -203,6 +203,42 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                 </div>
               </section>
             </div>
+
+            <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-zinc-900">Cron health</h2>
+                  <p className="mt-1 text-xs text-zinc-500">A stale check-expiry run triggers an email after 48 hours.</p>
+                </div>
+                <span className="text-xs text-zinc-400">{cronRuns.length} jobs reporting</span>
+              </div>
+              {cronRuns.length ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {cronRuns.map((run) => {
+                    const stale = run.isStale
+                    return (
+                      <div key={run.jobName} className={`rounded-xl border p-4 ${stale ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-bold text-zinc-900">{run.jobName}</p>
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${stale ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                            {stale ? "Stale" : "Healthy"}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-xs text-zinc-600">
+                          Last success: {run.lastSuccessAt ? new Date(run.lastSuccessAt).toLocaleString() : "Never"}
+                        </p>
+                        <p className="mt-1 text-xs text-zinc-500">Duration: {run.durationMs == null ? "-" : `${run.durationMs} ms`}</p>
+                        {run.lastError ? <p className="mt-2 text-xs font-medium text-red-700">{run.lastError}</p> : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="rounded-xl bg-zinc-50 px-4 py-6 text-center text-sm text-zinc-500">
+                  No cron heartbeat data yet. Apply the latest migration and wait for the next scheduled run.
+                </p>
+              )}
+            </section>
 
             {/* Recent signups */}
             {recentUsers.length > 0 && (

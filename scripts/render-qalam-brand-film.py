@@ -83,7 +83,7 @@ def tracked_text_layer(text: str, size: int, tracking: int, color: tuple[int, in
 
 
 def load_mark() -> Image.Image:
-    source = Image.open(ROOT / "public" / "byqalam-mark-gold.png").convert("RGB")
+    source = Image.open(ROOT / "assets" / "brand" / "byqalam-mark-gold.png").convert("RGB")
     array = np.asarray(source)
     blue_separation = 245 - array[:, :, 2].astype(np.int16)
     alpha = np.clip((blue_separation - 18) * 2.5, 0, 255).astype(np.uint8)

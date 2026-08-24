@@ -5,8 +5,8 @@ import sharp from "sharp"
 const ROOT = process.cwd()
 const WIDTH = 1128
 const HEIGHT = 191
-const PHOTO = path.join(ROOT, "public/brand/source/qalam-guide-reference.png")
-const MARK = path.join(ROOT, "public/byqalam-logo-dark-bg.png")
+const PHOTO = path.join(ROOT, "assets/brand/qalam-guide-reference.png")
+const MARK = path.join(ROOT, "assets/brand/byqalam-logo-dark-bg.png")
 const OUT = path.join(ROOT, "public/brand/linkedin")
 
 const svg = (body) => Buffer.from(`

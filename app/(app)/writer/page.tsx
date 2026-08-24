@@ -24,33 +24,11 @@ import {
 import { HookCard } from "@/components/writer/HookCard"
 import { WriterScheduleModal } from "@/components/writer/WriterScheduleModal"
 import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
+import { WriterApprovalModal } from "@/components/writer/WriterApprovalModal"
+import { ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORMATS } from "@/components/writer/writer-config"
 import { QueueOverlay } from "@/components/QueueOverlay"
 
-import type { Role, FormatKey, ScoreData } from "@/lib/hooks/useWriterLogic"
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const ROLE_SUGGESTIONS: string[] = [
-  "CEO", "Consultant", "Designer", "Founder", "Freelancer", "HR Leader",
-  "Marketer", "Product Manager", "Recruiter", "Sales Leader", "Software Developer",
-]
-
-const FORMATS: { key: FormatKey; words: string }[] = [
-  { key: "Short", words: "150-200w" },
-  { key: "Medium", words: "250-350w" },
-  { key: "Long", words: "400-500w" },
-  { key: "Carousel", words: "5-7 slides" },
-]
-
-const SCORE_LABELS: Array<{ key: keyof Omit<ScoreData, "overall" | "tips" | "hashtags">; label: string }> = [
-  { key: "hook", label: "Hook" },
-  { key: "readability", label: "Readability" },
-  { key: "authority", label: "Authority" },
-  { key: "specificity", label: "Specificity" },
-  { key: "cta", label: "CTA" },
-  { key: "human", label: "Human-likeness" },
-  { key: "voiceFit", label: "Voice Fit" },
-]
+import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -382,7 +360,7 @@ export default function WriterPage() {
                 <>
                   {!canUseCarousel ? (
                     <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                      Carousel generation requires <span className="font-bold">Solo</span> or higher. Upgrade to unlock.
+                      Carousel generation requires <span className="font-bold">Solo</span> or higher. Upgrade to access it.
                     </div>
                   ) : null}
                   <button
@@ -1008,7 +986,7 @@ export default function WriterPage() {
                       onClick={() => setUpgradeProModal(true)}
                       className="w-full cursor-pointer rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-amber-700"
                     >
-                      Unlock Pro to push your {scores.overall} to 90+
+                      Choose Pro to push your {scores.overall} to 90+
                     </button>
                   </div>
                 )}
@@ -1282,98 +1260,3 @@ export default function WriterPage() {
     </>
   )
 }
-
-// ── Inline approval modal ────────────────────────────────────────────────────
-
-function WriterApprovalModal({ draftContent, draftTitle, postId, onClose, onSent, onError }: {
-  draftContent: string
-  draftTitle: string
-  postId: string | null
-  onClose: () => void
-  onSent: () => void
-  onError: (msg: string) => void
-}) {
-  const [reviewerEmail, setReviewerEmail] = useState("")
-  const [message, setMessage] = useState("")
-  const [isSending, setIsSending] = useState(false)
-
-  const onSubmit = async () => {
-    if (!reviewerEmail.trim()) return
-    setIsSending(true)
-    try {
-      const res = await fetch("/api/approvals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reviewerEmail: reviewerEmail.trim(),
-          postTitle: draftTitle,
-          postContent: draftContent,
-          message: message.trim(),
-          postId,
-        }),
-      })
-      const data = await res.json() as { error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to send")
-      onSent()
-    } catch (e) {
-      onError((e as Error).message)
-    } finally {
-      setIsSending(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl">
-        <h2 className="text-base font-bold text-zinc-900">Send for approval</h2>
-        <p className="mt-1 text-sm text-zinc-500">Share this draft with a colleague, manager, or client before it goes live. They will receive an email with a private link to review the post and either approve it or send back feedback - no Qalam account required.</p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-              Reviewer email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={reviewerEmail}
-              onChange={(e) => setReviewerEmail(e.target.value)}
-              placeholder="reviewer@company.com"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-              Message <span className="font-normal normal-case text-zinc-400">(optional)</span>
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={2}
-              placeholder="e.g. Please check tone and facts before we publish."
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-            />
-          </div>
-          <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">Post being sent</p>
-            <p className="mt-1 line-clamp-2 text-xs text-zinc-700">{draftTitle}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 cursor-pointer rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => void onSubmit()}
-            disabled={isSending || !reviewerEmail.trim()}
-            className="flex-1 cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-600 disabled:opacity-50"
-          >
-            {isSending ? "Sending..." : "Send for review"}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-

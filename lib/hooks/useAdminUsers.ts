@@ -6,6 +6,7 @@ import type {
   AuditLogEntry as AuditRow,
   AdminStats as Stats,
   CircuitState,
+  CronRunHealth,
   RecentUser,
 } from "@/types/admin"
 
@@ -57,6 +58,7 @@ export function useAdminUsers(adminEmail: string) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [circuits, setCircuits] = useState<CircuitState | null>(null)
   const [recentUsers, setRecentUsers] = useState<RecentUser[]>([])
+  const [cronRuns, setCronRuns] = useState<CronRunHealth[]>([])
   const [selfId, setSelfId] = useState<string | null>(null)
   const [resettingCircuits, setResettingCircuits] = useState(false)
   const [deletingUser, setDeletingUser] = useState(false)
@@ -81,7 +83,7 @@ export function useAdminUsers(adminEmail: string) {
       fetch("/api/admin/stats", { headers: { "x-admin-key": adminKey } }),
     ])
     const usersData = await usersRes.json().catch(() => ({})) as { users?: AdminUser[]; auditLog?: AuditRow[]; error?: string }
-    const statsData = await statsRes.json().catch(() => ({})) as { stats?: Stats; recentUsers?: RecentUser[]; circuits?: CircuitState; selfId?: string; error?: string }
+    const statsData = await statsRes.json().catch(() => ({})) as { stats?: Stats; recentUsers?: RecentUser[]; circuits?: CircuitState; cronRuns?: CronRunHealth[]; selfId?: string; error?: string }
     if (!usersRes.ok) throw new Error(usersData.error || "Admin data unavailable")
     const nextUsers = usersData.users || []
     setUsers(nextUsers)
@@ -89,6 +91,7 @@ export function useAdminUsers(adminEmail: string) {
     if (statsData.stats) setStats(statsData.stats)
     if (statsData.circuits) setCircuits(statsData.circuits)
     if (statsData.recentUsers) setRecentUsers(statsData.recentUsers)
+    if (statsData.cronRuns) setCronRuns(statsData.cronRuns)
     if (statsData.selfId) setSelfId(statsData.selfId)
     setLoading(false)
     return nextUsers
@@ -246,7 +249,7 @@ export function useAdminUsers(adminEmail: string) {
     selected,
     status,
     loading,
-    stats, circuits, recentUsers,
+    stats, circuits, recentUsers, cronRuns,
     resettingCircuits,
     form, setForm,
     headers,

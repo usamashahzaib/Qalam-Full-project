@@ -102,7 +102,7 @@ export default function ContactPage() {
                 <li>2. Email the team or use the form above for payment instructions.</li>
                 <li>3. Pay using {MANUAL_UPGRADE_METHODS.join(", ")}.</li>
                 <li>4. Send the payment screenshot in the same thread.</li>
-                <li>5. Qalam unlocks your workspace after manual review.</li>
+                <li>5. Qalam activates your workspace after manual review.</li>
               </ol>
               <p className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-xs leading-relaxed text-zinc-500">
                 {MANUAL_UPGRADE_SLA}

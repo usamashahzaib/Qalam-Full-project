@@ -8,14 +8,12 @@ export type Plan = {
   name: PlanName
   monthlyPrice: number | null
   quarterlyPrice: number | null
-  annualPrice?: number | null
   postsPerMonth: number | null
   draftsPerMonth: number | null
   carouselsPerMonth: number | null
   researchPerMonth: number
   voiceProfiles: number
   workspaces: number
-  annualSavingsLabel: string
   audience: string
   featureLead: string
   features: string[]
@@ -54,7 +52,6 @@ export const plans: Plan[] = [
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    annualSavingsLabel: "",
     audience: "Explore Qalam before paying",
     featureLead: "A complete starting point",
     features: [
@@ -76,14 +73,12 @@ export const plans: Plan[] = [
     name: "Solo",
     monthlyPrice: 799,
     quarterlyPrice: 1598,
-    annualPrice: 3493,
     postsPerMonth: 30,
     draftsPerMonth: 30,
     carouselsPerMonth: 3,
     researchPerMonth: 0,
     voiceProfiles: 0,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 799",
     audience: "Publish consistently on LinkedIn",
     featureLead: "Everything in Free, plus",
     features: [
@@ -105,14 +100,12 @@ export const plans: Plan[] = [
     name: "Pro",
     monthlyPrice: 1499,
     quarterlyPrice: 2998,
-    annualPrice: 10433,
     postsPerMonth: 60,
     draftsPerMonth: 60,
     carouselsPerMonth: 10,
     researchPerMonth: 5,
     voiceProfiles: 1,
     workspaces: 1,
-    annualSavingsLabel: "Save PKR 1,499",
     audience: "Build authority and career leverage",
     featureLead: "Everything in Solo, plus",
     features: [
@@ -135,14 +128,12 @@ export const plans: Plan[] = [
     name: "Agency",
     monthlyPrice: 3999,
     quarterlyPrice: 7998,
-    annualPrice: null,
     postsPerMonth: 300,
     draftsPerMonth: 300,
     carouselsPerMonth: 50,
     researchPerMonth: 25,
     voiceProfiles: 5,
     workspaces: 5,
-    annualSavingsLabel: "Save PKR 3,999",
     audience: "Run multiple client workspaces",
     featureLead: "Everything in Pro, plus",
     features: [
@@ -217,12 +208,6 @@ export const getPostLimit = (plan: string): number => getPlanByName(plan).postsP
 
 export const canUseVoice = (plan: string): boolean => getPlanByName(plan).voiceProfiles > 0
 
-export const getAnnualSavings = (planName: string): number => {
-  const plan = getPlanByName(planName)
-  if (!plan.monthlyPrice || !plan.annualPrice) return 0
-  return plan.monthlyPrice * 12 - plan.annualPrice
-}
-
 export const isComingSoon = (plan: string): boolean => getPlanByName(plan).comingSoon === true
 
 export function isFeatureAllowed(plan: string, feature: string): boolean {
@@ -243,7 +228,6 @@ export interface PricingPlan {
   plan: string
   monthlyPkr: number | null
   quarterlyPkr: number | null
-  annualPkrPerMonth?: number
   period: string
   description: string
   audience: string
@@ -274,7 +258,6 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   plan: plan.name,
   monthlyPkr: plan.monthlyPrice,
   quarterlyPkr: plan.quarterlyPrice,
-  annualPkrPerMonth: plan.annualPrice != null ? Math.round(plan.annualPrice / 12) : undefined,
   period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "month",
   description:
     plan.name === "Free"
@@ -303,8 +286,8 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   comingSoon: plan.comingSoon,
 }))
 
-export const PLAN_PRICES: Record<string, { monthly: number; quarterly: number; annual: number }> = Object.fromEntries(
-  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice ?? 0, quarterly: plan.quarterlyPrice ?? 0, annual: plan.annualPrice ?? 0 }])
+export const PLAN_PRICES: Record<string, { monthly: number; quarterly: number }> = Object.fromEntries(
+  plans.map((plan) => [plan.name, { monthly: plan.monthlyPrice ?? 0, quarterly: plan.quarterlyPrice ?? 0 }])
 )
 
 export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
@@ -558,28 +541,27 @@ export const getQuarterlyMonthlyEquivalent = (quarterlyPrice: number | null | un
 // ─── Lemon Squeezy checkout ────────────────────────────────────────────────
 
 export type BillingCycle = "monthly" | "quarterly" | "annual"
+export type PurchasableBillingCycle = Exclude<BillingCycle, "annual">
 
 // Hosted checkout links from the Lemon Squeezy store. Not secret - safe in a shared module.
-export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<BillingCycle, string>>>> = {
+export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<PurchasableBillingCycle, string>>>> = {
   Solo: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
     // Quarterly product (PKR 1,598 every 3 months). Env var still overrides if set.
     quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
       || "https://byqalam.lemonsqueezy.com/checkout/buy/a1e289b6-9c8b-42f5-b2ad-b9b36b7aff3b",
-    annual: "https://byqalam.lemonsqueezy.com/checkout/buy/0872e475-9487-4430-9590-49e569524553",
   },
   Pro: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
     // Quarterly product (PKR 2,998 every 3 months). Env var still overrides if set.
     quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
       || "https://byqalam.lemonsqueezy.com/checkout/buy/c3036b23-7f98-4a58-ad09-c2ddbe2483c2",
-    annual: "https://byqalam.lemonsqueezy.com/checkout/buy/2f787de4-dc72-40d6-ac70-3544420455f0",
   },
 }
 
 export function getLemonSqueezyCheckoutUrl(
   planName: string,
-  billingCycle: BillingCycle,
+  billingCycle: PurchasableBillingCycle,
   buyer?: { userId?: string | null; email?: string | null; checkoutToken?: string | null; discountCode?: string | null }
 ): string | null {
   const base = LEMONSQUEEZY_CHECKOUT_URLS[planName as PlanName]?.[billingCycle]

@@ -5,6 +5,7 @@ import { createNotification } from "@/lib/server/notifications"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { verifyCronAuth } from "@/lib/server/verify-cron"
 import { toLocalDateKey } from "@/lib/career-momentum"
+import { runTrackedCron } from "@/lib/server/cron-health"
 
 export const maxDuration = 30
 
@@ -23,21 +24,22 @@ const joinedUser = (row: PreferenceRow) => Array.isArray(row.users) ? row.users[
 export async function GET(request: Request) {
   if (!verifyCronAuth(request)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const supabase = createServiceClient()
-  const now = new Date()
-  const { data, error } = await supabase
+  return runTrackedCron("career-momentum", async () => {
+    const supabase = createServiceClient()
+    const now = new Date()
+    const { data, error } = await supabase
     .from("career_habit_preferences")
     .select("id,workspace_id,user_id,reminder_hour,timezone_offset,last_reminded_on,users:user_id(email,full_name)")
     .eq("reminder_enabled", true)
     .limit(250)
 
-  if (error) return NextResponse.json({ error: "Reminder preferences could not be loaded." }, { status: 500 })
+    if (error) return NextResponse.json({ error: "Reminder preferences could not be loaded." }, { status: 500 })
 
-  let sent = 0
-  let skipped = 0
-  let failed = 0
+    let sent = 0
+    let skipped = 0
+    let failed = 0
 
-  for (const preference of (data || []) as unknown as PreferenceRow[]) {
+    for (const preference of (data || []) as unknown as PreferenceRow[]) {
     const shifted = new Date(now.getTime() - preference.timezone_offset * 60_000)
     const localHour = shifted.getUTCHours()
     const localDate = toLocalDateKey(now, preference.timezone_offset)
@@ -105,7 +107,8 @@ export async function GET(request: Request) {
       link: "/dashboard#daily-proof",
     })
     sent += 1
-  }
+    }
 
-  return NextResponse.json({ sent, skipped, failed })
+    return NextResponse.json({ sent, skipped, failed })
+  })
 }

@@ -439,7 +439,7 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // PKR), so this PKR-price cross-check doesn't apply to either.
   if (provider !== "stripe" && provider !== "lemonsqueezy") {
     const plan = PRICING_PLANS.find((p) => p.name === planName)
-    const candidatePrices = [plan?.monthlyPrice, plan?.annualPrice].filter(
+    const candidatePrices = [plan?.monthlyPrice, plan?.quarterlyPrice].filter(
       (p): p is number => typeof p === "number" && p > 0
     )
     // Gateways vary on whether amount is sent as major units (499) or minor units (49900) -

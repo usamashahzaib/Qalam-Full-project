@@ -11,17 +11,20 @@ export const maxDuration = 30
 import { NextRequest, NextResponse } from "next/server"
 import { verifyCronAuth } from "@/lib/server/verify-cron"
 import { reconcileStuckPublishing } from "@/lib/server/linkedin-publish"
+import { runTrackedCron } from "@/lib/server/cron-health"
 
 export async function GET(request: NextRequest) {
   if (!verifyCronAuth(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  try {
-    const { finalized, reverted } = await reconcileStuckPublishing()
-    return NextResponse.json({ recovered: finalized + reverted, finalized, reverted })
-  } catch (error) {
-    console.error("[cron/process-queue] reconciliation error:", (error as Error).message)
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
-  }
+  return runTrackedCron("process-queue", async () => {
+    try {
+      const { finalized, reverted } = await reconcileStuckPublishing()
+      return NextResponse.json({ recovered: finalized + reverted, finalized, reverted })
+    } catch (error) {
+      console.error("[cron/process-queue] reconciliation error:", (error as Error).message)
+      return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    }
+  })
 }

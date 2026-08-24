@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 import { publishScheduledPost, reconcileStuckPublishing, type ScheduledPost } from "@/lib/server/linkedin-publish"
 import { verifyCronAuth } from "@/lib/server/verify-cron"
+import { runTrackedCron } from "@/lib/server/cron-health"
 
 export const maxDuration = 60
 
@@ -23,8 +24,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
-  try {
-    const reconciled = await reconcileStuckPublishing()
+  return runTrackedCron("linkedin-publish-scheduled", async () => {
+    try {
+      const reconciled = await reconcileStuckPublishing()
 
     const duePosts = await supabaseSelect<ScheduledPost>(
       "posts",
@@ -35,15 +37,16 @@ export async function GET(request: Request) {
       ? await Promise.all(duePosts.map((post) => publishScheduledPost(post.id)))
       : []
 
-    return NextResponse.json({
-      reconciled,
-      processed: results.length,
-      published: results.filter((r) => r.status === "published").length,
-      failed: results.filter((r) => r.status === "failed").length,
-      skipped: results.filter((r) => r.status === "skipped").length,
-      results,
-    })
-  } catch (error) {
-    return NextResponse.json({ error: (error as Error).message || "scheduled_publish_failed" }, { status: 500 })
-  }
+      return NextResponse.json({
+        reconciled,
+        processed: results.length,
+        published: results.filter((r) => r.status === "published").length,
+        failed: results.filter((r) => r.status === "failed").length,
+        skipped: results.filter((r) => r.status === "skipped").length,
+        results,
+      })
+    } catch (error) {
+      return NextResponse.json({ error: (error as Error).message || "scheduled_publish_failed" }, { status: 500 })
+    }
+  })
 }

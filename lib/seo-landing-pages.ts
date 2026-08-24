@@ -1,4 +1,5 @@
 import type { MarketingFaq } from "@/lib/site-content"
+import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
 
 export type SeoLandingPage = {
   slug: string
@@ -78,8 +79,8 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     description:
       "Write LinkedIn posts faster with Qalam, an AI LinkedIn post writer that learns your tone, stores draft history, and keeps hooks, revisions, and scheduling connected.",
     summary:
-      "Qalam helps you write LinkedIn posts from ideas, experience, or rough notes while preserving your personal voice and post archive.",
-    intent: "LinkedIn post writer, LinkedIn content writer, LinkedIn writing assistant",
+      "Turn a real lesson, decision, result, or rough note into a structured LinkedIn draft. Qalam keeps the source idea, hook options, voice context, revisions, archive, and scheduling in one writing workflow.",
+    intent: "LinkedIn post writer, AI LinkedIn post generator, LinkedIn ghostwriting software, LinkedIn content writer",
     primaryKeyword: "LinkedIn post writer",
     keywords: [
       "LinkedIn post writer",
@@ -88,22 +89,47 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       "write LinkedIn posts",
       "AI LinkedIn post writer",
       "LinkedIn ghostwriter AI",
+      "LinkedIn post generator",
+      "AI content writer for LinkedIn",
     ],
     updatedAt,
+    tool: {
+      label: "Try the free Hook Generator",
+      href: "/free-tools/hook-generator",
+      description: "Test several opening angles from one real topic before turning the strongest one into a full post in your Qalam workspace.",
+      detail: "The public tool creates hooks. Full drafts, voice context, version history, and scheduling use the signed-in workspace.",
+    },
+    methodology: { label: "See how Qalam writes from real work", href: "/ai-linkedin-writer" },
     sections: [
       {
-        heading: "From rough idea to publishable post",
-        body: "Start with a topic, lesson, story, or insight. Qalam turns it into a structured LinkedIn draft with a clear hook, body, and close.",
+        heading: "Start with something you can defend",
+        body: "The strongest source is not a generic topic. It is a decision you made, a mistake you corrected, a result you can explain, a customer pattern you noticed, or a professional tension you have earned the right to discuss. Qalam helps structure that material without inventing the experience behind it.",
+      },
+      {
+        heading: "Choose a hook that matches the point",
+        body: "Generate several openings, then choose the one that creates a clear reason to read without exaggerating the claim. A useful hook names the tension, result, or unexpected lesson quickly. It does not rely on vague suspense or a copied formula.",
       },
       {
         heading: "Designed for revision, not one-shot output",
-        body: "Strong LinkedIn writing usually needs edits. Qalam keeps revisions attached to the same draft so the system can learn from what you keep and remove.",
+        body: "Strong LinkedIn writing usually improves through a sharper example, a shorter middle, a clearer transition, or a more useful close. Qalam keeps versions attached to the same draft so you can compare changes instead of resetting the work with every prompt.",
+      },
+      {
+        heading: "Use voice context without surrendering judgment",
+        body: "Saved posts and examples give the writer a better starting point for vocabulary, rhythm, and structure. You still review every claim and choose the final wording. Voice memory supports authorship. It does not replace it.",
+      },
+      {
+        heading: "Move from draft to publishing without losing context",
+        body: "The selected hook, draft versions, content score, schedule, and final post stay connected. That continuity matters when you return to an idea, prepare the next post in a series, or need to understand why a revision worked.",
       },
       {
         heading: "Better archive, better future posts",
-        body: "Finished posts, hooks, and versions stay in your workspace, creating reusable content capital instead of disconnected one-off outputs.",
+        body: "Finished posts, hooks, and versions form a searchable record of the ideas you have already used. The archive helps you develop themes over time, avoid accidental repetition, and reuse a strong insight in a new format without copying the old post.",
       },
     ],
+    example: {
+      heading: "From a rough operational note to a credible post angle",
+      body: "Raw note: 'Hiring slowed down because nobody owned the final decision.' Draft angle: 'We did not have a hiring-speed problem. We had a decision-owner problem. Every interview happened on time, then each candidate waited while three people assumed someone else would make the call.' Add only the true context, action, and result before publishing.",
+    },
     faqs: [
       {
         q: "How do I write LinkedIn posts with AI?",
@@ -113,11 +139,23 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
         q: "Is Qalam a LinkedIn ghostwriter?",
         a: "Qalam is software, not a human ghostwriter. It helps you write in your own voice by learning from your real posts and edits.",
       },
+      {
+        q: "Can I generate LinkedIn posts for free?",
+        a: "Yes. Qalam's Free plan includes a monthly post allowance, and the public Hook Generator lets you test opening angles without a payment card.",
+      },
+      {
+        q: "Will Qalam publish invented stories or metrics?",
+        a: "The writer is designed around material you provide, but you remain responsible for reviewing every draft. Remove any claim, event, quote, or number you cannot support before publishing.",
+      },
+      {
+        q: "Can teams use the same LinkedIn post writer?",
+        a: "Yes. Qalam keeps drafts, revisions, approvals, and voice context connected so a reviewer can see the work before it is scheduled or published.",
+      },
     ],
     related: [
       { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
       { label: "Free Hook Generator", href: "/free-tools/hook-generator" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "LinkedIn Content Scheduler", href: "/linkedin-content-scheduler" },
     ],
   },
   "linkedin-post-generator": {
@@ -1026,4 +1064,6 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
   },
 }
 
-export const SEO_LANDING_ROUTES = Object.keys(SEO_LANDING_PAGES).map((slug) => `/${slug}`)
+export const SEO_LANDING_ROUTES = Object.keys(SEO_LANDING_PAGES)
+  .filter((slug) => !REDIRECTED_SEO_SLUGS.has(slug))
+  .map((slug) => `/${slug}`)
