@@ -6,7 +6,7 @@ import { motion, useInView, useScroll, useSpring } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { CapabilityShowcase } from "@/components/marketing/CapabilityShowcase"
 import { HeroChecker } from "@/components/home/HeroChecker"
-import { InteractiveQalamGuide } from "@/components/home/InteractiveQalamGuide"
+import { HeroProofPanel } from "@/components/home/HeroProofPanel"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { PricingCard } from "@/components/PricingCard"
 import { resolvePublicHref } from "@/lib/seo"
@@ -332,7 +332,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <InteractiveQalamGuide />
+          <HeroProofPanel />
         </div>
       </section>
 
@@ -375,7 +375,7 @@ export default function HomePage() {
       </section>
 
       {/* Before / After */}
-      <section id="before-after" className="border-b border-zinc-100 bg-zinc-50 px-6 py-24">
+      <section id="before-after" className="border-b border-zinc-100 bg-[#f7f3ea] px-6 py-24">
         <div className="mx-auto max-w-[1200px]">
           <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-gold/25 bg-gold-50 text-gold-700">Illustrative transformation</span>

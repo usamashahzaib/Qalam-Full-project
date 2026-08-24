@@ -192,7 +192,7 @@ export default function RootLayout({
       <ContentProtection />
       <GridGlowBackground
         glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-        backgroundColor="#fafaf8"
+        backgroundColor="#f7f3ea"
         gridColor="rgba(13,74,69,0.07)"
         glowCount={4}
       >

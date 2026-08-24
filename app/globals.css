@@ -2,7 +2,7 @@
 
 /* Qalam App Background */
 :root {
-  --bg-warm: #f5f7f6;
+  --bg-warm: #f7f3ea;
   --bg-ripple-1: rgba(13, 74, 69, 0.07);
   --bg-ripple-2: rgba(201, 135, 31, 0.05);
   --bg-ripple-3: rgba(13, 74, 69, 0.04);
@@ -221,26 +221,18 @@ html {
    guaranteed-invalid CSS and silently clobbered it, so the whole site fell back
    to the OS UI font. The fallback chain lives in the next/font config instead. */
 :root {
-  --surface-bg: #f5f7f6;
+  --surface-bg: #f7f3ea;
   --surface-fg: #1a1a1a;
   --surface-card: #ffffff;
   --surface-border: #e4e4e7;
   --surface-muted: #f0f4f2;
 }
 
-/* Dark mode is only supported inside the authenticated app shell (.qalam-app-canvas).
-   Marketing pages are a deliberately light/warm editorial theme and always render light,
-   since their components aren't retrofitted with dark: variants. */
-@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
-  :root:has(.qalam-app-canvas) {
-    --surface-bg: #111113;
-    --surface-fg: #f1f1f1;
-    --surface-card: #1c1c1e;
-    --surface-border: #2d2d30;
-    --surface-muted: #1c1c1e;
-  }
-}
-
+/* The whole product renders in one deliberately light, warm editorial theme.
+   A dark app theme was scaffolded here once but never shipped - it sat behind
+   an impossible `(dark) and (light)` media query, so ~200 lines of overrides
+   could never match and have been removed. If a dark app theme is wanted, build
+   it as a real, QA'd feature rather than reviving dead overrides. */
 body {
   position: relative;
   background: var(--surface-bg);
@@ -255,185 +247,6 @@ body {
 @media (pointer: coarse) {
   body {
     scrollbar-gutter: auto;
-  }
-}
-
-/* Dark mode overrides for app content area.
-   .qalam-app-header-desktop lives as a sibling of .qalam-app-canvas (not a child), so every
-   selector group below is applied to both - otherwise the desktop header's background darkens
-   while its text stays dark-on-dark. */
-@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
-  .qalam-app-canvas {
-    background: var(--surface-bg);
-  }
-
-  /* Backgrounds */
-  .qalam-app-canvas .bg-white,
-  .qalam-app-canvas .bg-white\/85,
-  .qalam-app-canvas .bg-white\/90,
-  .qalam-app-canvas .bg-white\/98,
-  .qalam-app-header-desktop .bg-white,
-  .qalam-app-header-desktop .bg-white\/85,
-  .qalam-app-header-desktop .bg-white\/90,
-  .qalam-app-header-desktop .bg-white\/98 {
-    background-color: var(--surface-card) !important;
-  }
-  .qalam-app-canvas .bg-zinc-50,
-  .qalam-app-canvas .bg-zinc-50\/60,
-  .qalam-app-canvas .bg-zinc-50\/80,
-  .qalam-app-canvas .bg-zinc-50\/50,
-  .qalam-app-header-desktop .bg-zinc-50,
-  .qalam-app-header-desktop .bg-zinc-50\/60,
-  .qalam-app-header-desktop .bg-zinc-50\/80,
-  .qalam-app-header-desktop .bg-zinc-50\/50 {
-    background-color: var(--surface-muted) !important;
-  }
-  .qalam-app-canvas .bg-zinc-100,
-  .qalam-app-header-desktop .bg-zinc-100 {
-    background-color: #27272a !important;
-  }
-
-  /* Borders */
-  .qalam-app-canvas .border-zinc-200,
-  .qalam-app-canvas .border-zinc-100,
-  .qalam-app-header-desktop .border-zinc-200,
-  .qalam-app-header-desktop .border-zinc-100 {
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-canvas .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-canvas .divide-zinc-200 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-header-desktop .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-header-desktop .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: var(--surface-border) !important;
-  }
-
-  /* Text */
-  .qalam-app-canvas .text-zinc-950,
-  .qalam-app-canvas .text-zinc-900,
-  .qalam-app-header-desktop .text-zinc-950,
-  .qalam-app-header-desktop .text-zinc-900 {
-    color: var(--surface-fg) !important;
-  }
-  .qalam-app-canvas .text-zinc-700,
-  .qalam-app-canvas .text-zinc-800,
-  .qalam-app-header-desktop .text-zinc-700,
-  .qalam-app-header-desktop .text-zinc-800 {
-    color: #d4d4d8 !important;
-  }
-  .qalam-app-canvas .text-zinc-600,
-  .qalam-app-header-desktop .text-zinc-600 {
-    color: #a1a1aa !important;
-  }
-  .qalam-app-canvas .text-zinc-500,
-  .qalam-app-canvas .text-zinc-400,
-  .qalam-app-header-desktop .text-zinc-500,
-  .qalam-app-header-desktop .text-zinc-400 {
-    color: #71717a !important;
-  }
-
-  /* Inputs in dark mode */
-  .qalam-app-canvas input,
-  .qalam-app-canvas select,
-  .qalam-app-canvas textarea,
-  .qalam-app-header-desktop input,
-  .qalam-app-header-desktop select,
-  .qalam-app-header-desktop textarea {
-    background-color: #27272a;
-    color: var(--surface-fg);
-    border-color: var(--surface-border);
-  }
-  .qalam-app-canvas input::placeholder,
-  .qalam-app-canvas textarea::placeholder,
-  .qalam-app-header-desktop input::placeholder,
-  .qalam-app-header-desktop textarea::placeholder {
-    color: #71717a;
-  }
-
-  /* App header (desktop) */
-  .qalam-app-header-desktop {
-    background-color: rgba(28, 28, 30, 0.92) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-header-desktop .hover\:bg-zinc-50:hover,
-  .qalam-app-header-desktop .hover\:bg-zinc-100:hover {
-    background-color: #27272a !important;
-  }
-  /* App header (mobile) */
-  .qalam-app-header-mobile {
-    background-color: rgba(28, 28, 30, 0.95) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-header-mobile .text-zinc-900 {
-    color: var(--surface-fg) !important;
-  }
-  .qalam-app-header-mobile .text-zinc-500 {
-    color: #71717a !important;
-  }
-  .qalam-app-header-mobile .hover\:bg-zinc-100:hover {
-    background-color: #27272a !important;
-  }
-
-  /* Mobile bottom nav */
-  .qalam-mobile-nav {
-    background-color: rgba(28, 28, 30, 0.97) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-mobile-nav .text-zinc-500 {
-    color: #71717a !important;
-  }
-
-  /* Cards */
-  .qalam-app-canvas .rounded-2xl.border.bg-white,
-  .qalam-app-canvas .rounded-2xl.border.border-zinc-200.bg-white,
-  .qalam-app-header-desktop .rounded-2xl.border.bg-white,
-  .qalam-app-header-desktop .rounded-2xl.border.border-zinc-200.bg-white {
-    background-color: var(--surface-card) !important;
-    border-color: var(--surface-border) !important;
-  }
-
-  /* Mobile "more" popup panel (fixed, outside qalam-app-canvas) */
-  .qalam-mobile-more-panel {
-    background-color: rgba(28, 28, 30, 0.98) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-mobile-more-panel .text-zinc-500 { color: #71717a !important; }
-  .qalam-mobile-more-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
-
-  /* Modal overlays */
-  .qalam-modal-panel {
-    background-color: var(--surface-card) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-modal-panel .text-zinc-900 { color: var(--surface-fg) !important; }
-  .qalam-modal-panel .text-zinc-500 { color: #71717a !important; }
-  .qalam-modal-panel .bg-zinc-50 { background-color: var(--surface-muted) !important; }
-  .qalam-modal-panel .border-zinc-100,
-  .qalam-modal-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
-
-  /* Writer mobile tab bar */
-  .qalam-writer-tabs {
-    background-color: var(--surface-muted) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-writer-tabs .bg-white {
-    background-color: var(--surface-card) !important;
-  }
-  .qalam-writer-tabs .text-zinc-900 { color: var(--surface-fg) !important; }
-  .qalam-writer-tabs .text-zinc-500 { color: #71717a !important; }
-
-  /* Plan status banners (expired-plan / trial), rendered inside .qalam-app-canvas */
-  .qalam-app-canvas .bg-amber-50 { background-color: rgba(217, 119, 6, 0.12) !important; }
-  .qalam-app-canvas .text-amber-900 { color: #fcd34d !important; }
-  .qalam-app-canvas .text-amber-800 { color: #fde68a !important; }
-  .qalam-app-canvas .bg-teal\/5 { background-color: rgba(13, 74, 69, 0.18) !important; }
-  .qalam-app-canvas .text-teal-900 { color: #5db5af !important; }
-
-  /* Marquee edge fade - avoid a visible white smear against a dark surface */
-  .marquee-fade::before {
-    background: linear-gradient(to right, var(--surface-bg), transparent);
-  }
-  .marquee-fade::after {
-    background: linear-gradient(to left, var(--surface-bg), transparent);
   }
 }
 
@@ -825,7 +638,7 @@ input, textarea, select {
 
 /* Matches --bg-warm exactly so the page never shows a seam between the
    body ground and a section that paints its own. */
-.ground-paper { background: #f5f7f6; }
+.ground-paper { background: #f7f3ea; }
 
 .panel-raised {
   background: #ffffff;
@@ -1035,9 +848,13 @@ img {
   pointer-events: auto;
 }
 
-/* Print watermark - visible on every printed page and print-to-PDF */
+/* Print watermark - scoped to the authenticated app surfaces only
+   (body:has(.qalam-app-canvas)). Public marketing, blog, pricing, docs and
+   legal pages are meant to be shared, so stamping them "Confidential" read as
+   paranoid and off-brand; they now print clean. Generated resume/carousel
+   exports are separate server-rendered PDFs and are unaffected either way. */
 @media print {
-  body::before {
+  body:has(.qalam-app-canvas)::before {
     content: "© Qalam (byqalam.com) - Confidential. Unauthorized reproduction prohibited.";
     position: fixed;
     top: 50%;
