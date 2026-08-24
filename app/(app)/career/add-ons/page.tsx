@@ -147,7 +147,7 @@ export default function CareerAddOnsPage() {
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">Outcome packs</p>
               <h2 className="mt-2 text-3xl font-bold text-zinc-900">One checkout. A complete workflow.</h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-zinc-500">Job-Win is the recommended path for one high-priority application. Every included tool unlocks separately.</p>
+            <p className="max-w-md text-sm leading-6 text-zinc-500">Job-Win is the recommended path for one high-priority application. Each included tool becomes available separately.</p>
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-[1.25fr_0.75fr]">

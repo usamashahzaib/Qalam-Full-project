@@ -873,3 +873,24 @@ img {
     margin-bottom: 1.5cm;
   }
 }
+/* Lightweight marketing reveal. Values are supplied by components/FadeUp.tsx. */
+.fade-up {
+  opacity: 0;
+  transform: translateY(var(--fade-up-distance, 40px));
+  transition:
+    opacity var(--fade-up-duration, 0.65s) cubic-bezier(0.16, 1, 0.3, 1) var(--fade-up-delay, 0s),
+    transform var(--fade-up-duration, 0.65s) cubic-bezier(0.16, 1, 0.3, 1) var(--fade-up-delay, 0s);
+}
+
+.fade-up.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

@@ -226,7 +226,7 @@ export default function FreeToolsPage() {
                 Want the full system?
               </p>
               <h2 className="mb-4 text-4xl font-extrabold text-white">
-                Unlock the full <span className="text-gold-200">Qalam platform</span>
+                Explore the full <span className="text-gold-200">Qalam platform</span>
               </h2>
               <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
                 60 posts a month, trained Voice Profile, scheduler, and performance

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
-import { getLemonSqueezyCheckoutUrl, LEMONSQUEEZY_CHECKOUT_URLS, type BillingCycle, type PlanName } from "@/lib/pricing"
+import { getLemonSqueezyCheckoutUrl, LEMONSQUEEZY_CHECKOUT_URLS, type PlanName, type PurchasableBillingCycle } from "@/lib/pricing"
 
 const LEMON_JS_SRC = "https://app.lemonsqueezy.com/js/lemon.js"
 
@@ -48,7 +48,7 @@ type PlanCheckoutContextValue = {
   state: CheckoutState
   /** True when a live Lemon Squeezy link exists for this plan. */
   isSelfServe: (plan: string) => boolean
-  openCheckout: (plan: PlanName, cycle: BillingCycle) => Promise<void>
+  openCheckout: (plan: PlanName, cycle: PurchasableBillingCycle) => Promise<void>
   /**
    * Starts the post-payment activation poll directly. Used by the redirect
    * fallback landing page, which arrives after payment with no overlay event.
@@ -179,7 +179,7 @@ export function PlanCheckoutProvider({ children }: { children: React.ReactNode }
   )
 
   const openCheckout = useCallback(
-    async (plan: PlanName, cycle: BillingCycle) => {
+    async (plan: PlanName, cycle: PurchasableBillingCycle) => {
       if (!isSelfServePlan(plan)) {
         setState({
           phase: "error",

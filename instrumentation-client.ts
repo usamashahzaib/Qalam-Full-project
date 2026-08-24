@@ -11,25 +11,58 @@ import type * as SentryTypes from "@sentry/nextjs"
 // Loading it behind the same condition that enables it means builds without a
 // DSN, and every development session, never download it at all.
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN
-const shouldLoad = process.env.NODE_ENV === "production" && !!dsn
+const monitoredRoutePrefixes = [
+  "/agency",
+  "/analytics",
+  "/approvals",
+  "/billing",
+  "/calendar",
+  "/career",
+  "/carousels",
+  "/chat",
+  "/comment-generator",
+  "/competitors",
+  "/dashboard",
+  "/library",
+  "/settings",
+  "/silent-growth",
+  "/upgrade",
+  "/voice",
+  "/writer",
+]
+
+const isMonitoredRoute = (url: string) => {
+  const pathname = new URL(url, window.location.origin).pathname
+  return monitoredRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+}
+
+const shouldLoad = process.env.NODE_ENV === "production" && !!dsn && isMonitoredRoute(window.location.href)
 
 let sentryModule: typeof SentryTypes | null = null
-const sentryReady: Promise<typeof SentryTypes | null> = shouldLoad
-  ? import("@sentry/nextjs").then((mod) => {
+let sentryReady: Promise<typeof SentryTypes | null> | null = null
+
+const loadSentry = () => {
+  if (!sentryReady) {
+    sentryReady = import("@sentry/nextjs").then((mod) => {
       mod.init({ dsn, tracesSampleRate: 0.1 })
       sentryModule = mod
       return mod
     })
-  : Promise.resolve(null)
+  }
+  return sentryReady
+}
+
+if (shouldLoad) void loadSentry()
 
 // Next calls this on every client navigation. It has to exist synchronously,
 // so it forwards to the SDK once loaded and is a no-op until then.
 export const onRouterTransitionStart: typeof SentryTypes.captureRouterTransitionStart = (
   ...args
 ) => {
+  if (process.env.NODE_ENV !== "production" || !dsn || !isMonitoredRoute(args[0])) return
   if (sentryModule) {
     sentryModule.captureRouterTransitionStart(...args)
     return
   }
-  void sentryReady.then((mod) => mod?.captureRouterTransitionStart(...args))
+  void loadSentry().then((mod) => mod?.captureRouterTransitionStart(...args))
 }

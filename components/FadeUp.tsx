@@ -1,7 +1,6 @@
 "use client"
 
-import { useRef } from "react"
-import { motion, useInView } from "framer-motion"
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react"
 
 interface FadeUpProps {
   children: React.ReactNode
@@ -21,21 +20,39 @@ export function FadeUp({
   once = true,
 }: FadeUpProps) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once, margin: "-80px 0px" })
+  const [revealed, setRevealed] = useState(true)
+
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element || !window.IntersectionObserver) return
+
+    const isInitiallyVisible = element.getBoundingClientRect().top < window.innerHeight - 80
+    setRevealed(isInitiallyVisible)
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setRevealed(entry.isIntersecting)
+        if (entry.isIntersecting && once) observer.unobserve(element)
+      },
+      { rootMargin: "0px 0px -80px" },
+    )
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [once])
+
+  const style = {
+    "--fade-up-delay": `${delay}s`,
+    "--fade-up-duration": `${duration}s`,
+    "--fade-up-distance": `${y}px`,
+  } as CSSProperties
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      className={className}
-      initial={{ opacity: 0, y }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y }}
-      transition={{
-        duration,
-        ease: [0.16, 1, 0.3, 1],
-        delay,
-      }}
+      className={`fade-up ${revealed ? "is-revealed" : ""} ${className || ""}`}
+      style={style}
     >
       {children}
-    </motion.div>
+    </div>
   )
 }

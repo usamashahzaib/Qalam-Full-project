@@ -25,7 +25,7 @@ function LockedState({ requiredPlan, feature, description, currentPlan }: { requ
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 py-16 text-center">
         <h2 className="text-xl font-bold text-zinc-900">{feature}</h2>
         <p className="mt-2 text-sm text-zinc-500">
-          {description || "Move to the next plan to unlock more Qalam features."}
+          {description || "Move to the next plan to access more Qalam features."}
         </p>
 
         <div className="mt-6 w-full rounded-2xl border border-zinc-100 bg-white p-5 text-left shadow-sm">

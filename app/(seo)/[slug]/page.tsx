@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
+import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
 import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata, resolvePublicHref, APP_URL } from "@/lib/seo"
 
 type Params = { slug: keyof typeof SEO_LANDING_PAGES }
@@ -10,7 +11,9 @@ type Params = { slug: keyof typeof SEO_LANDING_PAGES }
 export const dynamicParams = false
 
 export function generateStaticParams() {
-  return Object.keys(SEO_LANDING_PAGES).map((slug) => ({ slug }))
+  return Object.keys(SEO_LANDING_PAGES)
+    .filter((slug) => !REDIRECTED_SEO_SLUGS.has(slug))
+    .map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {

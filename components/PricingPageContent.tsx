@@ -180,7 +180,7 @@ export function PricingPageContent() {
       plan.plan === "Free"
         ? "No payment card required."
         : plan.plan === "Solo" || plan.plan === "Pro"
-          ? "Access unlocks after confirmed card payment."
+          ? "Access starts after confirmed card payment."
           : "Agency onboarding is reviewed before activation."
 
     const basePkr = plan.quarterlyPkr

@@ -2,7 +2,6 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import * as Sentry from "@sentry/nextjs"
 
 export default function RootError({
   error,
@@ -13,7 +12,6 @@ export default function RootError({
 }) {
   useEffect(() => {
     console.error("[Root Error]", error)
-    Sentry.captureException(error)
   }, [error])
 
   return (

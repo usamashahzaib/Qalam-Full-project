@@ -43,7 +43,7 @@ export default function BillingSuccessPage() {
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
       <h1 className="text-xl font-bold text-zinc-950">Confirming your payment</h1>
       <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-        Hold on while we unlock {plan ? plan : "your plan"} on your account.
+        Hold on while we activate {plan ? plan : "your plan"} on your account.
       </p>
     </div>
   )
