@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getSessionContext } from "@/lib/server/dashboard"
+import { DailyMomentumCard } from "@/components/dashboard/DailyMomentumCard"
 
 // ─── Writing Prompts ──────────────────────────────────────────────────────────
 
@@ -241,6 +242,8 @@ export default async function DashboardPage() {
         </Link>
         </div>
       </header>
+
+      <DailyMomentumCard />
 
       {/* Static sections - render immediately, no data dependency */}
       <WritingPromptsCard />
