@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { z } from "zod"
 import { requireAuth } from "@/lib/server/workspace"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
-import { supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
+import { createScopedClient, supabaseInsert, supabaseSelect } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus, requireRole } from "@/lib/server/roles"
 
@@ -96,14 +97,15 @@ export async function DELETE(request: NextRequest) {
     const workspaceId = await resolveWorkspaceId(request)
     await requireRole(request, workspaceId, "editor")
     const url = new URL(request.url)
-    const id = url.searchParams.get("id")
-    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
+    const parsedId = jobIdSchema.safeParse(url.searchParams.get("id"))
+    if (!parsedId.success) return NextResponse.json({ error: "invalid_id" }, { status: 400 })
 
-    const { supabaseDelete } = await import("@/lib/server/supabase-rest")
-    await supabaseDelete("jobs", `id=eq.${id}&workspace_id=eq.${workspaceId}`)
+    await createScopedClient(workspaceId).from("jobs").delete().eq("id", parsedId.data)
     return NextResponse.json({ deleted: true })
   } catch (error) {
     const message = (error as Error).message || "server_error"
     return NextResponse.json({ error: message }, { status: errorToStatus(message) })
   }
 }
+
+const jobIdSchema = z.string().uuid("id must be a valid UUID")

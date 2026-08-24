@@ -37,7 +37,7 @@ async function expectNoHorizontalOverflow(page: import("@playwright/test").Page,
 // ── Helper: check page has at least one visible CTA button ────────────────────
 async function expectCtaPresent(page: import("@playwright/test").Page) {
   const cta = page.locator("a:visible, button:visible").filter({
-    hasText: /get started|start free|try|sign up|see pricing|view demo|join/i,
+    hasText: /build your proof|get started|start free|try|sign up|see pricing|view demo|join/i,
   }).first()
   await expect(cta).toBeVisible({ timeout: 8000 })
 }

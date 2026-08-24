@@ -341,7 +341,7 @@ test.describe("Free tools functionality", () => {
     const textarea = page.locator("textarea").first()
     if (await textarea.isVisible()) {
       await textarea.fill("Just closed a $100K deal. Here is what worked.")
-      const btn = page.getByRole("button", { name: /predict|analyze|check/i }).first()
+      const btn = page.getByRole("button", { name: /review|predict|analyze|check/i }).first()
       await btn.click()
       await page.waitForTimeout(6000)
       await expect(page.locator("body")).not.toContainText(/\[object Object\]|TypeError/)

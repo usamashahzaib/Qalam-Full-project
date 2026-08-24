@@ -11,7 +11,19 @@ export function passwordVersionsMatch(databaseVersion: unknown, tokenVersion: un
 export async function isSessionCurrent(session: Session | null): Promise<boolean> {
   if (!session?.user?.id) return false
   const user = session.user as typeof session.user & { provider?: string; passwordVersion?: number }
-  if ((user.provider ?? "linkedin") !== "credentials") return true
+  if ((user.provider ?? "linkedin") !== "credentials") {
+    const { data, error } = await createServiceClient()
+      .from("users")
+      .select("id")
+      .eq("external_user_id", user.id)
+      .maybeSingle()
+
+    if (error || !data) {
+      log.warn("auth.stale_oauth_session", { externalUserId: user.id })
+      return false
+    }
+    return true
+  }
 
   const { data, error } = await createServiceClient()
     .from("users")

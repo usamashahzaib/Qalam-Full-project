@@ -46,7 +46,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
   const role = rawRole
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined
+  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, trimmed).catch(() => undefined) : undefined
 
   const { system, user } = build7MetricScorePrompt(trimmed, role, voiceProfile)
 

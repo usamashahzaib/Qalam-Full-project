@@ -8,15 +8,17 @@ import { createScopedClient } from "@/lib/server/supabase-rest"
 const patchSchema = z.object({
   role: z.enum(["editor", "viewer", "client_reviewer"]),
 })
+const memberParamsSchema = z.object({ id: z.string().uuid(), userId: z.string().uuid() })
 
 type Params = { params: Promise<{ id: string; userId: string }> }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Agency")
+    const parsedParams = memberParamsSchema.safeParse(await params)
+    if (!parsedParams.success) return NextResponse.json({ error: "invalid_workspace_member" }, { status: 400 })
+    const { id: workspaceId, userId: targetUserId } = parsedParams.data
+    const planCheck = await requirePlan(req, "Agency", workspaceId)
     if (!planCheck.ok) return planCheck.response
-
-    const { id: workspaceId, userId: targetUserId } = await params
 
     try {
       await requireRole(req, workspaceId, "admin")
@@ -25,6 +27,17 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
     if (targetUserId === user.id) {
       return NextResponse.json({ error: "cannot_change_own_role" }, { status: 400 })
+    }
+
+    const scoped = createScopedClient(workspaceId)
+    const { data: targetMembership } = await scoped
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", targetUserId)
+      .maybeSingle()
+    if (!targetMembership) return NextResponse.json({ error: "member_not_found" }, { status: 404 })
+    if ((targetMembership as unknown as { role: string }).role === "owner") {
+      return NextResponse.json({ error: "owner_membership_protected" }, { status: 403 })
     }
 
     let body: unknown
@@ -37,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
-    const { error } = await createScopedClient(workspaceId)
+    const { error } = await scoped
       .from("workspace_members")
       .update({ role: parsed.data.role })
       .eq("user_id", targetUserId)
@@ -49,10 +62,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Agency")
+    const parsedParams = memberParamsSchema.safeParse(await params)
+    if (!parsedParams.success) return NextResponse.json({ error: "invalid_workspace_member" }, { status: 400 })
+    const { id: workspaceId, userId: targetUserId } = parsedParams.data
+    const planCheck = await requirePlan(req, "Agency", workspaceId)
     if (!planCheck.ok) return planCheck.response
-
-    const { id: workspaceId, userId: targetUserId } = await params
 
     try {
       await requireRole(req, workspaceId, "admin")
@@ -63,7 +77,18 @@ export async function DELETE(request: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "cannot_remove_self" }, { status: 400 })
     }
 
-    const { error } = await createScopedClient(workspaceId)
+    const scoped = createScopedClient(workspaceId)
+    const { data: targetMembership } = await scoped
+      .from("workspace_members")
+      .select("role")
+      .eq("user_id", targetUserId)
+      .maybeSingle()
+    if (!targetMembership) return NextResponse.json({ error: "member_not_found" }, { status: 404 })
+    if ((targetMembership as unknown as { role: string }).role === "owner") {
+      return NextResponse.json({ error: "owner_membership_protected" }, { status: 403 })
+    }
+
+    const { error } = await scoped
       .from("workspace_members")
       .delete()
       .eq("user_id", targetUserId)

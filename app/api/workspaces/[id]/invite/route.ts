@@ -17,10 +17,10 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Agency")
+    const { id: workspaceId } = await context.params
+    const planCheck = await requirePlan(req, "Agency", workspaceId)
     if (!planCheck.ok) return planCheck.response
 
-    const { id: workspaceId } = await context.params
     // rpc calls and lookups against tables with no workspace_id column
     // (users, workspaces) stay on the raw client; workspace_members and
     // workspace_invites queries below use the workspace-scoped one.

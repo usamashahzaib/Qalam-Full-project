@@ -29,17 +29,16 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await callAi("engagement-prediction",
-      "Return strict JSON only. Be realistic - most LinkedIn posts get 10-50 reactions.",
-      `Predict LinkedIn engagement for this draft. Use content quality, audience fit, specificity, novelty, clarity, and likely discussion value. Do not use formulaic keyword checks.
+      "Return strict JSON only. Do not predict impressions, reactions, or reach.",
+      `Review this LinkedIn draft for pre-publish readiness. Use content quality, audience fit, specificity, novelty, clarity, and discussion value. Do not use formulaic keyword checks.
 
 POST:
 ${parsed.data.content}
 
 OUTPUT JSON:
 {
-  "engagement_score": number,
-  "reach_prediction": "low / moderate / strong / breakout",
-  "confidence": "low / medium / high",
+  "content_readiness_score": number,
+  "assessment": "ready / strong with edits / needs focus / rewrite",
   "score_breakdown": {
     "hook": number,
     "clarity": number,
@@ -47,7 +46,7 @@ OUTPUT JSON:
     "audience_relevance": number,
     "discussion_potential": number
   },
-  "why_it_will_work": ["specific reason"],
+  "strengths": ["specific strength"],
   "risks": ["specific risk"],
   "recommended_edits": ["specific edit"],
   "stronger_opening": "rewrite the first 1-2 lines"

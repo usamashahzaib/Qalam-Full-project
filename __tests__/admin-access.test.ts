@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("@/auth", () => ({ auth: mocks.auth }))
 vi.mock("@/lib/server/env", () => ({ env: mocks.env }))
+vi.mock("@/lib/server/session-revocation", () => ({ isSessionCurrent: vi.fn().mockResolvedValue(true) }))
 
 const { requireAdminPage } = await import("@/lib/server/workspace")
 

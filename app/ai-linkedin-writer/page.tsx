@@ -86,7 +86,7 @@ const faqSchema = buildFaqSchema([...FAQS])
 const FEATURES = [
   {
     title: "Voice Memory",
-    desc: "Trains on your real posts so every draft sounds like you - not a generic AI template.",
+    desc: "Builds a reusable voice profile from real posts so drafts begin closer to your tone and vocabulary.",
   },
   {
     title: "Hook Generator",
@@ -112,7 +112,7 @@ const FEATURES = [
 
 const COMPARISONS = [
   {
-    feature: "Voice memory that learns from your posts",
+    feature: "Voice profile built from your saved posts",
     qalam: true,
     chatgpt: false,
     jasper: false,
@@ -164,13 +164,12 @@ export default function AiLinkedInWriterPage() {
               <div className="mx-auto max-w-[860px] text-center">
                 <span className="chip mb-6 inline-flex border-teal/30 bg-teal-50 text-teal">AI LinkedIn Writer</span>
                 <h1 className="mb-6 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl lg:text-7xl">
-                  The AI writer that learns{" "}
+                  The AI writer built around{" "}
                   <span className="text-gold gold-underline">your LinkedIn voice</span>
                 </h1>
                 <p className="mx-auto mb-10 max-w-2xl text-xl leading-relaxed text-zinc-600">
-                  Most AI writers generate generic posts. <strong className="text-zinc-900">Qalam</strong> learns your
-                  tone, vocabulary, and hook patterns from your real posts - so every draft sounds like{" "}
-                  <em>you</em>, not a chatbot.
+                  Most AI writers generate generic posts. <strong className="text-zinc-900">Qalam</strong> builds a saved
+                  profile from your tone, vocabulary, and hook patterns so each draft starts with relevant context.
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
                   <Link
@@ -208,8 +207,7 @@ export default function AiLinkedInWriterPage() {
                 <p>
                   <strong>Qalam is different.</strong> It is an AI writing system built specifically for LinkedIn, with a
                   core feature called <em>voice memory</em>. Instead of starting from scratch every session, Qalam
-                  learns your writing style from your real posts and gets closer to your voice with every draft you
-                  approve.
+                  uses the writing examples you explicitly save as a reusable voice profile.
                 </p>
                 <p>
                   The result? Posts that sound like <em>you</em> - with your vocabulary, your rhythm, your perspective -
@@ -268,7 +266,7 @@ export default function AiLinkedInWriterPage() {
                 {
                   step: "03",
                   title: "Generate and refine",
-                  desc: "Get a draft in your voice. Edit and approve - every change trains the system further.",
+                  desc: "Get a voice-aware draft. Edit it, approve it, and save examples deliberately when you want to refine the profile.",
                 },
                 {
                   step: "04",
@@ -356,9 +354,9 @@ export default function AiLinkedInWriterPage() {
                   { name: "Comment Generator", desc: "On-voice replies, free sign-in required", href: "/free-tools/comment-generator" },
                   { name: "Headline Analyzer", desc: "Score your profile headline", href: "/free-tools/headline-analyzer" },
                   { name: "Profile Optimizer", desc: "Improve your LinkedIn profile", href: "/free-tools/profile-optimizer" },
-                  { name: "Viral Checker", desc: "Analyze why posts perform", href: "/free-tools/viral-checker" },
+                  { name: "Post Quality Checker", desc: "Review clarity and specificity", href: "/free-tools/viral-checker" },
                   { name: "Carousel Builder", desc: "Turn posts into carousels", href: "/free-tools/carousel-builder" },
-                  { name: "Engagement Predictor", desc: "Score before you post", href: "/free-tools/engagement-predictor" },
+                  { name: "Post Readiness Review", desc: "Review before you post", href: "/free-tools/engagement-predictor" },
                 ].map((tool) => (
                   <Link
                     key={tool.name}
@@ -402,7 +400,7 @@ export default function AiLinkedInWriterPage() {
                 Stop sounding like everyone else on LinkedIn.
               </h2>
               <p className="mb-10 text-xl leading-relaxed text-white/80">
-                Qalam is the AI writer that learns <em>your</em> voice. Start with the Free plan.
+                Qalam is the AI writer built around <em>your</em> saved voice profile. Start with the Free plan.
               </p>
               <div className="flex flex-col justify-center gap-4 sm:flex-row">
                 <Link

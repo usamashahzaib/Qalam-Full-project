@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     `Pakistan-first quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
-    title: "Qalam Pricing - AI LinkedIn Writer Plans",
+    title: "Qalam Pricing - Career Visibility Plans",
     description:
       `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
     url: `${SITE_URL}/pricing`,
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Qalam Pricing - AI LinkedIn Writer Plans",
+    title: "Qalam Pricing - Career Visibility Plans",
     description:
       `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
   },
@@ -123,7 +123,7 @@ const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Qalam",
-  description: "AI LinkedIn writing system with voice memory, hook archives, draft history, scheduling, and approval workflows.",
+  description: "Career visibility system with saved voice context, career evidence, ATS resumes, LinkedIn workflows, and approvals.",
   image: `${SITE_URL}/icon.png`,
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },

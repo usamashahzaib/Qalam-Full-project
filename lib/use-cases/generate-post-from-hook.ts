@@ -53,7 +53,7 @@ export async function generatePostFromHook(
   const format: PostFormat = FORMAT_MAP[rawFormat] || "medium"
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined
+  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, `${topic} ${hook} ${originalContent ?? ""}`).catch(() => undefined) : undefined
 
   const hasDraft = Boolean(originalContent && originalContent.length >= 20)
   const { system: genSystem, user: genUser } = hasDraft

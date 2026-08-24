@@ -25,7 +25,7 @@ const contactPageSchema = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Contact Qalam",
-  description: "Contact page for Qalam - AI LinkedIn writing system. Support, plan upgrades, and commercial questions.",
+  description: "Contact page for Qalam career visibility support, assisted payments, and commercial questions.",
   url: "https://www.byqalam.com/contact",
   mainEntity: {
     "@type": "Organization",
@@ -95,10 +95,10 @@ export default function ContactPage() {
         <div className="mx-auto max-w-[1000px]">
           <FadeUp>
             <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal">Manual upgrades</p>
-              <h2 className="mb-3 text-2xl font-bold text-zinc-900">How paid access works today</h2>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal">Assisted payments</p>
+              <h2 className="mb-3 text-2xl font-bold text-zinc-900">Pay without a card</h2>
               <ol className="space-y-2 text-sm leading-relaxed text-zinc-600">
-                <li>1. Pick the plan that matches your workload.</li>
+                <li>1. Pick the plan that matches your workload. Card checkout is available from Pricing.</li>
                 <li>2. Email the team or use the form above for payment instructions.</li>
                 <li>3. Pay using {MANUAL_UPGRADE_METHODS.join(", ")}.</li>
                 <li>4. Send the payment screenshot in the same thread.</li>

@@ -35,7 +35,7 @@ const groqResult = {
   content: "groq response",
   tokensIn: 4,
   tokensOut: 3,
-  model: "llama-3.1-8b-instant",
+  model: "openai/gpt-oss-20b",
 }
 
 describe("AI provider fallback", () => {
@@ -63,5 +63,14 @@ describe("AI provider fallback", () => {
 
     expect(mockGemini).toHaveBeenCalledTimes(4)
     expect(mockMistral).not.toHaveBeenCalled()
+  })
+
+  it("does not retry a retired model response before falling back", async () => {
+    mockGroq.mockRejectedValue(new Error("Groq API error: 404 model no longer available"))
+
+    await expect(callAi("post-generation", "system", "user", { cache: false })).resolves.toBe("gemini response")
+
+    expect(mockGroq).toHaveBeenCalledTimes(1)
+    expect(mockGemini).toHaveBeenCalledTimes(1)
   })
 })

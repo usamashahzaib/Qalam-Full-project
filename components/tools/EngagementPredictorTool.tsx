@@ -7,11 +7,10 @@ import { FadeUp } from "@/components/FadeUp"
 import { AnalyticsIcon } from "@/components/ui/qalam-icons"
 
 type Result = {
-  engagement_score: number
-  reach_prediction: string
-  confidence: string
+  content_readiness_score: number
+  assessment: string
   score_breakdown: Record<string, number>
-  why_it_will_work: string[]
+  strengths: string[]
   risks: string[]
   recommended_edits: string[]
   stronger_opening: string
@@ -64,9 +63,9 @@ export function EngagementPredictorTool() {
           <FadeUp>
             <Link href="/free-tools" className="mb-6 inline-flex text-sm text-zinc-400 hover:text-teal transition-colors">{"<- All Free Tools"}</Link>
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal"><AnalyticsIcon className="h-6 w-6" /></div>
-            <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">Engagement Predictor</h1>
+            <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">Post Readiness Review</h1>
             <p className="max-w-xl text-lg leading-relaxed text-zinc-500">
-              AI prediction based on specificity, hook quality, audience relevance, and discussion value.
+              A pre-publish quality review based on specificity, hook strength, audience relevance, and discussion value. It does not predict reach.
             </p>
           </FadeUp>
         </div>
@@ -92,7 +91,7 @@ export function EngagementPredictorTool() {
                   disabled={!text.trim() || loading}
                   className={`rounded-xl px-5 py-3 text-sm font-semibold transition-all ${text.trim() ? "bg-teal text-white hover:bg-teal-600" : "cursor-not-allowed bg-zinc-200 text-zinc-400"}`}
                 >
-                  {loading ? "Predicting..." : "Predict Engagement"}
+                  {loading ? "Reviewing..." : "Review Draft"}
                 </motion.button>
               </div>
               {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
@@ -106,9 +105,9 @@ export function EngagementPredictorTool() {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
               >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400">Engagement score</p>
-                <p className="text-5xl font-extrabold text-zinc-900">{result.engagement_score}/100</p>
-                <p className="mt-1 text-sm font-semibold text-teal">{result.reach_prediction} reach, {result.confidence} confidence</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400">Content readiness score</p>
+                <p className="text-5xl font-extrabold text-zinc-900">{result.content_readiness_score}/100</p>
+                <p className="mt-1 text-sm font-semibold capitalize text-teal">{result.assessment}</p>
                 <div className="mt-5 grid gap-2 sm:grid-cols-5">
                   {Object.entries(result.score_breakdown || {}).map(([k, v]) => (
                     <div key={k} className="rounded-xl bg-zinc-50 p-3">
@@ -117,7 +116,7 @@ export function EngagementPredictorTool() {
                     </div>
                   ))}
                 </div>
-                <Section title="Why it can work" items={result.why_it_will_work} />
+                <Section title="Strengths" items={result.strengths} />
                 <Section title="Risks" items={result.risks} />
                 <Section title="Recommended edits" items={result.recommended_edits} />
                 {result.stronger_opening ? (

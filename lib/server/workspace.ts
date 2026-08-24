@@ -176,12 +176,12 @@ export async function getCurrentWorkspace() {
   return { workspaceId: workspaceId || undefined, role: workspaceId ? "owner" : undefined }
 }
 
-export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
+export const resolveWorkspaceId = async (request: NextRequest, explicitWorkspaceId?: string): Promise<string> => {
   const ctx = await getWorkspaceSessionContext()
   const url = new URL(request.url)
-  let requestedWorkspaceId = url.searchParams.get("workspaceKey")
+  let requestedWorkspaceId = explicitWorkspaceId || url.searchParams.get("workspaceKey")
 
-  if (!requestedWorkspaceId && request.method !== "GET") {
+  if (!explicitWorkspaceId && !requestedWorkspaceId && request.method !== "GET") {
     try {
       const body = await request.clone().json()
       requestedWorkspaceId = body.workspaceKey

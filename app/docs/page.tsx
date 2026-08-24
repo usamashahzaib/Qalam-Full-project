@@ -12,7 +12,7 @@ export const metadata = buildPageMetadata({
 const SECTIONS = [
   {
     title: "Getting started",
-    body: "LinkedIn-first sign-in, workspace creation, and where drafts, archive items, and profile settings live today.",
+    body: "Email or LinkedIn sign-in, workspace creation, and where drafts, career records, archive items, and profile settings live today.",
   },
   {
     title: "Voice profile setup",

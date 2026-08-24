@@ -2,49 +2,23 @@
 
 import { useState, type ReactNode } from "react"
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
 import { QalamLogo } from "@/components/QalamLogo"
 
 export function AuthGuardian({ watching }: { watching: boolean }) {
-  const reduce = useReducedMotion()
-
   return (
-    <svg viewBox="0 0 200 200" className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28" role="img" aria-label={watching ? "Looking away while you type your password" : "Qalam guide"}>
-      <defs>
-        <radialGradient id="guardian-face" cx="38%" cy="32%" r="80%">
-          <stop offset="0%" stopColor="#1f5e57" />
-          <stop offset="100%" stopColor="#0D4A45" />
-        </radialGradient>
-      </defs>
-      <circle cx="100" cy="100" r="86" fill="#0D4A45" opacity="0.08" />
-      <circle cx="100" cy="100" r="70" fill="url(#guardian-face)" />
-      <path d="M100 40 l7 14 -7 8 -7 -8 Z" fill="#C9871F" />
-
-      <motion.g animate={{ opacity: watching ? 0 : 1 }} transition={{ duration: reduce ? 0 : 0.12 }}>
-        <circle cx="80" cy="98" r="9" fill="#fef6e8" />
-        <circle cx="120" cy="98" r="9" fill="#fef6e8" />
-        <motion.circle cx="80" cy="101" r="4.2" fill="#0D4A45" animate={{ y: watching ? 0 : [0, 1.5, 0] }} transition={reduce ? { duration: 0 } : { duration: 4, repeat: Infinity, ease: "easeInOut" }} />
-        <motion.circle cx="120" cy="101" r="4.2" fill="#0D4A45" animate={{ y: watching ? 0 : [0, 1.5, 0] }} transition={reduce ? { duration: 0 } : { duration: 4, repeat: Infinity, ease: "easeInOut" }} />
-      </motion.g>
-
-      <motion.g stroke="#fef6e8" strokeWidth="3.5" strokeLinecap="round" fill="none" animate={{ opacity: watching ? 1 : 0 }} transition={{ duration: reduce ? 0 : 0.12 }}>
-        <path d="M71 99 q9 7 18 0" />
-        <path d="M111 99 q9 7 18 0" />
-      </motion.g>
-
-      <path d="M86 120 q14 12 28 0" stroke="#fef6e8" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.9" />
-
-      <motion.g initial={false} animate={{ y: watching ? -36 : 0 }} transition={reduce ? { duration: 0 } : { type: "spring", stiffness: 320, damping: 24 }}>
-        <g transform="translate(80 96)">
-          <ellipse cx="0" cy="0" rx="15" ry="12" fill="#C9871F" />
-          <ellipse cx="0" cy="-1" rx="11" ry="8.5" fill="#f9d387" />
-        </g>
-        <g transform="translate(120 96)">
-          <ellipse cx="0" cy="0" rx="15" ry="12" fill="#C9871F" />
-          <ellipse cx="0" cy="-1" rx="11" ry="8.5" fill="#f9d387" />
-        </g>
-      </motion.g>
-    </svg>
+    <div className="flex items-center gap-4" role="img" aria-label={watching ? "Password entry is private" : "Evidence stays under your control"}>
+      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+        <svg viewBox="0 0 32 32" className="h-8 w-8 text-gold-200" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+          <path d="M16 3.5 26 7v7.5c0 6.4-4 11.3-10 14-6-2.7-10-7.6-10-14V7l10-3.5Z" />
+          {watching ? <path d="M12.5 16.5 15 19l5-6" /> : <path d="M10 17h12M16 11v12" />}
+        </svg>
+        <span className={`absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-teal ${watching ? "bg-emerald-400" : "bg-gold"}`} aria-hidden />
+      </div>
+      <div className="hidden sm:block">
+        <p className="text-[0.65rem] font-bold uppercase tracking-[0.17em] text-gold-200">{watching ? "Private entry" : "Evidence controlled"}</p>
+        <p className="mt-1 max-w-[180px] text-xs leading-5 text-white/55">{watching ? "Your password is never displayed or stored as plain text." : "You decide what is saved, changed, and released."}</p>
+      </div>
+    </div>
   )
 }
 
@@ -76,7 +50,7 @@ export function AuthShell({
         </div>
 
         <div className="relative z-10 px-10 pb-6">
-          <div className="mb-5"><AuthGuardian watching={watching} /></div>
+          <div className="mb-7"><AuthGuardian watching={watching} /></div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-200">{eyebrow}</p>
           <h2 className="max-w-md text-3xl font-extrabold leading-tight">{headline}</h2>
           <ul className="mt-6 space-y-3">

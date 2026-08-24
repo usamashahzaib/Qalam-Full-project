@@ -48,7 +48,7 @@ export const toPromptVoiceProfile = (row?: VoiceRow | null): VoiceProfile | unde
     : undefined
 }
 
-export const getWorkspaceVoiceProfile = async (workspaceId?: string | null): Promise<VoiceProfile | undefined> => {
+export const getWorkspaceVoiceProfile = async (workspaceId?: string | null, query?: string): Promise<VoiceProfile | undefined> => {
   if (!workspaceId) return undefined
   const [profileResult, examples] = await Promise.all([
     createServiceClient()
@@ -57,7 +57,7 @@ export const getWorkspaceVoiceProfile = async (workspaceId?: string | null): Pro
       .eq("workspace_id", workspaceId)
       .limit(1)
       .maybeSingle(),
-    retrieveVoiceExamples(workspaceId, undefined, 3).catch(() => [] as string[]),
+    retrieveVoiceExamples(workspaceId, query, 3).catch(() => [] as string[]),
   ])
   const base = toPromptVoiceProfile(profileResult.data)
   if (!base && !examples.length) return undefined

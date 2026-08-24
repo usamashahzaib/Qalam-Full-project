@@ -3,8 +3,8 @@ import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata, buildOrganizationSchema, SITE_URL } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "About - AI LinkedIn Writing System",
-  description: "Qalam is a serious LinkedIn publishing system: voice memory, post history, content assets, scheduling, and performance feedback for founders and agencies.",
+  title: "About Qalam - Career Visibility Built on Evidence",
+  description: "Qalam connects career evidence, LinkedIn positioning, professional content, ATS resumes, and target roles in one controlled workspace.",
   path: "/about",
   keywords: ["about Qalam", "Qalam AI writer", "LinkedIn writing system", "Qalam product principles"],
 })
@@ -13,7 +13,7 @@ const aboutSchema = {
   "@context": "https://schema.org",
   "@type": "AboutPage",
   name: "About Qalam",
-  description: "Qalam is an AI LinkedIn writing system built around persistent voice memory, draft history, and compounding content capital for serious professionals.",
+  description: "Qalam is a career visibility system built around controlled evidence, saved voice context, draft history, and practical career assets.",
   url: `${SITE_URL}/about`,
   mainEntity: buildOrganizationSchema(),
 }
@@ -24,8 +24,8 @@ const PRINCIPLES = [
     desc: "If a feature helps users publish more but sound less like themselves, it fails the test.",
   },
   {
-    title: "Retention through memory",
-    desc: "The product should improve because it remembers your edits, drafts, approved posts, and outcomes.",
+    title: "Continuity through context",
+    desc: "The product should keep evidence, saved voice examples, drafts, and outcomes connected without pretending every action trains a model.",
   },
   {
     title: "No fake intelligence",
@@ -56,13 +56,13 @@ export default function AboutPage() {
               About Qalam
             </span>
             <h1 className="mb-6 text-5xl font-extrabold leading-tight text-white sm:text-6xl">
-              A publishing system for people who need
+              A career system for people who need
               {" "}
               <span className="gold-underline" style={{ color: "oklch(0.85 0.05 85)" }}>authority, not filler.</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg leading-relaxed text-white/65">
-              Qalam is being built as a serious LinkedIn publishing desk: voice memory, post
-              history, content assets, scheduling, and performance feedback in one system.
+              Qalam is being built as a serious career visibility desk: evidence, saved voice context,
+              LinkedIn content, ATS resumes, applications, and target roles in one system.
             </p>
           </FadeUp>
         </div>
@@ -75,16 +75,16 @@ export default function AboutPage() {
               <h2 className="mb-4 text-2xl font-bold text-white">What this product is trying to solve</h2>
               <div className="space-y-4 leading-relaxed text-white/60">
                 <p>
-                  Most AI writing tools reset every session. They generate a draft, but they do not
-                  accumulate knowledge about the writer behind it.
+                  Most AI writing tools start with an isolated prompt. They can generate a draft, but
+                  they do not maintain a defensible career record behind it.
                 </p>
                 <p>
-                  Qalam is designed around a different idea: each approved post, edit, saved asset,
-                  and publishing outcome should make the next session more useful than the last one.
+                  Qalam is designed around a different idea: user-supplied evidence, saved voice
+                  examples, assets, and outcomes should remain available as controlled context.
                 </p>
                 <p>
                   That is the product direction. Not chat for chat&apos;s sake. Not generic content
-                  volume. A system that becomes harder to replace the longer someone uses it.
+                  volume. A system that keeps a professional story accurate across every surface.
                 </p>
               </div>
             </div>

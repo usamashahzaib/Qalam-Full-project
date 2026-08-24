@@ -58,13 +58,6 @@ export default function LoginPage() {
       ])
 
       if (result?.error || result?.ok === false) {
-        const checkRes = await fetch(`/api/auth/check-provider?email=${encodeURIComponent(email.trim().toLowerCase())}`)
-          .then(r => r.ok ? r.json() : null).catch(() => null)
-        if (checkRes?.provider === "linkedin") {
-          setSocialLoading("linkedin")
-          await signIn("linkedin", { callbackUrl })
-          return
-        }
         setFormError("Incorrect email or password.")
         setSubmitting(false)
       } else {

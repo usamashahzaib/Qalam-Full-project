@@ -51,30 +51,15 @@ export async function POST(req: NextRequest) {
   }
 
   const newHash = await hashPassword(newPassword)
-  const { error: updateErr } = await supabase
-    .from("users")
-    .update({ password_hash: newHash, updated_at: new Date().toISOString() })
-    .eq("id", userId!)
+  const { data: updated, error: updateErr } = await supabase.rpc("set_user_password_and_revoke", {
+    target_user_id: userId!,
+    new_password_hash: newHash,
+  })
 
-  if (updateErr) {
-    log.error("change-password.update_failed", { userId: userId!, error: updateErr.message })
+  if (updateErr || !updated) {
+    log.error("change-password.update_failed", { userId: userId!, error: updateErr?.message || "no user updated" })
     return NextResponse.json({ error: "Failed to update password." }, { status: 500 })
   }
-
-  // Increment password_version to invalidate all existing sessions.
-  // Requires: ALTER TABLE users ADD COLUMN password_version INTEGER DEFAULT 0 NOT NULL
-  try {
-    const { data: current } = await supabase
-      .from("users")
-      .select("password_version")
-      .eq("id", userId!)
-      .maybeSingle()
-    const currentVersion = (current as { password_version?: number } | null)?.password_version ?? 0
-    await supabase
-      .from("users")
-      .update({ password_version: currentVersion + 1 })
-      .eq("id", userId!)
-  } catch { /* password_version column not yet migrated */ }
 
   return NextResponse.json({ success: true, message: "Password updated successfully." })
 }

@@ -3,7 +3,6 @@ import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
-import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
 import { SITE_NAME } from "@/lib/seo"
@@ -190,14 +189,9 @@ export default function RootLayout({
   const app = (
     <SessionProvider>
       <ContentProtection />
-      <GridGlowBackground
-        glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-        backgroundColor="#f7f3ea"
-        gridColor="rgba(13,74,69,0.07)"
-        glowCount={4}
-      >
+      <div className="min-h-screen w-full bg-[#f7f3ea]">
         <NavWrapper>{children}</NavWrapper>
-      </GridGlowBackground>
+      </div>
     </SessionProvider>
   )
 

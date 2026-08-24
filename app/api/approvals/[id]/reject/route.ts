@@ -20,7 +20,7 @@ export async function POST(
 
   const { data: approval } = await supabase
     .from("approvals")
-    .select("id, post_id, requester_id, reviewer_email, post_title, status, review_token_hash, review_token_expires_at")
+    .select("id, post_id, workspace_id, requester_id, reviewer_email, post_title, status, review_token_hash, review_token_expires_at")
     .eq("id", id)
     .maybeSingle()
 
@@ -63,6 +63,7 @@ export async function POST(
       .from("posts")
       .update({ status: "rejected", updated_at: new Date().toISOString() })
       .eq("id", approval.post_id)
+      .eq("workspace_id", approval.workspace_id)
       .eq("status", "pending_approval")
       .then(undefined, () => undefined)
   }

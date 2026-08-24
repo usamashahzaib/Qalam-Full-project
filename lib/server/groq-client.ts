@@ -2,7 +2,7 @@ import "server-only"
 
 import { callOpenAiCompatible } from "./openai-compatible-client"
 
-export type GroqModel = "llama-3.1-8b-instant" | "llama-3.3-70b-versatile"
+export type GroqModel = "openai/gpt-oss-20b" | "openai/gpt-oss-120b"
 
 export async function callGroq(
   systemPrompt: string,
@@ -10,7 +10,7 @@ export async function callGroq(
   options: { json?: boolean; temperature?: number; maxTokens?: number; model?: GroqModel } = {},
   timeout = 15000
 ) {
-  const { json = false, temperature = 0.7, maxTokens = 2048, model = "llama-3.1-8b-instant" } = options
+  const { json = false, temperature = 0.7, maxTokens = 2048, model = "openai/gpt-oss-20b" } = options
   return callOpenAiCompatible({
     endpoint: "https://api.groq.com/openai/v1/chat/completions",
     apiKey: process.env.GROQ_API_KEY,

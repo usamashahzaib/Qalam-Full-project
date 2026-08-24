@@ -234,7 +234,7 @@ export function Navbar() {
   // announcement on top of it doubles up on urgency messaging.
   // Gated on announcementReady so repeat visitors (who already dismissed it) never
   // see the banner flash in and animate-collapse before the localStorage check runs.
-  const showAnnouncement = announcementReady && announcementVisible && pathname !== "/pricing"
+  const showAnnouncement = announcementReady && announcementVisible && pathname !== "/" && pathname !== "/pricing"
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -529,4 +529,3 @@ export function Navbar() {
     </div>
   )
 }
-

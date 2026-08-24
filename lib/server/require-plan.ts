@@ -33,7 +33,8 @@ type PlanCheckResult =
  */
 export const requirePlan = async (
   request: NextRequest,
-  requiredPlan: PlanTier
+  requiredPlan: PlanTier,
+  explicitWorkspaceId?: string
 ): Promise<PlanCheckResult> => {
   const userId = await requireAuth().catch(() => null)
   if (!userId) {
@@ -49,7 +50,7 @@ export const requirePlan = async (
 
   let workspaceId: string
   try {
-    workspaceId = await resolveWorkspaceId(request)
+    workspaceId = await resolveWorkspaceId(request, explicitWorkspaceId)
   } catch (err) {
     const msg = (err as Error).message || "server_error"
     const status = (msg === "auth_required" || msg === "Unauthorized") ? 401 : msg === "unauthorized_workspace" ? 403 : 500
