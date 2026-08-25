@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { motion, useReducedMotion } from "framer-motion"
 import { analyzeResume, MIN_RESUME_CHARS, RESUME_HANDOFF_KEY, type SignalState } from "@/lib/resume-signals"
 import { trackMarketingEvent } from "@/lib/marketing-events"
 
@@ -29,7 +28,6 @@ const STATE_LABEL: Record<SignalState, string> = {
 
 export function HeroChecker() {
   const router = useRouter()
-  const prefersReducedMotion = useReducedMotion()
   const [resumeText, setResumeText] = useState("")
   const [sourceName, setSourceName] = useState("")
   const [pasting, setPasting] = useState(false)
@@ -178,12 +176,7 @@ export function HeroChecker() {
           )}
         </div>
       ) : (
-        <motion.div
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 28 }}
-          className="qlx-panel overflow-hidden rounded-2xl"
-        >
+        <div className="qlx-panel qlx-popover-enter overflow-hidden rounded-2xl">
           <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">
@@ -204,12 +197,10 @@ export function HeroChecker() {
 
           <ul className="divide-y divide-white/8">
             {read.signals.map((signal, index) => (
-              <motion.li
+              <li
                 key={signal.key}
-                initial={prefersReducedMotion ? false : { opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: prefersReducedMotion ? 0 : index * 0.05, duration: 0.25 }}
-                className="flex items-center justify-between gap-4 px-5 py-3"
+                className="qlx-signal-enter flex items-center justify-between gap-4 px-5 py-3"
+                style={{ animationDelay: `${index * 50}ms` }}
               >
                 <span className="flex min-w-0 items-center gap-3">
                   <span
@@ -223,7 +214,7 @@ export function HeroChecker() {
                   <span className="sr-only">{STATE_LABEL[signal.state]}. </span>
                   {signal.detail}
                 </span>
-              </motion.li>
+              </li>
             ))}
           </ul>
 
@@ -240,7 +231,7 @@ export function HeroChecker() {
               and clarity.
             </p>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   )

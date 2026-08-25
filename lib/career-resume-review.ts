@@ -133,3 +133,29 @@ export function normalizeResumeReview(value: unknown): ResumeReviewResult | null
     disclaimer: "Independent Qalam diagnostic, not an employer ATS result or hiring guarantee.",
   }
 }
+
+/**
+ * Strict client-side parse of an ATS checker API response.
+ *
+ * `normalizeResumeReview` is deliberately lenient because it repairs model
+ * JSON on the server. The browser is validating a different contract: that the
+ * response really is a completed review. An error envelope or a truncated body
+ * must be rejected here so it can never render as a zero-score review or emit
+ * an `assessment_complete` event with a band inferred from a missing score.
+ */
+export function parseResumeReviewResponse(value: unknown): ResumeReviewResult | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const source = value as Record<string, unknown>
+  if (typeof source.error === "string") return null
+  if (typeof source.overall_score !== "number" || !Number.isFinite(source.overall_score)) return null
+
+  const scores = source.scores
+  if (!scores || typeof scores !== "object" || Array.isArray(scores)) return null
+  const scoreRecord = scores as Record<string, unknown>
+  const everyScorePresent = RESUME_REVIEW_SCORE_KEYS.every(
+    (key) => typeof scoreRecord[key] === "number" && Number.isFinite(scoreRecord[key] as number)
+  )
+  if (!everyScorePresent) return null
+
+  return normalizeResumeReview(source)
+}

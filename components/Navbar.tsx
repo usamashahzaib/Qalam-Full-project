@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
 import { ChevronRightIcon, ChevronDownIcon } from "@/components/ui/qalam-icons"
 import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { resolvePublicHref } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
-import { MORPH_SPRING } from "@/lib/motion"
 
 const PRODUCT_LINKS = alphabetical([
   { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
@@ -85,24 +83,15 @@ function NavDropdown({
         className="flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors qlx-link"
       >
         {label}
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.18 }}
-          className="inline-flex"
-        >
+        <span className={`inline-flex transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
           <ChevronDownIcon className="h-3.5 w-3.5 text-[var(--nav-fg-mute)]" />
-        </motion.span>
+        </span>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
+      {open && (
+          <div
             id={panelId}
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={MORPH_SPRING}
-            className={`qlx-panel absolute left-0 top-full z-50 mt-2 overflow-hidden rounded-2xl ${links.length > 7 ? "w-[34rem]" : "w-64"}`}
+            className={`qlx-panel qlx-popover-enter absolute left-0 top-full z-50 mt-2 overflow-hidden rounded-2xl ${links.length > 7 ? "w-[34rem]" : "w-64"}`}
           >
             <div className={`p-2 ${links.length > 7 ? "grid grid-cols-2" : ""}`}>
               {links.map((link) => (
@@ -117,9 +106,8 @@ function NavDropdown({
                 </Link>
               ))}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </div>
   )
 }
@@ -151,23 +139,14 @@ function UserMenu({ session }: { session: SessionData }) {
         ) : (
           <UserAvatar name={session.user?.name || "U"} imageUrl={null} />
         )}
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.18 }}
-          className="inline-flex"
-        >
+        <span className={`inline-flex transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
           <ChevronDownIcon className="h-3.5 w-3.5 text-[var(--nav-fg-mute)]" />
-        </motion.span>
+        </span>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={MORPH_SPRING}
-            className="qlx-panel absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl"
+      {open && (
+          <div
+            className="qlx-panel qlx-popover-enter absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl"
           >
             <div className="border-b border-white/10 px-4 py-3">
               <p className="truncate text-sm font-semibold text-white/90">{session.user?.name || "Account"}</p>
@@ -197,9 +176,8 @@ function UserMenu({ session }: { session: SessionData }) {
                 Log out
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
     </div>
   )
 }
@@ -213,6 +191,7 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const pathname = usePathname()
   const navRef = useRef<HTMLElement>(null)
+  const mobileToggleRef = useRef<HTMLButtonElement>(null)
   const shellRef = useRef<HTMLDivElement>(null)
   // The navbar reads dark only while a dark section is actually behind it.
   // This replaced a hardcoded allowlist of routes, which silently mismatched
@@ -251,6 +230,21 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
+
+  // The mobile menu covers the page, so Escape has to dismiss it the way the
+  // desktop dropdowns do. Focus returns to the toggle rather than being
+  // dropped at the top of the document.
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return
+      setMobileOpen(false)
+      setMobileSection(null)
+      mobileToggleRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [mobileOpen])
 
   // Publish the header's real height so anchor targets can clear it. A
   // ResizeObserver rather than a one-off measurement because the banner
@@ -316,14 +310,8 @@ export function Navbar() {
 
   return (
     <div ref={shellRef} className="qlx fixed left-0 right-0 top-0 z-50 flex flex-col">
-      <AnimatePresence>
-        {showAnnouncement && (
-          <motion.div
-            initial={{ height: 44, opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden bg-[#1f5e57]"
-          >
+      {showAnnouncement && (
+          <div className="overflow-hidden bg-[#1f5e57]">
             <div className="relative flex h-11 items-center justify-center gap-2 px-12 text-sm font-medium text-white sm:gap-3 sm:px-4">
               <span className="hidden h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 sm:inline-flex">
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
@@ -348,9 +336,8 @@ export function Navbar() {
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
 
       <nav
         ref={navRef}
@@ -408,27 +395,23 @@ export function Navbar() {
           </div>
 
           <button
+            ref={mobileToggleRef}
             className={`flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg p-2 transition-colors lg:hidden hover:bg-[var(--nav-hover-bg)]`}
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
             aria-controls="mobile-navigation"
           >
-            <motion.span animate={mobileOpen ? { rotate: 45, y: 8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)]`} />
-            <motion.span animate={mobileOpen ? { opacity: 0 } : { opacity: 1 }} transition={{ duration: 0.15 }} className={`block h-0.5 w-5 rounded-full bg-[var(--nav-fg-strong)]`} />
-            <motion.span animate={mobileOpen ? { rotate: -45, y: -8 } : { rotate: 0, y: 0 }} transition={{ duration: 0.2 }} className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)]`} />
+            <span className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)] transition-transform duration-200 ${mobileOpen ? "translate-y-2 rotate-45" : ""}`} />
+            <span className={`block h-0.5 w-5 rounded-full bg-[var(--nav-fg-strong)] transition-opacity duration-150 ${mobileOpen ? "opacity-0" : ""}`} />
+            <span className={`block h-0.5 w-5 origin-center rounded-full bg-[var(--nav-fg-strong)] transition-transform duration-200 ${mobileOpen ? "-translate-y-2 -rotate-45" : ""}`} />
           </button>
         </div>
 
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
+        {mobileOpen && (
+            <div
               id="mobile-navigation"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="overflow-hidden border-t border-white/10 bg-[#242a28] lg:hidden"
+              className="qlx-mobile-menu-enter overflow-hidden border-t border-white/10 bg-[#242a28] lg:hidden"
             >
               <div className="flex flex-col gap-1 px-6 py-4">
                 {/* Product section */}
@@ -439,21 +422,19 @@ export function Navbar() {
                   className="qlx-link flex min-h-11 items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium"
                 >
                   Product
-                  <motion.span animate={{ rotate: mobileSection === "product" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
+                  <span className={`inline-flex transition-transform duration-200 ${mobileSection === "product" ? "rotate-180" : ""}`}>
                     <ChevronDownIcon className="h-3.5 w-3.5" />
-                  </motion.span>
+                  </span>
                 </button>
-                <AnimatePresence>
-                  {mobileSection === "product" && (
-                    <motion.div id="mobile-product-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
+                {mobileSection === "product" && (
+                    <div id="mobile-product-links" className="qlx-mobile-section-enter overflow-hidden pl-4">
                       {PRODUCT_LINKS.map((link) => (
                         <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-white/60 hover:text-[oklch(0.88_0.04_90)]">
                           {link.label}
                         </Link>
                       ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                )}
 
                 {/* Use Cases section */}
                 <button
@@ -463,21 +444,19 @@ export function Navbar() {
                   className="qlx-link flex min-h-11 items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium"
                 >
                   Use Cases
-                  <motion.span animate={{ rotate: mobileSection === "use-cases" ? 180 : 0 }} transition={{ duration: 0.18 }} className="inline-flex">
+                  <span className={`inline-flex transition-transform duration-200 ${mobileSection === "use-cases" ? "rotate-180" : ""}`}>
                     <ChevronDownIcon className="h-3.5 w-3.5" />
-                  </motion.span>
+                  </span>
                 </button>
-                <AnimatePresence>
-                  {mobileSection === "use-cases" && (
-                    <motion.div id="mobile-use-case-links" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden pl-4">
+                {mobileSection === "use-cases" && (
+                    <div id="mobile-use-case-links" className="qlx-mobile-section-enter overflow-hidden pl-4">
                       {USE_CASE_LINKS.map((link) => (
                         <Link key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-white/60 hover:text-[oklch(0.88_0.04_90)]">
                           {link.label}
                         </Link>
                       ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                )}
 
                 {STATIC_LINKS.map((link) => (
                   <Link key={link.label} href={link.href} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium">
@@ -522,9 +501,8 @@ export function Navbar() {
                   )}
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+        )}
       </nav>
     </div>
   )

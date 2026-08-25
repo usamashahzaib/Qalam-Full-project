@@ -46,7 +46,7 @@ export function AuthShell({
       <aside className="relative hidden overflow-hidden bg-teal text-white lg:flex lg:flex-col lg:justify-between">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #ffffff 0, transparent 45%), radial-gradient(circle at 80% 70%, #C9871F 0, transparent 40%)" }} />
         <div className="relative z-10 p-10">
-          <QalamLogo href="/" size={30} textClassName="text-xl font-extrabold text-white" containerClassName="flex items-center gap-2" />
+          <QalamLogo href="/" size={30} textClassName="text-xl font-extrabold text-white" containerClassName="flex min-h-11 items-center gap-2" />
         </div>
 
         <div className="relative z-10 px-10 pb-6">
@@ -79,7 +79,7 @@ export function AuthShell({
         <div className="app-content w-full max-w-sm animate-[fadeInUp_0.5s_ease-out]">
           <div className="mb-5 flex flex-col items-center gap-2 lg:hidden">
             <AuthGuardian watching={watching} />
-            <QalamLogo href="/" size={26} textClassName="text-lg font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
+            <QalamLogo href="/" size={26} textClassName="text-lg font-extrabold text-zinc-900" containerClassName="flex min-h-11 items-center gap-2" />
           </div>
           {children}
         </div>

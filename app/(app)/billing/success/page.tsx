@@ -35,8 +35,10 @@ export default function BillingSuccessPage() {
 
   useEffect(() => {
     if (state.phase !== "activated" || conversionTracked.current) return
+    const confirmedPlan = state.targetPlan || plan
+    if (confirmedPlan !== "Solo" && confirmedPlan !== "Pro" && confirmedPlan !== "Agency") return
     conversionTracked.current = true
-    trackMarketingEvent("paid_conversion", { plan: state.targetPlan || plan || "unknown" })
+    trackMarketingEvent("paid_conversion", { plan: confirmedPlan, confirmation: "server_confirmed" })
   }, [plan, state.phase, state.targetPlan])
 
   return (

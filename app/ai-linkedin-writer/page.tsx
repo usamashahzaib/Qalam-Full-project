@@ -297,7 +297,7 @@ export default function AiLinkedInWriterPage() {
                 See why Qalam wins for LinkedIn-specific publishing workflows.
               </p>
             </FadeUp>
-            <div className="overflow-hidden rounded-2xl border border-zinc-200 shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-zinc-200 shadow-sm">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-zinc-100">
@@ -430,28 +430,28 @@ export default function AiLinkedInWriterPage() {
               Related resources
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Link href="/product/post-writer" className="text-sm text-teal hover:underline">
+              <Link href="/product/post-writer" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 AI Post Writer →
               </Link>
-              <Link href="/product/voice-profile" className="text-sm text-teal hover:underline">
+              <Link href="/product/voice-profile" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 Voice Profile →
               </Link>
-              <Link href="/use-cases/founders" className="text-sm text-teal hover:underline">
+              <Link href="/use-cases/founders" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 LinkedIn for Founders →
               </Link>
-              <Link href="/use-cases/consultants" className="text-sm text-teal hover:underline">
+              <Link href="/use-cases/consultants" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 LinkedIn for Consultants →
               </Link>
-              <Link href="/blog/train-an-ai-writing-system-without-losing-your-voice" className="text-sm text-teal hover:underline">
+              <Link href="/blog/train-an-ai-writing-system-without-losing-your-voice" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 Train AI on Your Voice →
               </Link>
-              <Link href="/blog/the-three-habits-that-separate-linkedin-authority-from-linkedin-noise" className="text-sm text-teal hover:underline">
+              <Link href="/blog/the-three-habits-that-separate-linkedin-authority-from-linkedin-noise" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 LinkedIn Authority Habits →
               </Link>
-              <Link href="/pricing" className="text-sm text-teal hover:underline">
+              <Link href="/pricing" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 Pricing →
               </Link>
-              <Link href="/free-tools" className="text-sm text-teal hover:underline">
+              <Link href="/free-tools" className="inline-flex min-h-11 items-center text-sm text-teal hover:underline">
                 All Free Tools →
               </Link>
             </div>

@@ -49,9 +49,11 @@ describe("analytics tags", () => {
     const src = readFileSync(join(ROOT, "lib", "csp-inline-scripts.ts"), "utf-8")
 
     expect(src).toContain('process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || ""')
-    // Renders nothing outside production, and nothing without a valid ID.
-    expect(src).toContain('process.env.NODE_ENV === "production"')
-    expect(src).toContain("isValidGaMeasurementId(GA_MEASUREMENT_ID)")
+    expect(src).toContain('process.env.NEXT_PUBLIC_GA_PREVIEW_MEASUREMENT_ID')
+    // Environment tier decides which ID applies. Neither fires without a valid ID.
+    expect(src).toContain('deploymentEnv === "production"')
+    expect(src).toContain('deploymentEnv === "preview"')
+    expect(src).toContain("isValidGaMeasurementId")
   })
 
   it("ships no real measurement ID in .env.example", () => {

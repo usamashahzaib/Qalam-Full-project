@@ -48,3 +48,14 @@ Jakarta is the primary interface and body family. Cormorant is reserved for shor
 | Primary CTA | hover lift, focus ring, press feedback, reduced-motion safe | preserve | active |
 | Capability tabs | click and keyboard arrows update preview | preserve | active |
 | Scroll reveals | run once and respect reduced motion | verify in browser tests | active |
+| ATS assessment | submit locks, progress copy changes, result scores appear together | preserve input on error and announce completion | active |
+| Writer generation | immediate busy state followed by draft and score feedback | keep motion under 250 milliseconds and respect reduced motion | active |
+| Contact link | visible underline and 44 pixel mobile target | preserve | active |
+
+## Motion Principles
+
+1. Motion explains state change, hierarchy, or continuity. Decorative motion is omitted.
+2. Direct manipulation feedback begins immediately. Enter and exit transitions stay between 120 and 250 milliseconds.
+3. Use opacity and transforms for routine transitions. Avoid layout animation on text-heavy pages.
+4. Reduced-motion users receive the same information without travel, parallax, or repeated reveal effects.
+5. The signature moment is a completed proof artifact appearing with its score and next action, not a generic celebration.

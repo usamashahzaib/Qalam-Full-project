@@ -1,11 +1,9 @@
 "use client"
 
 import { useId, useState } from "react"
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 
 export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
   const [open, setOpen] = useState<number | null>(0)
-  const prefersReducedMotion = useReducedMotion()
   const baseId = useId()
 
   return (
@@ -30,37 +28,27 @@ export function FaqAccordion({ items }: { items: { q: string; a: string }[] }) {
                     at whatever weight and optical centre the font happened to
                     give it, and collapsing the vertical bar is a truer
                     plus-to-minus than rotating a plus 45 degrees into an x. */}
-                <motion.span
+                <span
                   aria-hidden="true"
-                  animate={{ rotate: isOpen ? 180 : 0 }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-zinc-500"
+                  className={`relative ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-zinc-500 transition-transform duration-300 motion-reduce:transition-none ${isOpen ? "rotate-180" : ""}`}
                 >
                   <span className="absolute h-0.5 w-3 rounded-full bg-current" />
-                  <motion.span
-                    className="absolute h-3 w-0.5 rounded-full bg-current"
-                    animate={{ scaleY: isOpen ? 0 : 1 }}
-                    transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
+                  <span
+                    className={`absolute h-3 w-0.5 rounded-full bg-current transition-transform duration-300 motion-reduce:transition-none ${isOpen ? "scale-y-0" : "scale-y-100"}`}
                   />
-                </motion.span>
+                </span>
               </button>
             </h3>
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.div
+            {isOpen && (
+                <div
                   id={panelId}
                   role="region"
                   aria-labelledby={buttonId}
-                  initial={prefersReducedMotion ? false : { height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={prefersReducedMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                  transition={{ duration: prefersReducedMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
-                  className="overflow-hidden"
+                  className="qlx-mobile-section-enter overflow-hidden"
                 >
                   <p className="t-body px-6 pb-5 text-zinc-600">{item.a}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+            )}
           </div>
         )
       })}

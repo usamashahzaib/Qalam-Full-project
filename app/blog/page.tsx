@@ -86,7 +86,7 @@ export default function BlogPage() {
                     <p className="flex-1 text-sm leading-relaxed text-zinc-500">{post.excerpt}</p>
                     <div className="mt-5 flex items-center justify-between gap-4">
                       <p className="text-xs text-zinc-400">{new Date(post.datePublished).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
-                      <Link href={`/blog/${post.slug}`} className="text-sm font-semibold text-teal transition-colors hover:text-teal-600">
+                      <Link href={`/blog/${post.slug}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-teal transition-colors hover:text-teal-600">
                         Read article
                       </Link>
                     </div>

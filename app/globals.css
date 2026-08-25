@@ -406,7 +406,7 @@ input, textarea, select {
    finished underline. */
 .gold-underline {
   position: relative;
-  white-space: nowrap;
+  white-space: normal;
 }
 .gold-underline::after {
   content: "";
@@ -733,6 +733,40 @@ input, textarea, select {
 
 .qlx-surface { background: var(--qlx-surface); }
 .qlx-raised { background: var(--qlx-surface-raised); box-shadow: var(--qlx-elevation-2); }
+
+@keyframes qlx-popover-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes qlx-mobile-menu-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qlx-mobile-section-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qlx-signal-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.qlx-popover-enter { animation: qlx-popover-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.qlx-mobile-menu-enter { animation: qlx-mobile-menu-enter 220ms ease-out; }
+.qlx-mobile-section-enter { animation: qlx-mobile-section-enter 180ms ease-out; }
+.qlx-signal-enter { animation: qlx-signal-enter 250ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qlx-popover-enter,
+  .qlx-mobile-menu-enter,
+  .qlx-mobile-section-enter {
+    animation: none;
+  }
+  .qlx-signal-enter { animation: none; }
+}
 
 /* Navbar glass. Two rules, in this order, for two reasons that are both
    easy to get wrong and were both wrong here.

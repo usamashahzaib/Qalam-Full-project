@@ -34,6 +34,10 @@ vi.mock("@/lib/server/roles", async (importOriginal) => {
 const { createScopedClient } = vi.hoisted(() => ({ createScopedClient: vi.fn() }))
 vi.mock("@/lib/server/supabase-rest", () => ({ createScopedClient }))
 
+// PDF generation is covered separately. Keeping pdf-lib out of this wiring
+// test avoids a multi-second cold transform when shuffled workers are busy.
+vi.mock("@/lib/server/carousel-pdf", () => ({ buildCarouselPdf: vi.fn() }))
+
 beforeEach(() => {
   vi.clearAllMocks()
   requireAuthApi.mockResolvedValue({

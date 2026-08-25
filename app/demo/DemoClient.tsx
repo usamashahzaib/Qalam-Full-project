@@ -119,7 +119,7 @@ function DemoBanner() {
           <p className="text-sm text-zinc-600">
             Signed in as <span className="font-semibold text-teal">{user.name || user.email}</span>. This is the demo workspace.
           </p>
-          <Link href={`${APP_URL}/dashboard`} className="rounded-lg bg-teal px-4 py-2 text-center text-xs font-semibold text-white hover:bg-teal-600">
+          <Link href={`${APP_URL}/dashboard`} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-teal px-4 py-2 text-center text-xs font-semibold text-white hover:bg-teal-600">
             Go to my workspace
           </Link>
         </div>
@@ -134,10 +134,10 @@ function DemoBanner() {
           <span className="font-semibold text-zinc-900">You are in demo mode.</span> Nothing here is saved until you start your account.
         </p>
         <div className="flex items-center gap-3">
-          <button onClick={() => openPanel("sign-in")} className="text-sm font-semibold text-teal hover:underline">
+          <button onClick={() => openPanel("sign-in")} className="inline-flex min-h-11 items-center text-sm font-semibold text-teal hover:underline">
             Log in
           </button>
-          <button onClick={() => openPanel("sign-up")} className="rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600">
+          <button onClick={() => openPanel("sign-up")} className="inline-flex min-h-11 items-center rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600">
             Start with LinkedIn
           </button>
         </div>
@@ -185,7 +185,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
             </div>
           ))}
         </div>
-        <button onClick={onStart} className="mt-5 w-full rounded-xl border border-teal/25 py-2.5 text-xs font-semibold text-teal hover:bg-teal/5">
+        <button onClick={onStart} className="mt-5 flex min-h-11 w-full items-center justify-center rounded-xl border border-teal/25 py-2.5 text-xs font-semibold text-teal hover:bg-teal/5">
           Train my real voice
         </button>
       </aside>
@@ -223,7 +223,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
             <label htmlFor="demo-draft" className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Draft</label>
             <div className="flex items-center gap-3">
               <span className="text-xs text-zinc-400">{draft.length} / 3000</span>
-              <button onClick={regenerate} disabled={generating} className="rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-60">
+              <button onClick={regenerate} disabled={generating} className="inline-flex min-h-11 items-center rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-60">
                 {generating ? "Writing..." : "Regenerate"}
               </button>
             </div>
@@ -238,7 +238,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
           />
           <div className="mt-3 flex items-center justify-between gap-4">
             <p className="text-xs text-zinc-400">Edit freely. This is your draft.</p>
-            <button onClick={onStart} className="text-xs font-semibold text-teal hover:underline">
+            <button onClick={onStart} className="inline-flex min-h-11 items-center text-xs font-semibold text-teal hover:underline">
               Save and schedule this post
             </button>
           </div>
@@ -407,7 +407,7 @@ export function DemoClient({ initialTab }: { initialTab: Tab }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              className={`inline-flex min-h-11 items-center whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                 activeTab === tab.id ? "bg-teal text-white" : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               }`}
             >
@@ -436,11 +436,11 @@ export function DemoClient({ initialTab }: { initialTab: Tab }) {
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
               onClick={handleStart}
-              className="press rounded-xl bg-teal px-6 py-3 text-sm font-bold text-white shadow-[0_4px_24px_rgba(13,74,69,0.25)] hover:bg-teal-600"
+              className="press inline-flex min-h-11 items-center rounded-xl bg-teal px-6 py-3 text-sm font-bold text-white shadow-[0_4px_24px_rgba(13,74,69,0.25)] hover:bg-teal-600"
             >
               Start with LinkedIn
             </button>
-            <Link href="/pricing" className="text-sm font-semibold text-zinc-500 hover:text-zinc-800">
+            <Link href="/pricing" className="inline-flex min-h-11 items-center text-sm font-semibold text-zinc-500 hover:text-zinc-800">
               See pricing
             </Link>
           </div>

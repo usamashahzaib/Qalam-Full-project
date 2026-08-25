@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "prepare": "node scripts/setup-git-hooks.mjs",
-    "prebuild": "node scripts/check-career-addon-readiness.mjs",
+    "prebuild": "node scripts/check-career-addon-readiness.mjs && node scripts/check-analytics-readiness.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -12,10 +12,12 @@
     "check:dashes": "node scripts/check-no-dashes.mjs",
     "check:rls": "node scripts/check-rls.mjs",
     "check:career-addons": "node scripts/check-career-addon-readiness.mjs",
+    "check:analytics": "node scripts/check-analytics-readiness.mjs",
     "package:extension": "node scripts/package-extension.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:reliability": "node scripts/run-vitest-reliability.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.67.0",

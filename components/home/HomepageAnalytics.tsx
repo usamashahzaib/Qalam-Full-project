@@ -2,17 +2,19 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
-import { trackMarketingEvent, type MarketingEventName } from "@/lib/marketing-events"
+import { trackMarketingEvent, type MarketingEventMap } from "@/lib/marketing-events"
 
 export function HomepageAnalytics() {
   useEffect(() => {
-    trackMarketingEvent("homepage_view")
+    trackMarketingEvent("homepage_view", {})
   }, [])
 
   return null
 }
 
-export function TrackedHomepageLink({
+type TrackedHomepageEvent = "homepage_primary_cta_click" | "resume_check_start"
+
+export function TrackedHomepageLink<E extends TrackedHomepageEvent>({
   href,
   event,
   parameters,
@@ -20,8 +22,8 @@ export function TrackedHomepageLink({
   children,
 }: {
   href: string
-  event: MarketingEventName
-  parameters: Record<string, unknown>
+  event: E
+  parameters: MarketingEventMap[E]
   className: string
   children: React.ReactNode
 }) {

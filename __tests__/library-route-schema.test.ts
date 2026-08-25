@@ -1,10 +1,6 @@
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
 import { createFakeScopedClient, ok } from "./mocks/supabase-client"
-
-const route = readFileSync(resolve(process.cwd(), "app/api/library/route.ts"), "utf8")
 
 const { requirePlan } = vi.hoisted(() => ({ requirePlan: vi.fn() }))
 vi.mock("@/lib/server/require-plan", () => ({ requirePlan }))

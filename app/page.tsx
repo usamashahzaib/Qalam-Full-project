@@ -412,7 +412,7 @@ export default function HomePage() {
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Questions</p>
             <h2 className="t-h2 mt-4 text-teal">What a careful buyer should ask.</h2>
             <p className="t-body mt-5 text-zinc-600">
-              Need a direct answer? <a href={`mailto:${SUPPORT_EMAIL}`} className="font-bold text-teal underline underline-offset-4">Email us</a>.
+              Need a direct answer? <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center font-bold text-teal underline underline-offset-4">Email us</a>.
             </p>
           </div>
           <FaqAccordion items={focusedFaq} />

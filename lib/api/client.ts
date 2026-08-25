@@ -89,6 +89,7 @@ export type GenerateHooksInput = { topic: string; role?: WriterRole | string; go
 export type GenerateHooksOutput = { hooks: HookItem[] }
 
 export type GeneratePostInput = {
+  idempotencyKey: string
   topic: string
   hook: string
   originalContent?: string

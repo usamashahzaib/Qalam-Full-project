@@ -67,7 +67,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-jakarta">
       <header className="border-b border-zinc-200 bg-white px-6 py-4">
-        <QalamLogo href="/" size={24} textClassName="text-base font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
+        <QalamLogo href="/" size={24} textClassName="text-base font-extrabold text-zinc-900" containerClassName="flex min-h-11 items-center gap-2" />
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-12">

@@ -6,8 +6,8 @@ import { GA_MEASUREMENT_ID, isGaActive, gaInlineScript } from "@/lib/csp-inline-
  * tag) plus a build-time content hash (inline bootstrap) instead of a nonce -
  * see proxy.ts buildCsp - so this renders identically on statically
  * generated marketing pages, where no per-request nonce exists.
- * Skipped outside production so local and preview traffic stays out of the
- * property.
+ * Production and preview use separate IDs. Development and an unconfigured
+ * preview stay silent.
  */
 export function GoogleAnalytics() {
   if (!isGaActive) return null
