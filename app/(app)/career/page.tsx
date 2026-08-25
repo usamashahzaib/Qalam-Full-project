@@ -314,6 +314,7 @@ export default function CareerPage() {
                   ["Resume Studio", "Build JD-matched resumes from verified evidence with ATS-safe templates.", "/career/resumes"],
                   ["Post Intelligence", "Import your own posts and metrics to find repeatable professional signals.", "/career/content"],
                   ["Cover Letters", "Generate a letter matched to the exact job description, using a purchased credit.", "/career/cover-letters"],
+                  ["Signal Match", "Get three peer introductions a week, matched on what you publish and who you publish for.", "/career/match"],
                   ["Career Network", "Opt into recruiter discovery or search visible candidates.", "/career/network"],
                   ["Learning Cohorts", "Run LinkedIn and career modules for certifications and coaching groups.", "/career/cohorts"],
                   ["Interview Practice", "Build a JD-specific question set, evidence bank, and practice scorecard.", "/career/interview-prep"],

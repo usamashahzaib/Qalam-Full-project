@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { trackCareerEvent } from "@/lib/career-events"
 
@@ -89,9 +90,9 @@ export default function CareerNetworkPage() {
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Career Network</p><h1 className="mt-2 text-3xl font-bold">Be searchable without exposing everything.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Candidates opt in. Recruiters search professional signals. Contact details stay private in search results.</p></header>
+        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Career Network</p><h1 className="mt-2 text-3xl font-bold">Be searchable without exposing everything.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Recruiter discovery is opt in and off by default. Contact details never appear in search results.</p><Link href="/career/match" className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2.5 text-xs font-bold text-white">Looking for peers instead of recruiters? Open Signal Match</Link></header>
         {message && <p className="mt-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700">{message}</p>}
-        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <div className="mt-5 grid gap-5">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
             <div className="flex items-center justify-between"><div><h2 className="text-xl font-bold text-zinc-900">Candidate visibility</h2><p className="mt-1 text-sm text-zinc-500">Off by default. You control when recruiters can find you.</p></div><button onClick={() => setForm({ ...form, isSearchable: !form.isSearchable })} className={`rounded-full px-4 py-2 text-xs font-bold ${form.isSearchable ? "bg-teal text-white" : "bg-zinc-100 text-zinc-500"}`}>{form.isSearchable ? "Searchable" : "Private"}</button></div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -106,8 +107,8 @@ export default function CareerNetworkPage() {
             </div>
             <button onClick={save} className="mt-4 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white">Save visibility</button>
           </section>
-          <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-bold text-zinc-900">Verified recruiter search</h2><p className="mt-1 text-sm text-zinc-500">Pro recruiters and employers search only after organization verification.</p></div>{organization && <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${organization.verification_status === "verified" ? "bg-teal/10 text-teal" : "bg-gold/10 text-gold-700"}`}>{organization.verification_status}</span>}</div>
+          <section className="rounded-2xl border border-zinc-200 bg-zinc-50/80 p-6">
+            <div className="flex items-start justify-between gap-3"><div><p className="text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-400">For employers and recruiters</p><h2 className="mt-1 text-xl font-bold text-zinc-900">Verified recruiter search</h2><p className="mt-1 text-sm text-zinc-500">Reviewed by hand, not instant. Qalam checks the organization identity and intended use before search is enabled, and search stays locked until it is.</p></div>{organization && <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase ${organization.verification_status === "verified" ? "bg-teal/10 text-teal" : "bg-gold/10 text-gold-700"}`}>{organization.verification_status}</span>}</div>
             {!organization ? <div className="mt-5 grid gap-3"><input className={field} placeholder="Organization name" value={organizationForm.name} onChange={(event) => setOrganizationForm({ ...organizationForm, name: event.target.value })} /><select className={field} value={organizationForm.organizationType} onChange={(event) => setOrganizationForm({ ...organizationForm, organizationType: event.target.value })}><option value="recruiter">Recruitment agency</option><option value="employer">Employer</option><option value="university">University</option><option value="bootcamp">Bootcamp</option><option value="credential_body">Credential body</option></select><input className={field} type="url" placeholder="Organization website" value={organizationForm.website} onChange={(event) => setOrganizationForm({ ...organizationForm, website: event.target.value })} /><button type="button" disabled={!organizationForm.name} onClick={submitOrganization} className="min-h-11 rounded-xl bg-zinc-900 px-5 text-sm font-bold text-white disabled:opacity-40">Submit for verification</button><p className="text-xs leading-5 text-zinc-400">Recruiter search remains locked until Qalam verifies the organization. Candidate visibility does not require Pro.</p></div> : organization.verification_status !== "verified" ? <div className="mt-8 rounded-xl bg-zinc-50 px-5 py-8 text-center"><p className="font-bold text-zinc-900">Verification pending</p><p className="mt-2 text-sm leading-6 text-zinc-500">Qalam will enable search after reviewing the organization identity and use case.</p></div> : <>
             <div className="mt-4 flex gap-2"><input className={field} placeholder="Role, skill, location, or name" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") search() }} /><button onClick={search} className="rounded-xl bg-zinc-900 px-5 text-sm font-bold text-white">Search</button></div>
             <div className="mt-4 max-h-[520px] space-y-3 overflow-y-auto">
