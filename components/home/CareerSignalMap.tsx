@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react"
+
 const outputs = [
   {
     index: "01",
@@ -33,7 +35,7 @@ export function CareerSignalMap() {
       </div>
 
       <div className="relative py-5">
-        <div className="rounded-2xl border border-gold/30 bg-[#fffaf0] p-5">
+        <div className="sig-in rounded-2xl border border-gold/30 bg-[#fffaf0] p-5" style={{ "--sig-delay": "0.15s" } as CSSProperties}>
           <div className="flex items-center gap-3">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-extrabold text-teal-900">F</span>
             <div>
@@ -43,11 +45,11 @@ export function CareerSignalMap() {
           </div>
         </div>
 
-        <div className="ml-9 h-7 w-px bg-gradient-to-b from-gold to-teal/30" aria-hidden />
+        <div className="sig-line ml-9 h-7 w-px bg-gradient-to-b from-gold to-teal/30" style={{ "--sig-delay": "0.45s" } as CSSProperties} aria-hidden />
 
         <div className="space-y-3">
-          {outputs.map((output) => (
-            <div key={output.index} className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:border-teal/30 sm:p-5">
+          {outputs.map((output, index) => (
+            <div key={output.index} className="sig-in group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-4 transition-colors hover:border-teal/30 sm:p-5" style={{ "--sig-delay": `${0.6 + index * 0.22}s` } as CSSProperties}>
               <div className="absolute inset-y-0 left-0 w-1 bg-teal opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
               <div className="flex gap-4">
                 <span className="font-cormorant text-2xl font-semibold italic text-gold-700">{output.index}</span>

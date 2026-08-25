@@ -229,25 +229,37 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Scheduling belongs after the draft",
-        body: "Qalam keeps the planned post connected to the draft, version, hook, and voice profile that created it.",
+        body: "Most scheduling tools treat a post as a block of text with a time attached. Qalam keeps the scheduled post connected to the draft, revision history, hook, and voice profile that produced it, so anyone reviewing the queue can see why a post reads the way it does before it goes live.",
       },
       {
-        heading: "Useful for teams and agencies",
-        body: "Operators can manage publishing flow, approvals, and client-specific context without spreading work across disconnected tools.",
+        heading: "One workspace instead of five tabs",
+        body: "Writing in one app, approving in a second, and scheduling in a third is how context gets lost between steps. Qalam keeps generation, review, and publishing timing in a single place, so nothing has to be re-explained or re-pasted to move a post from idea to calendar.",
       },
       {
-        heading: "Archive every scheduled post",
-        body: "Scheduled and published content becomes part of the archive, making future planning easier and more consistent.",
+        heading: "Built for teams and agencies",
+        body: "Operators can manage publishing flow, approvals, and client-specific context without spreading work across disconnected tools. Each client keeps a separate voice profile and archive, so scheduled posts stay on brand for the right account.",
+      },
+      {
+        heading: "Every scheduled post feeds the next one",
+        body: "Scheduled and published content folds back into the archive. Next month's planning starts from the posts that already worked rather than a blank calendar, which is how a consistent presence compounds instead of resetting each week.",
       },
     ],
+    example: {
+      heading: "A week planned in one place",
+      body: "A founder drafts three posts on Monday, each built from a saved achievement. Qalam keeps the hook, voice profile, and edit history attached as they queue one for Tuesday, Thursday, and Friday. When a post performs, it is already in the archive, ready to build on rather than rewrite.",
+    },
     faqs: [
       {
         q: "Can Qalam schedule LinkedIn posts?",
-        a: "Qalam includes a post scheduler workflow that keeps drafting, revision context, archive, and publishing planning connected.",
+        a: "Qalam includes a post scheduler workflow that keeps drafting, revision context, archive, and publishing timing connected in one workspace.",
       },
       {
         q: "Why use a LinkedIn scheduler with an AI writer?",
-        a: "Because the best publishing workflow keeps the draft, approval, timing, and later review in one system.",
+        a: "Because the strongest publishing workflow keeps the draft, approval, timing, and later review in one system rather than handing the post between disconnected tools.",
+      },
+      {
+        q: "Does scheduling change my voice?",
+        a: "No. A scheduled post is the exact draft you approved, with its voice profile and edits intact. Timing is the only thing scheduling adds.",
       },
     ],
     related: [
@@ -327,25 +339,33 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Hooks decide whether the post gets read",
-        body: "A strong LinkedIn opening creates tension, specificity, or curiosity fast enough to stop the scroll.",
+        body: "On LinkedIn only the first line or two show before the fold. A strong opening has to create tension, specificity, or curiosity fast enough to earn the tap on See more. Everything else in the post is wasted if the hook does not land.",
       },
       {
-        heading: "Generate multiple angles",
-        body: "Use Qalam to create several hook options from one idea, then pick the one that best matches your voice and point of view.",
+        heading: "Generate several angles from one idea",
+        body: "The same insight can open as a contrarian claim, a specific number, a short story, or a direct question. Qalam produces multiple hook options from one idea so you can pick the angle that matches your voice and point of view instead of settling for the first line that comes to mind.",
       },
       {
-        heading: "Save reusable hook structures",
-        body: "The full Qalam workflow keeps strong openings in your archive so they can shape future posts.",
+        heading: "Save the openings that work",
+        body: "A hook that performed once is a reusable structure, not a one-off. The full Qalam workflow keeps your strongest openings in the archive so future posts start from proven patterns rather than a blank line.",
       },
     ],
+    example: {
+      heading: "One idea, four openings",
+      body: "Take a lesson like cutting a weekly review from 90 to 35 minutes. It can open as a number (We cut our weekly review by 61%), a mistake (We were running the wrong meeting for two years), a question (What if your status meeting is the problem?), or a claim (Most status meetings should be a document). Qalam drafts the set so you choose, rather than guess.",
+    },
     faqs: [
       {
         q: "How do I generate LinkedIn hooks?",
-        a: "Open Qalam's free hook generator, enter your topic, and choose from multiple opening lines designed for LinkedIn posts.",
+        a: "Open Qalam's free hook generator, enter your topic, and choose from several opening lines written for LinkedIn's first-line-visible feed.",
       },
       {
         q: "What makes a good LinkedIn hook?",
-        a: "A good hook is specific, easy to understand, and creates a reason to keep reading within the first line or two.",
+        a: "A good hook is specific, easy to understand at a glance, and creates a clear reason to keep reading within the first line or two. Vague or clever-for-its-own-sake openings tend to lose the scroll.",
+      },
+      {
+        q: "Should every post use the same hook style?",
+        a: "No. Rotating between numbers, stories, questions, and claims keeps a feed from feeling formulaic. Qalam gives you the range so your openings stay varied without losing your voice.",
       },
     ],
     related: [
@@ -424,26 +444,34 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     updatedAt,
     sections: [
       {
-        heading: "Carousels need structure first",
-        body: "A good carousel is not a post split randomly into slides. It needs one clear idea, slide-level progression, and a strong closing action.",
+        heading: "Carousels need structure before design",
+        body: "A good carousel is not a post chopped into slides. It needs one clear idea, a slide-level progression that pulls the reader forward, and a closing slide that asks for something specific. Structure is what separates a carousel people swipe through from one they skip.",
       },
       {
-        heading: "Repurpose strong posts",
-        body: "Qalam helps turn proven post ideas into a multi-slide asset so one insight can work across more than one format.",
+        heading: "Repurpose posts that already worked",
+        body: "A strong written post is proof the idea resonates. Qalam helps turn that proven idea into a multi-slide asset so one insight can work as text and as a document post, reaching people who scan carousels but skim long text.",
       },
       {
-        heading: "Keep assets in the content system",
-        body: "Carousel work should stay tied to the original post, hook, and archive instead of becoming a disconnected file.",
+        heading: "Keep the asset in the content system",
+        body: "A carousel should stay tied to the original post, hook, and archive rather than becoming a disconnected file on someone's desktop. Kept in the system, it can be updated, reused, and measured alongside the rest of your content.",
       },
     ],
+    example: {
+      heading: "From one post to a five-slide document",
+      body: "A consultant's post on why status meetings fail earns strong engagement. Qalam helps reshape it into a carousel: slide one states the problem, slides two through four give the three fixes, and slide five points to a resource. Same idea, second format, no rewrite from scratch.",
+    },
     faqs: [
       {
         q: "Can Qalam create LinkedIn carousels?",
-        a: "Qalam includes a carousel builder route for turning content into cleaner multi-slide assets for LinkedIn.",
+        a: "Qalam includes a carousel builder for turning content into cleaner multi-slide assets, kept connected to the post and archive it came from.",
       },
       {
         q: "What is the easiest way to make a LinkedIn carousel?",
-        a: "Start from one strong post or idea, split it into a clear slide sequence, then use Qalam's carousel builder to shape the asset.",
+        a: "Start from one strong post or idea, split it into a clear slide sequence, then use Qalam's carousel builder to shape the asset. Structure first, design second.",
+      },
+      {
+        q: "How many slides should a LinkedIn carousel have?",
+        a: "Most effective carousels run between five and ten slides: enough to develop one idea with a clear beginning and a closing action, without asking for more swipes than the point deserves.",
       },
     ],
     related: [

@@ -1,12 +1,13 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { CareerMomentumPreview } from "@/components/home/CareerMomentumPreview"
 import { CareerSignalMap } from "@/components/home/CareerSignalMap"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { HeroChecker } from "@/components/home/HeroChecker"
 import { HomepageAnalytics, TrackedHomepageLink } from "@/components/home/HomepageAnalytics"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { PLANS, formatPkr, getQuarterlyMonthlyEquivalent } from "@/lib/pricing"
+import { PLANS, formatPkr, getQuarterlyMonthlyEquivalent, quarterlyFraming } from "@/lib/pricing"
 import { LANDING_FAQ } from "@/lib/marketing-content"
 import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
@@ -114,6 +115,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden bg-[#f7f3ea] px-6 pb-20 pt-32 sm:pb-24 sm:pt-40">
         <div className="pointer-events-none absolute inset-0 hero-field opacity-70" aria-hidden />
         <div className="pointer-events-none absolute inset-0 hero-wash" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hidden hero-glow lg:block" aria-hidden />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(430px,0.82fr)] lg:gap-16">
           <div>
             <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
@@ -121,10 +123,10 @@ export default function HomePage() {
               Career visibility, grounded in evidence
             </p>
             <h1 className="mt-7 max-w-[720px] text-[clamp(3.5rem,7.2vw,6.8rem)] font-extrabold leading-[0.92] tracking-[-0.06em] text-teal">
-              Turn your experience into <span className="font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">proof people trust.</span>
+              Turn your experience into <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">proof people trust.</span>
             </h1>
             <p className="mt-7 max-w-[610px] text-lg leading-8 text-zinc-600 sm:text-xl">
-              Your career story, LinkedIn voice, and job-ready resume in one accurate system.
+              You already did the work. Qalam turns it into proof a recruiter believes, on LinkedIn, in your resume, and everywhere your name shows up.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <TrackedHomepageLink
@@ -144,6 +146,21 @@ export default function HomePage() {
               <li>No automatic posting</li>
               <li>No invented experience</li>
             </ul>
+
+            <dl className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-5 border-t border-teal/12 pt-7 sm:gap-x-10">
+              {[
+                { value: "1,000+", label: "Resumes checked with the free ATS tool" },
+                { value: "3", label: "Career surfaces shaped from one fact" },
+                { value: "0", label: "Achievements ever invented" },
+              ].map((stat) => (
+                <div key={stat.label} className="min-w-[7rem]">
+                  <dd className="font-cormorant text-4xl font-semibold leading-none tracking-tight text-gold-700 tabular-nums sm:text-[2.75rem]">
+                    {stat.value}
+                  </dd>
+                  <dt className="mt-2 max-w-[15ch] text-xs font-semibold leading-5 text-teal/70">{stat.label}</dt>
+                </div>
+              ))}
+            </dl>
           </div>
 
           <CareerSignalMap />
@@ -311,6 +328,34 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
+        <div className="mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">The part that keeps you going</p>
+            <h2 className="t-h2 mt-4 text-teal">Career momentum you can actually feel.</h2>
+            <p className="t-lead mt-5 max-w-lg text-zinc-600">
+              Qalam scores real progress: proof captured, profile depth, visibility, pipeline, and showing up. One clear number, a weekly streak, and the single next move that lifts it. Small, honest wins that compound.
+            </p>
+            <ul className="mt-7 space-y-3">
+              {[
+                ["A score you can move", "Every documented achievement and published post nudges it up. No vanity metrics."],
+                ["A streak worth keeping", "Show up, capture one proof, keep the week alive. Consistency is the whole game."],
+                ["One next action", "Never a blank page. Qalam always names the highest-leverage thing to do today."],
+              ].map(([title, copy]) => (
+                <li key={title} className="flex gap-3">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
+                  <span className="text-sm leading-6 text-zinc-600">
+                    <span className="font-bold text-zinc-900">{title}. </span>
+                    {copy}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <CareerMomentumPreview />
+        </div>
+      </section>
+
       <section id="pricing" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-2xl">
@@ -327,8 +372,20 @@ export default function HomePage() {
                 <article key={plan.plan} className={`relative flex flex-col rounded-2xl border p-7 sm:p-8 ${highlighted ? "border-teal bg-teal text-white shadow-[0_20px_50px_rgba(13,74,69,0.2)]" : "border-zinc-200 bg-white text-zinc-900"}`}>
                   {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-teal-900">Most popular</span>}
                   <p className={`text-xs font-bold uppercase tracking-[0.17em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{plan.plan}</p>
-                  <p className="mt-5 text-4xl font-extrabold tracking-tight">{price}</p>
+                  <div className="mt-5 flex items-center gap-2.5">
+                    <p className="text-4xl font-extrabold tracking-tight">{price}</p>
+                    {plan.plan !== "Free" && (
+                      <span className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${highlighted ? "bg-gold text-teal-900" : "bg-gold-100 text-gold-700"}`}>
+                        {quarterlyFraming}
+                      </span>
+                    )}
+                  </div>
                   <p className={`mt-2 text-xs ${highlighted ? "text-white/65" : "text-zinc-500"}`}>{plan.plan === "Free" ? effective : `Billed quarterly. ${effective}.`}</p>
+                  {plan.plan !== "Free" && plan.monthlyPkr ? (
+                    <p className={`mt-1 text-xs ${highlighted ? "text-white/55" : "text-zinc-400"}`}>
+                      <span className="line-through">{formatPkr(plan.monthlyPkr * 3)}</span> if billed monthly.
+                    </p>
+                  ) : null}
                   <p className={`mt-5 text-sm leading-6 ${highlighted ? "text-white/75" : "text-zinc-600"}`}>{plan.description}</p>
                   <ul className="my-7 flex flex-1 flex-col gap-3">
                     {plan.features.map((feature) => (
