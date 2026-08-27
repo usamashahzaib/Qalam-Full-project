@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
     if (!limit.allowed) return NextResponse.json({ error: "career_analysis_limit_reached", remaining: 0 }, { status: 403 })
 
     const raw = await callAi(
+      "voice-profile",
       "Return strict JSON only.",
       `${prompts[body.tool]}\n\nTarget role: ${body.targetRole || "Not supplied"}\n\nLinkedIn profile:\n${body.profile || "Not supplied"}\n\nResume:\n${body.resume || "Not supplied"}\n\nJob description:\n${body.jobDescription || "Not supplied"}\n\nOutput JSON: {"summary":"string","score":number,"dimensions":[{"name":"string","score":number,"reason":"string"}],"recommendations":["string"],"rewrites":[{"section":"string","text":"string"}],"gaps":["string"]}`,
       { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: limit.plan, cache: false }
