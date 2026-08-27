@@ -1,5 +1,4 @@
 ﻿import type { Metadata } from "next"
-import { Suspense } from "react"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { SITE_URL, APP_URL } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
@@ -183,9 +182,7 @@ export default function PricingPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema).replace(/</g, "\\u003c") }} />
-      <Suspense fallback={null}>
-        <PricingPageContent />
-      </Suspense>
+      <PricingPageContent />
     </>
   )
 }
