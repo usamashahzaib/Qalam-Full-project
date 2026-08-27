@@ -16,10 +16,9 @@ export const SITE_NAME = "Qalam"
 export const SITE_DOMAIN_LABEL = "byqalam.com"
 
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
-// login and signup are served from the marketing domain itself
-// (app/login, app/signup). Only the authenticated app surfaces live on APP_URL.
+// Auth and authenticated product routes resolve directly to the app domain.
 export const resolvePublicHref = (href: string) =>
-  /^\/(?:dashboard|settings|career)(?:[/?]|$)/.test(href)
+  /^\/(?:login|signup|dashboard|settings|career)(?:[/?]|$)/.test(href)
     ? process.env.NODE_ENV === "development" ? href : `${APP_URL}${href}`
     : href
 
