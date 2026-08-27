@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { hashToken } from "@/lib/server/password"
+import { safeRedirectPath } from "@/lib/validation"
 
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token")?.trim()
   const origin = req.nextUrl.origin
+  const callbackUrl = safeRedirectPath(req.nextUrl.searchParams.get("callbackUrl"))
 
   if (!token) {
     return NextResponse.redirect(new URL("/login?error=invalid_token", origin))
@@ -42,5 +44,8 @@ export async function GET(req: NextRequest) {
     .update({ used: true })
     .eq("id", record.id)
 
-  return NextResponse.redirect(new URL("/login?verified=1", origin))
+  const loginUrl = new URL("/login", origin)
+  loginUrl.searchParams.set("verified", "1")
+  loginUrl.searchParams.set("callbackUrl", callbackUrl)
+  return NextResponse.redirect(loginUrl)
 }

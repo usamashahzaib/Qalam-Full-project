@@ -4,12 +4,14 @@
  *
  * Vercel Hobby allows only 2 cron jobs, both once per day (already used by
  * /api/cron/schedule and /api/linkedin/publish-scheduled in vercel.json).
- * QStash's free tier allows cron schedules at any frequency, so these two
+ * QStash's free tier allows cron schedules at any frequency, so these
  * maintenance routes are triggered from QStash instead:
  *
  *   - /api/cron/process-queue  hourly   (recovers posts stuck in "queued")
  *   - /api/cron/cleanup-pdfs   daily    (clears expired generated PDFs)
  *   - /api/cron/check-expiry   daily    (expires plans and sends reminders)
+ *   - /api/cron/career-momentum hourly  (sends opted-in daily proof reminders)
+ *   - /api/cron/indexnow        daily    (submits fresh public URLs to search engines)
  *
  * Usage:
  *   QSTASH_TOKEN=qstash_xxx node scripts/setup-qstash-schedules.mjs
@@ -72,6 +74,16 @@ const SCHEDULES = [
     scheduleId: "qalam-check-expiry-daily",
     path: "/api/cron/check-expiry",
     cron: "30 1 * * *",
+  },
+  {
+    scheduleId: "qalam-career-momentum-hourly",
+    path: "/api/cron/career-momentum",
+    cron: "15 * * * *",
+  },
+  {
+    scheduleId: "qalam-indexnow-daily",
+    path: "/api/cron/indexnow",
+    cron: "0 3 * * *",
   },
 ]
 

@@ -4,10 +4,10 @@ import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
-import GridGlowBackground from "@/components/ui/grid-glow-background"
 import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
+import { AccessibleControlNames } from "@/components/AccessibleControlNames"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
@@ -24,7 +24,7 @@ const cormorant = Cormorant_Garamond({
   weight: ["400", "500", "600", "700"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
-  display: "swap",
+  display: "optional",
 })
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "3200x3200" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
     shortcut: ["/icon.png"],
     apple: [{ url: "/apple-icon.png", type: "image/png" }],
@@ -185,14 +185,10 @@ export default async function RootLayout({
   const app = (
     <SessionProvider session={session}>
       <ContentProtection />
-      <GridGlowBackground
-        glowColors={["#b8e6c8", "#e8d5a8", "#7abf9e"]}
-        backgroundColor="#fafaf8"
-        gridColor="rgba(13,74,69,0.07)"
-        glowCount={4}
-      >
+      <AccessibleControlNames />
+      <div className="min-h-screen w-full bg-[#f7f3ea]">
         <NavWrapper>{children}</NavWrapper>
-      </GridGlowBackground>
+      </div>
       <PwaRegistration enabled={pwaEnabled} />
     </SessionProvider>
   )

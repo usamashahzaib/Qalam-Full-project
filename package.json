@@ -12,6 +12,7 @@
     "check:dashes": "node scripts/check-no-dashes.mjs",
     "check:rls": "node scripts/check-rls.mjs",
     "check:career-addons": "node scripts/check-career-addon-readiness.mjs",
+    "package:extension": "node scripts/package-extension.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

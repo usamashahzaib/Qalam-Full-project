@@ -7,6 +7,9 @@ import { checkAuthRateLimit } from "@/lib/server/queue"
 import { log } from "@/lib/server/logging"
 import { applyReferralCode } from "@/lib/server/referrals"
 import { APP_URL } from "@/lib/seo"
+import { fetchWorkspacePlan } from "@/lib/server/workspace"
+import { getPlanLimits } from "@/lib/entitlements"
+import { safeRedirectPath } from "@/lib/validation"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -39,6 +42,7 @@ export async function POST(req: NextRequest) {
   const password = String(body.password ?? "")
   const role = String(body.role ?? "").trim()
   const referralCode = String(body.referralCode ?? "").trim()
+  const callbackUrl = safeRedirectPath(typeof body.callbackUrl === "string" ? body.callbackUrl : null)
 
   if (!name || !email || !password || !role) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 })
@@ -146,16 +150,20 @@ export async function POST(req: NextRequest) {
         (inv: { workspace_id: string; role: string; expires_at?: string | null }) =>
           !inv.expires_at || new Date(inv.expires_at) > now
       )
-      if (validInvites.length > 0) {
-        await supabase
-          .from("workspace_members")
-          .insert(validInvites.map((inv: { workspace_id: string; role: string }) => ({
-            workspace_id: inv.workspace_id,
-            user_id: userId,
-            role: inv.role,
-          })))
+      for (const invite of validInvites) {
+        const plan = await fetchWorkspacePlan(invite.workspace_id)
+        const seats = getPlanLimits(plan.plan).seats
+        const { data: added } = await supabase.rpc("add_workspace_member_with_limit", {
+          p_workspace_id: invite.workspace_id,
+          p_user_id: userId,
+          p_role: invite.role,
+          p_seat_limit: seats === "unlimited" ? null : seats,
+        })
+        if (added) {
+          await supabase.from("workspace_invites").delete().eq("workspace_id", invite.workspace_id).eq("email", email)
+        }
       }
-      await supabase.from("workspace_invites").delete().eq("email", email)
+      await supabase.from("workspace_invites").delete().eq("email", email).lte("expires_at", now.toISOString())
     }
   } catch { /* ignore - workspace_invites table may not exist yet */ }
 
@@ -185,7 +193,7 @@ export async function POST(req: NextRequest) {
       `Welcome to Qalam, ${name}!`,
       "",
       "Verify your email address to activate your account:",
-      `${APP_URL}/verify-email?token=${verificationToken}`,
+      `${APP_URL}/verify-email?token=${verificationToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
       "",
       "This link expires in 24 hours.",
       "If you did not create an account, ignore this email.",

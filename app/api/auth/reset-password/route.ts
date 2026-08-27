@@ -42,34 +42,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid or expired reset link." }, { status: 400 })
   }
 
-  const { error: updateErr } = await supabase
-    .from("users")
-    .update({ password_hash: await hashPassword(password), updated_at: new Date().toISOString() })
-    .eq("id", record.user_id)
+  const { data: updated, error: updateErr } = await supabase.rpc("set_user_password_and_revoke", {
+    target_user_id: record.user_id,
+    new_password_hash: await hashPassword(password),
+  })
 
-  if (updateErr) {
+  if (updateErr || !updated) {
     return NextResponse.json({ error: "Could not update password." }, { status: 500 })
-  }
-
-  // Invalidate all active sessions by bumping password_version.
-  // Any JWT issued before this reset will fail the version check in requireAuthApi.
-  try {
-    const { data: current } = await supabase
-      .from("users")
-      .select("password_version")
-      .eq("id", record.user_id)
-      .maybeSingle()
-    const currentVersion = (current as { password_version?: number } | null)?.password_version ?? 0
-    await supabase
-      .from("users")
-      .update({ password_version: currentVersion + 1 })
-      .eq("id", record.user_id)
-  } catch (e) {
-    // 42P01 = column not yet migrated - safe to skip.
-    // Any other error means existing sessions may not be invalidated; log it.
-    if ((e as { code?: string }).code !== "42P01") {
-      console.error("reset-password.version_bump_failed", { userId: record.user_id, error: (e as Error).message })
-    }
   }
 
   return NextResponse.json({ success: true, message: "Password updated. You can now sign in." })

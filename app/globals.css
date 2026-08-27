@@ -2,7 +2,7 @@
 
 /* Qalam App Background */
 :root {
-  --bg-warm: #f5f7f6;
+  --bg-warm: #f7f3ea;
   --bg-ripple-1: rgba(13, 74, 69, 0.07);
   --bg-ripple-2: rgba(201, 135, 31, 0.05);
   --bg-ripple-3: rgba(13, 74, 69, 0.04);
@@ -55,6 +55,35 @@ html, body {
   }
 }
 
+/* Without scripting, framer-motion writes its `initial` state inline and then
+   never runs the `animate` step, so every element that fades in from
+   opacity 0 stays invisible permanently. The pricing hero, headline included,
+   was blank in that state. */
+@media (scripting: none) {
+  [style*="opacity:0"],
+  [style*="opacity: 0"] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Global reduced-motion net. The blocks further down disable specific
+   animations, which left every transition and any newly added animation
+   uncovered. Durations collapse to near-zero rather than to 0 so that
+   transitionend and animationend listeners still fire and no state machine
+   waiting on them stalls. Smooth scrolling is dropped here too, since it is
+   a common migraine and vestibular trigger. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Solid product cards */
 .qalam-card,
 .content-card {
@@ -67,6 +96,19 @@ html, body {
 }
 
 @theme {
+  /* Motion defaults. Every `transition-*` utility inherits these, so the
+     whole site moves on one curve instead of Tailwind's stock ease-in-out,
+     which more than fifty elements were still using.
+
+     The curve is expo-out, the same [0.16, 1, 0.3, 1] the codebase already
+     passes to framer-motion in a dozen components. It leaves fast and
+     settles slowly, so a hover reads as something arriving rather than
+     something being interpolated. 220ms because the stock 150ms is too
+     brief for the eye to register the deceleration that makes it feel
+     considered. */
+  --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 220ms;
+
   --color-teal: #0D4A45;
   --color-teal-50: #eef7f6;
   --color-teal-100: #cce8e6;
@@ -76,7 +118,35 @@ html, body {
   --color-teal-700: #082e2b;
   --color-teal-800: #051f1c;
   --color-teal-900: #030f0e;
-  --color-gold: #C9871F;
+  /* Warm neutrals, replacing Tailwind's stock zinc.
+
+     Two reasons. Tailwind's zinc is a cool blue-grey (#a1a1aa), and on this
+     site's cream ground (#f7f3ea) a cool grey reads as dirty rather than
+     quiet, which is most of why the secondary text looked washed out. And
+     the two steps used for body copy were far too light to read: zinc-400
+     at 12px measured 2.6:1 on white, against a 4.5:1 requirement, across
+     roughly 390 usages.
+
+     The two text steps below are darkened to clear 4.5:1 on white and on
+     cream, and given a slight green bias so they sit under the teal rather
+     than fighting it. The 200 and 300 steps hold their luminance, since
+     they are hairlines and dividers, and only pick up the same warmth.
+
+     Safe to do globally: the dark-mode blocks in this file are gated on
+     `(prefers-color-scheme: dark) and (prefers-color-scheme: light)`, a
+     query that can never match, so every surface in the product is light. */
+  --color-zinc-200: #e5e6e2;
+  --color-zinc-300: #d6d8d3;
+  --color-zinc-400: #656d6a;
+  --color-zinc-500: #555c5a;
+
+  /* Deepened from #C9871F. That value measured 2.88:1 against the cream
+     ground, just under the 3:1 large-text floor, wherever gold carried a
+     display heading. The deeper bronze clears 3.4:1, and on cream it also
+     reads richer than the original yellow-leaning gold, which went slightly
+     acidic against the warm paper. Small gold text still uses gold-700:
+     no gold saturated enough to stay gold will reach 4.5:1 here. */
+  --color-gold: #B87A16;
   --color-gold-50: #fef6e8;
   --color-gold-100: #fce9c3;
   --color-gold-200: #f9d387;
@@ -133,36 +203,57 @@ html, body {
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* Hero Career Signal Map staged reveal. Pure CSS so the component stays a
+   server component; the global reduced-motion net above collapses these to
+   near-zero duration, so the whole map is visible instantly for anyone who
+   opts out of motion. Delays are supplied inline via --sig-delay. */
+@keyframes sigIn {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes sigDraw {
+  0%   { transform: scaleY(0); }
+  100% { transform: scaleY(1); }
+}
+.sig-in {
+  opacity: 0;
+  animation: sigIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) var(--sig-delay, 0s) both;
+}
+.sig-line {
+  transform-origin: top center;
+  animation: sigDraw 0.4s ease-out var(--sig-delay, 0s) both;
+}
+
 
 /* ─── Global resets & base ────────────────────────────────────── */
 
 html {
   position: relative;
   scroll-behavior: auto;
+  /* Anchors must clear the fixed header or they land underneath it. The
+     navbar publishes its real height into --header-h, which changes when
+     the announcement bar is dismissed; the fallback covers the tallest
+     case for the first paint and for anyone whose JS never runs. */
+  scroll-padding-top: var(--header-h, 7rem);
 }
 
+/* Do not redeclare --font-jakarta here. next/font sets it on <html> via its
+   generated variable class; a self-referential var() on the same element is
+   guaranteed-invalid CSS and silently clobbered it, so the whole site fell back
+   to the OS UI font. The fallback chain lives in the next/font config instead. */
 :root {
-  --font-jakarta: var(--font-jakarta, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
-  --surface-bg: #f5f7f6;
+  --surface-bg: #f7f3ea;
   --surface-fg: #1a1a1a;
   --surface-card: #ffffff;
   --surface-border: #e4e4e7;
   --surface-muted: #f0f4f2;
 }
 
-/* Dark mode is only supported inside the authenticated app shell (.qalam-app-canvas).
-   Marketing pages are a deliberately light/warm editorial theme and always render light,
-   since their components aren't retrofitted with dark: variants. */
-@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
-  :root:has(.qalam-app-canvas) {
-    --surface-bg: #111113;
-    --surface-fg: #f1f1f1;
-    --surface-card: #1c1c1e;
-    --surface-border: #2d2d30;
-    --surface-muted: #1c1c1e;
-  }
-}
-
+/* The whole product renders in one deliberately light, warm editorial theme.
+   A dark app theme was scaffolded here once but never shipped - it sat behind
+   an impossible `(dark) and (light)` media query, so ~200 lines of overrides
+   could never match and have been removed. If a dark app theme is wanted, build
+   it as a real, QA'd feature rather than reviving dead overrides. */
 body {
   position: relative;
   background: var(--surface-bg);
@@ -177,185 +268,6 @@ body {
 @media (pointer: coarse) {
   body {
     scrollbar-gutter: auto;
-  }
-}
-
-/* Dark mode overrides for app content area.
-   .qalam-app-header-desktop lives as a sibling of .qalam-app-canvas (not a child), so every
-   selector group below is applied to both - otherwise the desktop header's background darkens
-   while its text stays dark-on-dark. */
-@media (prefers-color-scheme: dark) and (prefers-color-scheme: light) {
-  .qalam-app-canvas {
-    background: var(--surface-bg);
-  }
-
-  /* Backgrounds */
-  .qalam-app-canvas .bg-white,
-  .qalam-app-canvas .bg-white\/85,
-  .qalam-app-canvas .bg-white\/90,
-  .qalam-app-canvas .bg-white\/98,
-  .qalam-app-header-desktop .bg-white,
-  .qalam-app-header-desktop .bg-white\/85,
-  .qalam-app-header-desktop .bg-white\/90,
-  .qalam-app-header-desktop .bg-white\/98 {
-    background-color: var(--surface-card) !important;
-  }
-  .qalam-app-canvas .bg-zinc-50,
-  .qalam-app-canvas .bg-zinc-50\/60,
-  .qalam-app-canvas .bg-zinc-50\/80,
-  .qalam-app-canvas .bg-zinc-50\/50,
-  .qalam-app-header-desktop .bg-zinc-50,
-  .qalam-app-header-desktop .bg-zinc-50\/60,
-  .qalam-app-header-desktop .bg-zinc-50\/80,
-  .qalam-app-header-desktop .bg-zinc-50\/50 {
-    background-color: var(--surface-muted) !important;
-  }
-  .qalam-app-canvas .bg-zinc-100,
-  .qalam-app-header-desktop .bg-zinc-100 {
-    background-color: #27272a !important;
-  }
-
-  /* Borders */
-  .qalam-app-canvas .border-zinc-200,
-  .qalam-app-canvas .border-zinc-100,
-  .qalam-app-header-desktop .border-zinc-200,
-  .qalam-app-header-desktop .border-zinc-100 {
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-canvas .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-canvas .divide-zinc-200 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-header-desktop .divide-zinc-100 > :not([hidden]) ~ :not([hidden]),
-  .qalam-app-header-desktop .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) {
-    border-color: var(--surface-border) !important;
-  }
-
-  /* Text */
-  .qalam-app-canvas .text-zinc-950,
-  .qalam-app-canvas .text-zinc-900,
-  .qalam-app-header-desktop .text-zinc-950,
-  .qalam-app-header-desktop .text-zinc-900 {
-    color: var(--surface-fg) !important;
-  }
-  .qalam-app-canvas .text-zinc-700,
-  .qalam-app-canvas .text-zinc-800,
-  .qalam-app-header-desktop .text-zinc-700,
-  .qalam-app-header-desktop .text-zinc-800 {
-    color: #d4d4d8 !important;
-  }
-  .qalam-app-canvas .text-zinc-600,
-  .qalam-app-header-desktop .text-zinc-600 {
-    color: #a1a1aa !important;
-  }
-  .qalam-app-canvas .text-zinc-500,
-  .qalam-app-canvas .text-zinc-400,
-  .qalam-app-header-desktop .text-zinc-500,
-  .qalam-app-header-desktop .text-zinc-400 {
-    color: #71717a !important;
-  }
-
-  /* Inputs in dark mode */
-  .qalam-app-canvas input,
-  .qalam-app-canvas select,
-  .qalam-app-canvas textarea,
-  .qalam-app-header-desktop input,
-  .qalam-app-header-desktop select,
-  .qalam-app-header-desktop textarea {
-    background-color: #27272a;
-    color: var(--surface-fg);
-    border-color: var(--surface-border);
-  }
-  .qalam-app-canvas input::placeholder,
-  .qalam-app-canvas textarea::placeholder,
-  .qalam-app-header-desktop input::placeholder,
-  .qalam-app-header-desktop textarea::placeholder {
-    color: #71717a;
-  }
-
-  /* App header (desktop) */
-  .qalam-app-header-desktop {
-    background-color: rgba(28, 28, 30, 0.92) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-header-desktop .hover\:bg-zinc-50:hover,
-  .qalam-app-header-desktop .hover\:bg-zinc-100:hover {
-    background-color: #27272a !important;
-  }
-  /* App header (mobile) */
-  .qalam-app-header-mobile {
-    background-color: rgba(28, 28, 30, 0.95) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-app-header-mobile .text-zinc-900 {
-    color: var(--surface-fg) !important;
-  }
-  .qalam-app-header-mobile .text-zinc-500 {
-    color: #71717a !important;
-  }
-  .qalam-app-header-mobile .hover\:bg-zinc-100:hover {
-    background-color: #27272a !important;
-  }
-
-  /* Mobile bottom nav */
-  .qalam-mobile-nav {
-    background-color: rgba(28, 28, 30, 0.97) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-mobile-nav .text-zinc-500 {
-    color: #71717a !important;
-  }
-
-  /* Cards */
-  .qalam-app-canvas .rounded-2xl.border.bg-white,
-  .qalam-app-canvas .rounded-2xl.border.border-zinc-200.bg-white,
-  .qalam-app-header-desktop .rounded-2xl.border.bg-white,
-  .qalam-app-header-desktop .rounded-2xl.border.border-zinc-200.bg-white {
-    background-color: var(--surface-card) !important;
-    border-color: var(--surface-border) !important;
-  }
-
-  /* Mobile "more" popup panel (fixed, outside qalam-app-canvas) */
-  .qalam-mobile-more-panel {
-    background-color: rgba(28, 28, 30, 0.98) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-mobile-more-panel .text-zinc-500 { color: #71717a !important; }
-  .qalam-mobile-more-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
-
-  /* Modal overlays */
-  .qalam-modal-panel {
-    background-color: var(--surface-card) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-modal-panel .text-zinc-900 { color: var(--surface-fg) !important; }
-  .qalam-modal-panel .text-zinc-500 { color: #71717a !important; }
-  .qalam-modal-panel .bg-zinc-50 { background-color: var(--surface-muted) !important; }
-  .qalam-modal-panel .border-zinc-100,
-  .qalam-modal-panel .border-zinc-200 { border-color: var(--surface-border) !important; }
-
-  /* Writer mobile tab bar */
-  .qalam-writer-tabs {
-    background-color: var(--surface-muted) !important;
-    border-color: var(--surface-border) !important;
-  }
-  .qalam-writer-tabs .bg-white {
-    background-color: var(--surface-card) !important;
-  }
-  .qalam-writer-tabs .text-zinc-900 { color: var(--surface-fg) !important; }
-  .qalam-writer-tabs .text-zinc-500 { color: #71717a !important; }
-
-  /* Plan status banners (expired-plan / trial), rendered inside .qalam-app-canvas */
-  .qalam-app-canvas .bg-amber-50 { background-color: rgba(217, 119, 6, 0.12) !important; }
-  .qalam-app-canvas .text-amber-900 { color: #fcd34d !important; }
-  .qalam-app-canvas .text-amber-800 { color: #fde68a !important; }
-  .qalam-app-canvas .bg-teal\/5 { background-color: rgba(13, 74, 69, 0.18) !important; }
-  .qalam-app-canvas .text-teal-900 { color: #5db5af !important; }
-
-  /* Marquee edge fade - avoid a visible white smear against a dark surface */
-  .marquee-fade::before {
-    background: linear-gradient(to right, var(--surface-bg), transparent);
-  }
-  .marquee-fade::after {
-    background: linear-gradient(to left, var(--surface-bg), transparent);
   }
 }
 
@@ -428,7 +340,7 @@ html {
   font-size: 0.875rem;
   border-radius: 0 0 8px 8px;
   text-decoration: none;
-  transition: top 0.1s;
+  transition: top 160ms var(--default-transition-timing-function);
 }
 .skip-link:focus {
   top: 0;
@@ -439,22 +351,10 @@ html {
 /* Smooth focus transitions on every form field so existing focus:ring/focus:border
    utilities animate instead of snapping */
 input, textarea, select {
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: border-color 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
 }
 
 /* ─── Reusable utility classes ────────────────────────────────── */
-
-/* Glassmorphism nav - solid fallback first so unsupported/degraded
-   backdrop-filter never lets page content show through the nav bar */
-.glass {
-  background: #fafaf8;
-}
-
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .glass {
-    background: #fafaf8;
-  }
-}
 
 /* Grid-line background pattern (80 px) */
 .grid-bg {
@@ -462,6 +362,67 @@ input, textarea, select {
     linear-gradient(rgba(13, 74, 69, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(13, 74, 69, 0.06) 1px, transparent 1px);
   background-size: 80px 80px;
+}
+
+/* ─── Hero ground ──────────────────────────────────────────────
+   Replaces the pair of large blurred colour circles the hero used to
+   carry. Two reasons to drop them. They are the single most recognisable
+   decoration of 2020-era product pages, and this brand is about evidence
+   and structure, so soft blurred shapes argue against the copy sitting on
+   top of them. And `blur-3xl` is a real filter over an 800px area, paid
+   on every paint, where a radial gradient costs nothing.
+
+   The wash keeps the same warm-to-green colour turn; the ruled field
+   underneath it reads as measurement rather than atmosphere, and is
+   masked so it never reaches a hard edge. */
+.hero-wash {
+  background:
+    radial-gradient(ellipse 58% 48% at 10% 26%, oklch(0.9 0.035 168 / 0.62), transparent 70%),
+    radial-gradient(ellipse 54% 44% at 90% 80%, oklch(0.93 0.045 88 / 0.55), transparent 72%);
+}
+
+.hero-field {
+  background-image:
+    linear-gradient(oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
+  mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
+}
+
+/* Warm ambient glow behind the hero card. Kept low-contrast and slow so it
+   reads as light, not decoration; the reduced-motion net collapses it. */
+.hero-glow {
+  background: radial-gradient(ellipse 44% 42% at 80% 44%, oklch(0.9 0.06 84 / 0.5), transparent 70%);
+  animation: heroGlow 7s ease-in-out infinite;
+}
+@keyframes heroGlow {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.82; }
+}
+
+/* Gold underline that draws under the hero's key phrase on load. Fill-mode
+   `both` leaves it fully drawn, so reduced-motion viewers simply see the
+   finished underline. */
+.gold-underline {
+  position: relative;
+  white-space: normal;
+}
+.gold-underline::after {
+  content: "";
+  position: absolute;
+  left: 0.02em;
+  right: 0.02em;
+  bottom: -0.04em;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--color-gold), var(--color-gold-200));
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: goldDraw 0.75s cubic-bezier(0.16, 1, 0.3, 1) 1.05s both;
+}
+@keyframes goldDraw {
+  to { transform: scaleX(1); }
 }
 
 /* Particle float */
@@ -561,7 +522,7 @@ input, textarea, select {
 
 /* Press feedback - brief scale-down on click/tap for buttons and primary links */
 .press {
-  transition: transform 0.15s ease;
+  transition: transform 120ms var(--default-transition-timing-function);
 }
 .press:active {
   transform: scale(0.98);
@@ -588,7 +549,7 @@ input, textarea, select {
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.2s ease;
+  transition: transform 260ms var(--default-transition-timing-function);
   opacity: 0.55;
 }
 .nav-underline:hover::after,
@@ -598,7 +559,7 @@ input, textarea, select {
 
 /* Card hover lift */
 .card-hover {
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition: transform 260ms var(--default-transition-timing-function), box-shadow 260ms var(--default-transition-timing-function), border-color 260ms var(--default-transition-timing-function);
 }
 .card-hover:hover {
   transform: translateY(-4px);
@@ -678,6 +639,286 @@ input, textarea, select {
   background: rgba(201, 135, 31, 0.7);
 }
 
+/* ─── Type scale ───────────────────────────────────────────────
+   Five steps, and a view should spend at most three of them plus the
+   display. Reach for weight and color before reaching for a new size;
+   the homepage previously carried fifteen distinct sizes, which is what
+   these classes exist to prevent. */
+
+.t-display {
+  font-size: clamp(2.6rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.t-h2 {
+  font-size: clamp(1.75rem, 3.4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.t-h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.t-lead {
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.t-body {
+  font-size: 0.975rem;
+  line-height: 1.68;
+  text-wrap: pretty;
+}
+
+.t-meta {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+}
+
+/* ─── Marketing grounds ────────────────────────────────────────
+   One reading ground (paper), white reserved for elevated panels that
+   sit on it, and the dark velvet used for exactly two chapter breaks
+   per page. Anything else reintroduces the alternating-background noise
+   this replaced. */
+
+/* Matches --bg-warm exactly so the page never shows a seam between the
+   body ground and a section that paints its own. */
+.ground-paper { background: #f7f3ea; }
+
+.panel-raised {
+  background: #ffffff;
+  border: 1px solid #E3E7E4;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(16, 25, 23, 0.04),
+    0 8px 24px rgba(16, 25, 23, 0.05);
+}
+
+/* Qalam Luxe (qlx): dark velvet system for hero + navbar */
+
+.qlx {
+  --qlx-bg: oklch(0.12 0.014 196);
+  --qlx-surface: linear-gradient(to bottom, oklch(0.205 0.02 196), oklch(0.145 0.015 196));
+  --qlx-surface-raised: linear-gradient(to bottom, oklch(0.265 0.022 196), oklch(0.2 0.018 196));
+  --qlx-surface-hover: linear-gradient(to bottom, oklch(0.295 0.024 196), oklch(0.225 0.02 196));
+  --qlx-champagne: linear-gradient(to bottom, oklch(0.91 0.028 90), oklch(0.79 0.05 82));
+  --qlx-champagne-hover: linear-gradient(to bottom, oklch(0.93 0.026 90), oklch(0.83 0.048 83));
+  --qlx-fg: oklch(0.94 0.014 196);
+  --qlx-fg-muted: oklch(0.66 0.018 196);
+  --qlx-border: oklch(1 0.02 196 / 0.08);
+
+  /* Layered dark-mode elevation: rim + accumulating drop layers */
+  --qlx-rim:
+    inset 0 1px 0 0 oklch(1 0 0 / 0.08),
+    inset 0 0 0 1px oklch(1 0 0 / 0.04),
+    0 0 0 1px oklch(0 0 0 / 0.16);
+  --qlx-elevation-1: var(--qlx-rim), 0 1px 1px -0.5px oklch(0 0 0 / 0.18);
+  --qlx-elevation-2: var(--qlx-rim), 0 1px 1px -0.5px oklch(0 0 0 / 0.18), 0 3px 3px -1.5px oklch(0 0 0 / 0.18);
+  --qlx-elevation-3: var(--qlx-rim), 0 1px 1px -0.5px oklch(0 0 0 / 0.18), 0 3px 3px -1.5px oklch(0 0 0 / 0.18), 0 6px 6px -3px oklch(0 0 0 / 0.18);
+  --qlx-elevation-5: var(--qlx-rim), 0 1px 1px -0.5px oklch(0 0 0 / 0.18), 0 3px 3px -1.5px oklch(0 0 0 / 0.18), 0 6px 6px -3px oklch(0 0 0 / 0.18), 0 12px 12px -6px oklch(0 0 0 / 0.18);
+
+  color: var(--qlx-fg);
+}
+
+.qlx-surface { background: var(--qlx-surface); }
+.qlx-raised { background: var(--qlx-surface-raised); box-shadow: var(--qlx-elevation-2); }
+
+@keyframes qlx-popover-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes qlx-mobile-menu-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qlx-mobile-section-enter {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qlx-signal-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.qlx-popover-enter { animation: qlx-popover-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.qlx-mobile-menu-enter { animation: qlx-mobile-menu-enter 220ms ease-out; }
+.qlx-mobile-section-enter { animation: qlx-mobile-section-enter 180ms ease-out; }
+.qlx-signal-enter { animation: qlx-signal-enter 250ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qlx-popover-enter,
+  .qlx-mobile-menu-enter,
+  .qlx-mobile-section-enter {
+    animation: none;
+  }
+  .qlx-signal-enter { animation: none; }
+}
+
+/* Navbar glass. Two rules, in this order, for two reasons that are both
+   easy to get wrong and were both wrong here.
+
+   1. The feature query tests ONLY the standard property. Adding
+      `or (-webkit-backdrop-filter: ...)` looks safer but is the bug:
+      current Chromium has dropped the -webkit- alias while still passing
+      the standard half of the `or`. The browser therefore took the
+      translucent background that is meant to sit behind a blur, and got
+      no blur, so page content read straight through the navbar.
+
+   2. The standard property is declared LAST. Lightning CSS collapses
+      prefixed and unprefixed declarations of one property and keeps the
+      final one, so writing the prefix last deletes `backdrop-filter`
+      from the build output entirely. Prefix first, standard last. */
+.qlx-glass {
+  /* Fully opaque: a browser that lands here has no blur to hide behind,
+     so any alpha at all lets high-contrast text bleed through. */
+  background: oklch(0.12 0.014 196);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .qlx-glass {
+    background: oklch(0.13 0.015 196 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+/* Light counterpart, for the navbar sitting over paper grounds. Same two
+   authoring rules as above: test only the standard property, prefix first.
+
+   Deliberately warm rather than plain white. The marketing ground is
+   #f7f3ea cream, and a neutral white bar reads as a separate grey slab
+   floating on it. Carrying a little of the cream's hue lets the bar read
+   as the same paper, lit from above. */
+.qlx-glass-light {
+  background: oklch(0.985 0.008 92);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  .qlx-glass-light {
+    /* 0.86 rather than a more glassy 0.72. The bar also travels over inset
+       dark cards, which are not grounds worth flipping the whole navbar for,
+       and at 0.72 those pushed the teal link colour to 3.99:1. This holds the
+       links above 4.5:1 against anything behind them, and over the cream
+       ground it is visually indistinguishable since the tint matches. */
+    background: oklch(0.987 0.009 92 / 0.86);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
+
+.qlx-champagne-btn {
+  background: var(--qlx-champagne);
+  color: oklch(0.22 0.02 196);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0.02 196 / 0.78),
+    inset 0 -2px 4px oklch(0.42 0.08 196 / 0.28),
+    0 1px 2px oklch(0.04 0.02 196 / 0.46),
+    0 6px 18px oklch(0.06 0.024 196 / 0.4);
+  transition: background 220ms var(--default-transition-timing-function), box-shadow 220ms var(--default-transition-timing-function), transform 220ms var(--default-transition-timing-function);
+}
+.qlx-champagne-btn:hover {
+  background: var(--qlx-champagne-hover);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0.02 196 / 0.85),
+    inset 0 -2px 4px oklch(0.42 0.08 196 / 0.32),
+    0 2px 4px oklch(0.04 0.02 196 / 0.5),
+    0 10px 26px oklch(0.06 0.024 196 / 0.46);
+}
+
+.qlx :focus-visible {
+  outline-color: oklch(0.85 0.05 85);
+}
+
+.qlx-panel {
+  background: var(--qlx-surface-raised);
+  border: 1px solid var(--qlx-border);
+  box-shadow: var(--qlx-elevation-3);
+}
+
+.qlx-link {
+  color: var(--nav-fg);
+  transition: color 220ms var(--default-transition-timing-function), background-color 220ms var(--default-transition-timing-function);
+}
+.qlx-link:hover,
+.qlx-link[aria-expanded="true"] {
+  color: var(--nav-fg-strong);
+  background-color: var(--nav-hover-bg);
+}
+
+/* ─── Navbar palette ───────────────────────────────────────────
+   Every navbar colour resolves through these tokens, so the whole bar
+   flips ground with one attribute instead of a conditional on each
+   element. That matters for more than tidiness: it lets plain CSS paint
+   the correct theme before React hydrates, which a per-element ternary
+   cannot do.
+
+   Light is the default because almost every marketing ground is paper. */
+.qlx-nav {
+  --nav-fg: oklch(0.44 0.042 190);
+  --nav-fg-strong: #0d4a45;
+  --nav-fg-mute: oklch(0.6 0.032 190);
+  --nav-hover-bg: oklch(0.44 0.042 190 / 0.09);
+  --nav-border: oklch(0.44 0.042 190 / 0.14);
+  --nav-shadow: 0 10px 30px -12px oklch(0.35 0.06 175 / 0.22);
+}
+
+.qlx-nav[data-ground="dark"] {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+}
+
+/* Pre-hydration ground. A page whose first section is dark marks it with
+   data-nav-hero, and until the navbar mounts and stamps its own
+   data-ground, this paints the dark palette straight from the server
+   markup. Without it, such pages served a light bar with deep teal links
+   sitting on a near-black hero for the whole hydration window, and
+   permanently for anyone whose JS never arrives. */
+body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+  --nav-fg: oklch(0.79 0.016 196);
+  --nav-fg-strong: #ffffff;
+  --nav-fg-mute: oklch(1 0 0 / 0.48);
+  --nav-hover-bg: oklch(1 0.02 196 / 0.09);
+  --nav-border: oklch(1 0 0 / 0.1);
+  --nav-shadow: 0 2px 32px oklch(0 0 0 / 0.35);
+  background: oklch(0.12 0.014 196);
+}
+
+@supports (backdrop-filter: blur(1px)) {
+  body:has([data-nav-hero="dark"]) .qlx-nav:not([data-ground]) {
+    background: oklch(0.13 0.015 196 / 0.72);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+}
+
+/* Fine grain texture for the hero, breaks up flat gradient banding */
+.qlx-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 /* ─── Content protection ──────────────────────────────────────── */
 
 /* Prevent casual drag-and-drop theft of images */
@@ -697,9 +938,13 @@ img {
   pointer-events: auto;
 }
 
-/* Print watermark - visible on every printed page and print-to-PDF */
+/* Print watermark - scoped to the authenticated app surfaces only
+   (body:has(.qalam-app-canvas)). Public marketing, blog, pricing, docs and
+   legal pages are meant to be shared, so stamping them "Confidential" read as
+   paranoid and off-brand; they now print clean. Generated resume/carousel
+   exports are separate server-rendered PDFs and are unaffected either way. */
 @media print {
-  body::before {
+  body:has(.qalam-app-canvas)::before {
     content: "© Qalam (byqalam.com) - Confidential. Unauthorized reproduction prohibited.";
     position: fixed;
     top: 50%;
@@ -716,5 +961,26 @@ img {
   @page {
     margin-top: 1.5cm;
     margin-bottom: 1.5cm;
+  }
+}
+/* Lightweight marketing reveal. Values are supplied by components/FadeUp.tsx. */
+.fade-up {
+  opacity: 0;
+  transform: translateY(var(--fade-up-distance, 40px));
+  transition:
+    opacity var(--fade-up-duration, 0.65s) cubic-bezier(0.16, 1, 0.3, 1) var(--fade-up-delay, 0s),
+    transform var(--fade-up-duration, 0.65s) cubic-bezier(0.16, 1, 0.3, 1) var(--fade-up-delay, 0s);
+}
+
+.fade-up.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }

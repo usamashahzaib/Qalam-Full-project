@@ -12,21 +12,22 @@ export function chunkExamplePosts(raw: string): string[] {
     .slice(0, 20)
 }
 
-// Generate a text embedding via Gemini text-embedding-004.
+// Generate a text embedding via Gemini embedding.
 // Returns null if GEMINI_API_KEY is not set or the call fails (graceful degradation).
 async function generateEmbedding(text: string): Promise<number[] | null> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return null
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${encodeURIComponent(apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "models/text-embedding-004",
+          model: "models/gemini-embedding-001",
           content: { parts: [{ text: text.slice(0, 2048) }] },
           taskType: "RETRIEVAL_DOCUMENT",
+          outputDimensionality: 768,
         }),
       }
     )
@@ -72,7 +73,7 @@ export async function storeVoiceExamples(
 // Falls back to empty array when voice_examples table doesn't exist yet (migration pending).
 export async function retrieveVoiceExamples(
   workspaceId: string,
-  _query?: string,
+  query?: string,
   topN = 3,
 ): Promise<string[]> {
   const supabase = createServiceClient()
@@ -80,8 +81,27 @@ export async function retrieveVoiceExamples(
     .from("voice_examples")
     .select("content")
     .eq("workspace_id", workspaceId)
-    .limit(topN)
+    .limit(20)
   // 42P01 = table doesn't exist yet - degrade to empty (profile characteristics still used)
   if (error?.code === "42P01") return []
-  return (data ?? []).map((row: { content: string }) => row.content)
+  const examples = (data ?? []).map((row: { content: string }) => row.content)
+  return rankVoiceExamples(examples, query, topN)
+}
+
+export function rankVoiceExamples(examples: string[], query?: string, topN = 3): string[] {
+  const normalizedQuery = query?.trim().toLowerCase() ?? ""
+  if (!normalizedQuery) return examples.slice(0, topN)
+
+  const terms = [...new Set(normalizedQuery.match(/[a-z0-9]{4,}/g) ?? [])]
+  if (!terms.length) return examples.slice(0, topN)
+
+  return examples
+    .map((content, index) => {
+      const haystack = content.toLowerCase()
+      const overlap = terms.reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0)
+      return { content, index, score: overlap }
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, topN)
+    .map(({ content }) => content)
 }

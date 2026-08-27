@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Qalam for LinkedIn",
+  "version": "1.0.0",
+  "description": "Generate on-voice LinkedIn comment variations with your Qalam plan.",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://www.linkedin.com/*", "https://www.byqalam.com/*"],
+  "background": { "service_worker": "service-worker.js", "type": "module" },
+  "action": { "default_title": "Qalam for LinkedIn", "default_popup": "popup.html" },
+  "content_scripts": [{ "matches": ["https://www.linkedin.com/*"], "js": ["content-script.js"], "css": ["content.css"], "run_at": "document_idle" }]
+}

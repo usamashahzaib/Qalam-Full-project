@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { Ratelimit } from "@upstash/ratelimit"
-import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getClientIp } from "@/lib/server/rate-limit"
 import { getRedis } from "@/lib/server/redis"
 
@@ -27,29 +26,12 @@ async function checkProviderRateLimit(ip: string): Promise<boolean> {
   return success
 }
 
-// Returns which sign-in method an email uses, without revealing account existence.
-// Used by login page to auto-redirect OAuth-only accounts to the right provider.
+// Retained for older clients, but deliberately returns a uniform response.
+// Sign-in method discovery leaks whether an account exists and how it authenticates.
 export async function GET(request: NextRequest) {
   if (!(await checkProviderRateLimit(getClientIp(request)))) {
     return NextResponse.json({ provider: null }, { status: 429 })
   }
 
-  const email = request.nextUrl.searchParams.get("email")?.trim().toLowerCase()
-  if (!email) return NextResponse.json({ provider: null })
-
-  try {
-    const supabase = createServiceClient()
-    const { data } = await supabase
-      .from("users")
-      .select("password_hash, external_user_id")
-      .eq("email", email)
-      .maybeSingle()
-
-    if (!data) return NextResponse.json({ provider: null })
-    if (!data.password_hash && data.external_user_id) return NextResponse.json({ provider: "linkedin" })
-    if (data.password_hash) return NextResponse.json({ provider: "email" })
-    return NextResponse.json({ provider: null })
-  } catch {
-    return NextResponse.json({ provider: null })
-  }
+  return NextResponse.json({ provider: null })
 }

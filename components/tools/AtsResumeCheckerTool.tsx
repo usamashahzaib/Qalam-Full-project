@@ -1,11 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { APP_URL } from "@/lib/seo"
-import type { ResumeReviewResult, ResumeReviewScoreKey } from "@/lib/career-resume-review"
+import { RESUME_HANDOFF_KEY } from "@/lib/resume-signals"
+import { parseResumeReviewResponse, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_STEPS } from "@/lib/ats-methodology"
 import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
+import { trackMarketingEvent } from "@/lib/marketing-events"
+import { ATS_FUNNEL_SOURCE, buildAtsResumeLoginUrl, type AtsCtaPlacement } from "@/lib/ats-funnel"
 
 const scoreLabels: Record<ResumeReviewScoreKey, string> = {
   ats_parsing: "ATS parsing",
@@ -19,6 +22,7 @@ const scoreLabels: Record<ResumeReviewScoreKey, string> = {
 }
 
 const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length
+const scoreBand = (score: number) => score >= 80 ? "strong" : score >= 60 ? "developing" : "at_risk"
 const scoreTone = (score: number) => score >= 80 ? "text-emerald-700" : score >= 60 ? "text-gold-700" : "text-red-700"
 const uploadError = (code: string) => ({
   resume_pdf_too_large: "This file is over 5 MB. Upload a smaller PDF or DOCX.",
@@ -36,6 +40,32 @@ export function AtsResumeCheckerTool() {
   const [uploading, setUploading] = useState(false)
   const [sourceName, setSourceName] = useState("")
   const [error, setError] = useState("")
+
+  const resumeBuilderHref = (placement: AtsCtaPlacement) => buildAtsResumeLoginUrl(APP_URL, placement)
+  const trackSignupStart = (placement: AtsCtaPlacement) => {
+    trackMarketingEvent("signup_start", { source: ATS_FUNNEL_SOURCE, placement })
+  }
+
+  // The homepage hero runs an instant structural read, then hands the resume
+  // here so the visitor never re-uploads to get the full review.
+  useEffect(() => {
+    let handoffTimer: ReturnType<typeof setTimeout> | undefined
+    try {
+      const handoff = sessionStorage.getItem(RESUME_HANDOFF_KEY)
+      if (handoff) {
+        handoffTimer = setTimeout(() => {
+          setResumeText(handoff)
+          sessionStorage.removeItem(RESUME_HANDOFF_KEY)
+        }, 0)
+      }
+    } catch {
+      // sessionStorage can be unavailable in private browsing; the form still works.
+    }
+
+    return () => {
+      if (handoffTimer) clearTimeout(handoffTimer)
+    }
+  }, [])
 
   const uploadResume = async (file: File) => {
     setUploading(true)
@@ -58,6 +88,14 @@ export function AtsResumeCheckerTool() {
     }
   }
 
+  const statusMessage = uploading
+    ? "Reading your resume file."
+    : loading
+      ? "Checking your resume. This can take up to a minute."
+      : result
+        ? `Review complete. Readiness score ${result.overall_score} out of 100. ${result.screening_decision}.`
+        : ""
+
   const checkResume = async () => {
     if (resumeText.trim().length < 200) return setError("Upload a text-based PDF or DOCX, or add at least 200 characters of resume text.")
     setLoading(true)
@@ -71,7 +109,17 @@ export function AtsResumeCheckerTool() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || "Resume check failed.")
-      setResult(data)
+      // The response is re-validated on the client so a partial or unexpected
+      // body can never render as a review, and can never emit an assessment
+      // event whose score band was inferred from a missing score.
+      const review = parseResumeReviewResponse(data)
+      if (!review) throw new Error("The resume check could not be completed. Try again.")
+      setResult(review)
+      trackMarketingEvent("assessment_complete", {
+        assessment: "ats_resume_checker",
+        score_band: scoreBand(review.overall_score),
+        job_description_supplied: jobDescription.trim().length > 0,
+      })
     } catch (requestError) {
       setError((requestError as Error).message)
     } finally {
@@ -83,7 +131,7 @@ export function AtsResumeCheckerTool() {
     <main className="min-h-screen bg-zinc-50 pt-24">
       <section className="border-b border-zinc-200 bg-[#f8f7f3] px-6 py-16 sm:py-20">
         <div className="mx-auto max-w-[1100px]">
-          <Link href="/free-tools" className="mb-8 inline-flex text-sm font-medium text-zinc-500 hover:text-teal">{"<- All free tools"}</Link>
+          <Link href="/free-tools" className="mb-8 inline-flex min-h-11 items-center text-sm font-medium text-zinc-500 hover:text-teal">{"<- All free tools"}</Link>
           <div className="grid items-end gap-8 lg:grid-cols-[1fr_360px]">
             <div>
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-teal">Free. No account required.</p>
@@ -145,19 +193,23 @@ export function AtsResumeCheckerTool() {
               </button>
             </div>
             {error ? <p role="alert" className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</p> : null}
+            {/* Always mounted so the region exists before its text changes.
+                A live region created in the same render as its content is not
+                reliably announced by screen readers. */}
+            <p className="sr-only" role="status" aria-live="polite">{statusMessage}</p>
           </div>
 
           <aside className="h-fit rounded-2xl bg-[#073f3b] p-6 text-white lg:sticky lg:top-28">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">After your check</p>
             <h2 className="mt-3 text-2xl font-bold">Build one ATS resume free every month.</h2>
             <p className="mt-3 text-sm leading-6 text-white/70">Sign in to target an exact job, edit every line, choose from 12 ATS-safe templates, and export to PDF.</p>
-            <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-white transition hover:bg-gold-600">Build my monthly free resume</Link>
-            <p className="mt-3 text-center text-xs text-white/50">Free plan. One generation per month.</p>
+            <Link href={resumeBuilderHref("post_result_sidebar")} onClick={() => trackSignupStart("post_result_sidebar")} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-teal-900 transition hover:bg-gold-600">Build my monthly free resume</Link>
+            <p className="mt-3 text-center text-xs text-white/65">Free plan. One generation per month.</p>
           </aside>
         </div>
 
         {result ? (
-          <div className="mx-auto mt-10 max-w-[1100px] space-y-6" aria-live="polite">
+          <div className="mx-auto mt-10 max-w-[1100px] space-y-6">
             <section className="grid gap-6 rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 lg:grid-cols-[220px_1fr]">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Qalam readiness score</p>
@@ -210,7 +262,7 @@ export function AtsResumeCheckerTool() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">Truth-preserving rewrite</p>
               <h2 className="mt-2 text-2xl font-bold">Professional summary</h2>
               <p className="mt-4 max-w-4xl leading-7 text-white/80">{result.rewritten_summary}</p>
-              <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-white">Build the full resume free</Link>
+              <Link href={resumeBuilderHref("post_result_summary")} onClick={() => trackSignupStart("post_result_summary")} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-teal-900">Build the full resume free</Link>
             </section>
           </div>
         ) : null}

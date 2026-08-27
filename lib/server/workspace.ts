@@ -11,15 +11,17 @@ import { PLAN_PRIORITY } from "@/lib/server/plan-priority"
 import { env } from "@/lib/server/env"
 import { log } from "@/lib/server/logging"
 import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
+import { isSessionCurrent } from "@/lib/server/session-revocation"
 
 export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
 export async function getAuthenticatedSession() {
-  return await auth()
+  const session = await auth()
+  return await isSessionCurrent(session) ? session : null
 }
 
 export async function requireAuth(): Promise<string> {
-  const session = await auth()
+  const session = await getAuthenticatedSession()
   const id = session?.user?.id
   if (!id) throw new Error("auth_required")
   return id
@@ -174,12 +176,12 @@ export async function getCurrentWorkspace() {
   return { workspaceId: workspaceId || undefined, role: workspaceId ? "owner" : undefined }
 }
 
-export const resolveWorkspaceId = async (request: NextRequest): Promise<string> => {
+export const resolveWorkspaceId = async (request: NextRequest, explicitWorkspaceId?: string): Promise<string> => {
   const ctx = await getWorkspaceSessionContext()
   const url = new URL(request.url)
-  let requestedWorkspaceId = url.searchParams.get("workspaceKey")
+  let requestedWorkspaceId = explicitWorkspaceId || url.searchParams.get("workspaceKey")
 
-  if (!requestedWorkspaceId && request.method !== "GET") {
+  if (!explicitWorkspaceId && !requestedWorkspaceId && request.method !== "GET") {
     try {
       const body = await request.clone().json()
       requestedWorkspaceId = body.workspaceKey

@@ -4,8 +4,8 @@ import { signIn } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import Link from "next/link"
-import { QalamLogo } from "@/components/QalamLogo"
 import { ReferralBanner } from "@/components/ReferralBanner"
+import { AuthShell, PasswordField } from "@/components/auth/AuthScene"
 import { SITE_URL } from "@/lib/seo"
 import { safeRedirectPath } from "@/lib/validation"
 
@@ -31,11 +31,13 @@ export default function LoginPage() {
   const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"))
   const errorParam = searchParams.get("error")
   const verified = searchParams.get("verified") === "1"
+  const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
 
   const errorMessage = errorParam ? (ERROR_MESSAGES[errorParam] ?? ERROR_MESSAGES.Default) : null
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [passwordActive, setPasswordActive] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [socialLoading, setSocialLoading] = useState<"linkedin" | null>(null)
@@ -57,13 +59,6 @@ export default function LoginPage() {
       ])
 
       if (result?.error || result?.ok === false) {
-        const checkRes = await fetch(`/api/auth/check-provider?email=${encodeURIComponent(email.trim().toLowerCase())}`)
-          .then(r => r.ok ? r.json() : null).catch(() => null)
-        if (checkRes?.provider === "linkedin") {
-          setSocialLoading("linkedin")
-          await signIn("linkedin", { callbackUrl })
-          return
-        }
         setFormError("Incorrect email or password.")
         setSubmitting(false)
       } else {
@@ -85,23 +80,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="app-shell grid-bg relative flex min-h-screen items-center justify-center px-4 pt-28 pb-16 sm:pt-16">
-      <Link
-        href="/"
-        className="absolute left-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 transition-colors hover:text-teal sm:left-6 sm:top-6"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-        </svg>
-        Back to byqalam.com
-      </Link>
-
-      <div className="app-content w-full max-w-sm animate-[fadeInUp_0.5s_ease-out]">
-        {/* Logo */}
-        <div className="mb-8 flex justify-center">
-          <QalamLogo href="/" size={28} textClassName="text-xl font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
-        </div>
-
+    <AuthShell watching={passwordActive} eyebrow="Welcome back" headline="Sign in to your Qalam workspace.">
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
           <h1 className="mb-1 text-2xl font-bold text-zinc-900">Welcome back</h1>
           <p className="mb-6 text-sm text-zinc-500">Sign in to your Qalam workspace.</p>
@@ -143,30 +122,22 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal focus:bg-white focus:ring-2 focus:ring-teal/10"
+                className="min-h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal focus:bg-white focus:ring-2 focus:ring-teal/10"
                 placeholder="you@example.com"
               />
             </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-xs font-semibold text-zinc-600" htmlFor="password">
-                  Password
-                </label>
-                <Link href="/forgot-password" className="inline-flex min-h-7 items-center text-xs font-semibold text-teal hover:text-teal-700">
+            <PasswordField
+              id="password"
+              label="Password"
+              value={password}
+              onChange={setPassword}
+              onActiveChange={setPasswordActive}
+              rightSlot={
+                <Link href="/forgot-password" className="inline-flex min-h-11 items-center text-xs font-semibold text-teal hover:text-teal-700">
                   Forgot password?
                 </Link>
-              </div>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-teal focus:bg-white focus:ring-2 focus:ring-teal/10"
-                placeholder="Password"
-              />
-            </div>
+              }
+            />
             <p className="text-center text-xs text-zinc-400">
               By signing in you agree to our{" "}
               <Link href={`${SITE_URL}/legal/terms`} className="underline hover:text-zinc-600">Terms</Link>
@@ -176,7 +147,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="press w-full rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="press min-h-11 w-full rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? "Signing in..." : "Sign in"}
             </button>
@@ -205,13 +176,11 @@ export default function LoginPage() {
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-zinc-500">
             No account?{" "}
-            <Link href="/signup" className="font-semibold text-teal hover:text-teal-700">
+            <Link href={signupUrl} className="font-semibold text-teal hover:text-teal-700">
               Create one free
             </Link>
           </p>
         </div>
-
-      </div>
-    </div>
+    </AuthShell>
   )
 }

@@ -42,6 +42,10 @@ const PRICING_FAQ = [
     a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows.",
   },
   {
+    q: "Is the Qalam LinkedIn extension included?",
+    a: "Yes. Free, Solo, and Pro include the Qalam LinkedIn extension. It uses the same smart comment allowance: 10 per month on Free, 50 on Solo, and 150 on Pro. Qalam suggests comments only and never posts automatically.",
+  },
+  {
     q: "Can I buy a career tool without changing my plan?",
     a: "Yes. Career add-ons are one-time software credits for a targeted resume, cover letter, interview pack, deep resume review, LinkedIn rewrite, or career strategy blueprint. Checkout is shown only when that product is configured for card payment.",
   },
@@ -297,7 +301,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
               <button
                 onClick={() => setPricingTab("selfserve")}
-                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
                     ? "bg-teal text-white shadow-sm"
                     : "text-zinc-500 hover:text-zinc-800"
@@ -307,7 +311,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </button>
               <button
                 onClick={() => setPricingTab("managed")}
-                className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
                     ? "bg-gold text-white shadow-sm"
                     : "text-zinc-500 hover:text-zinc-800"

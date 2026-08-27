@@ -4,7 +4,9 @@ import { FadeUp } from "@/components/FadeUp"
 import { PUBLISHED_BLOG_POSTS, UPCOMING_BLOG_POSTS } from "@/lib/marketing-content"
 import { buildOgImageUrl, SITE_URL } from "@/lib/seo"
 
-const blogTitle = "Blog - LinkedIn Writing, Voice Memory and Publishing Workflows"
+// Kept under 60 characters so the template's " | Qalam" suffix still fits
+// inside what Google renders rather than being truncated away.
+const blogTitle = "Blog: LinkedIn Writing and Publishing Workflows"
 const blogDescription =
   "Practical articles on LinkedIn writing, voice memory, approvals, publishing workflows, agency operations, and content systems that actually compound."
 
@@ -84,7 +86,7 @@ export default function BlogPage() {
                     <p className="flex-1 text-sm leading-relaxed text-zinc-500">{post.excerpt}</p>
                     <div className="mt-5 flex items-center justify-between gap-4">
                       <p className="text-xs text-zinc-400">{new Date(post.datePublished).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
-                      <Link href={`/blog/${post.slug}`} className="text-sm font-semibold text-teal transition-colors hover:text-teal-600">
+                      <Link href={`/blog/${post.slug}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-teal transition-colors hover:text-teal-600">
                         Read article
                       </Link>
                     </div>

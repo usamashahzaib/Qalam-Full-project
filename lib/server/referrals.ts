@@ -222,86 +222,23 @@ export async function trackReferralClick(
 export async function applyReferralCode(rawCode: string, referredUserId: string): Promise<ReferralApplyResult> {
   const code = rawCode.trim().toUpperCase()
   const supabase = createServiceClient()
-
-  const validation = await validateReferralCode(code)
-  if (!validation.valid) {
-    return { success: false, discountPercent: 0, error: validation.error || "invalid_referral_code" }
-  }
-
-  const { data: referral } = await supabase
-    .from("referrals")
-    .select("id, referrer_user_id, referrer_email, discount_percent, used_count")
-    .eq("referral_code", code)
-    .maybeSingle()
-
-  if (!referral) {
-    return { success: false, discountPercent: 0, error: "Referral code not found." }
-  }
-
-  if (referral.referrer_user_id && referral.referrer_user_id === referredUserId) {
-    return { success: false, discountPercent: 0, error: "self_referral_not_allowed" }
-  }
-
-  const { data: referredUser } = await supabase
-    .from("users")
-    .select("id, email")
-    .eq("id", referredUserId)
-    .maybeSingle()
-
-  if (referredUser?.email && referredUser.email.trim().toLowerCase() === referral.referrer_email) {
-    return { success: false, discountPercent: 0, error: "self_referral_not_allowed" }
-  }
-
-  const { data: existingUse } = await supabase
-    .from("referral_uses")
-    .select("id")
-    .eq("referred_user_id", referredUserId)
-    .maybeSingle()
-
-  if (existingUse) {
-    return { success: false, discountPercent: 0, error: "referral_already_used" }
-  }
-
-  const { error: insertError } = await supabase.from("referral_uses").insert({
-    referral_id: referral.id,
-    referred_user_id: referredUserId,
-    discount_applied: referral.discount_percent,
+  const { data, error } = await supabase.rpc("redeem_referral_code", {
+    raw_code: code,
+    target_user_id: referredUserId,
   })
 
-  if (insertError) {
-    // Unique violation on referred_user_id means a concurrent request won the race.
-    if (insertError.code === "23505") {
-      return { success: false, discountPercent: 0, error: "referral_already_used" }
-    }
-    log.error("referrals.apply_insert_failed", { error: insertError.message })
+  if (error || !data) {
+    log.error("referrals.apply_failed", { error: error?.message })
     return { success: false, discountPercent: 0, error: "referral_apply_failed" }
   }
 
-  for (let attempt = 0; attempt < MAX_INCREMENT_ATTEMPTS; attempt++) {
-    const { data: current } = await supabase
-      .from("referrals")
-      .select("used_count")
-      .eq("id", referral.id)
-      .maybeSingle()
-    const usedCount = current?.used_count ?? referral.used_count
-    const { data: updated } = await supabase
-      .from("referrals")
-      .update({ used_count: usedCount + 1, updated_at: new Date().toISOString() })
-      .eq("id", referral.id)
-      .eq("used_count", usedCount)
-      .select("id")
-      .maybeSingle()
-    if (updated) break
+  const result = data as { success: boolean; discount_percent: number; error?: string; referral_id?: string }
+  if (!result.success) {
+    return { success: false, discountPercent: 0, error: result.error || "referral_apply_failed" }
   }
 
-  await supabase
-    .from("plan_usage")
-    .update({ referral_discount_percent: referral.discount_percent, updated_at: new Date().toISOString() })
-    .eq("user_id", referredUserId)
-    .then(undefined, (err: unknown) => log.error("referrals.plan_usage_update_failed", { error: (err as Error).message }))
-
-  log.info("referrals.applied", { referralId: referral.id, discountPercent: referral.discount_percent })
-  return { success: true, discountPercent: referral.discount_percent }
+  log.info("referrals.applied", { referralId: result.referral_id, discountPercent: result.discount_percent })
+  return { success: true, discountPercent: result.discount_percent }
 }
 
 export async function getDiscountForUser(userId: string): Promise<number> {

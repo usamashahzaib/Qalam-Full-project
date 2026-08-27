@@ -3,6 +3,9 @@ export type CareerEvent =
   | "career.application_stage_changed"
   | "career.evidence_created"
   | "career.evidence_deleted"
+  | "career.daily_signal_captured"
+  | "career.momentum_next_action"
+  | "career.momentum_reminder_updated"
   | "career.consent_updated"
   | "career.organization_submitted"
 

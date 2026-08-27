@@ -1,5 +1,6 @@
 import type { NextConfig } from "next"
 import { withSentryConfig } from "@sentry/nextjs"
+import { SEO_CANONICAL_REDIRECTS } from "./lib/seo-redirects"
 
 const nextConfig: NextConfig = {
   compress: true,
@@ -13,6 +14,16 @@ const nextConfig: NextConfig = {
         destination: "/legal/privacy",
         permanent: true,
       },
+      {
+        source: "/terms",
+        destination: "/legal/terms",
+        permanent: true,
+      },
+      ...Object.entries(SEO_CANONICAL_REDIRECTS).map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: true,
+      })),
     ]
   },
 
