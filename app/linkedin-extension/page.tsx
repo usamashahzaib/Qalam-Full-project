@@ -48,7 +48,7 @@ export default function LinkedInExtensionPage() {
   ]
   return (
     <main className="overflow-hidden bg-[#fbfdfc] pt-20 text-zinc-900">
-      {schemas.map((schema, index) => <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\u003c") }} />)}
+      {schemas.map((schema, index) => <script key={index} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, "\\u003c") }} />)}
       <section className="relative px-6 py-16 sm:py-24">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_20%_10%,rgba(183,232,221,0.72),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(255,220,170,0.42),transparent_31%)]" />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">

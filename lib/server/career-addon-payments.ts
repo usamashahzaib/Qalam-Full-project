@@ -57,7 +57,7 @@ export async function handleCareerAddonWebhook(
 
   const meta = (body.meta ?? {}) as Record<string, unknown>
   const signedEventName = typeof meta.event_name === "string" ? meta.event_name : ""
-  if (!signedEventName || signedEventName !== eventName) {
+  if ((signedEventName && signedEventName !== eventName) || (!signedEventName && eventName !== "order_created")) {
     return { status: 400, body: { ok: false, error: "event_name_mismatch" } }
   }
   const data = (body.data ?? {}) as Record<string, unknown>

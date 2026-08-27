@@ -138,7 +138,7 @@ export const CAREER_AUTHORITY_PAGES = {
     summary:
       "Qalam is building an ATS-safe resume workflow that turns experience into clear progression, evidence, and a role-specific version without decorative formatting that breaks parsing.",
     answer:
-      "An ATS resume is a plainly structured resume that applicant tracking systems can parse and recruiters can scan quickly. Qalam’s planned builder will focus on accurate chronology, relevant keywords, measurable evidence, and clear progression—not templates designed mainly to look impressive.",
+    "An ATS resume is a plainly structured resume that applicant tracking systems can parse and recruiters can scan quickly. Qalam’s planned builder will focus on accurate chronology, relevant keywords, measurable evidence, and clear progression, not templates designed mainly to look impressive.",
     status: "Planned product",
     statusDetail:
       "Resume building, file export, ATS analysis, and subscription allowances are not live yet. The page describes the product contract being designed, not a currently available tool.",
@@ -333,7 +333,7 @@ export const LINKEDIN_AUTHORITY_METHOD = {
   description:
     "Qalam’s proposed LinkedIn Authority Score will be an explainable profile diagnostic based on supplied evidence. It will not be an official LinkedIn score or a promise of reach.",
   answer:
-    "The planned LinkedIn Authority Score is a Qalam diagnostic for profile clarity, search relevance, credibility, completeness, and professional-story alignment. It is designed to expose weak dimensions and next actions—not compress a career into an unexplained rating.",
+    "The planned LinkedIn Authority Score is a Qalam diagnostic for profile clarity, search relevance, credibility, completeness, and professional-story alignment. It is designed to expose weak dimensions and next actions, not compress a career into an unexplained rating.",
   status: "Methodology proposal, version 0.1",
   dimensions: [
     {

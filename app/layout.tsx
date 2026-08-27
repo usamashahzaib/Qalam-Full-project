@@ -1,14 +1,17 @@
 ﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
+import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
 import { ContentProtection } from "@/components/providers/ContentProtection"
+import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
+import { AccessibleControlNames } from "@/components/AccessibleControlNames"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
-import { AccessibleControlNames } from "@/components/AccessibleControlNames"
+import { auth } from "@/auth"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -16,14 +19,6 @@ const jakarta = Plus_Jakarta_Sans({
   display: "swap",
 })
 
-// "optional" rather than "swap". Cormorant is the display accent, and its
-// italic is a high-contrast serif no system fallback matches in width. On a
-// throttled connection the swap re-wrapped the hero h1 by a full line at
-// 2.9s, moving everything below it and accounting for 0.1333 of a 0.14 CLS.
-// With "optional" the browser uses the font when it arrives inside the first
-// paint budget and otherwise keeps the fallback for that visit, so the line
-// count is decided once and never changes. Repeat visits hit the cache and
-// get the real face immediately.
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -179,29 +174,36 @@ const appSchema = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: { children: React.ReactNode }) {
-  // No server-side session fetch here: SessionProvider (no initial `session`
-  // prop) fetches client-side on mount instead. That keeps this layout free
-  // of dynamic APIs so marketing/SEO pages stay statically generated - only
-  // the auth-gated app segment (app/(app)/layout.tsx) forces dynamic
-  // rendering, and only it needs the PWA manifest/meta tags.
+  const [session, headersList] = await Promise.all([auth(), headers()])
+  const nonce = headersList.get("x-nonce") ?? undefined
+  const host = (headersList.get("x-forwarded-host") || headersList.get("host") || "").split(":")[0].toLowerCase()
+  const pwaEnabled = host === "app.byqalam.com" || host === "localhost" || host === "127.0.0.1"
+
   const app = (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <ContentProtection />
       <AccessibleControlNames />
       <div className="min-h-screen w-full bg-[#f7f3ea]">
         <NavWrapper>{children}</NavWrapper>
       </div>
+      <PwaRegistration enabled={pwaEnabled} />
     </SessionProvider>
   )
 
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
-        <GoogleAnalytics />
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
+        {pwaEnabled ? <link rel="manifest" href="/manifest.webmanifest" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-capable" content="yes" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-title" content="Qalam" /> : null}
+        {pwaEnabled ? <meta name="apple-mobile-web-app-status-bar-style" content="default" /> : null}
+        <GoogleAnalytics nonce={nonce} />
+        {/* suppressHydrationWarning: browsers hide the nonce attribute from the
+            DOM after parsing, so the client always sees "" vs the server value. */}
+        <script type="application/ld+json" nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {app}
