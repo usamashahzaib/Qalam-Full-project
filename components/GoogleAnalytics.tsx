@@ -9,13 +9,13 @@ import { GA_MEASUREMENT_ID, isGaActive, gaInlineScript } from "@/lib/csp-inline-
  * Production and preview use separate IDs. Development and an unconfigured
  * preview stay silent.
  */
-export function GoogleAnalytics() {
+export function GoogleAnalytics({ nonce }: { nonce?: string }) {
   if (!isGaActive) return null
 
   return (
     <>
-      <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
-      <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: gaInlineScript(GA_MEASUREMENT_ID) }} />
+      <script async nonce={nonce} src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+      <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: gaInlineScript(GA_MEASUREMENT_ID) }} />
     </>
   )
 }
