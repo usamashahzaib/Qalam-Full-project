@@ -37,7 +37,7 @@ export function CareerSignalMap() {
       <div className="relative py-5">
         <div className="sig-in rounded-2xl border border-gold/30 bg-[#fffaf0] p-5" style={{ "--sig-delay": "0.15s" } as CSSProperties}>
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold text-sm font-extrabold text-teal-900">F</span>
+            <span className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full bg-gold px-2.5 text-[0.6rem] font-extrabold uppercase tracking-[0.12em] text-teal-900" aria-label="Supplied fact">Fact</span>
             <div>
               <p className="text-[0.66rem] font-bold uppercase tracking-[0.17em] text-gold-700">Supplied career fact</p>
               <p className="mt-1 text-sm font-bold leading-6 text-zinc-900">Cut a weekly project review from 90 to 35 minutes.</p>

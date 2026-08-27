@@ -378,7 +378,9 @@ export function Navbar() {
 
           <div className="hidden items-center gap-3 lg:flex">
             {status === "loading" ? (
-              <div className={`h-8 w-8 animate-pulse rounded-full bg-[var(--nav-hover-bg)]`} />
+              <Link href={resolvePublicHref("/login")} className="qlx-link inline-flex min-h-11 items-center rounded-lg px-2 py-2 text-sm font-medium" aria-label="Log in while account status loads">
+                Log in
+              </Link>
             ) : session?.user?.id ? (
               <UserMenu session={session} />
             ) : (
@@ -466,7 +468,9 @@ export function Navbar() {
 
                 <div className="mt-3 flex flex-col gap-1 border-t border-white/10 pt-3">
                   {status === "loading" ? (
-                    <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+                    <Link href={resolvePublicHref("/login")} onClick={() => setMobileOpen(false)} className="qlx-link flex min-h-11 items-center rounded-lg px-3 py-2.5 text-sm font-medium" aria-label="Log in while account status loads">
+                      Log in
+                    </Link>
                   ) : session?.user?.id ? (
                     <>
                       <div className="mb-1 flex items-center gap-2.5 px-3 py-2">
