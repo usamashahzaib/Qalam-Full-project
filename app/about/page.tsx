@@ -98,7 +98,7 @@ export default function AboutPage() {
             <FadeUp key={item.title} delay={i * 0.08}>
               <div className="h-full rounded-2xl border border-white/10 bg-white/5 p-7">
                 <h3 className="mb-3 text-xl font-bold text-white">{item.title}</h3>
-                <p className="text-sm leading-relaxed text-white/55">{item.desc}</p>
+                <p className="text-sm leading-relaxed text-white/65">{item.desc}</p>
               </div>
             </FadeUp>
           ))}
@@ -110,7 +110,7 @@ export default function AboutPage() {
           <FadeUp>
             <div className="rounded-3xl border border-teal/20 bg-gradient-to-br from-teal/30 to-transparent p-10 text-center">
               <h2 className="mb-3 text-3xl font-bold text-white">Want the product updates?</h2>
-              <p className="mx-auto mb-7 max-w-xl text-white/55">
+              <p className="mx-auto mb-7 max-w-xl text-white/65">
                 The changelog, pricing, and free tools pages show the current public state more
                 honestly than a polished brand story ever could.
               </p>

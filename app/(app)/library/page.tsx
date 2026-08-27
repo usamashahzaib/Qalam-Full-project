@@ -208,6 +208,7 @@ export default function LibraryPage() {
             <path d="M10.5 10.5L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
           </svg>
           <input
+            aria-label="Search posts"
             value={search}
             onChange={(e) => { setSearch(e.target.value); resetPage() }}
             placeholder="Search posts..."
@@ -217,6 +218,7 @@ export default function LibraryPage() {
 
         {/* Type filter */}
         <select
+          aria-label="Filter posts by type"
           value={filterType}
           onChange={(e) => { setFilterType(e.target.value as FilterType); resetPage() }}
           className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
@@ -228,6 +230,7 @@ export default function LibraryPage() {
 
         {/* Status filter */}
         <select
+          aria-label="Filter posts by status"
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value as FilterStatus); resetPage() }}
           className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
@@ -241,6 +244,7 @@ export default function LibraryPage() {
 
         {/* Sort */}
         <select
+          aria-label="Sort posts"
           value={sort}
           onChange={(e) => { setSort(e.target.value as SortKey); resetPage() }}
           className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm font-medium text-zinc-700 outline-none focus:border-teal focus:ring-4 focus:ring-teal/10"
@@ -251,6 +255,7 @@ export default function LibraryPage() {
 
         {/* Date range */}
         <input
+          aria-label="Posts from date"
           type="date"
           value={dateFrom}
           onChange={(e) => { setDateFrom(e.target.value); resetPage() }}
@@ -258,6 +263,7 @@ export default function LibraryPage() {
           title="From date"
         />
         <input
+          aria-label="Posts to date"
           type="date"
           value={dateTo}
           onChange={(e) => { setDateTo(e.target.value); resetPage() }}

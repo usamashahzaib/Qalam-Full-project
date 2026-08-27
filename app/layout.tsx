@@ -8,6 +8,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
+import { AccessibleControlNames } from "@/components/AccessibleControlNames"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -189,6 +190,7 @@ export default function RootLayout({
   const app = (
     <SessionProvider>
       <ContentProtection />
+      <AccessibleControlNames />
       <div className="min-h-screen w-full bg-[#f7f3ea]">
         <NavWrapper>{children}</NavWrapper>
       </div>

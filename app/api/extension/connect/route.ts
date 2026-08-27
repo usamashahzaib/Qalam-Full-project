@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "extension_auth_unavailable" }, { status: 503 })
       }
       return NextResponse.json(
-        { token: mintExtensionToken({ userId: user.id, workspaceId: user.workspaceId, passwordVersion: account.password_version }), expiresInDays: 7 },
+        { token: mintExtensionToken({ userId: user.id, passwordVersion: account.password_version }), expiresInDays: 7 },
         { headers: { "Cache-Control": "no-store" } }
       )
     } catch {

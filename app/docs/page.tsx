@@ -46,7 +46,7 @@ export default function DocsPage() {
               Help Center
             </span>
             <h1 className="mb-4 text-5xl font-extrabold text-white">Docs</h1>
-            <p className="text-lg leading-relaxed text-white/55">
+            <p className="text-lg leading-relaxed text-white/65">
               Public docs are concise on purpose: only live behavior, current constraints, and the
               shortest path to operator clarity.
             </p>
@@ -60,7 +60,7 @@ export default function DocsPage() {
             <FadeUp key={section.title} delay={i * 0.06}>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5">
                 <p className="font-medium text-white">{section.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-white/55">{section.body}</p>
+                <p className="mt-2 text-sm leading-relaxed text-white/65">{section.body}</p>
               </div>
             </FadeUp>
           ))}

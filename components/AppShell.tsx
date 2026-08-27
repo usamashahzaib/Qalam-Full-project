@@ -349,11 +349,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
                           </div>
                           <button
-                            onClick={() => upgradeTarget && setUpgradePrompt({ plan: upgradeTarget, reason: `${link.label.toLowerCase()} locked` })}
-                            disabled={!upgradeTarget}
-                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                            type="button"
+                            onClick={() => upgradeTarget
+                              ? setUpgradePrompt({ plan: upgradeTarget, reason: `${link.label.toLowerCase()} locked` })
+                              : router.push("/contact")}
+                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
                           >
-                            {upgradeTarget ? `Upgrade to ${upgradeTarget}` : "Coming Soon"}
+                            {upgradeTarget ? `Upgrade to ${upgradeTarget}` : "Contact support"}
                           </button>
                         </div>
                       )
@@ -366,7 +368,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         className={`flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all group ${active ? "bg-teal-50 font-semibold text-zinc-900" : "font-medium text-zinc-400 hover:bg-zinc-800 hover:text-white"}`}
                       >
                         <Icon
-                          className="h-4 w-4 shrink-0 transition-colors text-zinc-600 group-hover:text-zinc-300"
+                          className="h-4 w-4 shrink-0 transition-colors text-zinc-400 group-hover:text-zinc-300"
                           style={active ? { color: "var(--ws-brand, #0d9488)" } : undefined}
                         />
                         <span className={`flex-1 ${active ? "font-semibold" : ""}`}>{link.label}</span>
@@ -516,7 +518,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {searchFocused && (
           <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
             <div className="relative flex items-center">
-              <input type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
+              <input aria-label="Search posts and drafts" type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
               <button onClick={() => { setSearchFocused(false); setSearchQuery("") }} className="absolute right-3 text-xs text-zinc-400 font-bold hover:text-zinc-600">Close</button>
             </div>
             {searchQuery.trim() && <div className="qalam-scrollbar mt-2 max-h-60 overflow-y-auto rounded-xl border border-zinc-100 bg-white overflow-hidden divide-y divide-zinc-50">{searchResults.length === 0 ? <div className="px-4 py-4 text-center text-xs text-zinc-500">No results found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-3 py-2.5 text-left hover:bg-zinc-50 transition-colors"><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-zinc-900 truncate">{post.title}</p><p className="text-[11px] text-zinc-400 font-medium truncate">{post.status} - {post.type}</p></div></button>)}</div>}

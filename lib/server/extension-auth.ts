@@ -4,7 +4,7 @@ import { createHmac, timingSafeEqual } from "crypto"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { passwordVersionsMatch } from "@/lib/server/session-revocation"
 
-type ExtensionIdentity = { userId: string; workspaceId: string | null; passwordVersion: number; exp: number }
+export type ExtensionIdentity = { userId: string; passwordVersion: number; exp: number }
 
 const secret = () => process.env.EXTENSION_TOKEN_SECRET || process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET || ""
 const sign = (value: string) => createHmac("sha256", secret()).update(value).digest("base64url")
@@ -36,4 +36,20 @@ export const readExtensionToken = async (authorization: string | null): Promise<
   } catch {
     return null
   }
+}
+
+// Extension tokens identify the person, not a workspace. Workspace access can
+// change independently of a user's password, so resolve the current primary
+// membership for every request before loading workspace-scoped data.
+export const resolveExtensionWorkspace = async (userId: string): Promise<string | null> => {
+  const { data, error } = await createServiceClient()
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (error || !data?.workspace_id) return null
+  return data.workspace_id
 }

@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import { gaScriptHash } from "@/lib/csp-inline-scripts"
+import { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 // ─── Redis rate limiters ─────────────────────────────────────────────────────
 // Lazy-initialized per Edge invocation; state persists in Upstash, not memory.
@@ -143,26 +144,7 @@ async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextReq
 
 // ─── Route tables ─────────────────────────────────────────────────────────────
 
-export const PROTECTED_ROUTES = [
-  "/dashboard",
-  "/write",
-  "/writer",
-  "/carousel",
-  "/carousels",
-  "/comment-generator",
-  "/library",
-  "/analytics",
-  "/voice",
-  "/career",
-  "/settings",
-  "/agency",
-  "/competitors",
-  "/calendar",
-  "/approvals",
-  "/chat",
-  "/admin",
-  "/silent-growth",
-]
+export { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
 

@@ -1,29 +1,16 @@
 import type { MetadataRoute } from "next"
 import { SITE_URL } from "@/lib/seo"
+import { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 const PRIVATE_ROUTES = [
   "/api/",
-  "/dashboard",
-  "/write",
-  "/writer",
-  "/calendar",
-  "/library",
-  "/analytics",
-  "/voice",
-  "/agency",
-  "/competitors",
-  "/settings",
-  "/carousel",
-  "/carousels",
-  "/approvals",
-  "/chat",
-  "/comment-generator",
   "/reset-password",
   "/verify-email",
   "/forgot-password",
   "/login",
   "/signup",
   "/admin",
+  ...PROTECTED_ROUTES,
 ]
 
 export default function robots(): MetadataRoute.Robots {

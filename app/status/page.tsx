@@ -17,7 +17,7 @@ export default function StatusPage() {
               Status
             </span>
             <h1 className="mb-4 text-5xl font-extrabold text-white">System Status</h1>
-            <p className="text-lg leading-relaxed text-white/55">
+            <p className="text-lg leading-relaxed text-white/65">
               Public status is manual right now. We do not publish invented uptime charts or fake
               incident history.
             </p>
@@ -27,7 +27,7 @@ export default function StatusPage() {
             <FadeUp>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
                 <p className="mb-2 font-semibold text-white">Current public note</p>
-                <p className="text-sm leading-relaxed text-white/55">
+                <p className="text-sm leading-relaxed text-white/65">
                   No active public incident is being announced from this route at the moment.
                 </p>
               </div>
@@ -35,7 +35,7 @@ export default function StatusPage() {
             <FadeUp delay={0.05}>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
                 <p className="mb-2 font-semibold text-white">How updates work today</p>
-                <p className="text-sm leading-relaxed text-white/55">
+                <p className="text-sm leading-relaxed text-white/65">
                   If a production issue affects customers, updates should go through direct support or
                   customer channels until an automated status pipeline is live.
                 </p>
