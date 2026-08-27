@@ -176,6 +176,17 @@ function isAppOnlyPath(pathname: string): boolean {
   )
 }
 
+// The host split is narrower than isAppOnlyPath: login/signup/forgot-password/
+// reset-password are served from the marketing domain itself, so they must not
+// be bounced to app.byqalam.com. They still get the strict CSP and auth rate
+// limiter via isAppOnlyPath / AUTH_ONLY_ROUTES above.
+function isAppHostPath(pathname: string): boolean {
+  return (
+    PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  )
+}
+
 const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
@@ -328,7 +339,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // routes host-agnostic avoids duplicating the route tables here).
   if (!pathname.startsWith("/api/")) {
     const hostname = request.nextUrl.hostname
-    if (MARKETING_HOSTS.has(hostname) && isAppOnlyPath(pathname)) {
+    if (MARKETING_HOSTS.has(hostname) && isAppHostPath(pathname)) {
       const url = new URL(`${pathname}${request.nextUrl.search}`, `https://${APP_HOST}`)
       return await addSecurityHeaders(NextResponse.redirect(url, 308))
     }
@@ -337,7 +348,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         const url = new URL("/dashboard", `https://${APP_HOST}`)
         return await addSecurityHeaders(NextResponse.redirect(url))
       }
-      if (!isAppOnlyPath(pathname)) {
+      if (!isAppHostPath(pathname)) {
         const url = new URL(`${pathname}${request.nextUrl.search}`, "https://www.byqalam.com")
         return await addSecurityHeaders(NextResponse.redirect(url, 308))
       }
