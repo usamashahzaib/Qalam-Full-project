@@ -103,7 +103,6 @@ export default function HomePage() {
   const homepagePlans = PLANS.slice(0, 3).map((plan) => ({
     ...plan,
     href: resolvePublicHref(plan.href),
-    features: plan.features.slice(0, 4),
   }))
 
   return (
