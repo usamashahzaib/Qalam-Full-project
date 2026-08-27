@@ -131,6 +131,12 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
       ? null
       : await reserveCommentUsage(user.id, limits.commentGenerationsPerMonth)
     if (reservation && !reservation.allowed) {
+      if (reservation.unavailable) {
+        return NextResponse.json(
+          { error: "comment_quota_unavailable", message: "Comment quota is temporarily unavailable. Please try again in a moment." },
+          { status: 503 }
+        )
+      }
       return NextResponse.json(
         { error: "monthly_limit_reached", featureName: "comment_generations", limit: reservation.limit, current: reservation.current, remaining: 0 },
         { status: 403 }

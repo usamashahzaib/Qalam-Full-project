@@ -31,6 +31,12 @@ export const env = {
   easyPaisaWebhookSecret: read("EASYPAISA_WEBHOOK_SECRET"),
   lemonSqueezyWebhookSecret: read("LEMONSQUEEZY_WEBHOOK_SECRET"),
   lemonSqueezyApiKey: read("LEMONSQUEEZY_API_KEY"),
+  // Legacy server-side checkout endpoint configuration. The main checkout flow
+  // uses the hosted URLs in lib/pricing.ts, but this route must still compile
+  // when it is deployed.
+  lemonSqueezyStoreUrl: read("LEMONSQUEEZY_STORE_URL"),
+  lemonSqueezyGrowthVariantId: read("LEMONSQUEEZY_GROWTH_VARIANT_ID"),
+  lemonSqueezyProVariantId: read("LEMONSQUEEZY_PRO_VARIANT_ID"),
   lemonSqueezyCareerAddonVariantIds: {
     extra_resume: read("LEMONSQUEEZY_CAREER_ADDON_EXTRA_RESUME_VARIANT_ID"),
     cover_letter: read("LEMONSQUEEZY_CAREER_ADDON_COVER_LETTER_VARIANT_ID"),

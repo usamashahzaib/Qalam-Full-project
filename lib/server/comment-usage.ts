@@ -5,6 +5,14 @@ import { log } from "./logging"
 
 const FIELD = "comment_generations_used"
 
+export type CommentUsageReservation = {
+  allowed: boolean
+  current: number
+  limit: number
+  /** The quota service could not confirm usage, so this is not a real limit hit. */
+  unavailable?: boolean
+}
+
 // Read-only lookup for displaying "X of Y used" in the UI - never increments.
 export async function getCommentUsage(
   userId: string,
@@ -27,7 +35,7 @@ export async function getCommentUsage(
 export async function reserveCommentUsage(
   userId: string,
   limit: number
-): Promise<{ allowed: boolean; current: number; limit: number }> {
+): Promise<CommentUsageReservation> {
   const supabase = createServiceClient()
   const { data, error } = await supabase.rpc("reserve_comment_generation", {
     p_user_id: userId,
@@ -39,8 +47,10 @@ export async function reserveCommentUsage(
   }
 
   log.error("comment_usage.reserve_failed", { userId, error: error?.message })
-  // Fail closed. A quota outage must not create unbounded AI spend.
-  return { allowed: false, current: limit, limit }
+  // Fail closed so an outage cannot create unbounded AI spend, but preserve the
+  // cause so callers do not mislead every user into thinking their plan limit
+  // was reached.
+  return { allowed: false, current: 0, limit, unavailable: true }
 }
 
 export async function releaseCommentUsage(userId: string): Promise<void> {

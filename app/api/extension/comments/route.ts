@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
 
   const reservation = limit === "unlimited" ? null : await reserveCommentUsage(identity.userId, limit)
   if (reservation && !reservation.allowed) {
+    if (reservation.unavailable) {
+      return NextResponse.json(
+        { error: "comment_quota_unavailable", message: "Comment quota is temporarily unavailable. Please try again in a moment." },
+        { status: 503 }
+      )
+    }
     return NextResponse.json({ error: "monthly_limit_reached", limit: reservation.limit, current: reservation.current }, { status: 403 })
   }
 
