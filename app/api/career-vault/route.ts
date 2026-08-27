@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -44,14 +44,14 @@ export async function GET(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
 
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("career_profiles")
       .select("*")
-      .eq("workspace_id", planCheck.workspaceId)
       .maybeSingle()
 
     if (error) return NextResponse.json({ error: "Career Vault could not be loaded." }, { status: 500 })
-    return NextResponse.json({ profile: data ? toClientProfile(data) : null })
+    const row = data as Record<string, unknown> | null
+    return NextResponse.json({ profile: row ? toClientProfile(row) : null })
   })(request)
 }
 
@@ -70,7 +70,6 @@ export async function PUT(request: NextRequest) {
 
     const profile = parsed.data
     const payload = {
-      workspace_id: planCheck.workspaceId,
       user_id: user.id,
       target_role: profile.targetRole,
       target_industry: profile.targetIndustry,
@@ -86,7 +85,7 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("career_profiles")
       .upsert(payload, { onConflict: "workspace_id" })
       .select("*")

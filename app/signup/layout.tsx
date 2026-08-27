@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Create Account",
   description: "Create your free Qalam account. No credit card required.",

@@ -7,7 +7,7 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getPlanLimits } from "@/lib/entitlements"
-import { checkAndIncrementCommentUsage, getCommentUsage } from "@/lib/server/comment-usage"
+import { getCommentUsage, releaseCommentUsage, reserveCommentUsage } from "@/lib/server/comment-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { professionalContextPrompt } from "@/lib/professional-context"
 import { log } from "@/lib/server/logging"
@@ -57,16 +57,6 @@ export async function POST(request: NextRequest) {
     }
 
     const limits = getPlanLimits(planCheck.plan)
-    if (limits.commentGenerationsPerMonth !== "unlimited") {
-      const usage = await getCommentUsage(user.id, limits.commentGenerationsPerMonth)
-      if (usage.current >= usage.limit) {
-        return NextResponse.json(
-          { error: "monthly_limit_reached", featureName: "comment_generations", limit: usage.limit, current: usage.current, remaining: 0 },
-          { status: 403 }
-        )
-      }
-    }
-
     let body: Record<string, unknown>
     try {
       body = await req.json()
@@ -137,6 +127,22 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
 
     const userMsg = `Post to comment on:\n${postText.slice(0, 1200)}`
 
+    const reservation = limits.commentGenerationsPerMonth === "unlimited"
+      ? null
+      : await reserveCommentUsage(user.id, limits.commentGenerationsPerMonth)
+    if (reservation && !reservation.allowed) {
+      if (reservation.unavailable) {
+        return NextResponse.json(
+          { error: "comment_quota_unavailable", message: "Comment quota is temporarily unavailable. Please try again in a moment." },
+          { status: 503 }
+        )
+      }
+      return NextResponse.json(
+        { error: "monthly_limit_reached", featureName: "comment_generations", limit: reservation.limit, current: reservation.current, remaining: 0 },
+        { status: 403 }
+      )
+    }
+
     let comments: Array<{ style: string; text: string }> = []
     try {
       const raw = await callAi("chat-strategist", system, userMsg, {
@@ -158,6 +164,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
     }
 
     if (!comments.length) {
+      if (reservation) await releaseCommentUsage(user.id)
       log.warn("comments.generate.empty", { userId: user.id, profile })
       return NextResponse.json(
         { error: "ai_unavailable", message: "Comment generation is temporarily unavailable. Please try again in a moment." },
@@ -172,14 +179,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
       remaining: "unlimited",
     }
     if (limits.commentGenerationsPerMonth !== "unlimited") {
-      const usage = await checkAndIncrementCommentUsage(user.id, limits.commentGenerationsPerMonth)
-      if (!usage.allowed) {
-        return NextResponse.json(
-          { error: "monthly_limit_reached", featureName: "comment_generations", limit: usage.limit, current: usage.current },
-          { status: 403 }
-        )
-      }
-      responseUsage = { ...usage, remaining: Math.max(0, usage.limit - usage.current) }
+      responseUsage = { ...reservation!, remaining: Math.max(0, reservation!.limit - reservation!.current) }
     }
 
     log.info("comments.generate.done", { userId: user.id, profile, style, count: comments.length })

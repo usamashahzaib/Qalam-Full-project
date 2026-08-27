@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
+import { trackActivationOnce } from "@/lib/marketing-events"
 import type {
   WriterRole as Role,
   PostFormat as FormatKey,
@@ -414,7 +415,15 @@ export function useWriterLogic({
     void fetchDemand()
 
     try {
-      const data = await apiGeneratePost({ topic: topic.trim(), hook: hookText, originalContent, role, format, goal: goal.trim() })
+      const data = await apiGeneratePost({
+        idempotencyKey: crypto.randomUUID(),
+        topic: topic.trim(),
+        hook: hookText,
+        originalContent,
+        role,
+        format,
+        goal: goal.trim(),
+      })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
       skipDebounceScore.current = true
@@ -422,6 +431,7 @@ export function useWriterLogic({
       setVersions((p) => [...p.slice(-19), { content, timestamp: new Date().toISOString() }])
       setEditingId(null)
       consumeDraftCredit(1)
+      trackActivationOnce("writer_draft_generated", { content_type: "linkedin_post" })
       genAttemptRef.current += 1
       showStatus("Draft ready. Scoring...", "info", false)
       void autoScore(content)

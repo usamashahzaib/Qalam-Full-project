@@ -16,6 +16,7 @@ import {
 } from "@/lib/server/referrals"
 import { isStalePaymentRevocation } from "@/lib/payment-lifecycle"
 import { resolveCheckoutSession } from "@/lib/server/checkout-session"
+import { recordProductEventSafely, type PaymentProductEvent } from "@/lib/server/product-events"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa" | "lemonsqueezy"
 export type PaymentStatus = "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
@@ -439,7 +440,7 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // PKR), so this PKR-price cross-check doesn't apply to either.
   if (provider !== "stripe" && provider !== "lemonsqueezy") {
     const plan = PRICING_PLANS.find((p) => p.name === planName)
-    const candidatePrices = [plan?.monthlyPrice, plan?.annualPrice].filter(
+    const candidatePrices = [plan?.monthlyPrice, plan?.quarterlyPrice].filter(
       (p): p is number => typeof p === "number" && p > 0
     )
     // Gateways vary on whether amount is sent as major units (499) or minor units (49900) -
@@ -514,6 +515,9 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   }
   return extracted
 }
+
+export const billingCycleDays = (billingCycle: string): number =>
+  billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30
 
 const addBillingDays = (days: number) => {
   const expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
@@ -633,7 +637,7 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   // Prefer the provider's own period end over a locally computed one so our expiry never
   // drifts from theirs across late deliveries and retries.
   const expiresAt = payment.status === "paid"
-    ? payment.periodEndsAt || addBillingDays(billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30)
+    ? payment.periodEndsAt || addBillingDays(billingCycleDays(billingCycle))
     : null
   const existingPayment = payment.recordTransaction
     ? await supabaseSelect<{ status: PaymentStatus }>(
@@ -934,6 +938,66 @@ const sanitizePaymentPayload = (
   ) || null,
 })
 
+const paymentProductEventName = (payment: VerifiedPayment): PaymentProductEvent["eventName"] | null => {
+  if (payment.status === "failed") return "payment_failed"
+  if (payment.status === "refunded" || payment.status === "partially_refunded") return "payment_refunded"
+  if (payment.status === "cancelled") return payment.revokeAccess ? "subscription_expired" : "subscription_cancelled"
+  if (payment.status !== "paid") return null
+  if (payment.eventName === "subscription_payment_success") return "subscription_renewed"
+  if (payment.activateAccess) return "entitlement_activated"
+  if (payment.recordTransaction) return "checkout_paid"
+  return null
+}
+
+async function recordAuthoritativePaymentEvent(
+  payment: VerifiedPayment,
+  result: Awaited<ReturnType<typeof processPaymentWebhook>>,
+) {
+  if (!("user" in result) || !result.user) return
+  const eventName = paymentProductEventName(payment)
+  if (!eventName) return
+
+  let planName = payment.planName
+  let billingCycle = payment.billingCycle
+  if (!planName && payment.recordTransaction) {
+    const rows = await supabaseSelect<{ plan_name: PlanName; billing_cycle: VerifiedPayment["billingCycle"] }>(
+      "payments",
+      `provider=eq.${encodeURIComponent(payment.provider)}&transaction_id=eq.${encodeURIComponent(payment.transactionId)}&select=plan_name,billing_cycle&limit=1`,
+    ).catch(() => [])
+    planName = rows[0]?.plan_name ?? null
+    billingCycle = rows[0]?.billing_cycle ?? billingCycle
+  }
+  if (!planName && (payment.subscriptionId || payment.orderId)) {
+    const identity = payment.subscriptionId
+      ? `subscription_id=eq.${encodeURIComponent(payment.subscriptionId)}`
+      : `order_id=eq.${encodeURIComponent(payment.orderId || "")}`
+    const rows = await supabaseSelect<{ plan_name: PlanName; billing_cycle: VerifiedPayment["billingCycle"] }>(
+      "payment_subscriptions",
+      `provider=eq.${encodeURIComponent(payment.provider)}&${identity}&select=plan_name,billing_cycle&limit=1`,
+    ).catch(() => [])
+    planName = rows[0]?.plan_name ?? null
+    billingCycle = rows[0]?.billing_cycle ?? billingCycle
+  }
+  if (!planName || planName === "Free") {
+    log.error("payments.product_event_plan_unresolved", {
+      provider: payment.provider,
+      eventName: payment.eventName,
+    })
+    return
+  }
+
+  await recordProductEventSafely({
+    eventName,
+    userId: result.user.id,
+    idempotencyKey: `payment:${payloadHash(payment.eventId)}`,
+    planName,
+    billingCycle,
+    provider: payment.provider,
+    transactionId: payment.transactionId,
+    paymentStatus: payment.status,
+  })
+}
+
 export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
   const supabase = createServiceClient()
   const { data: claimState, error: claimError } = await supabase.rpc("claim_payment_webhook_v2", {
@@ -958,6 +1022,7 @@ export const recordPaymentWebhook = async (payment: VerifiedPayment) => {
 
   try {
     const result = await processPaymentWebhook(payment)
+    await recordAuthoritativePaymentEvent(payment, result)
     const { error: completeError } = await supabase
       .from("payment_webhook_events")
       .update({

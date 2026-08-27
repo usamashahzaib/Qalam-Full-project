@@ -3,7 +3,7 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint: string }
 
@@ -33,19 +33,18 @@ export async function PATCH(
       return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     const { data, error } = await supabase
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("workspace_id", workspaceId)
       .single()
 
     if (error || !data) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
 
-    const slides: DbSlide[] = [...((data as { slides: DbSlide[] }).slides || [])]
+    const slides: DbSlide[] = [...((data as unknown as { slides: DbSlide[] }).slides || [])]
     if (slideIndex >= slides.length) {
       return NextResponse.json({ error: "Slide not found" }, { status: 404 })
     }
@@ -62,7 +61,6 @@ export async function PATCH(
       .from("carousels")
       .update({ slides, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("workspace_id", workspaceId)
 
     return NextResponse.json({
       slide: {
@@ -101,19 +99,18 @@ export async function DELETE(
       return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     const { data, error } = await supabase
       .from("carousels")
       .select("slides")
       .eq("id", carouselId)
-      .eq("workspace_id", workspaceId)
       .single()
 
     if (error || !data) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
 
-    const slides: DbSlide[] = [...((data as { slides: DbSlide[] }).slides || [])]
+    const slides: DbSlide[] = [...((data as unknown as { slides: DbSlide[] }).slides || [])]
     if (slides.length <= 2) {
       return NextResponse.json({ error: "Cannot delete - minimum 2 slides required" }, { status: 400 })
     }
@@ -127,7 +124,6 @@ export async function DELETE(
       .from("carousels")
       .update({ slides: updated, slide_count: updated.length, updated_at: new Date().toISOString() })
       .eq("id", carouselId)
-      .eq("workspace_id", workspaceId)
 
     return NextResponse.json({ ok: true, slideCount: updated.length })
   })(request)

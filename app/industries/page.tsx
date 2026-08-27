@@ -4,7 +4,7 @@ import { INDUSTRIES, DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
 import { SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const title = "Industries and Professionals Qalam Helps"
-const description = "See how Qalam supports job seekers, recruiters, career coaches, universities, founders, consultants, agencies, and marketing teams with connected career visibility workflows."
+const description = "See how Qalam supports job seekers, recruiters, career coaches, universities, founders, consultants, and agencies with connected career workflows."
 
 export const metadata: Metadata = buildPageMetadata({
   title,
@@ -63,7 +63,7 @@ export default function IndustriesPage() {
 
       <section className="border-b border-zinc-200 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
         <div className="mx-auto max-w-[1200px]">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Built around the decision being made</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Built around the decision being made</p>
           <div className="mt-5 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <h1 className="text-4xl font-extrabold leading-none tracking-tight text-zinc-900 sm:text-6xl">Different careers need different proof. Qalam keeps the evidence connected.</h1>
             <p className="max-w-[60ch] border-l-2 border-teal pl-5 text-base leading-8 text-zinc-600 sm:pl-7">Choose your context to see the exact problem, outcome, and workflows Qalam supports. No generic promise that one feature solves every audience.</p>
@@ -75,9 +75,9 @@ export default function IndustriesPage() {
         <div className="mx-auto max-w-[1200px] divide-y divide-zinc-200 border-y border-zinc-200">
           {INDUSTRIES.map((industry, index) => (
             <article key={industry.slug} className="group grid gap-5 py-8 md:grid-cols-[3rem_0.72fr_1.28fr_auto] md:items-start md:gap-8">
-              <span className="text-xs font-bold text-gold">{String(index + 1).padStart(2, "0")}</span>
+              <span className="text-xs font-bold text-gold-700">{String(index + 1).padStart(2, "0")}</span>
               <div><h2 className="text-2xl font-extrabold tracking-tight text-zinc-900 group-hover:text-teal">{industry.name}</h2><p className="mt-2 text-xs leading-5 text-zinc-500">{industry.audience}</p></div>
-              <div><p className="text-sm font-bold text-zinc-800">{industry.outcome}</p><p className="mt-3 text-sm leading-7 text-zinc-600">{industry.qalamFit}</p><div className="mt-4 flex flex-wrap gap-2">{industry.workflows.map((workflow) => <span key={workflow} className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[10px] font-bold text-zinc-600">{workflow}</span>)}</div></div>
+              <div><p className="text-sm font-bold text-zinc-800">{industry.outcome}</p><p className="mt-3 text-sm leading-7 text-zinc-600">{industry.qalamFit}</p><div className="mt-4 flex flex-wrap gap-2">{industry.workflows.map((workflow) => <span key={workflow} className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-[11px] font-bold text-zinc-600">{workflow}</span>)}</div></div>
               <Link href={`/use-cases/${industry.slug}`} className="press inline-flex min-h-11 w-fit items-center rounded-xl border border-teal/20 bg-teal-50 px-4 py-2.5 text-xs font-bold text-teal hover:bg-teal hover:text-white">View workflow</Link>
             </article>
           ))}
@@ -102,7 +102,7 @@ export default function IndustriesPage() {
         <div className="mx-auto max-w-[900px]">
           <h2 className="text-4xl font-extrabold tracking-tight text-zinc-900">Industry questions</h2>
           <div className="mt-7 divide-y divide-zinc-200 border-y border-zinc-200">{faqs.map((faq) => <article key={faq.q} className="py-6"><h3 className="font-bold text-zinc-900">{faq.q}</h3><p className="mt-2 text-sm leading-7 text-zinc-600">{faq.a}</p></article>)}</div>
-          <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#073f3b] p-7 text-white sm:flex-row sm:items-center"><div><h2 className="text-2xl font-extrabold">Need an organization-specific workflow?</h2><p className="mt-2 text-sm text-white/65">Tell Qalam who the users are, what outcome matters, and how delivery works today.</p></div><Link href="/contact" className="press shrink-0 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Discuss the workflow</Link></div>
+          <div className="mt-10 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#073f3b] p-7 text-white sm:flex-row sm:items-center"><div><h2 className="text-2xl font-extrabold">Need an organization-specific workflow?</h2><p className="mt-2 text-sm text-white/65">Tell Qalam who the users are, what outcome matters, and how delivery works today.</p></div><Link href="/contact" className="press shrink-0 rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">Discuss the workflow</Link></div>
         </div>
       </section>
     </main>

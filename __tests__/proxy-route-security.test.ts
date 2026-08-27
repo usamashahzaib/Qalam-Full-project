@@ -22,18 +22,25 @@ describe("proxy route security tables", () => {
     expect(PROTECTED_ROUTES).toContain("/career")
   })
 
-  it("keeps scripts nonce-bound while allowing runtime framework styles", () => {
-    const csp = buildCsp("test-nonce", false)
-    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' 'strict-dynamic'")
+  it("keeps scripts nonce-bound on auth-gated routes while allowing runtime framework styles", async () => {
+    const csp = await buildCsp({ nonce: "test-nonce", isDev: false })
+    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' https://www.googletagmanager.com https://app.lemonsqueezy.com")
     expect(csp).toContain("style-src 'self' 'unsafe-inline'")
     expect(csp).toContain("style-src-elem 'self' 'unsafe-inline'")
     expect(csp).not.toContain("style-src 'self' 'nonce-test-nonce'")
+    expect(csp.split("; ").find((d) => d.startsWith("script-src"))).not.toContain("unsafe-inline")
     expect(csp).toContain("frame-ancestors 'none'")
     expect(csp).toContain("object-src 'none'")
     expect(csp).toContain("upgrade-insecure-requests")
   })
 
-  it("keeps local development on HTTP", () => {
-    expect(buildCsp("test-nonce", true)).not.toContain("upgrade-insecure-requests")
+  it("falls back to a static-friendly policy with no nonce on marketing routes", async () => {
+    const csp = await buildCsp({ isDev: false })
+    expect(csp).toContain("script-src 'self' 'unsafe-inline' https://www.googletagmanager.com")
+    expect(csp).not.toContain("nonce-")
+  })
+
+  it("keeps local development on HTTP", async () => {
+    expect(await buildCsp({ nonce: "test-nonce", isDev: true })).not.toContain("upgrade-insecure-requests")
   })
 })

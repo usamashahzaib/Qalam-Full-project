@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
-import { AGENCY_PLAN_LIVE, PLAN_FEATURES, PLAN_PRICES, formatPkr, type BillingCycle, type PlanName } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLAN_FEATURES, PLAN_PRICES, formatPkr, type PlanName, type PurchasableBillingCycle } from "@/lib/pricing"
 import { PLAN_HIERARCHY, type PlanTier } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS, upgradesMailUrl } from "@/lib/contact"
 import { CheckIcon } from "@/components/ui/qalam-icons"
@@ -20,7 +20,7 @@ export default function UpgradePage() {
   const { openCheckout, isSelfServe, state } = usePlanCheckout()
 
   const requestedPlan = isValidPlan(searchParams.get("plan")) ? (searchParams.get("plan") as PlanName) : null
-  const cycle: BillingCycle = "quarterly"
+  const cycle: PurchasableBillingCycle = "quarterly"
 
   const currentRank = PLAN_HIERARCHY[billing.plan as PlanTier] ?? 0
   const preparingPlan = state.phase === "preparing" ? state.targetPlan : null
@@ -30,7 +30,7 @@ export default function UpgradePage() {
       <header>
         <h1 className="text-2xl font-bold text-zinc-950">Upgrade your plan</h1>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          Pay by card and your plan unlocks straight away. You stay on this page the whole time.
+          Pay by card and your plan activates straight away. You stay on this page the whole time.
         </p>
         <p className="mt-2 text-xs text-zinc-500">
           Current plan:{" "}
@@ -45,7 +45,7 @@ export default function UpgradePage() {
       {/* Plans */}
       <div className="mt-6 grid gap-5 sm:grid-cols-2">
         {SELF_SERVE_PLANS.map((plan) => {
-          const prices = PLAN_PRICES[plan] ?? { monthly: 0, quarterly: 0, annual: 0 }
+          const prices = PLAN_PRICES[plan] ?? { monthly: 0, quarterly: 0 }
           const rank = PLAN_HIERARCHY[plan as PlanTier] ?? 0
           const isCurrent = billing.plan === plan
           const isDowngrade = rank < currentRank
@@ -99,7 +99,7 @@ export default function UpgradePage() {
                       ? "Pay via JazzCash, Easypaisa, or bank transfer"
                     : isBusy
                       ? "Opening checkout..."
-                      : `Pay and unlock ${plan}`}
+                      : `Pay and activate ${plan}`}
               </button>
               <p className="mt-2 text-center text-[11px] text-zinc-400">
                 {checkoutReady ? "Secure card checkout via Lemon Squeezy." : "Quarterly card checkout activates after the new variants are configured."}
@@ -111,7 +111,7 @@ export default function UpgradePage() {
 
       {AGENCY_PLAN_LIVE ? (
         <section className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-5">
-          <span className="rounded-full bg-teal px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">For teams</span>
+          <span className="rounded-full bg-teal px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-white">For teams</span>
           <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
             PKR 7,998 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.

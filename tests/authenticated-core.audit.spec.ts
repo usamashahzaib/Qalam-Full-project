@@ -169,6 +169,7 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
 
     const postResponse = await page.request.post("/api/generate/post", {
       data: {
+        idempotencyKey: crypto.randomUUID(),
         topic,
         hook: hooks.hooks[0].text,
         role: "Founder",

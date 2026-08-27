@@ -133,7 +133,7 @@ export default function CarouselsPage() {
           <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full" style={{ background: "radial-gradient(circle, rgba(13,74,69,0.1) 0%, transparent 70%)" }} />
           <div className="relative flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Carousel Studio</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Carousel Studio</p>
               <h1 className="mt-1 text-3xl font-bold text-zinc-900">Build premium decks directly from a post, theme, or rough brief</h1>
               <p className="mt-2 max-w-3xl text-sm text-zinc-500">Start from a workspace post or a fresh idea. Qalam builds the first deck, then you refine slides in the editor.</p>
             </div>
@@ -151,7 +151,7 @@ export default function CarouselsPage() {
                 <h2 className="text-sm font-bold text-zinc-900">Direct creation</h2>
                 <p className="mt-1 text-xs text-zinc-500">Choose a deck style, then start from a post or your own seed.</p>
               </div>
-              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-zinc-500">No default theme</span>
+              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-zinc-500">No default theme</span>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -213,7 +213,7 @@ export default function CarouselsPage() {
                 <h2 className="text-sm font-bold text-zinc-900">Deck preview</h2>
                 <p className="mt-0.5 text-[11px] text-zinc-400">{THEME_META[theme]?.tagline ?? "AI-structured LinkedIn carousel"}</p>
               </div>
-              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[10px] font-bold text-zinc-500">{slideCount} slides</span>
+              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-[11px] font-bold text-zinc-500">{slideCount} slides</span>
             </div>
 
             {/* Slide 1 preview card */}
@@ -241,7 +241,7 @@ export default function CarouselsPage() {
 
             {/* Slide structure */}
             <div className="space-y-1.5">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Deck structure</p>
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-zinc-400">Deck structure</p>
               {(THEME_META[theme]?.structure ?? ["Hook", "Framework", "Proof", "Insight", "Application", "CTA"]).slice(0, slideCount).map((item, i) => (
                 <div key={i} className="flex items-center gap-2.5">
                   <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-[9px] font-bold tabular-nums text-zinc-500">{i + 1}</span>
@@ -270,10 +270,10 @@ export default function CarouselsPage() {
                     className="mb-4 overflow-hidden rounded-xl p-4"
                     style={{ background: (carousel.tone && THEME_META[carousel.tone]?.gradient) || "linear-gradient(135deg, #0d1117 0%, #0d4a45 60%, #0f766e 100%)" }}
                   >
-                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.accent) || "#5eead4" }}>{carousel.slide_count || 7} slides</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.accent) || "#5eead4" }}>{carousel.slide_count || 7} slides</p>
                     <p className="mt-5 line-clamp-2 min-h-10 text-base font-bold" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.text) || "#ffffff" }}>{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                     <div className="mt-5 h-px bg-white/15" />
-                    <p className="mt-2 text-[10px]" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.muted) || "rgba(255,255,255,0.6)" }}>{carousel.role || "LinkedIn"} · {formatDate(carousel.created_at)}</p>
+                    <p className="mt-2 text-[11px]" style={{ color: (carousel.tone && THEME_META[carousel.tone]?.muted) || "rgba(255,255,255,0.6)" }}>{carousel.role || "LinkedIn"} · {formatDate(carousel.created_at)}</p>
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
@@ -281,7 +281,7 @@ export default function CarouselsPage() {
                       <p className="truncate text-sm font-semibold text-zinc-900 transition-colors group-hover:text-teal">{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                       <p className="mt-1 text-[11px] text-zinc-400">Created {formatDate(carousel.created_at)}</p>
                     </div>
-                    <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-[10px] font-semibold text-zinc-500 transition-colors group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-teal">Edit &gt;</span>
+                    <span className="shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] font-semibold text-zinc-500 transition-colors group-hover:border-teal/30 group-hover:bg-teal/5 group-hover:text-teal">Edit &gt;</span>
                   </div>
                 </Link>
                 <button

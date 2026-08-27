@@ -11,7 +11,7 @@ export function ResumePreview({ data, templateKey }: { data: ResumeData; templat
       <header className="border-b-2 pb-4" style={{ borderColor: template.accent }}>
         <h1 className="text-3xl font-bold tracking-tight text-zinc-950">{data.fullName || "Your Name"}</h1>
         <p className="mt-1 text-sm font-semibold" style={{ color: template.accent }}>{data.headline}</p>
-        <p className="mt-2 text-[10px] text-zinc-600">{[data.email, data.phone, data.location, data.linkedinUrl].filter(Boolean).join("  |  ")}</p>
+        <p className="mt-2 text-[11px] text-zinc-600">{[data.email, data.phone, data.location, data.linkedinUrl].filter(Boolean).join("  |  ")}</p>
       </header>
 
       {data.summary && <section className={sectionClass}><Heading title="Professional Summary" color={template.accent} /><p>{data.summary}</p></section>}
@@ -24,7 +24,7 @@ export function ResumePreview({ data, templateKey }: { data: ResumeData; templat
               <div key={`${entry.organization}-${index}`} className="break-inside-avoid">
                 <div className="flex items-start justify-between gap-5">
                   <div><h3 className="font-bold text-zinc-950">{entry.title}</h3><p className="font-semibold">{entry.organization}{entry.location ? `, ${entry.location}` : ""}</p></div>
-                  <p className="shrink-0 text-[10px] text-zinc-500">{[entry.startDate, entry.endDate].filter(Boolean).join(" - ")}</p>
+                  <p className="shrink-0 text-[11px] text-zinc-500">{[entry.startDate, entry.endDate].filter(Boolean).join(" - ")}</p>
                 </div>
                 {entry.bullets.length > 0 && <ul className="mt-1.5 list-disc space-y-1 pl-4">{entry.bullets.map((bullet, bulletIndex) => <li key={`${bullet}-${bulletIndex}`}>{bullet}</li>)}</ul>}
               </div>
@@ -51,7 +51,7 @@ function EntrySection({ title, entries, color, compact }: { title: string; entri
         {entries.map((entry, index) => (
           <div key={`${entry.organization}-${index}`} className="flex justify-between gap-5 break-inside-avoid">
             <div><h3 className="font-bold text-zinc-950">{entry.title}</h3><p>{entry.organization}</p></div>
-            <p className="shrink-0 text-[10px] text-zinc-500">{[entry.startDate, entry.endDate].filter(Boolean).join(" - ")}</p>
+            <p className="shrink-0 text-[11px] text-zinc-500">{[entry.startDate, entry.endDate].filter(Boolean).join(" - ")}</p>
           </div>
         ))}
       </div>

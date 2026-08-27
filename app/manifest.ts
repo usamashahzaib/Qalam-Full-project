@@ -15,9 +15,9 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#0d4a45",
     categories: ["productivity", "business"],
     icons: [
-      { src: "/icon.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/apple-icon.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icon.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
       {
@@ -25,14 +25,14 @@ export default function manifest(): MetadataRoute.Manifest {
         short_name: "Write",
         description: "Start a new LinkedIn post",
         url: "/writer?compose=new",
-        icons: [{ src: "/icon.png", sizes: "96x96" }],
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
       {
         name: "Planner",
         short_name: "Plan",
         description: "Open your content calendar",
         url: "/calendar",
-        icons: [{ src: "/icon.png", sizes: "96x96" }],
+        icons: [{ src: "/icon-192.png", sizes: "192x192" }],
       },
     ],
   }

@@ -2,7 +2,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "Changelog",
+  title: "Changelog: Product Updates and Release Notes",
   description: "Public product notes for Qalam changes that affect positioning, trust, workflow, or behavior.",
   path: "/changelog",
 })
@@ -73,7 +73,7 @@ const UPDATES = [
 
 export default function ChangelogPage() {
   return (
-    <div className="min-h-screen bg-teal-900 pt-24">
+    <div data-nav-ground="dark" data-nav-hero="dark" className="min-h-screen bg-teal-900 pt-24">
       <section className="px-6 py-20">
         <div className="mx-auto max-w-[760px]">
           <FadeUp className="mb-14">
@@ -81,7 +81,7 @@ export default function ChangelogPage() {
               Product Notes
             </span>
             <h1 className="mb-4 text-5xl font-extrabold text-white">Changelog</h1>
-            <p className="text-lg leading-relaxed text-white/55">
+            <p className="text-lg leading-relaxed text-white/65">
               Public-facing changes that affect positioning, trust, workflow, or product behavior.
             </p>
           </FadeUp>
@@ -90,9 +90,9 @@ export default function ChangelogPage() {
             {UPDATES.map((update, i) => (
               <FadeUp key={update.title} delay={i * 0.08}>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-                  <p className="mb-3 text-sm font-semibold text-gold">{update.date}</p>
+                  <p className="mb-3 text-sm font-semibold text-gold-200">{update.date}</p>
                   <h2 className="mb-4 text-2xl font-bold text-white">{update.title}</h2>
-                  <ul className="space-y-3 text-sm leading-relaxed text-white/55">
+                  <ul className="space-y-3 text-sm leading-relaxed text-white/65">
                     {update.items.map((item) => (
                       <li key={item} className="flex items-start gap-3">
                         <span className="font-bold text-gold">-</span>

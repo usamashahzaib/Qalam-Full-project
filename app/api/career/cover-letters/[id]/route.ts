@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -29,9 +29,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
     const { id } = await context.params
-    const { data, error } = await createServiceClient().from("cover_letter_documents").select("*").eq("id", id).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("cover_letter_documents").select("*").eq("id", id).maybeSingle()
     if (error || !data) return NextResponse.json({ error: "Cover letter not found." }, { status: 404 })
-    return NextResponse.json({ coverLetter: toClient(data) })
+    return NextResponse.json({ coverLetter: toClient(data as unknown as Record<string, unknown>) })
   })(request)
 }
 
@@ -44,17 +44,17 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const { id } = await context.params
     const parsed = updateSchema.safeParse(await req.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "Check the cover letter fields." }, { status: 400 })
-    const supabase = createServiceClient()
-    const { data: existing } = await supabase.from("cover_letter_documents").select("id").eq("id", id).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const scoped = createScopedClient(planCheck.workspaceId)
+    const { data: existing } = await scoped.from("cover_letter_documents").select("id").eq("id", id).maybeSingle()
     if (!existing) return NextResponse.json({ error: "Cover letter not found." }, { status: 404 })
-    const { data, error } = await supabase
+    const { data, error } = await scoped
       .from("cover_letter_documents")
       .update({ title: parsed.data.title, content: parsed.data.content, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select("*")
       .single()
     if (error) return NextResponse.json({ error: "Cover letter could not be saved." }, { status: 500 })
-    return NextResponse.json({ coverLetter: toClient(data) })
+    return NextResponse.json({ coverLetter: toClient(data as unknown as Record<string, unknown>) })
   })(request)
 }
 
@@ -65,7 +65,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
     const { id } = await context.params
-    const { error } = await createServiceClient().from("cover_letter_documents").update({ status: "archived", updated_at: new Date().toISOString() }).eq("id", id).eq("workspace_id", planCheck.workspaceId)
+    const { error } = await createScopedClient(planCheck.workspaceId).from("cover_letter_documents").update({ status: "archived", updated_at: new Date().toISOString() }).eq("id", id)
     if (error) return NextResponse.json({ error: "Cover letter could not be archived." }, { status: 500 })
     return NextResponse.json({ success: true })
   })(request)

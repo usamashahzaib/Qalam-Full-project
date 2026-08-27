@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(
@@ -13,10 +13,12 @@ export async function POST(
     if (!planCheck.ok) return planCheck.response
 
     const { id: postId, versionId } = await context.params
-    const supabase = createServiceClient()
+    // Workspace isn't known yet at this point - this lookup is how it gets
+    // discovered, so it can't itself be workspace-scoped. Everything after
+    // the role check below uses createScopedClient(post.workspace_id) instead.
+    const rawSupabase = createServiceClient()
 
-    // Verify workspace membership
-    const { data: post } = await supabase
+    const { data: post } = await rawSupabase
       .from("posts")
       .select("workspace_id, content")
       .eq("id", postId)
@@ -27,18 +29,22 @@ export async function POST(
     const roleError = await authorizeRole(req, post.workspace_id, "editor")
     if (roleError) return roleError
 
-    // Fetch the target version
-    const { data: version } = await supabase
+    const supabase = createScopedClient(post.workspace_id)
+
+    // post_versions has no workspace_id column of its own (scoped indirectly
+    // via post_id, already verified above) - use .raw.
+    const { data: versionRaw } = await supabase
       .from("post_versions")
-      .select("content, version_number")
+      .raw.select("content, version_number")
       .eq("id", versionId)
       .eq("post_id", postId)
       .maybeSingle()
 
-    if (!version) return NextResponse.json({ error: "version_not_found" }, { status: 404 })
+    if (!versionRaw) return NextResponse.json({ error: "version_not_found" }, { status: 404 })
+    const version = versionRaw as unknown as { content: string; version_number: number }
 
     // Snapshot current content before restoring
-    const { error: rpcErr } = await supabase.rpc("update_post_with_version", {
+    const { error: rpcErr } = await rawSupabase.rpc("update_post_with_version", {
       p_post_id: postId,
       p_workspace_id: post.workspace_id,
       p_new_content: version.content,
@@ -51,7 +57,6 @@ export async function POST(
         .from("posts")
         .update({ content: version.content, updated_at: new Date().toISOString() })
         .eq("id", postId)
-        .eq("workspace_id", post.workspace_id)
       if (directErr) return NextResponse.json({ error: "restore_failed: " + directErr.message }, { status: 500 })
     }
 

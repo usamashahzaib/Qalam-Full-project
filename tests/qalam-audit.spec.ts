@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test"
+import { AGENCY_PLAN_LIVE } from "../lib/pricing"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 const MOBILE = { width: 375, height: 812 }
@@ -99,7 +100,6 @@ test.describe("Marketing sub-pages status", () => {
     "/product/voice-profile",
     "/product/hook-generator",
     "/product/post-scheduler",
-    "/product/agency-workspaces",
     "/use-cases/founders",
     "/use-cases/agencies",
     "/ai-linkedin-writer",
@@ -251,9 +251,9 @@ test.describe("Auth guards", () => {
     "/carousels",
     "/analytics",
     "/calendar",
-      "/voice",
-      "/career",
-      "/competitors",
+    "/voice",
+    "/career",
+    "/competitors",
     "/library",
     "/settings",
     "/approvals",
@@ -269,9 +269,18 @@ test.describe("Auth guards", () => {
     })
   }
 
-  test("/agency-setup redirects visitors to managed agency application", async ({ page }) => {
+  test("agency workspaces product page matches release state", async ({ page }) => {
+    const response = await page.goto("/product/agency-workspaces")
+    expect(response?.status()).toBe(AGENCY_PLAN_LIVE ? 200 : 404)
+  })
+
+  test("/agency-setup matches the agency plan release state", async ({ page }) => {
     await page.goto("/agency-setup")
-    await expect(page).toHaveURL(/\/managed\/apply\?plan=Agency&type=company$/)
+    if (AGENCY_PLAN_LIVE) {
+      await expect(page).toHaveURL(/\/managed\/apply\?plan=Agency&type=company$/)
+    } else {
+      await expect(page).toHaveURL(/\/pricing$/)
+    }
   })
 
   test("homepage has no Framer Motion scroll-container warning", async ({ page }) => {
@@ -332,7 +341,7 @@ test.describe("Free tools functionality", () => {
     const textarea = page.locator("textarea").first()
     if (await textarea.isVisible()) {
       await textarea.fill("Just closed a $100K deal. Here is what worked.")
-      const btn = page.getByRole("button", { name: /predict|analyze|check/i }).first()
+      const btn = page.getByRole("button", { name: /review|predict|analyze|check/i }).first()
       await btn.click()
       await page.waitForTimeout(6000)
       await expect(page.locator("body")).not.toContainText(/\[object Object\]|TypeError/)
@@ -366,6 +375,8 @@ test.describe("Free tools functionality", () => {
 
   test("comment generator - preserves its deep link through sign-in", async ({ page }) => {
     await page.goto("/free-tools/comment-generator")
+    await page.locator("textarea").first().fill("This post makes a useful point about building trust through consistent work.")
+    await page.getByRole("button", { name: /generate 3/i }).click()
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Ffree-tools%2Fcomment-generator/)
   })
 

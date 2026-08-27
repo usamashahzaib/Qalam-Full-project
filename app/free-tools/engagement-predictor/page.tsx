@@ -3,22 +3,22 @@ import { EngagementPredictorTool } from "@/components/tools/EngagementPredictorT
 const engagementPredictorSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  name: "How to predict LinkedIn post engagement before publishing",
+  name: "How to review LinkedIn post readiness before publishing",
   description:
-    "Score your LinkedIn post draft across hook quality, specificity, audience relevance, and discussion value to predict real engagement before posting.",
-  tool: { "@type": "HowToTool", name: "Qalam LinkedIn Engagement Predictor" },
+    "Score your LinkedIn post draft across hook quality, specificity, audience relevance, and discussion value before posting.",
+  tool: { "@type": "HowToTool", name: "Qalam LinkedIn Post Readiness Review" },
   step: [
     {
       "@type": "HowToStep",
       position: 1,
       name: "Paste your LinkedIn draft",
-      text: "Copy your draft post text and paste it into the engagement predictor.",
+      text: "Copy your draft post text and paste it into the readiness review.",
     },
     {
       "@type": "HowToStep",
       position: 2,
-      name: "Get your engagement score",
-      text: "The AI scores your post across 5 dimensions: hook quality, specificity, audience relevance, discussion trigger, and emotional resonance.",
+      name: "Get your readiness score",
+      text: "The AI scores your post across 5 dimensions: hook quality, clarity, specificity, audience relevance, and discussion potential.",
     },
     {
       "@type": "HowToStep",
@@ -30,7 +30,7 @@ const engagementPredictorSchema = {
       "@type": "HowToStep",
       position: 4,
       name: "Use the stronger opening",
-      text: "Apply the AI-suggested stronger opening line to improve your hook and re-score until you reach a strong engagement prediction.",
+      text: "Apply the suggested stronger opening line to improve your hook and review the draft again.",
     },
   ],
 }

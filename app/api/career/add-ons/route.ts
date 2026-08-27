@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { CAREER_PRODUCTS, getCareerProduct } from "@/lib/career-pricing"
 import { isCareerAddonCheckoutConfigured } from "@/lib/server/lemonsqueezy-api"
 import { requirePlan } from "@/lib/server/require-plan"
@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
     const rows = parsed.data.items.map((item) => {
       const product = getCareerProduct(item.key)!
       return {
-        workspace_id: planCheck.workspaceId,
         user_id: user.id,
         addon_key: product.key,
         product_key: product.key,
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
         source_type: "purchase",
       }
     })
-    const { data, error } = await createServiceClient().from("career_addon_orders").insert(rows).select("id, addon_key, amount_pkr, quantity, status")
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("career_addon_orders").insert(rows).select("id, addon_key, amount_pkr, quantity, status")
     if (error) return NextResponse.json({ error: "Add-on order could not be created." }, { status: 500 })
     return NextResponse.json({ orders: data, total: rows.reduce((sum, row) => sum + row.amount_pkr, 0) }, { status: 201 })
   })(request)

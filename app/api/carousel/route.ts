@@ -7,7 +7,7 @@ import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit, incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { requirePlan } from "@/lib/server/require-plan"
 import { checkWorkspaceUsage, incrementWorkspaceUsage } from "@/lib/server/workspace-usage"
@@ -180,10 +180,9 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
     // still come out looking different from each other.
     const themeId = pickThemeForTone(parsed.data.tone)
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     const baseRow = {
       user_id: user.id,
-      workspace_id: workspaceId,
       topic: parsed.data.topic,
       role: parsed.data.role,
       tone: parsed.data.tone ?? null,
@@ -218,8 +217,9 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
       throw new Error(saveError.message ?? "carousel_save_failed")
     }
     if (!carousel) throw new Error("carousel_save_failed")
+    const savedCarousel = carousel as unknown as { id: string }
 
-    return NextResponse.json({ id: carousel.id, slides, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
+    return NextResponse.json({ id: savedCarousel.id, slides, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
   })(request)
 }
 
@@ -237,11 +237,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     const { data, error } = await supabase
       .from("carousels")
       .select("id, topic, role, tone, slide_count, created_at")
-      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(50)
 

@@ -6,7 +6,7 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { resumeDataSchema } from "@/lib/career-resume"
 import { isResumeTemplateKey } from "@/lib/resume-templates"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Add a source resume, target role, job description, and template." }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(planCheck.workspaceId)
     let usageConsumed = false
     let creditOrderId: string | null = null
     const usage = await consumeCareerUsage(user.id, planCheck.plan, "resume_generation")
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parsed.data
-    const { data: vault } = await supabase.from("career_profiles").select("*").eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const { data: vault } = await supabase.from("career_profiles").select("*").maybeSingle()
     let raw: string
     try {
       raw = await callAi(
@@ -122,7 +122,6 @@ Return:
     const { data, error } = await supabase
       .from("resume_documents")
       .insert({
-        workspace_id: planCheck.workspaceId,
         user_id: user.id,
         title: input.title,
         template_key: input.templateKey,
@@ -141,12 +140,15 @@ Return:
       await releaseReservation()
       return NextResponse.json({ error: "The resume could not be saved." }, { status: 500 })
     }
-    const { error: versionError } = await supabase.from("resume_versions").insert({ resume_id: data.id, version_number: 1, resume_data: resumeParsed.data, analysis })
+    const savedResume = data as unknown as { id: string }
+    // resume_versions has no workspace_id column of its own (scoped
+    // indirectly via resume_id, just created above) - use .raw.
+    const { error: versionError } = await supabase.from("resume_versions").raw.insert({ resume_id: savedResume.id, version_number: 1, resume_data: resumeParsed.data, analysis })
     if (versionError) {
-      await supabase.from("resume_documents").delete().eq("id", data.id)
+      await supabase.from("resume_documents").delete().eq("id", savedResume.id)
       await releaseReservation()
       return NextResponse.json({ error: "The resume could not be versioned." }, { status: 500 })
     }
-    return NextResponse.json({ id: data.id, resumeData: resumeParsed.data, analysis, atsScore }, { status: 201 })
+    return NextResponse.json({ id: savedResume.id, resumeData: resumeParsed.data, analysis, atsScore }, { status: 201 })
   })(request)
 }

@@ -98,7 +98,7 @@ export default function CommentGeneratorPage() {
           <CommentIcon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Engagement</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Engagement</p>
           <h1 className="mt-1 text-2xl font-bold text-zinc-900">Comment Generator</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Paste a post, pick the style you want, and get comment options written in your own voice, ready to post.

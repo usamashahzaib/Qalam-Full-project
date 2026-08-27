@@ -73,7 +73,7 @@ export function NewFeatureBadge({
               e.stopPropagation()
               dismiss()
             }}
-            className="mt-2 cursor-pointer text-[10px] font-bold text-teal hover:underline"
+            className="mt-2 cursor-pointer text-[11px] font-bold text-teal hover:underline"
           >
             Dismiss
           </button>

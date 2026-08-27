@@ -82,7 +82,9 @@ node_modules/
 /.fallow/
 *.png
 !public/brand/linkedin/*.png
-!public/brand/source/qalam-guide-reference.png
+!assets/brand/*.png
+!public/product/*.png
+!public/icon-192.png
 QALAM_AUDIT_REPORT.md
 
 # Campaign archives are regenerable build output from render-posters.mjs and run

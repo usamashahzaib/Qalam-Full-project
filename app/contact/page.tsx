@@ -25,7 +25,7 @@ const contactPageSchema = {
   "@context": "https://schema.org",
   "@type": "ContactPage",
   name: "Contact Qalam",
-  description: "Contact page for Qalam - AI LinkedIn writing system. Support, plan upgrades, and commercial questions.",
+  description: "Contact page for Qalam career visibility support, assisted payments, and commercial questions.",
   url: "https://www.byqalam.com/contact",
   mainEntity: {
     "@type": "Organization",
@@ -74,7 +74,7 @@ export default function ContactPage() {
                   </a>
                 ))}
                 <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold">Before you write</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold-700">Before you write</p>
                   <ul className="space-y-1.5 text-sm leading-relaxed text-zinc-600">
                     <li>- Your workspace email</li>
                     <li>- The plan you want</li>
@@ -95,14 +95,14 @@ export default function ContactPage() {
         <div className="mx-auto max-w-[1000px]">
           <FadeUp>
             <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal">Manual upgrades</p>
-              <h2 className="mb-3 text-2xl font-bold text-zinc-900">How paid access works today</h2>
+              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal">Assisted payments</p>
+              <h2 className="mb-3 text-2xl font-bold text-zinc-900">Pay without a card</h2>
               <ol className="space-y-2 text-sm leading-relaxed text-zinc-600">
-                <li>1. Pick the plan that matches your workload.</li>
+                <li>1. Pick the plan that matches your workload. Card checkout is available from Pricing.</li>
                 <li>2. Email the team or use the form above for payment instructions.</li>
                 <li>3. Pay using {MANUAL_UPGRADE_METHODS.join(", ")}.</li>
                 <li>4. Send the payment screenshot in the same thread.</li>
-                <li>5. Qalam unlocks your workspace after manual review.</li>
+                <li>5. Qalam activates your workspace after manual review.</li>
               </ol>
               <p className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-xs leading-relaxed text-zinc-500">
                 {MANUAL_UPGRADE_SLA}
@@ -130,7 +130,7 @@ export default function ContactPage() {
           </div>
           <Link
             href="/pricing"
-            className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600"
+            className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 transition-colors hover:bg-gold-600"
           >
             See pricing
           </Link>

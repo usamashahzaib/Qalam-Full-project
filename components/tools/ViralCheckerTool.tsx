@@ -7,7 +7,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { MicroscopeIcon } from "@/components/ui/qalam-icons"
 
 type ViralResult = {
-  viral_score: number
+  content_quality_score: number
   breakdown: Record<string, number>
   verdict: string
   specific_feedback: string
@@ -54,8 +54,8 @@ export function ViralCheckerTool() {
           <FadeUp>
             <Link href="/free-tools" className="mb-6 inline-flex text-sm text-zinc-400 hover:text-teal">{"<- All Free Tools"}</Link>
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal"><MicroscopeIcon className="h-6 w-6" /></div>
-            <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">Viral Formula Checker</h1>
-            <p className="max-w-xl text-lg leading-relaxed text-zinc-500">AI analysis of viral potential, specific weaknesses, and a stronger opening.</p>
+            <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">LinkedIn Post Quality Checker</h1>
+            <p className="max-w-xl text-lg leading-relaxed text-zinc-500">A structured review of clarity, specificity, usefulness, and discussion potential. It does not predict reach.</p>
           </FadeUp>
         </div>
       </section>
@@ -76,13 +76,13 @@ export function ViralCheckerTool() {
           </FadeUp>
           {result ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Viral score</p>
-              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.viral_score}/100</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Content quality score</p>
+              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.content_quality_score}/100</p>
               <p className="mt-2 text-sm font-semibold text-teal">{result.verdict}</p>
               <div className="mt-5 grid gap-2 sm:grid-cols-5">
                 {Object.entries(result.breakdown || {}).map(([key, value]) => (
                   <div key={key} className="rounded-xl bg-zinc-50 p-3">
-                    <p className="text-[10px] font-bold uppercase text-zinc-400">{key}</p>
+                    <p className="text-[11px] font-bold uppercase text-zinc-400">{key}</p>
                     <p className="mt-1 text-lg font-bold">{value}</p>
                   </div>
                 ))}

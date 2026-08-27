@@ -246,19 +246,16 @@ export function ReferralCard() {
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <a
-                        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://${shareUrl}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          e.preventDefault()
+                      <button
+                        type="button"
+                        onClick={() => {
                           onCopy(templates.linkedin, `${c.code}-linkedin`)
                         }}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50"
                       >
                         <LinkedInIcon className="h-3.5 w-3.5" />
                         {copiedCode === `${c.code}-linkedin` ? "Copied!" : "LinkedIn"}
-                      </a>
+                      </button>
                       <a
                         href={`https://wa.me/?text=${encodeURIComponent(templates.whatsapp)}`}
                         target="_blank"

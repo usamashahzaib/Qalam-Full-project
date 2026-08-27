@@ -57,3 +57,13 @@ export interface RecentUser {
   name: string
   joinedAt: string
 }
+
+export interface CronRunHealth {
+  jobName: string
+  lastStartedAt: string | null
+  lastSuccessAt: string | null
+  lastFailureAt: string | null
+  lastError: string | null
+  durationMs: number | null
+  isStale: boolean
+}

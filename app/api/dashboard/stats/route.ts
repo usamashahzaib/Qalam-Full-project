@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { requireAuth, getAuthenticatedSession, ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/workspace"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 
 export async function GET() {
@@ -20,7 +20,7 @@ export async function GET() {
 
     const workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email: userEmail ?? "" })
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(workspaceId)
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
@@ -32,23 +32,20 @@ export async function GET() {
       supabase
         .from("posts")
         .select("engagement_score")
-        .eq("workspace_id", workspaceId)
         .gte("created_at", monthStart),
       supabase
         .from("posts")
-        .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId),
+        .select("id", { count: "exact", head: true }),
       supabase
         .from("posts")
         .select("id", { count: "exact", head: true })
-        .eq("workspace_id", workspaceId)
         .eq("status", "published")
         .gte("created_at", monthStart),
     ])
 
     const status = planStatus.status === "fulfilled" ? planStatus.value : null
     const monthPosts =
-      monthPostsRes.status === "fulfilled" ? (monthPostsRes.value.data ?? []) : []
+      monthPostsRes.status === "fulfilled" ? (monthPostsRes.value.data as unknown as { engagement_score?: number | null }[] ?? []) : []
     const libraryCount =
       libraryRes.status === "fulfilled" ? (libraryRes.value.count ?? 0) : 0
     const postsPublished =

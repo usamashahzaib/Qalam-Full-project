@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import { gaScriptHash } from "@/lib/csp-inline-scripts"
+import { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 // ─── Redis rate limiters ─────────────────────────────────────────────────────
 // Lazy-initialized per Edge invocation; state persists in Upstash, not memory.
@@ -142,26 +144,7 @@ async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextReq
 
 // ─── Route tables ─────────────────────────────────────────────────────────────
 
-export const PROTECTED_ROUTES = [
-  "/dashboard",
-  "/write",
-  "/writer",
-  "/carousel",
-  "/carousels",
-  "/comment-generator",
-  "/library",
-  "/analytics",
-  "/voice",
-  "/career",
-  "/settings",
-  "/agency",
-  "/competitors",
-  "/calendar",
-  "/approvals",
-  "/chat",
-  "/admin",
-  "/silent-growth",
-]
+export { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
 
@@ -189,6 +172,17 @@ function isAppOnlyPath(pathname: string): boolean {
   return (
     PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
     AUTH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
+  )
+}
+
+// The host split is narrower than isAppOnlyPath: login/signup/forgot-password/
+// reset-password are served from the marketing domain itself, so they must not
+// be bounced to app.byqalam.com. They still get the strict CSP and auth rate
+// limiter via isAppOnlyPath / AUTH_ONLY_ROUTES above.
+function isAppHostPath(pathname: string): boolean {
+  return (
+    PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
     APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
   )
 }
@@ -230,32 +224,53 @@ export const RATE_LIMITED_API_PREFIXES = [
 ] as const
 
 // ─── CSP builder ─────────────────────────────────────────────────────────────
-// Nonce is generated per HTML request and passed via x-nonce request header so
-// Server Components can attach it to any custom <script> tags. Next.js 16
-// automatically reads x-nonce and applies it to its own hydration scripts.
-// 'strict-dynamic' propagates trust to scripts loaded by nonce-bearing scripts,
-// enabling Next.js chunk loading without an allowlist.
+// Two script-src modes, chosen per request by isAppOnlyPath():
+//
+// - Auth-gated app pages (dashboard, career, admin, ...) are always
+//   server-rendered per request (see app/(app)/layout.tsx's force-dynamic),
+//   so a fresh nonce is generated and forwarded as x-nonce. Next.js parses
+//   the resulting Content-Security-Policy response header itself and stamps
+//   that nonce onto its own inline hydration scripts - no app code needs to
+//   read the header. 'self' alone already covers Next's same-origin chunk
+//   scripts, so no 'strict-dynamic' is needed there.
+// - Marketing/SEO pages are statically generated at build time, when no
+//   request or nonce exists yet - the CSP guide is explicit that nonces and
+//   static rendering don't mix. Those pages fall back to 'unsafe-inline',
+//   which only allows Next's own build-time-fixed inline hydration payload:
+//   there is no user-authored content and no other dangerouslySetInnerHTML
+//   on these routes for an attacker to smuggle a script through.
+//
+// Both modes allow the GA4 tag by host (external loader) and by build-time
+// hash (its one inline bootstrap script) instead of by nonce, so analytics
+// keeps working identically on both branches - see lib/csp-inline-scripts.ts.
+// lemon.js (LemonSqueezy checkout overlay) is only ever injected from
+// auth-gated app pages, so it's host-allowed on that branch only.
 
-export function buildCsp(nonce: string, isDev: boolean): string {
+export async function buildCsp(opts: { nonce?: string; isDev: boolean }): Promise<string> {
+  const { nonce, isDev } = opts
+  const gaHash = await gaScriptHash()
+  const gaSource = gaHash ? ` 'sha256-${gaHash}'` : ""
+
+  const scriptSrc = nonce
+    ? `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://app.lemonsqueezy.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
+    : `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
+
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'` + (isDev ? " 'unsafe-eval'" : ""),
+    scriptSrc,
     // React, Next.js and Framer Motion create runtime style elements without a
-    // nonce. Keep scripts nonce-bound, but allow inline CSS so those styles render.
+    // nonce. Keep scripts locked down, but allow inline CSS so those styles render.
     "style-src 'self' 'unsafe-inline'",
     "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self'",
-    // lemonsqueezy.com entries back the overlay checkout: lemon.js is appended by an
-    // already-trusted bundle chunk (so 'strict-dynamic' covers script-src, where a host
-    // allowlist would be ignored anyway), but the checkout itself renders in an iframe
-    // and the script talks back to its own origin. Without frame-src and connect-src
-    // here the overlay fails silently and no one can pay.
-    // google-analytics/googletagmanager entries back the GA4 tag: gtag.js itself is a
-    // nonce-bearing tag in the layout head, but the hits it sends go to collect
-    // endpoints on separate hosts, and GA falls back to an image pixel when fetch and
-    // sendBeacon are unavailable. Without connect-src and img-src here the tag loads
-    // and reports nothing.
+    // lemonsqueezy.com entries back the overlay checkout: the script talks back
+    // to its own origin and the checkout itself renders in an iframe. Without
+    // frame-src and connect-src here the overlay fails silently and no one can pay.
+    // google-analytics/googletagmanager entries back the GA4 tag: the hits it
+    // sends go to collect endpoints on separate hosts, and GA falls back to an
+    // image pixel when fetch and sendBeacon are unavailable. Without connect-src
+    // and img-src here the tag loads and reports nothing.
     "connect-src 'self' https://*.linkedin.com https://*.licdn.com https://*.groq.com https://*.googleapis.com https://*.supabase.co https://*.upstash.io wss://*.supabase.co https://*.lemonsqueezy.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "img-src 'self' data: blob: https://*.licdn.com https://media.licdn.com https://static.licdn.com https://*.supabase.co https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://*.lemonsqueezy.com https://*.google-analytics.com https://*.googletagmanager.com",
     "frame-src 'self' https://*.linkedin.com https://*.lemonsqueezy.com",
@@ -269,17 +284,20 @@ export function buildCsp(nonce: string, isDev: boolean): string {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function addSecurityHeaders(response: NextResponse, nonce?: string): NextResponse {
+async function addSecurityHeaders(response: NextResponse, csp?: { nonce?: string } | false): Promise<NextResponse> {
   response.headers.set("X-Frame-Options", "DENY")
   response.headers.set("X-Content-Type-Options", "nosniff")
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
-  response.headers.set("X-XSS-Protection", "1; mode=block")
+  // X-XSS-Protection is deliberately not set. Every browser that still
+  // honours it has an XSS auditor with known bypasses that can introduce
+  // vulnerabilities rather than prevent them, which is why the header was
+  // deprecated and removed from Chrome. The CSP below does the real work.
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-  if (nonce) {
+  if (csp) {
     response.headers.set(
       "Content-Security-Policy",
-      buildCsp(nonce, process.env.NODE_ENV === "development")
+      await buildCsp({ nonce: csp.nonce, isDev: process.env.NODE_ENV === "development" })
     )
   }
   return response
@@ -294,7 +312,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
     const contentLength = request.headers.get("content-length")
     if (contentLength && parseInt(contentLength, 10) > MAX_BODY_BYTES) {
-      return addSecurityHeaders(
+      return await addSecurityHeaders(
         NextResponse.json({ error: "Request body too large" }, { status: 413 })
       )
     }
@@ -321,18 +339,18 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // routes host-agnostic avoids duplicating the route tables here).
   if (!pathname.startsWith("/api/")) {
     const hostname = request.nextUrl.hostname
-    if (MARKETING_HOSTS.has(hostname) && isAppOnlyPath(pathname)) {
+    if (MARKETING_HOSTS.has(hostname) && isAppHostPath(pathname)) {
       const url = new URL(`${pathname}${request.nextUrl.search}`, `https://${APP_HOST}`)
-      return addSecurityHeaders(NextResponse.redirect(url, 308))
+      return await addSecurityHeaders(NextResponse.redirect(url, 308))
     }
     if (hostname === APP_HOST) {
       if (pathname === "/") {
         const url = new URL("/dashboard", `https://${APP_HOST}`)
-        return addSecurityHeaders(NextResponse.redirect(url))
+        return await addSecurityHeaders(NextResponse.redirect(url))
       }
-      if (!isAppOnlyPath(pathname)) {
+      if (!isAppHostPath(pathname)) {
         const url = new URL(`${pathname}${request.nextUrl.search}`, "https://www.byqalam.com")
-        return addSecurityHeaders(NextResponse.redirect(url, 308))
+        return await addSecurityHeaders(NextResponse.redirect(url, 308))
       }
     }
   }
@@ -363,25 +381,26 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     )
     const rateLimitOk = await checkRateLimit(ip, isAuthRoute, request)
     if (!rateLimitOk) {
-      return addSecurityHeaders(
+      return await addSecurityHeaders(
         NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
       )
     }
   }
 
-  // Generate a per-request nonce for HTML pages (not API routes or static assets).
-  // The nonce is forwarded as x-nonce so Server Components can stamp it on any
-  // inline <script> they own. Next.js 16 reads x-nonce internally and applies it
-  // to its own hydration script bundles, so no manual wiring is needed there.
+  // A per-request nonce is only generated for HTML pages that stay on the
+  // strict CSP branch (isAppOnlyPath - always dynamically rendered, see
+  // app/(app)/layout.tsx). Statically generated marketing pages never see a
+  // nonce, matching Next's own rule that nonces and static rendering don't
+  // mix. The nonce is forwarded as x-nonce so Next.js 16 can apply it to its
+  // own hydration script bundles during SSR.
   const isHtmlPage = !pathname.startsWith("/api/")
-  const nonce = isHtmlPage
+  const nonce = isHtmlPage && isAppOnlyPath(pathname)
     ? Buffer.from(crypto.randomUUID()).toString("base64")
     : undefined
 
   if (isPublicApi) {
-    return addSecurityHeaders(
-      NextResponse.next({ request: { headers: baseHeaders() } }),
-      nonce
+    return await addSecurityHeaders(
+      NextResponse.next({ request: { headers: baseHeaders() } })
     )
   }
 
@@ -402,9 +421,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!isProtectedRoute && !isAuthOnly && !isApiRoute) {
     const requestHeaders = baseHeaders()
     if (nonce) requestHeaders.set("x-nonce", nonce)
-    return addSecurityHeaders(
+    return await addSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
-      nonce
+      { nonce }
     )
   }
 
@@ -425,30 +444,30 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const userEmail = token?.email as string | undefined
 
   if (isAuthOnly && userId) {
-    return addSecurityHeaders(
+    return await addSecurityHeaders(
       NextResponse.redirect(new URL("/dashboard", request.url)),
-      nonce
+      { nonce }
     )
   }
 
   if (!userId) {
     // All API routes not in PUBLIC_API_PREFIXES require authentication
     if (isApiRoute) {
-      return addSecurityHeaders(
+      return await addSecurityHeaders(
         NextResponse.json({ error: "Unauthorized" }, { status: 401 })
       )
     }
     if (isAuthOnly) {
       const requestHeaders = baseHeaders()
       if (nonce) requestHeaders.set("x-nonce", nonce)
-      return addSecurityHeaders(
+      return await addSecurityHeaders(
         NextResponse.next({ request: { headers: requestHeaders } }),
-        nonce
+        { nonce }
       )
     }
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`)
-    return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce)
+    return await addSecurityHeaders(NextResponse.redirect(loginUrl), { nonce })
   }
 
   const requestHeaders = baseHeaders()
@@ -456,9 +475,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (userEmail) requestHeaders.set("x-user-email", userEmail)
   if (nonce) requestHeaders.set("x-nonce", nonce)
 
-  return addSecurityHeaders(
+  return await addSecurityHeaders(
     NextResponse.next({ request: { headers: requestHeaders } }),
-    nonce
+    // Authenticated protected-API responses (e.g. /api/competitors/analyze)
+    // reach this same return - they're JSON, not HTML, so skip the CSP header.
+    isHtmlPage ? { nonce } : undefined
   )
 }
 

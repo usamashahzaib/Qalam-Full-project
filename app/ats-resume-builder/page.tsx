@@ -72,7 +72,7 @@ export default function AtsResumeBuilderPage() {
             <p className="mt-3 text-sm text-zinc-500">Free plan. No payment card required. One resume generation per calendar month.</p>
           </div>
           <div className="rounded-3xl bg-[#073f3b] p-8 text-white">
-            <p className="text-sm font-bold text-gold">Included</p>
+            <p className="text-sm font-bold text-gold-200">Included</p>
             <ul className="mt-5 list-disc space-y-4 pl-5 text-sm text-white/80">
               {included.map((item) => <li key={item}>{item}</li>)}
             </ul>
@@ -106,7 +106,7 @@ export default function AtsResumeBuilderPage() {
             <Link href="/methodology/ats-resume-readiness" className="mt-7 inline-flex font-bold text-teal hover:underline">Read the ATS readiness methodology</Link>
           </div>
           <aside className="rounded-3xl bg-zinc-900 p-8 text-white">
-            <p className="text-sm font-bold text-gold">Continue your workflow</p>
+            <p className="text-sm font-bold text-gold-200">Continue your workflow</p>
             <div className="mt-5 space-y-4 text-sm">
               <Link href="/free-tools/ats-resume-checker" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Free ATS Resume Checker</strong><span className="mt-1 block text-white/70">Get your baseline before rebuilding.</span></Link>
               <Link href="/resume-keyword-match" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Resume Keyword Match</strong><span className="mt-1 block text-white/70">Find accurate language to prioritize.</span></Link>

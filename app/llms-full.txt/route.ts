@@ -2,7 +2,10 @@ import { CONTENT_LAST_UPDATED, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-cont
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_METHODOLOGY_UPDATED, ATS_METHODOLOGY_VERSION } from "@/lib/ats-methodology"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
+import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
+
+export const dynamic = "force-static"
 
 // llms-full.txt: the emerging companion convention to llms.txt. Where llms.txt
 // is an index, this serves the complete published article corpus as plain
@@ -67,7 +70,7 @@ export function GET() {
     "",
     "## High-intent answer pages",
     "",
-    ...Object.values(SEO_LANDING_PAGES).flatMap((page) => [
+    ...Object.values(SEO_LANDING_PAGES).filter((page) => !REDIRECTED_SEO_SLUGS.has(page.slug)).flatMap((page) => [
       `### ${page.title}`,
       "",
       `- URL: ${SITE_URL}/${page.slug}`,

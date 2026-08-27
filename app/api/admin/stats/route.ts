@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const supabase = createServiceClient()
 
   // Parallel fetch everything
-  const [usersResult, planUsageResult, recentUsersResult, circuitResult] = await Promise.all([
+  const [usersResult, planUsageResult, recentUsersResult, circuitResult, cronRunsResult] = await Promise.all([
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("plan_usage").select("plan, ai_drafts_used, carousels_used, hooks_used, analyses_used, user_id"),
     supabase.from("users").select("id, email, full_name, created_at").order("created_at", { ascending: false }).limit(8),
@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
         return { groq: "unknown", gemini: "unknown" }
       }
     })(),
+    supabase
+      .from("cron_runs")
+      .select("job_name,last_started_at,last_success_at,last_failure_at,last_error,duration_ms")
+      .order("job_name"),
   ])
 
   const totalUsers = usersResult.count ?? 0
@@ -96,6 +100,15 @@ export async function GET(request: NextRequest) {
     },
     recentUsers,
     circuits: circuitResult,
+    cronRuns: (cronRunsResult.data || []).map((run) => ({
+      jobName: run.job_name,
+      lastStartedAt: run.last_started_at,
+      lastSuccessAt: run.last_success_at,
+      lastFailureAt: run.last_failure_at,
+      lastError: run.last_error,
+      durationMs: run.duration_ms,
+      isStale: !run.last_success_at || Date.now() - new Date(run.last_success_at).getTime() > 48 * 60 * 60 * 1000,
+    })),
     selfId,
   })
 }

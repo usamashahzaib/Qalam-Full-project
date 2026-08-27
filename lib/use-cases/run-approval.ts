@@ -1,6 +1,7 @@
 import "server-only"
 
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { z } from "zod"
+import { createScopedClient, createServiceClient } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { env } from "@/lib/server/env"
 import { generateToken, hashToken } from "@/lib/server/password"
@@ -44,6 +45,8 @@ export interface RunApprovalOutput {
   }
 }
 
+const postIdSchema = z.string().uuid("Post ID must be a valid UUID")
+
 // ─── Use case ─────────────────────────────────────────────────────────────────
 
 export async function runApproval(input: RunApprovalInput): Promise<Result<RunApprovalOutput>> {
@@ -59,6 +62,24 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
   const supabase = createServiceClient()
   const reviewToken = generateToken()
 
+  if (postId) {
+    const parsedPostId = postIdSchema.safeParse(postId)
+    if (!parsedPostId.success) {
+      return err({ code: "VALIDATION_ERROR", message: "Post ID must be a valid UUID" })
+    }
+    const { data: linkedPost, error: linkedPostError } = await createScopedClient(workspaceId)
+      .from("posts")
+      .select("id")
+      .eq("id", parsedPostId.data)
+      .maybeSingle()
+    if (linkedPostError) {
+      return err({ code: "INTERNAL_ERROR", message: "Could not verify the linked post" })
+    }
+    if (!linkedPost) {
+      return err({ code: "VALIDATION_ERROR", message: "Post does not belong to this workspace" })
+    }
+  }
+
   const { data: approval, error } = await supabase
     .from("approvals")
     .insert({
@@ -71,6 +92,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       status: "pending",
       message: message || null,
       review_token_hash: hashToken(reviewToken),
+      review_token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     })
     .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
     .single()

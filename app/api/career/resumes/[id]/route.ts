@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { resumeDocumentSchema } from "@/lib/career-resume"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -25,9 +25,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
     const { id } = await context.params
-    const { data, error } = await createServiceClient().from("resume_documents").select("*").eq("id", id).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("resume_documents").select("*").eq("id", id).maybeSingle()
     if (error || !data) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
-    return NextResponse.json({ resume: toClient(data) })
+    return NextResponse.json({ resume: toClient(data as unknown as Record<string, unknown>) })
   })(request)
 }
 
@@ -41,8 +41,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const parsed = resumeDocumentSchema.safeParse(await req.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "Check the resume fields." }, { status: 400 })
     const input = parsed.data
-    const supabase = createServiceClient()
-    const { data: existing } = await supabase.from("resume_documents").select("id").eq("id", id).eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const supabase = createScopedClient(planCheck.workspaceId)
+    const { data: existing } = await supabase.from("resume_documents").select("id").eq("id", id).maybeSingle()
     if (!existing) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
     const { data, error } = await supabase
       .from("resume_documents")
@@ -62,13 +62,16 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
       .select("*")
       .single()
     if (error) return NextResponse.json({ error: "Resume could not be saved." }, { status: 500 })
-    const { error: versionError } = await supabase.rpc("append_resume_version", {
+    // rpc isn't part of the scoped wrapper's interface - the function itself
+    // takes p_resume_id, not a workspace_id, and resume ownership was already
+    // verified by the workspace-scoped lookup above.
+    const { error: versionError } = await createServiceClient().rpc("append_resume_version", {
       p_resume_id: id,
       p_resume_data: input.resumeData,
       p_analysis: input.analysis,
     })
     if (versionError) return NextResponse.json({ error: "Resume saved, but its version history could not be updated." }, { status: 500 })
-    return NextResponse.json({ resume: toClient(data) })
+    return NextResponse.json({ resume: toClient(data as unknown as Record<string, unknown>) })
   })(request)
 }
 
@@ -79,7 +82,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
     const { id } = await context.params
-    const { error } = await createServiceClient().from("resume_documents").update({ status: "archived", updated_at: new Date().toISOString() }).eq("id", id).eq("workspace_id", planCheck.workspaceId)
+    const { error } = await createScopedClient(planCheck.workspaceId).from("resume_documents").update({ status: "archived", updated_at: new Date().toISOString() }).eq("id", id)
     if (error) return NextResponse.json({ error: "Resume could not be archived." }, { status: 500 })
     return NextResponse.json({ success: true })
   })(request)

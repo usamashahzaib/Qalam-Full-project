@@ -13,6 +13,9 @@ import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server
 import type { PlanTier } from "@/types/domain"
 import type { GeneratePostFromHookOutput } from "@/lib/use-cases/generate-post-from-hook"
 import { authorizeRole } from "@/lib/server/roles"
+import { recordProductEventSafely } from "@/lib/server/product-events"
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -31,8 +34,10 @@ export async function POST(request: NextRequest) {
     const topic = String(body.topic || "").trim()
     const hook = String(body.hook || "").trim()
     const originalContent = String(body.originalContent || "").trim()
+    const idempotencyKey = String(body.idempotencyKey || "").trim()
     const hasOriginalDraft = originalContent.length >= 20
 
+    if (!UUID_PATTERN.test(idempotencyKey)) return NextResponse.json({ error: "A valid idempotency key is required" }, { status: 400 })
     if (!hasOriginalDraft && (!topic || topic.length < 3)) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     if (!hook) return NextResponse.json({ error: "A hook is required" }, { status: 400 })
 
@@ -42,7 +47,16 @@ export async function POST(request: NextRequest) {
       : null
     if (cacheKey) {
       const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)
-      if (cached) return NextResponse.json(cached)
+      if (cached) {
+        await recordProductEventSafely({
+          eventName: "writer_draft_generated",
+          userId: user.id,
+          workspaceId: planCheck.workspaceId,
+          idempotencyKey,
+          contentType: "linkedin_post",
+        })
+        return NextResponse.json(cached)
+      }
     }
 
     const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "post", { topic, hook })
@@ -72,6 +86,13 @@ export async function POST(request: NextRequest) {
     }
 
     log.info("generate.post-from-hook.done", { userId: user.id, wordCount: result.data.wordCount })
+    await recordProductEventSafely({
+      eventName: "writer_draft_generated",
+      userId: user.id,
+      workspaceId: planCheck.workspaceId,
+      idempotencyKey,
+      contentType: "linkedin_post",
+    })
     if (cacheKey) await setCachedResult(cacheKey, result.data, 1800)
     return NextResponse.json(result.data)
   })(request)

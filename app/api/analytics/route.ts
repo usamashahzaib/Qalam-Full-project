@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { authorizeRole } from "@/lib/server/roles"
 
 const createSchema = z.object({
@@ -31,11 +31,10 @@ export async function GET(request: NextRequest) {
     const postId = url.searchParams.get("postId")
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50", 10), 200)
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(user.workspaceId)
     let query = supabase
       .from("analytics_snapshots")
       .select("id, post_id, impressions, reactions, comments, reposts, follower_delta, notes, captured_at")
-      .eq("workspace_id", user.workspaceId)
       .order("captured_at", { ascending: false })
       .limit(limit)
 
@@ -76,23 +75,20 @@ export async function POST(request: NextRequest) {
     const { postId, impressions, reactions, comments, reposts, followerDelta, notes, capturedAt } = parsed.data
 
     // If postId provided, verify it belongs to this workspace
+    const supabase = createScopedClient(user.workspaceId)
     if (postId) {
-      const supabase = createServiceClient()
       const { data: post } = await supabase
         .from("posts")
         .select("id")
         .eq("id", postId)
-        .eq("workspace_id", user.workspaceId)
         .maybeSingle()
       if (!post) return NextResponse.json({ error: "post_not_found_in_workspace" }, { status: 404 })
     }
 
-    const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("analytics_snapshots")
       .insert({
         post_id: postId ?? null,
-        workspace_id: user.workspaceId,
         user_id: user.id,
         impressions,
         reactions,
@@ -128,12 +124,10 @@ export async function DELETE(request: NextRequest) {
     const id = url.searchParams.get("id")
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
 
-    const supabase = createServiceClient()
-    const { error } = await supabase
+    const { error } = await createScopedClient(user.workspaceId)
       .from("analytics_snapshots")
       .delete()
       .eq("id", id)
-      .eq("workspace_id", user.workspaceId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })

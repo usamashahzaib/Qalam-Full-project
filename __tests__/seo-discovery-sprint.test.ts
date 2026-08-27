@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { APP_URL, LLM_ROUTES, PUBLIC_ROUTES, resolvePublicHref } from "@/lib/seo"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
+import { SEO_CANONICAL_REDIRECTS } from "@/lib/seo-redirects"
 
 const discoverySlugs = [
   "ats-resume-score",
@@ -10,7 +11,7 @@ const discoverySlugs = [
   "linkedin-headline-examples",
   "linkedin-about-examples",
   "linkedin-profile-optimization",
-  "ai-linkedin-post-generator",
+  "linkedin-post-writer",
 ] as const
 
 describe("SEO discovery sprint", () => {
@@ -35,6 +36,14 @@ describe("SEO discovery sprint", () => {
     for (const slug of discoverySlugs) {
       expect(publicPaths).toContain(`/${slug}`)
       expect(llmPaths).toContain(`/${slug}`)
+    }
+  })
+
+  it("keeps redirected intent variants out of discovery registries", () => {
+    const publicPaths = PUBLIC_ROUTES.map(({ path }) => path)
+    for (const [source, destination] of Object.entries(SEO_CANONICAL_REDIRECTS)) {
+      expect(publicPaths).not.toContain(source)
+      expect(publicPaths).toContain(destination)
     }
   })
 

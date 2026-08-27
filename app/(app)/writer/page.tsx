@@ -24,33 +24,11 @@ import {
 import { HookCard } from "@/components/writer/HookCard"
 import { WriterScheduleModal } from "@/components/writer/WriterScheduleModal"
 import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
+import { WriterApprovalModal } from "@/components/writer/WriterApprovalModal"
+import { ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORMATS } from "@/components/writer/writer-config"
 import { QueueOverlay } from "@/components/QueueOverlay"
 
-import type { Role, FormatKey, ScoreData } from "@/lib/hooks/useWriterLogic"
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const ROLE_SUGGESTIONS: string[] = [
-  "CEO", "Consultant", "Designer", "Founder", "Freelancer", "HR Leader",
-  "Marketer", "Product Manager", "Recruiter", "Sales Leader", "Software Developer",
-]
-
-const FORMATS: { key: FormatKey; words: string }[] = [
-  { key: "Short", words: "150-200w" },
-  { key: "Medium", words: "250-350w" },
-  { key: "Long", words: "400-500w" },
-  { key: "Carousel", words: "5-7 slides" },
-]
-
-const SCORE_LABELS: Array<{ key: keyof Omit<ScoreData, "overall" | "tips" | "hashtags">; label: string }> = [
-  { key: "hook", label: "Hook" },
-  { key: "readability", label: "Readability" },
-  { key: "authority", label: "Authority" },
-  { key: "specificity", label: "Specificity" },
-  { key: "cta", label: "CTA" },
-  { key: "human", label: "Human-likeness" },
-  { key: "voiceFit", label: "Voice Fit" },
-]
+import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -282,10 +260,10 @@ export default function WriterPage() {
             <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">1</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">1</span>
                   <h2 className="text-sm font-bold text-zinc-900">Your post details</h2>
                 </div>
-                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${canUseProTools ? "border-gold/30 bg-gold/10 text-gold" : canUseSolo ? "border-teal/20 bg-teal/10 text-teal" : "border-zinc-200 bg-zinc-100 text-zinc-500"}`}>
+                <span className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${canUseProTools ? "border-gold/30 bg-gold/10 text-gold" : canUseSolo ? "border-teal/20 bg-teal/10 text-teal" : "border-zinc-200 bg-zinc-100 text-zinc-500"}`}>
                   {canUseProTools ? "Voice-Trained AI" : canUseSolo ? "Role-Aware AI" : "Basic AI Writer"}
                 </span>
               </div>
@@ -307,7 +285,7 @@ export default function WriterPage() {
               {/* Role + Format row */}
               <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Role</label>
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Role</label>
                   <input
                     type="text"
                     list="role-suggestions"
@@ -322,7 +300,7 @@ export default function WriterPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Format</label>
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Format</label>
                   <div className="flex gap-1.5">
                     {FORMATS.map(({ key, words }) => (
                       <button
@@ -368,7 +346,7 @@ export default function WriterPage() {
 
               {/* Goal */}
               <div className="mb-5">
-                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Goal <span className="font-normal normal-case text-zinc-400">(optional)</span></label>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Goal <span className="font-normal normal-case text-zinc-400">(optional)</span></label>
                 <input
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
@@ -382,7 +360,7 @@ export default function WriterPage() {
                 <>
                   {!canUseCarousel ? (
                     <div className="mb-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
-                      Carousel generation requires <span className="font-bold">Solo</span> or higher. Upgrade to unlock.
+                      Carousel generation requires <span className="font-bold">Solo</span> or higher. Upgrade to access it.
                     </div>
                   ) : null}
                   <button
@@ -424,7 +402,7 @@ export default function WriterPage() {
               <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">2</span>
                     <h2 className="text-sm font-bold text-zinc-900">Choose your opening hook</h2>
                   </div>
                   {hooks.length > 0 && (
@@ -511,7 +489,7 @@ export default function WriterPage() {
               <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">3</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">3</span>
                     <h2 className="text-sm font-bold text-zinc-900">Your draft</h2>
                   </div>
                   {versions.length > 0 && (
@@ -552,7 +530,7 @@ export default function WriterPage() {
                                 <span className={`text-xs font-semibold ${idx === currentVersionIdx ? "text-teal" : "text-zinc-700"}`}>
                                   Version {idx + 1}
                                 </span>
-                                <span className="text-[10px] text-zinc-400">{formatVersionTime(v.timestamp)}</span>
+                                <span className="text-[11px] text-zinc-400">{formatVersionTime(v.timestamp)}</span>
                                 {idx === currentVersionIdx && (
                                   <svg className="h-3 w-3 text-teal" viewBox="0 0 12 12" fill="none">
                                     <path d="M2 6l3.5 3.5L10 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -594,10 +572,10 @@ export default function WriterPage() {
                 <div className={`overflow-hidden transition-all duration-200 ${hookAltOpen ? "mt-3 max-h-[400px] opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60">
                     <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">3 stronger hooks</span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">3 stronger hooks</span>
                       <button
                         onClick={() => setHookAltOpen(false)}
-                        className="cursor-pointer text-[10px] font-bold text-zinc-400 transition-colors hover:text-zinc-600"
+                        className="cursor-pointer text-[11px] font-bold text-zinc-400 transition-colors hover:text-zinc-600"
                       >
                         Close
                       </button>
@@ -747,7 +725,7 @@ export default function WriterPage() {
               <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-4">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">2</span>
                     <span className="text-sm font-bold text-zinc-900">Generating slides...</span>
                     <span className="animate-pulse text-xs text-teal">Working</span>
                   </div>
@@ -764,9 +742,9 @@ export default function WriterPage() {
                 <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[10px] font-bold text-white">2</span>
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal text-[11px] font-bold text-white">2</span>
                       <h2 className="text-sm font-bold text-zinc-900">Carousel slides</h2>
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-500">{slides.length} slides</span>
+                      <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">{slides.length} slides</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -806,7 +784,7 @@ export default function WriterPage() {
                         >
                           {/* Badge + delete */}
                           <div className="flex items-center justify-between px-4 pb-2 pt-4">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${
                               isFirst || isLast ? "bg-white/20 text-white" : "bg-zinc-900 text-white"
                             }`}>
                               {isFirst ? "Cover" : isLast ? "CTA" : slide.number}
@@ -834,7 +812,7 @@ export default function WriterPage() {
                               placeholder="Slide title..."
                               rows={2}
                               className={`w-full resize-none bg-transparent text-[15px] font-bold leading-snug outline-none ${
-                                isFirst || isLast ? "text-white placeholder:text-white/40" : "text-zinc-900 placeholder:text-zinc-300"
+                                isFirst || isLast ? "text-white placeholder:text-white/60" : "text-zinc-900 placeholder:text-zinc-300"
                               }`}
                             />
                             <textarea
@@ -850,7 +828,7 @@ export default function WriterPage() {
 
                           {/* Visual suggestion */}
                           {slide.visual_suggestion && (
-                            <div className={`mt-auto border-t px-4 py-2.5 text-[10px] ${
+                            <div className={`mt-auto border-t px-4 py-2.5 text-[11px] ${
                               isFirst || isLast ? "border-white/15 text-white/45" : "border-zinc-100 text-zinc-400"
                             }`}>
                               <svg className="mr-1 inline-block h-3 w-3 -translate-y-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
@@ -930,13 +908,13 @@ export default function WriterPage() {
             <div className="border-b border-zinc-100 bg-zinc-50/60 px-4 py-3.5">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Content Score</h2>
-                {isScoring && <span className="animate-pulse text-[10px] font-semibold text-teal">Scoring...</span>}
+                {isScoring && <span className="animate-pulse text-[11px] font-semibold text-teal">Scoring...</span>}
               </div>
               {scores ? (
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className={`text-4xl font-bold tabular-nums ${scoreTextColor(scores.overall)}`}>{scores.overall}</span>
                   <span className="text-sm text-zinc-400">/100</span>
-                  {scores.overall >= 85 && <span className="ml-1 text-[10px] font-bold text-emerald-600">Copy-ready</span>}
+                  {scores.overall >= 85 && <span className="ml-1 text-[11px] font-bold text-emerald-600">Copy-ready</span>}
                 </div>
               ) : (
                 <p className="mt-1 text-xs text-zinc-400">{step3Visible ? "Scoring..." : "Generate a draft to see scores"}</p>
@@ -951,13 +929,13 @@ export default function WriterPage() {
                   return (
                     <div key={key} className="px-4 py-3">
                       <div className="mb-1 flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">{label}</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-500">{label}</span>
                         <span className={`text-sm font-bold tabular-nums ${scoreTextColor(v)}`}>{v}</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-zinc-100">
                         <div className={`h-full rounded-full transition-all duration-500 ${scoreBarColor(v)}`} style={{ width: `${v}%` }} />
                       </div>
-                      {tip && <p className="mt-1 text-[10px] leading-snug text-zinc-400">{tip}</p>}
+                      {tip && <p className="mt-1 text-[11px] leading-snug text-zinc-400">{tip}</p>}
                     </div>
                   )
                 })}
@@ -966,7 +944,7 @@ export default function WriterPage() {
               <div className="space-y-2 p-4">
                 {SCORE_LABELS.map(({ label }) => (
                   <div key={label} className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-300">{label}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wide text-zinc-300">{label}</span>
                     <div className="h-1.5 flex-1 rounded-full bg-zinc-100" />
                     <span className="text-sm font-bold text-zinc-200">--</span>
                   </div>
@@ -992,13 +970,13 @@ export default function WriterPage() {
                 ) : (
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Push to 90+ · Pro only</span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">Push to 90+ · Pro only</span>
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">locked</span>
                     </div>
                     <p className="text-xs text-zinc-500 mb-2">Qalam rewrites your draft to fix the lowest-scoring dimension and targets a 90+ overall score - hook sharpness, authority, specificity, and CTA all lifted in one pass.</p>
                     <div className="rounded-lg border border-zinc-100 bg-white px-3 py-2 mb-2">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400 mb-1">What changes at 90+</p>
-                      <ul className="space-y-0.5 text-[10px] text-zinc-600">
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400 mb-1">What changes at 90+</p>
+                      <ul className="space-y-0.5 text-[11px] text-zinc-600">
                         <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Hook rewritten to stop the scroll in the first 2 words</li>
                         <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Specific numbers and outcomes added where generic now</li>
                         <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />CTA tightened to a single clear action</li>
@@ -1008,7 +986,7 @@ export default function WriterPage() {
                       onClick={() => setUpgradeProModal(true)}
                       className="w-full cursor-pointer rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-amber-700"
                     >
-                      Unlock Pro to push your {scores.overall} to 90+
+                      Choose Pro to push your {scores.overall} to 90+
                     </button>
                   </div>
                 )}
@@ -1029,10 +1007,10 @@ export default function WriterPage() {
                 <div className={`overflow-hidden transition-all duration-200 ${ctaAltOpen ? "max-h-[320px] opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60">
                     <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">3 CTA options</span>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">3 CTA options</span>
                       <button
                         onClick={() => setCtaAltOpen(false)}
-                        className="cursor-pointer text-[10px] font-bold text-zinc-400 transition-colors hover:text-zinc-600"
+                        className="cursor-pointer text-[11px] font-bold text-zinc-400 transition-colors hover:text-zinc-600"
                       >
                         Close
                       </button>
@@ -1045,7 +1023,7 @@ export default function WriterPage() {
                           <p className="flex-1 text-xs leading-relaxed text-zinc-700">{alt}</p>
                           <button
                             onClick={() => applyCtaAlt(alt)}
-                            className="shrink-0 cursor-pointer rounded-lg bg-teal px-2.5 py-1 text-[10px] font-bold text-white transition-colors hover:bg-teal-600"
+                            className="shrink-0 cursor-pointer rounded-lg bg-teal px-2.5 py-1 text-[11px] font-bold text-white transition-colors hover:bg-teal-600"
                           >
                             Use
                           </button>
@@ -1106,7 +1084,7 @@ export default function WriterPage() {
                   <div className="mb-3 flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 p-1">
                     <button
                       onClick={() => setReplyMode("comment")}
-                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                         replyMode === "comment" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                       }`}
                     >
@@ -1114,7 +1092,7 @@ export default function WriterPage() {
                     </button>
                     <button
                       onClick={() => setReplyMode("reply")}
-                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                         replyMode === "reply" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                       }`}
                     >
@@ -1123,7 +1101,7 @@ export default function WriterPage() {
                   </div>
                   {replyMode === "reply" && (
                     <div className="mb-3">
-                      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">Original comment (optional, for context)</label>
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Original comment (optional, for context)</label>
                       <textarea
                         value={parentCommentInput}
                         onChange={(e) => setParentCommentInput(e.target.value)}
@@ -1134,7 +1112,7 @@ export default function WriterPage() {
                     </div>
                   )}
                   <div className="mb-3">
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
                       {replyMode === "reply" ? "Paste the reply you received" : "Paste a comment to reply to"}
                     </label>
                     <textarea
@@ -1161,7 +1139,7 @@ export default function WriterPage() {
                         <div key={i} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-3">
                           <div className="mb-2 flex items-center justify-between gap-2">
                             <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-500">{r.style}</span>
-                            <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 text-[10px] font-bold text-teal hover:text-teal-700">Copy</button>
+                            <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 text-[11px] font-bold text-teal hover:text-teal-700">Copy</button>
                           </div>
                           <p className="w-full break-words text-xs leading-relaxed text-zinc-700">{r.text}</p>
                         </div>
@@ -1185,10 +1163,10 @@ export default function WriterPage() {
                   <h2 className="text-xs font-bold text-amber-800">Research Notes</h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-semibold text-amber-600">From Competitor Analyzer</span>
+                  <span className="text-[11px] font-semibold text-amber-600">From Competitor Analyzer</span>
                   <button
                     onClick={(e) => { e.stopPropagation(); setResearchNotes(null) }}
-                    className="cursor-pointer text-[10px] font-bold text-amber-500 hover:text-amber-700"
+                    className="cursor-pointer text-[11px] font-bold text-amber-500 hover:text-amber-700"
                   >
                     Dismiss
                   </button>
@@ -1198,19 +1176,19 @@ export default function WriterPage() {
                 <div className="border-t border-amber-200 px-4 py-3 space-y-2">
                   {researchNotes.hookPattern && (
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Hook pattern</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Hook pattern</p>
                       <p className="text-xs text-amber-900">{researchNotes.hookPattern} · {researchNotes.hookType}</p>
                     </div>
                   )}
                   {researchNotes.framework && (
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Framework</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Framework</p>
                       <p className="text-xs text-amber-900">{researchNotes.framework}</p>
                     </div>
                   )}
                   {researchNotes.improvements?.length ? (
                     <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Improvements to apply</p>
+                      <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Improvements to apply</p>
                       <ul className="mt-1 space-y-1">
                         {researchNotes.improvements.map((tip, i) => (
                           <li key={i} className="flex items-start gap-1.5 text-xs text-amber-900">
@@ -1282,98 +1260,3 @@ export default function WriterPage() {
     </>
   )
 }
-
-// ── Inline approval modal ────────────────────────────────────────────────────
-
-function WriterApprovalModal({ draftContent, draftTitle, postId, onClose, onSent, onError }: {
-  draftContent: string
-  draftTitle: string
-  postId: string | null
-  onClose: () => void
-  onSent: () => void
-  onError: (msg: string) => void
-}) {
-  const [reviewerEmail, setReviewerEmail] = useState("")
-  const [message, setMessage] = useState("")
-  const [isSending, setIsSending] = useState(false)
-
-  const onSubmit = async () => {
-    if (!reviewerEmail.trim()) return
-    setIsSending(true)
-    try {
-      const res = await fetch("/api/approvals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reviewerEmail: reviewerEmail.trim(),
-          postTitle: draftTitle,
-          postContent: draftContent,
-          message: message.trim(),
-          postId,
-        }),
-      })
-      const data = await res.json() as { error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to send")
-      onSent()
-    } catch (e) {
-      onError((e as Error).message)
-    } finally {
-      setIsSending(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl">
-        <h2 className="text-base font-bold text-zinc-900">Send for approval</h2>
-        <p className="mt-1 text-sm text-zinc-500">Share this draft with a colleague, manager, or client before it goes live. They will receive an email with a private link to review the post and either approve it or send back feedback - no Qalam account required.</p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              Reviewer email <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              value={reviewerEmail}
-              onChange={(e) => setReviewerEmail(e.target.value)}
-              placeholder="reviewer@company.com"
-              className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
-              Message <span className="font-normal normal-case text-zinc-400">(optional)</span>
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={2}
-              placeholder="e.g. Please check tone and facts before we publish."
-              className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-            />
-          </div>
-          <div className="rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-zinc-400">Post being sent</p>
-            <p className="mt-1 line-clamp-2 text-xs text-zinc-700">{draftTitle}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex gap-2">
-          <button
-            onClick={onClose}
-            className="flex-1 cursor-pointer rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => void onSubmit()}
-            disabled={isSending || !reviewerEmail.trim()}
-            className="flex-1 cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white hover:bg-teal-600 disabled:opacity-50"
-          >
-            {isSending ? "Sending..." : "Send for review"}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-

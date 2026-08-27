@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { log } from "@/lib/server/logging"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { checkPlanLimit } from "@/lib/server/plan-limits-v2"
 import { requirePlan } from "@/lib/server/require-plan"
 import { generatePost } from "@/lib/use-cases/generate-post"
@@ -121,13 +121,12 @@ export async function PATCH(request: NextRequest) {
     const roleError = await authorizeRole(req, user.workspaceId, "editor")
     if (roleError) return roleError
 
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(user.workspaceId)
 
     const { data: post } = await supabase
       .from("posts")
       .select("id, workspace_id")
       .eq("id", parsed.data.id)
-      .eq("workspace_id", user.workspaceId)
       .single()
 
     if (!post) {
@@ -149,7 +148,6 @@ export async function PATCH(request: NextRequest) {
         .from("posts")
         .select("*")
         .eq("id", parsed.data.id)
-        .eq("workspace_id", user.workspaceId)
         .single()
       return NextResponse.json({ post: fullPost })
     }
@@ -157,7 +155,7 @@ export async function PATCH(request: NextRequest) {
     const { data: updated } = await supabase.from("posts").update({
       content: parsed.data.content,
       updated_at: new Date().toISOString(),
-    }).eq("id", parsed.data.id).eq("workspace_id", user.workspaceId).select().single()
+    }).eq("id", parsed.data.id).select().single()
 
     if (!updated) return NextResponse.json({ error: "Failed to update" }, { status: 500 })
     return NextResponse.json({ post: updated })

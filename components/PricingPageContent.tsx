@@ -300,6 +300,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp className="mb-10 text-center">
             <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
               <button
+                type="button"
                 onClick={() => setPricingTab("selfserve")}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
@@ -310,6 +311,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 Self-serve Plans
               </button>
               <button
+                type="button"
                 onClick={() => setPricingTab("managed")}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"

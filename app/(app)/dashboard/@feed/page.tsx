@@ -42,7 +42,7 @@ function PostRow({ post }: { post: DashboardPost }) {
         <p className="truncate text-sm font-semibold text-zinc-900">{post.title}</p>
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <span
-            className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusStyle}`}
+            className={`rounded-full border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${statusStyle}`}
           >
             {capitalize(post.status)}
           </span>

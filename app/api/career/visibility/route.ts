@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { normalizeLinkedInUrl } from "@/lib/validation"
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
-    const { data, error } = await createServiceClient().from("candidate_visibility").select("*").eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const { data, error } = await createScopedClient(planCheck.workspaceId).from("candidate_visibility").select("*").maybeSingle()
     if (error) return NextResponse.json({ error: "Visibility settings could not be loaded." }, { status: 500 })
     return NextResponse.json({ visibility: data })
   })(request)
@@ -42,9 +42,8 @@ export async function PUT(request: NextRequest) {
     const input = parsed.data
     const linkedinUrl = input.linkedinUrl ? normalizeLinkedInUrl(input.linkedinUrl) : ""
     if (linkedinUrl === null) return NextResponse.json({ error: "Use a valid public LinkedIn profile URL." }, { status: 400 })
-    const supabase = createServiceClient()
+    const supabase = createScopedClient(planCheck.workspaceId)
     const { error } = await supabase.from("candidate_visibility").upsert({
-      workspace_id: planCheck.workspaceId,
       user_id: user.id,
       is_searchable: input.isSearchable,
       public_name: input.publicName,
@@ -59,7 +58,7 @@ export async function PUT(request: NextRequest) {
     }, { onConflict: "workspace_id" })
     if (error) return NextResponse.json({ error: "Visibility settings could not be saved." }, { status: 500 })
     const now = new Date().toISOString()
-    await supabase.from("career_consents").upsert({ workspace_id: planCheck.workspaceId, user_id: user.id, purpose: "recruiter_discovery", granted: input.isSearchable, policy_version: "2026-08-17", granted_at: input.isSearchable ? now : null, revoked_at: input.isSearchable ? null : now, updated_at: now }, { onConflict: "user_id,purpose" })
+    await supabase.from("career_consents").upsert({ user_id: user.id, purpose: "recruiter_discovery", granted: input.isSearchable, policy_version: "2026-08-17", granted_at: input.isSearchable ? now : null, revoked_at: input.isSearchable ? null : now, updated_at: now }, { onConflict: "user_id,purpose" })
     return NextResponse.json({ success: true })
   })(request)
 }

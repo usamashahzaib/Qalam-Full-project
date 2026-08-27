@@ -163,7 +163,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
                 { label: "Hook Generator", desc: "Generate 5 opening lines for any topic", href: "/free-tools/hook-generator" },
                 { label: "Comment Generator", desc: "On-voice replies, free sign-in required", href: "/free-tools/comment-generator" },
                 { label: "Headline Analyzer", desc: "Score your LinkedIn headline", href: "/free-tools/headline-analyzer" },
-                { label: "Engagement Predictor", desc: "Pre-publish score before posting", href: "/free-tools/engagement-predictor" },
+                { label: "Post Readiness Review", desc: "Pre-publish quality review", href: "/free-tools/engagement-predictor" },
               ].map((tool) => (
                 <Link key={tool.href} href={tool.href} className="rounded-xl border border-teal/15 bg-white px-4 py-3 transition-colors hover:border-teal/40 hover:bg-teal/5">
                   <p className="text-sm font-semibold text-teal">{tool.label}</p>
@@ -181,7 +181,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
               <div className="grid gap-4 md:grid-cols-2">
                 {relatedPosts.map((related) => (
                   <Link key={related.slug} href={`/blog/${related.slug}`} className="rounded-2xl border border-white/15 bg-white/5 p-5 transition-colors hover:bg-white/10">
-                    <p className="text-sm font-semibold text-gold">{related.tag}</p>
+                    <p className="text-sm font-semibold text-gold-700">{related.tag}</p>
                     <p className="mt-2 text-lg font-bold">{related.title}</p>
                     <p className="mt-2 text-sm leading-relaxed text-white/75">{related.excerpt}</p>
                   </Link>

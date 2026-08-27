@@ -12,10 +12,12 @@ export async function GET(request: NextRequest) {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
 
+    // Not createScopedClient: its auto workspace_id filter would AND against
+    // the .or() below, breaking the legacy-row fallback. Scope to the active
+    // client workspace so switching clients shows that client's queue. Rows
+    // saved before workspace_id existed fall back to the requester filter so
+    // nothing already sent disappears.
     const supabase = createServiceClient()
-    // Scope to the active client workspace so switching clients shows that
-    // client's queue. Rows saved before workspace_id existed fall back to
-    // the requester filter so nothing already sent disappears.
     const { data: rows } = await supabase
       .from("approvals")
       .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")

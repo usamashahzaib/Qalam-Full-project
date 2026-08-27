@@ -66,8 +66,8 @@ export function sanitizeOutput(text: string): string {
 // Transient = server-side capacity issue; do NOT count toward circuit breaker.
 // Rate-limit = quota exhausted; counts toward circuit but not as hard failure.
 // Config error = key / model wrong; skip silently without any failure mark.
-function classifyError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
-  if (/not configured|api.?key|401|403|expired|api_key_invalid|invalid.?model/i.test(msg)) return "config"
+export function classifyAiError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
+  if (/not configured|api.?key|401|403|404|not.?found|no longer available|expired|api_key_invalid|invalid.?model|model.*(?:retired|deprecated|unsupported)/i.test(msg)) return "config"
   if (/503|overloaded|capacity|unavailable|service.?unavailable/i.test(msg)) return "transient"
   if (/429|rate.?limit|too many requests|quota/i.test(msg)) return "rate-limit"
   if (/content filtered|SAFETY|RECITATION|PROHIBITED/i.test(msg)) return "filtered"
@@ -117,8 +117,8 @@ export function safeParseJson<T = unknown>(raw: string): T | null {
 
 // ── Cost table ────────────────────────────────────────────────────────────────
 const COST_PER_M: Record<string, { input: number; output: number }> = {
-  "llama-3.1-8b-instant":    { input: 0.05,  output: 0.08 },
-  "llama-3.3-70b-versatile": { input: 0.59,  output: 0.79 },
+  "openai/gpt-oss-20b":      { input: 0.075, output: 0.30 },
+  "openai/gpt-oss-120b":     { input: 0.15,  output: 0.60 },
   "gemini-2.5-flash":        { input: 0.15,  output: 0.60 },
   "gemini-2.5-pro":          { input: 1.25,  output: 10.00 },
   "mistral-small-latest":    { input: 0.10,  output: 0.30 },
@@ -208,16 +208,16 @@ async function enforceDailySpendCap(): Promise<void> {
 
 // ── 1.2: Model mapping per task per provider ──────────────────────────────────
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
-  "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
-  "post-scoring":          { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.3-70b-versatile" },
-  "competitor-analysis":   { gemini:  "gemini-2.5-pro",       groq:   "llama-3.3-70b-versatile", mistral: "mistral-small-latest" },
-  "hook-generation":       { gemini: "gemini-2.5-flash", groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest" },
-  "cta-rewrite":           { gemini: "gemini-2.5-flash", groq: "llama-3.1-8b-instant", mistral: "mistral-small-latest" },
-  "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash",  groq: "llama-3.1-8b-instant" },
-  "voice-profile":         { mistral: "mistral-medium-2505",  gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
-  "chat-strategist":       { gemini:  "gemini-2.5-flash",     mistral: "mistral-small-latest", groq: "llama-3.1-8b-instant" },
-  "post-improvement":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-pro",    groq: "llama-3.3-70b-versatile" },
-  "engagement-prediction": { groq:    "llama-3.1-8b-instant", gemini: "gemini-2.5-flash",  mistral: "mistral-small-latest" },
+  "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-scoring":          { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "competitor-analysis":   { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b", mistral: "mistral-small-latest" },
+  "hook-generation":       { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", mistral: "mistral-small-latest" },
+  "cta-rewrite":           { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", mistral: "mistral-small-latest" },
+  "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "voice-profile":         { mistral: "mistral-medium-2505", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "chat-strategist":       { gemini: "gemini-2.5-flash", mistral: "mistral-small-latest", groq: "openai/gpt-oss-20b" },
+  "post-improvement":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "engagement-prediction": { groq: "openai/gpt-oss-20b", gemini: "gemini-2.5-flash", mistral: "mistral-small-latest" },
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
@@ -283,7 +283,7 @@ async function callProvider(
 
     } catch (error) {
       const msg = (error as Error).message || ""
-      const kind = classifyError(msg)
+      const kind = classifyAiError(msg)
 
       if (kind === "config") {
         log.warn("ai.provider_config_error", { provider, error: msg.slice(0, 100) })

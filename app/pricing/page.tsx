@@ -1,8 +1,5 @@
 ﻿import type { Metadata } from "next"
-import { Suspense } from "react"
-import { headers } from "next/headers"
 import { PricingPageContent } from "@/components/PricingPageContent"
-import { resolvePricingCurrency } from "@/lib/geo-pricing"
 import { SITE_URL, APP_URL } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
 import { CAREER_PRODUCTS } from "@/lib/career-pricing"
@@ -24,7 +21,7 @@ export const metadata: Metadata = {
     `Pakistan-first quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
-    title: "Qalam Pricing - AI LinkedIn Writer Plans",
+    title: "Qalam Pricing - Career Visibility Plans",
     description:
       `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
     url: `${SITE_URL}/pricing`,
@@ -32,7 +29,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Qalam Pricing - AI LinkedIn Writer Plans",
+    title: "Qalam Pricing - Career Visibility Plans",
     description:
       `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
   },
@@ -125,7 +122,7 @@ const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Qalam",
-  description: "AI LinkedIn writing system with voice memory, hook archives, draft history, scheduling, and approval workflows.",
+  description: "Career visibility system with saved voice context, career evidence, ATS resumes, LinkedIn workflows, and approvals.",
   image: `${SITE_URL}/icon.png`,
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },
@@ -180,17 +177,12 @@ const productSchema = {
   ],
 }
 
-export default async function PricingPage() {
-  const headerStore = await headers()
-  const pricingCurrency = resolvePricingCurrency(headerStore)
-
+export default function PricingPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingFaqSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema).replace(/</g, "\\u003c") }} />
-      <Suspense fallback={null}>
-        <PricingPageContent pricingCurrency={pricingCurrency} />
-      </Suspense>
+      <PricingPageContent />
     </>
   )
 }

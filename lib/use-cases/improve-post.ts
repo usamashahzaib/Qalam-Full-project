@@ -70,7 +70,7 @@ export async function improvePost(
   const role = rawRole
 
   const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined) : undefined
+  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, content).catch(() => undefined) : undefined
 
   let artifact = toPostArtifact(content)
   if (!artifact) {

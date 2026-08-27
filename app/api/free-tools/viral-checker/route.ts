@@ -30,23 +30,23 @@ export async function POST(req: NextRequest) {
 
     const result = await callAi("engagement-prediction",
       "Return strict JSON only.",
-      `Analyze this LinkedIn post for viral potential. Be specific and critical.
+      `Analyze this LinkedIn post for content quality. Be specific and critical. Do not predict reach or claim the post will go viral.
 
 POST:
 ${parsed.data.content}
 
 SCORE 0-100 on:
 1. Hook strength
-2. Emotional trigger
-3. Shareability
-4. Comment bait
-5. Timing relevance
+2. Clarity
+3. Specificity
+4. Usefulness
+5. Discussion potential
 
 OUTPUT JSON:
 {
-  "viral_score": number,
-  "breakdown": { "hook": number, "emotion": number, "share": number, "comment": number, "timing": number },
-  "verdict": "Will go viral / Good reach / Average / Poor",
+  "content_quality_score": number,
+  "breakdown": { "hook": number, "clarity": number, "specificity": number, "usefulness": number, "discussion": number },
+  "verdict": "Ready / Strong with edits / Needs focus / Rewrite",
   "specific_feedback": "exactly what to fix",
   "improved_version": "rewritten hook if weak"
 }`,

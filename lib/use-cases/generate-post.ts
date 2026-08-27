@@ -100,7 +100,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     if (isAgency) await decrementWorkspaceUsage(workspaceId, "drafts")
   }
 
-  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined)
+  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, `${role} ${topic} ${goal ?? ""}`).catch(() => undefined)
 
   // Pass 1: Generate raw post
   const { system: genSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)

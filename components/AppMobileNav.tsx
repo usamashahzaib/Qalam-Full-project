@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type MouseEvent } from "react"
+import { useMemo, useState, type MouseEvent } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import {
@@ -20,7 +20,6 @@ import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitle
 import { useBilling } from "@/lib/hooks/useBilling"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 type MobileLink = {
@@ -28,6 +27,7 @@ type MobileLink = {
   label: string
   icon: (props: { className?: string }) => React.ReactElement
   requiredPlan?: PlanTier
+  hideWhenLocked?: boolean
 }
 
 export const MOBILE_PRIMARY_LINKS: MobileLink[] = [
@@ -48,9 +48,7 @@ export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
   ...(SILENT_GROWTH_LIVE ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }] : []),
-  ...(AGENCY_PLAN_LIVE
-    ? [{ href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency" as PlanTier }]
-    : []),
+  { href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency", hideWhenLocked: true },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]
 
@@ -71,8 +69,16 @@ export function AppMobileNav() {
   const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
+  const visibleMoreLinks = useMemo(
+    () => MOBILE_MORE_LINKS.filter((link) => (
+      !link.hideWhenLocked
+      || !link.requiredPlan
+      || hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)
+    )),
+    [billing.featureFlags, billing.plan],
+  )
 
-  const isMoreActive = MOBILE_MORE_LINKS.some(
+  const isMoreActive = visibleMoreLinks.some(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`)
   )
 
@@ -93,7 +99,7 @@ export function AppMobileNav() {
       {moreOpen && (
         <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 max-h-[62dvh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
           <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
-            {MOBILE_MORE_LINKS.map((link) => {
+            {visibleMoreLinks.map((link) => {
               const { href, label, icon: Icon } = link
               const active = pathname === href || pathname.startsWith(`${href}/`)
               return (

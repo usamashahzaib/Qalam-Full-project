@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { storeVoiceExamples } from "@/lib/server/embeddings"
 import { requireAuth } from "@/lib/server/workspace"
 import { parseProfessionalContext } from "@/lib/professional-context"
@@ -57,7 +57,6 @@ export async function POST(request: NextRequest) {
 
   const profile = {
     user_id: session.supabaseUserId,
-    workspace_id: workspaceId,
     name: String(body.name || "").trim(),
     title: String(body.title || "").trim(),
     industry: String(body.industry || "").trim(),
@@ -71,20 +70,24 @@ export async function POST(request: NextRequest) {
     updated_at: new Date().toISOString(),
   }
 
-  const supabase = createServiceClient()
-  // Same scoping fix as GET /api/voice/me - only fall back to a bare user_id
-  // match for pre-migration rows with no workspace_id, so this never updates
-  // a different workspace's profile for users in more than one workspace.
-  const { data: existing } = await supabase
+  // Not createScopedClient here: its auto workspace_id filter would AND
+  // against the .or() below, breaking the legacy-row fallback (same reason
+  // as GET /api/voice/me). Only fall back to a bare user_id match for
+  // pre-migration rows with no workspace_id, so this never updates a
+  // different workspace's profile for users in more than one workspace.
+  const { data: existing } = await createServiceClient()
     .from("voice_profiles")
     .select("id")
     .or(`workspace_id.eq.${workspaceId},and(workspace_id.is.null,user_id.eq.${session.supabaseUserId})`)
     .limit(1)
     .maybeSingle()
 
+  // The write itself is workspace-scoped: existing.id was already verified
+  // above to belong to this workspace (or a pre-migration null row).
+  const scoped = createScopedClient(workspaceId)
   const { error } = existing?.id
-    ? await supabase.from("voice_profiles").update(profile).eq("id", existing.id)
-    : await supabase.from("voice_profiles").insert(profile)
+    ? await scoped.from("voice_profiles").update(profile).eq("id", existing.id)
+    : await scoped.from("voice_profiles").insert(profile)
 
   if (error) {
     console.error("voice_save_failed", error)

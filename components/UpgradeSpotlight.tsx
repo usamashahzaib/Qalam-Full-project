@@ -32,11 +32,11 @@ const LOCKED_FEATURES: LockedFeature[] = [
 
 const HEADLINES: Record<"Solo" | "Pro", { title: string; sub: string }> = {
   Solo: {
-    title: "Unlock Solo and start publishing properly",
+    title: "Choose Solo and start publishing properly",
     sub: "30 posts, 3 carousels, scheduling, planner, and library.",
   },
   Pro: {
-    title: "Unlock Pro and let Qalam learn your voice",
+    title: "Choose Pro and let Qalam learn your voice",
     sub: "60 posts, 10 carousels, voice training, AI Strategist, competitor research.",
   },
 }
@@ -55,7 +55,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
 
   const targetPlan: "Solo" | "Pro" = normalized === "free" ? "Solo" : "Pro"
   const copy = HEADLINES[targetPlan]
-  const prices = PLAN_PRICES[targetPlan] ?? { monthly: 0, quarterly: 0, annual: 0 }
+  const prices = PLAN_PRICES[targetPlan] ?? { monthly: 0, quarterly: 0 }
   const isBusy = state.phase === "preparing" && state.targetPlan === targetPlan
 
   return (
@@ -77,7 +77,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
               return (
                 <li
                   key={feature.label}
-                  title={`Unlocks with ${feature.plan}`}
+                  title={`Included with ${feature.plan}`}
                   className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${
                     unlockedHere
                       ? "border-teal/30 bg-white text-teal"
@@ -89,7 +89,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
                   {unlockedHere ? (
                     <CheckIcon className="h-3 w-3" />
                   ) : (
-                    <span className="text-[10px] font-bold uppercase tracking-wide">{feature.plan}</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wide">{feature.plan}</span>
                   )}
                 </li>
               )
@@ -107,7 +107,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
             disabled={isBusy}
             className="mt-3 w-full cursor-pointer rounded-xl bg-teal px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isBusy ? "Opening checkout..." : `Unlock ${targetPlan} now`}
+            {isBusy ? "Opening checkout..." : `Choose ${targetPlan} now`}
           </button>
           <p className="mt-2 text-center text-xs font-semibold text-emerald-700">
             {formatPkr(prices.quarterly)} quarterly - 1 month free
@@ -119,7 +119,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
             Compare plans
           </Link>
           <p className="mt-2 text-center text-[11px] leading-relaxed text-zinc-400">
-            Card checkout. Unlocks in seconds.
+            Card checkout. Access starts in seconds.
           </p>
         </div>
       </div>

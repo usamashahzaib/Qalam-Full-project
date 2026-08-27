@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { claimCareerAddonCredit, releaseCareerAddonCredit } from "@/lib/server/career-usage"
@@ -73,10 +73,9 @@ export async function GET(request: NextRequest, context: { params: Promise<{ too
     if (!config) return NextResponse.json({ error: "Career tool not found." }, { status: 404 })
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("career_addon_artifacts")
       .select("id, title, result, created_at, updated_at")
-      .eq("workspace_id", planCheck.workspaceId)
       .eq("addon_key", config.addonKey)
       .eq("status", "ready")
       .order("updated_at", { ascending: false })
@@ -105,8 +104,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
 
     const input = parsed.data
     const prompt = prompts[config.addonKey]
-    const supabase = createServiceClient()
-    const { data: vault } = await supabase.from("career_profiles").select("*").eq("workspace_id", planCheck.workspaceId).maybeSingle()
+    const supabase = createScopedClient(planCheck.workspaceId)
+    const { data: vault } = await supabase.from("career_profiles").select("*").maybeSingle()
 
     let result: ReturnType<typeof normalizeResult>
     try {
@@ -124,7 +123,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     }
 
     const { data, error } = await supabase.from("career_addon_artifacts").insert({
-      workspace_id: planCheck.workspaceId,
       user_id: user.id,
       order_id: orderId,
       addon_key: config.addonKey,

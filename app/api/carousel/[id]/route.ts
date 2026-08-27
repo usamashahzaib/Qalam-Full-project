@@ -3,7 +3,7 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole, errorToStatus } from "@/lib/server/roles"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 
 type DbSlide = { title: string; bullets: string[]; designHint?: string }
 
@@ -41,22 +41,32 @@ export async function GET(
       return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
     }
 
-    const supabase = createServiceClient()
     // select("*") so optional columns (theme_id, design_settings) are picked
     // up when present without erroring on databases missing migration 0050.
-    const { data, error } = await supabase
+    const { data: dataRaw, error } = await createScopedClient(workspaceId)
       .from("carousels")
       .select("*")
       .eq("id", id)
-      .eq("workspace_id", workspaceId)
       .maybeSingle()
 
     if (error) {
       console.error("[carousel GET]", id, error.message)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    if (!data) {
+    if (!dataRaw) {
       return NextResponse.json({ error: "not_found" }, { status: 404 })
+    }
+    const data = dataRaw as unknown as {
+      id: string
+      tone: string | null
+      role: string | null
+      theme_id: string | null
+      design_settings: unknown
+      created_at: string
+      updated_at: string
+      linkedin_post_urn: string | null
+      published_at: string | null
+      slides: unknown
     }
 
     return NextResponse.json({
@@ -119,12 +129,10 @@ export async function PATCH(
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
     }
 
-    const supabase = createServiceClient()
-    const { error } = await supabase
+    const { error } = await createScopedClient(workspaceId)
       .from("carousels")
       .update(update)
       .eq("id", id)
-      .eq("workspace_id", workspaceId)
 
     if (error) {
       // Columns from migration 0050 may not exist yet - treat as a soft
@@ -157,12 +165,10 @@ export async function DELETE(
       return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
     }
 
-    const supabase = createServiceClient()
-    const { error } = await supabase
+    const { error } = await createScopedClient(workspaceId)
       .from("carousels")
       .delete()
       .eq("id", id)
-      .eq("workspace_id", workspaceId)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ ok: true })

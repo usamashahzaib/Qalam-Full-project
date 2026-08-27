@@ -11,10 +11,9 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (req) => {
-    const planCheck = await requirePlan(req, "Agency")
-    if (!planCheck.ok) return planCheck.response
-
     const { id: workspaceId } = await params
+    const planCheck = await requirePlan(req, "Agency", workspaceId)
+    if (!planCheck.ok) return planCheck.response
 
     try {
       await requireRole(req, workspaceId, "admin")

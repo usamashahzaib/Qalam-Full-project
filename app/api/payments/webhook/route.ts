@@ -10,15 +10,16 @@ export async function POST(request: NextRequest) {
   // Career add-on orders are a separate, simpler Lemon Squeezy event class with no
   // plan/subscription concept - route them to their own isolated handler before the
   // plan-billing pipeline below, which would reject an event it cannot resolve to a plan.
-  const eventName = request.headers.get("x-event-name") || ""
+  let eventName = ""
+  let peekedBody: Record<string, unknown> = {}
+  try {
+    peekedBody = JSON.parse(rawBody || "{}")
+    const meta = (peekedBody.meta ?? {}) as Record<string, unknown>
+    eventName = typeof meta.event_name === "string" ? meta.event_name : ""
+  } catch {
+    // Malformed JSON falls through to the main verifier.
+  }
   if (eventName) {
-    let peekedBody: Record<string, unknown> = {}
-    try {
-      peekedBody = JSON.parse(rawBody || "{}")
-    } catch {
-      // Malformed JSON falls through to the plan pipeline's own parsing, which
-      // will reject it with a clear error instead of this route guessing.
-    }
     if (isCareerAddonWebhook(eventName, peekedBody)) {
       const result = await handleCareerAddonWebhook(rawBody, request.headers.get("x-signature"), eventName)
       return NextResponse.json(result.body, { status: result.status })

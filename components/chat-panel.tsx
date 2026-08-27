@@ -99,7 +99,7 @@ function MessageBubble({
           <div className="rounded-2xl rounded-tr-sm bg-teal px-4 py-3 text-sm leading-relaxed text-white shadow-sm">
             <p className="whitespace-pre-wrap">{msg.content}</p>
           </div>
-          <span className="pointer-events-none absolute -bottom-5 right-0 text-[10px] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="pointer-events-none absolute -bottom-5 right-0 text-[11px] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
             {time}
           </span>
         </div>
@@ -116,19 +116,19 @@ function MessageBubble({
           <div className="mt-2.5 flex items-center gap-3 border-t border-zinc-100 pt-2">
             <button
               onClick={() => onCopy(msg.content)}
-              className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:text-zinc-700"
+              className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 transition-colors hover:text-zinc-700"
             >
               Copy
             </button>
             <button
               onClick={() => onUseAsPost(msg.content)}
-              className="text-[10px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700"
+              className="text-[11px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700"
             >
               Use as post
             </button>
           </div>
         </div>
-        <span className="pointer-events-none absolute -bottom-5 left-0 text-[10px] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
+        <span className="pointer-events-none absolute -bottom-5 left-0 text-[11px] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
           {time}
         </span>
       </div>
@@ -301,7 +301,7 @@ export default function ChatPanel({ initialTopic, onUpdatePost }: ChatPanelProps
         <aside className="flex w-52 shrink-0 flex-col border-r border-zinc-100 bg-zinc-50">
           <div className="border-b border-zinc-100 px-3 py-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Chats</p>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">Chats</p>
               <button
                 onClick={() => setSidebarOpen(false)}
                 aria-label="Close sidebar"
@@ -338,7 +338,7 @@ export default function ChatPanel({ initialTopic, onUpdatePost }: ChatPanelProps
                   }`}
                 >
                   <p className="truncate font-semibold">{conv.name}</p>
-                  <p className="mt-0.5 text-[10px] text-zinc-400">
+                  <p className="mt-0.5 text-[11px] text-zinc-400">
                     {new Date(conv.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     {conv.messageCount > 0 && ` · ${conv.messageCount} msgs`}
                   </p>
@@ -368,10 +368,10 @@ export default function ChatPanel({ initialTopic, onUpdatePost }: ChatPanelProps
             <h2 className="truncate text-sm font-bold text-zinc-900">
               {conversationName || "AI Strategist"}
             </h2>
-            <p className="text-[10px] text-zinc-400">Enter to send · Shift+Enter for new line</p>
+            <p className="text-[11px] text-zinc-400">Enter to send · Shift+Enter for new line</p>
           </div>
           {copiedFlash && (
-            <span className="text-[10px] font-semibold text-teal">Copied!</span>
+            <span className="text-[11px] font-semibold text-teal">Copied!</span>
           )}
         </div>
 

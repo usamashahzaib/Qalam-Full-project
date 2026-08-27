@@ -1,6 +1,10 @@
 import { CONTENT_LAST_UPDATED, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { SITE_NAME, SITE_URL } from "@/lib/seo"
 
+// Next 15+ defaults GET route handlers to dynamic; this content only changes
+// at build/deploy time, so pin it back to static generation and CDN caching.
+export const dynamic = "force-static"
+
 // RSS 2.0 feed of the published article corpus. Feed readers, search crawlers,
 // and LLM ingestion pipelines all consume this - it signals content freshness
 // and gives every post a machine-readable publication record.

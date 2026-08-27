@@ -65,11 +65,11 @@ export const BLOG_POSTS: MarketingArticle[] = [
     faqs: [
       {
         q: "What is the best way to train an AI writing tool on brand voice?",
-        a: "Use real approved writing samples, preserve edits, and keep a reusable archive of accepted outputs instead of relying on one-off prompts.",
+        a: "Use real approved writing samples and keep a reusable archive of examples you deliberately save instead of relying on one-off prompts.",
       },
       {
         q: "Why do AI writing tools sound generic?",
-        a: "Because most of them reset every session and do not learn from the writer's real edits, approvals, and publishing history.",
+        a: "Because most of them begin without enough source material about the writer's vocabulary, structure, and professional context.",
       },
     ],
   },
@@ -79,7 +79,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
     description:
       "Why content systems that preserve drafts, versions, approvals, and outcomes create stronger product defensibility than prompt libraries alone.",
     excerpt:
-      "The compounding advantage in AI writing is not the prompt. It is the retained post history that keeps getting sharper with every approved draft.",
+      "The compounding advantage in AI writing is not the prompt. It is a retained archive of source posts, saved examples, and reusable context.",
     tag: "Product",
     readMinutes: 5,
     datePublished: "2026-05-18",
@@ -750,8 +750,8 @@ export const BLOG_POSTS: MarketingArticle[] = [
       {
         heading: "Where Qalam is different",
         paragraphs: [
-          "Qalam is built around the problem that ChatGPT cannot solve: persistent voice memory across sessions. Every approved draft, every edit, every saved hook becomes context for the next post. The system accumulates knowledge about your writing patterns instead of resetting after each conversation.",
-          "Practically, this means: the hook generation in a Qalam session reflects your past hook archive. The tone in a new draft is informed by real posts you have approved rather than a generic description. The revision history stays attached to each draft so the system learns from what you keep.",
+          "Qalam is built around persistent voice context across sessions. Source posts and examples you explicitly save can be reused when creating the next draft, so the workflow does not depend on rebuilding context in every prompt.",
+          "Practically, this means the hook archive remains available, the tone in a new draft can be informed by saved source posts, and revision history stays attached to each draft for your own review.",
         ],
       },
       {
@@ -759,7 +759,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
         paragraphs: [
           "ChatGPT is the right choice if: you post infrequently and do not need continuity across sessions, you already have a strong voice and just need drafting assistance, or you want a general-purpose tool that does more than LinkedIn.",
           "Qalam is the right choice if: you post consistently and want each session to start from your accumulated voice, you want a LinkedIn-specific workflow that connects drafts, hooks, archive, and scheduling, or you are an agency or team managing multiple LinkedIn voices and need client-level isolation.",
-          "The decision is not about which tool writes better English. It is about whether your publishing volume and consistency goals justify a system that learns over time versus a general-purpose model that resets each session.",
+          "The decision is not about which tool writes better English. It is about whether your publishing volume and consistency goals justify a system with persistent, user-controlled context versus a general-purpose prompt box.",
         ],
       },
     ],
@@ -861,7 +861,7 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
 export const LANDING_FAQ: { q: string; a: string }[] = [
   {
     q: "How does the Voice Profile actually learn my writing?",
-    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. Every draft you approve and every edit you keep then improves future starting points.",
+    a: "You provide real LinkedIn posts you have written. Qalam extracts tone, structure, and vocabulary patterns from those examples. You can explicitly save more examples when you want to refine the profile.",
   },
   {
     q: "What happens to my archive if I stop using the product?",
@@ -869,7 +869,7 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How is this different from a generic AI writing tool?",
-    a: "Qalam connects profile positioning, writing context, approved examples, editing history, career evidence, and target roles instead of treating every prompt as a separate task.",
+    a: "Qalam connects profile positioning, writing context, saved voice examples, career evidence, and target roles instead of treating every prompt as a separate task.",
   },
   {
     q: "Who is the Pro plan for?",

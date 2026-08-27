@@ -3,6 +3,7 @@ import { PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { PUBLIC_ROUTES, SITE_URL } from "@/lib/seo"
 import { PRODUCT_PAGES, USE_CASE_PAGES } from "@/lib/site-content"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+import { SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
 
 const HIDDEN_PRODUCT_SLUGS = new Set<string>(AGENCY_PLAN_LIVE ? [] : ["agency-workspaces"])
 
@@ -37,5 +38,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.74,
   }))
 
-  return [...staticRoutes, ...productRoutes, ...useCaseRoutes, ...blogRoutes]
+  const seoLandingRoutes = SEO_LANDING_ROUTES.map((route) => ({
+    url: `${SITE_URL}${route}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }))
+
+  return [...staticRoutes, ...productRoutes, ...useCaseRoutes, ...seoLandingRoutes, ...blogRoutes]
 }

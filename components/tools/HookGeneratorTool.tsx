@@ -80,7 +80,7 @@ export function HookGeneratorTool() {
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal">
                 <HookIcon className="h-6 w-6" />
               </div>
-              <span className="chip border-gold/40 bg-gold/5 text-xs text-gold">Most Used</span>
+              <span className="chip border-gold/40 bg-gold/5 text-xs text-gold-700">Most Used</span>
             </div>
             <h1 className="mb-4 text-4xl font-extrabold leading-tight text-zinc-900 sm:text-5xl">
               LinkedIn Hook Generator
@@ -197,7 +197,7 @@ export function HookGeneratorTool() {
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
                 Voice settings, archive continuity, and guided production onboarding.
               </p>
-              <Link href={`${APP_URL}/login`} className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-white shadow-lg transition-colors hover:bg-gold-600">
+              <Link href={`${APP_URL}/login`} className="inline-flex items-center gap-2 rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600">
                 {"Start with LinkedIn ->"}
               </Link>
             </div>

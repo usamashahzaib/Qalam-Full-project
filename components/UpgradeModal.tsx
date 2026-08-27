@@ -46,7 +46,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
   }
 
   const priceKey = requiredPlan.startsWith("Agency") ? "Agency" : requiredPlan
-  const prices = PLAN_PRICES[priceKey] ?? { monthly: 0, quarterly: 0, annual: 0 }
+  const prices = PLAN_PRICES[priceKey] ?? { monthly: 0, quarterly: 0 }
   const isBusy = state.phase === "preparing" && state.targetPlan === requiredPlan
 
   return (
@@ -57,7 +57,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
         <p className="mt-2 text-sm font-semibold text-zinc-700">Upgrade to {requiredPlan} for {formatPkr(prices.monthly)}/month</p>
         <p className="mt-1 text-xs text-emerald-700">{formatPkr(prices.quarterly)} billed quarterly. 1 month free.</p>
         <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-left">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Unlocks</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Included</p>
           <ul className="mt-2 space-y-1.5">
             {unlocksFor(requiredPlan).map((item) => (
               <li key={item} className="flex items-center gap-2 text-sm text-zinc-700">
@@ -77,7 +77,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
           disabled={isBusy}
           className="mt-5 w-full cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isBusy ? "Opening checkout..." : `Unlock ${requiredPlan} - ${formatPkr(prices.quarterly)}`}
+          {isBusy ? "Opening checkout..." : `Choose ${requiredPlan} - ${formatPkr(prices.quarterly)}`}
         </button>
         <div className="mt-4 flex items-center justify-center gap-3 text-xs">
           <button onClick={onClose} className="cursor-pointer font-semibold text-zinc-500 hover:text-zinc-700">Not now</button>

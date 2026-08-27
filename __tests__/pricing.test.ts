@@ -64,10 +64,9 @@ describe("PLANS", () => {
     expect([premium.monthlyPrice, premium.originalMonthlyPrice]).toEqual([10000, 15000])
   })
 
-  it("Free plan has zero monthly price and no annual option", () => {
+  it("Free plan has zero monthly price", () => {
     const free = PLANS.find((p) => p.plan === "Free")!
     expect(free.monthlyPkr).toBe(0)
-    expect(free.annualPkrPerMonth).toBeUndefined()
   })
 
   it("Solo starts at 799 PKR/month", () => {
@@ -84,12 +83,6 @@ describe("PLANS", () => {
   it("active paid plans have a positive monthly price", () => {
     PLANS.filter((p) => p.plan !== "Free" && !p.comingSoon).forEach((plan) => {
       expect(plan.monthlyPkr).toBeGreaterThan(0)
-    })
-  })
-
-  it("annual price per month is lower than monthly for plans that offer it", () => {
-    PLANS.filter((p) => p.annualPkrPerMonth != null).forEach((plan) => {
-      expect(plan.annualPkrPerMonth!).toBeLessThan(plan.monthlyPkr!)
     })
   })
 
@@ -127,23 +120,15 @@ describe("PLAN_PRICES consistency with PLANS", () => {
     })
   })
 
-  it("annual total is less than 12 monthly payments for all paid plans", () => {
-    Object.entries(PLAN_PRICES).forEach(([, prices]) => {
-      if (prices.monthly > 0 && prices.annual > 0) {
-        expect(prices.annual).toBeLessThan(prices.monthly * 12)
-      }
-    })
-  })
-
   it("quarterly billing charges 2 months for 3 months of access", () => {
     Object.values(PLAN_PRICES).forEach((prices) => {
       if (prices.monthly > 0) expect(prices.quarterly).toBe(prices.monthly * 2)
     })
   })
 
-  it("Free has zero for both monthly and annual", () => {
+  it("Free has zero for monthly and quarterly billing", () => {
     expect(PLAN_PRICES.Free.monthly).toBe(0)
-    expect(PLAN_PRICES.Free.annual).toBe(0)
+    expect(PLAN_PRICES.Free.quarterly).toBe(0)
   })
 })
 

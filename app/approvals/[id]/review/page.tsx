@@ -67,7 +67,7 @@ export default function ReviewPage() {
   return (
     <div className="min-h-screen bg-zinc-50 font-jakarta">
       <header className="border-b border-zinc-200 bg-white px-6 py-4">
-        <QalamLogo href="/" size={24} textClassName="text-base font-extrabold text-zinc-900" containerClassName="flex items-center gap-2" />
+        <QalamLogo href="/" size={24} textClassName="text-base font-extrabold text-zinc-900" containerClassName="flex min-h-11 items-center gap-2" />
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-12">
@@ -90,7 +90,7 @@ export default function ReviewPage() {
 
             {/* Header */}
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-zinc-400">Review Request</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Review Request</p>
               <h1 className="mt-1 text-2xl font-bold text-zinc-900">{approval.post_title}</h1>
               <p className="mt-1 text-sm text-zinc-500">
                 Submitted {new Date(approval.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
@@ -100,7 +100,7 @@ export default function ReviewPage() {
             {/* Message from requester */}
             {approval.message && (
               <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4">
-                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-zinc-400">Note from requester</p>
+                <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-400">Note from requester</p>
                 <p className="text-sm leading-relaxed text-zinc-700 italic">&ldquo;{approval.message}&rdquo;</p>
               </div>
             )}
@@ -124,7 +124,7 @@ export default function ReviewPage() {
                 </div>
                 <div className="p-5 space-y-4">
                   <div>
-                    <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
                       Comment <span className="font-normal normal-case text-zinc-400">(optional)</span>
                     </label>
                     <textarea

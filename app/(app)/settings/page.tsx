@@ -285,7 +285,7 @@ export default function SettingsPage() {
     }
   }
 
-  const selectedPlanPrices = PLAN_PRICES[billingDraft.plan] ?? { monthly: 0, quarterly: 0, annual: 0 }
+  const selectedPlanPrices = PLAN_PRICES[billingDraft.plan] ?? { monthly: 0, quarterly: 0 }
   const displayPrice = selectedPlanPrices.quarterly
   const isUpgrade = billingDraft.plan !== billing.plan
   const isPaidUpgrade = isUpgrade && billingDraft.plan !== "Free"
@@ -511,7 +511,7 @@ export default function SettingsPage() {
                   <h3 className="text-sm font-bold text-zinc-900">{isLinkedInConnected ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
                   <p className="text-xs text-zinc-500">{isLinkedInConnected ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
                   {user?.linkedinTokenExpiresAt && (
-                    <p className="mt-1 text-[10px] text-zinc-400">
+                    <p className="mt-1 text-[11px] text-zinc-400">
                       Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
                     </p>
                   )}
@@ -541,7 +541,7 @@ export default function SettingsPage() {
             <MiniStat label="Scheduled" value={String(scheduled.length)} />
             <MiniStat label="Storage health" value={postsError || "Healthy"} />
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro unlock instantly on card checkout. Agency is activated after onboarding.</p>
+          <p className="mt-4 text-xs text-zinc-500">Posts, profile, and events are stored in Supabase. Solo and Pro activate instantly on card checkout. Agency is activated after onboarding.</p>
         </section>
       </div>
       {/* Account + Password */}

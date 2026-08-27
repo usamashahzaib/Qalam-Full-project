@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
-import { createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 
@@ -24,14 +24,14 @@ export async function GET(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
 
-    const { data, error } = await createServiceClient()
+    const { data, error } = await createScopedClient(planCheck.workspaceId)
       .from("cover_letter_documents")
       .select("*")
-      .eq("workspace_id", planCheck.workspaceId)
       .neq("status", "archived")
       .order("updated_at", { ascending: false })
 
     if (error) return NextResponse.json({ error: "Cover letters could not be loaded." }, { status: 500 })
-    return NextResponse.json({ coverLetters: (data || []).map(toClient) })
+    const rows = (data || []) as unknown as Record<string, unknown>[]
+    return NextResponse.json({ coverLetters: rows.map(toClient) })
   })(request)
 }

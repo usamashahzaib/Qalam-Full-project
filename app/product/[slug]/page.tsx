@@ -159,7 +159,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
               Product pages explain the system. The app and pricing pages show where the workflow fits inside the broader publishing stack.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Link href="/pricing" className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-white transition-colors hover:bg-gold-600">
+              <Link href="/pricing" className="inline-flex items-center justify-center rounded-xl bg-gold px-7 py-3.5 font-bold text-teal-900 transition-colors hover:bg-gold-600">
                 Compare Plans
               </Link>
               <Link href="/free-tools" className="inline-flex items-center justify-center rounded-xl border border-white/20 px-7 py-3.5 font-semibold text-white transition-colors hover:bg-white/10">

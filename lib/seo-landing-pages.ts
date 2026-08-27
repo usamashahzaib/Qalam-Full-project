@@ -1,4 +1,5 @@
 import type { MarketingFaq } from "@/lib/site-content"
+import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
 
 export type SeoLandingPage = {
   slug: string
@@ -47,8 +48,8 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
         body: "Most AI content writers produce safe, reusable text. Qalam is built around LinkedIn publishing, so the workflow keeps hooks, voice, draft versions, scheduling, and archive continuity together.",
       },
       {
-        heading: "Voice memory improves every draft",
-        body: "Qalam learns from real posts, approved drafts, and edits. Each accepted output becomes context for the next post, which makes it stronger than a blank prompt box.",
+        heading: "Saved voice context improves the starting point",
+        body: "Qalam builds from real posts and examples you explicitly save. That reusable context gives the next draft a stronger starting point than a blank prompt box.",
       },
       {
         heading: "Useful for solo writers and teams",
@@ -62,7 +63,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "Can an AI content writer sound like me?",
-        a: "Yes, if it learns from real source material. Qalam uses your posts, edits, and approvals to keep future drafts closer to your actual voice.",
+        a: "A saved voice profile can move drafts closer to real source material. Qalam uses the posts and examples you deliberately save as reusable context.",
       },
     ],
     related: [
@@ -78,8 +79,8 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     description:
       "Write LinkedIn posts faster with Qalam, an AI LinkedIn post writer that learns your tone, stores draft history, and keeps hooks, revisions, and scheduling connected.",
     summary:
-      "Qalam helps you write LinkedIn posts from ideas, experience, or rough notes while preserving your personal voice and post archive.",
-    intent: "LinkedIn post writer, LinkedIn content writer, LinkedIn writing assistant",
+      "Turn a real lesson, decision, result, or rough note into a structured LinkedIn draft. Qalam keeps the source idea, hook options, voice context, revisions, archive, and scheduling in one writing workflow.",
+    intent: "LinkedIn post writer, AI LinkedIn post generator, LinkedIn ghostwriting software, LinkedIn content writer",
     primaryKeyword: "LinkedIn post writer",
     keywords: [
       "LinkedIn post writer",
@@ -88,22 +89,47 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       "write LinkedIn posts",
       "AI LinkedIn post writer",
       "LinkedIn ghostwriter AI",
+      "LinkedIn post generator",
+      "AI content writer for LinkedIn",
     ],
     updatedAt,
+    tool: {
+      label: "Try the free Hook Generator",
+      href: "/free-tools/hook-generator",
+      description: "Test several opening angles from one real topic before turning the strongest one into a full post in your Qalam workspace.",
+      detail: "The public tool creates hooks. Full drafts, voice context, version history, and scheduling use the signed-in workspace.",
+    },
+    methodology: { label: "See how Qalam writes from real work", href: "/ai-linkedin-writer" },
     sections: [
       {
-        heading: "From rough idea to publishable post",
-        body: "Start with a topic, lesson, story, or insight. Qalam turns it into a structured LinkedIn draft with a clear hook, body, and close.",
+        heading: "Start with something you can defend",
+        body: "The strongest source is not a generic topic. It is a decision you made, a mistake you corrected, a result you can explain, a customer pattern you noticed, or a professional tension you have earned the right to discuss. Qalam helps structure that material without inventing the experience behind it.",
+      },
+      {
+        heading: "Choose a hook that matches the point",
+        body: "Generate several openings, then choose the one that creates a clear reason to read without exaggerating the claim. A useful hook names the tension, result, or unexpected lesson quickly. It does not rely on vague suspense or a copied formula.",
       },
       {
         heading: "Designed for revision, not one-shot output",
-        body: "Strong LinkedIn writing usually needs edits. Qalam keeps revisions attached to the same draft so the system can learn from what you keep and remove.",
+        body: "Strong LinkedIn writing usually improves through a sharper example, a shorter middle, a clearer transition, or a more useful close. Qalam keeps versions attached to the same draft so you can compare changes instead of resetting the work with every prompt.",
+      },
+      {
+        heading: "Use voice context without surrendering judgment",
+        body: "Saved posts and examples give the writer a better starting point for vocabulary, rhythm, and structure. You still review every claim and choose the final wording. Voice memory supports authorship. It does not replace it.",
+      },
+      {
+        heading: "Move from draft to publishing without losing context",
+        body: "The selected hook, draft versions, content score, schedule, and final post stay connected. That continuity matters when you return to an idea, prepare the next post in a series, or need to understand why a revision worked.",
       },
       {
         heading: "Better archive, better future posts",
-        body: "Finished posts, hooks, and versions stay in your workspace, creating reusable content capital instead of disconnected one-off outputs.",
+        body: "Finished posts, hooks, and versions form a searchable record of the ideas you have already used. The archive helps you develop themes over time, avoid accidental repetition, and reuse a strong insight in a new format without copying the old post.",
       },
     ],
+    example: {
+      heading: "From a rough operational note to a credible post angle",
+      body: "Raw note: 'Hiring slowed down because nobody owned the final decision.' Draft angle: 'We did not have a hiring-speed problem. We had a decision-owner problem. Every interview happened on time, then each candidate waited while three people assumed someone else would make the call.' Add only the true context, action, and result before publishing.",
+    },
     faqs: [
       {
         q: "How do I write LinkedIn posts with AI?",
@@ -113,11 +139,23 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
         q: "Is Qalam a LinkedIn ghostwriter?",
         a: "Qalam is software, not a human ghostwriter. It helps you write in your own voice by learning from your real posts and edits.",
       },
+      {
+        q: "Can I generate LinkedIn posts for free?",
+        a: "Yes. Qalam's Free plan includes a monthly post allowance, and the public Hook Generator lets you test opening angles without a payment card.",
+      },
+      {
+        q: "Will Qalam publish invented stories or metrics?",
+        a: "The writer is designed around material you provide, but you remain responsible for reviewing every draft. Remove any claim, event, quote, or number you cannot support before publishing.",
+      },
+      {
+        q: "Can teams use the same LinkedIn post writer?",
+        a: "Yes. Qalam keeps drafts, revisions, approvals, and voice context connected so a reviewer can see the work before it is scheduled or published.",
+      },
     ],
     related: [
       { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
       { label: "Free Hook Generator", href: "/free-tools/hook-generator" },
-      { label: "Pricing", href: "/pricing" },
+      { label: "LinkedIn Content Scheduler", href: "/linkedin-content-scheduler" },
     ],
   },
   "linkedin-post-generator": {
@@ -191,25 +229,37 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Scheduling belongs after the draft",
-        body: "Qalam keeps the planned post connected to the draft, version, hook, and voice profile that created it.",
+        body: "Most scheduling tools treat a post as a block of text with a time attached. Qalam keeps the scheduled post connected to the draft, revision history, hook, and voice profile that produced it, so anyone reviewing the queue can see why a post reads the way it does before it goes live.",
       },
       {
-        heading: "Useful for teams and agencies",
-        body: "Operators can manage publishing flow, approvals, and client-specific context without spreading work across disconnected tools.",
+        heading: "One workspace instead of five tabs",
+        body: "Writing in one app, approving in a second, and scheduling in a third is how context gets lost between steps. Qalam keeps generation, review, and publishing timing in a single place, so nothing has to be re-explained or re-pasted to move a post from idea to calendar.",
       },
       {
-        heading: "Archive every scheduled post",
-        body: "Scheduled and published content becomes part of the archive, making future planning easier and more consistent.",
+        heading: "Built for teams and agencies",
+        body: "Operators can manage publishing flow, approvals, and client-specific context without spreading work across disconnected tools. Each client keeps a separate voice profile and archive, so scheduled posts stay on brand for the right account.",
+      },
+      {
+        heading: "Every scheduled post feeds the next one",
+        body: "Scheduled and published content folds back into the archive. Next month's planning starts from the posts that already worked rather than a blank calendar, which is how a consistent presence compounds instead of resetting each week.",
       },
     ],
+    example: {
+      heading: "A week planned in one place",
+      body: "A founder drafts three posts on Monday, each built from a saved achievement. Qalam keeps the hook, voice profile, and edit history attached as they queue one for Tuesday, Thursday, and Friday. When a post performs, it is already in the archive, ready to build on rather than rewrite.",
+    },
     faqs: [
       {
         q: "Can Qalam schedule LinkedIn posts?",
-        a: "Qalam includes a post scheduler workflow that keeps drafting, revision context, archive, and publishing planning connected.",
+        a: "Qalam includes a post scheduler workflow that keeps drafting, revision context, archive, and publishing timing connected in one workspace.",
       },
       {
         q: "Why use a LinkedIn scheduler with an AI writer?",
-        a: "Because the best publishing workflow keeps the draft, approval, timing, and later review in one system.",
+        a: "Because the strongest publishing workflow keeps the draft, approval, timing, and later review in one system rather than handing the post between disconnected tools.",
+      },
+      {
+        q: "Does scheduling change my voice?",
+        a: "No. A scheduled post is the exact draft you approved, with its voice profile and edits intact. Timing is the only thing scheduling adds.",
       },
     ],
     related: [
@@ -289,25 +339,33 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Hooks decide whether the post gets read",
-        body: "A strong LinkedIn opening creates tension, specificity, or curiosity fast enough to stop the scroll.",
+        body: "On LinkedIn only the first line or two show before the fold. A strong opening has to create tension, specificity, or curiosity fast enough to earn the tap on See more. Everything else in the post is wasted if the hook does not land.",
       },
       {
-        heading: "Generate multiple angles",
-        body: "Use Qalam to create several hook options from one idea, then pick the one that best matches your voice and point of view.",
+        heading: "Generate several angles from one idea",
+        body: "The same insight can open as a contrarian claim, a specific number, a short story, or a direct question. Qalam produces multiple hook options from one idea so you can pick the angle that matches your voice and point of view instead of settling for the first line that comes to mind.",
       },
       {
-        heading: "Save reusable hook structures",
-        body: "The full Qalam workflow keeps strong openings in your archive so they can shape future posts.",
+        heading: "Save the openings that work",
+        body: "A hook that performed once is a reusable structure, not a one-off. The full Qalam workflow keeps your strongest openings in the archive so future posts start from proven patterns rather than a blank line.",
       },
     ],
+    example: {
+      heading: "One idea, four openings",
+      body: "Take a lesson like cutting a weekly review from 90 to 35 minutes. It can open as a number (We cut our weekly review by 61%), a mistake (We were running the wrong meeting for two years), a question (What if your status meeting is the problem?), or a claim (Most status meetings should be a document). Qalam drafts the set so you choose, rather than guess.",
+    },
     faqs: [
       {
         q: "How do I generate LinkedIn hooks?",
-        a: "Open Qalam's free hook generator, enter your topic, and choose from multiple opening lines designed for LinkedIn posts.",
+        a: "Open Qalam's free hook generator, enter your topic, and choose from several opening lines written for LinkedIn's first-line-visible feed.",
       },
       {
         q: "What makes a good LinkedIn hook?",
-        a: "A good hook is specific, easy to understand, and creates a reason to keep reading within the first line or two.",
+        a: "A good hook is specific, easy to understand at a glance, and creates a clear reason to keep reading within the first line or two. Vague or clever-for-its-own-sake openings tend to lose the scroll.",
+      },
+      {
+        q: "Should every post use the same hook style?",
+        a: "No. Rotating between numbers, stories, questions, and claims keeps a feed from feeling formulaic. Qalam gives you the range so your openings stay varied without losing your voice.",
       },
     ],
     related: [
@@ -386,26 +444,34 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     updatedAt,
     sections: [
       {
-        heading: "Carousels need structure first",
-        body: "A good carousel is not a post split randomly into slides. It needs one clear idea, slide-level progression, and a strong closing action.",
+        heading: "Carousels need structure before design",
+        body: "A good carousel is not a post chopped into slides. It needs one clear idea, a slide-level progression that pulls the reader forward, and a closing slide that asks for something specific. Structure is what separates a carousel people swipe through from one they skip.",
       },
       {
-        heading: "Repurpose strong posts",
-        body: "Qalam helps turn proven post ideas into a multi-slide asset so one insight can work across more than one format.",
+        heading: "Repurpose posts that already worked",
+        body: "A strong written post is proof the idea resonates. Qalam helps turn that proven idea into a multi-slide asset so one insight can work as text and as a document post, reaching people who scan carousels but skim long text.",
       },
       {
-        heading: "Keep assets in the content system",
-        body: "Carousel work should stay tied to the original post, hook, and archive instead of becoming a disconnected file.",
+        heading: "Keep the asset in the content system",
+        body: "A carousel should stay tied to the original post, hook, and archive rather than becoming a disconnected file on someone's desktop. Kept in the system, it can be updated, reused, and measured alongside the rest of your content.",
       },
     ],
+    example: {
+      heading: "From one post to a five-slide document",
+      body: "A consultant's post on why status meetings fail earns strong engagement. Qalam helps reshape it into a carousel: slide one states the problem, slides two through four give the three fixes, and slide five points to a resource. Same idea, second format, no rewrite from scratch.",
+    },
     faqs: [
       {
         q: "Can Qalam create LinkedIn carousels?",
-        a: "Qalam includes a carousel builder route for turning content into cleaner multi-slide assets for LinkedIn.",
+        a: "Qalam includes a carousel builder for turning content into cleaner multi-slide assets, kept connected to the post and archive it came from.",
       },
       {
         q: "What is the easiest way to make a LinkedIn carousel?",
-        a: "Start from one strong post or idea, split it into a clear slide sequence, then use Qalam's carousel builder to shape the asset.",
+        a: "Start from one strong post or idea, split it into a clear slide sequence, then use Qalam's carousel builder to shape the asset. Structure first, design second.",
+      },
+      {
+        q: "How many slides should a LinkedIn carousel have?",
+        a: "Most effective carousels run between five and ten slides: enough to develop one idea with a clear beginning and a closing action, without asking for more swipes than the point deserves.",
       },
     ],
     related: [
@@ -436,11 +502,11 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "What separates a LinkedIn-specific AI from a generic tool",
-        body: "General-purpose AI models like ChatGPT can draft a LinkedIn post from a prompt, but they reset after every session. A purpose-built LinkedIn AI retains voice memory, hook archives, draft history, and workspace context across every session - so each new post starts from accumulated knowledge rather than a blank page.",
+        body: "General-purpose AI models can draft a LinkedIn post from a prompt. A purpose-built LinkedIn workflow can keep saved voice examples, hook archives, draft history, and workspace context together so each new post starts with reusable material rather than a blank page.",
       },
       {
         heading: "The voice memory difference",
-        body: "Qalam trains on your real LinkedIn posts and retains every approved draft, edit, and hook. The system becomes more accurate to your specific voice the longer you use it. Generic AI tools start from the same place every time regardless of how much you have published.",
+        body: "Qalam builds a voice profile from real LinkedIn posts and keeps examples you explicitly save alongside hooks and draft history. Generic prompt tools usually require you to provide that context again.",
       },
       {
         heading: "A complete publishing workflow, not just a draft button",
@@ -450,7 +516,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     faqs: [
       {
         q: "What is the best AI tool for writing LinkedIn posts?",
-        a: "For consistent publishers who need voice memory and compounding improvement, Qalam is purpose-built for LinkedIn. For occasional one-off posts, general-purpose tools like ChatGPT work fine. The right choice depends on your publishing frequency and whether you need the system to remember your voice across sessions.",
+        a: "For consistent publishers who need saved voice context and a connected archive, Qalam is purpose-built for LinkedIn. For occasional one-off posts, general-purpose tools work fine. The right choice depends on your publishing frequency and whether you need reusable context across sessions.",
       },
       {
         q: "Is there a free AI LinkedIn writer?",
@@ -489,17 +555,17 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         heading: "Voice fidelity: the core difference",
-        body: "Qalam trains on your actual LinkedIn posts and retains every approved draft and edit so each new session starts from real knowledge of your voice. Taplio's AI drafting generates posts from prompts without the same level of cross-session voice retention.",
+        body: "Qalam builds a reusable profile from your actual LinkedIn posts and keeps examples you explicitly save available across sessions. Taplio has a different product emphasis, centered more heavily on publishing operations.",
       },
       {
         heading: "Which workflow each tool fits",
-        body: "If you manage high posting volume across multiple accounts and need scheduling analytics, Taplio's operational features are stronger. If you are a solo creator or consultant who wants posts that genuinely sound like you with compounding improvement over time, Qalam is purpose-built for that problem.",
+        body: "If you manage high posting volume across multiple accounts and need scheduling analytics, Taplio's operational features may fit better. If you are a solo creator or consultant who wants saved voice context tied to a career record, Qalam is built for that workflow.",
       },
     ],
     faqs: [
       {
         q: "Is Qalam a Taplio alternative?",
-        a: "Yes, Qalam is a Taplio alternative for creators who prioritize voice fidelity and writing quality over analytics and scheduling volume. Qalam's voice memory system and persistent draft archive make it more suitable for professionals who want compounding improvement rather than content operations management.",
+        a: "Yes, Qalam is a Taplio alternative for creators who prioritize saved voice context and writing quality over analytics and scheduling volume. Its voice profile and persistent draft archive support a different workflow emphasis.",
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
@@ -762,9 +828,9 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "Free LinkedIn Tools",
     h1: "Free LinkedIn tools that improve your posts, most with no account needed",
     description:
-      "Seven free LinkedIn tools built by Qalam: hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor. Six work with no sign-in.",
+      "Seven free LinkedIn tools built by Qalam: hook generator, comment generator, headline analyzer, profile optimizer, post quality checker, carousel builder, and post readiness review. Six work with no sign-in.",
     summary:
-      "Six of Qalam's seven free tools work instantly without creating an account. Hook generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor need nothing but a paste. Comment Generator needs a free sign-in to track your monthly usage.",
+      "Six of Qalam's seven free tools work instantly without creating an account. Hook generator, headline analyzer, profile optimizer, post quality checker, carousel builder, and post readiness review need nothing but a paste. Comment Generator needs a free sign-in to track your monthly usage.",
     intent: "free LinkedIn tools, free LinkedIn AI tools, LinkedIn tools no account",
     primaryKeyword: "free LinkedIn tools",
     keywords: [
@@ -779,11 +845,11 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Seven tools, minimal friction",
-        body: "Six tools at byqalam.com/free-tools work without creating an account or entering a credit card - paste your content, get instant AI analysis. Comment Generator is the one exception: it asks for a free sign-in so it can track your monthly comment quota. Hook generator, comment generator, headline analyzer, profile optimizer, viral checker, carousel builder, and engagement predictor.",
+        body: "Six tools at byqalam.com/free-tools work without creating an account or entering a credit card. Paste your content and get an immediate structured review. Comment Generator is the one exception: it asks for a free sign-in so it can track your monthly comment quota.",
       },
       {
         heading: "What each tool does",
-        body: "Hook Generator: generates 5 opening line variants for any LinkedIn topic. Comment Generator: drafts on-voice replies to other people's LinkedIn posts, free sign-in required. Headline Analyzer: scores your LinkedIn profile headline across 5 criteria with improvement suggestions. Profile Optimizer: structured audit of your LinkedIn profile with specific rewrites. Viral Checker: scores a post across 5 viral dimensions and rewrites the hook. Carousel Builder: converts any post or outline into branded slide assets. Engagement Predictor: pre-publish engagement score with specific edits to improve reach.",
+        body: "Hook Generator creates 5 opening line variants for a LinkedIn topic. Comment Generator drafts voice-aware replies and requires free sign-in. Headline Analyzer reviews a profile headline across 5 criteria. Profile Optimizer provides a structured audit with specific rewrites. Post Quality Checker reviews clarity, specificity, usefulness, and the hook. Carousel Builder converts a post or outline into branded slide assets. Post Readiness Review gives a pre-publish quality score without predicting reach.",
       },
       {
         heading: "Built as a trust surface, not a paywall",
@@ -793,7 +859,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     faqs: [
       {
         q: "What free LinkedIn tools are available from Qalam?",
-        a: "Qalam offers seven free tools: LinkedIn hook generator, comment generator, headline analyzer, profile optimizer, viral post checker, carousel builder, and engagement predictor. All are available at byqalam.com/free-tools.",
+        a: "Qalam offers seven free tools: LinkedIn hook generator, comment generator, headline analyzer, profile optimizer, post quality checker, carousel builder, and post readiness review. All are available at byqalam.com/free-tools.",
       },
       {
         q: "Do the Qalam free LinkedIn tools require an account?",
@@ -812,7 +878,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "LinkedIn AI Ghostwriter",
     h1: "LinkedIn AI ghostwriter that writes in your voice, not a template",
     description:
-      "Use Qalam as a LinkedIn AI ghostwriter: generate posts that reflect your specific voice, experience, and perspective with persistent memory that improves every draft.",
+      "Use Qalam as a LinkedIn writing assistant: generate drafts from your saved voice profile, experience, and professional context while keeping final review in your hands.",
     summary:
       "A LinkedIn AI ghostwriter should produce posts that sound like the person publishing them - not a generic AI output. Qalam's voice memory system is built for exactly this use case.",
     intent: "LinkedIn AI ghostwriter, AI ghostwriter for LinkedIn, LinkedIn ghostwriter AI tool",
@@ -843,7 +909,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     faqs: [
       {
         q: "Can AI ghostwrite LinkedIn posts that sound authentic?",
-        a: "Yes, when the AI has access to real source material and persistent memory. Qalam trains on your actual LinkedIn posts and retains approved drafts and edits so outputs match your real voice rather than a generic LinkedIn template.",
+        a: "A saved voice profile can make drafts more consistent with real source material. Qalam uses actual LinkedIn posts and examples you deliberately save to reduce generic output, while you still review every draft.",
       },
       {
         q: "Is Qalam a LinkedIn ghostwriter or an AI tool?",
@@ -1018,7 +1084,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       { heading: "Start with a point of view, not a prompt formula", body: "The best source material is a lesson, decision, observation, customer pattern, or professional tension you can explain from experience. AI can help structure the draft, but it cannot supply the credibility that comes from a real perspective." },
       { heading: "A post generator needs room for revision", body: "Strong LinkedIn posts often improve through a sharper hook, a more concrete example, a shorter middle, or a clearer close. Keep revisions attached to the original idea so the work does not reset every time you edit." },
-      { heading: "Voice context should improve the starting point", body: "Saved examples, approved drafts, and deliberate edits can make future suggestions closer to the writer's vocabulary and rhythm. The writer still reviews every draft before it represents them publicly." },
+      { heading: "Voice context should improve the starting point", body: "Saved examples can make future suggestions closer to the writer's vocabulary and rhythm. The writer still reviews every draft before it represents them publicly." },
     ],
     example: { heading: "From operational lesson to post angle", body: "Raw idea: 'Our hiring delays were caused by unclear ownership.' Possible angle: 'We did not have a hiring-speed problem. We had a decision-owner problem. The calendar looked full because everyone was waiting for someone else to make the call.' The writer can then add the true context and outcome." },
     faqs: [{ q: "Can I generate LinkedIn posts for free?", a: "Qalam has a Free plan with monthly post allowance, plus public free tools including the Hook Generator. No payment card is required for Free." }, { q: "Will AI-generated LinkedIn posts sound authentic?", a: "They can start closer to your voice when you provide real examples and review the draft. Do not publish claims, stories, or metrics that you cannot support." }],
@@ -1026,4 +1092,6 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
   },
 }
 
-export const SEO_LANDING_ROUTES = Object.keys(SEO_LANDING_PAGES).map((slug) => `/${slug}`)
+export const SEO_LANDING_ROUTES = Object.keys(SEO_LANDING_PAGES)
+  .filter((slug) => !REDIRECTED_SEO_SLUGS.has(slug))
+  .map((slug) => `/${slug}`)
