@@ -15,6 +15,27 @@ Surface: `/career/match` inside Qalam.
 Tables: `match_profiles`, `match_suggestions`, `match_connections`, all with `domain = 'professional'`.
 Consent: `career_consents.purpose = 'peer_matching'`.
 
+## Signal Match onboarding prefill
+
+Signal Match prepares an unsaved, editable draft from context the member has already saved in the active workspace. Existing match-profile values always win. Empty fields may then use the following sources in order.
+
+| Match field | Workspace profile | Grounded publishing context | Career Vault |
+|---|---|---|---|
+| Display name | Name | - | - |
+| Headline | Title | Primary role | Target role |
+| Industry | Industry | Industry | Target industry |
+| Seniority | - | Seniority | - |
+| Location | - | - | Location |
+| Topics | - | Content pillars and expertise | Skills |
+| Audience | - | Audience | - |
+| Goals | Goals | Content goals | Career goals |
+| LinkedIn URL | LinkedIn URL | - | - |
+| Contact email | Never inferred | Never inferred | Never inferred |
+
+The GET route returns only the reduced draft fields and source labels. It does not return resume contents, imported post contents, proof points, achievements, or raw publishing examples for this purpose.
+
+Draft construction performs no write. A member can edit every field while matching remains off. `save_match_profile_v1` writes the match profile and peer-matching consent in one database transaction, so an opted-in profile cannot enter the pool without the matching consent being saved at the same time.
+
 Attributes: `industry`, `seniority`, `location`, `expertise[]`, `audience[]`, `goals[]`.
 
 Scoring is entirely soft. There are no disqualifiers, because a bad professional pairing

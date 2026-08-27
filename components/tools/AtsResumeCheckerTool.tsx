@@ -8,6 +8,7 @@ import { parseResumeReviewResponse, type ResumeReviewResult, type ResumeReviewSc
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_STEPS } from "@/lib/ats-methodology"
 import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
 import { trackMarketingEvent } from "@/lib/marketing-events"
+import { ATS_FUNNEL_SOURCE, buildAtsResumeLoginUrl, type AtsCtaPlacement } from "@/lib/ats-funnel"
 
 const scoreLabels: Record<ResumeReviewScoreKey, string> = {
   ats_parsing: "ATS parsing",
@@ -39,6 +40,11 @@ export function AtsResumeCheckerTool() {
   const [uploading, setUploading] = useState(false)
   const [sourceName, setSourceName] = useState("")
   const [error, setError] = useState("")
+
+  const resumeBuilderHref = (placement: AtsCtaPlacement) => buildAtsResumeLoginUrl(APP_URL, placement)
+  const trackSignupStart = (placement: AtsCtaPlacement) => {
+    trackMarketingEvent("signup_start", { source: ATS_FUNNEL_SOURCE, placement })
+  }
 
   // The homepage hero runs an instant structural read, then hands the resume
   // here so the visitor never re-uploads to get the full review.
@@ -197,7 +203,7 @@ export function AtsResumeCheckerTool() {
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">After your check</p>
             <h2 className="mt-3 text-2xl font-bold">Build one ATS resume free every month.</h2>
             <p className="mt-3 text-sm leading-6 text-white/70">Sign in to target an exact job, edit every line, choose from 12 ATS-safe templates, and export to PDF.</p>
-            <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-teal-900 transition hover:bg-gold-600">Build my monthly free resume</Link>
+            <Link href={resumeBuilderHref("post_result_sidebar")} onClick={() => trackSignupStart("post_result_sidebar")} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-teal-900 transition hover:bg-gold-600">Build my monthly free resume</Link>
             <p className="mt-3 text-center text-xs text-white/65">Free plan. One generation per month.</p>
           </aside>
         </div>
@@ -256,7 +262,7 @@ export function AtsResumeCheckerTool() {
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">Truth-preserving rewrite</p>
               <h2 className="mt-2 text-2xl font-bold">Professional summary</h2>
               <p className="mt-4 max-w-4xl leading-7 text-white/80">{result.rewritten_summary}</p>
-              <Link href={`${APP_URL}/login?callbackUrl=/career/resumes`} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-teal-900">Build the full resume free</Link>
+              <Link href={resumeBuilderHref("post_result_summary")} onClick={() => trackSignupStart("post_result_summary")} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-teal-900">Build the full resume free</Link>
             </section>
           </div>
         ) : null}

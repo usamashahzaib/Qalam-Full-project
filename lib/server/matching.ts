@@ -91,6 +91,31 @@ export async function loadMatchProfile(workspaceId: string) {
   return (data as MatchProfileRow | null) ?? null
 }
 
+export async function hasActiveMatchConsent(userId: string) {
+  const { data } = await createServiceClient()
+    .from("career_consents")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("purpose", MATCH_CONSENT_PURPOSE)
+    .eq("granted", true)
+    .limit(1)
+    .maybeSingle()
+  return Boolean(data)
+}
+
+async function loadConsentedUserIds(userIds: string[]) {
+  if (!userIds.length) return new Set<string>()
+  const { data } = await createServiceClient()
+    .from("career_consents")
+    .select("user_id")
+    .in("user_id", userIds)
+    .eq("purpose", MATCH_CONSENT_PURPOSE)
+    .eq("granted", true)
+  return new Set(
+    ((data as { user_id: string }[] | null) ?? []).map((row) => row.user_id)
+  )
+}
+
 async function loadConnectedUserIds(userId: string) {
   const supabase = createServiceClient()
   const { data } = await supabase
@@ -125,7 +150,7 @@ export async function ensureSuggestions(userId: string, workspaceId: string) {
   if (((existing as unknown[] | null) ?? []).length) return
 
   const profile = await loadMatchProfile(workspaceId)
-  if (!profile || !profile.opted_in) return
+  if (!profile || !profile.opted_in || !(await hasActiveMatchConsent(userId))) return
 
   const { data: poolRows } = await supabase
     .from("match_profiles")
@@ -135,7 +160,11 @@ export async function ensureSuggestions(userId: string, workspaceId: string) {
     .order("updated_at", { ascending: false })
     .limit(POOL_LIMIT)
 
-  const pool = ((poolRows as MatchProfileRow[] | null) ?? []).map(toParticipant)
+  const optedInProfiles = (poolRows as MatchProfileRow[] | null) ?? []
+  const consentedUserIds = await loadConsentedUserIds(optedInProfiles.map((row) => row.user_id))
+  const pool = optedInProfiles
+    .filter((row) => consentedUserIds.has(row.user_id))
+    .map(toParticipant)
   if (pool.length < 2) return
 
   // Never resurface someone the user has already been shown, in any period.
@@ -181,16 +210,23 @@ export async function listSuggestions(userId: string): Promise<SuggestionView[]>
     .from("match_profiles")
     .select(PROFILE_COLUMNS)
     .in("workspace_id", suggestions.map((row) => row.candidate_workspace_id))
+    .eq("opted_in", true)
+
+  const visibleProfiles = (profileRows as MatchProfileRow[] | null) ?? []
+  const consentedUserIds = await loadConsentedUserIds(visibleProfiles.map((row) => row.user_id))
 
   const profiles = new Map(
-    ((profileRows as MatchProfileRow[] | null) ?? []).map((row) => [row.workspace_id, row])
+    visibleProfiles
+      .filter((row) => consentedUserIds.has(row.user_id))
+      .map((row) => [row.workspace_id, row])
   )
   const connected = await loadConnectedUserIds(userId)
 
-  return suggestions.map((suggestion) => {
+  return suggestions.flatMap((suggestion) => {
     const profile = profiles.get(suggestion.candidate_workspace_id)
+    if (!profile) return []
     const isConnected = connected.has(suggestion.candidate_user_id)
-    return {
+    return [{
       id: suggestion.id,
       status: suggestion.status,
       score: suggestion.score,
@@ -205,7 +241,7 @@ export async function listSuggestions(userId: string): Promise<SuggestionView[]>
       // Contact details stay hidden until both sides opt in to the introduction.
       contactEmail: isConnected ? profile?.contact_email ?? null : null,
       linkedinUrl: isConnected ? profile?.linkedin_url ?? null : null,
-    }
+    }]
   })
 }
 
@@ -236,6 +272,16 @@ export async function respondToSuggestion(
   const suggestion = data as (SuggestionRow & { workspace_id: string }) | null
   if (!suggestion) return { ok: false, reason: "not_found" }
 
+  const [viewer, candidate, viewerConsented, candidateConsented] = await Promise.all([
+    loadMatchProfile(suggestion.workspace_id),
+    loadMatchProfile(suggestion.candidate_workspace_id),
+    hasActiveMatchConsent(userId),
+    hasActiveMatchConsent(suggestion.candidate_user_id),
+  ])
+  if (!viewer?.opted_in || !candidate?.opted_in || !viewerConsented || !candidateConsented) {
+    return { ok: false, reason: "not_found" }
+  }
+
   await supabase
     .from("match_suggestions")
     .update({ status: action, responded_at: new Date().toISOString() })
@@ -255,23 +301,17 @@ export async function respondToSuggestion(
   const reciprocal = reciprocalRow as { id: string; status: string } | null
 
   if (!reciprocal) {
-    const [viewer, candidate] = await Promise.all([
-      loadMatchProfile(suggestion.workspace_id),
-      loadMatchProfile(suggestion.candidate_workspace_id),
-    ])
-    if (viewer && candidate && candidate.opted_in) {
-      const reverse = scorePair(toParticipant(candidate), toParticipant(viewer))
-      await supabase.from("match_suggestions").insert({
-        domain: MATCH_DOMAIN,
-        period_start: periodStart(),
-        user_id: candidate.user_id,
-        workspace_id: candidate.workspace_id,
-        candidate_user_id: viewer.user_id,
-        candidate_workspace_id: viewer.workspace_id,
-        score: reverse.score,
-        reasons: reverse.reasons,
-      })
-    }
+    const reverse = scorePair(toParticipant(candidate), toParticipant(viewer))
+    await supabase.from("match_suggestions").insert({
+      domain: MATCH_DOMAIN,
+      period_start: periodStart(),
+      user_id: candidate.user_id,
+      workspace_id: candidate.workspace_id,
+      candidate_user_id: viewer.user_id,
+      candidate_workspace_id: viewer.workspace_id,
+      score: reverse.score,
+      reasons: reverse.reasons,
+    })
     return { ok: true, connected: false }
   }
 

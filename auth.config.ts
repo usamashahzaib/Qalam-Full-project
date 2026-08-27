@@ -1,5 +1,7 @@
 ﻿import type { NextAuthConfig } from "next-auth"
 
+import { safeRedirectPath } from "@/lib/validation"
+
 // App page routes that require authentication
 const PROTECTED = [
   "/dashboard",
@@ -37,7 +39,8 @@ export const authConfig: NextAuthConfig = {
 
       // Redirect authenticated users away from auth pages
       if (isAuthOnly && isLoggedIn) {
-        return Response.redirect(new URL("/dashboard", request.nextUrl.origin))
+        const callbackUrl = safeRedirectPath(request.nextUrl.searchParams.get("callbackUrl"))
+        return Response.redirect(new URL(callbackUrl, request.nextUrl.origin))
       }
 
       // Require auth for app page routes

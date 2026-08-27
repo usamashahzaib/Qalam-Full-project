@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { signIn } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import { AuthShell, PasswordField } from "@/components/auth/AuthScene"
 import { LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamSignupNotice } from "@/components/QalamSignupNotice"
@@ -10,6 +11,7 @@ import { ReferralBanner, readPendingReferralCode, clearPendingReferralCode } fro
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { SITE_URL } from "@/lib/seo"
 import { trackMarketingEvent } from "@/lib/marketing-events"
+import { safeRedirectPath } from "@/lib/validation"
 
 const ROLES = [
   "Consultant",
@@ -23,6 +25,9 @@ const ROLES = [
 type PageState = "form" | "success" | "email_failed"
 
 export default function SignupPage() {
+  const searchParams = useSearchParams()
+  const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"))
+  const loginUrl = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
   const [pageState, setPageState] = useState<PageState>("form")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -55,7 +60,7 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, referralCode: referralCode || undefined }),
+        body: JSON.stringify({ name, email, password, role, referralCode: referralCode || undefined, callbackUrl }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -75,7 +80,7 @@ export default function SignupPage() {
   const handleSocial = async (provider: "linkedin") => {
     setSocialLoading(provider)
     try {
-      await signIn(provider, { callbackUrl: "/dashboard" })
+      await signIn(provider, { callbackUrl })
     } catch {
       setSocialLoading(null)
     }
@@ -111,7 +116,7 @@ export default function SignupPage() {
                 to verify your address and activate your account.
               </p>
               <Link
-                href="/login"
+                href={loginUrl}
                 className="block w-full rounded-xl border border-zinc-300 px-4 py-2.5 text-center text-sm font-bold text-zinc-800 transition-colors hover:bg-zinc-50"
               >
                 Go to sign in
@@ -131,7 +136,7 @@ export default function SignupPage() {
                 Click it to activate your account, then sign in.
               </p>
               <Link
-                href="/login"
+                href={loginUrl}
                 className="block w-full rounded-xl bg-teal px-4 py-2.5 text-center text-sm font-bold text-white transition-colors hover:bg-teal-600"
               >
                 Go to sign in
@@ -273,7 +278,7 @@ export default function SignupPage() {
 
               <p className="mt-6 text-center text-sm text-zinc-500">
                 Already have an account?{" "}
-                <Link href="/login" className="font-semibold text-teal hover:text-teal-700">
+                <Link href={loginUrl} className="font-semibold text-teal hover:text-teal-700">
                   Sign in
                 </Link>
               </p>

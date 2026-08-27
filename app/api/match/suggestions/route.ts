@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
-import { ensureSuggestions, listSuggestions, loadMatchProfile } from "@/lib/server/matching"
+import { ensureSuggestions, hasActiveMatchConsent, listSuggestions, loadMatchProfile } from "@/lib/server/matching"
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -11,8 +11,11 @@ export async function GET(request: NextRequest) {
     const roleError = await authorizeRole(req, planCheck.workspaceId, "viewer")
     if (roleError) return roleError
 
-    const profile = await loadMatchProfile(planCheck.workspaceId)
-    if (!profile?.opted_in) return NextResponse.json({ optedIn: false, suggestions: [] })
+    const [profile, consented] = await Promise.all([
+      loadMatchProfile(planCheck.workspaceId),
+      hasActiveMatchConsent(user.id),
+    ])
+    if (!profile?.opted_in || !consented) return NextResponse.json({ optedIn: false, suggestions: [] })
 
     try {
       await ensureSuggestions(user.id, planCheck.workspaceId)

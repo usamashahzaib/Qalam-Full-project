@@ -31,6 +31,8 @@ No browser event accepts email, name, account ID, resume text, job description t
 | `homepage_primary_cta_click` | `placement` |
 | `resume_check_start` | `placement`, `method` |
 | `assessment_complete` | `assessment`, `score_band`, `job_description_supplied` |
+| `signup_start` | `source=ats_resume_checker`, `placement` |
+| `ats_resume_handoff` | `source=ats_resume_checker`, `placement`, `destination=career_resumes` |
 | `signup_complete` | `method`, `verification_email_sent` |
 | `activation` | `workflow`, `content_type` |
 | `paid_conversion` | `plan`, `confirmation=server_confirmed` |
@@ -53,6 +55,7 @@ Payment lifecycle events originate only after a provider signature and webhook c
 ## Failure policy
 
 - GA failure is swallowed. A successful signup, assessment, generation, or payment confirmation remains successful.
+- ATS attribution crosses authentication only through fixed source, placement, and destination tokens. Login, signup, email verification, and authenticated auth-page redirects validate the callback as a same-origin path.
 - Product event failure is logged as `product_event.record_failed` without including user content.
 - Payment and activation facts are idempotent when retried.
 - A missing migration is visible in server logs and release validation. It does not turn a completed user action into an error page.

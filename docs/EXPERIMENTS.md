@@ -22,3 +22,16 @@
 | Homepage color-only CTA test | 2/2/9 | rejected as too small |
 | Branded auth shell with password privacy guardian | 7/6/8 | implemented as new control, measure signup completion |
 | Five-feature homepage pricing summary with full comparison link | 6/6/9 | implemented as new control, measure pricing visits and paid conversion |
+
+## ATS CTA measurement note
+
+The checker sidebar and result-summary CTAs now have distinct placement values, but they are not an A-B test. Users encounter them in different contexts and at different times. Compare them as funnel diagnostics only.
+
+Before running a CTA variant test:
+
+- choose signup completion as the primary metric
+- keep ATS Resume Studio arrival and first resume creation as guardrails
+- pre-calculate the sample required for the chosen minimum detectable effect
+- run through at least one to two full business cycles
+- verify the traffic split for sample-ratio mismatch
+- report a 95 percent confidence interval, statistical significance, and practical significance

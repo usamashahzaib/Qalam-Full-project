@@ -31,6 +31,7 @@ export default function LoginPage() {
   const callbackUrl = safeRedirectPath(searchParams.get("callbackUrl"))
   const errorParam = searchParams.get("error")
   const verified = searchParams.get("verified") === "1"
+  const signupUrl = `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`
 
   const errorMessage = errorParam ? (ERROR_MESSAGES[errorParam] ?? ERROR_MESSAGES.Default) : null
 
@@ -175,7 +176,7 @@ export default function LoginPage() {
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-zinc-500">
             No account?{" "}
-            <Link href="/signup" className="font-semibold text-teal hover:text-teal-700">
+            <Link href={signupUrl} className="font-semibold text-teal hover:text-teal-700">
               Create one free
             </Link>
           </p>

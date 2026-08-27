@@ -15,6 +15,15 @@ export type MarketingEventMap = {
     score_band: "strong" | "developing" | "at_risk"
     job_description_supplied: boolean
   }
+  signup_start: {
+    source: "ats_resume_checker"
+    placement: "post_result_sidebar" | "post_result_summary"
+  }
+  ats_resume_handoff: {
+    source: "ats_resume_checker"
+    placement: "post_result_sidebar" | "post_result_summary"
+    destination: "career_resumes"
+  }
   signup_complete: {
     method: "credentials"
     verification_email_sent: boolean
@@ -76,6 +85,21 @@ export function safeMarketingProperties(
             assessment: value.assessment,
             score_band: value.score_band,
             job_description_supplied: value.job_description_supplied,
+          }
+        : null
+    case "signup_start":
+      return value.source === "ats_resume_checker"
+        && oneOf(value.placement, ["post_result_sidebar", "post_result_summary"] as const)
+        ? { source: value.source, placement: value.placement }
+        : null
+    case "ats_resume_handoff":
+      return value.source === "ats_resume_checker"
+        && oneOf(value.placement, ["post_result_sidebar", "post_result_summary"] as const)
+        && value.destination === "career_resumes"
+        ? {
+            source: value.source,
+            placement: value.placement,
+            destination: value.destination,
           }
         : null
     case "signup_complete":

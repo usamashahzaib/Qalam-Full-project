@@ -1,9 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
+import { ATS_FUNNEL_SOURCE, ATS_RESUME_DESTINATION, isAtsCtaPlacement } from "@/lib/ats-funnel"
+import { trackMarketingEvent } from "@/lib/marketing-events"
 
 type ResumeListItem = {
   id: string
@@ -45,15 +47,30 @@ function readResumeHandoff(): { form: typeof defaultForm; open: boolean } {
 export default function ResumesPage() {
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
+  const handoffSource = searchParams.get("source")
+  const placementMarker = searchParams.get("placement")
+  const handoffPlacement = isAtsCtaPlacement(placementMarker) ? placementMarker : null
+  const hasAtsHandoff = handoffSource === ATS_FUNNEL_SOURCE && handoffPlacement !== null
   const suffix = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
   const [resumes, setResumes] = useState<ResumeListItem[]>([])
   const [handoff] = useState(readResumeHandoff)
-  const [showCreate, setShowCreate] = useState(handoff.open)
+  const [showCreate, setShowCreate] = useState(handoff.open || hasAtsHandoff)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [form, setForm] = useState(handoff.form)
   const [uploading, setUploading] = useState(false)
   const [sourceLabel, setSourceLabel] = useState("")
+  const trackedHandoff = useRef(false)
+
+  useEffect(() => {
+    if (!hasAtsHandoff || !handoffPlacement || trackedHandoff.current) return
+    trackedHandoff.current = true
+    trackMarketingEvent("ats_resume_handoff", {
+      source: ATS_FUNNEL_SOURCE,
+      placement: handoffPlacement,
+      destination: ATS_RESUME_DESTINATION,
+    })
+  }, [handoffPlacement, hasAtsHandoff])
 
   useEffect(() => {
     fetch(`/api/career/resumes${suffix}`)

@@ -9,6 +9,7 @@ import { applyReferralCode } from "@/lib/server/referrals"
 import { APP_URL } from "@/lib/seo"
 import { fetchWorkspacePlan } from "@/lib/server/workspace"
 import { getPlanLimits } from "@/lib/entitlements"
+import { safeRedirectPath } from "@/lib/validation"
 
 const VALID_ROLES = [
   "HR Professional",
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
   const password = String(body.password ?? "")
   const role = String(body.role ?? "").trim()
   const referralCode = String(body.referralCode ?? "").trim()
+  const callbackUrl = safeRedirectPath(typeof body.callbackUrl === "string" ? body.callbackUrl : null)
 
   if (!name || !email || !password || !role) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 })
@@ -191,7 +193,7 @@ export async function POST(req: NextRequest) {
       `Welcome to Qalam, ${name}!`,
       "",
       "Verify your email address to activate your account:",
-      `${APP_URL}/verify-email?token=${verificationToken}`,
+      `${APP_URL}/verify-email?token=${verificationToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`,
       "",
       "This link expires in 24 hours.",
       "If you did not create an account, ignore this email.",
