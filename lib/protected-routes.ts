@@ -18,5 +18,4 @@ export const PROTECTED_ROUTES = [
   "/approvals",
   "/chat",
   "/admin",
-  "/silent-growth",
 ] as const

@@ -4,6 +4,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { SupabaseVoiceProfileRepository } from "@/lib/repositories/supabase/SupabaseVoiceProfileRepository"
 import { errorToStatus, requireRole } from "@/lib/server/roles"
 import { normalizeLinkedInUrl } from "@/lib/validation"
+import { log } from "@/lib/server/logging"
 
 const voiceRepo = new SupabaseVoiceProfileRepository()
 
@@ -49,6 +50,11 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ profile })
   } catch (error) {
     const msg = (error as Error).message
-    return NextResponse.json({ error: msg }, { status: errorToStatus(msg) })
+    const status = errorToStatus(msg)
+    log.error("voice_profile.save_failed", { error: msg })
+    return NextResponse.json(
+      { error: status === 401 ? "Please sign in again." : status === 403 ? "You do not have permission to edit this profile." : "Could not save your profile. Please try again." },
+      { status },
+    )
   }
 }

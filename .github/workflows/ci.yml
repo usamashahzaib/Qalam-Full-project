@@ -35,5 +35,14 @@ jobs:
       - name: Check dashes
         run: npm run check:dashes
 
+      - name: Verify Supabase migrations
+        if: ${{ secrets.SUPABASE_DB_URL != '' || secrets.SUPABASE_ACCESS_TOKEN != '' }}
+        env:
+          REQUIRE_MIGRATION_CHECK: "1"
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: npm run check:migrations
+
       - name: Build
         run: npm run build

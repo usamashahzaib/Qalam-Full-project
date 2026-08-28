@@ -32,7 +32,6 @@ const APP_ROUTES = [
   "/login",
   "/reset-password",
   "/settings",
-  "/silent-growth",
   "/signup",
   "/upgrade",
   "/verify-email",

@@ -285,6 +285,19 @@ summary {
   }
 }
 
+/* Keep touch controls at the platform-recommended 44px minimum. The app uses
+   compact text buttons in several screens, so this shared guard prevents a
+   later small utility class from creating an inaccessible tap target. */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a.inline-flex,
+  a.flex {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
 /* Smooth momentum scrolling on iOS for scrollable containers */
 .qalam-scrollbar,
 .qalam-scrollbar-dark {

@@ -3,6 +3,7 @@ import "server-only"
 import { timingSafeEqual } from "node:crypto"
 import { NextRequest } from "next/server"
 import { redirect } from "next/navigation"
+import { cache } from "react"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
@@ -15,10 +16,12 @@ import { isSessionCurrent } from "@/lib/server/session-revocation"
 
 export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
-export async function getAuthenticatedSession() {
+const getAuthenticatedSessionImpl = async () => {
   const session = await auth()
   return await isSessionCurrent(session) ? session : null
 }
+
+export const getAuthenticatedSession = cache(getAuthenticatedSessionImpl)
 
 export async function requireAuth(): Promise<string> {
   const session = await getAuthenticatedSession()
@@ -105,13 +108,11 @@ export const requireAdminPage = async () => {
   return { email: email || "", userId }
 }
 
-export const getWorkspaceSessionContext = async (): Promise<WorkspaceSessionContext> => {
+const getWorkspaceSessionContextImpl = async (): Promise<WorkspaceSessionContext> => {
   const session = await getAuthenticatedSession().catch(() => null)
-  const userId = session?.user?.id || await requireAuth().catch(() => {
-    throw new Error("auth_required")
-  })
+  const userId = session?.user?.id
   const email = session?.user?.email?.trim().toLowerCase()
-  if (!email) throw new Error("auth_required")
+  if (!userId || !email) throw new Error("auth_required")
 
   const names = toNames(session?.user?.name || "", email)
   const supabaseUserId = await ensureSupabaseUser({
@@ -131,6 +132,8 @@ export const getWorkspaceSessionContext = async (): Promise<WorkspaceSessionCont
     supabaseUserId,
   }
 }
+
+export const getWorkspaceSessionContext = cache(getWorkspaceSessionContextImpl)
 
 export const toPublicAuthUser = (ctx: WorkspaceSessionContext) => ({
   email: ctx.email,
@@ -176,8 +179,12 @@ export async function getCurrentWorkspace() {
   return { workspaceId: workspaceId || undefined, role: workspaceId ? "owner" : undefined }
 }
 
-export const resolveWorkspaceId = async (request: NextRequest, explicitWorkspaceId?: string): Promise<string> => {
-  const ctx = await getWorkspaceSessionContext()
+export const resolveWorkspaceId = async (
+  request: NextRequest,
+  explicitWorkspaceId?: string,
+  context?: WorkspaceSessionContext,
+): Promise<string> => {
+  const ctx = context ?? await getWorkspaceSessionContext()
   const url = new URL(request.url)
   let requestedWorkspaceId = explicitWorkspaceId || url.searchParams.get("workspaceKey")
 
@@ -214,7 +221,9 @@ const higherPlan = (a: string, b: string) => {
 
 const toTitleCasePlan = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 
-const fetchUsersPlanByMemberId = async (memberId: string): Promise<string | null> => {
+type UserPlanInfo = { plan: string; expiresAt: string | null }
+
+const fetchUsersPlanByMemberId = async (memberId: string): Promise<UserPlanInfo | null> => {
   try {
     const users = await supabaseSelect<{ plan: string | null; external_user_id: string | null; plan_expires_at: string | null }>(
       "users",
@@ -227,7 +236,7 @@ const fetchUsersPlanByMemberId = async (memberId: string): Promise<string | null
     const userPlan = user.plan?.toLowerCase()
     if (userPlan && userPlan !== "free") {
       const expired = user.plan_expires_at && new Date(user.plan_expires_at) < new Date()
-      if (!expired) return toTitleCasePlan(userPlan)
+      if (!expired) return { plan: toTitleCasePlan(userPlan), expiresAt: user.plan_expires_at }
     }
 
     // Fall back to plan_usage - try both internal and external user IDs
@@ -238,7 +247,7 @@ const fetchUsersPlanByMemberId = async (memberId: string): Promise<string | null
         `user_id=eq.${encodeURIComponent(uid)}&select=plan&limit=1`
       ).catch(() => null)
       const usagePlan = usage?.[0]?.plan?.toLowerCase()
-      if (usagePlan && usagePlan !== "free") return toTitleCasePlan(usagePlan)
+      if (usagePlan && usagePlan !== "free") return { plan: toTitleCasePlan(usagePlan), expiresAt: null }
     }
     return null
   } catch {
@@ -262,7 +271,7 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
       ).catch(() => null)
       const memberId = members?.[0]?.user_id
       const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
-      return { plan: userPlan ?? "Free", status: "active", expiresAt: null }
+      return { plan: userPlan?.plan ?? "Free", status: "active", expiresAt: userPlan?.expiresAt ?? null }
     }
 
     const orgs = await supabaseSelect<{ plan: string; subscription_status: string; plan_expires_at: string | null }>(
@@ -294,12 +303,13 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
     ).catch(() => null)
     const memberId = members?.[0]?.user_id
     const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
-    const effectivePlan = userPlan ? higherPlan(orgPlan, userPlan) : orgPlan
+    const effectivePlan = userPlan ? higherPlan(orgPlan, userPlan.plan) : orgPlan
+    const usesDirectUserPlan = Boolean(userPlan && effectivePlan.toLowerCase() === userPlan.plan.toLowerCase() && (PLAN_PRIORITY[userPlan.plan.toLowerCase()] ?? 0) > (PLAN_PRIORITY[orgPlan.toLowerCase()] ?? 0))
 
     return {
       plan: effectivePlan,
       status: org.subscription_status || "active",
-      expiresAt: org.plan_expires_at ?? null,
+      expiresAt: usesDirectUserPlan ? userPlan?.expiresAt ?? null : org.plan_expires_at ?? null,
       planExpired: false,
     }
   } catch {
@@ -326,6 +336,7 @@ export async function resolveEffectivePlan(
       const { getCanonicalPlan } = await import("@/lib/server/plan-limits-v2")
       const canonical = await getCanonicalPlan(internalUserId)
       if ((PLAN_PRIORITY[canonical.toLowerCase()] ?? 0) > (PLAN_PRIORITY[wsInfo.plan.toLowerCase()] ?? 0)) {
+        const directPlan = await fetchUsersPlanByMemberId(internalUserId)
         // Derive featureFlags from the canonical plan's entitlements so they are
         // never empty when the override wasn't found via the email/workspace path.
         const { getPlanLimits } = await import("@/lib/entitlements")
@@ -339,7 +350,12 @@ export async function resolveEffectivePlan(
           exportPdf: limits.canExport,
           voiceProfiles: limits.voiceTraining,
         }
-        return { ...wsInfo, plan: canonical, featureFlags: { ...derivedFlags, ...(wsInfo.featureFlags ?? {}) } }
+        return {
+          ...wsInfo,
+          plan: canonical,
+          expiresAt: directPlan?.plan.toLowerCase() === canonical.toLowerCase() ? directPlan.expiresAt : wsInfo.expiresAt,
+          featureFlags: { ...derivedFlags, ...(wsInfo.featureFlags ?? {}) },
+        }
       }
     } catch {
       // Fall through to workspace plan.

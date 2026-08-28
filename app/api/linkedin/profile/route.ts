@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const accessToken = account?.access_token || legacy?.access_token || ""
     const expiresAt = account?.expires_at ? Date.parse(account.expires_at) : legacy?.token_expires_at || null
 
-    if (!accessToken) return NextResponse.json({ connected: false, error: "LinkedIn token not found" }, { status: 404, headers: corsHeaders })
+    if (!accessToken) return NextResponse.json({ connected: false }, { headers: corsHeaders })
     if (expiresAt && expiresAt < Date.now()) return NextResponse.json({ error: "linkedin_token_expired", reconnectRequired: true }, { status: 401, headers: corsHeaders })
 
     const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000

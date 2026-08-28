@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useState } from "react"
 import Link from "next/link"
 
 type TableRow = { name: string; exists: boolean }
@@ -12,21 +12,35 @@ type DbStatus = {
   rpcs: RpcRow[]
   missingTables: string[]
   missingRpcs: string[]
+  missingColumns: string[]
   instructions: string
 }
 
 export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
+  const [adminKey, setAdminKey] = useState("")
   const [status, setStatus] = useState<DbStatus | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch("/api/admin/db-status")
-      .then((r) => r.json())
-      .then((data: DbStatus) => setStatus(data))
-      .catch((e) => setError(String(e)))
-      .finally(() => setLoading(false))
-  }, [])
+  const loadStatus = useCallback(async () => {
+    if (!adminKey.trim()) {
+      setError("Enter the admin key to check migration status.")
+      return
+    }
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await fetch("/api/admin/db-status", { headers: { "x-admin-key": adminKey } })
+      const data = await response.json().catch(() => ({})) as DbStatus & { error?: string }
+      if (!response.ok) throw new Error(data.error || "Migration status is unavailable.")
+      setStatus(data)
+    } catch (requestError) {
+      setStatus(null)
+      setError(requestError instanceof Error ? requestError.message : "Migration status is unavailable.")
+    } finally {
+      setLoading(false)
+    }
+  }, [adminKey])
 
   return (
     <div className="min-h-screen bg-zinc-50 p-6 font-jakarta">
@@ -39,6 +53,15 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
           <Link href="/admin" className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
             Back to Admin
           </Link>
+        </div>
+
+        <div className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5">
+          <label htmlFor="admin-key" className="block text-sm font-semibold text-zinc-900">Admin key</label>
+          <p className="mt-1 text-xs text-zinc-500">This key is required to inspect production database status.</p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input id="admin-key" type="password" value={adminKey} onChange={(event) => setAdminKey(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void loadStatus() }} className="min-h-11 flex-1 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-900" autoComplete="off" />
+            <button type="button" onClick={() => void loadStatus()} disabled={loading} className="min-h-11 rounded-lg bg-teal px-4 text-sm font-semibold text-white hover:bg-teal-600 disabled:opacity-60">{loading ? "Checking..." : "Check status"}</button>
+          </div>
         </div>
 
         {loading && (
@@ -59,7 +82,7 @@ export function MigrationsClient({ adminEmail }: { adminEmail: string }) {
               <div className="flex items-center gap-3">
                 <span className={`h-3 w-3 rounded-full ${status.ok ? "bg-teal-500" : "bg-amber-500"}`} />
                 <p className={`text-sm font-semibold ${status.ok ? "text-teal-800" : "text-amber-800"}`}>
-                  {status.ok ? "All migrations applied" : `${status.missingTables.length + status.missingRpcs.length} items missing`}
+                  {status.ok ? "All migrations applied" : `${status.missingTables.length + status.missingRpcs.length + status.missingColumns.length} items missing`}
                 </p>
               </div>
               {!status.ok && (

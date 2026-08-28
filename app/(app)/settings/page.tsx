@@ -39,7 +39,7 @@ export default function SettingsPage() {
         linkedinTokenExpiresAt: null,
       }
     : null
-  const { billing, saveBilling } = useBilling()
+  const { billing } = useBilling()
   const { openCheckout, state: checkoutState } = usePlanCheckout()
   const { profile, saveProfile, isLoadingProfile } = useProfile()
   const { posts, drafts, scheduled, postsError } = usePosts()
@@ -149,8 +149,6 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setBillingDraft(billing)
   }, [billing])
-
-  const onSaveBilling = () => saveBilling(billingDraft)
 
   const onCancelSubscription = async () => {
     if (!confirm("Cancel your subscription? You'll keep access until the end of your current billing period, then your workspace drops to Free.")) return
@@ -469,7 +467,6 @@ export default function SettingsPage() {
           )}
 
           <div className="flex flex-wrap gap-3">
-            <button onClick={onSaveBilling} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-800 transition-colors hover:bg-zinc-50">Save preference</button>
             <Link href={"/upgrade"} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Upgrade plan</Link>
             {billing.plan !== "Free" && cancelState !== "done" && (
               <button

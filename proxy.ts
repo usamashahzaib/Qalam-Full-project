@@ -115,14 +115,14 @@ function getClientIp(request: NextRequest): string {
   return "unknown"
 }
 
-async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextRequest): Promise<boolean> {
+async function checkRateLimit(key: string, isAuthRoute: boolean, request: NextRequest): Promise<boolean> {
   if (isAuthRoute) {
     const ipLimiter = authIpLimiter()
     const emailLimiter = authEmailLimiter()
     if (!ipLimiter && !emailLimiter) return true // fail-open when Redis not configured
 
     if (ipLimiter) {
-      const { success } = await ipLimiter.limit(ip)
+      const { success } = await ipLimiter.limit(key)
       if (!success) return false
     }
 
@@ -138,8 +138,22 @@ async function checkRateLimit(ip: string, isAuthRoute: boolean, request: NextReq
 
   const limiter = generalLimiter()
   if (!limiter) return true // fail-open when Redis not configured
-  const { success } = await limiter.limit(ip)
+  const { success } = await limiter.limit(key)
   return success
+}
+
+function rateLimitExceededResponse(isApiRoute: boolean): NextResponse {
+  if (isApiRoute) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    )
+  }
+
+  return new NextResponse(
+    "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Please try again shortly</title></head><body style=\"font-family:system-ui,sans-serif;margin:0;padding:3rem;background:#fafafa;color:#18181b\"><main style=\"max-width:38rem;margin:auto;background:#fff;border:1px solid #e4e4e7;border-radius:1rem;padding:2rem\"><h1 style=\"margin-top:0\">Please try again shortly</h1><p>There have been too many requests from this connection. Your workspace is safe. Wait a minute, then reload this page.</p><p><a href=\"\">Reload page</a></p></main></body></html>",
+    { status: 429, headers: { "Content-Type": "text/html; charset=utf-8", "Retry-After": "60" } },
+  )
 }
 
 // ─── Route tables ─────────────────────────────────────────────────────────────
@@ -256,7 +270,7 @@ export async function buildCsp(opts: { nonce?: string; isDev: boolean }): Promis
   const gaSource = gaHash ? ` 'sha256-${gaHash}'` : ""
 
   const scriptSrc = nonce
-    ? `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://app.lemonsqueezy.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
+    ? `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://app.lemonsqueezy.com https://assets.lemonsqueezy.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
     : `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
 
   return [
@@ -359,6 +373,23 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
   }
 
+  // Read the signed session before applying the general limiter. Authenticated
+  // traffic is isolated by account so people sharing an office or carrier IP
+  // cannot exhaust one another's workspace quota.
+  const isHttps = request.url.startsWith("https://")
+  const cookieName = isHttps ? "__Secure-authjs.session-token" : "authjs.session-token"
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    cookieName,
+  }) ?? await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+    cookieName: isHttps ? "authjs.session-token" : "__Secure-authjs.session-token",
+  })
+  const userId = token?.id as string | undefined
+  const userEmail = token?.email as string | undefined
+
   const isExplicitlyProtectedApi = PROTECTED_API_ROUTES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   )
@@ -383,10 +414,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       pathname.startsWith("/api/auth/callback") ||
       AUTH_ONLY_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
     )
-    const rateLimitOk = await checkRateLimit(ip, isAuthRoute, request)
+    const rateLimitKey = isAuthRoute ? `ip:${ip}` : userId ? `user:${userId}` : `ip:${ip}`
+    const rateLimitOk = await checkRateLimit(rateLimitKey, isAuthRoute, request)
     if (!rateLimitOk) {
       return await addSecurityHeaders(
-        NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 })
+        rateLimitExceededResponse(pathname.startsWith("/api/")),
+        pathname.startsWith("/api/") ? false : {},
       )
     }
   }
@@ -430,22 +463,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       { nonce }
     )
   }
-
-  // Read JWT directly - Edge-compatible, no Supabase dependency
-  // NextAuth v5 uses "authjs.session-token" (not "next-auth.session-token")
-  const isHttps = request.url.startsWith("https://")
-  const cookieName = isHttps ? "__Secure-authjs.session-token" : "authjs.session-token"
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    cookieName,
-  }) ?? await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    cookieName: isHttps ? "authjs.session-token" : "__Secure-authjs.session-token",
-  })
-  const userId = token?.id as string | undefined
-  const userEmail = token?.email as string | undefined
 
   if (isAuthOnly && userId) {
     return await addSecurityHeaders(

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/server/workspace"
-import { getWorkspaceSessionContext, resolveWorkspaceId, resolveEffectivePlan } from "@/lib/server/workspace"
+import { getWorkspaceSessionContext, requireAuth, resolveWorkspaceId, resolveEffectivePlan } from "@/lib/server/workspace"
 
 const toStatus = (message: string) => {
   switch (message) {
@@ -18,9 +17,8 @@ const toStatus = (message: string) => {
 
 export async function GET(request: NextRequest) {
   try {
-    await requireAuth()
     const ctx = await getWorkspaceSessionContext()
-    const workspaceId = await resolveWorkspaceId(request)
+    const workspaceId = await resolveWorkspaceId(request, undefined, ctx)
     const planInfo = await resolveEffectivePlan(workspaceId, ctx.email, ctx.supabaseUserId)
     return NextResponse.json({ workspaceId, ...planInfo })
   } catch (error) {

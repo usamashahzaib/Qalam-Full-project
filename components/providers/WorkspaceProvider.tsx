@@ -1,10 +1,12 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 import { VALID_PLAN_NAMES } from "@/lib/entitlements"
+import { SUPPORT_EMAIL } from "@/lib/contact"
 import { BillingProvider, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { PostsProvider } from "@/lib/hooks/usePosts"
 import { ProfileProvider } from "@/lib/hooks/useProfile"
@@ -163,8 +165,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   if (isResolving && !workspaceId) {
     return (
       <div className="min-h-screen bg-zinc-50">
-        <div className="h-16 border-b border-zinc-100 bg-white" />
+        <div className="flex h-16 items-center border-b border-zinc-100 bg-white px-6">
+          <QalamMark size={28} />
+          <span className="ml-3 text-sm font-semibold text-zinc-900">Qalam</span>
+        </div>
         <div className="mx-auto max-w-6xl px-6 py-10">
+          <p className="text-sm font-medium text-zinc-600">Opening your workspace...</p>
           <div className="h-32 animate-pulse rounded-2xl bg-zinc-100" />
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
             {[0, 1, 2, 3].map((i) => <div key={i} className="h-24 animate-pulse rounded-xl bg-zinc-100" />)}
@@ -176,6 +182,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   if (!workspaceId) {
     const isSchemaError = resolveError === "schema_not_applied"
+    const isAuthError = resolveError === "auth_required" || resolveError === "Unauthorized"
+    const retry = () => window.location.reload()
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-16">
         <div className="w-full max-w-xl rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
@@ -189,9 +197,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           <p className="text-sm leading-6 text-zinc-600">
             {isSchemaError
               ? "Supabase is connected, but required migrations are missing. Apply the active supabase/migrations chain, then reload this page."
-              : "The app could not resolve your workspace. Reload once. If it still fails, check the Vercel function logs for /api/workspace."}
+              : isAuthError
+                ? "Your sign-in session has ended. Sign in again to continue."
+                : "We could not open your workspace. Please try again. If this keeps happening, contact support."}
           </p>
-          {resolveError ? <pre className="mt-4 overflow-x-auto rounded-2xl bg-zinc-950 px-4 py-3 text-xs text-zinc-100">{resolveError}</pre> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            {isAuthError ? (
+              <Link href={`/login?callbackUrl=${encodeURIComponent(`${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`)}`} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">
+                Sign in
+              </Link>
+            ) : (
+              <button type="button" onClick={retry} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">Try again</button>
+            )}
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Contact support</a>
+          </div>
         </div>
       </div>
     )

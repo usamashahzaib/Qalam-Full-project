@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
       ["post_versions", probeTable("post_versions")],
       ["scheduling_notifications", probeTable("scheduling_notifications")],
       ["voice_examples", probeTable("voice_examples")],
+      ["cron_runs", probeTable("cron_runs")],
+      ["product_events", probeTable("product_events")],
     ].map(async ([name, promise]) => ({ name, exists: await (promise as Promise<boolean>) }))),
     Promise.all([
       ["users.password_version", probeColumn("users", "password_version")],

@@ -31,7 +31,7 @@ describe("proxy route security tables", () => {
 
   it("keeps scripts nonce-bound on auth-gated routes while allowing runtime framework styles", async () => {
     const csp = await buildCsp({ nonce: "test-nonce", isDev: false })
-    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' https://www.googletagmanager.com https://app.lemonsqueezy.com")
+    expect(csp).toContain("script-src 'self' 'nonce-test-nonce' https://www.googletagmanager.com https://app.lemonsqueezy.com https://assets.lemonsqueezy.com")
     expect(csp).toContain("style-src 'self' 'unsafe-inline'")
     expect(csp).toContain("style-src-elem 'self' 'unsafe-inline'")
     expect(csp).not.toContain("style-src 'self' 'nonce-test-nonce'")

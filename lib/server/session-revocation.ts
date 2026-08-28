@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { Session } from "next-auth"
+import { cache } from "react"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 
@@ -8,7 +9,7 @@ export function passwordVersionsMatch(databaseVersion: unknown, tokenVersion: un
   return typeof databaseVersion === "number" && typeof tokenVersion === "number" && databaseVersion === tokenVersion
 }
 
-export async function isSessionCurrent(session: Session | null): Promise<boolean> {
+async function isSessionCurrentImpl(session: Session | null): Promise<boolean> {
   if (!session?.user?.id) return false
   const user = session.user as typeof session.user & { provider?: string; passwordVersion?: number }
   if ((user.provider ?? "linkedin") !== "credentials") {
@@ -37,3 +38,7 @@ export async function isSessionCurrent(session: Session | null): Promise<boolean
   }
   return true
 }
+
+// Reuse the revocation lookup throughout one server request. A single route can
+// resolve auth through its own guard, workspace context, and plan checks.
+export const isSessionCurrent = cache(isSessionCurrentImpl)
