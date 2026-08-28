@@ -176,18 +176,18 @@ function isAppOnlyPath(pathname: string): boolean {
   )
 }
 
-// The host split is narrower than isAppOnlyPath: login/signup/forgot-password/
-// reset-password are served from the marketing domain itself, so they must not
-// be bounced to app.byqalam.com. They still get the strict CSP and auth rate
-// limiter via isAppOnlyPath / AUTH_ONLY_ROUTES above.
-function isAppHostPath(pathname: string): boolean {
+// Auth.js issues its sign-in and callback URLs for app.byqalam.com. Keep every
+// auth screen on that same host so its CSRF and OAuth state cookies are sent
+// back to the endpoint that created them.
+export function isAppHostPath(pathname: string): boolean {
   return (
     PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    AUTH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
     APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
   )
 }
 
-const PUBLIC_API_PREFIXES = [
+export const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
   "/api/webhooks",
@@ -207,6 +207,10 @@ const PUBLIC_API_PREFIXES = [
   "/api/managed/apply",
   "/api/referrals/click",
   "/api/referrals/validate",
+  // Browser-extension requests authenticate with their short-lived Bearer
+  // token. They cannot carry a Qalam session cookie because their origin is
+  // chrome-extension://, so this endpoint must reach its own token validator.
+  "/api/extension/comments",
   // External approval review links (/approvals/[id]/review) let a client
   // approve or reject a draft via a emailed, hashed token - without a
   // Qalam account or session. GET/POST /api/approvals itself stays

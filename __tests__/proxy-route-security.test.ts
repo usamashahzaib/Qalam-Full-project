@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { APP_ONLY_EXTRA_PATHS, PROTECTED_API_ROUTES, PROTECTED_ROUTES, RATE_LIMITED_API_PREFIXES, buildCsp } from "@/proxy"
+import { APP_ONLY_EXTRA_PATHS, PROTECTED_API_ROUTES, PROTECTED_ROUTES, RATE_LIMITED_API_PREFIXES, buildCsp, isAppHostPath } from "@/proxy"
 
 describe("proxy route security tables", () => {
   it("keeps competitor APIs explicitly protected", () => {
@@ -16,6 +16,13 @@ describe("proxy route security tables", () => {
     expect(APP_ONLY_EXTRA_PATHS).toEqual(
       expect.arrayContaining(["/upgrade", "/billing", "/plan"])
     )
+  })
+
+  it("keeps every auth route on the Auth.js app host", () => {
+    expect(isAppHostPath("/login")).toBe(true)
+    expect(isAppHostPath("/signup")).toBe(true)
+    expect(isAppHostPath("/forgot-password")).toBe(true)
+    expect(isAppHostPath("/pricing")).toBe(false)
   })
 
   it("keeps the complete Career Hub on the protected app host", () => {

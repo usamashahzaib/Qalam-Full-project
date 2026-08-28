@@ -8,7 +8,7 @@ Qalam for LinkedIn creates selectable comment suggestions with your existing Qal
 2. Unzip it in a folder you will keep.
 3. Open `chrome://extensions` in Chrome or Chromium.
 4. Turn on Developer mode.
-5. Select Load unpacked and choose the unzipped `extension` folder.
+5. Select Load unpacked and choose the extracted `qalam-linkedin-extension` folder.
 6. Open the Qalam extension, choose Connect Qalam, then paste a connection code from `https://www.byqalam.com/extension/connect`.
 
 ## Permissions

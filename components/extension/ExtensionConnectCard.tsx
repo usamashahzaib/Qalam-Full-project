@@ -46,7 +46,7 @@ export function ExtensionConnectCard() {
       <p className="mt-3 max-w-xl text-base leading-7 text-zinc-600">Create a short-lived connection code for this browser. It uses your existing Qalam plan and comment allowance.</p>
 
       <ol className="mt-7 space-y-3 text-sm text-zinc-700">
-        <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">1</span><span><a className="font-semibold text-teal underline underline-offset-2" href="/downloads/qalam-linkedin-extension.zip">Download the Qalam extension package</a> and load it in Chrome.</span></li>
+        <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">1</span><span><a className="font-semibold text-teal underline underline-offset-2" href="/downloads/qalam-linkedin-extension.zip">Download the Qalam extension package</a>, extract it, then load the <code>qalam-linkedin-extension</code> folder in Chrome.</span></li>
         <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">2</span><span>Generate and copy a connection code below.</span></li>
         <li className="flex gap-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">3</span><span>Open the extension popup and paste the code. It expires in 7 days.</span></li>
       </ol>
