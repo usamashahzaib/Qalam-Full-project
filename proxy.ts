@@ -187,7 +187,7 @@ function isAppHostPath(pathname: string): boolean {
   )
 }
 
-const PUBLIC_API_PREFIXES = [
+export const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
   "/api/webhooks",
@@ -207,6 +207,10 @@ const PUBLIC_API_PREFIXES = [
   "/api/managed/apply",
   "/api/referrals/click",
   "/api/referrals/validate",
+  // Browser-extension requests authenticate with their short-lived Bearer
+  // token. They cannot carry a Qalam session cookie because their origin is
+  // chrome-extension://, so this endpoint must reach its own token validator.
+  "/api/extension/comments",
   // External approval review links (/approvals/[id]/review) let a client
   // approve or reject a draft via a emailed, hashed token - without a
   // Qalam account or session. GET/POST /api/approvals itself stays
