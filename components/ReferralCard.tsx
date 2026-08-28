@@ -54,13 +54,23 @@ const payoutStatusClasses: Record<PayoutRow["status"], string> = {
   rejected: "bg-red-100 text-red-700",
 }
 
+/**
+ * Referral share copy.
+ *
+ * Every line states a specific, checkable mechanism rather than a superlative.
+ * "The best LinkedIn writing tool" cannot be verified, is not a claim Qalam
+ * makes anywhere else in the product, and does not survive being retold - the
+ * listener has no fact to carry. A concrete capability does: the recipient can
+ * repeat "it scores your resume the way an ATS does" to a third person and the
+ * sentence still works without the sender present.
+ */
 function shareTemplates(code: string) {
   const link = `${SITE_URL}/?ref=${code}`
   return {
-    linkedin: `I just found Qalam - the best LinkedIn writing tool. Get 10% off with my code: ${code}. #LinkedIn #ContentCreation #Qalam\n\n${link}`,
-    whatsapp: `Hey! Use my code ${code} for 10% off Qalam - AI-powered LinkedIn posts. ${link}`,
-    emailSubject: `Get 10% off Qalam with my referral code`,
-    emailBody: `Hi,\n\nI've been using Qalam for my LinkedIn writing and thought you'd like it too. Use my code ${code} at signup for 10% off your first purchase.\n\n${link}\n\nThanks!`,
+    linkedin: `Qalam writes from evidence you actually supply, so nothing on your profile is invented. It also scores a resume the way an ATS and a recruiter would, before you apply.\n\nMy code ${code} gets you 10% off.\n\n${link}`,
+    whatsapp: `This checks your resume the way an ATS reads it, before you apply. Free to try. My code ${code} gets you 10% off if you upgrade. ${link}`,
+    emailSubject: `The resume checker I mentioned, plus 10% off`,
+    emailBody: `Hi,\n\nThis is the tool I mentioned. It reads a resume the way an ATS and a recruiter do and tells you what is costing you screenings. The check itself is free.\n\nIf you do upgrade, my code ${code} takes 10% off your first purchase.\n\n${link}\n\nThanks!`,
   }
 }
 

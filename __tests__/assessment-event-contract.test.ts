@@ -50,7 +50,7 @@ describe("assessment_complete contract", () => {
   it("gates the event on the normalized review, not on the raw response body", () => {
     expect(tool).toContain("const review = parseResumeReviewResponse(data)")
     expect(tool).toContain("if (!review) throw new Error")
-    expect(tool).toContain("score_band: scoreBand(review.overall_score)")
+    expect(tool).toContain("score_band: resumeScoreBand(review.overall_score)")
     // The raw body must not be rendered as a result or used for the score band.
     expect(tool).not.toContain("setResult(data)")
     expect(tool).not.toContain("data.overall_score")

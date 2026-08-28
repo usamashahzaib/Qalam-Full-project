@@ -248,10 +248,15 @@ export default function HomePage() {
       <section id="free-resume-check" className="bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto grid max-w-[1200px] overflow-hidden rounded-[2rem] border border-teal/12 bg-[#e8f0eb] shadow-[0_24px_70px_rgba(13,74,69,0.09)] lg:grid-cols-[0.78fr_1.22fr]">
           <div className="flex flex-col justify-center p-7 sm:p-12">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Try the product first</p>
-            <h2 className="t-h2 mt-4 text-teal">See what the ATS sees.</h2>
+            {/* Framed as a recurring habit rather than a one-time trial.
+                Applying is the cue this audience already repeats, often weekly
+                during a search, so attaching the check to that moment is what
+                turns a single visit into a returning one - and it is the form
+                the recommendation takes when someone passes it on. */}
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Before you hit apply</p>
+            <h2 className="t-h2 mt-4 text-teal">Run it once for every job you apply to.</h2>
             <p className="t-body mt-5 text-zinc-600">
-              Paste resume text or upload a file for an immediate structural read. The homepage check is intentionally limited. Open the full checker for the complete review.
+              A resume that cleared one screen can still fail the next, because the next job asks for different evidence. Paste or upload for an immediate structural read. The homepage check is intentionally limited. Open the full checker for the complete review.
             </p>
             <TrackedHomepageLink
               href="/free-tools/ats-resume-checker"
@@ -273,10 +278,12 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Product truth</p>
-              <h2 className="t-h2 mt-4 max-w-lg text-white">Trust is a product feature.</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">The refusal</p>
+              <h2 className="t-h2 mt-4 max-w-lg text-white">
+                Every other AI tool will write you a career you never had.
+              </h2>
               <p className="t-lead mt-5 max-w-lg text-white/65">
-                A career tool becomes dangerous when it optimizes appearance at the expense of accuracy. Qalam is designed around your final review.
+                Qalam will not. Ask it for an achievement you cannot defend and it gives you back the one you can. That single refusal is what makes the rest of it worth using, because a resume only helps you until the interview asks you to prove it.
               </p>
             </div>
             <div className="divide-y divide-white/12 border-y border-white/12">
