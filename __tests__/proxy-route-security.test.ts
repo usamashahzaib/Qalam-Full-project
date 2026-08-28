@@ -45,6 +45,8 @@ describe("proxy route security tables", () => {
     const csp = await buildCsp({ isDev: false })
     expect(csp).toContain("script-src 'self' 'unsafe-inline' https://www.googletagmanager.com")
     expect(csp).not.toContain("nonce-")
+    const scriptDirective = csp.split("; ").find((d) => d.startsWith("script-src"))!
+    expect(scriptDirective).not.toMatch(/sha256-/)
   })
 
   it("keeps local development on HTTP", async () => {

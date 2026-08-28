@@ -258,9 +258,10 @@ export const RATE_LIMITED_API_PREFIXES = [
 //   there is no user-authored content and no other dangerouslySetInnerHTML
 //   on these routes for an attacker to smuggle a script through.
 //
-// Both modes allow the GA4 tag by host (external loader) and by build-time
-// hash (its one inline bootstrap script) instead of by nonce, so analytics
-// keeps working identically on both branches - see lib/csp-inline-scripts.ts.
+// The nonce branch allows the GA4 inline bootstrap by hash so it runs
+// without a nonce. The marketing branch relies on 'unsafe-inline' for
+// everything (including GA) and must NOT include a hash, because the CSP
+// spec ignores 'unsafe-inline' when any hash or nonce is present.
 // lemon.js (LemonSqueezy checkout overlay) is only ever injected from
 // auth-gated app pages, so it's host-allowed on that branch only.
 
@@ -269,9 +270,13 @@ export async function buildCsp(opts: { nonce?: string; isDev: boolean }): Promis
   const gaHash = await gaScriptHash()
   const gaSource = gaHash ? ` 'sha256-${gaHash}'` : ""
 
+  // Nonce branch: hash-allow the GA bootstrap so it runs alongside the nonce.
+  // Marketing branch: 'unsafe-inline' already covers every inline script
+  // including the GA bootstrap. Adding a hash here would disable
+  // 'unsafe-inline' per the CSP spec, blocking Next.js hydration scripts.
   const scriptSrc = nonce
     ? `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://app.lemonsqueezy.com https://assets.lemonsqueezy.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
-    : `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${gaSource}` + (isDev ? " 'unsafe-eval'" : "")
+    : `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com` + (isDev ? " 'unsafe-eval'" : "")
 
   return [
     "default-src 'self'",

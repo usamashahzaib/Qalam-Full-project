@@ -115,6 +115,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute inset-0 hero-field opacity-70" aria-hidden />
         <div className="pointer-events-none absolute inset-0 hero-wash" aria-hidden />
         <div className="pointer-events-none absolute inset-0 hidden hero-glow lg:block" aria-hidden />
+        <div className="pointer-events-none absolute inset-0 hidden hero-aurora lg:block" aria-hidden />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(430px,0.82fr)] lg:gap-16">
           <div>
             <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
