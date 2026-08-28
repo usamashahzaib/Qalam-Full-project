@@ -43,17 +43,18 @@ export function AuthShell({
 }) {
   return (
     <div className="app-shell grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
-      <aside className="relative hidden overflow-hidden bg-teal text-white lg:flex lg:flex-col lg:justify-between">
+      <aside className="relative hidden overflow-hidden bg-teal text-white lg:grid lg:grid-rows-[auto_1fr_auto]">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.12]" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, #ffffff 0, transparent 45%), radial-gradient(circle at 80% 70%, #C9871F 0, transparent 40%)" }} />
         <div className="relative z-10 p-10">
           <QalamLogo href="/" size={30} textClassName="text-xl font-extrabold text-white" containerClassName="flex min-h-11 items-center gap-2" />
         </div>
 
-        <div className="relative z-10 px-10 pb-6">
-          <div className="mb-7"><AuthGuardian watching={watching} /></div>
+        <div className="relative z-10 flex items-center justify-center px-10 py-12">
+          <div className="w-full max-w-md text-center">
+          <div className="mb-7 flex justify-center"><AuthGuardian watching={watching} /></div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-200">{eyebrow}</p>
-          <h2 className="max-w-md text-3xl font-extrabold leading-tight">{headline}</h2>
-          <ul className="mt-6 space-y-3">
+          <h2 className="mx-auto max-w-md text-3xl font-extrabold leading-tight">{headline}</h2>
+          <ul className="mx-auto mt-6 max-w-md space-y-3 text-left">
             {points.map((point) => (
               <li key={point} className="flex items-start gap-3 text-sm text-teal-100/90">
                 <svg className="mt-0.5 h-4 w-4 shrink-0 text-gold-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
@@ -63,6 +64,7 @@ export function AuthShell({
               </li>
             ))}
           </ul>
+          </div>
         </div>
 
         <div className="relative z-10 p-10 text-xs text-teal-100/70">Built from real evidence. Always under your control.</div>

@@ -176,13 +176,13 @@ function isAppOnlyPath(pathname: string): boolean {
   )
 }
 
-// The host split is narrower than isAppOnlyPath: login/signup/forgot-password/
-// reset-password are served from the marketing domain itself, so they must not
-// be bounced to app.byqalam.com. They still get the strict CSP and auth rate
-// limiter via isAppOnlyPath / AUTH_ONLY_ROUTES above.
-function isAppHostPath(pathname: string): boolean {
+// Auth.js issues its sign-in and callback URLs for app.byqalam.com. Keep every
+// auth screen on that same host so its CSRF and OAuth state cookies are sent
+// back to the endpoint that created them.
+export function isAppHostPath(pathname: string): boolean {
   return (
     PROTECTED_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
+    AUTH_ONLY_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`)) ||
     APP_ONLY_EXTRA_PATHS.some((route) => pathname === route || pathname.startsWith(`${route}/`))
   )
 }
