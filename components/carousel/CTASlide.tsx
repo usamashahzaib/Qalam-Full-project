@@ -35,6 +35,42 @@ function BgPhoto({ src, overlay }: { src: string; overlay: string }) {
   )
 }
 
+/**
+ * Attribution credit, on the closing slide only.
+ *
+ * Every carousel Qalam renders is exported and posted publicly, which makes
+ * the last slide the one piece of owned surface that travels with the work.
+ * Without a mark it arrives anonymous and the tool stays invisible to the
+ * people best placed to want it.
+ *
+ * Deliberately quiet: theme `textMuted` at 17px, bottom-centered, below the
+ * author block. The author keeps the CTA and the byline - this is a maker's
+ * credit, not a competing call to action, and it never appears on cover or
+ * content slides where it would read as adware rather than craft.
+ */
+function QalamCredit({ color }: { color: string }) {
+  return (
+    <p
+      style={{
+        position: "absolute",
+        bottom: 34,
+        left: 0,
+        right: 0,
+        textAlign: "center",
+        color,
+        fontSize: "17px",
+        fontWeight: 600,
+        letterSpacing: "0.06em",
+        margin: 0,
+        opacity: 0.72,
+        zIndex: 3,
+      }}
+    >
+      Designed with Qalam &middot; byqalam.com
+    </p>
+  )
+}
+
 export function CTASlide({ title, body, authorName, authorHandle, designation, authorPhotoUrl, theme: t, backgroundPhoto, totalSlides, slideNumber }: CTASlideProps) {
   const W = CANVAS.width
   const H = CANVAS.height
@@ -87,6 +123,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             </p>
           )}
         </div>
+        <QalamCredit color={t.textMuted} />
       </div>
     )
   }
@@ -116,6 +153,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             <p style={{ color: t.textSecondary, fontSize: "19px", margin: 0 }}>{authorName}{designation ? ` · ${designation}` : ""}</p>
           )}
         </div>
+        <QalamCredit color={t.textMuted} />
       </div>
     )
   }
@@ -161,6 +199,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             </div>
           )}
         </div>
+        <QalamCredit color={t.textMuted} />
       </div>
     )
   }
@@ -197,6 +236,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             </div>
           )}
         </div>
+        <QalamCredit color={t.textMuted} />
       </div>
     )
   }
@@ -230,6 +270,9 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
           {authorName && (
             <p style={{ color: t.textMuted, fontSize: "17px", margin: "28px 0 0" }}>{authorName}</p>
           )}
+          {/* Scoped to the right panel so the credit never crosses the dark
+              left column, where the light-ground muted token would vanish. */}
+          <QalamCredit color={t.textMuted} />
         </div>
       </div>
     )
@@ -270,6 +313,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
             </div>
           )}
         </div>
+        <QalamCredit color={t.textMuted} />
       </div>
     )
   }
@@ -325,6 +369,7 @@ export function CTASlide({ title, body, authorName, authorHandle, designation, a
           </div>
         )}
       </div>
+      <QalamCredit color={t.textMuted} />
     </div>
   )
 }

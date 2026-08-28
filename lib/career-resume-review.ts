@@ -13,6 +13,31 @@ export const RESUME_REVIEW_SCORE_KEYS = [
 
 export type ResumeReviewScoreKey = (typeof RESUME_REVIEW_SCORE_KEYS)[number]
 
+export type ResumeScoreBand = "strong" | "developing" | "at_risk"
+
+/**
+ * Canonical banding for a readiness score. Lives beside the result shape so
+ * the checker UI, the share card, and analytics all bucket a score the same
+ * way - separate copies of these thresholds would drift and quietly split the
+ * reporting vocabulary.
+ */
+export const resumeScoreBand = (score: number): ResumeScoreBand =>
+  score >= 80 ? "strong" : score >= 60 ? "developing" : "at_risk"
+
+/**
+ * Lowest score Qalam will render into a shareable asset.
+ *
+ * A readiness score is private information about someone's job search. A
+ * strong result is something people choose to show; a weak one is something
+ * they would be exposed by, and a product that nudges them to publish it has
+ * turned their disadvantage into its own distribution. Below this floor the
+ * number never leaves the page.
+ */
+export const PUBLIC_SCORE_FLOOR = 70
+
+export const isScorePubliclyShareable = (score: number): boolean =>
+  score >= PUBLIC_SCORE_FLOOR
+
 export type ResumeReviewResult = {
   overall_score: number
   scores: Record<ResumeReviewScoreKey, number>

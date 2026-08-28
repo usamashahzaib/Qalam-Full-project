@@ -1,7 +1,11 @@
 "use client"
 
+import type { ResumeScoreBand } from "@/lib/career-resume-review"
+
 export type ActivationWorkflow = "writer_draft_generated"
 export type PaidPlanName = "Solo" | "Pro" | "Agency"
+
+const SCORE_BANDS = ["strong", "developing", "at_risk"] as const
 
 export type MarketingEventMap = {
   homepage_view: Record<never, never>
@@ -14,6 +18,14 @@ export type MarketingEventMap = {
     assessment: "ats_resume_checker"
     score_band: "strong" | "developing" | "at_risk"
     job_description_supplied: boolean
+  }
+  score_card_download: {
+    score_band: ResumeScoreBand
+  }
+  score_share_copy: {
+    score_band: ResumeScoreBand
+    /** False when the score was withheld from the copy for being below the public floor. */
+    included_score: boolean
   }
   signup_start: {
     source: "ats_resume_checker"
@@ -76,6 +88,14 @@ export function safeMarketingProperties(
       return oneOf(value.placement, ["inline_checker", "homepage_checker"] as const)
         && oneOf(value.method, ["upload", "paste", "full_checker_link"] as const)
         ? { placement: value.placement, method: value.method }
+        : null
+    case "score_card_download":
+      return oneOf(value.score_band, SCORE_BANDS)
+        ? { score_band: value.score_band }
+        : null
+    case "score_share_copy":
+      return oneOf(value.score_band, SCORE_BANDS) && typeof value.included_score === "boolean"
+        ? { score_band: value.score_band, included_score: value.included_score }
         : null
     case "assessment_complete":
       return value.assessment === "ats_resume_checker"

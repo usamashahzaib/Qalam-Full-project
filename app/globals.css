@@ -378,6 +378,11 @@ input, textarea, select {
   background:
     radial-gradient(ellipse 58% 48% at 10% 26%, oklch(0.9 0.035 168 / 0.62), transparent 70%),
     radial-gradient(ellipse 54% 44% at 90% 80%, oklch(0.93 0.045 88 / 0.55), transparent 72%);
+  animation: heroWashDrift 14s ease-in-out infinite;
+}
+@keyframes heroWashDrift {
+  0%, 100% { opacity: 1; filter: hue-rotate(0deg); }
+  50%      { opacity: 0.85; filter: hue-rotate(8deg); }
 }
 
 .hero-field {
@@ -387,17 +392,36 @@ input, textarea, select {
   background-size: 64px 64px;
   -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
   mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
+  animation: heroFieldPulse 10s ease-in-out infinite;
+}
+@keyframes heroFieldPulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
 }
 
-/* Warm ambient glow behind the hero card. Kept low-contrast and slow so it
-   reads as light, not decoration; the reduced-motion net collapses it. */
 .hero-glow {
-  background: radial-gradient(ellipse 44% 42% at 80% 44%, oklch(0.9 0.06 84 / 0.5), transparent 70%);
+  background:
+    radial-gradient(ellipse 44% 42% at 80% 44%, oklch(0.9 0.06 84 / 0.5), transparent 70%),
+    radial-gradient(ellipse 36% 30% at 20% 60%, oklch(0.88 0.04 168 / 0.35), transparent 70%);
   animation: heroGlow 7s ease-in-out infinite;
 }
 @keyframes heroGlow {
-  0%, 100% { opacity: 0.5; }
-  50%      { opacity: 0.82; }
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.06); }
+}
+
+.hero-aurora {
+  background:
+    radial-gradient(ellipse 60% 28% at 30% 20%, oklch(0.88 0.04 168 / 0.4), transparent 70%),
+    radial-gradient(ellipse 50% 24% at 70% 70%, oklch(0.92 0.05 84 / 0.35), transparent 70%),
+    radial-gradient(ellipse 40% 20% at 50% 45%, oklch(0.9 0.035 140 / 0.25), transparent 70%);
+  animation: heroAurora 12s ease-in-out infinite;
+}
+@keyframes heroAurora {
+  0%, 100% { opacity: 0; transform: translateY(0) scale(1); }
+  25%      { opacity: 0.6; transform: translateY(-8px) scale(1.03); }
+  50%      { opacity: 0.4; transform: translateY(-4px) scale(1.01); }
+  75%      { opacity: 0.7; transform: translateY(-10px) scale(1.04); }
 }
 
 /* Gold underline that draws under the hero's key phrase on load. Fill-mode

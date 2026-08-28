@@ -4,9 +4,10 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { APP_URL } from "@/lib/seo"
 import { RESUME_HANDOFF_KEY } from "@/lib/resume-signals"
-import { parseResumeReviewResponse, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
+import { parseResumeReviewResponse, resumeScoreBand, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_STEPS } from "@/lib/ats-methodology"
 import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
+import { ScoreShareCard } from "@/components/tools/ScoreShareCard"
 import { trackMarketingEvent } from "@/lib/marketing-events"
 import { ATS_FUNNEL_SOURCE, buildAtsResumeLoginUrl, type AtsCtaPlacement } from "@/lib/ats-funnel"
 
@@ -22,7 +23,6 @@ const scoreLabels: Record<ResumeReviewScoreKey, string> = {
 }
 
 const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length
-const scoreBand = (score: number) => score >= 80 ? "strong" : score >= 60 ? "developing" : "at_risk"
 const scoreTone = (score: number) => score >= 80 ? "text-emerald-700" : score >= 60 ? "text-gold-700" : "text-red-700"
 const uploadError = (code: string) => ({
   resume_pdf_too_large: "This file is over 5 MB. Upload a smaller PDF or DOCX.",
@@ -117,7 +117,7 @@ export function AtsResumeCheckerTool() {
       setResult(review)
       trackMarketingEvent("assessment_complete", {
         assessment: "ats_resume_checker",
-        score_band: scoreBand(review.overall_score),
+        score_band: resumeScoreBand(review.overall_score),
         job_description_supplied: jobDescription.trim().length > 0,
       })
     } catch (requestError) {
@@ -234,6 +234,13 @@ export function AtsResumeCheckerTool() {
                 ))}
               </div>
             </section>
+
+            {/* Placed after the scorecard and before the risks: the reader has
+                the number and the dimensional breakdown, which is the high
+                point of the result, and has not yet hit the rejection risks
+                that follow. Asking for a share after the critique lands asks
+                at the emotional low. */}
+            <ScoreShareCard result={result} />
 
             <section className="grid gap-px overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 sm:grid-cols-2 lg:grid-cols-4">
               {Object.entries(result.recruiter_read).map(([key, value]) => (
