@@ -72,10 +72,11 @@ function NavDropdown({
   }, [])
 
   return (
-    <div ref={ref} className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onKeyDown={(event) => {
+    <div ref={ref} className="relative" onKeyDown={(event) => {
       if (event.key === "Escape") setOpen(false)
     }}>
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="true"

@@ -26,12 +26,13 @@ export function FadeUp({
     const element = ref.current
     if (!element || !window.IntersectionObserver) return
 
-    const isInitiallyVisible = element.getBoundingClientRect().top < window.innerHeight - 80
-    setRevealed(isInitiallyVisible)
-
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setRevealed(entry.isIntersecting)
+        // Content must never become invisible after it has been rendered. A
+        // browser can defer or skip an intersection update during hydration,
+        // which previously left whole marketing sections blank. Reveal effects
+        // are decorative, so visibility always wins over the animation.
+        if (entry.isIntersecting) setRevealed(true)
         if (entry.isIntersecting && once) observer.unobserve(element)
       },
       { rootMargin: "0px 0px -80px" },

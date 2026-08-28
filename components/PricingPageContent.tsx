@@ -302,6 +302,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <button
                 type="button"
                 onClick={() => setPricingTab("selfserve")}
+                aria-pressed={pricingTab === "selfserve"}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
                     ? "bg-teal text-white shadow-sm"
@@ -313,6 +314,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <button
                 type="button"
                 onClick={() => setPricingTab("managed")}
+                aria-pressed={pricingTab === "managed"}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
                     ? "bg-gold text-white shadow-sm"
@@ -328,7 +330,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             {pricingTab === "selfserve" ? (
               <motion.div
                 key="selfserve"
-                initial={{ opacity: 0, y: 12 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -344,7 +346,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key="quarterly"
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
@@ -353,7 +355,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     {displayPlans.map((plan, i) => (
                       <motion.div
                         key={plan.plan}
-                        initial={{ opacity: 0, y: 10 }}
+                        initial={false}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.35, ease: "easeOut", delay: i * 0.07 }}
                       >
@@ -366,7 +368,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             ) : (
               <motion.div
                 key="managed"
-                initial={{ opacity: 0, y: 12 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -12 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
