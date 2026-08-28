@@ -98,7 +98,7 @@ export default function CommentGeneratorPage() {
           <CommentIcon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Engagement</p>
+          <p className="t-eyebrow text-zinc-400">Engagement</p>
           <h1 className="mt-1 text-2xl font-bold text-zinc-900">Comment Generator</h1>
           <p className="mt-1 text-sm text-zinc-500">
             Paste a post, pick the style you want, and get comment options written in your own voice, ready to post.
@@ -139,7 +139,7 @@ export default function CommentGeneratorPage() {
                 }`}
               >
                 <span className={`block text-sm font-semibold ${style === s.value ? "text-teal" : "text-zinc-800"}`}>{s.label}</span>
-                <span className="mt-0.5 block text-[11px] leading-tight text-zinc-500">{s.hint}</span>
+                <span className="mt-0.5 block t-eyebrow leading-tight text-zinc-500">{s.hint}</span>
               </button>
             ))}
             </div>

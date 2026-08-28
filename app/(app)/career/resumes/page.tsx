@@ -190,7 +190,7 @@ export default function ResumesPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {resumes.map((resume) => (
                 <Link key={resume.id} href={`/career/resumes/${resume.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
-                  <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 text-[11px] font-bold uppercase text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold-700">{resume.atsScore}/100</span>}</div>
+                  <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold-700">{resume.atsScore}/100</span>}</div>
                   <h3 className="mt-5 font-bold text-zinc-900">{resume.title}</h3>
                   <p className="mt-1 text-sm text-zinc-500">{resume.targetRole}{resume.targetCompany ? ` at ${resume.targetCompany}` : ""}</p>
                   <p className="mt-4 text-xs text-zinc-400">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>

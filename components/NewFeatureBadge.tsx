@@ -57,7 +57,7 @@ export function NewFeatureBadge({
           e.stopPropagation()
           setShowTooltip((v) => !v)
         }}
-        className="cursor-pointer rounded-full bg-gold px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-zinc-900"
+        className="cursor-pointer rounded-full bg-gold px-1.5 py-0.5 t-eyebrow text-zinc-900"
       >
         New
       </button>
@@ -73,7 +73,7 @@ export function NewFeatureBadge({
               e.stopPropagation()
               dismiss()
             }}
-            className="mt-2 cursor-pointer text-[11px] font-bold text-teal hover:underline"
+            className="mt-2 cursor-pointer t-eyebrow text-teal hover:underline"
           >
             Dismiss
           </button>

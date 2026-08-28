@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { CheckIcon } from "@/components/ui/qalam-icons"
 
 const SCORE = 73
 
@@ -30,10 +31,10 @@ export function CareerMomentumPreview() {
     <div className="panel-raised p-6 sm:p-8">
       <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
         <div>
-          <p className="text-[0.67rem] font-bold uppercase tracking-[0.2em] text-gold-700">Career momentum</p>
+          <p className="t-eyebrow text-gold-700">Career momentum</p>
           <p className="mt-1 text-xs text-zinc-500">Example score, sample data</p>
         </div>
-        <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-teal/15 bg-teal/5 px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-teal">
+        <span className="inline-flex min-h-8 shrink-0 items-center gap-2 rounded-full border border-teal/15 bg-teal/5 px-3 t-eyebrow text-teal">
           <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
           4 day streak
         </span>
@@ -57,7 +58,7 @@ export function CareerMomentumPreview() {
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-extrabold tabular-nums leading-none text-teal">{SCORE}</span>
-            <span className="mt-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-zinc-500">of 100</span>
+            <span className="mt-1 t-eyebrow text-zinc-500">of 100</span>
           </div>
         </div>
 
@@ -70,9 +71,9 @@ export function CareerMomentumPreview() {
                     entry.active ? "bg-teal text-white" : "border border-zinc-200 bg-white text-zinc-300"
                   }`}
                 >
-                  {entry.active ? "✓" : ""}
+                  {entry.active ? <CheckIcon className="h-3.5 w-3.5" /> : ""}
                 </span>
-                <span className="text-[0.62rem] font-semibold text-zinc-400">{entry.day}</span>
+                <span className="t-eyebrow font-semibold text-zinc-400">{entry.day}</span>
               </div>
             ))}
           </div>
@@ -99,7 +100,7 @@ export function CareerMomentumPreview() {
 
       <div className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-gold/30 bg-[#fffaf0] p-4">
         <div>
-          <p className="text-[0.62rem] font-bold uppercase tracking-[0.16em] text-gold-700">Today&apos;s move</p>
+          <p className="t-eyebrow text-gold-700">Today&apos;s move</p>
           <p className="mt-1 text-sm font-bold leading-5 text-zinc-900">Document one achievement</p>
         </div>
         <span className="shrink-0 rounded-full bg-gold px-3 py-1.5 text-xs font-bold text-teal-900">+5 proof</span>

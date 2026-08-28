@@ -111,7 +111,7 @@ export function EngagementPredictorTool() {
                 <div className="mt-5 grid gap-2 sm:grid-cols-5">
                   {Object.entries(result.score_breakdown || {}).map(([k, v]) => (
                     <div key={k} className="rounded-xl bg-zinc-50 p-3">
-                      <p className="text-[11px] font-bold uppercase text-zinc-400">{k}</p>
+                      <p className="t-eyebrow text-zinc-400">{k}</p>
                       <p className="mt-1 text-lg font-bold">{v}</p>
                     </div>
                   ))}

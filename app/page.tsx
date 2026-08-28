@@ -236,7 +236,7 @@ export default function HomePage() {
                 <figcaption className="p-6">
                   <p className="text-lg font-bold text-zinc-900">{screen.title}</p>
                   <p className="mt-2 text-sm leading-6 text-zinc-600">{screen.copy}</p>
-                  <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.14em] text-gold-700">Interactive demo with sample data</p>
+                  <p className="mt-3 t-eyebrow text-gold-700">Interactive demo with sample data</p>
                 </figcaption>
               </figure>
             ))}
@@ -369,12 +369,12 @@ export default function HomePage() {
               const effective = plan.plan === "Free" ? "No payment card" : `${formatPkr(getQuarterlyMonthlyEquivalent(plan.quarterlyPkr))}/month effective`
               return (
                 <article key={plan.plan} className={`relative flex flex-col rounded-2xl border p-7 sm:p-8 ${highlighted ? "border-teal bg-teal text-white shadow-[0_20px_50px_rgba(13,74,69,0.2)]" : "border-zinc-200 bg-white text-zinc-900"}`}>
-                  {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.12em] text-teal-900">Most popular</span>}
+                  {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 t-eyebrow text-teal-900">Most popular</span>}
                   <p className={`text-xs font-bold uppercase tracking-[0.17em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{plan.plan}</p>
                   <div className="mt-5 flex items-center gap-2.5">
                     <p className="text-4xl font-extrabold tracking-tight">{price}</p>
                     {plan.plan !== "Free" && (
-                      <span className={`rounded-full px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.1em] ${highlighted ? "bg-gold text-teal-900" : "bg-gold-100 text-gold-700"}`}>
+                      <span className={`rounded-full px-2.5 py-1 t-eyebrow ${highlighted ? "bg-gold text-teal-900" : "bg-gold-100 text-gold-700"}`}>
                         {quarterlyFraming}
                       </span>
                     )}

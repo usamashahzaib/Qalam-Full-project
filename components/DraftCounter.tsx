@@ -63,7 +63,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
   if (compact) {
     return (
       <>
-        <div className={`flex items-center justify-end gap-2 text-right text-[11px] font-semibold ${remaining === 0 ? "text-red-600" : "text-zinc-500"} ${className}`}>
+        <div className={`flex items-center justify-end gap-2 text-right t-eyebrow font-semibold ${remaining === 0 ? "text-red-600" : "text-zinc-500"} ${className}`}>
           <span>
             {remaining === 0 ? (
               <>

@@ -107,7 +107,7 @@ export function AppMobileNav() {
                   key={href}
                   href={withClientParam(href, activeClientId)}
                   onClick={(event) => handleNavigation(event, link)}
-                  className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 text-[11px] font-medium transition-colors ${
+                  className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 py-3 t-eyebrow font-medium transition-colors ${
                     active ? "bg-teal/8 text-teal" : "text-zinc-500"
                   }`}
                 >
@@ -130,7 +130,7 @@ export function AppMobileNav() {
                 key={href}
                 href={withClientParam(href, activeClientId)}
                 onClick={(event) => handleNavigation(event, link)}
-                className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
+                className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 t-eyebrow font-medium transition-colors ${
                   active ? "bg-teal/8 text-teal" : "text-zinc-500"
                 }`}
               >
@@ -145,7 +145,7 @@ export function AppMobileNav() {
             onClick={() => setMoreOpen((v) => !v)}
             aria-expanded={moreOpen}
             aria-label="More navigation options"
-            className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
+            className={`flex flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 t-eyebrow font-medium transition-colors ${
               isMoreActive || moreOpen ? "bg-teal/8 text-teal" : "text-zinc-500"
             }`}
           >

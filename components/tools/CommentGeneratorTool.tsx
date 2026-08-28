@@ -186,7 +186,7 @@ function CommentGeneratorInner() {
                       }`}
                     >
                       <span className={`block text-sm font-semibold ${style === s.value ? "text-teal" : "text-zinc-800"}`}>{s.label}</span>
-                      <span className="mt-0.5 block text-[11px] leading-tight text-zinc-500">{s.hint}</span>
+                      <span className="mt-0.5 block t-eyebrow leading-tight text-zinc-500">{s.hint}</span>
                     </button>
                   ))}
                   </div>

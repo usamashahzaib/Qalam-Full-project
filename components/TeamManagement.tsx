@@ -165,7 +165,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
               </div>
               <div className="flex items-center gap-2">
                 {m.role === "owner" ? (
-                  <span className="rounded-full bg-teal/10 px-2.5 py-1 text-[11px] font-semibold text-teal-800">Owner</span>
+                  <span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow font-semibold text-teal-800">Owner</span>
                 ) : (
                   <select
                     value={m.role}
@@ -214,7 +214,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
 
           {pendingInvites.length ? (
             <div className="mt-3 space-y-2 border-t border-zinc-200 pt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Pending invites</p>
+              <p className="t-eyebrow font-semibold text-zinc-400">Pending invites</p>
               {pendingInvites.map((invite) => (
                 <div key={invite.email} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
                   <div>
@@ -261,7 +261,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
           {isInviting ? "Sending..." : "Invite"}
         </button>
       </div>
-      <p className="mt-1.5 text-[11px] text-zinc-400">
+      <p className="mt-1.5 t-eyebrow text-zinc-400">
         {INVITE_ROLES.find((r) => r.value === inviteRole)?.hint}
       </p>
       {inviteMsg ? (

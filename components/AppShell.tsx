@@ -95,7 +95,7 @@ function ReferralNavBadge() {
 
   if (!count) return null
   return (
-    <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[11px] font-bold text-teal-300">
+    <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 t-eyebrow text-teal-300">
       {count}
     </span>
   )
@@ -295,7 +295,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="relative px-4 py-4" ref={switcherRef}>
             <button onClick={() => setSwitcherOpen(!switcherOpen)} aria-expanded={switcherOpen} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] uppercase font-bold tracking-wider text-teal-100/70">Active Workspace</p>
+                <p className="t-eyebrowr text-teal-100/70">Active Workspace</p>
                 <p className="text-sm font-semibold text-white truncate mt-1">{activeClientName}</p>
               </div>
               <svg className={`h-4 w-4 shrink-0 text-zinc-400 group-hover:text-white transition-transform duration-200 ${switcherOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -326,7 +326,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div key={group.label}>
                 <button
                   onClick={() => toggleSection(group.label)}
-                  className="mb-1 flex w-full cursor-pointer items-center justify-between px-3 text-left text-[11px] font-bold uppercase tracking-widest text-zinc-500 transition-colors hover:text-zinc-300"
+                  className="mb-1 flex w-full cursor-pointer items-center justify-between px-3 text-left t-eyebrowst text-zinc-500 transition-colors hover:text-zinc-300"
                   aria-expanded={openSections[group.label] ?? true}
                 >
                   <span>{group.label}</span>
@@ -353,7 +353,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                             onClick={() => upgradeTarget
                               ? setUpgradePrompt({ plan: upgradeTarget, reason: `${link.label.toLowerCase()} locked` })
                               : router.push("/contact")}
-                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 text-[11px] font-bold text-white shadow-sm transition-colors hover:bg-teal-600"
+                            className="ml-7 mt-2 rounded-lg bg-teal px-2.5 py-1 t-eyebrow text-white shadow-sm transition-colors hover:bg-teal-600"
                           >
                             {upgradeTarget ? `Upgrade to ${upgradeTarget}` : "Contact support"}
                           </button>
@@ -395,7 +395,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {user?.linkedinMemberId && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-[#0A66C2] border-2 border-zinc-900 flex items-center justify-center"><LinkedInIcon className="h-1.5 w-1.5 text-white" /></span>}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 text-[11px] font-bold text-gold uppercase tracking-wider">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-red-200">Admin</span> : null}</div>
+              <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 t-eyebrow text-goldr">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 t-eyebrowr text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 t-eyebrowr text-red-200">Admin</span> : null}</div>
               <p className="text-xs text-zinc-500 truncate mt-1">{user?.email}</p>
             </div>
           </div>
@@ -411,7 +411,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <input type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setSearchFocused(true)} className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 pl-10 pr-16 py-2 text-sm text-zinc-900 outline-none focus:bg-white focus:border-teal/50 focus:ring-4 focus:ring-teal/10 transition-all" />
             <button
               onClick={() => setCommandMenuOpen(true)}
-              className="press absolute right-2 flex items-center gap-0.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 text-[11px] font-semibold text-zinc-400 transition-colors hover:border-teal/30 hover:text-teal"
+              className="press absolute right-2 flex items-center gap-0.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 t-eyebrow font-semibold text-zinc-400 transition-colors hover:border-teal/30 hover:text-teal"
               aria-label="Open command menu"
               title="Command menu"
             >
@@ -420,8 +420,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           {searchFocused && searchQuery.trim() && (
             <div className="qalam-scrollbar absolute left-0 right-0 mt-1 max-h-80 overflow-y-auto rounded-xl border border-zinc-200 bg-white shadow-xl z-40 overflow-hidden divide-y divide-zinc-100">
-              <div className="px-4 py-2 bg-zinc-50/50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">Search Results ({searchResults.length})</div>
-              {searchResults.length === 0 ? <div className="px-4 py-6 text-center text-xs text-zinc-500 font-medium">No matching posts found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-zinc-50 transition-colors group"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className={`text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-600"}`}>{post.status}</span><span className="text-[11px] text-zinc-400 font-medium truncate">{post.type}</span></div><p className="text-xs font-semibold text-zinc-900 group-hover:text-teal truncate mt-1">{post.title}</p></div><svg className="h-4 w-4 text-zinc-400 group-hover:text-teal opacity-0 group-hover:opacity-100 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>)}
+              <div className="px-4 py-2 bg-zinc-50/50 t-eyebrowr text-zinc-400">Search Results ({searchResults.length})</div>
+              {searchResults.length === 0 ? <div className="px-4 py-6 text-center text-xs text-zinc-500 font-medium">No matching posts found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-zinc-50 transition-colors group"><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className={`t-eyebrow px-1.5 py-0.5 rounded-full ${post.status === "published" ? "bg-emerald-50 text-emerald-700" : post.status === "scheduled" ? "bg-amber-50 text-amber-700" : "bg-zinc-100 text-zinc-600"}`}>{post.status}</span><span className="t-eyebrow text-zinc-400 font-medium truncate">{post.type}</span></div><p className="text-xs font-semibold text-zinc-900 group-hover:text-teal truncate mt-1">{post.title}</p></div><svg className="h-4 w-4 text-zinc-400 group-hover:text-teal opacity-0 group-hover:opacity-100 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>)}
             </div>
           )}
         </div>
@@ -516,18 +516,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {searchFocused && (
-          <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 animate-fade-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
+          <div className="absolute left-0 right-0 bg-white border-b border-zinc-200 px-4 py-3 shadow-lg z-40 fade-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={searchRef}>
             <div className="relative flex items-center">
               <input aria-label="Search posts and drafts" type="text" placeholder="Search posts and drafts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} autoFocus className="w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-4 pr-16 py-2 text-xs text-zinc-900 outline-none focus:bg-white focus:border-teal/50 transition-all" />
               <button onClick={() => { setSearchFocused(false); setSearchQuery("") }} className="absolute right-3 text-xs text-zinc-400 font-bold hover:text-zinc-600">Close</button>
             </div>
-            {searchQuery.trim() && <div className="qalam-scrollbar mt-2 max-h-60 overflow-y-auto rounded-xl border border-zinc-100 bg-white overflow-hidden divide-y divide-zinc-50">{searchResults.length === 0 ? <div className="px-4 py-4 text-center text-xs text-zinc-500">No results found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-3 py-2.5 text-left hover:bg-zinc-50 transition-colors"><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-zinc-900 truncate">{post.title}</p><p className="text-[11px] text-zinc-400 font-medium truncate">{post.status} - {post.type}</p></div></button>)}</div>}
+            {searchQuery.trim() && <div className="qalam-scrollbar mt-2 max-h-60 overflow-y-auto rounded-xl border border-zinc-100 bg-white overflow-hidden divide-y divide-zinc-50">{searchResults.length === 0 ? <div className="px-4 py-4 text-center text-xs text-zinc-500">No results found.</div> : searchResults.map((post) => <button key={post.id} onClick={() => handleOpenPost(post)} className="w-full cursor-pointer flex items-center justify-between gap-4 px-3 py-2.5 text-left hover:bg-zinc-50 transition-colors"><div className="min-w-0 flex-1"><p className="text-xs font-semibold text-zinc-900 truncate">{post.title}</p><p className="t-eyebrow text-zinc-400 font-medium truncate">{post.status} - {post.type}</p></div></button>)}</div>}
           </div>
         )}
 
         {switcherOpen && (
           <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
-            <div className="px-4 py-2 bg-zinc-50/50 text-[11px] font-bold uppercase tracking-wider text-zinc-400">Active Workspace</div>
+            <div className="px-4 py-2 bg-zinc-50/50 t-eyebrowr text-zinc-400">Active Workspace</div>
             <button onClick={() => handleSwitchWorkspace(null)} className={`block w-full cursor-pointer px-4 py-2.5 text-left text-xs font-bold transition-colors ${!activeClientId ? "bg-teal/5 text-teal" : "text-zinc-700 hover:bg-zinc-50"}`}>Personal Workspace</button>
             {showSwitcherList ? (
               <div className="max-h-40 overflow-y-auto">
@@ -557,7 +557,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             You are on a complimentary {billing.overridePlan || billing.plan} trial. <Link href={"/upgrade"} className="underline underline-offset-2">Upgrade to keep these features</Link>
           </div>
         ) : null}
-        <div className="app-content animate-fade-in">{children}</div>
+        <div className="app-content fade-in">{children}</div>
       </main>
       {upgradePrompt ? <UpgradeModal currentPlan={currentPlan} requiredPlan={upgradePrompt.plan} reason={upgradePrompt.reason} onClose={() => setUpgradePrompt(null)} /> : null}
       <CommandMenu

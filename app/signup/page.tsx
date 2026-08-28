@@ -158,7 +158,7 @@ export default function SignupPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="name">
+                  <label className="mb-1.5 block text-sm font-semibold text-zinc-600" htmlFor="name">
                     Full name
                   </label>
                   <input
@@ -175,7 +175,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="signup-email">
+                  <label className="mb-1.5 block text-sm font-semibold text-zinc-600" htmlFor="signup-email">
                     Work email
                   </label>
                   <input
@@ -213,7 +213,7 @@ export default function SignupPage() {
                 />
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="role">
+                  <label className="mb-1.5 block text-sm font-semibold text-zinc-600" htmlFor="role">
                     Your role
                   </label>
                   <select
@@ -237,13 +237,13 @@ export default function SignupPage() {
                     onChange={(e) => setAgreed(e.target.checked)}
                     className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 accent-teal"
                   />
-                  <span className="text-xs leading-relaxed text-zinc-500">
+                  <span className="text-sm leading-relaxed text-zinc-500">
                     I agree to Qalam&apos;s{" "}
-                    <Link href={`${SITE_URL}/legal/terms`} className="font-semibold text-zinc-700 underline hover:text-teal">
+                    <Link href={`${SITE_URL}/legal/terms`} className="inline-flex min-h-11 items-center font-semibold text-zinc-700 underline hover:text-teal">
                       Terms of Service
                     </Link>
                     {" "}and{" "}
-                    <Link href={`${SITE_URL}/legal/privacy`} className="font-semibold text-zinc-700 underline hover:text-teal">
+                    <Link href={`${SITE_URL}/legal/privacy`} className="inline-flex min-h-11 items-center font-semibold text-zinc-700 underline hover:text-teal">
                       Privacy Policy
                     </Link>.
                   </span>

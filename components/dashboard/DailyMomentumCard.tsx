@@ -180,7 +180,7 @@ export function DailyMomentumCard() {
                 {momentum.week.map((day) => (
                   <div key={day.date} className="text-center">
                     <span className={`block h-3 w-6 rounded-full sm:w-7 ${day.active ? "bg-teal" : "bg-zinc-200"}`} />
-                    <span className="mt-1 block text-[10px] font-semibold text-zinc-400">{DAY_FORMAT.format(new Date(`${day.date}T12:00:00`))}</span>
+                    <span className="mt-1 block t-eyebrow font-semibold text-zinc-400">{DAY_FORMAT.format(new Date(`${day.date}T12:00:00`))}</span>
                   </div>
                 ))}
               </div>
@@ -197,7 +197,7 @@ export function DailyMomentumCard() {
             >
               <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full bg-white">
                 <span className="text-2xl font-bold tabular-nums text-zinc-950">{momentum.score}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Momentum</span>
+                <span className="t-eyebrowr text-zinc-400">Momentum</span>
               </div>
             </div>
             <div>
@@ -232,7 +232,7 @@ export function DailyMomentumCard() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold text-zinc-800">Daily anchor</p>
-                  <p className="mt-1 text-[11px] leading-4 text-zinc-500">One reminder only when today&apos;s signal is still missing.</p>
+                  <p className="mt-1 t-eyebrow leading-4 text-zinc-500">One reminder only when today&apos;s signal is still missing.</p>
                 </div>
                 <label className="relative mt-0.5 inline-flex cursor-pointer items-center">
                   <input
@@ -264,14 +264,14 @@ export function DailyMomentumCard() {
               ) : null}
             </div>
           ) : null}
-          <p className="mt-4 text-[11px] leading-5 text-zinc-400">{momentum.measurementNote}</p>
+          <p className="mt-4 t-eyebrow leading-5 text-zinc-400">{momentum.measurementNote}</p>
         </aside>
       </div>
 
       {momentum.recentSignals.length ? (
         <div className="border-t border-zinc-200 px-5 py-4 sm:px-7 lg:px-8">
           <div className="flex gap-3 overflow-x-auto pb-1">
-            <span className="shrink-0 pt-2 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-400">Signal bank</span>
+            <span className="shrink-0 pt-2 t-eyebrow text-zinc-400">Signal bank</span>
             {momentum.recentSignals.map((signal) => (
               <div key={signal.id} className="min-w-64 max-w-sm rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
                 <p className="line-clamp-2 text-xs leading-5 text-zinc-600">{signal.note}</p>

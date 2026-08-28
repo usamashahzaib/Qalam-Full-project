@@ -33,7 +33,7 @@ function ProductScene() {
           <div className="mt-4 flex gap-2"><span className="rounded-lg bg-white px-2.5 py-2 text-xs font-semibold text-teal">Insightful</span><span className="rounded-lg bg-white/10 px-2.5 py-2 text-xs">Supportive</span></div>
           <div className="mt-4 rounded-xl bg-white p-3 text-xs leading-5 text-zinc-700">&quot;This is a useful distinction. Evidence makes the work legible, while adjectives only signal intention.&quot;</div>
           <div className="mt-3 rounded-xl border border-white/20 p-3 text-xs leading-5 text-white/85">&quot;A strong portfolio also shows what changed because of the decision, not just what was delivered.&quot;</div>
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-[#a9e4dc]">3 options. You choose.</p>
+          <p className="mt-4 t-eyebrow font-semiboldr text-[#a9e4dc]">3 options. You choose.</p>
         </div>
       </div>
     </div>

@@ -145,9 +145,9 @@ export function HeroProofPanel() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-cormorant text-[15px] font-semibold leading-tight text-teal">Sarah A. Khan</p>
-                    <p className="mt-0.5 text-[10px] font-medium tracking-[0.06em] text-zinc-500">Senior Product Manager  ·  Fintech</p>
+                    <p className="mt-0.5 t-eyebrow font-medium text-zinc-500">Senior Product Manager  ·  Fintech</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-gold-200 bg-gold-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-gold-700">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-gold-200 bg-gold-50 px-2 py-0.5 t-eyebrow text-gold-700">
                     ATS 96
                   </span>
                 </div>
@@ -158,7 +158,7 @@ export function HeroProofPanel() {
                   <svg viewBox="0 0 20 20" className="mt-[3px] h-3 w-3 flex-none text-gold" aria-hidden>
                     <path d="M4 10 l4 4 l8 -10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <p className="text-[10.5px] leading-[1.55] text-zinc-700">
+                  <p className="t-eyebrow leading-[1.55] text-zinc-700">
                     Cut weekly review from 90 to 35 min; every action left the meeting with an owner and a date.
                   </p>
                 </div>
@@ -166,7 +166,7 @@ export function HeroProofPanel() {
                   <svg viewBox="0 0 20 20" className="mt-[3px] h-3 w-3 flex-none text-gold" aria-hidden>
                     <path d="M4 10 l4 4 l8 -10" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <p className="text-[10.5px] leading-[1.55] text-zinc-700">
+                  <p className="t-eyebrow leading-[1.55] text-zinc-700">
                     Shipped tiered pricing that lifted quarterly ARR 18% without new acquisition spend.
                   </p>
                 </div>
@@ -189,21 +189,21 @@ export function HeroProofPanel() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[11.5px] font-semibold text-zinc-900">Sarah A. Khan</p>
-                    <p className="truncate text-[9.5px] text-zinc-500">Senior PM · Fintech · 3rd</p>
+                    <p className="truncate t-eyebrow text-zinc-500">Senior PM · Fintech · 3rd</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-teal/25 bg-teal/8 px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-[0.14em] text-teal">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-teal/25 bg-teal/8 px-1.5 py-0.5 t-eyebrow text-teal">
                     Voice 96
                   </span>
                 </div>
                 {/* Real post body */}
-                <p className="mt-3 text-[11px] leading-[1.55] text-zinc-800">
+                <p className="mt-3 t-eyebrow leading-[1.55] text-zinc-800">
                   Our weekly project review used to take 90 minutes and still end without clear owners. I replaced the deck with three questions: what changed, what is blocked, and who decides next.
                 </p>
-                <p className="mt-1.5 text-[11px] font-medium leading-[1.55] text-teal">
+                <p className="mt-1.5 t-eyebrow font-medium leading-[1.55] text-teal">
                   Better communication isn&apos;t more talking. It&apos;s making the next decision obvious.
                 </p>
                 {/* Engagement row - understated, no fake logo */}
-                <div className="mt-3.5 flex items-center gap-3 border-t border-[#0d4a45]/8 pt-2.5 text-[9.5px] text-zinc-500">
+                <div className="mt-3.5 flex items-center gap-3 border-t border-[#0d4a45]/8 pt-2.5 t-eyebrow text-zinc-500">
                   <span className="inline-flex items-center gap-1">
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-gold" /> 1,284
                   </span>
@@ -251,9 +251,9 @@ export function HeroProofPanel() {
                     </svg>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-gold-700">Authority Score</p>
+                    <p className="t-eyebrow text-gold-700">Authority Score</p>
                     <p className="mt-0.5 font-cormorant text-[38px] font-semibold leading-none text-teal">91</p>
-                    <p className="mt-1 text-[10px] text-zinc-500">Positioning, evidence, and voice - transparent method</p>
+                    <p className="mt-1 t-eyebrow text-zinc-500">Positioning, evidence, and voice - transparent method</p>
                   </div>
                 </div>
                 {/* Score dimensions - real names from the site's own methodology */}
@@ -266,7 +266,7 @@ export function HeroProofPanel() {
                   ].map((d) => (
                     <motion.div key={d.k} variants={softIn} className="flex flex-col items-start">
                       <span className="font-cormorant text-[18px] font-semibold leading-none text-teal">{d.v}</span>
-                      <span className="mt-1 text-[9px] font-medium uppercase tracking-[0.1em] text-zinc-500">{d.k}</span>
+                      <span className="mt-1 t-eyebrow font-medium text-zinc-500">{d.k}</span>
                     </motion.div>
                   ))}
                 </div>

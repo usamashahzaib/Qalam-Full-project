@@ -32,7 +32,7 @@ export default function ApprovalsPage() {
         {/* Header */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zinc-400">Approval Workflow</p>
+            <p className="t-eyebrow text-zinc-400">Approval Workflow</p>
             <h1 className="mt-1 text-2xl font-bold text-zinc-900">Approvals</h1>
             <p className="mt-1 text-sm text-zinc-500">
               Send drafts to reviewers and track status in one place.
@@ -86,8 +86,8 @@ export default function ApprovalsPage() {
             {/* Pending */}
             {pending.length > 0 && (
               <section>
-                <h2 className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">{pending.length}</span>
+                <h2 className="mb-3 flex items-center gap-2 t-eyebrowst text-zinc-400">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 t-eyebrow text-amber-700">{pending.length}</span>
                   Awaiting review
                 </h2>
                 <div className="space-y-3">
@@ -106,7 +106,7 @@ export default function ApprovalsPage() {
             {/* Resolved */}
             {resolved.length > 0 && (
               <section>
-                <h2 className="mb-3 text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+                <h2 className="mb-3 t-eyebrowst text-zinc-400">
                   Resolved ({resolved.length})
                 </h2>
                 <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100">
@@ -155,13 +155,13 @@ function ApprovalCard({ row, expanded, onToggle }: {
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase ${meta.badge}`}>
+              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 t-eyebrow ${meta.badge}`}>
                 {meta.label}
               </span>
               <span className="text-xs text-zinc-400">{row.reviewer_email}</span>
             </div>
             <p className="mt-1 truncate text-sm font-semibold text-zinc-900">{row.post_title}</p>
-            <p className="mt-0.5 text-[11px] text-zinc-400">{formatDate(row.created_at)}</p>
+            <p className="mt-0.5 t-eyebrow text-zinc-400">{formatDate(row.created_at)}</p>
           </div>
           <svg
             className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -175,20 +175,20 @@ function ApprovalCard({ row, expanded, onToggle }: {
       {expanded && (
         <div className="border-t border-zinc-100 px-5 py-4 space-y-3">
           <div>
-            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-zinc-400">Post content</p>
+            <p className="mb-1.5 t-eyebrow text-zinc-400">Post content</p>
             <div className="max-h-40 overflow-y-auto rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3 text-sm leading-relaxed text-zinc-700 whitespace-pre-wrap">
               {row.post_content}
             </div>
           </div>
           {row.message && (
             <div>
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-zinc-400">Your message</p>
+              <p className="mb-1 t-eyebrow text-zinc-400">Your message</p>
               <p className="text-sm text-zinc-600 italic">&ldquo;{row.message}&rdquo;</p>
             </div>
           )}
           {row.comment && (
             <div className={`rounded-xl px-4 py-3 ${row.status === "rejected" ? "border border-red-200 bg-red-50" : "border border-emerald-200 bg-emerald-50"}`}>
-              <p className={`mb-1 text-[11px] font-bold uppercase tracking-wide ${row.status === "rejected" ? "text-red-500" : "text-emerald-600"}`}>
+              <p className={`mb-1 t-eyebrow ${row.status === "rejected" ? "text-red-500" : "text-emerald-600"}`}>
                 Reviewer comment
               </p>
               <p className={`text-sm ${row.status === "rejected" ? "text-red-700" : "text-emerald-700"}`}>
@@ -201,12 +201,12 @@ function ApprovalCard({ row, expanded, onToggle }: {
               href={`/approvals/${row.id}/review?token=${encodeURIComponent(row.reviewToken)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block text-[11px] font-semibold text-teal underline underline-offset-2 hover:text-teal-700"
+              className="inline-block t-eyebrow font-semibold text-teal underline underline-offset-2 hover:text-teal-700"
             >
               Open review link &rarr;
             </a>
           ) : (
-            <p className="text-[11px] text-zinc-400">
+            <p className="t-eyebrow text-zinc-400">
               Review link was emailed to {row.reviewer_email}. For security, it can only be viewed here right after sending.
             </p>
           )}
@@ -262,7 +262,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
 
         <div className="mt-5 space-y-4">
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Reviewer email <span className="text-red-500">*</span>
             </label>
             <input
@@ -275,7 +275,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Post title <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
             <input
@@ -287,7 +287,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Post content <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -300,7 +300,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Message to reviewer <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
             <textarea

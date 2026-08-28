@@ -273,7 +273,7 @@ export default function ChatWorkspace() {
       {/* Dark sidebar matches app shell */}
       <div className="flex w-72 flex-col rounded-l-2xl bg-zinc-900">
         <div className="border-b border-zinc-800 px-4 py-4">
-          <p className="mb-3 px-1 text-[11px] font-bold uppercase tracking-widest text-zinc-500">AI Strategist</p>
+          <p className="mb-3 px-1 t-eyebrowst text-zinc-500">AI Strategist</p>
           <button
             onClick={createConversation}
             disabled={isCreating}
@@ -287,7 +287,7 @@ export default function ChatWorkspace() {
           {conversations.length === 0 ? (
             <div className="mt-6 px-2 text-center">
               <p className="text-xs text-zinc-400">No conversations yet.</p>
-              <p className="mt-1 text-[11px] text-zinc-500">Start a new chat above.</p>
+              <p className="mt-1 t-eyebrow text-zinc-500">Start a new chat above.</p>
             </div>
           ) : (
             conversations.map(conv => (
@@ -309,13 +309,13 @@ export default function ChatWorkspace() {
                     ) : (
                       <>
                         <div className={`truncate text-sm font-medium ${activeConvId === conv.id ? "text-white" : "text-zinc-300"}`}>{conv.title}</div>
-                        <div className="text-[11px] text-zinc-400 mt-0.5">{new Date(conv.updated_at).toLocaleDateString()}</div>
+                        <div className="t-eyebrow text-zinc-400 mt-0.5">{new Date(conv.updated_at).toLocaleDateString()}</div>
                       </>
                     )}
                   </button>
                   <div className="flex shrink-0 items-center gap-1.5 pt-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button onClick={() => startRename(conv)} className="cursor-pointer text-[11px] font-semibold text-zinc-500 hover:text-zinc-300">Edit</button>
-                    <button onClick={() => deleteConversation(conv.id)} className="cursor-pointer text-[11px] font-semibold text-zinc-500 hover:text-red-400">Del</button>
+                    <button onClick={() => startRename(conv)} className="cursor-pointer t-eyebrow font-semibold text-zinc-500 hover:text-zinc-300">Edit</button>
+                    <button onClick={() => deleteConversation(conv.id)} className="cursor-pointer t-eyebrow font-semibold text-zinc-500 hover:text-red-400">Del</button>
                   </div>
                 </div>
               </div>
@@ -367,7 +367,7 @@ export default function ChatWorkspace() {
                       {msg.role === 'assistant' ? renderMarkdown(msg.content) : <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>}
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-2">
-                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer text-[11px] font-bold uppercase tracking-wider text-teal transition-colors hover:text-teal-700">
+                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer t-eyebrowr text-teal transition-colors hover:text-teal-700">
                             Save to drafts
                           </button>
                         </div>
@@ -416,9 +416,9 @@ export default function ChatWorkspace() {
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between px-1">
-                <p className="text-[11px] text-zinc-400">Enter to send · Shift+Enter for newline</p>
+                <p className="t-eyebrow text-zinc-400">Enter to send · Shift+Enter for newline</p>
                 {draftStatus && (
-                  <p className={`text-[11px] font-semibold ${
+                  <p className={`text-xs font-semibold ${
                     draftStatus.includes("Failed") ? "text-red-500" :
                     draftStatus.includes("Saved") ? "text-emerald-600" : "text-zinc-400"
                   }`}>{draftStatus}</p>

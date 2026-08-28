@@ -360,7 +360,7 @@ function ArchiveTab({ onStart }: { onStart: () => void }) {
                 <Metric label="Reactions" value={post.reactions} />
                 <Metric label="Comments" value={post.comments} />
               </div>
-              <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+              <span className="shrink-0 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 t-eyebrow font-medium text-amber-600">
                 Sample data
               </span>
             </div>
@@ -419,7 +419,7 @@ export function DemoClient({ initialTab }: { initialTab: Tab }) {
 
       <div className="px-4 py-6 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-[1100px]">
-          <div key={activeTab} className="animate-fade-in">
+          <div key={activeTab} className="fade-in">
               {activeTab === "writer" && <WriterTab onStart={handleStart} />}
               {activeTab === "voice" && <VoiceTab onStart={handleStart} />}
               {activeTab === "archive" && <ArchiveTab onStart={handleStart} />}

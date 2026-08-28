@@ -352,7 +352,7 @@ export default function SettingsPage() {
 
           {/* Current plan summary */}
           <div className="mb-5 rounded-xl border border-zinc-100 bg-zinc-50 p-3">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Included in {billing.plan}</p>
+            <p className="mb-2 t-eyebrow font-semiboldr text-zinc-400">Included in {billing.plan}</p>
             <ul className="space-y-1">
               {planSummary.map((item) => (
                 <li key={item} className="flex items-center gap-2 text-xs text-zinc-700">
@@ -379,7 +379,7 @@ export default function SettingsPage() {
           {/* Usage */}
           {planUsage && (
             <div className="mb-5 rounded-xl border border-zinc-100 bg-zinc-50 p-3 space-y-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">This Month&apos;s Usage</p>
+              <p className="t-eyebrow font-semiboldr text-zinc-400">This Month&apos;s Usage</p>
               <UsageBar label="Posts" used={planUsage.drafts.used} limit={planUsage.drafts.limit} />
               <UsageBar label="Carousels" used={planUsage.carousels.used} limit={planUsage.carousels.limit} />
             </div>
@@ -395,16 +395,16 @@ export default function SettingsPage() {
                 className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${billingDraft.plan === plan ? "border-teal bg-teal/5 shadow-sm" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
               >
                 <p className={`text-sm font-semibold ${billingDraft.plan === plan ? "text-teal" : "text-zinc-900"}`}>{plan}</p>
-                <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC[plan]}</p>
+                <p className="mt-0.5 t-eyebrow text-zinc-500">{PLAN_DESC[plan]}</p>
               </button>
             ))}
             {AGENCY_PLAN_LIVE ? (
               <Link href="/managed/apply?plan=Agency&type=company" className="rounded-xl border border-teal/20 bg-teal/5 px-3 py-2.5 text-left hover:border-teal/50">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-teal">Agency</p>
-                  <span className="rounded-full bg-teal px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">Apply</span>
+                  <span className="rounded-full bg-teal px-2 py-0.5 t-eyebrowr text-white">Apply</span>
                 </div>
-                <p className="mt-0.5 text-[11px] text-zinc-500">{PLAN_DESC.Agency}</p>
+                <p className="mt-0.5 t-eyebrow text-zinc-500">{PLAN_DESC.Agency}</p>
               </Link>
             ) : null}
           </div>
@@ -511,7 +511,7 @@ export default function SettingsPage() {
                   <h3 className="text-sm font-bold text-zinc-900">{isLinkedInConnected ? (linkedinProfile?.name || "LinkedIn Account") : "LinkedIn"}</h3>
                   <p className="text-xs text-zinc-500">{isLinkedInConnected ? "Connected for real publishing" : "Not connected. Contact us to enable if unavailable."}</p>
                   {user?.linkedinTokenExpiresAt && (
-                    <p className="mt-1 text-[11px] text-zinc-400">
+                    <p className="mt-1 t-eyebrow text-zinc-400">
                       Token valid until {new Date(user.linkedinTokenExpiresAt).toLocaleDateString()}
                     </p>
                   )}
@@ -696,7 +696,7 @@ export default function SettingsPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
           <h2 className="mb-4 text-base font-semibold text-zinc-900">Billing history</h2>
           <div className="overflow-hidden rounded-xl border border-zinc-100">
-            <div className="grid grid-cols-4 bg-zinc-50 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="grid grid-cols-4 bg-zinc-50 px-4 py-2.5 t-eyebrow font-semiboldr text-zinc-500">
               <span>Date</span>
               <span>Plan</span>
               <span>Amount</span>

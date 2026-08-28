@@ -64,7 +64,7 @@ export function PricingCard({
           ? "border-zinc-200 bg-white/60 opacity-70 shadow-sm"
           : highlighted
           ? "border-teal bg-teal shadow-[0_8px_40px_rgba(13,74,69,0.28)]"
-          : "border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
+          : "border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-card-raised"
       }`}
     >
       {badge && (
@@ -104,7 +104,7 @@ export function PricingCard({
         <p className={`mt-1 text-sm leading-relaxed ${highlighted ? "text-teal-100" : "text-zinc-600"}`}>{description}</p>
       </div>
 
-      {featureLead && <p className={`mb-3 text-[11px] font-bold uppercase tracking-[0.14em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{featureLead}</p>}
+      {featureLead && <p className={`mb-3 t-eyebrow ${highlighted ? "text-gold-200" : "text-teal"}`}>{featureLead}</p>}
       <ul className="mb-8 flex flex-1 flex-col gap-3">
         {features.map((feature) => (
           <li key={feature} className="flex items-start gap-2.5">

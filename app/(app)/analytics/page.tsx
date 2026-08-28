@@ -236,11 +236,11 @@ export default function AnalyticsPage() {
                 {analytics.timeline.map((item) => (
                   <div key={item.key} className="group flex h-full flex-col justify-end">
                     <div className="relative">
-                      {item.count > 0 ? <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 rounded bg-zinc-900 px-1.5 py-0.5 text-[9px] font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">{item.count}</div> : null}
+                      {item.count > 0 ? <div className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 rounded bg-zinc-900 px-1.5 py-0.5 t-eyebrow text-white opacity-0 transition-opacity group-hover:opacity-100">{item.count}</div> : null}
                       <div className="rounded-t-md transition-all group-hover:brightness-110" style={{ height: `${Math.max(6, (item.count / analytics.timelineMax) * 180)}px`, background: item.count > 0 ? "rgb(13,74,69)" : "rgb(228,228,231)" }} />
                     </div>
-                    <p className="mt-1.5 text-center text-[9px] leading-tight text-zinc-400">{item.label.split(" ")[0]}</p>
-                    <p className="text-center text-[9px] leading-tight text-zinc-400">{item.label.split(" ")[1]}</p>
+                    <p className="mt-1.5 text-center t-eyebrow leading-tight text-zinc-400">{item.label.split(" ")[0]}</p>
+                    <p className="text-center t-eyebrow leading-tight text-zinc-400">{item.label.split(" ")[1]}</p>
                   </div>
                 ))}
               </div>
@@ -291,7 +291,7 @@ export default function AnalyticsPage() {
                   <div key={bucket.label} className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs font-semibold text-zinc-600">{bucket.label}</span>
-                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold text-zinc-500">{bucket.range}</span>
+                      <span className="rounded bg-zinc-100 px-1.5 py-0.5 t-eyebrow text-zinc-500">{bucket.range}</span>
                     </div>
                     <p className={`text-3xl font-bold ${bucket.valueColor}`}>{bucket.count}</p>
                     <div className="mt-2 h-1 rounded-full bg-zinc-200"><div className={`h-full rounded-full transition-all ${bucket.bar}`} style={{ width: `${analytics.byStatus.total ? (bucket.count / analytics.byStatus.total) * 100 : 0}%` }} /></div>
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
             <div className="grid gap-3 sm:grid-cols-3 md:grid-cols-5">
               {(["impressions", "reactions", "comments", "reposts", "followerDelta"] as const).map((field) => (
                 <div key={field}>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+                  <label className="mb-1 block t-eyebrow text-zinc-400">
                     {field === "followerDelta" ? "Follower change" : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
                   <input
@@ -324,7 +324,7 @@ export default function AnalyticsPage() {
               ))}
             </div>
             <div className="mt-3">
-              <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-zinc-400">Notes (optional)</label>
+              <label className="mb-1 block t-eyebrow text-zinc-400">Notes (optional)</label>
               <input
                 type="text"
                 value={snapshotForm.notes}
@@ -379,7 +379,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-[80px_repeat(4,minmax(0,1fr))] gap-1.5">
                 <div />
-                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center text-[11px] font-bold uppercase tracking-wider text-zinc-400">{label}</div>)}
+                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center t-eyebrowr text-zinc-400">{label}</div>)}
                 {DAYS.map((day, row) => (
                   <div key={day} className="contents">
                     <div className="flex items-center text-xs font-semibold text-zinc-500">{day}</div>
@@ -421,7 +421,7 @@ export default function AnalyticsPage() {
 function InsightRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-3">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="t-eyebrow text-zinc-400">{label}</p>
       <p className="mt-1 text-sm leading-relaxed text-zinc-700">{value}</p>
     </div>
   )
@@ -431,9 +431,9 @@ function Stat({ label, value, note, accent }: { label: string; value: number; no
   const valueColor = accent === "teal" ? "text-teal" : accent === "amber" ? "text-amber-700" : accent === "blue" ? "text-blue-700" : accent === "red" ? "text-red-600" : "text-zinc-900"
   return (
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">{label}</p>
+      <p className="t-eyebrow text-zinc-400">{label}</p>
       <p className={`mt-1.5 text-3xl font-bold ${valueColor}`}>{value}</p>
-      <p className="mt-0.5 text-[11px] uppercase tracking-wider text-zinc-400">{note}</p>
+      <p className="mt-0.5 t-eyebrowr text-zinc-400">{note}</p>
     </div>
   )
 }

@@ -29,10 +29,10 @@ export function WriterResearchNotesPanel({
           <h2 className="text-xs font-bold text-amber-800">Research Notes</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold text-amber-600">From Competitor Analyzer</span>
+          <span className="t-eyebrow font-semibold text-amber-600">From Competitor Analyzer</span>
           <button
             onClick={(e) => { e.stopPropagation(); setResearchNotes(null) }}
-            className="cursor-pointer text-[11px] font-bold text-amber-500 hover:text-amber-700"
+            className="cursor-pointer t-eyebrow text-amber-500 hover:text-amber-700"
           >
             Dismiss
           </button>
@@ -42,19 +42,19 @@ export function WriterResearchNotesPanel({
         <div className="border-t border-amber-200 px-4 py-3 space-y-2">
           {researchNotes.hookPattern && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Hook pattern</p>
+              <p className="t-eyebrow text-amber-600">Hook pattern</p>
               <p className="text-xs text-amber-900">{researchNotes.hookPattern} · {researchNotes.hookType}</p>
             </div>
           )}
           {researchNotes.framework && (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Framework</p>
+              <p className="t-eyebrow text-amber-600">Framework</p>
               <p className="text-xs text-amber-900">{researchNotes.framework}</p>
             </div>
           )}
           {researchNotes.improvements?.length ? (
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Improvements to apply</p>
+              <p className="t-eyebrow text-amber-600">Improvements to apply</p>
               <ul className="mt-1 space-y-1">
                 {researchNotes.improvements.map((tip, i) => (
                   <li key={i} className="flex items-start gap-1.5 text-xs text-amber-900">

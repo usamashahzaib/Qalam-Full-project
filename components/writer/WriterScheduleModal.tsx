@@ -24,7 +24,7 @@ export function WriterScheduleModal({
         <p className="mt-1 text-sm text-zinc-500">Choose when this post goes live.</p>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="relative">
-            <label className="absolute -top-2 left-2.5 bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Date</label>
+            <label className="absolute -top-2 left-2.5 bg-white px-1 t-eyebrowr text-teal">Date</label>
             <input
               type="date"
               min={todayInput()}
@@ -34,7 +34,7 @@ export function WriterScheduleModal({
             />
           </div>
           <div className="relative">
-            <label className="absolute -top-2 left-2.5 bg-white px-1 text-[9px] font-bold uppercase tracking-wider text-teal">Time</label>
+            <label className="absolute -top-2 left-2.5 bg-white px-1 t-eyebrowr text-teal">Time</label>
             <input
               type="time"
               min={scheduleDate === todayInput() ? nowTimeInput() : undefined}

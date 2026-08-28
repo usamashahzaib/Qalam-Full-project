@@ -329,7 +329,7 @@ function UsageChart({ usage }: { usage: UsageDay[] }) {
                 style={{ height: `${Math.max(3, (draftsUsed / maxVal) * 136)}px` }}
               />
               {usage.length <= 15 && (
-                <span className="text-[9px] text-zinc-400 tabular-nums">{day}</span>
+                <span className="t-eyebrow text-zinc-400 tabular-nums">{day}</span>
               )}
             </div>
           ))}

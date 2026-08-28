@@ -34,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
     status === "published" ? "bg-emerald-100 text-emerald-700" :
     status === "failed" ? "bg-red-100 text-red-700" :
     "bg-zinc-100 text-zinc-500"
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold capitalize ${cls}`}>{status}</span>
+  return <span className={`rounded-full px-2 py-0.5 t-eyebrow capitalize ${cls}`}>{status}</span>
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -320,10 +320,10 @@ export default function LibraryPage() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="w-[40%] px-5 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Title / Hook</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Type</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Date</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-zinc-400">Status</th>
+                  <th className="w-[40%] px-5 py-3 text-left t-eyebrowr text-zinc-400">Title / Hook</th>
+                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Type</th>
+                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Date</th>
+                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Status</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -335,7 +335,7 @@ export default function LibraryPage() {
                       <p className="mt-0.5 max-w-sm truncate text-xs text-zinc-400">{getPostPreviewText(post).slice(0, 100)}</p>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">
+                      <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 t-eyebrow font-semibold text-zinc-500">
                         {isCarouselType(post.type) ? "Carousel" : "Text"}
                       </span>
                     </td>
@@ -393,12 +393,12 @@ export default function LibraryPage() {
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">
+                  <span className="rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 t-eyebrow font-semibold text-zinc-500">
                     {isCarouselType(post.type) ? "Carousel" : "Text"}
                   </span>
                   <StatusBadge status={post.status} />
                 </div>
-                <span className="text-[11px] text-zinc-400">{formatDate(post.scheduledTime || post.updatedAt || post.date)}</span>
+                <span className="t-eyebrow text-zinc-400">{formatDate(post.scheduledTime || post.updatedAt || post.date)}</span>
               </div>
               <p className="mb-1.5 text-sm font-bold leading-snug text-zinc-900 line-clamp-2">{post.title}</p>
               <p className="text-xs leading-relaxed text-zinc-500 line-clamp-3">{getPostPreviewText(post)}</p>

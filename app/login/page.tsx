@@ -112,7 +112,7 @@ export default function LoginPage() {
           {/* Email / password form */}
           <form onSubmit={handleCredentials} className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-zinc-600" htmlFor="email">
+              <label className="mb-1.5 block text-sm font-semibold text-zinc-600" htmlFor="email">
                 Email
               </label>
               <input
@@ -138,11 +138,11 @@ export default function LoginPage() {
                 </Link>
               }
             />
-            <p className="text-center text-xs text-zinc-400">
+            <p className="text-center text-sm text-zinc-500">
               By signing in you agree to our{" "}
-              <Link href={`${SITE_URL}/legal/terms`} className="underline hover:text-zinc-600">Terms</Link>
+              <Link href={`${SITE_URL}/legal/terms`} className="inline-flex min-h-11 items-center underline hover:text-zinc-700">Terms</Link>
               {" "}and{" "}
-              <Link href={`${SITE_URL}/legal/privacy`} className="underline hover:text-zinc-600">Privacy Policy</Link>.
+              <Link href={`${SITE_URL}/legal/privacy`} className="inline-flex min-h-11 items-center underline hover:text-zinc-700">Privacy Policy</Link>.
             </p>
             <button
               type="submit"
@@ -176,7 +176,7 @@ export default function LoginPage() {
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-zinc-500">
             No account?{" "}
-            <Link href={signupUrl} className="font-semibold text-teal hover:text-teal-700">
+            <Link href={signupUrl} className="inline-flex min-h-11 items-center font-semibold text-teal hover:text-teal-700">
               Create one free
             </Link>
           </p>

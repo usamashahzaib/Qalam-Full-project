@@ -73,7 +73,7 @@ function ScorePanel({ title, result }: { title: string; result: AuditResult | Re
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {Object.entries(result.scores || {}).map(([key, value]) => (
           <div key={key} className="rounded-xl border border-zinc-200 bg-white p-3">
-            <p className="truncate text-[11px] font-semibold capitalize text-zinc-500">{key.replaceAll("_", " ")}</p>
+            <p className="truncate t-eyebrow font-semibold capitalize text-zinc-500">{key.replaceAll("_", " ")}</p>
             <p className="mt-1 text-xl font-bold text-zinc-900">{value}</p>
           </div>
         ))}
@@ -90,7 +90,7 @@ function ListBlock({ title, items }: { title: string; items?: string[] }) {
       <ol className="mt-3 space-y-2">
         {items.map((item, index) => (
           <li key={`${item}-${index}`} className="flex gap-3 text-sm leading-6 text-zinc-600">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 text-[11px] font-bold text-gold-700">{index + 1}</span>
+            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold/15 t-eyebrow text-gold-700">{index + 1}</span>
             {item}
           </li>
         ))}
@@ -276,7 +276,7 @@ export default function CareerPage() {
                   <>
                     <div className="flex items-center justify-between">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">0{index + 1}</span>
-                      <span className="rounded-full bg-gold/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-gold-700">{tile.badge}</span>
+                      <span className="rounded-full bg-gold/10 px-2 py-0.5 t-eyebrowr text-gold-700">{tile.badge}</span>
                     </div>
                     <h2 className="mt-5 text-lg font-bold text-zinc-900">{tile.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">{tile.copy}</p>
@@ -308,7 +308,7 @@ export default function CareerPage() {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">More career tools</p>
+              <p className="mb-3 t-eyebrow text-zinc-500">More career tools</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
                   ["Resume Studio", "Build JD-matched resumes from verified evidence with ATS-safe templates.", "/career/resumes"],

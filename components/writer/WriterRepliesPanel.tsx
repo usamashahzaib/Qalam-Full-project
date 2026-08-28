@@ -39,7 +39,7 @@ export function WriterRepliesPanel({
           <div className="mb-3 flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 p-1">
             <button
               onClick={() => setReplyMode("comment")}
-              className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrowr transition-colors ${
                 replyMode === "comment" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -47,7 +47,7 @@ export function WriterRepliesPanel({
             </button>
             <button
               onClick={() => setReplyMode("reply")}
-              className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrowr transition-colors ${
                 replyMode === "reply" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
               }`}
             >
@@ -56,7 +56,7 @@ export function WriterRepliesPanel({
           </div>
           {replyMode === "reply" && (
             <div className="mb-3">
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Original comment (optional, for context)</label>
+              <label className="mb-1.5 block t-eyebrowst text-zinc-400">Original comment (optional, for context)</label>
               <textarea
                 value={parentCommentInput}
                 onChange={(e) => setParentCommentInput(e.target.value)}
@@ -67,7 +67,7 @@ export function WriterRepliesPanel({
             </div>
           )}
           <div className="mb-3">
-            <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">
+            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               {replyMode === "reply" ? "Paste the reply you received" : "Paste a comment to reply to"}
             </label>
             <textarea
@@ -93,8 +93,8 @@ export function WriterRepliesPanel({
               {replies.map((r, i) => (
                 <div key={i} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-zinc-500">{r.style}</span>
-                    <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 text-[11px] font-bold text-teal hover:text-teal-700">Copy</button>
+                    <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 t-eyebrowr text-zinc-500">{r.style}</span>
+                    <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 t-eyebrow text-teal hover:text-teal-700">Copy</button>
                   </div>
                   <p className="w-full break-words text-xs leading-relaxed text-zinc-700">{r.text}</p>
                 </div>

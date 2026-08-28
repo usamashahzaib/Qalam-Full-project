@@ -52,7 +52,7 @@ export default function CohortsPage() {
           <div className="grid gap-3 md:grid-cols-3">
             {cohorts.map((cohort) => (
               <article key={cohort.id} className="rounded-xl border border-zinc-200 bg-white p-5">
-                <div className="flex justify-between"><span className="rounded-full bg-teal/10 px-2 py-1 text-[11px] font-bold uppercase text-teal">{cohort.role}</span><span className="font-mono text-xs font-bold text-gold-700">{cohort.code}</span></div>
+                <div className="flex justify-between"><span className="rounded-full bg-teal/10 px-2 py-1 t-eyebrow text-teal">{cohort.role}</span><span className="font-mono text-xs font-bold text-gold-700">{cohort.code}</span></div>
                 <h3 className="mt-4 font-bold text-zinc-900">{cohort.name}</h3>
                 <p className="mt-2 text-xs leading-5 text-zinc-500">{cohort.description}</p>
                 <Link href={`/career/cohorts/${cohort.id}`} className="mt-4 inline-flex text-xs font-bold text-teal">Open progress</Link>

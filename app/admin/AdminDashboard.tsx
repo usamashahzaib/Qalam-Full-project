@@ -155,7 +155,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       const pct = stats.totalUsers > 0 ? Math.round((count / stats.totalUsers) * 100) : 0
                       return (
                         <div key={plan} className="flex items-center gap-3">
-                          <span className={`w-16 shrink-0 rounded-full px-2 py-0.5 text-center text-[11px] font-bold ${planColor[plan]}`}>{plan}</span>
+                          <span className={`w-16 shrink-0 rounded-full px-2 py-0.5 text-center t-eyebrow ${planColor[plan]}`}>{plan}</span>
                           <div className="flex-1 overflow-hidden rounded-full bg-zinc-100 h-2">
                             <div className="h-2 rounded-full bg-teal transition-all" style={{ width: `${pct}%` }} />
                           </div>
@@ -173,14 +173,14 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                 {circuits && (
                   <div className="mb-4 flex gap-3">
                     <div className="flex-1 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Groq</p>
-                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${circuitColor(circuits.groq)}`}>
+                      <p className="t-eyebrowr text-zinc-400">Groq</p>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 t-eyebrow ${circuitColor(circuits.groq)}`}>
                         {String(circuits.groq)}
                       </span>
                     </div>
                     <div className="flex-1 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Gemini</p>
-                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${circuitColor(circuits.gemini)}`}>
+                      <p className="t-eyebrowr text-zinc-400">Gemini</p>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 t-eyebrow ${circuitColor(circuits.gemini)}`}>
                         {String(circuits.gemini)}
                       </span>
                     </div>
@@ -220,7 +220,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       <div key={run.jobName} className={`rounded-xl border p-4 ${stale ? "border-red-200 bg-red-50" : "border-emerald-200 bg-emerald-50"}`}>
                         <div className="flex items-center justify-between gap-2">
                           <p className="text-sm font-bold text-zinc-900">{run.jobName}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${stale ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
+                          <span className={`rounded-full px-2 py-0.5 t-eyebrow ${stale ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
                             {stale ? "Stale" : "Healthy"}
                           </span>
                         </div>
@@ -259,7 +259,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                             if (found) selectUser(found)
                             else setMsg(`Load user list first (search) to manage ${u.email}`)
                           }}
-                          className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 text-[11px] font-bold text-zinc-600 hover:bg-zinc-50"
+                          className="cursor-pointer rounded-lg border border-zinc-200 px-2 py-1 t-eyebrow text-zinc-600 hover:bg-zinc-50"
                         >
                           Manage
                         </button>
@@ -293,7 +293,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-zinc-50 text-[11px] uppercase tracking-wider text-zinc-500">
+                    <thead className="bg-zinc-50 t-eyebrowr text-zinc-500">
                       <tr>
                         <th className="px-4 py-3">User</th>
                         <th className="px-4 py-3">Plan</th>
@@ -317,16 +317,16 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                               <p className="font-semibold text-zinc-900">{user.name}</p>
                               <p className="text-xs text-zinc-500">{user.email}</p>
                               {user.override && (
-                                <span className="mt-0.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                                <span className="mt-0.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-800">
                                   Override active
                                 </span>
                               )}
                             </td>
                             <td className="px-4 py-3">
-                              <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${planColor[user.currentPlan] || "bg-zinc-100 text-zinc-700"}`}>
+                              <span className={`inline-flex rounded-full px-2 py-0.5 t-eyebrow ${planColor[user.currentPlan] || "bg-zinc-100 text-zinc-700"}`}>
                                 {user.currentPlan}
                               </span>
-                              <p className="mt-1 text-[11px] text-zinc-400">
+                              <p className="mt-1 t-eyebrow text-zinc-400">
                                 {user.currentPlan === "Free" ? "No expiry" : `Expires ${formatPlanDate(user.planExpiresAt)}`}
                               </p>
                             </td>
@@ -358,7 +358,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           {selected.currentPlan === "Free" ? "No expiry" : `Expires ${formatPlanDate(selected.planExpiresAt)}`}
                         </p>
                         {activeOverride && (
-                          <span className="mt-1.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">
+                          <span className="mt-1.5 inline-flex rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-800">
                             Override active
                           </span>
                         )}
@@ -366,7 +366,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Plan override */}
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Plan override</label>
+                        <label className="mb-1.5 block t-eyebrowst text-zinc-400">Plan override</label>
                         <select
                           value={form.planOverride}
                           onChange={(e) => setForm((p) => ({ ...p, planOverride: e.target.value }))}
@@ -380,7 +380,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       {/* Limit overrides */}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Draft limit</label>
+                          <label className="mb-1 block t-eyebrowst text-zinc-400">Draft limit</label>
                           <input
                             type="number"
                             min="0"
@@ -391,7 +391,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">WS limit</label>
+                          <label className="mb-1 block t-eyebrowst text-zinc-400">WS limit</label>
                           <input
                             type="number"
                             min="0"
@@ -405,7 +405,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Expiry */}
                       <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Override expires (optional)</label>
+                        <label className="mb-1 block t-eyebrowst text-zinc-400">Override expires (optional)</label>
                         <input
                           type="date"
                           value={form.expiresAt}
@@ -416,10 +416,10 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Feature flags */}
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Feature flags</label>
+                        <label className="mb-2 block t-eyebrowst text-zinc-400">Feature flags</label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {FEATURES.map(([key, label]) => (
-                            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-100 px-3 py-2 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50">
+                            <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-100 px-3 py-2 t-eyebrow font-semibold text-zinc-700 hover:bg-zinc-50">
                               <input
                                 type="checkbox"
                                 checked={Boolean(form.featureFlags[key])}
@@ -434,7 +434,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Notes */}
                       <div>
-                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Internal notes</label>
+                        <label className="mb-1 block t-eyebrowst text-zinc-400">Internal notes</label>
                         <textarea
                           value={form.notes}
                           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
@@ -446,7 +446,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Usage counters + reset */}
                       <div>
-                        <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-zinc-400">Usage this cycle</label>
+                        <label className="mb-2 block t-eyebrowst text-zinc-400">Usage this cycle</label>
                         <div className="space-y-1.5">
                           {USAGE_FIELDS.map(([field, label]) => (
                             <div key={field} className="flex items-center justify-between rounded-lg border border-zinc-100 px-3 py-2 text-xs">
@@ -456,7 +456,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                                 <button
                                   onClick={() => resetUsage([field]).catch(() => undefined)}
                                   disabled={resettingUsage}
-                                  className="cursor-pointer rounded-full border border-zinc-200 px-2 py-0.5 text-[11px] font-bold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
+                                  className="cursor-pointer rounded-full border border-zinc-200 px-2 py-0.5 t-eyebrow text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                                 >
                                   Reset
                                 </button>
@@ -501,7 +501,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Danger zone */}
                       <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-red-700">Danger zone</p>
+                        <p className="t-eyebrowst text-red-700">Danger zone</p>
                         <p className="mt-1 text-xs text-red-700/80">
                           Permanently deletes this user and all their data (posts, carousels, voice profiles, credentials). This cannot be undone.
                         </p>
@@ -556,7 +556,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-widest text-zinc-400">{label}</p>
+      <p className="t-eyebrowst text-zinc-400">{label}</p>
       <p className="mt-1.5 text-2xl font-bold text-zinc-900">{value}</p>
       <p className="mt-0.5 text-xs text-zinc-400">{sub}</p>
     </div>

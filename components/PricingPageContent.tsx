@@ -75,7 +75,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
         className={`relative flex flex-col rounded-2xl border p-8 shadow-md transition-all duration-300 ${
           isPremium
             ? "border-gold/40 bg-gradient-to-br from-amber-50 to-white hover:shadow-[0_12px_40px_rgba(180,83,9,0.18)]"
-            : "border-zinc-200 bg-white hover:border-gold/50 hover:shadow-[0_8px_32px_rgba(13,74,69,0.12)]"
+            : "border-zinc-200 bg-white hover:border-gold/50 hover:shadow-card-raised"
         }`}
       >
         {/* Managed badge */}
@@ -90,7 +90,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
           <div className="mb-1 flex items-center gap-2 text-sm">
             <span className="text-zinc-400 line-through">{formatPkr(plan.originalMonthlyPrice)}</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700">Save {formatPkr(monthlySaving)}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 t-eyebrowr text-emerald-700">Save {formatPkr(monthlySaving)}</span>
           </div>
           <div className="mb-2 flex items-end gap-1.5">
             <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
@@ -134,7 +134,7 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
             Company
           </Link>
         </div>
-        <p className="mt-3 text-center text-[10px] text-zinc-400">Application reviewed before managed service begins</p>
+        <p className="mt-3 text-center t-eyebrow text-zinc-400">Application reviewed before managed service begins</p>
       </motion.div>
     </motion.div>
   )
@@ -441,7 +441,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside your Qalam workspace</p>
                   </div>
                   <div className="flex items-center justify-between gap-4 sm:justify-end">
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
+                    <span className={`rounded-full px-2.5 py-1 t-eyebrow ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
                       {checkoutReady ? "Card checkout live" : "Checkout coming soon"}
                     </span>
                     <strong className="min-w-24 text-right text-sm text-teal">{formatPkr(item.price)}</strong>
@@ -556,7 +556,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     return [
                       startsGroup ? (
                         <tr key={`${row.group}-group`} className="border-y border-zinc-100 bg-zinc-50/80">
-                          <th colSpan={AGENCY_PLAN_LIVE ? 5 : 4} className="px-5 py-2.5 text-left text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{row.group}</th>
+                          <th colSpan={AGENCY_PLAN_LIVE ? 5 : 4} className="px-5 py-2.5 text-left t-eyebrow text-zinc-500">{row.group}</th>
                         </tr>
                       ) : null,
                       <motion.tr

@@ -87,7 +87,7 @@ export function ProfessionalProfileImport({
       <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
         <h2 className="text-sm font-bold text-zinc-900">
           Professional context
-          <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-700">Pro</span>
+          <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-700">Pro</span>
         </h2>
         <p className="mt-0.5 text-xs text-zinc-500">
           Import a resume or LinkedIn PDF once. The source is processed in memory and never stored.
@@ -125,7 +125,7 @@ export function ProfessionalProfileImport({
           >
             {isAnalyzing ? "Analyzing document..." : "Analyze document"}
           </button>
-          <p className="text-[11px] text-zinc-400">PDF only. Maximum 5 MB and 15 pages.</p>
+          <p className="t-eyebrow text-zinc-400">PDF only. Maximum 5 MB and 15 pages.</p>
         </div>
 
         {file && file.size > 5 * 1024 * 1024 ? (
@@ -144,7 +144,7 @@ export function ProfessionalProfileImport({
                 <h3 className="text-sm font-bold text-zinc-900">Review extracted profile</h3>
                 <p className="text-xs text-zinc-500">Nothing below is active until you save your profile.</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 t-eyebrow text-emerald-700">
                 Source deleted
               </span>
             </div>
@@ -178,7 +178,7 @@ function ContextField({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+    <label className="t-eyebrow text-zinc-400">
       {label}
       <input
         value={value}
@@ -199,7 +199,7 @@ function ContextArea({
   onChange: (value: string) => void
 }) {
   return (
-    <label className="block text-[11px] font-bold uppercase tracking-wide text-zinc-400">
+    <label className="block t-eyebrow text-zinc-400">
       {label}
       <textarea
         value={value}

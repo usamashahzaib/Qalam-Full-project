@@ -249,7 +249,7 @@ export function AdminReferralsClient() {
         )}
 
         <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-          <div className="grid grid-cols-6 gap-2 bg-zinc-50 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          <div className="grid grid-cols-6 gap-2 bg-zinc-50 px-4 py-2.5 t-eyebrow font-semiboldr text-zinc-500">
             <span className="col-span-2">Colleague</span>
             <span>Clicks</span>
             <span>Signups</span>
@@ -268,7 +268,7 @@ export function AdminReferralsClient() {
                 <div className="col-span-2">
                   <p className="font-semibold text-zinc-900">{row.referrerName}</p>
                   <p className="text-xs text-zinc-500">{row.referrerEmail}</p>
-                  <p className="mt-0.5 font-mono text-[11px] text-zinc-400">{row.codes.join(", ")}</p>
+                  <p className="mt-0.5 font-mono t-eyebrow text-zinc-400">{row.codes.join(", ")}</p>
                 </div>
                 <span className="text-zinc-700">{row.totalClicks}</span>
                 <span className="text-zinc-700">{row.totalSignups}</span>

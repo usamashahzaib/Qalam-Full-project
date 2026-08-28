@@ -15,7 +15,7 @@ export function AuthGuardian({ watching }: { watching: boolean }) {
         <span className={`absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-teal ${watching ? "bg-emerald-400" : "bg-gold"}`} aria-hidden />
       </div>
       <div className="hidden sm:block">
-        <p className="text-[0.65rem] font-bold uppercase tracking-[0.17em] text-gold-200">{watching ? "Private entry" : "Evidence controlled"}</p>
+        <p className="t-eyebrow text-gold-200">{watching ? "Private entry" : "Evidence controlled"}</p>
         <p className="mt-1 max-w-[180px] text-xs leading-5 text-white/55">{watching ? "Your password is never displayed or stored as plain text." : "You decide what is saved, changed, and released."}</p>
       </div>
     </div>

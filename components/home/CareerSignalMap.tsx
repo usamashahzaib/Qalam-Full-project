@@ -26,10 +26,10 @@ export function CareerSignalMap() {
     <div className="relative rounded-[1.75rem] border border-teal/15 bg-white/88 p-4 shadow-[0_28px_70px_rgba(13,74,69,0.14)] backdrop-blur sm:p-6">
       <div className="flex items-center justify-between gap-4 border-b border-zinc-200 pb-4">
         <div>
-          <p className="text-[0.67rem] font-bold uppercase tracking-[0.2em] text-gold-700">Career signal map</p>
+          <p className="t-eyebrow text-gold-700">Career signal map</p>
           <p className="mt-1 text-xs text-zinc-500">Illustrative workflow using supplied facts</p>
         </div>
-        <span className="inline-flex min-h-8 shrink-0 items-center rounded-full border border-teal/15 bg-teal/5 px-3 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-teal">
+        <span className="inline-flex min-h-8 shrink-0 items-center rounded-full border border-teal/15 bg-teal/5 px-3 t-eyebrow text-teal">
           Human approved
         </span>
       </div>
@@ -37,9 +37,9 @@ export function CareerSignalMap() {
       <div className="relative py-5">
         <div className="sig-in rounded-2xl border border-gold/30 bg-[#fffaf0] p-5" style={{ "--sig-delay": "0.15s" } as CSSProperties}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full bg-gold px-2.5 text-[0.6rem] font-extrabold uppercase tracking-[0.12em] text-teal-900" aria-label="Supplied fact">Fact</span>
+            <span className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full bg-gold px-2.5 t-eyebrow font-extrabold text-teal-900" aria-label="Supplied fact">Fact</span>
             <div>
-              <p className="text-[0.66rem] font-bold uppercase tracking-[0.17em] text-gold-700">Supplied career fact</p>
+              <p className="t-eyebrow text-gold-700">Supplied career fact</p>
               <p className="mt-1 text-sm font-bold leading-6 text-zinc-900">Cut a weekly project review from 90 to 35 minutes.</p>
             </div>
           </div>
@@ -54,7 +54,7 @@ export function CareerSignalMap() {
               <div className="flex gap-4">
                 <span className="font-cormorant text-2xl font-semibold italic text-gold-700">{output.index}</span>
                 <div>
-                  <p className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-teal">{output.label}</p>
+                  <p className="t-eyebrow text-teal">{output.label}</p>
                   <h2 className="mt-1 text-sm font-bold text-zinc-900">{output.title}</h2>
                   <p className="mt-2 text-xs leading-5 text-zinc-600">{output.copy}</p>
                 </div>

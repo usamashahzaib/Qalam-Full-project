@@ -619,13 +619,13 @@ export default function CarouselEditorPage() {
             {slides.map((slide, index) => (
               <button key={slide.id} onClick={() => setActiveSlide(index)} className={`w-full rounded-xl border px-3 py-3 text-left transition-all ${activeSlide === index ? "border-teal bg-teal/5 shadow-sm" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}>
                 <div className="flex items-start gap-2">
-                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${activeSlide === index ? "bg-teal text-white" : "bg-zinc-100 text-zinc-600"}`}>{index + 1}</span>
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full t-eyebrow ${activeSlide === index ? "bg-teal text-white" : "bg-zinc-100 text-zinc-600"}`}>{index + 1}</span>
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-zinc-800">{slide.title || "Untitled slide"}</p>
-                    <p className="mt-0.5 truncate text-[11px] text-zinc-400">{slide.content?.slice(0, 50) || "-"}</p>
+                    <p className="mt-0.5 truncate t-eyebrow text-zinc-400">{slide.content?.slice(0, 50) || "-"}</p>
                   </div>
                 </div>
-                {saveStatus[slide.id] ? <p className={`mt-1.5 text-[11px] font-medium ${saveStatus[slide.id] === "saved" ? "text-emerald-600" : saveStatus[slide.id] === "saving" ? "text-zinc-400" : "text-red-500"}`}>{saveStatus[slide.id]}</p> : null}
+                {saveStatus[slide.id] ? <p className={`mt-1.5 t-eyebrow font-medium ${saveStatus[slide.id] === "saved" ? "text-emerald-600" : saveStatus[slide.id] === "saving" ? "text-zinc-400" : "text-red-500"}`}>{saveStatus[slide.id]}</p> : null}
               </button>
             ))}
           </div>
@@ -704,7 +704,7 @@ export default function CarouselEditorPage() {
                 className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10"
                 placeholder="What you want to say above the carousel..."
               />
-              <p className="mt-1 text-right text-[11px] text-zinc-400">{commentary.length} / 3000</p>
+              <p className="mt-1 text-right t-eyebrow text-zinc-400">{commentary.length} / 3000</p>
             </div>
             {publishError && <p className="mt-2 text-sm font-medium text-red-600">{publishError}</p>}
             <div className="mt-5 flex justify-end gap-2">

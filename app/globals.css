@@ -34,25 +34,10 @@ html, body {
   }
 }
 
-.app-shell::before {
-  display: none;
-}
-
 /* Ensure content sits above background */
 .app-content {
   position: relative;
   z-index: 1;
-}
-
-@keyframes breathe {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.5; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-shell::before {
-    animation: none;
-  }
 }
 
 /* Without scripting, framer-motion writes its `initial` state inline and then
@@ -84,15 +69,24 @@ html, body {
   }
 }
 
-/* Solid product cards */
-.qalam-card,
-.content-card {
+/* Elevation ladder */
+.qalam-card {
   background: #ffffff;
-  border: 1px solid #e4e4e7;
+  border: 1px solid #E3E7E4;
   border-radius: 16px;
-  box-shadow:
-    0 4px 6px -1px rgba(13, 74, 69, 0.04),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-card);
+}
+.qalam-card-raised {
+  background: #ffffff;
+  border: 1px solid #E3E7E4;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card-raised);
+}
+.qalam-card-floating {
+  background: #ffffff;
+  border: 1px solid #E3E7E4;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card-floating);
 }
 
 @theme {
@@ -108,6 +102,10 @@ html, body {
      considered. */
   --default-transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   --default-transition-duration: 220ms;
+
+  --shadow-card: 0 1px 2px rgba(16, 25, 23, 0.04), 0 4px 12px rgba(16, 25, 23, 0.04);
+  --shadow-card-raised: 0 1px 2px rgba(16, 25, 23, 0.04), 0 8px 24px rgba(16, 25, 23, 0.05);
+  --shadow-card-floating: 0 1px 2px rgba(16, 25, 23, 0.04), 0 8px 24px rgba(16, 25, 23, 0.05), 0 20px 48px rgba(16, 25, 23, 0.06);
 
   --color-teal: #0D4A45;
   --color-teal-50: #eef7f6;
@@ -182,25 +180,13 @@ html, body {
   100% { transform: translate(0, 0) scale(1); }
 }
 
-@keyframes pulse-ring {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 135, 31, 0.55); }
-  50%       { box-shadow: 0 0 0 12px rgba(201, 135, 31, 0); }
-}
-
-@keyframes bg-pan {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes marquee {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
 @keyframes fadeInUp {
   0%   { opacity: 0; transform: translateY(12px); }
   100% { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeInUp 220ms var(--default-transition-timing-function) both;
 }
 
 /* Hero Career Signal Map staged reveal. Pure CSS so the component stays a
@@ -344,7 +330,7 @@ html {
 }
 .skip-link:focus {
   top: 0;
-  outline: 2px solid #C9871F;
+  outline: 2px solid var(--color-gold);
   outline-offset: 2px;
 }
 
@@ -443,69 +429,6 @@ input, textarea, select {
   will-change: transform;
 }
 
-/* Gold pulse on CTA button */
-.pulse-gold {
-  animation: pulse-ring 2.8s ease-in-out infinite;
-}
-
-/* Horizontal marquee */
-.marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee 40s linear infinite;
-}
-
-.marquee-track:hover {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-  }
-}
-
-.marquee-fade {
-  position: relative;
-}
-
-.marquee-fade::before,
-.marquee-fade::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 120px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.marquee-fade::before {
-  left: 0;
-  background: linear-gradient(to right, white, transparent);
-}
-
-.marquee-fade::after {
-  right: 0;
-  background: linear-gradient(to left, white, transparent);
-}
-
-/* Gold underline accent */
-.gold-underline {
-  position: relative;
-  display: inline-block;
-}
-.gold-underline::after {
-  content: '';
-  position: absolute;
-  bottom: -3px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #C9871F, #e8a735);
-  border-radius: 2px;
-}
-
 /* Chip / pill badge - uses border-width/style so Tailwind border-color utilities win */
 .chip {
   display: inline-flex;
@@ -534,46 +457,14 @@ input, textarea, select {
   }
 }
 
-/* Animated underline for nav-style text links */
-.nav-underline {
-  position: relative;
-}
-.nav-underline::after {
-  content: '';
-  position: absolute;
-  left: 0.75rem;
-  right: 0.75rem;
-  bottom: 0.3rem;
-  height: 2px;
-  background: currentColor;
-  border-radius: 2px;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 260ms var(--default-transition-timing-function);
-  opacity: 0.55;
-}
-.nav-underline:hover::after,
-.nav-underline[aria-expanded="true"]::after {
-  transform: scaleX(1);
-}
-
-/* Card hover lift */
-.card-hover {
-  transition: transform 260ms var(--default-transition-timing-function), box-shadow 260ms var(--default-transition-timing-function), border-color 260ms var(--default-transition-timing-function);
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(13, 74, 69, 0.12);
-  border-color: #C9871F;
-}
-
-/* Solid app cards keep contrast stable across devices */
-.app-content :is(section, article, div).bg-white:is(.rounded-2xl, .rounded-3xl):is(.border, [class*="border-"]) {
+/* Auto-card: any section/article/div/aside in the app shell that carries the
+   standard card pattern gets consistent elevation. Broader than the old
+   selector, which only matched rounded-2xl/3xl and silently missed rounded-xl
+   cards (22 of them). */
+.app-content :is(section, article, div, aside).bg-white:is(.rounded-xl, .rounded-2xl, .rounded-3xl):is(.border, [class*="border-"]):is([class*=" p-"], [class^="p-"]) {
   background: #ffffff;
-  border-color: #e4e4e7;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border-color: #E3E7E4;
+  box-shadow: var(--shadow-card);
 }
 
 .qalam-app-canvas {
@@ -686,15 +577,19 @@ input, textarea, select {
   letter-spacing: 0.005em;
 }
 
+.t-eyebrow {
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
 /* ─── Marketing grounds ────────────────────────────────────────
    One reading ground (paper), white reserved for elevated panels that
    sit on it, and the dark velvet used for exactly two chapter breaks
    per page. Anything else reintroduces the alternating-background noise
    this replaced. */
-
-/* Matches --bg-warm exactly so the page never shows a seam between the
-   body ground and a section that paints its own. */
-.ground-paper { background: #f7f3ea; }
 
 .panel-raised {
   background: #ffffff;

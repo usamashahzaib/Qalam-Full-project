@@ -244,7 +244,7 @@ export function AtsResumeCheckerTool() {
             <section className="grid gap-6 lg:grid-cols-2">
               <div className="rounded-2xl border border-zinc-200 bg-white p-6">
                 <h2 className="text-xl font-bold text-zinc-900">Rejection risks</h2>
-                <div className="mt-4 divide-y divide-zinc-100">{result.risks.map((risk, index) => <div key={`${risk.issue}-${index}`} className="py-4"><span className={`rounded-full px-2 py-1 text-[11px] font-bold uppercase ${risk.severity === "high" ? "bg-red-50 text-red-700" : risk.severity === "medium" ? "bg-gold/10 text-gold-700" : "bg-zinc-100 text-zinc-600"}`}>{risk.severity}</span><p className="mt-2 font-semibold text-zinc-900">{risk.issue}</p><p className="mt-1 text-sm leading-6 text-zinc-600">{risk.why}</p></div>)}</div>
+                <div className="mt-4 divide-y divide-zinc-100">{result.risks.map((risk, index) => <div key={`${risk.issue}-${index}`} className="py-4"><span className={`rounded-full px-2 py-1 t-eyebrow ${risk.severity === "high" ? "bg-red-50 text-red-700" : risk.severity === "medium" ? "bg-gold/10 text-gold-700" : "bg-zinc-100 text-zinc-600"}`}>{risk.severity}</span><p className="mt-2 font-semibold text-zinc-900">{risk.issue}</p><p className="mt-1 text-sm leading-6 text-zinc-600">{risk.why}</p></div>)}</div>
               </div>
               <div className="rounded-2xl border border-zinc-200 bg-white p-6">
                 <h2 className="text-xl font-bold text-zinc-900">Keyword evidence</h2>
