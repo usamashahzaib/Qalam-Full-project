@@ -16,14 +16,16 @@ const agencyPrice = agencyPlan ? formatPrice(agencyPlan.quarterlyPrice) : "$38"
 const liveCareerAddons = CAREER_PRODUCTS.filter((addon) => isAddonSelfServe(addon.key))
 
 export const metadata: Metadata = {
-  title: `Quarterly Pricing | Free to ${soloPrice}`,
+  title: AGENCY_PLAN_LIVE ? `Quarterly Pricing | Free to Agency` : `Quarterly Pricing | Free to ${soloPrice}`,
   description:
-    `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
+    AGENCY_PLAN_LIVE
+      ? `Quarterly pricing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} for LinkedIn optimization, content, ATS resumes, and career visibility.`
+      : `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Qalam Pricing - Career Visibility Plans",
     description:
-      `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
+      AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Qalam Pricing - Career Visibility Plans",
     description:
-      `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
+      AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
   },
 }
 
