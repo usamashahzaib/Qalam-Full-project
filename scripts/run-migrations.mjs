@@ -52,7 +52,8 @@ async function runViaDbUrl(dbUrl, sql) {
     const { default: pg } = await import("pg")
     const client = new pg.Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
     await client.connect()
-    await client.query(sql)
+    const result = await client.query(sql)
+    return result.rows
     await client.end()
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
@@ -66,6 +67,22 @@ async function getMigrationFiles() {
   return readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.match(/^\d+_.*\.sql$/) && !f.startsWith("COMBINED"))
     .sort()
+}
+
+const migrationVersion = (file) => file.split("_")[0]
+const migrationName = (file) => file.replace(/^\d+_/, "").replace(/\.sql$/, "")
+const quoteSql = (value) => `'${value.replace(/'/g, "''")}'`
+
+function queryRows(result) {
+  if (Array.isArray(result)) return result
+  if (Array.isArray(result?.rows)) return result.rows
+  if (Array.isArray(result?.result)) return result.result
+  return []
+}
+
+async function getAppliedVersions(run) {
+  const result = await run("select version from supabase_migrations.schema_migrations")
+  return new Set(queryRows(result).map((row) => String(row.version)))
 }
 
 async function main() {
@@ -84,8 +101,11 @@ async function main() {
     process.exit(1)
   }
 
+  const run = (sql) => (accessToken ? runViaMgmtApi(projectRef, accessToken, sql) : runViaDbUrl(dbUrl, sql))
   const files = await getMigrationFiles()
-  const targetFiles = process.argv[2] ? files.filter((f) => f >= process.argv[2]) : files
+  const requestedFiles = process.argv[2] ? files.filter((f) => f >= process.argv[2]) : files
+  const appliedVersions = await getAppliedVersions(run)
+  const targetFiles = requestedFiles.filter((file) => !appliedVersions.has(migrationVersion(file)))
 
   console.log(`Running ${targetFiles.length} migration(s)...`)
 
@@ -93,11 +113,10 @@ async function main() {
     const sql = readFileSync(join(MIGRATIONS_DIR, file), "utf-8")
     process.stdout.write(`  ${file} ... `)
     try {
-      if (accessToken) {
-        await runViaMgmtApi(projectRef, accessToken, sql)
-      } else {
-        await runViaDbUrl(dbUrl, sql)
-      }
+      await run(sql)
+      await run(`insert into supabase_migrations.schema_migrations (version, name)
+        values (${quoteSql(migrationVersion(file))}, ${quoteSql(migrationName(file))})
+        on conflict (version) do nothing`)
       console.log("ok")
     } catch (err) {
       console.log("FAILED")
