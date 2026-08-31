@@ -45,6 +45,7 @@ const SERVICE_ONLY_TABLES = [
   "admin_audit_log",
   "workspace_usage",
   "workspace_invites",
+  "cron_runs",
 ]
 
 function loadEnv() {
