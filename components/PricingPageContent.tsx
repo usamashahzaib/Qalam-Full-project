@@ -24,7 +24,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo is $10 per quarter and Pro is $10 per quarter. Every plan is billed quarterly and includes the equivalent of one free month. Purchasing-power-adjusted pricing is available in select regions.",
+    a: "Solo is $10 per quarter, Pro is $18 per quarter, and Agency is $38 per quarter. Every paid plan is billed quarterly and includes the equivalent of one free month. Purchasing-power-adjusted pricing is available in select regions.",
   },
   {
     q: "Why does Qalam use quarterly billing?",
@@ -40,15 +40,19 @@ const PRICING_FAQ = [
   },
   {
     q: "Which plan should I choose?",
-    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows.",
+    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows. Choose Agency if you manage multiple LinkedIn clients and need isolated workspaces, team seats, and approval workflows.",
   },
   {
     q: "Is the Qalam LinkedIn extension included?",
-    a: "Yes. Free, Solo, and Pro include the Qalam LinkedIn extension. It uses the same smart comment allowance: 10 per month on Free, 50 on Solo, and 150 on Pro. Qalam suggests comments only and never posts automatically.",
+    a: "Yes. Every plan includes the Qalam LinkedIn extension. Smart comment allowance scales with your plan: 10 per month on Free, 50 on Solo, 150 on Pro, and 400 on Agency. Qalam suggests comments only and never posts automatically.",
   },
   {
     q: "Can I buy a career tool without changing my plan?",
     a: "Yes. Career add-ons are one-time software credits for a targeted resume, cover letter, interview pack, deep resume review, LinkedIn rewrite, or career strategy blueprint. Checkout is shown only when that product is configured for card payment.",
+  },
+  {
+    q: "What is the Agency plan?",
+    a: "Agency is for teams managing multiple LinkedIn clients. It includes 5 isolated workspaces, 5 trained voice profiles, 300 posts per month, 50 carousels, approval workflows, team analytics, and dedicated support. Apply through the Agency application form and we activate your workspaces after review.",
   },
   {
     q: "How does Refer and Earn work?",

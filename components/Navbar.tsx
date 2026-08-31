@@ -8,6 +8,7 @@ import { useSession, signOut } from "next-auth/react"
 import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { resolvePublicHref } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
+import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 
 const PRODUCT_LINKS = alphabetical([
   { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
@@ -17,6 +18,7 @@ const PRODUCT_LINKS = alphabetical([
   { label: "Content Studio", href: "/product/post-writer", desc: "Draft, score, revise, and plan LinkedIn content" },
   { label: "ATS Resume Builder", href: "/ats-resume-builder", desc: "Build role-specific resumes from verified experience" },
   { label: "Job Description Match", href: "/job-description-match", desc: "Find evidence, relevance, and keyword gaps" },
+  ...(AGENCY_PLAN_LIVE ? [{ label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Isolated client workspaces with approvals and team seats" }] : []),
 ], (link) => link.label)
 
 const USE_CASE_LINKS = alphabetical([
