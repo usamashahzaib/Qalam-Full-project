@@ -591,12 +591,14 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">Need something custom?</p>
                 <h3 className="mb-3 text-3xl font-bold text-white">Managing content for multiple clients?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
-                  We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow.
+                  {AGENCY_PLAN_LIVE
+                    ? "Agency includes five isolated client workspaces, team seats, approvals, and reviewed onboarding."
+                    : "We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow."}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href="/contact" className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
-                  Get in Touch
+                <Link href={AGENCY_PLAN_LIVE ? "/agency-setup" : "/contact"} className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                  {AGENCY_PLAN_LIVE ? "Apply for Agency" : "Get in Touch"}
                 </Link>
               </div>
             </div>

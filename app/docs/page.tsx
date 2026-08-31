@@ -32,7 +32,7 @@ const SECTIONS = [
   },
   {
     title: "Team and approval workflows",
-    body: "Pro includes the approval workflow so a draft can be reviewed and released as a separate step from writing. Multi-workspace agency tooling is on the roadmap.",
+    body: "Pro includes the approval workflow so a draft can be reviewed and released as a separate step from writing. Agency includes five isolated client workspaces, team seats, and reviewed onboarding.",
   },
 ]
 

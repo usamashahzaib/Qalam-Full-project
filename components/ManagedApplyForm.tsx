@@ -24,6 +24,7 @@ export function ManagedApplyForm({ defaultPackage, defaultAccountType }: { defau
   const [error, setError] = useState<string | null>(null)
   const [accountType, setAccountType] = useState<"individual" | "company">(defaultAccountType || "individual")
   const formRef = useRef<HTMLFormElement>(null)
+  const isAgencyApplication = defaultPackage === "Agency"
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -54,10 +55,12 @@ export function ManagedApplyForm({ defaultPackage, defaultAccountType }: { defau
 
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-gold-700">Apply for Managed Services</p>
+      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-gold-700">{isAgencyApplication ? "Apply for Agency" : "Apply for Managed Services"}</p>
       <h2 className="mb-1 text-2xl font-bold text-zinc-900">Tell us about your account</h2>
       <p className="mb-6 text-sm leading-relaxed text-zinc-500">
-        We read every application personally and reply within one business day with next steps and pricing confirmation.
+        {isAgencyApplication
+          ? "We review every Agency application personally and reply within one business day with workspace activation steps."
+          : "We read every application personally and reply within one business day with next steps and pricing confirmation."}
       </p>
 
       <div className="mb-7 grid grid-cols-2 gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1">

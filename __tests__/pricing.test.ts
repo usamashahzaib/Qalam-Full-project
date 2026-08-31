@@ -41,18 +41,17 @@ describe("PLANS", () => {
     ])
   })
 
-  it("has exactly 3 public plans while Agency self-serve is unwired", () => {
-    expect(AGENCY_PLAN_LIVE).toBe(false)
-    expect(PLANS).toHaveLength(3)
+  it("publishes Agency with reviewed onboarding", () => {
+    expect(AGENCY_PLAN_LIVE).toBe(true)
+    expect(PLANS).toHaveLength(4)
+    const agency = PLANS.find((p) => p.plan === "Agency")
+    expect(agency?.href).toBe("/managed/apply?plan=Agency&type=company")
+    expect(agency?.comingSoon).not.toBe(true)
   })
 
-  it("does not publish the Agency plan on public surfaces yet", () => {
-    expect(PLANS.find((p) => p.plan === "Agency")).toBeUndefined()
-  })
-
-  it("keeps Agency's manual onboarding pricing defined even while hidden", () => {
+  it("keeps Agency's reviewed onboarding pricing public", () => {
     const agency = plans.find((p) => p.name === "Agency")!
-    expect(agency.hidden).toBe(true)
+    expect(agency.hidden).toBe(false)
     expect(agency.monthlyPrice).toBe(19)
     expect(agency.quarterlyPrice).toBe(38)
   })

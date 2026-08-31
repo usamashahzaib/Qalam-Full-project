@@ -42,6 +42,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
   const page = USE_CASE_PAGES[slug]
   if (!page) notFound()
   const industry = INDUSTRIES.find((item) => item.slug === slug)
+  const isAgencyUseCase = slug === "agencies"
 
   const pageUrl = absoluteUrl(`/use-cases/${slug}`)
   const pageSchema = {
@@ -186,11 +187,13 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
           <div className="mx-auto max-w-[900px] rounded-3xl bg-white p-10 text-center shadow-sm ring-1 ring-zinc-200">
             <h2 className="mb-3 text-3xl font-bold text-zinc-900">Need the matching workflow?</h2>
             <p className="mx-auto mb-6 max-w-xl text-sm leading-relaxed text-zinc-600">
-              Explore the complete capability map, then choose the self-serve plan or contact Qalam for an organization-specific workflow.
+              {isAgencyUseCase
+                ? "Apply for Agency to set up isolated client workspaces, team access, and reviewed onboarding."
+                : "Explore the complete capability map, then choose the self-serve plan or contact Qalam for an organization-specific workflow."}
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
-              <Link href="/features" className="inline-flex items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
-                Explore Features
+              <Link href={isAgencyUseCase ? "/agency-setup" : "/features"} className="inline-flex items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
+                {isAgencyUseCase ? "Apply for Agency" : "Explore Features"}
               </Link>
               <Link href="/pricing" className="inline-flex items-center justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
                 View Pricing
