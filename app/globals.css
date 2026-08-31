@@ -363,7 +363,7 @@ input, textarea, select {
   background-size: 80px 80px;
 }
 
-/* ─── Hero ground ──────────────────────────────────────────────
+/* ─── Qalam Evidence Field ─────────────────────────────────────
    Replaces the pair of large blurred colour circles the hero used to
    carry. Two reasons to drop them. They are the single most recognisable
    decoration of 2020-era product pages, and this brand is about evidence
@@ -374,54 +374,78 @@ input, textarea, select {
    The wash keeps the same warm-to-green colour turn; the ruled field
    underneath it reads as measurement rather than atmosphere, and is
    masked so it never reaches a hard edge. */
-.hero-wash {
-  background:
-    radial-gradient(ellipse 58% 48% at 10% 26%, oklch(0.9 0.035 168 / 0.62), transparent 70%),
-    radial-gradient(ellipse 54% 44% at 90% 80%, oklch(0.93 0.045 88 / 0.55), transparent 72%);
-  animation: heroWashDrift 14s ease-in-out infinite;
-}
-@keyframes heroWashDrift {
-  0%, 100% { opacity: 1; filter: hue-rotate(0deg); }
-  50%      { opacity: 0.85; filter: hue-rotate(8deg); }
+.qalam-evidence-field {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
 }
 
-.hero-field {
+.qalam-evidence-field__grid,
+.qalam-evidence-field__glow {
+  position: absolute;
+  inset: 0;
+}
+
+.qalam-evidence-field--hero,
+.qalam-evidence-field--quiet {
+  background: #f7f3ea;
+}
+
+.qalam-evidence-field--hero .qalam-evidence-field__grid,
+.qalam-evidence-field--quiet .qalam-evidence-field__grid {
   background-image:
     linear-gradient(oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px),
     linear-gradient(90deg, oklch(0.38 0.05 175 / 0.055) 1px, transparent 1px);
   background-size: 64px 64px;
-  -webkit-mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
-  mask-image: radial-gradient(ellipse 76% 64% at 50% 44%, #000 38%, transparent 100%);
-  animation: heroFieldPulse 10s ease-in-out infinite;
-}
-@keyframes heroFieldPulse {
-  0%, 100% { opacity: 0.7; }
-  50%      { opacity: 1; }
+  -webkit-mask-image: radial-gradient(ellipse 78% 70% at 50% 42%, #000 34%, transparent 100%);
+  mask-image: radial-gradient(ellipse 78% 70% at 50% 42%, #000 34%, transparent 100%);
 }
 
-.hero-glow {
+.qalam-evidence-field--hero .qalam-evidence-field__glow {
   background:
-    radial-gradient(ellipse 44% 42% at 80% 44%, oklch(0.9 0.06 84 / 0.5), transparent 70%),
-    radial-gradient(ellipse 36% 30% at 20% 60%, oklch(0.88 0.04 168 / 0.35), transparent 70%);
-  animation: heroGlow 7s ease-in-out infinite;
-}
-@keyframes heroGlow {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50%      { opacity: 0.85; transform: scale(1.06); }
+    radial-gradient(ellipse 58% 48% at 8% 28%, oklch(0.9 0.035 168 / 0.6), transparent 70%),
+    radial-gradient(ellipse 52% 44% at 92% 78%, oklch(0.93 0.045 88 / 0.5), transparent 72%);
+  animation: qalam-evidence-breathe 14s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+  transform-origin: 50% 50%;
 }
 
-.hero-aurora {
+.qalam-evidence-field--quiet .qalam-evidence-field__glow {
   background:
-    radial-gradient(ellipse 60% 28% at 30% 20%, oklch(0.88 0.04 168 / 0.4), transparent 70%),
-    radial-gradient(ellipse 50% 24% at 70% 70%, oklch(0.92 0.05 84 / 0.35), transparent 70%),
-    radial-gradient(ellipse 40% 20% at 50% 45%, oklch(0.9 0.035 140 / 0.25), transparent 70%);
-  animation: heroAurora 12s ease-in-out infinite;
+    radial-gradient(ellipse 46% 44% at 8% 24%, oklch(0.9 0.035 168 / 0.34), transparent 72%),
+    radial-gradient(ellipse 42% 38% at 92% 76%, oklch(0.93 0.045 88 / 0.28), transparent 74%);
 }
-@keyframes heroAurora {
-  0%, 100% { opacity: 0; transform: translateY(0) scale(1); }
-  25%      { opacity: 0.6; transform: translateY(-8px) scale(1.03); }
-  50%      { opacity: 0.4; transform: translateY(-4px) scale(1.01); }
-  75%      { opacity: 0.7; transform: translateY(-10px) scale(1.04); }
+
+.qalam-evidence-field--cta {
+  background: #0d4a45;
+}
+
+.qalam-evidence-field--cta .qalam-evidence-field__grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 24%, transparent 100%);
+  mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 24%, transparent 100%);
+}
+
+.qalam-evidence-field--cta .qalam-evidence-field__glow {
+  background:
+    radial-gradient(ellipse 46% 58% at 8% 22%, rgb(255 255 255 / 0.09), transparent 72%),
+    radial-gradient(ellipse 48% 54% at 94% 82%, rgb(201 135 31 / 0.2), transparent 74%);
+}
+
+@keyframes qalam-evidence-breathe {
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.025); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qalam-evidence-field--hero .qalam-evidence-field__glow {
+    animation: none !important;
+    opacity: 0.92;
+    transform: none;
+  }
 }
 
 /* Gold underline that draws under the hero's key phrase on load. Fill-mode

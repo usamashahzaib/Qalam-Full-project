@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
+import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { INDUSTRIES } from "@/lib/marketing-discovery"
 import { USE_CASE_PAGES } from "@/lib/site-content"
 import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
@@ -86,8 +87,9 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema).replace(/</g, "\\u003c") }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema).replace(/</g, "\\u003c") }} />
       <div className="min-h-screen bg-zinc-50 pt-24">
-        <section className="border-b border-zinc-100 bg-white px-6 py-20">
-          <div className="mx-auto max-w-[900px]">
+        <section className="relative overflow-hidden border-b border-zinc-100 px-6 py-20">
+          <QalamEvidenceField variant="quiet" />
+          <div className="relative z-10 mx-auto max-w-[900px]">
             <FadeUp>
               <span className="chip mb-5 inline-flex border-gold/40 bg-gold/5 text-gold-700">{page.eyebrow}</span>
               <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">{page.title}</h1>

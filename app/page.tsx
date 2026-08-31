@@ -6,6 +6,7 @@ import { CareerSignalMap } from "@/components/home/CareerSignalMap"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { HeroChecker } from "@/components/home/HeroChecker"
 import { HomepageAnalytics, TrackedHomepageLink } from "@/components/home/HomepageAnalytics"
+import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { CheckIcon } from "@/components/ui/qalam-icons"
 import { PLANS, formatPrice, getQuarterlyMonthlyEquivalent, quarterlyFraming } from "@/lib/pricing"
 import { LANDING_FAQ } from "@/lib/marketing-content"
@@ -112,10 +113,7 @@ export default function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema).replace(/</g, "\\u003c") }} />
 
       <section className="relative overflow-hidden bg-[#f7f3ea] px-6 pb-20 pt-32 sm:pb-24 sm:pt-40">
-        <div className="pointer-events-none absolute inset-0 hero-field opacity-70" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 hero-wash" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 hidden hero-glow lg:block" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 hidden hero-aurora lg:block" aria-hidden />
+        <QalamEvidenceField variant="hero" />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(430px,0.82fr)] lg:gap-16">
           <div>
             <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">

@@ -8,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
+import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
 import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPrice, getQuarterlyMonthlyEquivalent, upgradeUrl } from "@/lib/pricing"
 import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
@@ -214,10 +215,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-[500px] w-[500px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.25) 0%, transparent 70%)" }}
-        />
+        <QalamEvidenceField variant="quiet" />
         <div className="relative z-10 mx-auto max-w-[1200px] text-center">
           <FadeUp>
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Pricing</span>

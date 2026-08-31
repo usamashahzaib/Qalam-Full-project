@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
+import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import {
   AnalyticsIcon,
   CarouselIcon,
@@ -130,14 +131,7 @@ export default function FreeToolsPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(freeToolsSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-zinc-50 pt-24">
       <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
-        <div
-          className="pointer-events-none absolute right-0 top-0 h-[400px] w-[400px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, rgba(13,74,69,0.2) 0%, transparent 70%)" }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-20 -left-10 h-[300px] w-[300px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, rgba(201,135,31,0.3) 0%, transparent 70%)" }}
-        />
+        <QalamEvidenceField variant="quiet" />
 
         <div className="relative z-10 mx-auto max-w-[1200px]">
           <FadeUp>
@@ -215,36 +209,32 @@ export default function FreeToolsPage() {
         <div className="mx-auto max-w-[1200px]">
           <FadeUp>
             <div className="relative overflow-hidden rounded-2xl bg-teal px-10 py-16 text-center">
-              <div
-                className="pointer-events-none absolute left-[-10%] top-[-50%] h-[500px] w-[500px] rounded-full opacity-20 mesh-blob"
-                style={{
-                  background: "radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)",
-                  ["--dur" as string]: "16s",
-                }}
-              />
-              <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-teal-200">
-                Want the full system?
-              </p>
-              <h2 className="mb-4 text-4xl font-extrabold text-white">
-                Explore the full <span className="text-gold-200">Qalam platform</span>
-              </h2>
-              <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
-                60 posts a month, trained Voice Profile, scheduler, and performance
-                review. Pro starts at $9/month, billed quarterly.
-              </p>
-              <div className="flex flex-col justify-center gap-4 sm:flex-row">
-                <Link
-                  href={`${APP_URL}/login`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600"
-                >
-                  Start free - no card needed
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10"
-                >
-                  Compare Plans
-                </Link>
+              <QalamEvidenceField variant="cta" />
+              <div className="relative z-10">
+                <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-teal-200">
+                  Want the full system?
+                </p>
+                <h2 className="mb-4 text-4xl font-extrabold text-white">
+                  Explore the full <span className="text-gold-200">Qalam platform</span>
+                </h2>
+                <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
+                  60 posts a month, trained Voice Profile, scheduler, and performance
+                  review. Pro starts at $9/month, billed quarterly.
+                </p>
+                <div className="flex flex-col justify-center gap-4 sm:flex-row">
+                  <Link
+                    href={`${APP_URL}/login`}
+                    className="inline-flex items-center gap-2 rounded-xl bg-gold px-8 py-4 text-base font-bold text-teal-900 shadow-lg transition-colors hover:bg-gold-600"
+                  >
+                    Start free - no card needed
+                  </Link>
+                  <Link
+                    href="/pricing"
+                    className="inline-flex items-center gap-2 rounded-xl border-2 border-white/25 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-white/10"
+                  >
+                    Compare Plans
+                  </Link>
+                </div>
               </div>
             </div>
           </FadeUp>

@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { ContactForm } from "@/components/ContactForm"
+import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import {
   CONTACT_INBOXES,
   MANUAL_UPGRADE_METHODS,
@@ -44,8 +45,9 @@ export default function ContactPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema).replace(/</g, "\\u003c") }} />
     <div className="min-h-screen bg-zinc-50 pt-24">
-      <section className="border-b border-zinc-100 bg-white px-6 py-20">
-        <div className="mx-auto max-w-[860px] text-center">
+      <section className="relative overflow-hidden border-b border-zinc-100 px-6 py-20">
+        <QalamEvidenceField variant="quiet" />
+        <div className="relative z-10 mx-auto max-w-[860px] text-center">
           <FadeUp>
             <span className="chip mb-5 inline-flex border-teal/30 bg-teal-50 text-teal">Contact</span>
             <h1 className="mb-5 text-5xl font-extrabold text-zinc-900 sm:text-6xl">Reach the Qalam team</h1>
