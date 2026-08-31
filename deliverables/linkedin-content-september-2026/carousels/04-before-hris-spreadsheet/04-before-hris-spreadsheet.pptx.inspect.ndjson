@@ -1,0 +1,65 @@
+{"kind":"deck","id":"pr/d6p5jr","name":"Deck"}
+{"kind":"layout","layoutId":"80bf96e9-9d74-4f02-902d-4bc4cfd4bd17","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"840bd5b7-a33e-4fd0-a2f5-734147773d90","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/zcnz2s","slide":1,"title":"USAMA SHAHZAIB","textShapes":6}
+{"kind":"textbox","id":"sh/upwfmlgn","slide":1,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/hs7yx0zy","slide":1,"text":"01 / 07","textPreview":"01 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/grehovyt","slide":1,"bbox":[76,1008,928,2]}
+{"kind":"shape","id":"sh/3upgzah4","slide":1,"bbox":[76,128,928,790]}
+{"kind":"shape","id":"sh/itgzq5gj","slide":1,"bbox":[88,140,904,766]}
+{"kind":"textbox","id":"sh/5w7y1kza","slide":1,"text":"PEOPLE SYSTEMS FOR FOUNDERS","textPreview":"PEOPLE SYSTEMS FOR FOUNDERS","textChars":27,"textLines":1,"bbox":[132,188,760,42]}
+{"kind":"textbox","id":"sh/4vyhsfyp","slide":1,"text":"Before you buy an HRIS,","textPreview":"Before you buy an HRIS,","textChars":23,"textLines":1,"bbox":[132,290,800,240]}
+{"kind":"textbox","id":"sh/ripg3ahg","slide":1,"text":"open a spreadsheet","textPreview":"open a spreadsheet","textChars":18,"textLines":1,"bbox":[132,548,780,140]}
+{"kind":"shape","id":"sh/qhgzupgv","slide":1,"bbox":[132,760,86,8]}
+{"kind":"textbox","id":"sh/w72tgzyh","slide":1,"text":"Built from four startup people functions","textPreview":"Built from four startup people functions","textChars":40,"textLines":1,"bbox":[132,792,680,42]}
+{"kind":"notes","id":"nt/zcnz2s","slide":1,"text":""}
+{"kind":"slide","id":"sl/7e2b24","slide":2,"title":"USAMA SHAHZAIB","textShapes":5}
+{"kind":"textbox","id":"sh/kn2lwfqp","slide":2,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/j2t4nap4","slide":2,"text":"02 / 07","textPreview":"02 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/i1k3up8j","slide":2,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/x0bmlk7y","slide":2,"text":"FIRST PRINCIPLE","textPreview":"FIRST PRINCIPLE","textChars":15,"textLines":1,"bbox":[82,178,420,44]}
+{"kind":"textbox","id":"sh/wz2lsfqd","slide":2,"text":"A tool cannot repair an undefined process","textPreview":"A tool cannot repair an undefined process","textChars":41,"textLines":1,"bbox":[82,282,880,250]}
+{"kind":"shape","id":"sh/vyt4jap8","slide":2,"bbox":[82,566,102,7]}
+{"kind":"textbox","id":"sh/ax03q58n","slide":2,"text":"It only gives the confusion a cleaner interface.","textPreview":"It only gives the confusion a cleaner interface.","textChars":48,"textLines":1,"bbox":[82,618,860,240]}
+{"kind":"notes","id":"nt/7e2b24","slide":2,"text":""}
+{"kind":"slide","id":"sl/tjb9tt","slide":3,"title":"USAMA SHAHZAIB","textShapes":4}
+{"kind":"textbox","id":"sh/f610b254","slide":3,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/g7a1476p","slide":3,"text":"03 / 07","textPreview":"03 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/18jidcna","slide":3,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/6h8jyxon","slide":3,"text":"Start with the decision","textPreview":"Start with the decision","textChars":23,"textLines":1,"bbox":[82,224,880,250]}
+{"kind":"shape","id":"sh/ri107258","slide":3,"bbox":[82,566,102,7]}
+{"kind":"textbox","id":"sh/sja10n6t","slide":3,"text":"What will leadership do differently after seeing this information?","textPreview":"What will leadership do differently after seeing this information?","textChars":66,"textLines":1,"bbox":[82,618,860,240]}
+{"kind":"notes","id":"nt/tjb9tt","slide":3,"text":""}
+{"kind":"slide","id":"sl/bdrmhd","slide":4,"title":"USAMA SHAHZAIB","textShapes":4}
+{"kind":"textbox","id":"sh/zut4n210","slide":4,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/0v25w72l","slide":4,"text":"04 / 07","textPreview":"04 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/lwbmpcj6","slide":4,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/mxknyhkb","slide":4,"text":"Track less","textPreview":"Track less","textChars":10,"textLines":1,"bbox":[82,224,880,250]}
+{"kind":"shape","id":"sh/nyt4rm1w","slide":4,"bbox":[82,566,102,7]}
+{"kind":"textbox","id":"sh/8z25072h","slide":4,"text":"Headcount, open roles, hiring movement, attendance patterns, leave exposure, and early retention signals.","textPreview":"Headcount, open roles, hiring movement, attendance patterns, leave exposure, and early retention signals.","textChars":105,"textLines":1,"bbox":[82,618,860,240]}
+{"kind":"notes","id":"nt/bdrmhd","slide":4,"text":""}
+{"kind":"slide","id":"sl/b9kk1r","slide":5,"title":"USAMA SHAHZAIB","textShapes":4}
+{"kind":"textbox","id":"sh/elcjyt0f","slide":5,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/1o32toz6","slide":5,"text":"05 / 07","textPreview":"05 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/0nu103il","slide":5,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/ry10neh4","slide":5,"text":"Name an owner","textPreview":"Name an owner","textChars":13,"textLines":1,"bbox":[82,224,880,250]}
+{"kind":"shape","id":"sh/qxsju90j","slide":5,"bbox":[82,566,102,7]}
+{"kind":"textbox","id":"sh/dk3ipozu","slide":5,"text":"Every number needs one person responsible for updating it and one rhythm for review.","textPreview":"Every number needs one person responsible for updating it and one rhythm for review.","textChars":84,"textLines":1,"bbox":[82,618,860,240]}
+{"kind":"notes","id":"nt/b9kk1r","slide":5,"text":""}
+{"kind":"slide","id":"sl/m10qc0","slide":6,"title":"USAMA SHAHZAIB","textShapes":4}
+{"kind":"textbox","id":"sh/07mt8vy9","slide":6,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/z6dszqho","slide":6,"text":"06 / 07","textPreview":"06 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/e54b6lg3","slide":6,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/9cfu50zq","slide":6,"text":"Know when to upgrade","textPreview":"Know when to upgrade","textChars":20,"textLines":1,"bbox":[82,224,880,250]}
+{"kind":"shape","id":"sh/obmtcvy5","slide":6,"bbox":[82,566,102,7]}
+{"kind":"textbox","id":"sh/nadc3qhk","slide":6,"text":"Move beyond the spreadsheet when access, scale, history, or compliance becomes the actual constraint.","textPreview":"Move beyond the spreadsheet when access, scale, history, or compliance becomes the actual constraint.","textChars":101,"textLines":1,"bbox":[82,618,860,240]}
+{"kind":"notes","id":"nt/m10qc0","slide":6,"text":""}
+{"kind":"slide","id":"sl/2jekdz","slide":7,"title":"USAMA SHAHZAIB","textShapes":5}
+{"kind":"textbox","id":"sh/c3yxwny1","slide":7,"text":"USAMA SHAHZAIB","textPreview":"USAMA SHAHZAIB","textChars":14,"textLines":1,"bbox":[76,42,390,32]}
+{"kind":"textbox","id":"sh/b2pgnixg","slide":7,"text":"07 / 07","textPreview":"07 / 07","textChars":7,"textLines":1,"bbox":[850,42,150,32]}
+{"kind":"shape","id":"sh/qhgfudgv","slide":7,"bbox":[76,1008,928,2]}
+{"kind":"textbox","id":"sh/pg7yl8fq","slide":7,"text":"Start cheap. Stay disciplined.","textPreview":"Start cheap. Stay disciplined.","textChars":30,"textLines":1,"bbox":[96,230,888,360]}
+{"kind":"shape","id":"sh/ofexs3y5","slide":7,"bbox":[430,635,220,6]}
+{"kind":"textbox","id":"sh/3e5gjyxk","slide":7,"text":"Buy complexity only when complexity earns its place.","textPreview":"Buy complexity only when complexity earns its place.","textChars":52,"textLines":1,"bbox":[140,696,800,110]}
+{"kind":"textbox","id":"sh/2dwfqtgz","slide":7,"text":"People & Culture | Startup workforce decisions","textPreview":"People & Culture | Startup workforce decisions","textChars":46,"textLines":1,"bbox":[140,884,800,40]}
+{"kind":"notes","id":"nt/2jekdz","slide":7,"text":""}
