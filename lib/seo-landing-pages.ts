@@ -569,7 +569,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
-        a: "Qalam uses Pakistan-first quarterly pricing. Solo is PKR 1,598 per quarter, and a Free plan is available without a payment card.",
+        a: "Qalam uses quarterly pricing with purchasing-power-adjusted rates for Pakistan and South Asia. Solo is $10 per quarter, and a Free plan is available without a payment card.",
       },
     ],
     related: [
@@ -632,7 +632,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "AI Writing Tool Pakistan",
     h1: "The AI writing tool built for Pakistan's LinkedIn creators",
     description:
-      "Qalam is the AI writing tool built for Pakistani founders, consultants, HR leaders, and agencies. PKR-first pricing, JazzCash and Easypaisa billing, and a workflow built for serious LinkedIn publishing.",
+      "Qalam is the AI writing tool built for Pakistani founders, consultants, HR leaders, and agencies. Purchasing-power-adjusted pricing, local payment options, and a workflow built for serious LinkedIn publishing.",
     summary:
       "Most AI writing tools are priced and designed for Western markets. Qalam is purpose-built for Pakistan: local pricing, local payment methods, and a LinkedIn publishing system that works for the Pakistani professional audience.",
     intent: "AI writing tool Pakistan, LinkedIn AI tool Pakistan, AI content writer Pakistan",
@@ -649,7 +649,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "Built for the Pakistan market, not adapted for it",
-        body: "Qalam is priced in PKR. Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter. Card and assisted local payment workflows are available.",
+        body: "Qalam offers purchasing-power-adjusted pricing for Pakistan. Solo is $10 per quarter and Pro is $18 per quarter at the South Asia rate. Card and assisted local payment workflows are available.",
       },
       {
         heading: "The Pakistani LinkedIn opportunity",
@@ -663,15 +663,15 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     faqs: [
       {
         q: "Is there a good LinkedIn AI tool for Pakistan?",
-        a: "Qalam is purpose-built for Pakistan. It is priced in PKR, accepts payment via JazzCash, Easypaisa, and bank transfer, and has a free plan with no card required. It is the LinkedIn AI writing tool designed specifically for Pakistani professionals.",
+        a: "Qalam offers purchasing-power-adjusted pricing for Pakistan. It accepts payment via JazzCash, Easypaisa, and bank transfer, and has a free plan with no card required. It is the LinkedIn AI writing tool designed specifically for Pakistani professionals.",
       },
       {
         q: "How much does Qalam cost in Pakistan?",
-        a: "Qalam's Free plan includes 5 AI posts per month without a payment card. Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter, both billed as one free month included in the quarter.",
+        a: "Qalam's Free plan includes 5 AI posts per month without a payment card. Solo is $10 per quarter and Pro is $18 per quarter at the South Asia rate, both billed as one free month included in the quarter.",
       },
     ],
     related: [
-      { label: "Pricing in PKR", href: "/pricing" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Free Tools", href: "/free-tools" },
       { label: "Start Free", href: "/login" },
     ],

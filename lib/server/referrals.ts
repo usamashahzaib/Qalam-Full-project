@@ -525,7 +525,7 @@ export async function reverseReferralCommissionFromRefund(referredUserId: string
 
 // ── Payouts ─────────────────────────────────────────────────────────────────
 
-export const MIN_PAYOUT_PKR = 1000
+export const MIN_PAYOUT_USD = 1000
 const PAYOUT_METHODS = new Set(["jazzcash", "easypaisa", "bank"])
 
 export type PayoutBalance = {
@@ -625,8 +625,8 @@ export async function requestPayout(
   paymentMethod: string,
   accountDetails: string
 ): Promise<RequestPayoutResult> {
-  if (!Number.isFinite(amount) || amount < MIN_PAYOUT_PKR) {
-    return { success: false, error: `Minimum payout is PKR ${MIN_PAYOUT_PKR.toLocaleString("en-PK")}.` }
+  if (!Number.isFinite(amount) || amount < MIN_PAYOUT_USD) {
+    return { success: false, error: `Minimum payout is $${MIN_PAYOUT_USD.toLocaleString("en-US")}.` }
   }
   if (!PAYOUT_METHODS.has(paymentMethod)) {
     return { success: false, error: "Choose a valid payment method." }

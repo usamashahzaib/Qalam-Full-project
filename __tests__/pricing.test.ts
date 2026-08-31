@@ -1,29 +1,29 @@
 import { describe, it, expect } from "vitest"
-import { formatPkr, getQuarterlyMonthlyEquivalent, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
+import { formatPrice, getQuarterlyMonthlyEquivalent, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
 import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
-describe("formatPkr", () => {
+describe("formatPrice", () => {
   it("returns 'Free' for zero", () => {
-    expect(formatPkr(0)).toBe("Free")
+    expect(formatPrice(0)).toBe("Free")
   })
 
   it("returns 'Contact Us' for null", () => {
-    expect(formatPkr(null)).toBe("Contact Us")
+    expect(formatPrice(null)).toBe("Contact Us")
   })
 
-  it("formats non-zero amounts with PKR prefix", () => {
-    expect(formatPkr(499)).toContain("PKR")
-    expect(formatPkr(499)).toContain("499")
+  it("formats non-zero amounts with $ prefix", () => {
+    expect(formatPrice(499)).toContain("$")
+    expect(formatPrice(499)).toContain("499")
   })
 
   it("formats numbers over 1000 with comma separator", () => {
-    const result = formatPkr(1990)
+    const result = formatPrice(1990)
     expect(result).toContain("1,990")
   })
 
   it("shows the effective monthly cost of a quarterly payment", () => {
-    expect(getQuarterlyMonthlyEquivalent(1598)).toBe(533)
-    expect(getQuarterlyMonthlyEquivalent(2998)).toBe(999)
+    expect(getQuarterlyMonthlyEquivalent(10)).toBe(3)
+    expect(getQuarterlyMonthlyEquivalent(18)).toBe(6)
   })
 })
 
@@ -53,42 +53,42 @@ describe("PLANS", () => {
   it("keeps Agency's manual onboarding pricing defined even while hidden", () => {
     const agency = plans.find((p) => p.name === "Agency")!
     expect(agency.hidden).toBe(true)
-    expect(agency.monthlyPrice).toBe(3999)
-    expect(agency.quarterlyPrice).toBe(7998)
+    expect(agency.monthlyPrice).toBe(19)
+    expect(agency.quarterlyPrice).toBe(38)
   })
 
   it("keeps managed launch pricing and original anchors aligned", () => {
     const basic = MANAGED_PLANS.find((plan) => plan.name === "Basic Management")!
     const premium = MANAGED_PLANS.find((plan) => plan.name === "Premium Management")!
-    expect([basic.monthlyPrice, basic.originalMonthlyPrice]).toEqual([5000, 7500])
-    expect([premium.monthlyPrice, premium.originalMonthlyPrice]).toEqual([10000, 15000])
+    expect([basic.monthlyPrice, basic.originalMonthlyPrice]).toEqual([49, 79])
+    expect([premium.monthlyPrice, premium.originalMonthlyPrice]).toEqual([79, 129])
   })
 
   it("Free plan has zero monthly price", () => {
     const free = PLANS.find((p) => p.plan === "Free")!
-    expect(free.monthlyPkr).toBe(0)
+    expect(free.monthlyUsd).toBe(0)
   })
 
-  it("Solo starts at 799 PKR/month", () => {
+  it("Solo starts at $5/month", () => {
     const solo = PLANS.find((p) => p.plan === "Solo")!
-    expect(solo.monthlyPkr).toBe(799)
+    expect(solo.monthlyUsd).toBe(5)
     expect(solo.features.some((feature) => feature.includes("3 carousels"))).toBe(true)
   })
 
-  it("Pro starts at 1499 PKR/month", () => {
+  it("Pro starts at $9/month", () => {
     const pro = PLANS.find((p) => p.plan === "Pro")!
-    expect(pro.monthlyPkr).toBe(1499)
+    expect(pro.monthlyUsd).toBe(9)
   })
 
   it("active paid plans have a positive monthly price", () => {
     PLANS.filter((p) => p.plan !== "Free" && !p.comingSoon).forEach((plan) => {
-      expect(plan.monthlyPkr).toBeGreaterThan(0)
+      expect(plan.monthlyUsd).toBeGreaterThan(0)
     })
   })
 
   it("active plans are in ascending price order", () => {
     const activePlans = PLANS.filter((p) => !p.comingSoon)
-    const prices = activePlans.map((p) => p.monthlyPkr ?? 0)
+    const prices = activePlans.map((p) => p.monthlyUsd ?? 0)
     for (let i = 1; i < prices.length; i++) {
       expect(prices[i]).toBeGreaterThanOrEqual(prices[i - 1])
     }
@@ -115,7 +115,7 @@ describe("PLAN_PRICES consistency with PLANS", () => {
   it("monthly prices match PLANS entries for active plans", () => {
     PLANS.filter((p) => !p.comingSoon).forEach((plan) => {
       if (PLAN_PRICES[plan.plan]) {
-        expect(PLAN_PRICES[plan.plan].monthly).toBe(plan.monthlyPkr)
+        expect(PLAN_PRICES[plan.plan].monthly).toBe(plan.monthlyUsd)
       }
     })
   })
@@ -149,9 +149,9 @@ describe("COMPARISON_ROWS integrity", () => {
   it("quarterly price row matches current PLANS pricing", () => {
     const priceRow = COMPARISON_ROWS.find((r) => r.label === "Quarterly price")!
     expect(priceRow.free).toBe("Free")
-    expect(priceRow.solo).toContain("1,598")
-    expect(priceRow.pro).toContain("2,998")
-    expect(priceRow.agency).toContain("7,998")
+    expect(priceRow.solo).toBe("$10")
+    expect(priceRow.pro).toBe("$18")
+    expect(priceRow.agency).toBe("$38")
   })
 
   it("publishes every enforced plan capability", () => {

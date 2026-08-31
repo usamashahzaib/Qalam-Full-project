@@ -155,6 +155,7 @@ export async function handleCareerAddonWebhook(
   // price: this verifies the buyer checked out the correctly-priced LS variant and cannot
   // downgrade the amount. A merchant-issued coupon lowers discount_total/total but never
   // subtotal, so discounted orders must still fulfil - do NOT reject on discountTotal.
+  // TODO: update currency check and amount_pkr column when LS store currency is changed to USD.
   if (currency !== "PKR" || subtotal !== order.amount_pkr * 100) {
     log.error("career_addon_payment.amount_mismatch", { orderId: order.id, currency, subtotal, discountTotal })
     return fail("addon_amount_mismatch")

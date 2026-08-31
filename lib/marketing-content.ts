@@ -635,7 +635,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
           "The story entry point: 'Three years ago I made a decision that ended my largest client relationship. It turned out to be the best thing that happened to my business.' This works because it starts mid-narrative, which pulls the reader forward.",
           "The question that creates recognition: 'Why do smart professionals post consistently on LinkedIn for months and get almost no traction?' Rhetorical questions work when they name a real experience the reader has had.",
           "The bold statement: 'Most LinkedIn content is designed to look busy, not to build anything. There is a better approach.' This works when the statement is genuinely bold rather than mildly provocative.",
-          "The result-first opener: 'We went from zero to PKR 2 million in revenue from LinkedIn inbound. Here is the exact posting strategy that drove it.' Result-first openers work because they promise a specific, replicable lesson.",
+          "The result-first opener: 'We went from zero to $200K in revenue from LinkedIn inbound. Here is the exact posting strategy that drove it.' Result-first openers work because they promise a specific, replicable lesson.",
         ],
       },
       {

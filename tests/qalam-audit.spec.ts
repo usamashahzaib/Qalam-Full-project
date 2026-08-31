@@ -62,19 +62,12 @@ test.describe("Landing page", () => {
 })
 
 test.describe("Pricing page", () => {
-  test("loads with correct plan names and PKR pricing", async ({ page }) => {
+  test("loads with correct plan names and USD pricing", async ({ page }) => {
     await page.goto("/pricing")
     await expect(page).toHaveTitle(/Pricing.*Qalam|Qalam.*Pricing/)
-    await expect(page.locator("body")).toContainText(/PKR|Rs\.?|1[,.]?[489]/i)
-    await expect(page.locator("body")).not.toContainText(/\$19|\$29|\$49/i)
+    await expect(page.locator("body")).toContainText(/\$\d+/)
     // No duplicate brand name in title
     await expect(page).not.toHaveTitle(/Qalam.*Qalam/)
-  })
-
-  test("no dollar pricing shown", async ({ page }) => {
-    await page.goto("/pricing")
-    const bodyText = await page.locator("body").textContent()
-    expect(bodyText).not.toMatch(/\$\d+\/month|\$\d+\/mo/)
   })
 })
 
@@ -380,13 +373,13 @@ test.describe("Free tools functionality", () => {
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Ffree-tools%2Fcomment-generator/)
   })
 
-  test("free tools page - correct pricing copy (PKR, no trial)", async ({ page }) => {
+  test("free tools page - correct pricing copy (no trial)", async ({ page }) => {
     await page.goto("/free-tools", { waitUntil: "networkidle" })
     const bodyText = await page.locator("body").textContent()
-    // Must not contain old USD pricing or trial copy
-    expect(bodyText).not.toMatch(/\$19\/|\$29\/|7-Day Free Trial/)
-    // Must contain PKR pricing or free language
-    expect(bodyText).toMatch(/PKR|Rs\.?|free|Free/i)
+    // Must not contain trial copy
+    expect(bodyText).not.toMatch(/7-Day Free Trial/)
+    // Must contain USD pricing or free language
+    expect(bodyText).toMatch(/\$\d+|free|Free/i)
   })
 })
 

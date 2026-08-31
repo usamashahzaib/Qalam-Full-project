@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
-import { PLAN_PRICES, formatPkr, type PlanName } from "@/lib/pricing"
+import { PLAN_PRICES, formatPrice, type PlanName } from "@/lib/pricing"
 import {
   AnalyticsIcon,
   BrainIcon,
@@ -99,7 +99,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
 
         <div className="shrink-0 lg:w-56">
           <p className="text-3xl font-extrabold tabular-nums text-zinc-950">
-            {formatPkr(prices.monthly)}
+            {formatPrice(prices.monthly)}
             <span className="ml-1 text-sm font-normal text-zinc-500">/mo</span>
           </p>
           <button
@@ -110,7 +110,7 @@ export function UpgradeSpotlight({ currentPlan }: { currentPlan: string }) {
             {isBusy ? "Opening checkout..." : `Choose ${targetPlan} now`}
           </button>
           <p className="mt-2 text-center text-xs font-semibold text-emerald-700">
-            {formatPkr(prices.quarterly)} quarterly - 1 month free
+            {formatPrice(prices.quarterly)} quarterly - 1 month free
           </p>
           <Link
             href={`/upgrade?plan=${targetPlan}`}

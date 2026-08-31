@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { PLAN_FEATURES, PLAN_PRICES, formatPkr, type PlanName } from "@/lib/pricing"
+import { PLAN_FEATURES, PLAN_PRICES, formatPrice, type PlanName } from "@/lib/pricing"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
 import type { PlanTier } from "@/lib/entitlements"
 import { Dialog } from "@/components/ui/Dialog"
@@ -30,9 +30,9 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
         <span className="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal-800">
           For teams
         </span>
-        <h2 id="upgrade-modal-title" className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
+        <h2 id="upgrade-modal-title" className="mt-3 text-lg font-bold text-zinc-900">Agency - $19/month</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          PKR 7,998 billed quarterly. Includes 5 workspaces, 5 seats, approvals, publishing, and team analytics.
+          $38 billed quarterly. Includes 5 workspaces, 5 seats, approvals, publishing, and team analytics.
         </p>
         <Link
           href="/managed/apply?plan=Agency&type=company"
@@ -54,8 +54,8 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
         <h2 id="upgrade-modal-title" className="text-lg font-bold text-zinc-900">
           You&apos;re on {currentPlan} ({usageLabel || reason})
         </h2>
-        <p className="mt-2 text-sm font-semibold text-zinc-700">Upgrade to {requiredPlan} for {formatPkr(prices.monthly)}/month</p>
-        <p className="mt-1 text-xs text-emerald-700">{formatPkr(prices.quarterly)} billed quarterly. 1 month free.</p>
+        <p className="mt-2 text-sm font-semibold text-zinc-700">Upgrade to {requiredPlan} for {formatPrice(prices.monthly)}/month</p>
+        <p className="mt-1 text-xs text-emerald-700">{formatPrice(prices.quarterly)} billed quarterly. 1 month free.</p>
         <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-left">
           <p className="t-eyebrowr text-zinc-400">Included</p>
           <ul className="mt-2 space-y-1.5">
@@ -77,7 +77,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
           disabled={isBusy}
           className="mt-5 w-full cursor-pointer rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isBusy ? "Opening checkout..." : `Choose ${requiredPlan} - ${formatPkr(prices.quarterly)}`}
+          {isBusy ? "Opening checkout..." : `Choose ${requiredPlan} - ${formatPrice(prices.quarterly)}`}
         </button>
         <div className="mt-4 flex items-center justify-center gap-3 text-xs">
           <button onClick={onClose} className="cursor-pointer font-semibold text-zinc-500 hover:text-zinc-700">Not now</button>

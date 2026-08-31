@@ -27,9 +27,9 @@ describe("career resume product", () => {
     expect(parsed.success).toBe(true)
   })
 
-  it("uses Pakistan-first quarterly prices", () => {
-    expect(CAREER_PLANS.find((plan) => plan.name === "Solo")?.quarterlyPrice).toBe(1598)
-    expect(CAREER_PLANS.find((plan) => plan.name === "Pro")?.quarterlyPrice).toBe(2998)
-    expect(Math.max(...CAREER_ADD_ONS.map((item) => item.price))).toBeLessThanOrEqual(1499)
+  it("uses USD quarterly prices", () => {
+    expect(CAREER_PLANS.find((plan) => plan.name === "Solo")?.quarterlyPrice).toBe(10)
+    expect(CAREER_PLANS.find((plan) => plan.name === "Pro")?.quarterlyPrice).toBe(18)
+    expect(Math.max(...CAREER_ADD_ONS.map((item) => item.price))).toBeLessThanOrEqual(12)
   })
 })

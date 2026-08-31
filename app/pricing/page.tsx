@@ -1,7 +1,7 @@
 ﻿import type { Metadata } from "next"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { SITE_URL, APP_URL } from "@/lib/seo"
-import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPrice } from "@/lib/pricing"
 import { CAREER_PRODUCTS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 
@@ -10,15 +10,15 @@ const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
 const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
 const agencyPlan = ALL_PLANS.find((plan) => plan.name === "Agency")
-const soloPrice = soloPlan ? formatPkr(soloPlan.quarterlyPkr) : "PKR 1,598"
-const proPrice = proPlan ? formatPkr(proPlan.quarterlyPkr) : "PKR 2,998"
-const agencyPrice = agencyPlan ? formatPkr(agencyPlan.quarterlyPrice) : "PKR 7,998"
+const soloPrice = soloPlan ? formatPrice(soloPlan.quarterlyUsd) : "$10"
+const proPrice = proPlan ? formatPrice(proPlan.quarterlyUsd) : "$18"
+const agencyPrice = agencyPlan ? formatPrice(agencyPlan.quarterlyPrice) : "$38"
 const liveCareerAddons = CAREER_PRODUCTS.filter((addon) => isAddonSelfServe(addon.key))
 
 export const metadata: Metadata = {
   title: `Quarterly Pricing | Free to ${soloPrice}`,
   description:
-    `Pakistan-first quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility.`,
+    `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
     title: "Qalam Pricing - Career Visibility Plans",
@@ -53,8 +53,8 @@ const pricingFaqSchema = {
       acceptedAnswer: {
         "@type": "Answer",
         text: AGENCY_PLAN_LIVE
-          ? `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter.`
-          : `Qalam uses Pakistan-first quarterly billing. Solo is ${soloPrice} per quarter and Pro is ${proPrice} per quarter.`,
+          ? `Qalam uses quarterly billing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter. Reduced pricing is available in select regions.`
+          : `Qalam uses quarterly billing. Solo is ${soloPrice} per quarter and Pro is ${proPrice} per quarter. Reduced pricing is available in select regions.`,
       },
     },
     {
@@ -131,7 +131,7 @@ const productSchema = {
       "@type": "Offer",
       name: "Free Plan",
       price: "0",
-      priceCurrency: "PKR",
+      priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       description: "5 AI posts per month, hook generator. No card required.",
       url: `${APP_URL}/login`,
@@ -139,8 +139,8 @@ const productSchema = {
     {
       "@type": "Offer",
       name: "Solo Plan",
-      price: String(soloPlan?.quarterlyPkr ?? 1598),
-      priceCurrency: "PKR",
+      price: String(soloPlan?.quarterlyUsd ?? 10),
+      priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       description: "30 AI drafts, 3 carousels, content calendar, post library.",
       url: `${SITE_URL}/pricing`,
@@ -149,7 +149,7 @@ const productSchema = {
       "@type": "Offer",
       name: addon.name,
       price: String(addon.price),
-      priceCurrency: "PKR",
+      priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       description: `One ${addon.unit}, generated and saved inside Qalam.`,
       url: `${APP_URL}/login?callbackUrl=/career/add-ons`,
@@ -157,8 +157,8 @@ const productSchema = {
     {
       "@type": "Offer",
       name: "Pro Plan",
-      price: String(proPlan?.quarterlyPkr ?? 2998),
-      priceCurrency: "PKR",
+      price: String(proPlan?.quarterlyUsd ?? 18),
+      priceCurrency: "USD",
       availability: "https://schema.org/InStock",
       description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
       url: `${SITE_URL}/pricing`,
@@ -167,8 +167,8 @@ const productSchema = {
       ? [{
           "@type": "Offer",
           name: "Agency Plan",
-          price: String(agencyPlan?.quarterlyPrice ?? 7998),
-          priceCurrency: "PKR",
+          price: String(agencyPlan?.quarterlyPrice ?? 38),
+          priceCurrency: "USD",
           availability: "https://schema.org/InStock",
           description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
           url: `${SITE_URL}/pricing`,

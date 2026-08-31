@@ -142,7 +142,7 @@ const COMPARISONS = [
     jasper: false,
   },
   {
-    feature: "PKR pricing for Pakistan market",
+    feature: "Purchasing-power-adjusted pricing for select regions",
     qalam: true,
     chatgpt: false,
     jasper: false,

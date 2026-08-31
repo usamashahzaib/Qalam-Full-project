@@ -2,12 +2,12 @@
 
 import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { AGENCY_PLAN_LIVE, MANAGED_PLANS, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, MANAGED_PLANS, formatPrice } from "@/lib/pricing"
 
 const APPLICATION_PACKAGES = [
   ...MANAGED_PLANS.map((plan) => ({
     name: plan.name,
-    detail: `${formatPkr(plan.monthlyPrice)}/month, ${plan.postsPerMonth} posts`,
+    detail: `${formatPrice(plan.monthlyPrice)}/month, ${plan.postsPerMonth} posts`,
   })),
   ...(AGENCY_PLAN_LIVE ? [{ name: "Agency", detail: "5 client workspaces" }] : []),
 ]

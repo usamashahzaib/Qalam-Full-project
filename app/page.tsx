@@ -7,7 +7,7 @@ import { FaqAccordion } from "@/components/home/FaqAccordion"
 import { HeroChecker } from "@/components/home/HeroChecker"
 import { HomepageAnalytics, TrackedHomepageLink } from "@/components/home/HomepageAnalytics"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { PLANS, formatPkr, getQuarterlyMonthlyEquivalent, quarterlyFraming } from "@/lib/pricing"
+import { PLANS, formatPrice, getQuarterlyMonthlyEquivalent, quarterlyFraming } from "@/lib/pricing"
 import { LANDING_FAQ } from "@/lib/marketing-content"
 import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
@@ -373,8 +373,8 @@ export default function HomePage() {
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {homepagePlans.map((plan) => {
               const highlighted = plan.plan === "Solo"
-              const price = plan.plan === "Free" ? "PKR 0" : formatPkr(plan.quarterlyPkr)
-              const effective = plan.plan === "Free" ? "No payment card" : `${formatPkr(getQuarterlyMonthlyEquivalent(plan.quarterlyPkr))}/month effective`
+              const price = plan.plan === "Free" ? "Free" : formatPrice(plan.quarterlyUsd)
+              const effective = plan.plan === "Free" ? "No payment card" : `${formatPrice(getQuarterlyMonthlyEquivalent(plan.quarterlyUsd))}/month effective`
               return (
                 <article key={plan.plan} className={`relative flex flex-col rounded-2xl border p-7 sm:p-8 ${highlighted ? "border-teal bg-teal text-white shadow-[0_20px_50px_rgba(13,74,69,0.2)]" : "border-zinc-200 bg-white text-zinc-900"}`}>
                   {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 t-eyebrow text-teal-900">Most popular</span>}
@@ -388,9 +388,9 @@ export default function HomePage() {
                     )}
                   </div>
                   <p className={`mt-2 text-xs ${highlighted ? "text-white/65" : "text-zinc-500"}`}>{plan.plan === "Free" ? effective : `Billed quarterly. ${effective}.`}</p>
-                  {plan.plan !== "Free" && plan.monthlyPkr ? (
+                  {plan.plan !== "Free" && plan.monthlyUsd ? (
                     <p className={`mt-1 text-xs ${highlighted ? "text-white/55" : "text-zinc-400"}`}>
-                      <span className="line-through">{formatPkr(plan.monthlyPkr * 3)}</span> if billed monthly.
+                      <span className="line-through">{formatPrice(plan.monthlyUsd * 3)}</span> if billed monthly.
                     </p>
                   ) : null}
                   <p className={`mt-5 text-sm leading-6 ${highlighted ? "text-white/75" : "text-zinc-600"}`}>{plan.description}</p>
