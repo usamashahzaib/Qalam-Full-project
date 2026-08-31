@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
-import { formatPkr } from "@/lib/pricing"
+import { formatPrice } from "@/lib/pricing"
 import { APP_URL, SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
@@ -74,7 +74,7 @@ export default function CareerVisibilityPage() {
 
           <div className="mt-10 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
             <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
-            <div className="sm:text-right"><p className="text-xs text-white/60 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
+            <div className="sm:text-right"><p className="text-xs text-white/60 line-through">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
           </div>
 
           <div className="mt-5 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
@@ -85,7 +85,7 @@ export default function CareerVisibilityPage() {
                   <h3 className="font-semibold text-zinc-900">{item.name}</h3>
                   <p className="mt-1 text-xs text-zinc-500">One {item.unit}, generated inside Qalam</p>
                 </div>
-                <strong className="text-sm text-teal">{formatPkr(item.price)}</strong>
+                <strong className="text-sm text-teal">{formatPrice(item.price)}</strong>
               </div>
             ))}
           </div>

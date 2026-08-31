@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout } from "@/lib/hooks/usePlanCheckout"
-import { AGENCY_PLAN_LIVE, PLAN_FEATURES, PLAN_PRICES, formatPkr, type PlanName, type PurchasableBillingCycle } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLAN_FEATURES, PLAN_PRICES, formatPrice, type PlanName, type PurchasableBillingCycle } from "@/lib/pricing"
 import { PLAN_HIERARCHY, type PlanTier } from "@/lib/entitlements"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS, upgradesMailUrl } from "@/lib/contact"
 import { CheckIcon } from "@/components/ui/qalam-icons"
@@ -70,11 +70,11 @@ export default function UpgradePage() {
               </div>
 
               <p className="mt-3 text-3xl font-extrabold tabular-nums text-zinc-950">
-                {formatPkr(prices.monthly)}
+                {formatPrice(prices.monthly)}
                 <span className="ml-1 text-sm font-normal text-zinc-500">/month</span>
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                {formatPkr(prices.quarterly)} billed quarterly. 1 month free.
+                {formatPrice(prices.quarterly)} billed quarterly. 1 month free.
               </p>
 
               <ul className="mt-4 flex flex-1 flex-col gap-2">
@@ -112,9 +112,9 @@ export default function UpgradePage() {
       {AGENCY_PLAN_LIVE ? (
         <section className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-5">
           <span className="rounded-full bg-teal px-2.5 py-1 t-eyebrowr text-white">For teams</span>
-          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - PKR 3,999/month</h2>
+          <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - $19/month</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-            PKR 7,998 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.
+            $38 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.
           </p>
           <Link href="/managed/apply?plan=Agency&type=company" className="mt-4 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Apply for Agency</Link>
         </section>

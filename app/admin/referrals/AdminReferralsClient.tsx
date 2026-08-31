@@ -59,7 +59,7 @@ const payoutStatusClasses: Record<AdminPayout["status"], string> = {
   rejected: "bg-red-100 text-red-700",
 }
 
-const CSV_COLUMNS = ["Name", "Email", "Codes", "Clicks", "Signups", "Paid conversions", "Revenue (PKR)"] as const
+const CSV_COLUMNS = ["Name", "Email", "Codes", "Clicks", "Signups", "Paid conversions", "Revenue (USD)"] as const
 
 const toCsv = (rows: LeaderboardEntry[]): string => {
   const escape = (value: string) => `"${value.replace(/"/g, '""')}"`
@@ -244,7 +244,7 @@ export function AdminReferralsClient() {
             <Stat label="Total clicks" value={totals.clicks} />
             <Stat label="Total signups" value={totals.signups} />
             <Stat label="Paid conversions" value={totals.paid} />
-            <Stat label="Total revenue" value={`PKR ${totals.revenue.toLocaleString("en-PK")}`} />
+            <Stat label="Total revenue" value={`$${totals.revenue.toLocaleString("en-US")}`} />
           </div>
         )}
 
@@ -273,7 +273,7 @@ export function AdminReferralsClient() {
                 <span className="text-zinc-700">{row.totalClicks}</span>
                 <span className="text-zinc-700">{row.totalSignups}</span>
                 <span className="text-zinc-700">{row.totalPaidConversions}</span>
-                <span className="font-semibold text-teal">PKR {row.totalRevenue.toLocaleString("en-PK")}</span>
+                <span className="font-semibold text-teal">${row.totalRevenue.toLocaleString("en-US")}</span>
               </div>
             ))}
           </div>
@@ -366,7 +366,7 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
 
         {use.status === "paid" ? (
           <span className="text-xs text-zinc-500">
-            {use.planName} - PKR {use.amountPaid.toLocaleString("en-PK")}
+            {use.planName} - ${use.amountPaid.toLocaleString("en-US")}
           </span>
         ) : (
           <>
@@ -384,7 +384,7 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
               min={0}
               value={amountPaid}
               onChange={(e) => setAmountPaid(Number(e.target.value))}
-              placeholder="Amount (PKR)"
+              placeholder="Amount (USD)"
               className="w-28 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-900 focus:border-teal focus:outline-none"
             />
             <button
@@ -432,7 +432,7 @@ function PayoutQueueRow({ payout, onChanged }: { payout: AdminPayout; onChanged:
         <p className="font-semibold text-zinc-900">{payout.referrerName}</p>
         <p className="text-xs text-zinc-500">{payout.referrerEmail}</p>
         <p className="mt-0.5 text-xs text-zinc-400">
-          PKR {payout.amount.toLocaleString("en-PK")} - {payout.paymentMethod} - {payout.accountDetails}
+          ${payout.amount.toLocaleString("en-US")} - {payout.paymentMethod} - {payout.accountDetails}
         </p>
         {rowError && <p className="mt-1 text-xs text-red-600">{rowError}</p>}
       </div>

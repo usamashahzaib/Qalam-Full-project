@@ -436,8 +436,8 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // invalidating the signature. The transaction amount IS part of the signed field set for
   // both gateways, so cross-check the claimed plan's price against it to stop a cheap real
   // payment from being replayed as an activation request for a more expensive plan.
-  // Stripe and Lemon Squeezy sign the entire payload (and Lemon Squeezy bills in USD, not
-  // PKR), so this PKR-price cross-check doesn't apply to either.
+  // Stripe and Lemon Squeezy sign the entire payload, so this price cross-check
+  // doesn't apply to either.
   if (provider !== "stripe" && provider !== "lemonsqueezy") {
     const plan = PRICING_PLANS.find((p) => p.name === planName)
     const candidatePrices = [plan?.monthlyPrice, plan?.quarterlyPrice].filter(
@@ -473,7 +473,7 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
   // Squeezy round-trips back to us, so it is the only one used to attribute a payment.
   const lsVerifiedUserId = provider === "lemonsqueezy" ? verifyCheckoutToken(textValue(lsCustomData.token)) : null
 
-  const currency = textValue(stripe.currency, body.currency, body.pp_Currency, lsAttrs.currency) || "PKR"
+  const currency = textValue(stripe.currency, body.currency, body.pp_Currency, lsAttrs.currency) || "USD"
   const extracted: VerifiedPayment = {
     provider,
     status,

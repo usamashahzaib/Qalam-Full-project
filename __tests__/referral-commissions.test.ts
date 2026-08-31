@@ -11,7 +11,7 @@ const {
   getDiscountForUser,
   requestPayout,
   markPayoutPaid,
-  MIN_PAYOUT_PKR,
+  MIN_PAYOUT_USD,
 } = await import("@/lib/server/referrals")
 
 describe("referral commission accrual", () => {
@@ -141,18 +141,18 @@ describe("requestPayout", () => {
   })
 
   it("rejects a payout below the minimum", async () => {
-    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_PKR - 1, "jazzcash", "0300-1234567")
+    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_USD - 1, "jazzcash", "0300-1234567")
     expect(result.success).toBe(false)
     expect(result.error).toMatch(/minimum/i)
   })
 
   it("rejects an invalid payment method", async () => {
-    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_PKR, "paypal", "0300-1234567")
+    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_USD, "paypal", "0300-1234567")
     expect(result.success).toBe(false)
   })
 
   it("rejects missing account details", async () => {
-    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_PKR, "jazzcash", "  ")
+    const result = await requestPayout("user-1", "u@example.com", MIN_PAYOUT_USD, "jazzcash", "  ")
     expect(result.success).toBe(false)
   })
 

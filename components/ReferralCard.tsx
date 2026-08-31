@@ -40,7 +40,7 @@ type PayoutRow = {
 }
 
 const SITE_URL = "byqalam.com"
-const MIN_PAYOUT_PKR = 1000
+const MIN_PAYOUT_USD = 1000
 const PAYMENT_METHODS = [
   { value: "jazzcash", label: "JazzCash" },
   { value: "easypaisa", label: "EasyPaisa" },
@@ -228,9 +228,9 @@ export function ReferralCard() {
           <>
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="Total referrals" value={stats.totalReferred} />
-              <Stat label="Available balance" value={`PKR ${balance.availableBalance.toLocaleString("en-PK")}`} />
-              <Stat label="Pending payout" value={`PKR ${balance.pendingPayout.toLocaleString("en-PK")}`} />
-              <Stat label="Paid out" value={`PKR ${balance.paidOut.toLocaleString("en-PK")}`} />
+              <Stat label="Available balance" value={`$${balance.availableBalance.toLocaleString("en-US")}`} />
+              <Stat label="Pending payout" value={`$${balance.pendingPayout.toLocaleString("en-US")}`} />
+              <Stat label="Paid out" value={`$${balance.paidOut.toLocaleString("en-US")}`} />
             </div>
 
             <div className="space-y-2">
@@ -302,17 +302,17 @@ export function ReferralCard() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6">
           <h2 className="text-base font-semibold text-zinc-900">Request payout</h2>
           <p className="mt-1 text-xs text-zinc-500">
-            Minimum payout is PKR {MIN_PAYOUT_PKR.toLocaleString("en-PK")}. Requests are reviewed by an admin before transfer.
+            Minimum payout is ${MIN_PAYOUT_USD.toLocaleString("en-US")}. Requests are reviewed by an admin before transfer.
           </p>
 
           <form onSubmit={onRequestPayout} className="mt-3 grid gap-3 sm:grid-cols-3">
             <input
               type="number"
-              min={MIN_PAYOUT_PKR}
+              min={MIN_PAYOUT_USD}
               max={balance.availableBalance}
               value={payoutAmount || ""}
               onChange={(e) => setPayoutAmount(Number(e.target.value))}
-              placeholder={`Amount (max PKR ${balance.availableBalance.toLocaleString("en-PK")})`}
+              placeholder={`Amount (max $${balance.availableBalance.toLocaleString("en-US")})`}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
             <select
@@ -332,7 +332,7 @@ export function ReferralCard() {
             />
             <button
               type="submit"
-              disabled={submittingPayout || balance.availableBalance < MIN_PAYOUT_PKR}
+              disabled={submittingPayout || balance.availableBalance < MIN_PAYOUT_USD}
               className="rounded-lg bg-teal px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-3"
             >
               {submittingPayout ? "Submitting..." : "Request payout"}
@@ -347,7 +347,7 @@ export function ReferralCard() {
               {payouts.map((p) => (
                 <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
                   <div>
-                    <p className="font-semibold text-zinc-900">PKR {p.amount.toLocaleString("en-PK")}</p>
+                    <p className="font-semibold text-zinc-900">${p.amount.toLocaleString("en-US")}</p>
                     <p className="text-xs text-zinc-500">
                       {p.paymentMethod} - {new Date(p.createdAt).toLocaleDateString("en-PK")}
                       {p.paymentReference ? ` - ref ${p.paymentReference}` : ""}

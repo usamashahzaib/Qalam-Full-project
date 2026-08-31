@@ -27,7 +27,7 @@ type MarketplaceData = {
   billingCycle?: string
 }
 
-const money = (value: number) => `PKR ${value.toLocaleString("en-PK")}`
+const money = (value: number) => `$${value.toLocaleString("en-US")}`
 
 export default function CareerAddOnsPage() {
   const searchParams = useSearchParams()

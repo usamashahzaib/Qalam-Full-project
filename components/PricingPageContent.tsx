@@ -9,7 +9,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
 import { ArchiveIcon, CheckIcon, ShieldIcon, VoiceIcon } from "@/components/ui/qalam-icons"
-import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPkr, getQuarterlyMonthlyEquivalent, upgradeUrl } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, COMPARISON_ROWS, PLANS, MANAGED_PLANS, formatPrice, getQuarterlyMonthlyEquivalent, upgradeUrl } from "@/lib/pricing"
 import { CAREER_ADD_ONS, CAREER_PACKS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
@@ -23,7 +23,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo is PKR 1,598 per quarter and Pro is PKR 2,998 per quarter. Every plan is billed quarterly and includes the equivalent of one free month.",
+    a: "Solo is $10 per quarter and Pro is $10 per quarter. Every plan is billed quarterly and includes the equivalent of one free month. Purchasing-power-adjusted pricing is available in select regions.",
   },
   {
     q: "Why does Qalam use quarterly billing?",
@@ -89,12 +89,12 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
         <div className="mb-6 pt-2">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
           <div className="mb-1 flex items-center gap-2 text-sm">
-            <span className="text-zinc-400 line-through">{formatPkr(plan.originalMonthlyPrice)}</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 t-eyebrowr text-emerald-700">Save {formatPkr(monthlySaving)}</span>
+            <span className="text-zinc-400 line-through">{formatPrice(plan.originalMonthlyPrice)}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 t-eyebrowr text-emerald-700">Save {formatPrice(monthlySaving)}</span>
           </div>
           <div className="mb-2 flex items-end gap-1.5">
             <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
-              {formatPkr(plan.monthlyPrice)}
+              {formatPrice(plan.monthlyPrice)}
             </span>
             <span className="mb-2 text-sm font-medium text-zinc-500">/mo</span>
           </div>
@@ -173,13 +173,13 @@ export function PricingPageContent({}: PricingPageContentProps) {
           ? "Access unlocks after confirmed card payment."
           : "Agency onboarding is reviewed before activation."
 
-    const basePkr = plan.quarterlyPkr
+    const basePkr = plan.quarterlyUsd
     const hasDiscount = referralDiscountPercent > 0 && !!basePkr && basePkr > 0
-    const price = formatPkr(basePkr)
-    const monthlyEquivalent = getQuarterlyMonthlyEquivalent(plan.quarterlyPkr)
+    const price = formatPrice(basePkr)
+    const monthlyEquivalent = getQuarterlyMonthlyEquivalent(plan.quarterlyUsd)
     const annualSavings = plan.plan === "Free"
       ? undefined
-      : `${formatPkr(monthlyEquivalent)}/month effective`
+      : `${formatPrice(monthlyEquivalent)}/month effective`
     const usdReference = plan.plan === "Free" ? "Core tools included" : "Billed every three months"
 
     // Paid plans route to the in-app upgrade page, which mints the checkout token at
@@ -234,11 +234,11 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-500">
               <span className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <strong className="text-zinc-700">PKR 0</strong> to start
+                <strong className="text-zinc-700">Free</strong> to start
               </span>
               <span className="text-zinc-200">|</span>
               <span>
-                <strong className="text-zinc-700">{soloPlan ? `${formatPkr(soloPlan.quarterlyPkr)}/quarter` : "Solo"}</strong> Solo
+                <strong className="text-zinc-700">{soloPlan ? `${formatPrice(soloPlan.quarterlyUsd)}/quarter` : "Solo"}</strong> Solo
               </span>
               <span className="text-zinc-200">|</span>
               <span>
@@ -426,8 +426,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Deep recruiter review, JD-matched resume, targeted cover letter, and interview practice for one serious application.</p>
             </div>
             <div className="sm:text-right">
-              <p className="text-xs text-white/40 line-through">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
-              <p className="mt-1 text-2xl font-bold text-gold">{formatPkr(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
+              <p className="text-xs text-white/40 line-through">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
+              <p className="mt-1 text-2xl font-bold text-gold">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
               <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
             </div>
           </div>
@@ -446,7 +446,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     <span className={`rounded-full px-2.5 py-1 t-eyebrow ${checkoutReady ? "bg-emerald-50 text-emerald-700" : "bg-zinc-100 text-zinc-500"}`}>
                       {checkoutReady ? "Card checkout live" : "Checkout coming soon"}
                     </span>
-                    <strong className="min-w-24 text-right text-sm text-teal">{formatPkr(item.price)}</strong>
+                    <strong className="min-w-24 text-right text-sm text-teal">{formatPrice(item.price)}</strong>
                   </div>
                 </article>
               )
@@ -523,7 +523,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Solo starts at</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">PKR 1,598 per quarter</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">$10 per quarter</p>
               <p className="mt-1 text-xs text-zinc-400">One professional story across profile, content, and career assets.</p>
             </div>
           </FadeUp>

@@ -338,8 +338,8 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
 
     const pricingResponse = await page.goto("/pricing")
     expect(pricingResponse?.status()).toBeLessThan(400)
-    await expect(page.locator("body")).toContainText("PKR 1,598")
-    await expect(page.locator("body")).toContainText("PKR 2,998")
+    await expect(page.locator("body")).toContainText("$10")
+    await expect(page.locator("body")).toContainText("$18")
     await expect(page.locator("body")).toContainText("Managed Plans")
   } finally {
     let deletionStatus: number | null = null

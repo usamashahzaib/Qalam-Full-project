@@ -8,7 +8,7 @@ import { useBilling, type WorkspaceBilling } from "@/lib/hooks/useBilling"
 import { usePlanCheckout, isSelfServePlan } from "@/lib/hooks/usePlanCheckout"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { usePosts } from "@/lib/hooks/usePosts"
-import { AGENCY_PLAN_LIVE, PLAN_PRICES, formatPkr } from "@/lib/pricing"
+import { AGENCY_PLAN_LIVE, PLAN_PRICES, formatPrice } from "@/lib/pricing"
 import { getPlanLimits, getPlanSummary } from "@/lib/entitlements"
 import { SUPPORT_EMAIL, UPGRADES_EMAIL, upgradesMailUrl } from "@/lib/contact"
 import { ACCOUNT_ROLES, INDUSTRY_OPTIONS } from "@/lib/constants"
@@ -413,8 +413,8 @@ export default function SettingsPage() {
           {isSelfServePlan(billingDraft.plan) && (
             <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 px-4 py-3">
               <p className="text-sm font-semibold text-teal">{billingDraft.plan}</p>
-              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPkr(selectedPlanPrices.monthly)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
-              <p className="mt-0.5 text-xs text-zinc-500">{formatPkr(displayPrice)} billed quarterly. 1 month free.</p>
+              <p className="mt-1 text-xl font-bold text-zinc-900">{formatPrice(selectedPlanPrices.monthly)}<span className="ml-1 text-sm font-normal text-zinc-500">/month</span></p>
+              <p className="mt-0.5 text-xs text-zinc-500">{formatPrice(displayPrice)} billed quarterly. 1 month free.</p>
             </div>
           )}
 
@@ -424,7 +424,7 @@ export default function SettingsPage() {
               <div className="border-b border-amber-200 bg-amber-100/60 px-4 py-3">
                 <p className="text-sm font-bold text-amber-900">Upgrade to {billingDraft.plan}</p>
                 <p className="mt-0.5 text-xs text-amber-700">
-                  {formatPkr(displayPrice)} every 3 months
+                  {formatPrice(displayPrice)} every 3 months
                 </p>
               </div>
               <div className="p-4">

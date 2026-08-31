@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     "LinkedIn profile optimization",
     "LinkedIn authority",
     "career visibility",
-    "ATS resume builder Pakistan",
+    "ATS resume builder",
     "job description match",
     "LinkedIn content intelligence",
     "professional positioning",
@@ -159,11 +159,11 @@ const appSchema = {
       description:
         "Qalam is a career visibility system for LinkedIn positioning, content, ATS resumes, recruiter discovery, and career progression.",
       publisher: { "@id": `${siteUrl}/#organization` },
-      offers: PLANS.filter((plan) => plan.quarterlyPkr != null).map((plan) => ({
+      offers: PLANS.filter((plan) => plan.quarterlyUsd != null).map((plan) => ({
         "@type": "Offer",
         name: plan.plan,
-        price: String(plan.quarterlyPkr),
-        priceCurrency: "PKR",
+        price: String(plan.quarterlyUsd),
+        priceCurrency: "USD",
         description: plan.description,
         availability:
           plan.featureStatus === "coming_soon"

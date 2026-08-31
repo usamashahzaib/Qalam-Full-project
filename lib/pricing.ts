@@ -71,8 +71,8 @@ export const plans: Plan[] = [
   },
   {
     name: "Solo",
-    monthlyPrice: 799,
-    quarterlyPrice: 1598,
+    monthlyPrice: 5,
+    quarterlyPrice: 10,
     postsPerMonth: 30,
     draftsPerMonth: 30,
     carouselsPerMonth: 3,
@@ -98,8 +98,8 @@ export const plans: Plan[] = [
   },
   {
     name: "Pro",
-    monthlyPrice: 1499,
-    quarterlyPrice: 2998,
+    monthlyPrice: 9,
+    quarterlyPrice: 18,
     postsPerMonth: 60,
     draftsPerMonth: 60,
     carouselsPerMonth: 10,
@@ -126,8 +126,8 @@ export const plans: Plan[] = [
   },
   {
     name: "Agency",
-    monthlyPrice: 3999,
-    quarterlyPrice: 7998,
+    monthlyPrice: 19,
+    quarterlyPrice: 38,
     postsPerMonth: 300,
     draftsPerMonth: 300,
     carouselsPerMonth: 50,
@@ -162,8 +162,8 @@ export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 export const MANAGED_PLANS: ManagedPlan[] = [
   {
     name: "Basic Management",
-    monthlyPrice: 5000,
-    originalMonthlyPrice: 7500,
+    monthlyPrice: 49,
+    originalMonthlyPrice: 79,
     postsPerMonth: 12,
     description: "A Qalam writer turns your expertise into three approved LinkedIn posts each week.",
     features: [
@@ -179,8 +179,8 @@ export const MANAGED_PLANS: ManagedPlan[] = [
   },
   {
     name: "Premium Management",
-    monthlyPrice: 10000,
-    originalMonthlyPrice: 15000,
+    monthlyPrice: 79,
+    originalMonthlyPrice: 129,
     postsPerMonth: 20,
     description: "Positioning, voice, content, and publishing managed as one LinkedIn growth system.",
     features: [
@@ -226,8 +226,8 @@ export const hasFeature = isFeatureAllowed
 
 export interface PricingPlan {
   plan: string
-  monthlyPkr: number | null
-  quarterlyPkr: number | null
+  monthlyUsd: number | null
+  quarterlyUsd: number | null
   period: string
   description: string
   audience: string
@@ -256,8 +256,8 @@ export const upgradeUrl = (plan?: string, cycle?: BillingCycle): string => {
 
 export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   plan: plan.name,
-  monthlyPkr: plan.monthlyPrice,
-  quarterlyPkr: plan.quarterlyPrice,
+  monthlyUsd: plan.monthlyPrice,
+  quarterlyUsd: plan.quarterlyPrice,
   period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "month",
   description:
     plan.name === "Free"
@@ -523,16 +523,16 @@ export const COMPARISON_ROWS = [
     group: "Price",
     label: "Quarterly price",
     free: "Free",
-    solo: "PKR 1,598",
-    pro: "PKR 2,998",
-    agency: "PKR 7,998",
+    solo: "$10",
+    pro: "$18",
+    agency: "$38",
   },
 ]
 
-export const formatPkr = (amount: number | null | undefined): string => {
+export const formatPrice = (amount: number | null | undefined): string => {
   if (amount == null) return "Contact Us"
   if (amount === 0) return "Free"
-  return `PKR ${amount.toLocaleString("en-PK")}`
+  return `$${amount.toLocaleString("en-US")}`
 }
 
 export const getQuarterlyMonthlyEquivalent = (quarterlyPrice: number | null | undefined): number | null =>
@@ -547,13 +547,13 @@ export type PurchasableBillingCycle = Exclude<BillingCycle, "annual">
 export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<PurchasableBillingCycle, string>>>> = {
   Solo: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
-    // Quarterly product (PKR 1,598 every 3 months). Env var still overrides if set.
+    // Quarterly product. Env var still overrides if set.
     quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
       || "https://byqalam.lemonsqueezy.com/checkout/buy/a1e289b6-9c8b-42f5-b2ad-b9b36b7aff3b",
   },
   Pro: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
-    // Quarterly product (PKR 2,998 every 3 months). Env var still overrides if set.
+    // Quarterly product. Env var still overrides if set.
     quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
       || "https://byqalam.lemonsqueezy.com/checkout/buy/c3036b23-7f98-4a58-ad09-c2ddbe2483c2",
   },

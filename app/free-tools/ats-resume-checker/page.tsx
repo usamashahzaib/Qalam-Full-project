@@ -27,7 +27,7 @@ const schema = {
       operatingSystem: "Web",
       browserRequirements: "JavaScript enabled",
       isAccessibleForFree: true,
-      offers: { "@type": "Offer", price: "0", priceCurrency: "PKR", availability: "https://schema.org/InStock" },
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD", availability: "https://schema.org/InStock" },
       description: ATS_DIRECT_ANSWER,
       featureList: ATS_FACTORS.map((factor) => `${factor.name}: ${factor.definition}`),
       publisher: { "@id": `${SITE_URL}/#organization` },

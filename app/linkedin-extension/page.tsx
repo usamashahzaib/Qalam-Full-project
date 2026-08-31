@@ -44,7 +44,7 @@ export default function LinkedInExtensionPage() {
   const schemas = [
     buildBreadcrumbSchema([{ name: "Home", path: "/" }, { name: "Qalam LinkedIn Extension", path: "/linkedin-extension" }]),
     buildFaqSchema(faqs),
-    { "@context": "https://schema.org", "@type": "SoftwareApplication", name: "Qalam for LinkedIn", applicationCategory: "BusinessApplication", operatingSystem: "Chrome and Chromium desktop browsers", url: absoluteUrl("/linkedin-extension"), description: "A browser extension that creates selectable LinkedIn comment variations using a Qalam plan allowance.", offers: { "@type": "Offer", price: "0", priceCurrency: "PKR" } },
+    { "@context": "https://schema.org", "@type": "SoftwareApplication", name: "Qalam for LinkedIn", applicationCategory: "BusinessApplication", operatingSystem: "Chrome and Chromium desktop browsers", url: absoluteUrl("/linkedin-extension"), description: "A browser extension that creates selectable LinkedIn comment variations using a Qalam plan allowance.", offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
   ]
   return (
     <main className="overflow-hidden bg-[#fbfdfc] pt-20 text-zinc-900">
