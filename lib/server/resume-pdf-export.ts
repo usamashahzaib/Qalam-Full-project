@@ -107,7 +107,7 @@ export async function buildResumePdf(data: ResumeData, templateKey: string): Pro
   }
 
   pdf.setTitle(safeText(`${data.fullName || "Candidate"} Resume`))
-  pdf.setCreator("Qalam Career Visibility OS")
+  pdf.setCreator("Qalam")
   pdf.setProducer("Qalam ATS Resume Studio")
   return pdf.save()
 }

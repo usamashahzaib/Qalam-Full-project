@@ -32,7 +32,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
         </span>
         <h2 id="upgrade-modal-title" className="mt-3 text-lg font-bold text-zinc-900">Agency - $19/month</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          $38 billed quarterly. Includes 5 workspaces, 5 seats, approvals, publishing, and team analytics.
+          $38 billed quarterly. Includes 5 workspaces, 5 seats, an optional approval step, publishing, and per-workspace performance analytics.
         </p>
         <Link
           href="/managed/apply?plan=Agency&type=company"

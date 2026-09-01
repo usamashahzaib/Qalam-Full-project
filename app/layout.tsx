@@ -29,9 +29,9 @@ const cormorant = Cormorant_Garamond({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
 
-const rootOgTitle = "Qalam | LinkedIn Authority and Career Visibility OS"
+const rootOgTitle = "Qalam | LinkedIn Publishing System With Voice Memory"
 const rootOgDescription =
-  "Align your LinkedIn profile, professional content, ATS resumes, and target roles around one credible career story."
+  "Draft, review, approve, and schedule LinkedIn posts, carousels, and comments from saved writing examples and professional context, so the output still reads as you."
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
@@ -40,18 +40,20 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Qalam is a Career Visibility OS for LinkedIn positioning, professional content, ATS resumes, job matching, and career progression.",
+    "Qalam is a LinkedIn publishing system with voice memory. Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies.",
   keywords: [
     "Qalam",
-    "LinkedIn profile optimization",
-    "LinkedIn authority",
-    "career visibility",
-    "ATS resume builder",
-    "job description match",
-    "LinkedIn content intelligence",
-    "professional positioning",
-    "career progression",
-    "recruiter visibility",
+    "LinkedIn publishing system",
+    "LinkedIn voice profile",
+    "AI LinkedIn writer",
+    "LinkedIn content workflow",
+    "LinkedIn post approval workflow",
+    "LinkedIn scheduling",
+    "LinkedIn agency client workspaces",
+    "LinkedIn ghostwriting software",
+    "LinkedIn carousel creator",
+    "LinkedIn comment assistant",
+    "LinkedIn content operations",
   ],
   authors: [{ name: SITE_NAME, url: siteUrl }],
   creator: SITE_NAME,
@@ -80,7 +82,7 @@ export const metadata: Metadata = {
         url: buildOgImageUrl(rootOgTitle, rootOgDescription),
         width: 1200,
         height: 630,
-        alt: "Qalam Career Visibility OS",
+        alt: "Qalam LinkedIn publishing system",
       },
     ],
     locale: "en_US",
@@ -157,7 +159,7 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "Qalam is a career visibility system for LinkedIn positioning, content, ATS resumes, recruiter discovery, and career progression.",
+        "A LinkedIn publishing system with voice memory. Drafting, hooks, carousels, comments, approvals, scheduling, analytics, and isolated client workspaces, with supporting career and ATS resume tools.",
       publisher: { "@id": `${siteUrl}/#organization` },
       offers: PLANS.filter((plan) => plan.quarterlyUsd != null).map((plan) => ({
         "@type": "Offer",

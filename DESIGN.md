@@ -2,7 +2,7 @@
 
 ## Product Position
 
-Qalam is a Career Visibility OS for professionals who want to be found, trusted, and hired.
+Qalam is a LinkedIn publishing system with voice memory, for people who want to be read, trusted, and taken seriously. Career and ATS surfaces are supporting capability, not the headline.
 
 ## Visual Direction
 
@@ -14,8 +14,11 @@ Public pages must connect four engines:
 
 1. LinkedIn Positioning
 2. Content Intelligence
-3. ATS Career Engine
-4. Professional Growth
+3. Professional Growth
+4. ATS Career Engine
+
+Lead with the first two. The ATS engine is real and stays linked, but public pages must not
+present Qalam as a job-hunting utility.
 
 Authenticated product areas must preserve one shared Career Vault across profile audits, content, resumes, job matching, recruiter visibility, cohorts, and add-ons.
 

@@ -85,7 +85,7 @@ export const plans: Plan[] = [
       "Role-aware writing + Qalam LinkedIn extension + 50 smart comments/month",
       "Plan, publish, and schedule on LinkedIn",
       "Post Library + version history",
-      "Basic performance analytics",
+      "Post performance analytics",
       "5 LinkedIn audits + 5 ATS reviews/month",
       "3 targeted resumes/month",
       "1 flexible career credit/quarter",
@@ -108,10 +108,10 @@ export const plans: Plan[] = [
     featureLead: "Everything in Solo, plus",
     features: [
       "60 AI posts + 10 carousels/month",
-      "Trained voice + Push to 90+ improvement",
+      "Saved voice profile + guided draft revisions",
       "AI Strategist + 5 competitor research runs/month",
-      "Full analytics + priority generation",
-      "Approval workflow + PDF export",
+      "Analytics + priority generation",
+      "Optional approval step + PDF export",
       "Qalam LinkedIn extension + 150 smart comments/month",
       "20 LinkedIn positioning audits/month",
       "20 ATS reviews + 10 targeted resumes/month",
@@ -138,11 +138,11 @@ export const plans: Plan[] = [
       "300 posts/month across 5 workspaces",
       "50 carousels/month",
       "Competitor Research (25/month)",
-      "White-label",
+      "Per-workspace accent branding",
       "Team seats",
-      "Approval Workflow",
+      "Optional approval step",
       "Qalam LinkedIn extension + 400 smart comments/month",
-      "Team Analytics",
+      "Per-workspace performance analytics",
       "100 LinkedIn positioning audits/month",
       "100 ATS resume reviews/month",
       "50 targeted resumes/month",
@@ -263,7 +263,7 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
       : plan.name === "Solo"
         ? "Create, plan, and publish a consistent professional presence."
         : plan.name === "Pro"
-          ? "Turn trained voice, data, and career signals into an operating advantage."
+          ? "Turn saved voice context, data, and career signals into an operating advantage."
           : "For teams managing multiple workspaces and approvals.",
   audience: plan.audience,
   featureLead: plan.featureLead,

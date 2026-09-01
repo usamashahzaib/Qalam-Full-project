@@ -110,7 +110,7 @@ export default function AtsResumeBuilderPage() {
             <div className="mt-5 space-y-4 text-sm">
               <Link href="/free-tools/ats-resume-checker" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Free ATS Resume Checker</strong><span className="mt-1 block text-white/70">Get your baseline before rebuilding.</span></Link>
               <Link href="/resume-keyword-match" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Resume Keyword Match</strong><span className="mt-1 block text-white/70">Find accurate language to prioritize.</span></Link>
-              <Link href="/career-visibility" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Career Visibility OS</strong><span className="mt-1 block text-white/70">Align your resume and LinkedIn story.</span></Link>
+              <Link href="/career-visibility" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Career visibility</strong><span className="mt-1 block text-white/70">Align your resume and LinkedIn story.</span></Link>
               <Link href="/pricing" className="block rounded-xl bg-white/10 p-4 hover:bg-white/15"><strong>Compare plans</strong><span className="mt-1 block text-white/70">See generation limits and add-ons.</span></Link>
             </div>
           </aside>

@@ -216,6 +216,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/free-tools/viral-checker", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/free-tools/engagement-predictor", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/partners", priority: 0.84, changeFrequency: "monthly", lastModified: "2026-09-01" },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   ...(AGENCY_PLAN_LIVE
@@ -253,6 +254,7 @@ export const LLM_ROUTES = [
   "/free-tools/viral-checker",
   "/free-tools/engagement-predictor",
   "/about",
+  "/partners",
   "/contact",
   ...(AGENCY_PLAN_LIVE ? ["/agency-setup"] : []),
   "/blog",

@@ -4,7 +4,7 @@ import { CapabilityShowcase } from "@/components/marketing/CapabilityShowcase"
 import { CAPABILITIES, DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
 import { APP_URL, SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
-const title = "Career Visibility OS Features and Product Views"
+const title = "Qalam Features: LinkedIn Publishing, Voice Memory, and Client Workspaces"
 const description = "See how Qalam checks ATS resumes, builds targeted resumes, matches job descriptions, improves LinkedIn profiles, and connects career evidence."
 
 export const metadata: Metadata = buildPageMetadata({
@@ -12,7 +12,7 @@ export const metadata: Metadata = buildPageMetadata({
   description,
   path: "/features",
   keywords: [
-    "Career Visibility OS features",
+    "LinkedIn publishing system features",
     "ATS resume checker features",
     "ATS resume builder",
     "LinkedIn profile optimization",
@@ -71,7 +71,7 @@ export default function FeaturesPage() {
         <div className="mx-auto grid max-w-[1200px] gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Inside Qalam</p>
-            <h1 className="mt-5 text-4xl font-extrabold leading-none tracking-tight text-zinc-900 sm:text-6xl">See the complete career visibility system before you sign in.</h1>
+            <h1 className="mt-5 text-4xl font-extrabold leading-none tracking-tight text-zinc-900 sm:text-6xl">See every product surface before you sign in.</h1>
           </div>
           <div className="border-l-2 border-gold pl-5 sm:pl-7">
             <p className="max-w-[62ch] text-base leading-8 text-zinc-600 sm:text-lg">Qalam connects resume readiness, job fit, LinkedIn positioning, professional content, and career evidence. These product views explain what each workflow evaluates, produces, and keeps connected.</p>

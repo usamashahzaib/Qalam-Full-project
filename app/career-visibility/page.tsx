@@ -5,7 +5,7 @@ import { formatPrice } from "@/lib/pricing"
 import { APP_URL, SITE_URL } from "@/lib/seo"
 
 export const metadata: Metadata = {
-  title: "Career Visibility OS for LinkedIn and ATS Resumes",
+  title: "Career Visibility: LinkedIn Positioning and ATS Resumes",
   description: "Build one credible career story across LinkedIn, content, ATS resumes, recruiter discovery, interview preparation, and career progression with Qalam.",
   alternates: { canonical: `${SITE_URL}/career-visibility` },
 }
@@ -30,7 +30,7 @@ export default function CareerVisibilityPage() {
     <main className="bg-white pt-24">
       <section className="border-b border-zinc-100 bg-[#073f3b] px-6 py-24 text-white">
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Qalam Career Visibility OS</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Qalam career visibility</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight sm:text-6xl">Get found. Build trust. Get shortlisted.</h1>
           <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, applications, and interview story should use the same credible evidence. Qalam connects the complete outcome workflow.</p>
           <div className="mt-8 flex flex-wrap gap-3">

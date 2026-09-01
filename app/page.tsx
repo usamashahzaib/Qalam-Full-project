@@ -1,10 +1,8 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
-import { CareerMomentumPreview } from "@/components/home/CareerMomentumPreview"
-import { CareerSignalMap } from "@/components/home/CareerSignalMap"
+import { VoiceMemoryPanel } from "@/components/home/VoiceMemoryPanel"
 import { FaqAccordion } from "@/components/home/FaqAccordion"
-import { HeroChecker } from "@/components/home/HeroChecker"
 import { HomepageAnalytics, TrackedHomepageLink } from "@/components/home/HomepageAnalytics"
 import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { CheckIcon } from "@/components/ui/qalam-icons"
@@ -14,43 +12,43 @@ import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Qalam | Your Career Visibility Workspace",
-  description: "Turn real experience into a trusted LinkedIn presence, stronger content, ATS resumes, and recruiter-ready proof.",
+  title: "Qalam | LinkedIn Publishing System With Voice Memory",
+  description: "Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies and content teams.",
 }
 
 const workflow = [
   {
     number: "01",
-    title: "Capture the facts",
-    copy: "Start with achievements, source posts, target roles, and the work you can defend in an interview.",
+    title: "Set the position",
+    copy: "Name the audience you are writing for, the pillars you want to be known for, and the work you can actually defend.",
   },
   {
     number: "02",
-    title: "Shape each surface",
-    copy: "Align your profile, audience, and content pillars, then turn the same evidence into LinkedIn content and role-specific resume language.",
+    title: "Write in your voice",
+    copy: "Save the writing you want to sound like, once. Hooks, posts, carousels, and comments then all draft against that same profile, and the most relevant saved examples are pulled into each one.",
   },
   {
     number: "03",
     title: "Review before release",
-    copy: "Edit every claim, approve every draft, and publish only when the result still sounds true to you.",
+    copy: "Edit the claim, route it to a reviewer if the workspace needs one, and schedule it only when the result still sounds true to you.",
   },
 ]
 
 const proofRules = [
   {
+    label: "Voice",
+    title: "It sounds like you or it fails",
+    copy: "Your voice profile is built from writing examples you choose to save. Qalam analyses them into tone and structure, then pulls the most relevant ones into each draft. A feature that lifts output but flattens voice does not ship.",
+  },
+  {
     label: "Accuracy",
     title: "No invented achievements",
-    copy: "The system works from the evidence you provide. It should sharpen a fact, never manufacture one.",
+    copy: "Drafting is grounded in the evidence you supply and every draft requires your review before it goes anywhere. The job is to sharpen a fact you already have, not to fill a gap with something plausible.",
   },
   {
     label: "Control",
     title: "Nothing posts by surprise",
-    copy: "Scheduling and publishing are explicit actions. Drafts stay drafts until you decide otherwise.",
-  },
-  {
-    label: "Continuity",
-    title: "One career record",
-    copy: "Your Career Vault keeps roles, evidence, resumes, and applications connected instead of scattered across prompts.",
+    copy: "Publishing and scheduling are actions you take. A scheduled post goes out at the time you set it, and nothing else leaves the workspace on its own.",
   },
 ]
 
@@ -90,8 +88,8 @@ const faqSchema = {
 const howToSchema = {
   "@context": "https://schema.org",
   "@type": "HowTo",
-  name: "Build an evidence-led career story with Qalam",
-  description: "Capture career facts, shape them for each professional surface, and review every output before release.",
+  name: "Publish on LinkedIn in your own voice with Qalam",
+  description: "Set your positioning, save the writing examples your drafts should sound like, then review and schedule every post yourself.",
   step: workflow.map((step, index) => ({
     "@type": "HowToStep",
     position: index + 1,
@@ -118,13 +116,13 @@ export default function HomePage() {
           <div>
             <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
-              Your career visibility workspace
+              LinkedIn publishing system with voice memory
             </p>
-            <h1 className="mt-7 max-w-[720px] text-[clamp(3.5rem,7.2vw,6.8rem)] font-extrabold leading-[0.92] tracking-[-0.06em] text-teal">
-              Make your real work <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">easy to see and trust.</span>
+            <h1 className="mt-7 max-w-[720px] text-[clamp(3.2rem,6.6vw,6.2rem)] font-extrabold leading-[0.94] tracking-[-0.06em] text-teal">
+              Publish on LinkedIn without <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">sounding like everyone else.</span>
             </h1>
             <p className="mt-7 max-w-[610px] text-lg leading-8 text-zinc-600 sm:text-xl">
-              Qalam turns the experience you already have into a clear LinkedIn presence, credible content, and stronger resumes. One professional story, built from facts you control.
+              Anyone can generate a polished post now, which is exactly why polished stopped working. Qalam drafts from writing examples and professional context you save yourself, so posts, carousels, and comments come back in your register instead of the same flattened AI register as everyone else.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <TrackedHomepageLink
@@ -133,44 +131,55 @@ export default function HomePage() {
                 parameters={{ placement: "hero" }}
                 className="press inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(13,74,69,0.2)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-teal-600 hover:shadow-[0_18px_36px_rgba(13,74,69,0.24)]"
               >
-                Build your proof
+                Start writing in your own voice
               </TrackedHomepageLink>
-              <Link href="#workflow" className="press inline-flex min-h-12 items-center justify-center rounded-xl border border-teal/20 bg-white/70 px-7 py-3.5 text-sm font-bold text-teal transition-colors hover:border-teal/40 hover:bg-white">
-                See how it works
+              <Link href="/demo" className="press inline-flex min-h-12 items-center justify-center rounded-xl border border-teal/20 bg-white/70 px-7 py-3.5 text-sm font-bold text-teal transition-colors hover:border-teal/40 hover:bg-white">
+                Open the interactive demo
               </Link>
             </div>
             <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-xs font-semibold text-teal/75">
-              <li>No payment card</li>
-              <li>No automatic posting</li>
-              <li>No invented experience</li>
+              <li>Free plan, no payment card</li>
+              <li>Nothing publishes until you send or schedule it</li>
+              <li>Every draft goes through your review</li>
             </ul>
 
-            <dl className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-5 border-t border-teal/12 pt-7 sm:gap-x-10">
-              {[
-                { value: "1,000+", label: "Resumes checked with the free ATS tool" },
-                { value: "3", label: "Career surfaces shaped from one fact" },
-                { value: "0", label: "Achievements ever invented" },
-              ].map((stat) => (
-                <div key={stat.label} className="min-w-[7rem]">
-                  <dd className="font-cormorant text-4xl font-semibold leading-none tracking-tight text-gold-700 tabular-nums sm:text-[2.75rem]">
-                    {stat.value}
-                  </dd>
-                  <dt className="mt-2 max-w-[15ch] text-xs font-semibold leading-5 text-teal/70">{stat.label}</dt>
-                </div>
-              ))}
-            </dl>
+            <div className="mt-9 border-t border-teal/12 pt-7">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal/70">Check the product before you trust the page</p>
+              <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-3 text-sm font-bold text-teal">
+                <li>
+                  <Link href="/demo" className="inline-flex min-h-11 items-center underline decoration-gold decoration-2 underline-offset-4">
+                    Interactive demo
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/changelog" className="inline-flex min-h-11 items-center underline decoration-gold decoration-2 underline-offset-4">
+                    Public changelog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/pricing" className="inline-flex min-h-11 items-center underline decoration-gold decoration-2 underline-offset-4">
+                    Exact plan limits
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/status" className="inline-flex min-h-11 items-center underline decoration-gold decoration-2 underline-offset-4">
+                    System status
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <CareerSignalMap />
+          <VoiceMemoryPanel />
         </div>
       </section>
 
       <section className="border-y border-teal/10 bg-teal px-6 py-9 text-white">
         <div className="mx-auto grid max-w-[1200px] gap-6 md:grid-cols-3 md:divide-x md:divide-white/15">
           {[
-            ["Know your position", "Keep your profile, target audience, and content focused on the same professional identity."],
-            ["Publish with intent", "Balance authority, personal perspective, and relevant offers instead of posting random topics."],
-            ["Keep trust", "Use only supplied proof, avoid engagement bait, and approve every action yourself."],
+            ["Built on what you saved", "Saved writing examples, professional context, and supplied evidence stay in the workspace and feed every draft, hook, carousel, and comment."],
+            ["Keep the workflow", "Drafts, versions, reviewer approvals, scheduling, and the archive live in one place instead of five tabs and a spreadsheet."],
+            ["Separate the clients", "Agencies and content teams give each client an isolated workspace with its own voice profile, archive, and approval queue."],
           ].map(([title, copy]) => (
             <div key={title} className="md:px-8 first:md:pl-0 last:md:pr-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">{title}</p>
@@ -185,9 +194,9 @@ export default function HomePage() {
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
             <div className="lg:sticky lg:top-28 lg:self-start">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">How Qalam works</p>
-              <h2 className="t-h2 mt-4 max-w-md text-teal">Positioning, proof, and publishing in one place.</h2>
+              <h2 className="t-h2 mt-4 max-w-md text-teal">Three steps, and the second one is the whole point.</h2>
               <p className="t-lead mt-5 max-w-lg text-zinc-600">
-                Generic AI starts from a blank prompt. Qalam starts with your role, audience, voice, content pillars, and the work you can actually defend.
+                The difference is what persists. Your role, audience, saved writing examples, hooks, draft versions, schedule, archive, and post analytics stay in one LinkedIn workspace, so each draft is one step in a body of work rather than a standalone output.
               </p>
             </div>
 
@@ -243,34 +252,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="free-resume-check" className="bg-white px-6 py-24 sm:py-28">
-        <div className="mx-auto grid max-w-[1200px] overflow-hidden rounded-[2rem] border border-teal/12 bg-[#e8f0eb] shadow-[0_24px_70px_rgba(13,74,69,0.09)] lg:grid-cols-[0.78fr_1.22fr]">
-          <div className="flex flex-col justify-center p-7 sm:p-12">
-            {/* Framed as a recurring habit rather than a one-time trial.
-                Applying is the cue this audience already repeats, often weekly
-                during a search, so attaching the check to that moment is what
-                turns a single visit into a returning one - and it is the form
-                the recommendation takes when someone passes it on. */}
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Before you hit apply</p>
-            <h2 className="t-h2 mt-4 text-teal">Run it once for every job you apply to.</h2>
-            <p className="t-body mt-5 text-zinc-600">
-              A resume that cleared one screen can still fail the next, because the next job asks for different evidence. Paste or upload for an immediate structural read. The homepage check is intentionally limited. Open the full checker for the complete review.
-            </p>
-            <TrackedHomepageLink
-              href="/free-tools/ats-resume-checker"
-              event="resume_check_start"
-              parameters={{ placement: "homepage_checker", method: "full_checker_link" }}
-              className="mt-6 inline-flex min-h-11 items-center self-start font-bold text-teal underline decoration-gold decoration-2 underline-offset-4"
-            >
-              Open the full free checker
-            </TrackedHomepageLink>
-          </div>
-          <div className="qlx bg-[#123f3b] p-4 sm:p-8 lg:p-10">
-            <HeroChecker />
-          </div>
-        </div>
-      </section>
-
       <section className="qlx relative overflow-hidden bg-[#102f2d] px-6 py-24 text-white sm:py-28" data-nav-ground="dark">
         <div className="qlx-grain" aria-hidden />
         <div className="relative mx-auto max-w-[1200px]">
@@ -278,10 +259,10 @@ export default function HomePage() {
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">The refusal</p>
               <h2 className="t-h2 mt-4 max-w-lg text-white">
-                Every other AI tool will write you a career you never had.
+                A tool that writes in anybody&rsquo;s voice is writing in nobody&rsquo;s.
               </h2>
               <p className="t-lead mt-5 max-w-lg text-white/65">
-                Qalam will not. Ask it for an achievement you cannot defend and it gives you back the one you can. That single refusal is what makes the rest of it worth using, because a resume only helps you until the interview asks you to prove it.
+                Qalam is built the narrow way instead. Drafting is grounded in the evidence and examples in your workspace, and nothing reaches LinkedIn without you accepting it first. That constraint is the product, because a post only helps you until someone who knows you reads it.
               </p>
             </div>
             <div className="divide-y divide-white/12 border-y border-white/12">
@@ -302,25 +283,25 @@ export default function HomePage() {
       <section className="bg-[#f7f3ea] px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Career Vault</p>
-            <h2 className="t-h2 mt-4 text-teal">The record behind the result.</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">The archive</p>
+            <h2 className="t-h2 mt-4 text-teal">One idea, kept. Every format after that is a shorter job.</h2>
             <p className="t-lead mt-5 text-zinc-600">
-              Store the roles, achievements, resumes, applications, and writing examples that make your professional story defensible over time.
+              A point you have already made well is the most underused asset in publishing. Qalam keeps the evidence, the draft, the version history, and the hooks that worked in one searchable place, so the next format starts from something rather than nothing.
             </p>
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-12">
             <div className="panel-raised p-7 md:col-span-5 sm:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Evidence record</p>
               <blockquote className="mt-5 font-cormorant text-3xl font-semibold leading-tight text-zinc-900">
-                “Reduced project review time by 61% while keeping clear owners for every action.”
+                &ldquo;Reduced project review time by 61% while keeping clear owners for every action.&rdquo;
               </blockquote>
-              <p className="mt-6 text-xs leading-5 text-zinc-500">Source, context, metric, and your approval stay attached to the record.</p>
+              <p className="mt-6 text-xs leading-5 text-zinc-500">Source, context, and metric stay attached to the record, so the claim can be checked later rather than remembered vaguely.</p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2 md:col-span-7">
               {[
-                ["Resume variant", "Adapt the evidence to a specific job description without changing the underlying fact."],
-                ["LinkedIn draft", "Turn the same lesson into a useful point of view in your chosen voice profile."],
-                ["Application trail", "Track where the evidence was used and what happened next."],
+                ["LinkedIn post", "Turn the same lesson into a point of view, drafted through your voice profile."],
+                ["Carousel", "Break the same argument into slides, drawing on the draft and evidence already in the archive."],
+                ["Targeted resume", "Aim the identical evidence at a job description when you need it. Supporting capability, not the main event."],
               ].map(([title, copy], index) => (
                 <div key={title} className={`panel-raised p-7 ${index === 2 ? "sm:col-span-2" : ""}`}>
                   <p className="text-xs font-bold uppercase tracking-[0.15em] text-gold-700">0{index + 1}</p>
@@ -330,34 +311,44 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+          <p className="mt-7 text-sm leading-6 text-zinc-600">
+            Applying for roles as well?{" "}
+            <TrackedHomepageLink
+              href="/free-tools/ats-resume-checker"
+              event="resume_check_start"
+              parameters={{ placement: "homepage_checker", method: "full_checker_link" }}
+              className="inline-flex min-h-11 items-center font-bold text-teal underline decoration-gold decoration-2 underline-offset-4"
+            >
+              The free ATS resume check
+            </TrackedHomepageLink>{" "}
+            reads a resume the way an applicant tracking system does, no account required.
+          </p>
         </div>
       </section>
 
-      <section className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
-        <div className="mx-auto grid max-w-[1200px] items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
+      <section className="border-y border-zinc-200 bg-white px-6 py-20 sm:py-24">
+        <div className="mx-auto grid max-w-[1100px] items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">The part that keeps you going</p>
-            <h2 className="t-h2 mt-4 text-teal">Career momentum you can actually feel.</h2>
-            <p className="t-lead mt-5 max-w-lg text-zinc-600">
-              Qalam scores real progress: proof captured, profile depth, visibility, pipeline, and showing up. One clear number, a weekly streak, and the single next move that lifts it. Small, honest wins that compound.
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Running more than one account</p>
+            <h2 className="t-h2 mt-4 max-w-xl text-teal">Every client in their own voice, not the same one.</h2>
+            <p className="t-lead mt-5 max-w-xl text-zinc-600">
+              Agencies, ghostwriters, and content teams give each client a separate workspace with its own voice profile, archive, and analytics. Invite the client as a reviewer and use the approval step when an account needs one, then schedule from the same workspace.
             </p>
-            <ul className="mt-7 space-y-3">
-              {[
-                ["A score you can move", "Every documented achievement and published post nudges it up. No vanity metrics."],
-                ["A streak worth keeping", "Show up, capture one proof, keep the week alive. Consistency is the whole game."],
-                ["One next action", "Never a blank page. Qalam always names the highest-leverage thing to do today."],
-              ].map(([title, copy]) => (
-                <li key={title} className="flex gap-3">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-gold" aria-hidden />
-                  <span className="text-sm leading-6 text-zinc-600">
-                    <span className="font-bold text-zinc-900">{title}. </span>
-                    {copy}
-                  </span>
-                </li>
-              ))}
-            </ul>
           </div>
-          <CareerMomentumPreview />
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
+            <Link
+              href="/partners"
+              className="press inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(13,74,69,0.2)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-teal-600"
+            >
+              See partnership paths
+            </Link>
+            <Link
+              href="/product/agency-workspaces"
+              className="press inline-flex min-h-12 items-center justify-center rounded-xl border border-teal/20 bg-white px-7 py-3.5 text-sm font-bold text-teal transition-colors hover:border-teal/40 hover:bg-teal/5"
+            >
+              How client workspaces work
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -427,17 +418,17 @@ export default function HomePage() {
       <section className="qlx relative overflow-hidden bg-[#102f2d] px-6 py-20 text-white" data-nav-ground="dark">
         <div className="qlx-grain" aria-hidden />
         <div className="relative mx-auto flex max-w-[1000px] flex-col items-center text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Your experience already happened</p>
-          <h2 className="mt-5 max-w-4xl text-[clamp(2.4rem,5vw,4.7rem)] font-extrabold leading-[1] tracking-[-0.045em] text-white">Make it easier to see, trust, and remember.</h2>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">You already know what you think</p>
+          <h2 className="mt-5 max-w-4xl text-[clamp(2.4rem,5vw,4.7rem)] font-extrabold leading-[1] tracking-[-0.045em] text-white">Now publish it without losing the way you say it.</h2>
           <TrackedHomepageLink
             href={resolvePublicHref("/signup")}
             event="homepage_primary_cta_click"
             parameters={{ placement: "final_cta" }}
             className="qlx-champagne-btn mt-8 inline-flex min-h-12 items-center justify-center rounded-xl px-8 text-sm font-bold"
           >
-            Build your proof
+            Start writing in your own voice
           </TrackedHomepageLink>
-          <p className="mt-4 text-xs text-white/50">Free to start. No payment card required.</p>
+          <p className="mt-4 text-xs text-white/50">Free plan, no payment card required.</p>
         </div>
       </section>
     </>

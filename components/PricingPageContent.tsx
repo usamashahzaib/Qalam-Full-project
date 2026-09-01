@@ -32,7 +32,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, 1 flexible career credit per quarter, publishing, and basic analytics. Pro adds 10 resumes, 3 career credits per quarter, advanced outcome intelligence, featured recruiter visibility, cohorts, trained voice, research, and full analytics.",
+    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, 1 flexible career credit per quarter, publishing, and basic analytics. Pro adds 10 resumes, 3 career credits per quarter, advanced outcome intelligence, featured recruiter visibility, cohorts, a configurable voice profile, research, and post performance analytics. Performance figures sync from LinkedIn for posts published through a connected Qalam account, and can be entered manually for anything published elsewhere.",
   },
   {
     q: "Can I cancel anytime?",
@@ -40,7 +40,7 @@ const PRICING_FAQ = [
   },
   {
     q: "Which plan should I choose?",
-    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows. Choose Agency if you manage multiple LinkedIn clients and need isolated workspaces, team seats, and approval workflows.",
+    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows. Choose Agency if you manage multiple LinkedIn clients and need isolated workspaces, team seats, and an optional approval step.",
   },
   {
     q: "Is the Qalam LinkedIn extension included?",
@@ -52,7 +52,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What is the Agency plan?",
-    a: "Agency is for teams managing multiple LinkedIn clients. It includes 5 isolated workspaces, 5 trained voice profiles, 300 posts per month, 50 carousels, approval workflows, team analytics, and dedicated support. Apply through the Agency application form and we activate your workspaces after review.",
+    a: "Agency is for teams managing multiple LinkedIn clients. It includes 5 isolated workspaces, 5 configurable voice profiles, 300 posts per month, 50 carousels, an optional approval step, per-workspace performance analytics, and dedicated support. Apply through the Agency application form and we activate your workspaces after review.",
   },
   {
     q: "How does Refer and Earn work?",
@@ -263,7 +263,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             {[
               {
                 icon: VoiceIcon,
-                label: "Trained voice on Pro",
+                label: "Configurable voice profile on Pro",
                 sub: "Your examples, tone, and editing patterns become reusable writing context",
               },
               {

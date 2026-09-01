@@ -66,7 +66,7 @@ export default async function ManagedApplyPage({
                   <p className="mt-1 text-2xl font-bold text-zinc-900">$19<span className="text-sm font-medium text-zinc-500">/month</span></p>
                   <p className="mt-1 text-xs font-semibold text-emerald-700">$38 quarterly - 1 month free</p>
                   <ul className="mt-4 space-y-1.5 text-xs text-zinc-600">
-                    {["5 client workspaces", "5 seats and trained voices", "300 posts and 50 carousels/month", "Approvals, publishing, and team analytics", "20 JD-matched resumes/month"].map((item) => <li key={item}>- {item}</li>)}
+                    {["5 client workspaces", "5 seats and configurable voice profiles", "300 posts and 50 carousels/month", "Optional approvals, publishing, and per-workspace analytics", "20 JD-matched resumes/month"].map((item) => <li key={item}>- {item}</li>)}
                   </ul>
                 </div>
               )}

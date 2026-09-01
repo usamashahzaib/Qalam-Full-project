@@ -23,8 +23,8 @@ const PLAN_OPTIONS: WorkspaceBilling["plan"][] = ["Free", "Solo", "Pro"]
 const PLAN_DESC: Record<WorkspaceBilling["plan"], string> = {
   Free: "5 posts, 1 carousel, Career Vault, core career checks",
   Solo: "30 posts, publishing workflow, library, basic analytics",
-  Pro: "60 posts, trained voice, strategist, research, full analytics",
-  Agency: "5 workspaces, 5 seats, approvals, team analytics",
+  Pro: "60 posts, configurable voice profile, strategist, research, post performance analytics",
+  Agency: "5 workspaces, 5 seats, optional approvals, per-workspace analytics",
 }
 
 export default function SettingsPage() {

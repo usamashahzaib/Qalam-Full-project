@@ -29,11 +29,23 @@ describe("service listings are A-Z", () => {
     ["app/free-tools/page.tsx", "const TOOLS = alphabetical("],
     ["components/Navbar.tsx", "const PRODUCT_LINKS = alphabetical("],
     ["components/Navbar.tsx", "const USE_CASE_LINKS = alphabetical("],
-    ["components/Footer.tsx", "Product: alphabetical("],
+    ["components/Footer.tsx", '"Career and ATS": alphabetical('],
     ["components/Footer.tsx", '"Use Cases": alphabetical('],
   ])("%s applies alphabetical to %s", (file, marker) => {
     const src = readFileSync(resolve(__dirname, "..", file), "utf-8")
     expect(src).toContain(marker)
+  })
+
+  // The footer Product group is deliberately NOT alphabetical. It is ordered by
+  // the positioning hierarchy: publishing surfaces first, LinkedIn optimizer
+  // last. Career and ATS links live in their own group. This assertion exists so
+  // the ordering cannot be "fixed" back to A-Z without a deliberate decision.
+  it("keeps the footer Product group in positioning order, not A-Z", () => {
+    const src = readFileSync(resolve(__dirname, "..", "components/Footer.tsx"), "utf-8")
+    expect(src).toContain("Grouped by the positioning hierarchy")
+    expect(src).not.toContain("Product: alphabetical(")
+    const group = src.slice(src.indexOf("Product: ["), src.indexOf('"Career and ATS"'))
+    expect(group.indexOf("Content Studio")).toBeLessThan(group.indexOf("LinkedIn Optimizer"))
   })
 
   it("keeps managed packages A-Z, which also preserves cheapest-first pricing", () => {

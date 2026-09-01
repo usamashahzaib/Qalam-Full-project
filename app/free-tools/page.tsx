@@ -218,7 +218,7 @@ export default function FreeToolsPage() {
                   Explore the full <span className="text-gold-200">Qalam platform</span>
                 </h2>
                 <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
-                  60 posts a month, trained Voice Profile, scheduler, and performance
+                  60 posts a month, configurable Voice Profile, scheduler, and performance
                   review. Pro starts at $9/month, billed quarterly.
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">

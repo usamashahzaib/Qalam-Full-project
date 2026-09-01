@@ -6,43 +6,55 @@ import { alphabetical } from "@/lib/sort"
 
 const byLabel = (link: { label: string }) => link.label
 
+// Grouped by the positioning hierarchy rather than one flat product list.
+// Career and ATS surfaces keep their links and internal equity, but they no
+// longer sit above the publishing product in the footer's reading order.
 const FOOTER_LINKS = {
-  Product: alphabetical([
+  Product: [
     { label: "All Features", href: "/features" },
-    { label: "Career Visibility", href: "/career-visibility" },
-    { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
-    { label: "LinkedIn Extension", href: "/linkedin-extension" },
     { label: "Content Studio", href: "/product/post-writer" },
+    { label: "Voice Profile", href: "/product/voice-profile" },
+    { label: "Hook Generator", href: "/product/hook-generator" },
+    { label: "Comment Generator", href: "/product/comment-generator" },
+    { label: "Post Scheduler", href: "/product/post-scheduler" },
+    { label: "LinkedIn Extension", href: "/linkedin-extension" },
+    { label: "Agency Workspaces", href: "/product/agency-workspaces" },
+    { label: "LinkedIn Optimizer", href: "/linkedin-optimization" },
+  ],
+  "Career and ATS": alphabetical([
     { label: "ATS Resume Builder", href: "/ats-resume-builder" },
+    { label: "ATS Resume Score", href: "/ats-resume-score" },
     { label: "ATS Scoring Methodology", href: "/methodology/ats-resume-readiness" },
+    { label: "Career Visibility", href: "/career-visibility" },
+    { label: "Free ATS Resume Checker", href: "/free-tools/ats-resume-checker" },
     { label: "Job Description Match", href: "/job-description-match" },
-    { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
+    { label: "Resume Keyword Match", href: "/resume-keyword-match" },
   ], byLabel),
   "Use Cases": alphabetical([
     { label: "All Industries", href: "/industries" },
-    { label: "Job Seekers", href: "/use-cases/job-seekers" },
-    { label: "Recruiters", href: "/use-cases/recruiters" },
-    { label: "Career Coaches", href: "/use-cases/career-coaches" },
-    { label: "Universities", href: "/use-cases/universities" },
-    { label: "Founders", href: "/use-cases/founders" },
-    { label: "Marketing Teams", href: "/use-cases/marketing-teams" },
-    { label: "HR Leaders", href: "/use-cases/hr-leaders" },
-    { label: "Consultants", href: "/use-cases/consultants" },
     { label: "Agencies", href: "/use-cases/agencies" },
+    { label: "Career Coaches", href: "/use-cases/career-coaches" },
+    { label: "Consultants", href: "/use-cases/consultants" },
+    { label: "Founders", href: "/use-cases/founders" },
+    { label: "HR Leaders", href: "/use-cases/hr-leaders" },
+    { label: "Job Seekers", href: "/use-cases/job-seekers" },
+    { label: "Marketing Teams", href: "/use-cases/marketing-teams" },
+    { label: "Recruiters", href: "/use-cases/recruiters" },
+    { label: "Universities", href: "/use-cases/universities" },
   ], byLabel),
   Resources: [
-    { label: "Free ATS Resume Checker", href: "/free-tools/ats-resume-checker" },
-    { label: "ATS Resume Score", href: "/ats-resume-score" },
-    { label: "Resume Keyword Match", href: "/resume-keyword-match" },
-    { label: "LinkedIn Headline Examples", href: "/linkedin-headline-examples" },
-    { label: "Documentation", href: "/docs" },
-    { label: "Blog", href: "/blog" },
     { label: "Free Tools", href: "/free-tools" },
+    { label: "Interactive Demo", href: "/demo" },
+    { label: "Documentation", href: "/docs" },
+    { label: "Scoring Methodology", href: "/methodology/linkedin-authority-score" },
+    { label: "LinkedIn Headline Examples", href: "/linkedin-headline-examples" },
+    { label: "Blog", href: "/blog" },
     { label: "Changelog", href: "/changelog" },
     { label: "System Status", href: "/status" },
   ],
   Company: [
     { label: "About", href: "/about" },
+    { label: "Partnerships", href: "/partners" },
     { label: "Pricing", href: "/pricing" },
     { label: "Careers", href: "/careers" },
     { label: "Contact", href: "/contact" },
@@ -71,7 +83,7 @@ export function Footer() {
   return (
     <footer data-nav-ground="dark" className="qlx qlx-surface border-t border-white/10">
       <div className="mx-auto max-w-[1200px] px-6 py-16">
-        <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="mb-12 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-3 lg:grid-cols-7">
           <div className="sm:col-span-3 lg:col-span-1">
             <QalamLogo
               href="/"
@@ -80,7 +92,7 @@ export function Footer() {
               textClassName="text-lg font-bold text-white"
             />
             <p className="mb-5 text-sm leading-relaxed text-white/55">
-              The Career Visibility OS for professionals who want to be found, trusted, and shortlisted.
+              A LinkedIn publishing system with voice memory. Draft, review, approve, and schedule from writing examples you save.
             </p>
             <div className="flex gap-2">
               <SocialLink href="https://www.instagram.com/withqalam" label="Instagram">

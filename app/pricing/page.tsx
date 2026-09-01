@@ -88,7 +88,7 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, three flexible career credits per quarter, content intelligence, analytics, and approval workflows.`,
+        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, three flexible career credits per quarter, content intelligence, post performance analytics, and an optional approval step.`,
       },
     },
     {
@@ -113,7 +113,7 @@ const pricingFaqSchema = {
           name: "Is Qalam useful for agencies?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: `Agency is ${agencyPrice} per quarter. It includes 5 isolated client workspaces, 5 trained voice profiles, team collaboration, analytics, and approval workflows.`,
+            text: `Agency is ${agencyPrice} per quarter. It includes 5 isolated client workspaces, 5 configurable voice profiles, team collaboration, per-workspace performance analytics, and an optional approval step.`,
           },
         }]
       : []),
@@ -124,7 +124,7 @@ const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Qalam",
-  description: "Career visibility system with saved voice context, career evidence, ATS resumes, LinkedIn workflows, and approvals.",
+  description: "Exact monthly limits for every Qalam plan. LinkedIn drafting, voice profiles, carousels, comments, approvals, scheduling, and client workspaces.",
   image: `${SITE_URL}/icon.png`,
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },

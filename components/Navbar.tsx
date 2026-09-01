@@ -21,22 +21,23 @@ const PRODUCT_LINKS = alphabetical([
   ...(AGENCY_PLAN_LIVE ? [{ label: "Agency Workspaces", href: "/product/agency-workspaces", desc: "Isolated client workspaces with approvals and team seats" }] : []),
 ], (link) => link.label)
 
+// Trimmed to the audiences Qalam is actually positioned for. Universities,
+// recruiters, and job seekers still have live pages for search, but promoting
+// them here read as a job-hunting utility and blunted the publishing story.
 const USE_CASE_LINKS = alphabetical([
   { label: "All Industries", href: "/industries", desc: "Find the Qalam workflow for your work" },
-  { label: "Job Seekers", href: "/use-cases/job-seekers", desc: "ATS resumes, job matching, and LinkedIn positioning" },
-  { label: "Recruiters", href: "/use-cases/recruiters", desc: "Evidence-first review and recruiting authority" },
-  { label: "Career Coaches", href: "/use-cases/career-coaches", desc: "Repeatable client diagnostics and career assets" },
-  { label: "Universities", href: "/use-cases/universities", desc: "Scalable student career readiness" },
-  { label: "Founders", href: "/use-cases/founders", desc: "Consistent thought leadership without a ghostwriter" },
-  { label: "Marketing Teams", href: "/use-cases/marketing-teams", desc: "Shared workflow, consistent brand voice" },
-  { label: "HR Leaders", href: "/use-cases/hr-leaders", desc: "Employer brand and culture publishing" },
-  { label: "Consultants", href: "/use-cases/consultants", desc: "Frameworks and expertise that compounds" },
   { label: "Agencies", href: "/use-cases/agencies", desc: "Multi-client content operations at scale" },
+  { label: "Career Coaches", href: "/use-cases/career-coaches", desc: "Repeatable client diagnostics and career assets" },
+  { label: "Consultants", href: "/use-cases/consultants", desc: "Frameworks and expertise that compounds" },
+  { label: "Founders", href: "/use-cases/founders", desc: "Consistent thought leadership without a ghostwriter" },
+  { label: "HR Leaders", href: "/use-cases/hr-leaders", desc: "Employer brand and culture publishing" },
+  { label: "Job Seekers", href: "/use-cases/job-seekers", desc: "ATS resumes, job matching, and LinkedIn positioning" },
+  { label: "Marketing Teams", href: "/use-cases/marketing-teams", desc: "Shared workflow, consistent brand voice" },
 ], (link) => link.label)
 
 const STATIC_LINKS = [
-  { label: "Free ATS Check", href: "/free-tools/ats-resume-checker" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Partners", href: "/partners" },
   { label: "Free Tools", href: "/free-tools" },
   { label: "Blog", href: "/blog" },
 ]
@@ -320,10 +321,10 @@ export function Navbar() {
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
               <span className="truncate">
-                <strong>Free:</strong> <span className="hidden sm:inline">Check your resume like an ATS and recruiter</span><span className="sm:hidden">ATS resume check</span>
+                <strong>Free:</strong> <span className="hidden sm:inline">Hooks, carousels, comments, and a resume check. No account needed</span><span className="sm:hidden">LinkedIn tools</span>
               </span>
               <Link
-                href="/free-tools/ats-resume-checker"
+                href="/free-tools"
                 className="inline-flex min-h-11 shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
                 Check now <ChevronRightIcon className="h-3.5 w-3.5" />

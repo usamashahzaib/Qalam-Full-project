@@ -114,7 +114,7 @@ export default function UpgradePage() {
           <span className="rounded-full bg-teal px-2.5 py-1 t-eyebrowr text-white">For teams</span>
           <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - $19/month</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
-            $38 billed quarterly. Includes 5 client workspaces, 5 seats, trained voices, approvals, publishing, and team analytics.
+            $38 billed quarterly. Includes 5 client workspaces, 5 seats, configurable voice profiles, an optional approval step, publishing, and per-workspace performance analytics.
           </p>
           <Link href="/managed/apply?plan=Agency&type=company" className="mt-4 inline-flex rounded-xl bg-teal px-5 py-2.5 text-sm font-bold text-white hover:bg-teal-600">Apply for Agency</Link>
         </section>

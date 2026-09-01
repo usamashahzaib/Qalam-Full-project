@@ -36,8 +36,8 @@ const HEADLINES: Record<"Solo" | "Pro", { title: string; sub: string }> = {
     sub: "30 posts, 3 carousels, scheduling, planner, and library.",
   },
   Pro: {
-    title: "Choose Pro and let Qalam learn your voice",
-    sub: "60 posts, 10 carousels, voice training, AI Strategist, competitor research.",
+    title: "Choose Pro and configure your voice profile",
+    sub: "60 posts, 10 carousels, saved voice context, AI Strategist, competitor research.",
   },
 }
 

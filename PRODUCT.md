@@ -6,11 +6,11 @@ product
 
 ## Users
 
-Professionals, job seekers, founders, consultants, operators, agencies, and HR leaders building market visibility and career leverage. They need one accurate professional story across LinkedIn, content, and job applications.
+Primary: people who build authority on LinkedIn for a living or for leverage. Founders, consultants, operators, coaches, ghostwriters, and agencies running client rosters. Secondary: professionals who also need the same evidence aimed at a job application. The secondary audience is served, not led with.
 
 ## Product Purpose
 
-Qalam is a Career Visibility OS. It combines LinkedIn positioning, voice-aware content, ATS resume targeting, and career progression in one workflow. A shared Career Vault keeps every output accurate and consistent. Success means stronger recruiter discovery, credible authority, better-fit applications, and measurable career progress.
+Qalam is a LinkedIn publishing system with memory. Anyone can generate a polished post now, so polished stopped being the differentiator. Qalam drafts from writing the user has already approved and facts they actually supplied, so the output still reads as them. Positioning, voice, content, and publishing sit in one workflow, with ATS resume targeting attached to the same Career Vault rather than framed as the headline. Success means credible authority the user is willing to put their name on.
 
 ## Brand Personality
 

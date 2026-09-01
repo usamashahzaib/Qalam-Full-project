@@ -469,7 +469,7 @@ export default async function StatsPage() {
           <UsageChart usage={usage} />
           {planNorm === "solo" && (
             <p className="-mt-4 text-center text-xs text-zinc-400">
-              Upgrade to Pro for advanced analytics and competitor insights.{" "}
+              Upgrade to Pro for post performance analytics and competitor research.{" "}
               <Link href={"/upgrade"} className="font-semibold text-teal underline">
                 Learn more
               </Link>

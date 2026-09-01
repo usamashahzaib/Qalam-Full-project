@@ -512,7 +512,7 @@ export function CarouselBuilderTool() {
               <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal-200">Want AI-written carousel content?</p>
               <h2 className="mb-2 text-2xl font-bold text-white">Generate full carousel decks from a single post.</h2>
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
-                Qalam AI builds the slides, you refine and export. Voice-matched, on-brand, every time.
+                Qalam AI builds the slides from your inputs. You refine, review, and export.
               </p>
               <Link
                 href={`${APP_URL}/login`}

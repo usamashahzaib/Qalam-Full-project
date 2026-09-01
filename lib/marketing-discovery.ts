@@ -18,7 +18,7 @@ export type Capability = {
   availability: string
 }
 
-export const CAPABILITIES: Capability[] = [
+const CAPABILITY_DEFINITIONS: Capability[] = [
   {
     key: "ats-checker",
     label: "ATS Resume Check",
@@ -87,9 +87,9 @@ export const CAPABILITIES: Capability[] = [
     key: "content-studio",
     label: "Content Studio",
     eyebrow: "LinkedIn authority",
-    title: "Turn career evidence into content that sounds like you",
+    title: "Turn career evidence into content grounded in your voice profile",
     description:
-      "Draft, score, revise, save, schedule, and analyze LinkedIn posts using your voice profile and professional context instead of an isolated prompt box.",
+      "Draft, score, revise, save, schedule, and analyze LinkedIn posts in one workspace, with your voice profile, professional context, hooks, and version history attached to every draft.",
     benefits: [
       "Voice-aware post and hook generation",
       "Carousels, comments, versions, and scheduling",
@@ -112,7 +112,7 @@ export const CAPABILITIES: Capability[] = [
       "Optional one-time career add-ons",
     ],
     href: "/career-visibility",
-    cta: "Explore Career Visibility OS",
+    cta: "Explore career visibility",
     availability: "Core platform",
   },
 ]
@@ -126,6 +126,23 @@ export type Industry = {
   qalamFit: string
   workflows: string[]
 }
+
+// Ordered by the positioning hierarchy, not by when each was built. This single
+// order drives the /features ItemList schema, llms.txt, llms-full.txt, and the
+// default tab in CapabilityShowcase, so publishing surfaces lead everywhere at
+// once and the ATS engine reads as supporting capability.
+const CAPABILITY_ORDER: CapabilityKey[] = [
+  "content-studio",
+  "linkedin-optimizer",
+  "career-hub",
+  "ats-checker",
+  "resume-builder",
+  "jd-match",
+]
+
+export const CAPABILITIES: Capability[] = CAPABILITY_ORDER.map(
+  (key) => CAPABILITY_DEFINITIONS.find((capability) => capability.key === key)!
+)
 
 export const INDUSTRIES: Industry[] = [
   {

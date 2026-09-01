@@ -94,7 +94,7 @@ export default function SignupPage() {
       points={[
         "Start free with no payment card.",
         "Keep every draft and career asset under your control.",
-        "Qalam never invents experience or posts automatically.",
+        "Qalam is instructed to use supplied experience only, and you review what gets published.",
       ]}
     >
         <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">

@@ -40,7 +40,15 @@ const contactPageSchema = {
   },
 }
 
-export default function ContactPage() {
+// The topic param lets inbound links (notably /partners) name the reason for
+// writing so the subject field arrives filled in. Read on the server so the
+// form stays a plain client component with no suspense boundary to manage.
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topic?: string }>
+}) {
+  const { topic } = await searchParams
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(contactPageSchema).replace(/</g, "\\u003c") }} />
@@ -87,7 +95,7 @@ export default function ContactPage() {
               </div>
             </FadeUp>
             <FadeUp delay={0.06}>
-              <ContactForm />
+              <ContactForm topic={topic} />
             </FadeUp>
           </div>
         </div>

@@ -33,7 +33,7 @@ const breadcrumbSchema = buildBreadcrumbSchema([
 const howToSchema = buildHowToSchema({
   name: "How to write LinkedIn posts with AI using Qalam",
   description:
-    "A 4-step workflow for using an AI LinkedIn writer that learns your voice and creates posts that sound authentically like you.",
+    "A 4-step workflow for using an AI LinkedIn writer with source material, a configurable voice profile, and final human review.",
   steps: [
     {
       name: "Set up your voice profile",
@@ -65,11 +65,11 @@ const FAQS = [
   },
   {
     q: "Can AI write LinkedIn posts that sound like me?",
-    a: "A trained voice profile can make drafts more consistent with your examples, tone, and professional context. You still review every draft, and Qalam does not claim that generated text is indistinguishable from your own writing.",
+    a: "A configurable voice profile can make drafts more consistent with your saved examples, tone, and professional context. You still review every draft, and Qalam does not claim that generated text is indistinguishable from your own writing.",
   },
   {
     q: "Is Qalam better than ChatGPT for LinkedIn writing?",
-    a: "Qalam keeps your voice profile, draft history, hook archive, and publishing context in one LinkedIn-specific workflow instead of treating every prompt as a separate task.",
+    a: "Qalam keeps your voice profile, draft history, hook archive, scheduling, and post analytics in one LinkedIn-specific workflow, so each draft stays connected to the material and the publishing decisions around it.",
   },
   {
     q: "Does Qalam work for founders, consultants, and agencies?",
@@ -206,7 +206,7 @@ export default function AiLinkedInWriterPage() {
                 </p>
                 <p>
                   <strong>Qalam is different.</strong> It is an AI writing system built specifically for LinkedIn, with a
-                  core feature called <em>voice memory</em>. Instead of starting from scratch every session, Qalam
+                  core feature called <em>voice memory</em>. Working from the examples you have saved, Qalam
                   uses the writing examples you explicitly save as a reusable voice profile.
                 </p>
                 <p>
@@ -248,7 +248,7 @@ export default function AiLinkedInWriterPage() {
             <FadeUp className="mb-14 text-center">
               <h2 className="mb-4 text-4xl font-bold text-zinc-900">How Qalam works in 4 steps</h2>
               <p className="mx-auto max-w-2xl text-lg text-zinc-600">
-                From first draft to trained voice - a workflow designed for serious LinkedIn publishers.
+                From source material to reviewed draft - a workflow designed for serious LinkedIn publishers.
               </p>
             </FadeUp>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-4">

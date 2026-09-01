@@ -55,23 +55,23 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
   "voice-profile": {
     eyebrow: "Product",
     title: "Voice Profile",
-    summary: "Train Qalam on your approved writing so the system gets closer to your real tone over time.",
+    summary: "Save writing examples and professional context once, then have every draft, hook, carousel, and comment pull from them.",
     description:
-      "Voice Profile is the memory layer behind the product. It stores examples, edits, and approvals that make future drafts more specific to the writer instead of falling back to generic AI phrasing.",
+      "Voice Profile is the memory layer behind the product. You paste writing you are happy to be judged by, plus your role, industry, and audience. Qalam analyses those samples into tone, sentence length, vocabulary, and structure characteristics, then retrieves the most relevant examples each time it drafts. Updating the profile is a deliberate action, not something that happens silently in the background.",
     bullets: [
-      "Learns from real source posts and edits",
-      "Preserves long-term writing patterns",
-      "Gets more precisely you the longer you use it",
+      "Built from writing examples you choose and save",
+      "Analysed into tone, sentence length, vocabulary, and structure",
+      "Relevant examples retrieved into every draft, not just the first one",
     ],
     updatedAt: "2026-06-26",
     faqs: [
       {
         q: "How does Qalam learn my voice?",
-        a: "It uses your approved writing samples, edits, and kept drafts as source material so future drafts inherit real tone and structure instead of generic prompt output.",
+        a: "You save writing samples and professional context yourself. Qalam analyses those samples into voice characteristics and retrieves the most relevant ones at drafting time, so output inherits real tone and structure instead of generic prompt phrasing. It does not learn silently from your edits or post performance. To change the voice, you update the profile.",
       },
       {
         q: "Will the voice profile improve over time?",
-        a: "Yes. Each accepted draft and meaningful edit becomes part of the memory layer that sharpens future outputs.",
+        a: "Its source profile improves when you add or replace writing examples and sharpen your professional context. That update is deliberate, so Qalam does not silently rewrite the saved profile from edits or performance.",
       },
       {
         q: "Is voice memory useful for teams or agencies too?",
@@ -84,10 +84,10 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
     title: "Hook Generator",
     summary: "Build stronger opening lines, then feed the strongest structures back into your content system.",
     description:
-      "The hook system becomes more valuable when it is connected to your archive. Qalam tracks which openings you keep, which you reject, and which structures you return to most often.",
+      "The hook system becomes more valuable when it is connected to your archive. Openings you keep stay searchable alongside the drafts they belong to, so a structure that worked is easy to find again instead of being regenerated from nothing.",
     bullets: [
       "Pattern-based opening generation",
-      "Reusable hook structures inside the archive",
+      "Saved hooks stay searchable in the archive",
       "Fast entry point into longer post workflows",
     ],
     updatedAt: "2026-06-26",

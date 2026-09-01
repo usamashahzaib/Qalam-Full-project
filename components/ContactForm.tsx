@@ -3,6 +3,15 @@
 import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
+// Inbound links can name the reason for writing, so the subject arrives
+// filled in. /partners is the main caller: a partner who clicked through
+// should not land on a blank field and have to restate why they are here.
+const SUBJECT_PRESETS: Record<string, string> = {
+  partnership: "Partnership enquiry",
+  agency: "Agency workspace enquiry",
+  press: "Press enquiry",
+}
+
 type FormState = "idle" | "loading" | "success" | "error"
 type FieldErrors = { name?: string; email?: string; subject?: string; message?: string }
 
@@ -23,7 +32,8 @@ function validateFields(data: Record<string, string>): FieldErrors {
   return errors
 }
 
-export function ContactForm() {
+export function ContactForm({ topic }: { topic?: string }) {
+  const presetSubject = SUBJECT_PRESETS[topic ?? ""] ?? ""
   const [state, setState] = useState<FormState>("idle")
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
@@ -148,6 +158,7 @@ export function ContactForm() {
                 name="subject"
                 type="text"
                 maxLength={200}
+                defaultValue={presetSubject}
                 placeholder="e.g. Upgrade question, Account help, Bug report"
                 className={fieldErrors.subject ? inputErrorClass : inputClass}
                 disabled={state === "loading"}

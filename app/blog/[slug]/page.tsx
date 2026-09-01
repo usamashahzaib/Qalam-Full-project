@@ -77,6 +77,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": postUrl },
     url: postUrl,
+    ...(post.sources?.length ? { citation: post.sources.map((source) => source.href) } : {}),
   }
 
   const breadcrumbSchema = {
@@ -137,6 +138,28 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
             ))}
           </div>
         </section>
+
+        {post.sources?.length ? (
+          <section className="px-6 pb-16">
+            <div className="mx-auto max-w-[860px] rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
+              <h2 className="mb-4 text-2xl font-bold text-zinc-900">Primary sources</h2>
+              <ul className="space-y-3 text-sm leading-relaxed text-zinc-600">
+                {post.sources.map((source) => (
+                  <li key={source.href}>
+                    <a
+                      className="font-semibold text-teal underline decoration-teal/30 underline-offset-4 hover:decoration-teal"
+                      href={source.href}
+                      rel="noreferrer"
+                      target="_blank"
+                    >
+                      {source.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
 
         {post.faqs.length ? (
           <section className="px-6 pb-16">
