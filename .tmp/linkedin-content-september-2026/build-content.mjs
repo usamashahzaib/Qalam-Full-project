@@ -207,7 +207,7 @@ Which one would you add?
       ["03", "An enterprise job description does not fit a ten-person startup", "The title may match. The actual work rarely does."],
       ["04", "A degree is often used as a shortcut", "For non-regulated work, evidence of ability deserves more weight than access to education."],
       ["05", "A policy that changes by manager is not a policy", "Consistency matters most when the answer is inconvenient."],
-      ["06", "HR cannot repair founder inconsistency", "Leadership has to follow the systems it asks HR to build."],
+      ["HR cannot repair founder inconsistency.", "Leadership has to follow the systems it asks HR to build."],
     ],
   },
 ];

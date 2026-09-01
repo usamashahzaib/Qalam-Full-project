@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const result = await callAi("voice-profile",
       "Return strict JSON only.",
-      `Rewrite and optimize this LinkedIn About section. Preserve truth. Improve positioning, clarity, credibility, and conversion.
+      `Rewrite and optimize this LinkedIn About section. Preserve truth. Never invent credentials, employers, metrics, or experiences. Improve positioning, clarity, credibility, search relevance, and conversion. Align the headline and About section to one target audience and one defensible professional identity. Do not promise reach or claim access to LinkedIn's private ranking systems.
 
 HEADLINE:
 ${parsed.data.headline}

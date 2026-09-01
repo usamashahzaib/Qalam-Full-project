@@ -39,6 +39,9 @@ Statuses: pending, in-progress, awaiting-evidence, done, deferred, skipped.
 | 2026-08-24 | 5 | Use Build your proof as the primary CTA | It is shorter, more ownable, and directly connected to the product mechanism. |
 | 2026-08-24 | 5 | Stop presenting content heuristics as reach predictions | Qalam can review content quality but cannot know future distribution, impressions, or virality. |
 | 2026-08-24 | 8 | Keep voice-profile refinement explicit | Current behavior saves examples only when the user chooses to save them, so marketing now describes that exact behavior. |
+| 2026-09-01 | 5 | Define Qalam as a career visibility workspace | The homepage now explains the product in one sentence before describing individual tools. |
+| 2026-09-01 | 5 | Align profile, audience, content pillars, proof, and publishing intent | Attached strategy and profile evidence showed that random post generation weakens both clarity and trust. |
+| 2026-09-01 | 7 | Use Authority, Personal, and Offer as the visible content system | The three intents make the generation strategy easy to understand and use without presenting algorithm speculation as fact. |
 
 ## 2026-08-24 Upgrade Log
 
@@ -59,3 +62,4 @@ Statuses: pending, in-progress, awaiting-evidence, done, deferred, skipped.
 - [ ] Collect three named, permissioned customer outcome stories (founder)
 - [ ] Run the homepage promise as a bold A-B test after baseline data exists (growth)
 - [ ] Complete contrast automation and semantic color consolidation (design engineering)
+- [ ] Measure saved-draft rate and publish rate by Authority, Personal, and Offer intent (product analytics)

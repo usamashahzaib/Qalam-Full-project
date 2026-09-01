@@ -41,9 +41,10 @@ export async function POST(request: NextRequest) {
     if (!hasOriginalDraft && (!topic || topic.length < 3)) return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     if (!hook) return NextResponse.json({ error: "A hook is required" }, { status: 400 })
 
-    // Only cache generic generations - personalised rewrites are unique per user
+    // Scope fresh generations to the user because Pro output can include saved voice,
+    // audience, content pillars, and professional proof loaded inside the use case.
     const cacheKey = !hasOriginalDraft
-      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || "") })
+      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id })
       : null
     if (cacheKey) {
       const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)

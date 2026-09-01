@@ -263,7 +263,7 @@ export type GenerateRepliesOutput = { replies: Array<{ style: string; reply: str
 export type CtaAlternativesInput = { content: string; role?: string }
 export type CtaAlternativesOutput = { alternatives: string[] }
 
-export type CarouselInput = { topic: string; role?: string }
+export type CarouselInput = { topic: string; role?: string; goal?: string }
 export type CarouselOutput = { slides: SlideItem[] }
 
 export const generateHookAlternatives = (data: HookAlternativesInput) =>

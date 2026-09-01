@@ -22,6 +22,8 @@
 | Homepage color-only CTA test | 2/2/9 | rejected as too small |
 | Branded auth shell with password privacy guardian | 7/6/8 | implemented as new control, measure signup completion |
 | Five-feature homepage pricing summary with full comparison link | 6/6/9 | implemented as new control, measure pricing visits and paid conversion |
+| Career visibility workspace definition plus LinkedIn positioning loop | 8/6/8 | implemented as new control, measure hero CTA and writer activation |
+| Authority, Personal, and Offer intent selector in Writer | 8/7/8 | implemented, measure hook selection and saved-draft rate by intent |
 
 ## ATS CTA measurement note
 

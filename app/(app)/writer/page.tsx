@@ -25,7 +25,7 @@ import { HookCard } from "@/components/writer/HookCard"
 import { WriterScheduleModal } from "@/components/writer/WriterScheduleModal"
 import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
 import { WriterApprovalModal } from "@/components/writer/WriterApprovalModal"
-import { ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORMATS } from "@/components/writer/writer-config"
+import { CONTENT_INTENTS, ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORMATS } from "@/components/writer/writer-config"
 import { QueueOverlay } from "@/components/QueueOverlay"
 
 import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
@@ -66,7 +66,7 @@ export default function WriterPage() {
   })
 
   const {
-    topic, setTopic, role, setRole, format, setFormat, goal, setGoal,
+    topic, setTopic, role, setRole, format, setFormat, contentIntent, setContentIntent, goal, setGoal,
     hooks, selectedHook, setSelectedHook, isGeneratingHooks,
     draftContent, onDraftContentChange, isGeneratingPost,
     versions, editingId, scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, isSaving,
@@ -344,15 +344,34 @@ export default function WriterPage() {
                 </div>
               )}
 
-              {/* Goal */}
+              {/* Content intent */}
               <div className="mb-5">
-                <label className="mb-1.5 block t-eyebrowst text-zinc-400">Goal <span className="font-normal normal-case text-zinc-400">(optional)</span></label>
+                <label className="mb-2 block t-eyebrowst text-zinc-400">Content intent</label>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {CONTENT_INTENTS.map((intent) => {
+                    const selected = contentIntent === intent.value
+                    return (
+                      <button
+                        key={intent.label}
+                        type="button"
+                        onClick={() => setContentIntent(selected ? "" : intent.value)}
+                        aria-pressed={selected}
+                        className={`rounded-xl border px-3 py-2.5 text-left transition-all ${selected ? "border-teal bg-teal/10" : "border-zinc-200 bg-white hover:border-zinc-300"}`}
+                      >
+                        <span className={`block text-xs font-bold ${selected ? "text-teal" : "text-zinc-700"}`}>{intent.label}</span>
+                        <span className="mt-1 block text-[11px] leading-4 text-zinc-500">{intent.description}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <label className="mt-3 block t-eyebrow text-zinc-400">Specific outcome <span className="font-normal normal-case">(optional)</span></label>
                 <input
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
-                  placeholder="e.g. Get DMs from founders"
+                  placeholder="Choose an intent above or describe the result you want"
                   className="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
                 />
+                <p className="mt-2 text-xs leading-5 text-zinc-500">Qalam aligns the draft to your saved audience, content pillars, proof, and voice. It does not promise reach or invent experience.</p>
               </div>
 
               {/* Generate button + counters */}
@@ -957,7 +976,7 @@ export default function WriterPage() {
                 {scores.overall >= 90 ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
                     <p className="text-sm font-bold text-emerald-700">90+ Score Achieved</p>
-                    <p className="mt-0.5 text-xs text-emerald-600">This post is ready to publish. Top 5% of LinkedIn content.</p>
+                    <p className="mt-0.5 text-xs text-emerald-600">Strong across Qalam&apos;s seven transparent quality checks. You still make the final call.</p>
                   </div>
                 ) : canUseProTools ? (
                   <button
@@ -978,7 +997,7 @@ export default function WriterPage() {
                       <p className="t-eyebrow text-zinc-400 mb-1">What changes at 90+</p>
                       <ul className="space-y-0.5 t-eyebrow text-zinc-600">
                         <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Hook rewritten to stop the scroll in the first 2 words</li>
-                        <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Specific numbers and outcomes added where generic now</li>
+                        <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Supplied proof made clearer without adding new claims</li>
                         <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />CTA tightened to a single clear action</li>
                       </ul>
                     </div>

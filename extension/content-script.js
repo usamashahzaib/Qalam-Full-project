@@ -1,6 +1,20 @@
 /* global chrome */
 
 const cleanText = (value) => value.replace(/\s+/g, " ").trim()
+const POST_CARD_SELECTORS = [
+  "article",
+  ".feed-shared-update-v2",
+  '[data-view-name="feed-full-update"]',
+  '[data-view-name="feed-update"]',
+].join(", ")
+const POST_TEXT_SELECTORS = [
+  ".feed-shared-update-v2__description",
+  ".update-components-text",
+  '[data-test-id="main-feed-activity-card__commentary"]',
+].join(", ")
+const getPostText = (post) => cleanText(post.querySelector(POST_TEXT_SELECTORS)?.innerText || post.innerText || "")
+const getPostCards = () => Array.from(document.querySelectorAll(POST_CARD_SELECTORS))
+  .filter((post) => !post.parentElement?.closest(POST_CARD_SELECTORS))
 const showMessage = (panel, message, isError = false) => {
   const notice = panel.querySelector(".qalam-li-message") || document.createElement("p")
   notice.className = "qalam-li-message"
@@ -22,7 +36,8 @@ const showPanel = (article, postText) => {
   const panel = document.createElement("section")
   panel.className = "qalam-li-panel"
   panel.setAttribute("aria-live", "polite")
-  panel.innerHTML = "<strong>Qalam comment assistant</strong><p>Choose a style. Qalam creates three options. Nothing posts automatically.</p>"
+  panel.setAttribute("aria-label", "Qalam comment drafts")
+  panel.innerHTML = "<strong>Draft a comment with Qalam</strong><p>Choose a style to get three drafts for this post. You review the text before anything is posted.</p>"
   ;["insightful", "supportive", "engaging"].forEach((style) => {
     const button = document.createElement("button")
     button.type = "button"
@@ -79,17 +94,18 @@ const showPanel = (article, postText) => {
   panel.appendChild(writer)
   article.appendChild(panel)
 }
-const hydrate = () => document.querySelectorAll("article").forEach((article) => {
+const hydrate = () => getPostCards().forEach((article) => {
   if (article.dataset.qalamReady) return
-  const postText = cleanText(article.innerText || "")
+  const postText = getPostText(article)
   if (postText.length < 40) return
   article.dataset.qalamReady = "true"
   const trigger = document.createElement("button")
   trigger.className = "qalam-li-trigger"
   trigger.type = "button"
-  trigger.textContent = "Generate with Qalam"
+  trigger.textContent = "Draft a comment with Qalam"
+  trigger.setAttribute("aria-label", "Draft a comment with Qalam")
   trigger.addEventListener("click", () => showPanel(article, postText.slice(0, 5000)))
-  const target = article.querySelector(".feed-shared-social-actions, .social-details-social-counts")
+  const target = article.querySelector('.feed-shared-social-actions, [data-view-name="feed-actions"], .social-details-social-counts')
   target?.parentElement ? target.parentElement.appendChild(trigger) : article.appendChild(trigger)
 })
 new MutationObserver(hydrate).observe(document.documentElement, { childList: true, subtree: true })

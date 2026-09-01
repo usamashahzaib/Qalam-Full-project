@@ -1,6 +1,6 @@
 # Qalam for LinkedIn
 
-Qalam for LinkedIn creates selectable comment suggestions with your existing Qalam plan. It never posts comments or posts automatically.
+Qalam for LinkedIn helps you respond thoughtfully while you browse. On a LinkedIn post you choose, it creates three short comment drafts in the style you select. You review one, insert or copy it, and decide whether to publish. It never posts comments automatically.
 
 ## Install
 
@@ -15,8 +15,8 @@ Qalam for LinkedIn creates selectable comment suggestions with your existing Qal
 
 - `storage` keeps the short-lived Qalam connection code in this browser.
 - `tabs` opens Qalam pages only after you choose Connect or Open in Qalam Writer.
-- LinkedIn access adds the Qalam interface to LinkedIn pages after they load.
-- ByQalam access sends visible post text to Qalam only when you choose a comment style.
+- LinkedIn access adds a Generate with Qalam button to supported feed and post cards after they load.
+- ByQalam access sends the visible post text to Qalam only after you select a comment style.
 
 ## Privacy and limits
 

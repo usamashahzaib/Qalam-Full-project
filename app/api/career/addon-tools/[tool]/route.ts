@@ -36,9 +36,9 @@ Return {"summary":"clear recruiter verdict","score":0,"sections":[{"title":"Six-
   },
   linkedin_rewrite: {
     system: "You are a senior LinkedIn positioning strategist. Preserve truth. Never invent credentials, employers, outcomes, or metrics. Return strict JSON only.",
-    task: `Rewrite the complete LinkedIn profile around one credible market position. Include multiple headline options, a ready-to-use About section, experience bullet rewrites, a skills and keyword map, Featured section recommendations, and a final quality checklist.
+    task: `Rewrite the complete LinkedIn profile around one credible market position. Align the headline, About section, experience, skills, target audience, and future content themes to the same professional identity. Include multiple headline options, a ready-to-use About section, experience bullet rewrites, a skills and keyword map, Featured section recommendations, three evidence-supported content pillars, and a final quality checklist. Do not promise reach or use engagement-bait tactics.
 
-Return {"summary":"market position","score":0,"sections":[{"title":"Headline options","items":[""]},{"title":"About section","items":[""]},{"title":"Experience rewrites","items":[""]},{"title":"Skills and keyword map","items":[""]},{"title":"Featured section plan","items":[""]},{"title":"Final checklist","items":[""]}]}`,
+Return {"summary":"market position","score":0,"sections":[{"title":"Headline options","items":[""]},{"title":"About section","items":[""]},{"title":"Experience rewrites","items":[""]},{"title":"Skills and keyword map","items":[""]},{"title":"Featured section plan","items":[""]},{"title":"Content pillars","items":[""]},{"title":"Final checklist","items":[""]}]}`,
   },
   career_blueprint: {
     system: "You are a pragmatic career strategist. Preserve truth. Do not promise interviews, promotions, or job offers. Return strict JSON only.",

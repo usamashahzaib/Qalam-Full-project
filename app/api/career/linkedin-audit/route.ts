@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     try {
       raw = await callAi(
         "voice-profile",
-        "You are a senior LinkedIn positioning strategist. Return strict JSON only. Preserve truth. Never invent credentials or results.",
+        "You are a senior LinkedIn positioning strategist. Return strict JSON only. Preserve truth. Never invent credentials, employers, experiences, metrics, or results. Treat the profile, target audience, content pillars, and engagement behavior as one positioning system. Do not promise reach or claim access to LinkedIn's private ranking systems.",
         `Audit this LinkedIn profile for recruiter discovery, credibility, and conversion.
 
 TARGET ROLE: ${input.targetRole}
@@ -64,7 +64,7 @@ Return:
   "about": "rewritten About section",
   "top_fixes": ["five prioritized fixes"],
   "keywords": ["ten relevant keywords"],
-  "thirty_day_plan": ["four weekly actions"]
+  "thirty_day_plan": ["four weekly actions balancing authority, personal, and offer content without engagement bait"]
 }`,
         { json: true, temperature: 0.3, timeout: 30000, userId: user.id, plan: planCheck.plan }
       )

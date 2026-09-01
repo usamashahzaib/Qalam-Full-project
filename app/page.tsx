@@ -14,8 +14,8 @@ import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 
 export const metadata: Metadata = {
-  title: "Qalam | Turn Experience Into Proof People Trust",
-  description: "Build an accurate career story across LinkedIn, ATS resumes, and recruiter positioning from facts you control.",
+  title: "Qalam | Your Career Visibility Workspace",
+  description: "Turn real experience into a trusted LinkedIn presence, stronger content, ATS resumes, and recruiter-ready proof.",
 }
 
 const workflow = [
@@ -27,7 +27,7 @@ const workflow = [
   {
     number: "02",
     title: "Shape each surface",
-    copy: "Turn the same evidence into LinkedIn positioning, professional content, and role-specific resume language.",
+    copy: "Align your profile, audience, and content pillars, then turn the same evidence into LinkedIn content and role-specific resume language.",
   },
   {
     number: "03",
@@ -118,13 +118,13 @@ export default function HomePage() {
           <div>
             <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
-              Career visibility, grounded in evidence
+              Your career visibility workspace
             </p>
             <h1 className="mt-7 max-w-[720px] text-[clamp(3.5rem,7.2vw,6.8rem)] font-extrabold leading-[0.92] tracking-[-0.06em] text-teal">
-              Turn your experience into <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">proof people trust.</span>
+              Make your real work <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">easy to see and trust.</span>
             </h1>
             <p className="mt-7 max-w-[610px] text-lg leading-8 text-zinc-600 sm:text-xl">
-              You already did the work. Qalam turns it into proof a recruiter believes, on LinkedIn, in your resume, and everywhere your name shows up.
+              Qalam turns the experience you already have into a clear LinkedIn presence, credible content, and stronger resumes. One professional story, built from facts you control.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <TrackedHomepageLink
@@ -168,9 +168,9 @@ export default function HomePage() {
       <section className="border-y border-teal/10 bg-teal px-6 py-9 text-white">
         <div className="mx-auto grid max-w-[1200px] gap-6 md:grid-cols-3 md:divide-x md:divide-white/15">
           {[
-            ["Start useful", "Use the free ATS checker before creating an account."],
-            ["Stay consistent", "Keep LinkedIn, resumes, and target roles tied to the same facts."],
-            ["Keep control", "Review the language and approve every action yourself."],
+            ["Know your position", "Keep your profile, target audience, and content focused on the same professional identity."],
+            ["Publish with intent", "Balance authority, personal perspective, and relevant offers instead of posting random topics."],
+            ["Keep trust", "Use only supplied proof, avoid engagement bait, and approve every action yourself."],
           ].map(([title, copy]) => (
             <div key={title} className="md:px-8 first:md:pl-0 last:md:pr-0">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">{title}</p>
@@ -184,10 +184,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
             <div className="lg:sticky lg:top-28 lg:self-start">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">The operating loop</p>
-              <h2 className="t-h2 mt-4 max-w-md text-teal">One truth. Every professional surface.</h2>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">How Qalam works</p>
+              <h2 className="t-h2 mt-4 max-w-md text-teal">Positioning, proof, and publishing in one place.</h2>
               <p className="t-lead mt-5 max-w-lg text-zinc-600">
-                Generic AI starts with a prompt. Qalam starts with the work you actually did and carries that evidence through each output.
+                Generic AI starts from a blank prompt. Qalam starts with your role, audience, voice, content pillars, and the work you can actually defend.
               </p>
             </div>
 

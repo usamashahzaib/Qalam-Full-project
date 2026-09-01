@@ -102,7 +102,7 @@ export const buildHashtags = (text: string, profile?: Partial<WorkspaceProfile> 
 
   const add = (...tags: string[]) => {
     for (const tag of tags) {
-      if (!seen.has(tag) && result.length < 13) {
+      if (!seen.has(tag) && result.length < 3) {
         seen.add(tag)
         result.push(tag)
       }
@@ -112,7 +112,7 @@ export const buildHashtags = (text: string, profile?: Partial<WorkspaceProfile> 
   // 1. Topic signals from content (cap contributions per signal to keep variety)
   let signalAdded = 0
   for (const signal of TOPIC_SIGNALS) {
-    if (signalAdded >= 10) break
+    if (signalAdded >= 3) break
     if (signal.pattern.test(text)) {
       const batch = signal.tags.slice(0, 2)
       add(...batch)
@@ -141,12 +141,7 @@ export const buildHashtags = (text: string, profile?: Partial<WorkspaceProfile> 
     }
   }
 
-  // 4. Broad fallback only if very sparse
-  if (result.length < 3) {
-    add("#LinkedIn", "#ProfessionalDevelopment")
-  }
-
-  return result.filter((t) => t.length > 3).slice(0, 12)
+  return result.filter((t) => t.length > 3).slice(0, 3)
 }
 
 export const analyzeContent = ({
@@ -165,7 +160,8 @@ export const analyzeContent = ({
   const firstLine = lines[0] || title || ""
   const words = content.trim().split(/\s+/).filter(Boolean)
   const paragraphs = content.split(/\n\s*\n/).filter((chunk) => chunk.trim())
-  const ctaRegex = /comment|reply|share|follow|save|dm|message|tell me|let me know|what do you think|drop|tag/i
+  const ctaRegex = /what changed|what worked|your experience|where do you|which part|worth considering|try this|compare this|reply with context|tell me why/i
+  const engagementBaitRegex = /comment\s+["'“”]?[A-Z]{2,}|tag\s+(?:a|one|\d)|drop\s+(?:a|the)\s+(?:word|emoji)|like\s+(?:this|the post)|share\s+this\s+post|follow\s+for/i
   const hookRegex = /\?|^\d|hot take|stop|most people|most teams|nobody|why|how|mistake|truth|learned|failed|lesson|unpopular|brutal|honest/i
   const storyRegex = /\b(i|we)\s+(learned|realized|saw|noticed|failed|tested|built|spent|remember|used to|decided|quit|left|hired|fired)\b/i
   const authorityRegex = /\d+%|\d+x|\d+\b|years?|clients?|team|revenue|pipeline|hiring|operators?|leaders?/i
@@ -175,8 +171,8 @@ export const analyzeContent = ({
   const readability = clamp((words.length >= 80 && words.length <= 260 ? 35 : 18) + (paragraphs.length >= 3 ? 25 : 10) + (lines.length >= 5 ? 20 : 8) + (content.length <= 1800 ? 20 : 8))
   const hook = clamp((hookRegex.test(firstLine) ? 65 : 25) + (firstLine.length <= 90 ? 22 : 5) + (storyRegex.test(firstLine) ? 15 : 0) + (/\d/.test(firstLine) ? 10 : 0))
   const authority = clamp((authorityRegex.test(text) ? 65 : 25) + ((profile?.title || profile?.industry) ? 20 : 8) + (storyRegex.test(content) ? 15 : 0) + (words.length >= 120 ? 12 : 5))
-  const cta = clamp((ctaRegex.test(content) ? 70 : 25) + (/[\?]$/.test(content.trim()) ? 15 : 0))
-  const voiceFit = clamp((profile?.tone ? 28 : 14) + (profile?.industry ? 22 : 12) + (profile?.title ? 22 : 12) + (buildHashtags(text, profile).length >= 4 ? 12 : 6) + (storyRegex.test(content) ? 15 : 10) + (/linkedin/i.test(type || "") ? 10 : 6))
+  const cta = clamp((ctaRegex.test(content) ? 72 : 45) + (engagementBaitRegex.test(content) ? -45 : 0) + (/\?\s*(?:#\w+\s*)*$/.test(content.trim()) ? 8 : 0))
+  const voiceFit = clamp((profile?.tone ? 28 : 14) + (profile?.industry ? 22 : 12) + (profile?.title ? 22 : 12) + (buildHashtags(text, profile).length >= 2 ? 12 : 6) + (storyRegex.test(content) ? 15 : 10) + (/linkedin/i.test(type || "") ? 10 : 6))
   const specificity = clamp((specificityRegex.test(content) ? 42 : 20) + (authorityRegex.test(text) ? 18 : 6) + (storyRegex.test(content) ? 20 : 8) + (words.length >= 140 ? 10 : 4) + (/because|so|instead|but/i.test(content) ? 10 : 4))
   const humanLikeness = clamp((storyRegex.test(content) ? 30 : 14) + (!aiSlopRegex.test(text) ? 24 : 6) + (/\bI\b|\bwe\b/.test(content) ? 18 : 8) + (paragraphs.length >= 4 ? 14 : 6) + (firstLine.length <= 85 ? 12 : 6))
   const rawOverall = hook * 0.18 + readability * 0.16 + authority * 0.15 + specificity * 0.17 + cta * 0.12 + voiceFit * 0.1 + humanLikeness * 0.12
@@ -187,14 +183,14 @@ export const analyzeContent = ({
     readability < 65 ? "Improve readability: use short lines and at least 3 paragraph breaks." : "",
     authority < 65 ? "Add specific proof: a metric, team result, or concrete example." : "",
     specificity < 70 ? "Get more concrete: name the decision, example, or consequence behind the point." : "",
-    cta < 60 ? "Add a clear next step: ask for a comment, a save, or share an opinion." : "",
+    cta < 60 ? "Use an earned close or ask for a specific experience. Avoid keyword, tag, like, and share bait." : "",
     humanLikeness < 70 ? "Remove AI phrasing and write more like lived experience." : "",
     voiceFit < 70 ? "Complete your voice profile to align AI output with your positioning." : "",
   ].filter(Boolean).slice(0, 3)
 
   const hookNote = hookRegex.test(firstLine)
     ? (firstLine.length <= 90 ? "Strong opening found in first line" : "Hook present but first line is too long (aim under 90 chars)")
-    : "Weak opening: add a question, data point, or bold claim"
+    : "Weak opening: add a supplied data point, a concrete scene, or a clear claim"
 
   const readabilityNote = words.length < 80
     ? "Too short: add more context or specifics"
@@ -208,11 +204,11 @@ export const analyzeContent = ({
     ? "Concrete proof signals found: specific data or results present"
     : "No specific data detected: add a metric, result, or real example"
 
-  const ctaNote = ctaRegex.test(content)
-    ? "Clear engagement ask found"
-    : /[?]$/.test(content.trim())
-      ? "Ends with a question, good CTA signal"
-      : "No call-to-action: end with a direct ask or question"
+  const ctaNote = engagementBaitRegex.test(content)
+    ? "Engagement bait detected: ask for a real experience or use an earned close"
+    : ctaRegex.test(content)
+      ? "Specific conversation prompt found"
+      : "Closing is neutral: add an earned next step only if the post needs one"
 
   const specificityNote = specificityRegex.test(content)
     ? "Specific example or consequence framing detected"
@@ -263,7 +259,7 @@ export const analyzeContent = ({
         label: "CTA",
         score: cta,
         note: ctaNote,
-        actionHint: cta < 60 ? "End with: 'What do you think?' or 'Save this if it helped'" : undefined,
+        actionHint: cta < 60 ? "Ask for a specific experience or end on the earned insight" : undefined,
       },
       {
         label: "Human-likeness",

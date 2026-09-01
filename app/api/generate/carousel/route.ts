@@ -10,6 +10,8 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { log } from "@/lib/server/logging"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { professionalContextPrompt } from "@/lib/professional-context"
+import { LINKEDIN_POSITIONING_RULES } from "@/lib/prompts/role-aware-system"
+import { CAROUSEL_SYSTEM_PROMPT } from "@/lib/prompts/builders/carousel"
 import { authorizeRole } from "@/lib/server/roles"
 
 type Slide = {
@@ -36,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     const topic = String(body.topic || "").trim()
     const role = String(body.role || "").trim() || "professional"
+    const goal = String(body.goal || "").trim().slice(0, 500)
 
     if (!topic || topic.length < 3) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
@@ -51,18 +54,21 @@ export async function POST(request: NextRequest) {
 
     const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
     const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext)
-    const system = `You are a LinkedIn carousel expert. Return only valid JSON matching the schema exactly. No markdown fences.
+    const system = `${CAROUSEL_SYSTEM_PROMPT}
 
-${professionalContext}`
+${professionalContext}
+
+${LINKEDIN_POSITIONING_RULES}`
 
     const userMsg = `Create a 5-7 slide LinkedIn carousel on "${topic}" for a ${role}.
+${goal ? `Content intent and outcome: ${goal}` : ""}
 
 Rules:
 - Slide 1: Hook only - title max 5 words, body max 15 words, visual_suggestion: "Scroll-stopper image"
 - Slides 2-3: Problem/Insight - title max 5 words, body max 25 words punchy, visual suggestion
 - Slides 4-5: Solution/Framework - title max 5 words, body max 25 words, visual suggestion
-- Slides 6-7 (if included): Proof/Result - title max 5 words, body max 25 words, visual suggestion
-- Last slide: CTA - title: "Follow for more", body: "", visual_suggestion: "Profile photo or logo"
+- Slides 6-7 (if included): Proof/Result - title max 5 words, body max 25 words, visual suggestion. Use only supplied proof
+- Last slide: Earned close or useful next step. No "Follow for more", keyword comments, or tag requests
 
 Return JSON:
 {

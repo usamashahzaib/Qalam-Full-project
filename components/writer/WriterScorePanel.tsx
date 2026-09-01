@@ -91,7 +91,7 @@ export function WriterScorePanel({
           {scores.overall >= 90 ? (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
               <p className="text-sm font-bold text-emerald-700">90+ Score Achieved</p>
-              <p className="mt-0.5 text-xs text-emerald-600">This post is ready to publish. Top 5% of LinkedIn content.</p>
+              <p className="mt-0.5 text-xs text-emerald-600">Strong across Qalam&apos;s seven transparent quality checks. You still make the final call.</p>
             </div>
           ) : canUseProTools ? (
             <button
@@ -112,7 +112,7 @@ export function WriterScorePanel({
                 <p className="t-eyebrow text-zinc-400 mb-1">What changes at 90+</p>
                 <ul className="space-y-0.5 t-eyebrow text-zinc-600">
                   <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Hook rewritten to stop the scroll in the first 2 words</li>
-                  <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Specific numbers and outcomes added where generic now</li>
+                  <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Supplied proof made clearer without adding new claims</li>
                   <li className="flex items-start gap-1.5"><span className="mt-0.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />CTA tightened to a single clear action</li>
                 </ul>
               </div>

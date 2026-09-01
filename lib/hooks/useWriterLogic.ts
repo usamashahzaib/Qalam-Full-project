@@ -116,6 +116,7 @@ export function useWriterLogic({
   const [topic, setTopic] = useState(initialTopic)
   const [role, setRole] = useState<Role>(initialRole || "Founder")
   const [format, setFormat] = useState<FormatKey>(initialFormat ?? "Medium")
+  const [contentIntent, setContentIntent] = useState("Build authority with one useful, evidence-led idea")
   const [goal, setGoal] = useState("")
 
   // ── Hook generation ──────────────────────────────────────────────────────
@@ -297,6 +298,9 @@ export function useWriterLogic({
   )
 
   const draftLimitHit = typeof draftLimit === "number" && localDraftUsage >= draftLimit
+  const generationGoal = [contentIntent, goal.trim() ? `Specific outcome: ${goal.trim()}` : ""]
+    .filter(Boolean)
+    .join(". ")
 
   // ── Status helper ─────────────────────────────────────────────────────────
 
@@ -386,7 +390,7 @@ export function useWriterLogic({
     void fetchDemand()
 
     try {
-      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: goal.trim() })
+      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: generationGoal })
       const items = data.hooks.slice(0, 5)
       if (!items.length) throw new Error("No hooks returned")
       setHooks(items)
@@ -422,7 +426,7 @@ export function useWriterLogic({
         originalContent,
         role,
         format,
-        goal: goal.trim(),
+        goal: generationGoal,
       })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
@@ -712,7 +716,7 @@ export function useWriterLogic({
     showStatus("Generating carousel slides...", "info", false)
 
     try {
-      const data = await apiGenerateCarousel({ topic: topic.trim(), role })
+      const data = await apiGenerateCarousel({ topic: topic.trim(), role, goal: generationGoal })
       const items = data.slides || []
       if (!items.length) throw new Error("No slides returned")
       setSlides(items)
@@ -748,6 +752,7 @@ export function useWriterLogic({
     topic, setTopic,
     role, setRole,
     format, setFormat,
+    contentIntent, setContentIntent,
     goal, setGoal,
 
     // Hook generation

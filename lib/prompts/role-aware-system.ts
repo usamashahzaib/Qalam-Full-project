@@ -85,11 +85,21 @@ ABSOLUTE RULES - NEVER BREAK THESE:
 - Never open with "In today's", "In the world of", "Let's dive in", "I'm excited to share", "As a [role]", "It's no secret".
 - Never use: delve, leverage (as a verb), elevate, seamless, unlock, empower, supercharge, revolutionize, paradigm, holistic, ecosystem, synergy, cutting-edge, game-changer, thought leader, passionate.
 - No three-item lists that are perfectly parallel ("X, Y, and Z" at the end of every thought). It reads like a template.
-- No question as the last line of any content. Not "What do you think?" Not "Have you experienced this?" Not "Are you ready?" - ending with a question is a cliche that signals AI-generated content.
+- No generic question as the last line. Ban "What do you think?", "Have you experienced this?", and "Are you ready?" A specific question about the reader's real experience is allowed when it is earned.
 - No rhyming or near-rhyming at sentence ends.
 - No bullet points or numbered lists in the post body. Write in sentences.
 - Never summarise the post in the final line. End on the insight or the action, not "and that's why X matters."
-- Hashtags at the very end only. 2-4 maximum. No hashtag mid-sentence.
+- Hashtags at the very end only. 0-3 maximum. No hashtag mid-sentence.
+`.trim();
+
+export const LINKEDIN_POSITIONING_RULES = `
+LINKEDIN POSITIONING AND TRUST RULES:
+- Treat profile, content, and audience as one system. When professional context is available, write for one named audience and reinforce one saved content pillar.
+- Every post needs one intent: Authority, Personal, or Offer. Authority teaches from earned expertise. Personal reveals a true moment, belief, or behind-the-scenes lesson. Offer connects a real problem to a relevant service or next step.
+- Use only supplied personal facts and proof. Never invent a client, employer, metric, credential, event, quote, or first-person experience.
+- Create reading momentum through a specific opening, an earned payoff, and mobile-friendly spacing. Do not claim that any format or tactic guarantees reach.
+- Invite meaningful conversation without engagement bait. Never ask readers to comment a keyword, tag friends, join a pod, or engage only to receive something.
+- Prefer 0-3 precise topic hashtags. Do not pad the post with broad or unrelated tags.
 `.trim();
 
 // ---------------------------------------------------------------------------
@@ -132,6 +142,8 @@ ${roleBannedWords(profile, isCanonical).join(", ")}
 
 ${ANTI_AI_RULES}
 
+${LINKEDIN_POSITIONING_RULES}
+
 ${GENERATE_CRITICAL_RULES}
 
 FORMAT RULES FOR THIS POST:
@@ -141,8 +153,8 @@ ${formatRule.lineGuidance}
 STRUCTURE:
 Line 1: The hook. One or two sentences maximum. Must make someone stop scrolling. Concrete, specific, a little unexpected. No generic opener.
 Lines 2 to end: The substance. Show the situation, the thing that happened, the specific detail. One blank line between thoughts.
-Last 1-2 lines: CTA that feels natural, not forced. Not a question. Something like: "If you've been here, you know." or "Worth thinking about before your next [X]."
-Final line: 2-4 hashtags only.
+Last 1-2 lines: An earned close or genuine conversation prompt. No engagement bait and no forced question.
+Final line: 0-3 precise hashtags. Omit them when none are useful.
 
 ${goal ? `GOAL FOR THIS POST: ${goal}` : ""}
 
@@ -171,7 +183,7 @@ Role: ${label}
 Format: ${format}
 ${goal ? `Goal: ${goal}` : ""}
 
-Remember: First line must be the hook. Real, specific, and a little surprising. No AI tells. No em dashes. No generic openers.`;
+Remember: First line must be the hook. Real, specific, and a little surprising. Use only supplied personal facts. No AI tells. No em dashes. No generic openers.`;
 
   return { system, user };
 }
@@ -207,6 +219,8 @@ WHAT TO KEEP:
 
 ${ANTI_AI_RULES}
 
+${LINKEDIN_POSITIONING_RULES}
+
 Output the edited post only. No commentary. No "here's the edited version:". Just the post.
 `.trim();
 
@@ -241,17 +255,17 @@ DIMENSIONS:
    - 50-69: Some AI patterns visible - smooth transitions, perfect structure, vague specifics
    - Below 50: Clearly AI - em dashes, "leverage", "seamless", or robot-perfect sentences
 
-3. SPECIFICITY SCORE: Are there concrete details (numbers, names, exact situations) or only generalities?
-   - 90+: Reader can picture the exact situation. Numbers, specific tools, real moments
+3. SPECIFICITY SCORE: Are there concrete details (supplied numbers, names, exact situations) or only generalities?
+   - 90+: Reader can picture the exact situation without any invented personal proof
    - 70-89: Some specifics but also some vague sections
    - 50-69: Mostly general advice with no grounding detail
    - Below 50: Pure generality - could apply to any person in any situation
 
-4. ENGAGEMENT SCORE: Will this generate comments and shares from a Pakistani professional audience?
-   - 90+: Triggers a "this is me" or "I've seen this too" response. Has a clear angle.
-   - 70-89: Interesting but not provocative enough to comment on
-   - 50-69: People will read and scroll on
-   - Below 50: Nobody reacts to this
+4. ENGAGEMENT QUALITY SCORE: Does this give the intended audience a reason to pause, remember the author, or respond meaningfully?
+   - 90+: Clear audience, useful payoff, and a specific point worth discussing
+   - 70-89: Relevant but slightly broad
+   - 50-69: Useful to almost anyone, so it strengthens no clear position
+   - Below 50: Unrelated to the author's credible expertise or target audience
 
 5. FORMATTING SCORE: Is it readable on LinkedIn mobile? White space, line breaks, no paragraph walls?
    - 90+: Perfect rhythm - short lines, blank lines between thoughts, easy to scan
@@ -344,6 +358,8 @@ export function buildTopicSuggestionsPrompt(
   const system = `
 You generate LinkedIn post topic ideas for ${label}s in Pakistan.
 
+${LINKEDIN_POSITIONING_RULES}
+
 Topics must be:
 - Specific enough to write about immediately (not "talk about your experience")
 - Based on real pain points this role has
@@ -373,6 +389,8 @@ export function buildHookVariantsPrompt(
 
   const system = `
 You write LinkedIn post opening lines (hooks) for ${label}s.
+
+${LINKEDIN_POSITIONING_RULES}
 
 Generate 3 hooks for the same topic, each a different style:
 1. STATEMENT hook: A bold or unexpected claim. Concrete and specific.
@@ -463,13 +481,15 @@ ${list(roleBannedWords(profile, isCanonical))}
 Writing rules:
 - The first line must stop the scroll.
 - Use short paragraphs and line breaks for LinkedIn mobile.
-- Include a CTA that drives comments or replies.
-- Include 3-5 relevant hashtags.
+- Use an earned close or a genuine conversation prompt. Never use engagement bait.
+- Use 0-3 precise hashtags and omit them when they add no context.
 - Stay under 3,000 characters for long, 1,500 for medium, 500 for short.
 - Never use generic openers like "In today's world", "Let's dive in", or "In conclusion".
 - Never use em dashes or en dashes. Use hyphens only.
 - Use concrete details, mistakes, numbers, examples, and tradeoffs.
-- Make the reader think: this person really knows their stuff.`;
+- Make the reader think: this person really knows their stuff.
+
+${LINKEDIN_POSITIONING_RULES}`;
 
   if (voiceProfile) {
     prompt += `\n\nVoice guidance:
@@ -553,6 +573,8 @@ You write LinkedIn post opening lines for ${label}s.
 
 ${professionalContext}
 
+${LINKEDIN_POSITIONING_RULES}
+
 Generate exactly 5 hooks for the same topic, one per style:
 1. SHARP: An uncomfortable truth or bold claim. Concrete and specific.
 2. AUTHORITY: Lead with credibility, data, or hard-won experience. Shows expertise.
@@ -564,7 +586,7 @@ ${HOOKS_CRITICAL_RULES}
 
 Additional rules:
 - Maximum 2 sentences per hook
-- Specific and concrete - include a number, date, or named situation where possible
+- Specific and concrete. Include a number, date, or named situation only when supplied by the user or profile context
 - Match this voice: ${roleVoiceHeadline(label, profile, isCanonical)}
 - Words never to use: ${roleBannedWords(profile, isCanonical).slice(0, 5).join(", ")}
 
@@ -616,6 +638,8 @@ Vocabulary to draw from (use some, not all): ${isCanonical ? profile.vocabulary.
 
 ${ANTI_AI_RULES}
 
+${LINKEDIN_POSITIONING_RULES}
+
 ${GENERATE_CRITICAL_RULES}
 
 Words never to use: ${[...roleBannedWords(profile, isCanonical), "delve", "utilize", "leverage (as verb)", "seamless", "empower"].join(", ")}
@@ -625,8 +649,8 @@ FORMAT:
 - ${formatRule.lineGuidance}
 - The FIRST LINE must be exactly the hook provided - copy it word for word.
 - Continue naturally from where the hook leads
-- End with a CTA that feels earned (not a question)
-- 2-4 hashtags on the very last line only
+- End with an earned close or genuine conversation prompt
+- Use 0-3 precise hashtags on the very last line, or omit them
 
 ${goal ? `GOAL OF THIS POST: ${goal}` : ""}
 ${voiceProfile?.vocabulary?.length ? `VOICE PHRASES TO WEAVE IN: ${voiceProfile.vocabulary.join(", ")}` : ""}
@@ -660,6 +684,8 @@ ${professionalContext}
 
 ${ANTI_AI_RULES}
 
+${LINKEDIN_POSITIONING_RULES}
+
 TASK:
 - Replace the opening hook only.
 - The FIRST LINE must be exactly the new hook - copy it word for word.
@@ -692,6 +718,7 @@ export function build7MetricScorePrompt(
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const { label } = resolveRoleProfile(role);
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
 
   const voiceFitDimension = voiceProfile?.tone || voiceProfile?.vocabulary?.length
     ? `7. VOICE_FIT (matches the author's trained personal voice)
@@ -712,6 +739,10 @@ export function build7MetricScorePrompt(
 You score LinkedIn posts for ${label}s on 7 dimensions, 0-100 each.
 Be strict. Average posts score 55-65. A 90 is rare.
 
+${professionalContext}
+
+${LINKEDIN_POSITIONING_RULES}
+
 DIMENSIONS:
 
 1. HOOK (first line quality)
@@ -725,8 +756,8 @@ DIMENSIONS:
    70-89: Mostly good, one dense section
    Below 50: Wall of text or choppy single words
 
-3. AUTHORITY (credibility and expertise)
-   90+: Sounds like someone who has genuinely done this, specific knowledge
+3. AUTHORITY (credibility, evidence, and positioning)
+   90+: Sounds grounded in supplied expertise and clearly serves the intended audience
    70-89: Mostly credible, a little vague
    Below 50: Generic advice anyone could have written
 
@@ -735,10 +766,10 @@ DIMENSIONS:
    70-89: Some specifics, some vague
    Below 50: Pure generality, no grounding detail
 
-5. CTA (call to action quality)
-   90+: Specific, natural, non-question CTA
+5. CTA (closing quality)
+   90+: Earned close or genuine, specific conversation prompt with no engagement bait
    70-89: Present but generic
-   Below 50: No CTA, or a lame closing question ("What do you think?")
+   Below 50: Forced engagement, keyword bait, tag requests, or an unrelated sales pitch
 
 6. HUMAN_LIKENESS (sounds like a real person, not AI)
    90+: Zero AI tells, natural rhythm, real voice
@@ -768,7 +799,7 @@ Respond with ONLY valid JSON. No markdown, no explanation:
     "human": "one specific action to improve this dimension",
     "voiceFit": "one specific action to improve this dimension"
   },
-  "hashtags": ["#tag1", "#tag2", "#tag3", "#tag4", "#tag5"]
+  "hashtags": ["#tag1", "#tag2", "#tag3"]
 }
 overall = arithmetic mean of all 7 scores, rounded to nearest integer.
 `.trim();
@@ -789,6 +820,7 @@ export function buildPushTo90Prompt(
   voiceProfile?: VoiceProfile
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
+  const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext);
 
   const dimScores = Object.entries(scores)
     .filter(([k]) => k !== "overall" && k !== "tips" && k !== "hashtags")
@@ -801,7 +833,11 @@ You are rewriting a LinkedIn post for a ${label} so it scores 90+ on EVERY singl
 
 ${roleVoiceBlock(label, profile, isCanonical)}
 
+${professionalContext}
+
 ${ANTI_AI_RULES}
+
+${LINKEDIN_POSITIONING_RULES}
 
 BANNED WORDS (remove every instance): ${[...roleBannedWords(profile, isCanonical), "delve", "leverage (verb)", "seamless", "empower", "unlock", "holistic", "synergy"].join(", ")}
 
@@ -814,11 +850,11 @@ WHAT 90+ REQUIRES ON EACH DIMENSION:
 
 2. READABILITY - short lines, blank lines between every thought, mobile-first. One idea per line. No wall of text longer than 2 sentences.
 
-3. AUTHORITY - sound like someone who has genuinely lived this. Drop generic advice; use insider language, specific situations, earned perspective.
+3. AUTHORITY - sound grounded in supplied experience. Drop generic advice, but never manufacture lived experience.
 
-4. SPECIFICITY - every claim needs a number, a name, a timeline, or an exact situation. The reader must picture a real scene.
+4. SPECIFICITY - make the idea concrete with supplied numbers, names, timelines, or exact situations. If none were supplied, use a clear scenario without presenting it as the author's experience.
 
-5. CTA - end with a specific, natural call to action that invites real engagement. Not "What do you think?" or rhetorical questions.
+5. CTA - end with an earned close or a specific prompt for genuine conversation. Never use keyword bait, tag requests, or a generic "What do you think?"
 
 6. HUMAN-LIKENESS - zero AI tells. Natural rhythm. Real conversational voice. No em dashes (-), no en dashes (-), no perfect parallel structure.
 
@@ -829,6 +865,8 @@ WHAT 90+ REQUIRES ON EACH DIMENSION:
 KEEP:
 - All specific numbers, names, and facts from the original
 - The core story and content arc
+
+NEVER add a new personal claim, metric, client, employer, event, or outcome.
 
 Output the rewritten post ONLY. No commentary. No labels.
 `.trim();

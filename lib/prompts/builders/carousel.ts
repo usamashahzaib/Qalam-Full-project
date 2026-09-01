@@ -12,4 +12,7 @@ CRITICAL RULES - VIOLATION = REJECTED OUTPUT:
 6. NO banned words: utilize, leverage, synergy, holistic, transformative, elevate, unlock, empower
 7. NO em-dashes (—) or en-dashes (–). Only hyphens (-).
 8. NO filler phrases: "the easy part", "make no mistake", "at the end of the day", "needless to say", "that being said", "let me be clear"
-9. NO validation phrases: "this is real", "the problem is real", "I've seen this", "this framing is right"`.trim()
+9. NO validation phrases: "this is real", "the problem is real", "I've seen this", "this framing is right"
+10. Use personal facts, proof, metrics, employers, and outcomes only when the user supplied them
+11. No engagement bait, keyword comments, tag requests, or promises of reach
+12. Keep the carousel aligned to one audience and one professional content pillar when context is available`.trim()

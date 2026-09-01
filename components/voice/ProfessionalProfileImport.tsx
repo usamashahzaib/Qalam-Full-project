@@ -90,7 +90,7 @@ export function ProfessionalProfileImport({
           <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-700">Pro</span>
         </h2>
         <p className="mt-0.5 text-xs text-zinc-500">
-          Import a resume or LinkedIn PDF once. The source is processed in memory and never stored.
+          Import a resume or LinkedIn PDF once. Qalam extracts the positioning context that guides future drafts. The source is processed in memory and never stored.
         </p>
       </div>
 
@@ -158,6 +158,7 @@ export function ProfessionalProfileImport({
             <ContextArea label="Expertise" value={csv(context.expertise)} onChange={(value) => update("expertise", splitCsv(value))} />
             <ContextArea label="Target audience" value={csv(context.audience)} onChange={(value) => update("audience", splitCsv(value))} />
             <ContextArea label="Content pillars" value={csv(context.contentPillars)} onChange={(value) => update("contentPillars", splitCsv(value))} />
+            <ContextArea label="Content goals" value={csv(context.contentGoals)} onChange={(value) => update("contentGoals", splitCsv(value))} />
             <ContextArea label="Verified proof points" value={csv(context.proofPoints)} onChange={(value) => update("proofPoints", splitCsv(value))} />
             <ContextArea label="Career highlights" value={csv(context.careerHighlights)} onChange={(value) => update("careerHighlights", splitCsv(value))} />
             <ContextArea label="Avoided topics" value={csv(context.avoidedTopics)} onChange={(value) => update("avoidedTopics", splitCsv(value))} />

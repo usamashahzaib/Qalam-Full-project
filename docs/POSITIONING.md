@@ -16,14 +16,23 @@
 
 ## One-Liner
 
-Qalam turns real professional experience into visible proof across resumes, LinkedIn, and content.
+Qalam is a career visibility workspace that turns real experience into a trusted LinkedIn presence, credible content, and stronger resumes.
+
+## LinkedIn Content System
+
+- Positioning: profile, target audience, expertise, and recurring content pillars reinforce one defensible professional identity.
+- Authority content: teach from supplied expertise and proof.
+- Personal content: build recognition through true moments, beliefs, and behind-the-scenes lessons.
+- Offer content: connect a real audience problem to a relevant service or next step without sounding like an ad.
+- Trust constraints: never invent proof, never use engagement bait, and never promise reach or algorithmic distribution.
 
 ## Key Messages
 
 | Surface | Message | Status |
 |---|---|---|
-| Homepage hero | Turn experience into visible proof | shipped |
-| Hero support | Be easier to trust, shortlist, and remember | shipped |
+| Homepage hero | Make your real work easy to see and trust | shipped |
+| Hero support | Qalam is one workspace for LinkedIn presence, credible content, and stronger resumes | shipped |
 | Risk reversal | No payment card, no automatic posting, no invented experience | shipped |
 | Free tool | See what recruiters and ATS systems see first | shipped |
 | Product | One evidence base for resumes, LinkedIn, and content | shipped |
+| Writer | Choose Authority, Personal, or Offer intent while Qalam aligns the draft to saved audience, pillars, proof, and voice | shipped |

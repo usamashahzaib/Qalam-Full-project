@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
+import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { professionalContextPrompt } from "@/lib/professional-context"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -27,12 +29,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: mode === "reply" ? "Reply is required" : "Comment is required" }, { status: 400 })
     }
 
+    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const context = professionalContextPrompt(voiceProfile?.professionalContext)
+    const trustRules = `
+Use the author's professional context only where it is relevant.
+Never invent a personal experience, result, employer, or opinion.
+Reference a specific detail from the conversation instead of writing generic praise.
+Do not use engagement bait, hashtags, tag requests, or sales pitches.
+Do not claim that replying will improve reach or please an algorithm.
+No em dashes or en dashes.`
     const system = mode === "reply"
       ? `You are a LinkedIn expert helping ${role}s craft authentic, engaging replies to a reply they received on their own comment (a nested reply in a comment thread).
 Generate exactly 3 distinct reply styles for the given reply. Keep replies concise (1-3 sentences), genuine, and professional.
+${trustRules}
+${context}
 Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
       : `You are a LinkedIn expert helping ${role}s craft authentic, engaging comment replies.
 Generate exactly 3 distinct reply styles for the given comment. Keep replies concise (1-3 sentences), genuine, and professional.
+${trustRules}
+${context}
 Return JSON: { "replies": [{ "style": "string", "reply": "string" }] }`
 
     const userMsg = mode === "reply"

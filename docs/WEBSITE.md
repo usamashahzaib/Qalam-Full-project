@@ -23,6 +23,7 @@ The public site includes the homepage, pricing, features, free tools, product pa
 | Fit | Resume, LinkedIn, content, and career workflow previews | Feature showcase | shipped |
 | Timing | Immediate free resume result | Hero and first product section | shipped |
 | Effort | One evidence base and a three-step workflow | Hero and how it works | shipped |
+| Understanding | Plain-language definition of Qalam plus positioning, proof, and publishing loop | Hero and trust band | shipped |
 
 ## Audit Findings
 
@@ -38,6 +39,8 @@ The public site includes the homepage, pricing, features, free tools, product pa
 | Authentication looked generic beside the marketing experience | 3 | Add a branded split shell, evidence-led trust copy, and privacy-aware password guardian | shipped |
 | Mobile footer required a long scroll through every link group | 2 | Collapse link groups into accessible native accordions on mobile | shipped |
 | Local side-by-side development sent app CTAs to the other server | 3 | Keep login, signup, dashboard, settings, and career links relative in development | shipped |
+| Visitors could read Qalam as a generic AI writer or a collection of unrelated career tools | 3 | Define Qalam as a career visibility workspace and show how profile, audience, proof, content, and resumes stay aligned | shipped |
+| Writer prompts could force unsupported numbers or engagement tactics | 4 | Make supplied evidence mandatory for personal claims and apply non-bait positioning rules to posts, hooks, carousels, scores, and replies | shipped |
 
 ## Lead Capture
 

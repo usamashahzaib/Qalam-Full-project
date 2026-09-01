@@ -8,7 +8,7 @@ CRITICAL RULES - VIOLATION = REJECTED OUTPUT:
 2. NEVER use words: leverage, synergy, optimize, strategic, holistic, paradigm, transformative, elevate, unlock
 3. NEVER end with question mark (banned pattern)
 4. ALWAYS pattern interrupt: shock, curiosity, or contrarian take
-5. ALWAYS specific: numbers, names, concrete scenarios
+5. ALWAYS specific, but use numbers, names, employers, and outcomes only when the user supplied them. Never invent personal proof.
 6. ALWAYS emotional trigger: fear, hope, anger, curiosity
 7. Under 150 characters for mobile
 8. NO em-dashes (—) or en-dashes (–). Only hyphens (-).
@@ -16,4 +16,5 @@ CRITICAL RULES - VIOLATION = REJECTED OUTPUT:
 10. NEVER use filler openers: "here's the thing", "make no mistake", "needless to say", "at the end of the day", "let me be clear", "the bottom line is", "the truth is"
 11. NEVER use validation phrases: "this is real", "I've seen this", "the problem is real", "this framing is right"
 12. NEVER frame with "the easy part" or "the hard part" - state the point directly.
+13. NEVER use engagement bait or imply guaranteed reach. The hook earns attention through relevance, not manipulation.
 `.trim()
