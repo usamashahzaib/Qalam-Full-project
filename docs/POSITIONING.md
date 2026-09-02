@@ -36,3 +36,6 @@ Qalam is a career visibility workspace that turns real experience into a trusted
 | Free tool | See what recruiters and ATS systems see first | shipped |
 | Product | One evidence base for resumes, LinkedIn, and content | shipped |
 | Writer | Choose Authority, Personal, or Offer intent while Qalam aligns the draft to saved audience, pillars, proof, and voice | shipped |
+| Dashboard daily action | Save one thing you accomplished today | shipped |
+| Dashboard value | Keep today's work in Recent Wins so it can be reused in a post, resume, interview, or performance review | shipped |
+| Dashboard progress | Progress reflects useful actions saved in Qalam, not job readiness | shipped |

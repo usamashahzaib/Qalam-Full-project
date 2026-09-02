@@ -531,6 +531,10 @@ input, textarea, select {
 .qalam-app-canvas {
   position: relative;
   min-height: 100dvh;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(184, 122, 22, 0.09), transparent 30rem),
+    radial-gradient(circle at 100% 12%, rgba(13, 74, 69, 0.1), transparent 34rem),
+    linear-gradient(180deg, #f8f7f2 0%, #f3f6f4 100%);
   /* Mobile: header height + status bar safe area at top; bottom nav + home indicator at bottom */
   padding-top: calc(4rem + env(safe-area-inset-top, 0px));
   padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));

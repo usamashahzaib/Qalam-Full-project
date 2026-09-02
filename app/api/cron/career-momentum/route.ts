@@ -80,11 +80,11 @@ export async function GET(request: Request) {
     }
 
     const firstName = user.full_name?.trim().split(/\s+/)[0] || "there"
-    const subject = "Save one useful thing from today"
+    const subject = "Keep one win from today"
     const text = [
       `Hi ${firstName},`,
       "",
-      "Before today's work disappears into tomorrow, bank one result, decision, or lesson in Qalam.",
+      "Save one result, decision, or lesson from today in Qalam.",
       "",
       "It usually takes under 30 seconds and strengthens the proof behind your resume, LinkedIn, and interviews.",
       "",
@@ -103,7 +103,7 @@ export async function GET(request: Request) {
       workspaceId: preference.workspace_id,
       type: "career_momentum_reminder",
       title: subject,
-      body: "Bank one result, decision, or lesson before the day ends.",
+      body: "Save one result, decision, or lesson before the day ends.",
       link: "/dashboard#daily-proof",
     })
     sent += 1

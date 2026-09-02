@@ -95,7 +95,7 @@ export async function fetchCareerMomentum(
   const proofCapturedToday = signals.some((row) => row.signal_date === today)
 
   const nextAction = !proofCapturedToday
-    ? { label: "Bank today's proof", href: "#daily-proof", reason: "One sentence keeps today's work from disappearing." }
+    ? { label: "Save today's win", href: "#daily-proof", reason: "Keep one useful result, decision, or lesson from today." }
     : profileCompletion < 60
       ? { label: "Complete your direction", href: "/career", reason: "A clearer target role improves every generated asset." }
       : documentedEvidenceCount < 2
@@ -104,7 +104,7 @@ export async function fetchCareerMomentum(
           ? { label: "Add a target role", href: "/career/applications", reason: "A live opportunity gives your proof somewhere to work." }
           : publishedPostsLast30Days < 1
             ? { label: "Turn proof into a post", href: "/writer", reason: "Visibility compounds when useful evidence becomes a story." }
-            : { label: "Strengthen your proof bank", href: "/career/evidence", reason: "Document the signal most relevant to your next role." }
+            : { label: "Save stronger evidence", href: "/career/evidence", reason: "Document the result most relevant to your next role." }
 
   return {
     today,
@@ -129,6 +129,6 @@ export async function fetchCareerMomentum(
       enabled: reminder?.reminder_enabled ?? false,
       hour: reminder?.reminder_hour ?? 17,
     },
-    measurementNote: "Momentum reflects useful actions recorded in Qalam. It is not an employability score.",
+    measurementNote: "Progress only reflects useful actions saved in Qalam. It is not an employability score. It does not predict hiring.",
   }
 }

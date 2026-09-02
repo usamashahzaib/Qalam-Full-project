@@ -28,7 +28,7 @@ Manipulation Matrix decision: the maker would use the product, believes grounded
 | Progress after first value is abstract | Show the next evidence gap and how it improves future output | Design | P1 | planned |
 | Generic reminder timing can feel intrusive | Prompt after a saved artifact, new goal, scheduled review, or detected incomplete workflow | Product | P1 | planned |
 | Forced onboarding would reduce autonomy | Keep onboarding skippable and explain why each context field helps | Design | P1 | active principle |
-| Reward risk | Recognize completed proof and improvement after it happens, without points or streak pressure | Product | P1 | active principle |
+| Reward risk | Recognize meaningful progress with forgiving stages and useful rewards, never idle-time points or streak pressure | Product | P1 | active principle |
 
 Starter Step: complete an ATS assessment or generate one grounded draft with the smallest useful context. Celebration moment: reveal the completed artifact, its score, the strongest evidence used, and one next action.
 
@@ -80,7 +80,20 @@ Use outcome ownership with continuous discovery alongside delivery. The team rec
 | Mastery | 7/10 | Scores and revisions can show improvement | Connect progress to specific professional skills and evidence |
 | Purpose | 8/10 | Career visibility is tied to meaningful work outcomes | Keep outcomes factual and user-defined |
 
-No points or streak system is recommended. Use now-that recognition after a real artifact or evidence improvement.
+Meaningless points are not recommended. A staged path can work when every step represents real professional progress and every reward has genuine utility. Streaks remain optional and forgiving. Missing a day never deletes progress.
+
+## Qalam Sprint
+
+The proposed retention layer is a 13-stage professional progress path inspired by the clarity of a game map, not by gambling mechanics.
+
+| Mechanic | Qalam version | Guardrail |
+|---|---|---|
+| Short levels | One useful action such as saving a win, improving a profile, publishing, or tracking an application | No reward for idle time or opening the app |
+| Race progress | A visible 13-stage personal path | Compete with your previous state, not a fabricated leaderboard |
+| Lives and recovery | Continue after a missed day with all saved work intact | No paid repair and no shame message |
+| Currency | Future bonus smart-comment or review credits | Clear balance, predictable earning rules, and no chance-based purchase |
+| Difficulty help | Break a hard task into a smaller suggested action | Never weaken quality or invent professional evidence |
+| Variable reward | A useful prompt, stronger framing, or occasional utility credit after real work | Reward value, not compulsive time spent |
 
 ## Growth Gates
 

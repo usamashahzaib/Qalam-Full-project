@@ -48,14 +48,14 @@ function WritingPromptsCard() {
   )
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <section className="h-full rounded-3xl border border-zinc-200 bg-[linear-gradient(145deg,#ffffff,#fbfaf6)] p-6 shadow-card-raised">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-base font-bold text-zinc-950">
-            Today&apos;s writing prompts
+            Ideas worth sharing today
           </h2>
           <p className="mt-0.5 text-xs text-zinc-400">
-            Fresh ideas every day. Click to write.
+            Pick one and turn your experience into a useful post.
           </p>
         </div>
       </div>
@@ -64,7 +64,7 @@ function WritingPromptsCard() {
           <Link
             key={prompt}
             href={`/writer?topic=${encodeURIComponent(prompt)}`}
-            className="group flex items-start gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 transition-colors hover:border-teal/40 hover:bg-teal/5"
+            className="group flex min-h-20 items-start gap-3 rounded-2xl border border-zinc-100 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-card"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
               <svg
@@ -150,20 +150,20 @@ const QUICK_ACTIONS = [
 
 function QuickActionsCard() {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">
-        Career actions
-      </h2>
+    <div className="h-full rounded-3xl border border-teal/10 bg-teal-800 p-6 text-white shadow-card-raised">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">Keep moving</p>
+      <h2 className="mt-2 text-xl font-bold">Choose your next useful step</h2>
+      <p className="mt-2 text-sm leading-6 text-white/55">Each action improves something you can actually use.</p>
       <div className="space-y-2">
         {QUICK_ACTIONS.map(({ label, href, desc, icon }) => (
           <Link
             key={href}
             href={href}
-            className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
+            className="mt-3 flex min-h-14 items-center justify-between rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 transition-all hover:border-gold/40 hover:bg-white/[0.1]"
           >
             <div className="flex items-center gap-3">
               <svg
-                className="h-4 w-4 shrink-0 text-teal"
+                className="h-4 w-4 shrink-0 text-gold-200"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -171,12 +171,12 @@ function QuickActionsCard() {
                 {icon}
               </svg>
               <div>
-                <span className="text-sm font-semibold text-zinc-800">{label}</span>
-                <span className="ml-2 text-xs text-zinc-400">{desc}</span>
+                <span className="block text-sm font-semibold text-white">{label}</span>
+                <span className="mt-0.5 block text-xs text-white/45">{desc}</span>
               </div>
             </div>
             <svg
-              className="h-4 w-4 shrink-0 text-zinc-400"
+              className="h-4 w-4 shrink-0 text-white/45"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -213,10 +213,11 @@ export default async function DashboardPage() {
       {/* Header */}
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-medium text-zinc-500">Dashboard</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Your Qalam</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950">
             {greeting}
           </h1>
+          <p className="mt-2 text-sm text-zinc-500">One useful move at a time. Your work becomes easier to reuse every day.</p>
         </div>
         <div className="flex flex-wrap gap-2">
         <Link href="/career/resumes" className="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal hover:text-teal">Build resume</Link>
@@ -238,7 +239,7 @@ export default async function DashboardPage() {
               d="M12 4v16m8-8H4"
             />
           </svg>
-          Write new post
+          Create LinkedIn post
         </Link>
         </div>
       </header>
@@ -246,8 +247,10 @@ export default async function DashboardPage() {
       <DailyMomentumCard />
 
       {/* Static sections - render immediately, no data dependency */}
-      <WritingPromptsCard />
-      <QuickActionsCard />
+      <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <WritingPromptsCard />
+        <QuickActionsCard />
+      </div>
     </>
   )
 }

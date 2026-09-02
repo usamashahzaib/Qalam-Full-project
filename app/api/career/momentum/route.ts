@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
       const momentum = await fetchCareerMomentum(planCheck.workspaceId, user.id, parsed.data.timezoneOffset)
       return NextResponse.json({ momentum })
     } catch {
-      return NextResponse.json({ error: "Career momentum could not be loaded." }, { status: 500 })
+      return NextResponse.json({ error: "Your progress could not be loaded." }, { status: 500 })
     }
   })(request)
 }
@@ -71,9 +71,9 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       if ((error as { code?: string }).code === "23505") {
-        return NextResponse.json({ error: "Today's proof is already banked." }, { status: 409 })
+        return NextResponse.json({ error: "Today's win is already saved." }, { status: 409 })
       }
-      return NextResponse.json({ error: "Today's proof could not be saved." }, { status: 500 })
+      return NextResponse.json({ error: "Today's win could not be saved." }, { status: 500 })
     }
 
     try {

@@ -121,3 +121,8 @@ export const calculateProfileCompletion = (profile: Record<string, unknown> | nu
   ]
   return Math.round((checks.filter(Boolean).length / checks.length) * 100)
 }
+
+export const progressStageFromScore = (score: number) => {
+  const normalized = Math.max(0, Math.min(100, Number.isFinite(score) ? score : 0))
+  return normalized === 0 ? 0 : Math.ceil((normalized / 100) * 13)
+}

@@ -24,6 +24,8 @@
 | Five-feature homepage pricing summary with full comparison link | 6/6/9 | implemented as new control, measure pricing visits and paid conversion |
 | Career visibility workspace definition plus LinkedIn positioning loop | 8/6/8 | implemented as new control, measure hero CTA and writer activation |
 | Authority, Personal, and Offer intent selector in Writer | 8/7/8 | implemented, measure hook selection and saved-draft rate by intent |
+| Today's Win dashboard with clear reuse value and a 13-part progress map | 9/6/7 | implemented as new control, measure completion and seven-day return |
+| Earned bonus smart comments for meaningful stage completion | 9/4/3 | planned, requires a permanent reward ledger and abuse controls |
 
 ## ATS CTA measurement note
 
