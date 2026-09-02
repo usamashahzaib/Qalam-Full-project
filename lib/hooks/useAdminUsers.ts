@@ -9,6 +9,7 @@ import type {
   CronRunHealth,
   RecentUser,
 } from "@/types/admin"
+import { addBillingCycleIso } from "@/lib/plan-expiry"
 
 const FEATURES = [
   ["scheduling", "Scheduling"],
@@ -44,6 +45,7 @@ export interface AdminFormState {
   featureFlags: Record<string, boolean>
   notes: string
   expiresAt: string
+  billingCycle: "monthly" | "quarterly" | "annual"
 }
 
 export function useAdminUsers(adminEmail: string) {
@@ -71,6 +73,7 @@ export function useAdminUsers(adminEmail: string) {
     featureFlags: emptyFlags(),
     notes: "",
     expiresAt: "",
+    billingCycle: "monthly",
   })
 
   const headers = useMemo(() => ({ "x-admin-key": adminKey }), [adminKey])
@@ -125,6 +128,7 @@ export function useAdminUsers(adminEmail: string) {
       featureFlags: flags,
       notes: user.override?.notes || "",
       expiresAt: user.override?.expires_at ? user.override.expires_at.slice(0, 10) : "",
+      billingCycle: user.billingCycle === "quarterly" || user.billingCycle === "annual" ? user.billingCycle : "monthly",
     })
   }
 
@@ -140,7 +144,8 @@ export function useAdminUsers(adminEmail: string) {
           workspaceLimitOverride: form.workspaceLimitOverride === "" ? null : Number(form.workspaceLimitOverride),
           featureFlags: form.featureFlags,
           notes: form.notes || null,
-          expiresAt: form.expiresAt ? new Date(`${form.expiresAt}T23:59:59`).toISOString() : null,
+          expiresAt: form.expiresAt || null,
+          billingCycle: form.billingCycle,
         }
       : { userId: selected.id, targetEmail: selected.email }
     const res = await fetch("/api/admin/overrides", {
@@ -159,7 +164,7 @@ export function useAdminUsers(adminEmail: string) {
     setMsg("Giving you Pro...")
     // Set expires_at to 1 year from now for a clear, stable override.
     // Route resolves userId from email so selfId is not strictly required.
-    const oneYearLater = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    const oneYearLater = addBillingCycleIso("annual")
     const res = await fetch("/api/admin/overrides", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
@@ -172,6 +177,7 @@ export function useAdminUsers(adminEmail: string) {
         featureFlags: Object.fromEntries(FEATURES.map(([k]) => [k, true])),
         notes: "Admin self-assign",
         expiresAt: oneYearLater,
+        billingCycle: "annual",
       }),
     })
     if (res.ok) {

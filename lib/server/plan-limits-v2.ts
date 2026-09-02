@@ -7,7 +7,7 @@ import "server-only"
 import { cache } from "react"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
-import { resolvePlanExpiry } from "@/lib/plan-expiry"
+import { getMonthlyQuotaWindow, resolvePlanExpiry } from "@/lib/plan-expiry"
 import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-expiry"
 import { log } from "./logging"
 import type { Feature } from "@/lib/pricing"
@@ -32,18 +32,6 @@ const FIELD_MAP: Record<Feature, string> = {
 }
 
 const USAGE_FIELDS = ["ai_drafts_used", "carousels_used", "hooks_used", "analyses_used", "competitor_runs_used", "comment_generations_used"] as const
-const MS_30_DAYS = 30 * 24 * 60 * 60 * 1000
-
-const getThirtyDayWindow = (startedAt?: string | null) => {
-  if (!startedAt) return null
-  const start = new Date(startedAt)
-  if (Number.isNaN(start.getTime())) return null
-  const elapsed = Math.max(0, Math.floor((Date.now() - start.getTime()) / MS_30_DAYS))
-  const windowStart = new Date(start.getTime() + elapsed * MS_30_DAYS)
-  const windowEnd = new Date(windowStart.getTime() + MS_30_DAYS)
-  return { windowStart, windowEnd }
-}
-
 // Single canonical plan resolver - call this everywhere instead of any local higherPlan logic.
 export async function getCanonicalPlan(userId: string): Promise<string> {
   return (await getPlanStatus(userId)).plan
@@ -119,7 +107,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
       usage = newRow
     }
   }
-  const quotaWindow = usersResult.data?.billing_cycle === "annual" ? getThirtyDayWindow(usersResult.data?.plan_started_at) : null
+  const quotaWindow = getMonthlyQuotaWindow(usersResult.data?.plan_started_at, usersResult.data?.billing_cycle)
   if (usage && quotaWindow) {
     const cycleStart = usage?.cycle_start ? new Date(String(usage.cycle_start)) : null
     if (!cycleStart || Number.isNaN(cycleStart.getTime()) || cycleStart < quotaWindow.windowStart) {

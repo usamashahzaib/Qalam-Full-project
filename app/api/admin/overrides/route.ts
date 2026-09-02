@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requireAdminOps } from "@/lib/server/workspace"
 import { supabaseDelete, supabaseInsert, supabaseSelect, supabaseUpsert } from "@/lib/server/supabase-rest"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { addBillingCycleIso, normalizeSelectedPlanExpiry } from "@/lib/plan-expiry"
 
 type OverrideInput = {
   userId: string
@@ -12,9 +13,13 @@ type OverrideInput = {
   featureFlags: Record<string, boolean>
   notes?: string | null
   expiresAt?: string | null
+  billingCycle?: "monthly" | "quarterly" | "annual"
 }
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
+const PAID_PLANS = new Set(["Solo", "Pro", "Agency"])
+const normalizeBillingCycle = (billingCycle: string | undefined) =>
+  billingCycle === "annual" || billingCycle === "quarterly" ? billingCycle : "monthly"
 
 const getOldOverride = (userId: string) =>
   supabaseSelect("user_overrides", `user_id=eq.${encodeURIComponent(userId)}&select=*&limit=1`).then((rows) => rows?.[0] || null).catch(() => null)
@@ -67,32 +72,42 @@ export async function POST(request: NextRequest) {
   }
 
   const oldValue = await getOldOverride(canonicalUserId)
+  const planOverride = body.planOverride ? body.planOverride.charAt(0).toUpperCase() + body.planOverride.slice(1).toLowerCase() : null
+  if (planOverride && !["Free", ...PAID_PLANS].includes(planOverride)) return NextResponse.json({ error: "invalid_plan" }, { status: 400 })
+  const billingCycle = normalizeBillingCycle(body.billingCycle)
+  const selectedExpiry = normalizeSelectedPlanExpiry(body.expiresAt)
+  const planExpiresAt = planOverride && PAID_PLANS.has(planOverride)
+    ? selectedExpiry || addBillingCycleIso(billingCycle)
+    : selectedExpiry
+  const now = new Date().toISOString()
   const payload = {
     user_id: canonicalUserId,
-    plan_override: body.planOverride ? body.planOverride.charAt(0).toUpperCase() + body.planOverride.slice(1).toLowerCase() : null,
+    plan_override: planOverride,
     draft_limit_override: body.draftLimitOverride ?? null,
     workspace_limit_override: body.workspaceLimitOverride ?? null,
     feature_flags: body.featureFlags || {},
     notes: body.notes || null,
-    expires_at: body.expiresAt || null,
-    updated_at: new Date().toISOString(),
+    expires_at: planExpiresAt,
+    updated_at: now,
   }
   const rows = await supabaseUpsert("user_overrides", payload, "user_id")
   await writeAudit(admin.email, body.targetEmail, "set_override", oldValue, payload)
 
   // Sync plan_usage.plan and users.plan so all read paths see the override immediately.
-  if (body.planOverride) {
+  if (planOverride) {
     try {
       await Promise.all([
         supabase
           .from("plan_usage")
-          .upsert({ user_id: canonicalUserId, plan: body.planOverride.toLowerCase() }, { onConflict: "user_id" }),
+          .upsert({ user_id: canonicalUserId, plan: planOverride.toLowerCase(), cycle_start: now, cycle_end: planExpiresAt, updated_at: now }, { onConflict: "user_id" }),
         supabase
           .from("users")
           .update({
-            plan: body.planOverride,
-            plan_expires_at: body.expiresAt || null,
-            updated_at: new Date().toISOString(),
+            plan: planOverride,
+            plan_expires_at: planExpiresAt,
+            plan_started_at: now,
+            billing_cycle: billingCycle,
+            updated_at: now,
           })
           .eq("id", canonicalUserId),
       ])

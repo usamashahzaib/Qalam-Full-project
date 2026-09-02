@@ -17,6 +17,7 @@ import {
 import { isStalePaymentRevocation } from "@/lib/payment-lifecycle"
 import { resolveCheckoutSession } from "@/lib/server/checkout-session"
 import { recordProductEventSafely, type PaymentProductEvent } from "@/lib/server/product-events"
+import { addBillingCycleIso } from "@/lib/plan-expiry"
 
 export type PaymentProvider = "stripe" | "jazzcash" | "easypaisa" | "lemonsqueezy"
 export type PaymentStatus = "paid" | "failed" | "cancelled" | "partially_refunded" | "refunded"
@@ -519,12 +520,6 @@ export const verifyAndExtractPayment = (request: Request, rawBody: string): Veri
 export const billingCycleDays = (billingCycle: string): number =>
   billingCycle === "annual" ? 365 : billingCycle === "quarterly" ? 90 : 30
 
-const addBillingDays = (days: number) => {
-  const expiry = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
-  expiry.setUTCHours(23, 59, 59, 999)
-  return expiry.toISOString()
-}
-
 /**
  * Errors deliberately propagate: a Supabase outage must surface as a retryable failure,
  * not as "this customer does not exist", which would silently orphan a real payment.
@@ -637,7 +632,7 @@ const processPaymentWebhook = async (payment: VerifiedPayment) => {
   // Prefer the provider's own period end over a locally computed one so our expiry never
   // drifts from theirs across late deliveries and retries.
   const expiresAt = payment.status === "paid"
-    ? payment.periodEndsAt || addBillingDays(billingCycleDays(billingCycle))
+    ? payment.periodEndsAt || addBillingCycleIso(billingCycle)
     : null
   const existingPayment = payment.recordTransaction
     ? await supabaseSelect<{ status: PaymentStatus }>(

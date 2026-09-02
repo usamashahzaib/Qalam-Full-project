@@ -404,15 +404,30 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       </div>
 
                       {/* Expiry */}
-                      <div>
-                        <label className="mb-1 block t-eyebrowst text-zinc-400">Override expires (optional)</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <label>
+                          <span className="mb-1 block t-eyebrowst text-zinc-400">Plan duration</span>
+                          <select
+                            value={form.billingCycle}
+                            onChange={(e) => setForm((p) => ({ ...p, billingCycle: e.target.value as typeof p.billingCycle }))}
+                            className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal"
+                          >
+                            <option value="monthly">1 month</option>
+                            <option value="quarterly">3 months</option>
+                            <option value="annual">1 year</option>
+                          </select>
+                        </label>
+                        <label>
+                          <span className="mb-1 block t-eyebrowst text-zinc-400">Override expires</span>
                         <input
                           type="date"
                           value={form.expiresAt}
                           onChange={(e) => setForm((p) => ({ ...p, expiresAt: e.target.value }))}
                           className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal"
                         />
+                        </label>
                       </div>
+                      <p className="text-xs text-zinc-500">Choose a date to use that exact date. Leave it blank to calculate the selected duration from today.</p>
 
                       {/* Feature flags */}
                       <div>

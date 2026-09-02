@@ -3,8 +3,9 @@ import { fetchWorkspacePlan, requireAdminOps } from "@/lib/server/workspace"
 import { getMonthlyCount } from "@/lib/server/require-plan"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
+import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 
-type UserRow = { id: string; email: string; full_name: string | null; image_url: string | null; external_user_id: string | null; plan_expires_at: string | null; created_at: string | null }
+type UserRow = { id: string; email: string; full_name: string | null; image_url: string | null; external_user_id: string | null; plan_expires_at: string | null; billing_cycle: string | null; created_at: string | null }
 type MembershipRow = { user_id: string; workspace_id: string | null }
 type OverrideRow = { user_id: string; plan_override: string | null; draft_limit_override: number | null; workspace_limit_override: number | null; feature_flags: Record<string, boolean> | null; notes: string | null; expires_at: string | null }
 type AuditRow = { id: string; admin_email: string; target_user_email: string; action: string; old_value: unknown; new_value: unknown; created_at: string }
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
   const offset = (page - 1) * pageSize
   // Push search filter into SQL so pagination applies AFTER filtering
   const searchFilter = q ? `&or=(email.ilike.*${encodeURIComponent(q)}*,full_name.ilike.*${encodeURIComponent(q)}*)` : ""
-  const users = await supabaseSelect<UserRow>("users", `select=id,email,full_name,image_url,external_user_id,plan_expires_at,created_at&order=email.asc&limit=${pageSize}&offset=${offset}${searchFilter}`).catch(() => [])
+  const users = await supabaseSelect<UserRow>("users", `select=id,email,full_name,image_url,external_user_id,plan_expires_at,billing_cycle,created_at&order=email.asc&limit=${pageSize}&offset=${offset}${searchFilter}`).catch(() => [])
   const filtered = users
   const userIds = filtered.map((user) => user.id)
   const memberships = userIds.length
@@ -60,6 +61,8 @@ export async function GET(request: NextRequest) {
     const workspaceIds = memberships.filter((row) => row.user_id === user.id && row.workspace_id).map((row) => row.workspace_id as string)
     const primaryWorkspaceId = workspaceIds[0] || ""
     const planInfo = primaryWorkspaceId ? await fetchWorkspacePlan(primaryWorkspaceId, user.email) : null
+    const canonicalPlan = await getPlanStatus(user.id)
+    const currentPlan = planInfo?.plan && planInfo.plan !== "Free" ? planInfo.plan : canonicalPlan.plan
     const draftsUsed = (await Promise.all(workspaceIds.map((workspaceId) => getMonthlyCount("posts", workspaceId)))).reduce((sum, count) => sum + count, 0)
     // externalId is what plan_usage and user_overrides use as the key
     const externalId = user.external_user_id || user.id
@@ -71,8 +74,11 @@ export async function GET(request: NextRequest) {
       name: user.full_name || user.email.split("@")[0],
       email: user.email,
       linkedInId: user.external_user_id || "",
-      currentPlan: planInfo?.plan || "Free",
-      planExpiresAt: resolvePlanExpiry(planInfo?.expiresAt || user.plan_expires_at, payment?.processed_at || payment?.created_at || user.created_at),
+      currentPlan: currentPlan || "Free",
+      planExpiresAt: currentPlan === planInfo?.plan
+        ? planInfo?.expiresAt || resolvePlanExpiry(user.plan_expires_at, payment?.processed_at || payment?.created_at || user.created_at)
+        : canonicalPlan.expiresAt || resolvePlanExpiry(user.plan_expires_at, payment?.processed_at || payment?.created_at || user.created_at),
+      billingCycle: user.billing_cycle || "monthly",
       draftsUsed,
       workspaces: workspaceIds.length,
       override: overrides.find((o) => o.user_id === user.id || o.user_id === externalId) || null,

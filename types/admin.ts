@@ -24,6 +24,7 @@ export interface AdminUser {
   linkedInId: string
   currentPlan: string
   planExpiresAt?: string | null
+  billingCycle: "monthly" | "quarterly" | "annual"
   draftsUsed: number
   workspaces: number
   override: AdminOverride | null

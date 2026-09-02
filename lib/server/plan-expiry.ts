@@ -1,6 +1,7 @@
 import "server-only"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { sendTransactionalEmail } from "./email"
+import { endOfPlanExpiryDay, getMonthlyQuotaWindow } from "@/lib/plan-expiry"
 
 export interface PlanStatus {
   plan: string
@@ -31,12 +32,6 @@ const normalizePlan = (plan?: string | null) => {
   return "Free"
 }
 
-const endOfUtcDay = (iso: string) => {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return null
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999))
-}
-
 export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   const supabase = createServiceClient()
   const safeId = sanitizeOrFilterValue(userId)
@@ -51,7 +46,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   }
 
   const originalPlan = normalizePlan((user as UserPlanRow).plan)
-  const expiresAt = (user as UserPlanRow).plan_expires_at ? endOfUtcDay((user as UserPlanRow).plan_expires_at as string) : null
+  const expiresAt = endOfPlanExpiryDay((user as UserPlanRow).plan_expires_at)
   if (originalPlan === "Free" || !expiresAt) {
     return { plan: originalPlan, originalPlan, isActive: true, expiresAt: null, renewalDue: false, daysUntilExpiry: null }
   }
@@ -173,9 +168,5 @@ export async function sendExpiryReminders(): Promise<{ sent: number; downgraded:
 }
 
 export function getQuotaResetDate(planStartedAt: string | null, billingCycle: string | null): Date | null {
-  if (!planStartedAt || billingCycle !== "annual") return null
-  const start = new Date(planStartedAt)
-  if (Number.isNaN(start.getTime())) return null
-  const windowsElapsed = Math.floor((Date.now() - start.getTime()) / (30 * MS_DAY))
-  return new Date(start.getTime() + (windowsElapsed + 1) * 30 * MS_DAY)
+  return getMonthlyQuotaWindow(planStartedAt, billingCycle)?.windowEnd ?? null
 }

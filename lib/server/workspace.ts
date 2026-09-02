@@ -13,6 +13,7 @@ import { env } from "@/lib/server/env"
 import { log } from "@/lib/server/logging"
 import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 import { isSessionCurrent } from "@/lib/server/session-revocation"
+import { isPlanExpired } from "@/lib/plan-expiry"
 
 export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
@@ -235,8 +236,9 @@ const fetchUsersPlanByMemberId = async (memberId: string): Promise<UserPlanInfo 
     // users.plan is updated on payment - use it if it's above free and not expired
     const userPlan = user.plan?.toLowerCase()
     if (userPlan && userPlan !== "free") {
-      const expired = user.plan_expires_at && new Date(user.plan_expires_at) < new Date()
+      const expired = isPlanExpired(user.plan_expires_at)
       if (!expired) return { plan: toTitleCasePlan(userPlan), expiresAt: user.plan_expires_at }
+      return null
     }
 
     // Fall back to plan_usage - try both internal and external user IDs
@@ -280,7 +282,7 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
     )
     const org = orgs?.[0]
     if (!org) return { plan: "Free", status: "active", expiresAt: null }
-    const expired = Boolean(org.plan_expires_at && new Date(org.plan_expires_at).getTime() < Date.now() && org.plan !== "Free")
+    const expired = Boolean(org.plan_expires_at && isPlanExpired(org.plan_expires_at) && org.plan !== "Free")
     if (expired) {
       await supabasePatch("organizations", `id=eq.${encodeURIComponent(orgId)}`, {
         plan: "Free",
