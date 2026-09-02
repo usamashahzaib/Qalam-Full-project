@@ -6,6 +6,7 @@ type DeleteArtifactButtonProps = {
   itemType: string
   itemTitle: string
   onDelete: () => Promise<void>
+  onDeleted?: () => void
   className?: string
   label?: string
 }
@@ -14,6 +15,7 @@ export function DeleteArtifactButton({
   itemType,
   itemTitle,
   onDelete,
+  onDeleted,
   className = "min-h-10 rounded-xl border border-red-200 bg-white px-3 text-xs font-bold text-red-600 transition hover:bg-red-50",
   label,
 }: DeleteArtifactButtonProps) {
@@ -21,6 +23,7 @@ export function DeleteArtifactButton({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState("")
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const deletedRef = useRef(false)
   const titleId = useId()
 
   useEffect(() => {
@@ -33,11 +36,18 @@ export function DeleteArtifactButton({
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [open, deleting])
 
+  useEffect(() => {
+    if (open || !deletedRef.current) return
+    deletedRef.current = false
+    onDeleted?.()
+  }, [open, onDeleted])
+
   const confirmDelete = async () => {
     setDeleting(true)
     setError("")
     try {
       await onDelete()
+      deletedRef.current = true
       setOpen(false)
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : `Could not delete this ${itemType}.`)
@@ -63,7 +73,7 @@ export function DeleteArtifactButton({
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/55 px-4 backdrop-blur-sm" role="presentation" onMouseDown={() => !deleting && setOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/55 px-4" role="presentation" onMouseDown={() => !deleting && setOpen(false)}>
           <div
             role="dialog"
             aria-modal="true"

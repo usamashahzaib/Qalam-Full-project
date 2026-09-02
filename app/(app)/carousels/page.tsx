@@ -42,6 +42,7 @@ export default function CarouselsPage() {
   const [role, setRole] = useState<string>(ROLE_SUGGESTIONS[0])
   const [slideCount, setSlideCount] = useState(5)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [generatorOpen, setGeneratorOpen] = useState(false)
   const maxSlides = getEffectivePlanLimits(billing.plan, billing.limits).carouselSlides
 
   const carouselSourcePosts = useMemo(() => [...posts].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt))).slice(0, 12), [posts])
@@ -57,6 +58,7 @@ export default function CarouselsPage() {
           // eslint-disable-next-line react-hooks/set-state-in-effect
           setSeed(data.content)
           setSelectedPostId("manual")
+          setGeneratorOpen(true)
           setTimeout(() => {
             document.querySelector<HTMLElement>("[data-carousel-generator]")?.scrollIntoView({ behavior: "smooth", block: "start" })
           }, 100)
@@ -104,6 +106,7 @@ export default function CarouselsPage() {
       setSeed("")
       setSelectedPostId("manual")
       await fetchCarousels()
+      setGeneratorOpen(false)
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -118,6 +121,8 @@ export default function CarouselsPage() {
     setCarousels((prev) => prev.filter((carousel) => carousel.id !== id))
   }
 
+  const showGenerator = generatorOpen || (!isLoading && carousels.length === 0)
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-10 sm:px-10 font-jakarta">
         <div className="relative mb-8 overflow-hidden rounded-2xl border border-zinc-100 bg-white px-6 py-5 shadow-sm">
@@ -130,12 +135,13 @@ export default function CarouselsPage() {
             </div>
             <div className="flex shrink-0 items-center gap-3">
               <button onClick={fetchCarousels} className="text-sm font-semibold text-teal transition-colors hover:text-teal-700">Refresh</button>
+              {carousels.length > 0 ? <button type="button" onClick={() => setGeneratorOpen((isOpen) => !isOpen)} aria-expanded={showGenerator} className="rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-bold text-zinc-700 transition-colors hover:border-teal/40 hover:text-teal">{showGenerator ? "Close builder" : "Create carousel"}</button> : null}
               <Link href={withClientParam("/writer", activeClientId)} className="rounded-xl bg-teal px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600">Open Writer</Link>
             </div>
           </div>
         </div>
 
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]" data-carousel-generator>
+        {showGenerator ? <div className="mb-6 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]" data-carousel-generator>
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -241,7 +247,7 @@ export default function CarouselsPage() {
               ))}
             </div>
           </section>
-        </div>
+        </div> : null}
 
         {error ? <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
@@ -253,7 +259,15 @@ export default function CarouselsPage() {
             <p className="mt-1 text-sm text-zinc-500">Generate the first deck from a post or brief above.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-zinc-900">Saved carousels</h2>
+                <p className="mt-0.5 text-sm text-zinc-500">Open a deck to refine its slides or export it.</p>
+              </div>
+              <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-500">{carousels.length} saved</span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {carousels.map((carousel) => (
               <div key={carousel.id} className="group relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-teal/40 hover:shadow-md">
                 <Link href={withClientParam(`/carousels/${carousel.id}`, activeClientId)} className="block">
@@ -283,7 +297,8 @@ export default function CarouselsPage() {
                 />
               </div>
             ))}
-          </div>
+            </div>
+          </section>
         )}
 
         {!isLoading && carousels.length > 0 ? <p className="mt-6 text-center text-xs text-zinc-400">{carousels.length} carousel{carousels.length !== 1 ? "s" : ""} in this workspace</p> : null}

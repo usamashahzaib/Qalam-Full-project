@@ -61,8 +61,9 @@ export default function CoverLetterEditorPage() {
     const response = await fetch(`/api/career/cover-letters/${params.id}${suffix}`, { method: "DELETE" })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error || "Cover letter could not be deleted.")
-    router.push(`/career/cover-letters${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
   }
+
+  const leaveDeletedCoverLetter = () => router.replace(`/career/cover-letters${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
 
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading cover letter..."}</main>
 
@@ -84,7 +85,7 @@ export default function CoverLetterEditorPage() {
             <p className="mt-1 text-sm text-zinc-500">{document.targetRole}{document.targetCompany ? ` at ${document.targetCompany}` : ""}</p>
           </div>
           <div className="flex gap-2">
-            <DeleteArtifactButton itemType="cover letter" itemTitle={document.title} onDelete={deleteCoverLetter} />
+            <DeleteArtifactButton itemType="cover letter" itemTitle={document.title} onDelete={deleteCoverLetter} onDeleted={leaveDeletedCoverLetter} />
             <button onClick={copy} className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700">{copied ? "Copied" : "Copy text"}</button>
             <button onClick={() => window.print()} className="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700">Export PDF</button>
             <button onClick={save} disabled={saving} className="rounded-xl bg-teal px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save"}</button>
