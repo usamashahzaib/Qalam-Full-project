@@ -59,7 +59,7 @@ export function PricingCard({
     <motion.div
       whileHover={{ scale: isComingSoon ? 1.005 : 1.02, transition: { duration: 0.22, ease: "easeOut" } }}
       whileTap={{ scale: 0.995 }}
-      className={`relative flex flex-col rounded-2xl border p-8 ${
+      className={`relative flex flex-col rounded-2xl border p-6 xl:p-7 ${
         isComingSoon
           ? "border-zinc-200 bg-white/60 opacity-70 shadow-sm"
           : highlighted

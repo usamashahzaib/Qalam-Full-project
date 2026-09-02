@@ -218,7 +218,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
     <div className="min-h-screen bg-zinc-50 pt-24">
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-20">
+      <section className="relative overflow-hidden border-b border-zinc-100 bg-white px-6 py-14 sm:py-16">
         <QalamEvidenceField variant="quiet" />
         <div className="relative z-10 mx-auto max-w-[1200px] text-center">
           <FadeUp>
@@ -295,7 +295,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
       </section>
 
       {/* Plan cards */}
-      <section className="px-6 py-20">
+      <section id="plans" className="px-6 py-20">
         <div className="mx-auto max-w-[1200px]">
 
           {/* Tab switcher */}
@@ -352,7 +352,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mx-auto grid max-w-[1100px] grid-cols-1 items-start gap-6 md:grid-cols-3"
+                    className="mx-auto grid max-w-[1240px] grid-cols-1 items-start gap-5 sm:grid-cols-2 min-[1180px]:grid-cols-4"
                   >
                     {displayPlans.map((plan, i) => (
                       <motion.div
@@ -430,7 +430,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="sm:text-right">
               <p className="text-xs text-white/40 line-through">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p>
               <p className="mt-1 text-2xl font-bold text-gold">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</p>
-              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open Job-Win Pack</Link>
+              <Link href={`${APP_URL}/career/add-ons`} className="mt-4 inline-flex rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">View Job-Win Pack</Link>
             </div>
           </div>
 
@@ -462,8 +462,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
-              <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
-              <Link href={`${APP_URL}/login?callbackUrl=/settings/referrals`} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
+              <Link href={`${APP_URL}/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
+              <Link href={`${APP_URL}/settings/referrals`} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
             </div>
           </FadeUp>
         </div>
@@ -612,45 +612,52 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
       {/* FAQ */}
       <section id="faq" className="bg-white px-6 py-20">
-        <div className="mx-auto max-w-[760px]">
+        <div className="mx-auto max-w-[1100px]">
           <FadeUp className="mb-12 text-center">
             <span className="chip mb-4 border-teal/30 text-teal">Pricing FAQ</span>
             <h2 className="mt-3 text-3xl font-bold text-zinc-900">Common questions</h2>
           </FadeUp>
 
-          <div className="flex flex-col gap-3">
-            {PRICING_FAQ.map((item, i) => (
-              <FadeUp key={item.q} delay={i * 0.04}>
-                <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-colors hover:border-teal/30">
-                  <button
-                    className="flex w-full items-center justify-between px-6 py-4 text-left"
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    aria-expanded={openFaq === i}
-                  >
-                    <span className="text-base font-semibold text-zinc-900">{item.q}</span>
-                    <motion.span
-                      animate={{ rotate: openFaq === i ? 45 : 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
-                    >
-                      +
-                    </motion.span>
-                  </button>
-                  <AnimatePresence>
-                    {openFaq === i && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        <p className="px-6 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </FadeUp>
+          <div className="grid items-start gap-3 md:grid-cols-2 md:gap-4">
+            {[PRICING_FAQ.slice(0, 5), PRICING_FAQ.slice(5)].map((column, columnIndex) => (
+              <div key={columnIndex} className="flex flex-col gap-3">
+                {column.map((item, itemIndex) => {
+                  const i = columnIndex * 5 + itemIndex
+                  return (
+                    <FadeUp key={item.q} delay={i * 0.04}>
+                      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition-colors hover:border-teal/30">
+                        <button
+                          className="flex min-h-14 w-full items-center justify-between px-5 py-4 text-left"
+                          onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                          aria-expanded={openFaq === i}
+                        >
+                          <span className="text-sm font-semibold text-zinc-900 sm:text-base">{item.q}</span>
+                          <motion.span
+                            animate={{ rotate: openFaq === i ? 45 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
+                          >
+                            +
+                          </motion.span>
+                        </button>
+                        <AnimatePresence>
+                          {openFaq === i && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: "easeInOut" }}
+                              className="overflow-hidden"
+                            >
+                              <p className="px-5 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </FadeUp>
+                  )
+                })}
+              </div>
             ))}
           </div>
         </div>
