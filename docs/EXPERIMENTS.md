@@ -26,6 +26,7 @@
 | Authority, Personal, and Offer intent selector in Writer | 8/7/8 | implemented, measure hook selection and saved-draft rate by intent |
 | Today's Win dashboard with clear reuse value and a 13-part progress map | 9/6/7 | implemented as new control, measure completion and seven-day return |
 | Earned bonus smart comments for meaningful stage completion | 9/4/3 | planned, requires a permanent reward ledger and abuse controls |
+| Visible delete control for every saved generated output | 9/8/8 | implemented, measure support requests and abandoned cleanup attempts |
 
 ## ATS CTA measurement note
 

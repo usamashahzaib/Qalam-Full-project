@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type CoverLetterListItem = {
   id: string
@@ -55,6 +56,13 @@ export default function CoverLettersPage() {
     setLoading(false)
   }
 
+  const deleteLetter = async (id: string) => {
+    const response = await fetch(`/api/career/cover-letters/${id}${suffix}`, { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Cover letter could not be deleted.")
+    setLetters((current) => current.filter((letter) => letter.id !== id))
+  }
+
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -97,11 +105,14 @@ export default function CoverLettersPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {letters.map((letter) => (
-                <Link key={letter.id} href={`/career/cover-letters/${letter.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
-                  <h3 className="font-bold text-zinc-900">{letter.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-500">{letter.targetRole}{letter.targetCompany ? ` at ${letter.targetCompany}` : ""}</p>
-                  <p className="mt-4 text-xs text-zinc-400">Updated {new Date(letter.updatedAt).toLocaleDateString()}</p>
-                </Link>
+                <article key={letter.id} className="relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
+                  <Link href={`/career/cover-letters/${letter.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="block pr-12">
+                    <h3 className="font-bold text-zinc-900">{letter.title}</h3>
+                    <p className="mt-1 text-sm text-zinc-500">{letter.targetRole}{letter.targetCompany ? ` at ${letter.targetCompany}` : ""}</p>
+                    <p className="mt-4 text-xs text-zinc-400">Updated {new Date(letter.updatedAt).toLocaleDateString()}</p>
+                  </Link>
+                  <DeleteArtifactButton itemType="cover letter" itemTitle={letter.title} onDelete={() => deleteLetter(letter.id)} className="absolute right-4 top-3 min-h-10 rounded-xl px-3 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" />
+                </article>
               ))}
             </div>
           )}

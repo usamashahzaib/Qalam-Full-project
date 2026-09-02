@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ATS_FUNNEL_SOURCE, ATS_RESUME_DESTINATION, isAtsCtaPlacement } from "@/lib/ats-funnel"
 import { trackMarketingEvent } from "@/lib/marketing-events"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type ResumeListItem = {
   id: string
@@ -117,6 +118,13 @@ export default function ResumesPage() {
     setLoading(false)
   }
 
+  const deleteResume = async (id: string) => {
+    const response = await fetch(`/api/career/resumes/${id}${suffix}`, { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Resume could not be deleted.")
+    setResumes((current) => current.filter((resume) => resume.id !== id))
+  }
+
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -189,12 +197,15 @@ export default function ResumesPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {resumes.map((resume) => (
-                <Link key={resume.id} href={`/career/resumes/${resume.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
-                  <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold-700">{resume.atsScore}/100</span>}</div>
-                  <h3 className="mt-5 font-bold text-zinc-900">{resume.title}</h3>
-                  <p className="mt-1 text-sm text-zinc-500">{resume.targetRole}{resume.targetCompany ? ` at ${resume.targetCompany}` : ""}</p>
-                  <p className="mt-4 text-xs text-zinc-400">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
-                </Link>
+                <article key={resume.id} className="relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-md">
+                  <Link href={`/career/resumes/${resume.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`} className="block pr-12">
+                    <div className="flex items-start justify-between"><span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow text-teal">{resume.templateKey}</span>{resume.atsScore != null && <span className="text-sm font-bold text-gold-700">{resume.atsScore}/100</span>}</div>
+                    <h3 className="mt-5 font-bold text-zinc-900">{resume.title}</h3>
+                    <p className="mt-1 text-sm text-zinc-500">{resume.targetRole}{resume.targetCompany ? ` at ${resume.targetCompany}` : ""}</p>
+                    <p className="mt-4 text-xs text-zinc-400">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
+                  </Link>
+                  <DeleteArtifactButton itemType="resume" itemTitle={resume.title} onDelete={() => deleteResume(resume.id)} className="absolute right-4 top-4 min-h-10 rounded-xl px-3 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" />
+                </article>
               ))}
             </div>
           )}

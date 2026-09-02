@@ -6,7 +6,7 @@
 |---|---|---|
 | 1. Jobs to be done | done | Daily return job and emotional need documented |
 | 2. UX heuristics | in-progress | Remove dashboard jargon and unclear progress labels |
-| 3. Error prevention | pending | Review forms, destructive actions, and recovery states |
+| 3. Error prevention | in-progress | Generated outputs now have consistent, confirmed deletion; continue form recovery review |
 | 4. Visual hierarchy | in-progress | Premium app canvas and dashboard hierarchy |
 | 5. Microinteractions | pending | Save feedback and one signature completion moment |
 | 6. In-app language | in-progress | Replace proof banking, rhythm, and momentum jargon |
@@ -25,6 +25,8 @@
 
 ## Next Actions
 
+- [x] Give every persisted generated output a visible delete action in its library and editor.
+- [x] Verify the dashboard carousel handoff, generation API, editor, quota, and deletion with an authenticated browser audit.
 - [ ] Measure daily-win completion and seven-day return rate.
 - [ ] Define the permanent 13-stage milestone ledger before calling stages completed.
 - [ ] Design a bonus-comment ledger with fraud protection, expiry rules, and visible balance history.

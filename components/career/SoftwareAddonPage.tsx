@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import type { AddonToolConfig } from "@/lib/career-addon-tools"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type FormState = Record<AddonToolConfig["fields"][number]["key"], string>
 type Result = { summary: string; score: number; sections: { title: string; items: string[] }[] }
@@ -75,6 +76,17 @@ export default function SoftwareAddonPage({ config }: { config: AddonToolConfig 
     window.setTimeout(() => setCopied(false), 1800)
   }
 
+  const deleteArtifact = async (artifact: Artifact) => {
+    const response = await fetch(`/api/career/addon-tools/${config.slug}${apiSuffix}${apiSuffix ? "&" : "?"}id=${encodeURIComponent(artifact.id)}`, { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Saved result could not be deleted.")
+    setArtifacts((current) => {
+      const next = current.filter((item) => item.id !== artifact.id)
+      setSelected((selectedItem) => selectedItem?.id === artifact.id ? next[0] || null : selectedItem)
+      return next
+    })
+  }
+
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <style jsx global>{`@media print { body * { visibility: hidden !important; } #career-addon-output, #career-addon-output * { visibility: visible !important; } #career-addon-output { position: absolute; inset: 0; width: 100%; border: 0 !important; box-shadow: none !important; } @page { size: A4; margin: 1.6cm; } }`}</style>
@@ -108,7 +120,7 @@ export default function SoftwareAddonPage({ config }: { config: AddonToolConfig 
             <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
               <div className="border-b border-zinc-100 px-5 py-4"><h2 className="text-sm font-bold text-zinc-900">Saved results</h2></div>
               {loading ? <div className="space-y-3 p-5"><div className="h-10 animate-pulse rounded-lg bg-zinc-100"/><div className="h-10 animate-pulse rounded-lg bg-zinc-100"/></div>
-                : artifacts.length ? <div className="divide-y divide-zinc-100">{artifacts.map((artifact) => <button key={artifact.id} onClick={() => setSelected(artifact)} className={`w-full px-5 py-4 text-left transition ${selected?.id === artifact.id ? "bg-teal/[0.05]" : "hover:bg-zinc-50"}`}><p className="text-sm font-semibold text-zinc-900">{artifact.title}</p><p className="mt-1 text-xs text-zinc-400">{new Date(artifact.updated_at).toLocaleDateString()}</p></button>)}</div>
+                : artifacts.length ? <div className="divide-y divide-zinc-100">{artifacts.map((artifact) => <div key={artifact.id} className={`flex items-center gap-2 px-3 py-2 ${selected?.id === artifact.id ? "bg-teal/[0.05]" : "hover:bg-zinc-50"}`}><button onClick={() => setSelected(artifact)} className="min-w-0 flex-1 px-2 py-2 text-left"><p className="truncate text-sm font-semibold text-zinc-900">{artifact.title}</p><p className="mt-1 text-xs text-zinc-400">{new Date(artifact.updated_at).toLocaleDateString()}</p></button><DeleteArtifactButton itemType="saved result" itemTitle={artifact.title} onDelete={() => deleteArtifact(artifact)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" /></div>)}</div>
                   : <div className="px-5 py-10 text-center"><p className="text-sm font-semibold text-zinc-700">Nothing generated yet.</p><p className="mt-1 text-xs leading-5 text-zinc-500">Your saved software outputs will appear here.</p></div>}
             </section>
           </aside>

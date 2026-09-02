@@ -138,3 +138,23 @@ export async function POST(request: NextRequest, context: { params: Promise<{ to
     return NextResponse.json({ artifact: data }, { status: 201 })
   })(request)
 }
+
+export async function DELETE(request: NextRequest, context: { params: Promise<{ tool: string }> }) {
+  return withAuth(async (req) => {
+    const config = getCareerAddonTool((await context.params).tool)
+    if (!config) return NextResponse.json({ error: "Career tool not found." }, { status: 404 })
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
+    const id = new URL(req.url).searchParams.get("id")
+    if (!id) return NextResponse.json({ error: "Saved result id is required." }, { status: 400 })
+    const { error } = await createScopedClient(planCheck.workspaceId)
+      .from("career_addon_artifacts")
+      .update({ status: "archived", updated_at: new Date().toISOString() })
+      .eq("id", id)
+      .eq("addon_key", config.addonKey)
+    if (error) return NextResponse.json({ error: "Saved result could not be deleted." }, { status: 500 })
+    return NextResponse.json({ success: true })
+  })(request)
+}

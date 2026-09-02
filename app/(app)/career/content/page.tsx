@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type Analysis = {
   content_worth_score?: number
@@ -50,6 +51,14 @@ export default function ContentIntelligencePage() {
     setLoading(false)
   }
 
+  const deleteAnalysis = async (id: string) => {
+    const response = await fetch(`/api/career/content-intelligence${suffix}${suffix ? "&" : "?"}id=${encodeURIComponent(id)}`, { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Analysis could not be deleted.")
+    setHistory((current) => current.filter((item) => item.id !== id))
+    setAnalysis(null)
+  }
+
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
@@ -68,7 +77,7 @@ export default function ContentIntelligencePage() {
             {analysis ? <Result analysis={analysis} /> : <div className="py-16 text-center text-sm text-zinc-400">Your content worth analysis appears here.</div>}
           </aside>
         </div>
-        {history.length > 0 && <section className="mt-5"><h2 className="mb-3 text-lg font-bold text-zinc-900">Imported post history</h2><div className="grid gap-3 md:grid-cols-3">{history.slice(0, 9).map((item) => <div key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4"><div className="flex justify-between"><span className="text-xs font-bold text-teal">Worth score</span><span className="font-bold text-gold">{item.analysis?.content_worth_score || 0}</span></div><p className="mt-3 line-clamp-4 text-xs leading-5 text-zinc-600">{item.content}</p></div>)}</div></section>}
+        {history.length > 0 && <section className="mt-5"><h2 className="mb-3 text-lg font-bold text-zinc-900">Imported post history</h2><div className="grid gap-3 md:grid-cols-3">{history.slice(0, 9).map((item) => <article key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold text-teal">Worth score</span><span className="ml-2 font-bold text-gold">{item.analysis?.content_worth_score || 0}</span></div><DeleteArtifactButton itemType="content analysis" itemTitle={item.content.slice(0, 80)} onDelete={() => deleteAnalysis(item.id)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" /></div><p className="mt-3 line-clamp-4 text-xs leading-5 text-zinc-600">{item.content}</p></article>)}</div></section>}
       </div>
     </main>
   )

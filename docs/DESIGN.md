@@ -43,6 +43,8 @@ Jakarta is the primary interface and body family. Cormorant is reserved for shor
 | Daily dashboard used proof banking, signal bank, rhythm, and momentum for one simple action | match to real language | 4 | use Today&apos;s Win, Your Week, Recent Wins, and Progress | shipped |
 | Dashboard progress looked clinical and visually flat | hierarchy and emotional design | 3 | make the daily action dominant, move progress into a rich supporting panel, and add a 13-part progress map | shipped |
 | A missed day could feel like failure | user control and recovery | 3 | state that saved work remains and let the user continue without repair pressure | shipped |
+| Generated career outputs and carousel decks could not always be removed where they appeared | user control and freedom | 4 | add a shared confirmation dialog plus visible delete actions in libraries and editors | shipped |
+| Carousel deletion was hidden until pointer hover and unavailable as a clear mobile action | accessibility and discoverability | 3 | keep the action visible, touch-friendly, and keyboard operable | shipped |
 
 ## Microinteraction Inventory
 
@@ -55,6 +57,7 @@ Jakarta is the primary interface and body family. Cormorant is reserved for shor
 | Writer generation | immediate busy state followed by draft and score feedback | keep motion under 250 milliseconds and respect reduced motion | active |
 | Contact link | visible underline and 44 pixel mobile target | preserve | active |
 | Save today's win | button responds immediately, saves once, confirms reusable value, then presents the next useful move | implemented | active |
+| Delete generated output | visible action opens a focused confirmation dialog, supports Escape, reports failure inline, and removes the item after success | implemented | active |
 
 ## Motion Principles
 

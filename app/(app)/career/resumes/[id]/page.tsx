@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import type { ResumeData } from "@/lib/career-resume"
 import { emptyResumeData } from "@/lib/career-resume"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ResumePreview } from "@/components/career/ResumePreview"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type ResumeDocument = {
   id: string
@@ -25,6 +26,7 @@ const label = "mb-1 block t-eyebrow text-zinc-500"
 
 export default function ResumeEditorPage() {
   const params = useParams<{ id: string }>()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
   const suffix = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
@@ -89,6 +91,14 @@ export default function ResumeEditorPage() {
     }
   }
 
+  const deleteResume = async () => {
+    if (!document) return
+    const response = await fetch(`/api/career/resumes/${params.id}${suffix}`, { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Resume could not be deleted.")
+    router.push(`/career/resumes${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
+  }
+
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading resume..."}</main>
   const data = document.resumeData || emptyResumeData
 
@@ -105,7 +115,7 @@ export default function ResumeEditorPage() {
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
-          <div className="flex flex-wrap gap-2"><button onClick={downloadPdf} disabled={downloading} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
+          <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} /><button onClick={downloadPdf} disabled={downloading} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 

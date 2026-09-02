@@ -93,3 +93,17 @@ Return:
     return NextResponse.json({ id: saved.id, analysis: normalized })
   })(request)
 }
+
+export async function DELETE(request: NextRequest) {
+  return withAuth(async (req) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
+    const id = new URL(req.url).searchParams.get("id")
+    if (!id) return NextResponse.json({ error: "Analysis id is required." }, { status: 400 })
+    const { error } = await createScopedClient(planCheck.workspaceId).from("career_content_imports").delete().eq("id", id)
+    if (error) return NextResponse.json({ error: "Analysis could not be deleted." }, { status: 500 })
+    return NextResponse.json({ success: true })
+  })(request)
+}

@@ -20,6 +20,7 @@ import { CoverSlide } from "@/components/carousel/CoverSlide"
 import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
 import { generateCarouselZip, generateCarouselPdf, captureCarouselPdfBytes } from "@/lib/carousel-generator"
+import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 const SLIDE_SCALE = 0.40
 const PREVIEW_W = Math.round(CANVAS.width * SLIDE_SCALE)
@@ -394,6 +395,13 @@ export default function CarouselEditorPage() {
 
   const currentSlide = slides[activeSlide]
 
+  const deleteCarousel = async () => {
+    const response = await fetch(withWorkspaceKey(`/api/carousel/${id}`, workspaceId), { method: "DELETE" })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error || "Carousel could not be deleted.")
+    router.push(withClientParam("/carousels", activeClientId))
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 sm:px-10 font-jakarta">
 
@@ -411,6 +419,7 @@ export default function CarouselEditorPage() {
           <p className="mt-0.5 text-sm text-zinc-500">{slides.length} slides - {project?.theme || "LinkedIn carousel"}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <DeleteArtifactButton itemType="carousel" itemTitle={slides[0]?.title || "Untitled carousel"} onDelete={deleteCarousel} />
           <button onClick={exportAsText} className="rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">
             Export text
           </button>
