@@ -34,7 +34,7 @@ export default function CareerVisibilityPage() {
           <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight sm:text-6xl">Get found. Build trust. Get shortlisted.</h1>
           <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, applications, and interview story should use the same credible evidence. Qalam connects the complete outcome workflow.</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={`${APP_URL}/login?callbackUrl=/career`} className="rounded-xl bg-gold px-6 py-4 font-bold text-teal-900">Start free</Link>
+            <Link href={`${APP_URL}/career`} className="rounded-xl bg-gold px-6 py-4 font-bold text-teal-900">Start free</Link>
             <Link href="/pricing" className="rounded-xl border border-white/25 px-6 py-4 font-bold text-white">See plans and add-ons</Link>
           </div>
         </div>
@@ -69,7 +69,7 @@ export default function CareerVisibilityPage() {
               <h2 className="mt-3 text-4xl font-bold text-zinc-900">Pay for the output, not another subscription.</h2>
               <p className="mt-4 text-base leading-7 text-zinc-600">Each credit generates and saves the result inside your Qalam workspace. Card checkout appears only for configured products.</p>
             </div>
-            <Link href={`${APP_URL}/login?callbackUrl=/career/add-ons`} className="w-fit rounded-xl bg-teal px-6 py-4 font-bold text-white">Open career add-ons</Link>
+            <Link href={`${APP_URL}/career/add-ons`} className="w-fit rounded-xl bg-teal px-6 py-4 font-bold text-white">Open career add-ons</Link>
           </div>
 
           <div className="mt-10 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
@@ -96,7 +96,7 @@ export default function CareerVisibilityPage() {
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-4xl font-bold text-zinc-900">Stop presenting a different version of yourself everywhere.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-600">Build the evidence once. Adapt it for the platform, audience, and job without changing the truth.</p>
-          <Link href={`${APP_URL}/login?callbackUrl=/career/evidence`} className="mt-8 inline-flex rounded-xl bg-teal px-7 py-4 font-bold text-white">Build your Evidence Vault</Link>
+          <Link href={`${APP_URL}/career/evidence`} className="mt-8 inline-flex rounded-xl bg-teal px-7 py-4 font-bold text-white">Build your Evidence Vault</Link>
         </div>
       </section>
     </main>

@@ -4,6 +4,7 @@ import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import { gaScriptHash } from "@/lib/csp-inline-scripts"
 import { PROTECTED_ROUTES } from "@/lib/protected-routes"
+import { safeRedirectPath } from "@/lib/validation"
 
 // ─── Redis rate limiters ─────────────────────────────────────────────────────
 // Lazy-initialized per Edge invocation; state persists in Upstash, not memory.
@@ -161,6 +162,14 @@ function rateLimitExceededResponse(isApiRoute: boolean): NextResponse {
 export { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 const AUTH_ONLY_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"]
+
+export function authenticatedAuthRedirect(callbackUrl: string | null): string {
+  const destination = safeRedirectPath(callbackUrl)
+  const pointsBackToAuth = AUTH_ONLY_ROUTES.some(
+    (route) => destination === route || destination.startsWith(`${route}/`)
+  )
+  return pointsBackToAuth ? "/dashboard" : destination
+}
 
 // Page routes with no auth gate of their own (token-based, not session-based)
 // that still belong on the app subdomain rather than the marketing site.
@@ -470,8 +479,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   if (isAuthOnly && userId) {
+    const destination = authenticatedAuthRedirect(request.nextUrl.searchParams.get("callbackUrl"))
     return await addSecurityHeaders(
-      NextResponse.redirect(new URL("/dashboard", request.url)),
+      NextResponse.redirect(new URL(destination, request.url)),
       { nonce }
     )
   }
