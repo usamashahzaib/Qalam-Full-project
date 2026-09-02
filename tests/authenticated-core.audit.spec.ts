@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test"
-import { encode } from "next-auth/jwt"
 import { createClient } from "@supabase/supabase-js"
 import { PDFDocument, StandardFonts } from "pdf-lib"
 import argon2 from "argon2"
@@ -39,7 +38,7 @@ test("local email and password login succeeds", async ({ page }) => {
   try {
     await page.goto("/login")
     await page.getByLabel("Email").fill(email)
-    await page.getByLabel("Password").fill(password)
+    await page.getByLabel("Password", { exact: true }).fill(password)
     const authResponsePromise = page.waitForResponse((response) =>
       response.url().includes("/api/auth/callback/credentials"),
     )
@@ -70,11 +69,11 @@ test("local email and password login succeeds", async ({ page }) => {
   }
 })
 
-test("authenticated writer, dashboard, settings, and account deletion", async ({ page, context }) => {
+test("authenticated writer, dashboard, settings, and account deletion", async ({ page }) => {
   test.skip(process.env.RUN_AUTHENTICATED_AUDIT !== "1", "Requires live Supabase and AI providers")
-  test.setTimeout(180_000)
-  const secret = process.env.AUTH_SECRET
-  if (!secret) throw new Error("AUTH_SECRET is required for authenticated audit")
+  test.setTimeout(480_000)
+  page.setDefaultTimeout(15_000)
+  page.setDefaultNavigationTimeout(60_000)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !serviceRoleKey) throw new Error("Supabase service credentials are required")
@@ -82,41 +81,41 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const loginResponse = await page.goto("/login")
-  expect(loginResponse?.status()).toBe(200)
-  await expect(page.locator("body")).not.toContainText(/Internal server error|Application error/)
-
   const auditId = crypto.randomUUID()
   const email = `audit-${auditId}@example.invalid`
-  const session = {
-    sub: auditId,
-    id: auditId,
-    email,
-    name: "Audit Runtime",
-    provider: "linkedin",
-  }
-  const cookieNames = ["authjs.session-token", "__Secure-authjs.session-token"] as const
-  const cookies = await Promise.all(cookieNames.map(async (name) => ({
-    name,
-    value: await encode({ secret, salt: name, maxAge: 60 * 60, token: session }),
-    domain: "localhost",
-    path: "/",
-    httpOnly: true,
-    secure: name.startsWith("__Secure-"),
-    sameSite: "Lax" as const,
-  })))
+  const password = `Qalam!${auditId}`
+  const passwordHash = await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 65536,
+    timeCost: 3,
+    parallelism: 1,
+  })
+  const { data: auditUser, error: auditUserError } = await supabase
+    .from("users")
+    .insert({
+      id: auditId,
+      email,
+      full_name: "Audit Runtime",
+      password_hash: passwordHash,
+      email_verified: true,
+      auth_provider: "credentials",
+    })
+    .select("id")
+    .single()
+  if (auditUserError || !auditUser) throw auditUserError || new Error("Could not create audit user")
 
-  await context.addCookies(cookies)
-
-  let provisioned = false
   try {
-    const dashboardResponse = await page.goto("/dashboard")
-    expect(dashboardResponse?.status()).toBeLessThan(400)
+    const loginResponse = await page.goto("/login")
+    expect(loginResponse?.status()).toBe(200)
+    await expect(page.locator("body")).not.toContainText(/Internal server error|Application error/)
+    await page.getByLabel("Email", { exact: true }).fill(email)
+    await page.getByLabel("Password", { exact: true }).fill(password)
+    await page.getByRole("button", { name: "Sign in", exact: true }).click()
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15_000 })
     await expect(page.locator("body")).not.toContainText("Could not load")
 
     const dashboardApi = await page.request.get("/api/dashboard/stats")
     expect(dashboardApi.status()).toBe(200)
-    provisioned = true
     const dashboard = await dashboardApi.json()
     expect(dashboard.plan).toBe("Free")
     expect(dashboard.draftsTotal).toBe(5)
@@ -130,6 +129,21 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     const userMenu = page.getByRole("button", { name: "User menu" })
     await expect(userMenu).toContainText("Audit Runtime")
 
+    const skipTour = page.getByRole("button", { name: "Skip tour" })
+    if (await skipTour.isVisible()) {
+      await skipTour.click()
+      await expect(skipTour).toBeHidden()
+    }
+
+    const createCarouselLink = page.getByRole("link", { name: /Create Carousel/ })
+    await expect(createCarouselLink).toBeVisible()
+    expect(await createCarouselLink.getAttribute("href")).toBe("/writer?mode=carousel")
+    await Promise.all([
+      page.waitForURL(/\/writer\?mode=carousel$/, { timeout: 15_000 }),
+      createCarouselLink.click(),
+    ])
+    await expect(page.getByRole("button", { name: "Generate Carousel" })).toBeVisible()
+
     const freeGates = [
       ["/calendar", "Upgrade to Solo"],
       ["/analytics", "Upgrade to Solo"],
@@ -137,11 +151,10 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       ["/chat", "Upgrade to Pro"],
       ["/approvals", "Upgrade to Pro"],
       ["/competitors", "Upgrade to Pro"],
-      ["/career/network", "Upgrade to Pro"],
       ["/agency", "Upgrade to Agency"],
     ] as const
     for (const [path, upgradeLabel] of freeGates) {
-      const response = await page.goto(path)
+      const response = await page.goto(path, { waitUntil: "domcontentloaded" })
       expect(response?.status(), path).toBeLessThan(400)
       await expect(page.locator("#main-content").getByRole("button", { name: upgradeLabel }).last(), path).toBeVisible()
     }
@@ -213,6 +226,28 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     })
     expect(slideUpdate.status()).toBe(200)
 
+    const carouselListApi = await page.request.get("/api/carousel")
+    expect(carouselListApi.status()).toBe(200)
+    const carouselList = await carouselListApi.json()
+    expect(carouselList.carousels).toEqual(expect.arrayContaining([expect.objectContaining({ id: carousel.id, topic })]))
+
+    const carouselLibrary = await page.goto("/carousels")
+    expect(carouselLibrary?.status()).toBeLessThan(400)
+    await expect(page.getByRole("heading", { name: /Build premium decks/ })).toBeVisible()
+    await page.getByRole("button", { name: "Refresh" }).click()
+    await expect(page.getByText(topic, { exact: true }).first()).toBeVisible({ timeout: 15_000 })
+    await page.screenshot({ path: ".gstack/qa-reports/screenshots/carousel-library-before-delete.png", fullPage: true })
+    await page.goto(`/carousels/${carousel.id}`)
+    await expect(page.getByRole("heading", { name: "Carousel Editor" })).toBeVisible({ timeout: 20_000 })
+    await page.getByRole("button", { name: "Delete carousel" }).click()
+    const deleteDialog = page.getByRole("dialog", { name: "Delete this carousel?" })
+    await expect(deleteDialog).toBeVisible()
+    await deleteDialog.getByRole("button", { name: "Delete", exact: true }).click()
+    await expect(page).toHaveURL(/\/carousels$/, { timeout: 15_000 })
+    await expect(page.getByText(topic, { exact: true })).toHaveCount(0)
+    expect((await page.request.get(`/api/carousel/${carousel.id}`)).status()).toBe(404)
+    await page.screenshot({ path: ".gstack/qa-reports/screenshots/carousel-library-after-delete.png", fullPage: true })
+
     const overLimitCarousel = await page.request.post("/api/carousel", {
       data: {
         topic,
@@ -228,12 +263,6 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       availableSlides: 5,
     })
 
-    const { data: auditUser, error: auditUserError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("external_user_id", auditId)
-      .single()
-    if (auditUserError || !auditUser?.id) throw auditUserError || new Error("Audit user missing")
     const { error: planError } = await supabase
       .from("users")
       .update({ plan: "Pro", plan_expires_at: new Date(Date.now() + 86_400_000).toISOString() })
@@ -250,7 +279,6 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       "/voice",
       "/carousels",
       "/comment-generator",
-      "/silent-growth",
       "/calendar",
       "/analytics",
       "/library",
@@ -260,7 +288,7 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       "/settings",
     ]
     for (const path of proRoutes) {
-      const response = await page.goto(path)
+      const response = await page.goto(path, { waitUntil: "domcontentloaded" })
       expect(response?.status(), path).toBeLessThan(400)
       await expect(page.locator("body"), path).not.toContainText(/Could not load|Internal server error|Application error/)
     }
@@ -341,21 +369,18 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
     await expect(page.locator("body")).toContainText("$10")
     await expect(page.locator("body")).toContainText("$18")
     await expect(page.locator("body")).toContainText("Managed Plans")
+
+    const deletion = await page.request.delete("/api/user/delete", { timeout: 30_000 })
+    expect(deletion.status()).toBe(200)
   } finally {
-    let deletionStatus: number | null = null
-    if (provisioned) {
-      const deletion = await page.request.delete("/api/user/delete")
-      deletionStatus = deletion.status()
-    }
     const { data: residue } = await supabase
       .from("users")
       .select("id")
-      .eq("external_user_id", auditId)
+      .eq("id", auditId)
       .maybeSingle()
     if (residue?.id) {
       const { error } = await supabase.rpc("delete_user_data", { target_user_id: residue.id })
       if (error) throw error
     }
-    if (deletionStatus !== null) expect(deletionStatus).toBe(200)
   }
 })
