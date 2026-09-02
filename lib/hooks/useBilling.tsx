@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useMemo } from "react"
 import type { PlanLimits } from "@/lib/entitlements"
 import type { PlanName } from "@/lib/pricing"
 
@@ -42,19 +42,17 @@ export function BillingProvider({
   serverBilling: Partial<WorkspaceBilling> | null
   onRefresh?: () => Promise<void>
 }) {
-  const [billing, setBilling] = useState<WorkspaceBilling>(() => ({
+  const billing = useMemo<WorkspaceBilling>(() => ({
     ...defaultBilling,
     ...(serverBilling ?? {}),
-  }))
-
-  const resolvedBilling = useMemo(() => ({ ...billing, ...(serverBilling ?? {}) }), [billing, serverBilling])
+  }), [serverBilling])
 
   const refresh = useCallback(async () => {
     if (!onRefresh) return
     await onRefresh()
   }, [onRefresh])
 
-  return <BillingContext.Provider value={{ billing: resolvedBilling, refresh }}>{children}</BillingContext.Provider>
+  return <BillingContext.Provider value={{ billing, refresh }}>{children}</BillingContext.Provider>
 }
 
 export function useBilling(): BillingContextValue {
