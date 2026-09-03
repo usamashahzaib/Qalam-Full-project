@@ -12,6 +12,8 @@ describe("agency workspace completion contracts", () => {
     expect(migration).toContain("workspace_type in ('personal', 'client')")
     expect(migration).toContain("pg_advisory_xact_lock")
     expect(migration).toContain("create_client_workspace_with_limit")
+    expect(migration).toContain("analysis.user_id = owner_workspace.user_id::text")
+    expect(migration).toContain("v_user_id uuid")
     expect(route).toContain('rpc("create_client_workspace_with_limit"')
     expect(route).toContain("p_max_clients: limits.clientWorkspaces")
     expect(route).not.toContain("memberships.length - 1")

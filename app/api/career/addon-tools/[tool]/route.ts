@@ -9,6 +9,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { claimCareerAddonCredit, releaseCareerAddonCredit } from "@/lib/server/career-usage"
 import { getCareerAddonTool, type SoftwareAddonKey } from "@/lib/career-addon-tools"
+import { toHundredPointScore } from "@/lib/free-tool-scores"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -24,25 +25,25 @@ const schema = z.object({
 const prompts: Record<SoftwareAddonKey, { system: string; task: string }> = {
   interview_pack: {
     system: "You are a senior interview coach and hiring panelist. Preserve truth. Never invent candidate experience. Return strict JSON only.",
-    task: `Create a complete interview practice pack. Include likely screening, behavioral, role-specific, leadership, and closing questions. Tie every answer framework to supplied evidence. Include red flags, questions to ask the employer, and a scorecard.
+    task: `Create a complete interview practice pack. Include likely screening, behavioral, role-specific, leadership, and closing questions. Tie every answer framework to supplied evidence. Include red flags, questions to ask the employer, and a scorecard. The score must be an integer from 0 to 100.
 
 Return {"summary":"","score":0,"sections":[{"title":"Likely questions","items":[""]},{"title":"STAR evidence bank","items":[""]},{"title":"Answer guidance","items":[""]},{"title":"Risks to address","items":[""]},{"title":"Questions to ask","items":[""]},{"title":"Practice scorecard","items":[""]}]}`,
   },
   recruiter_review: {
     system: "You are a senior recruiter and ATS resume specialist. Preserve truth. Never invent roles, dates, qualifications, metrics, or achievements. Return strict JSON only.",
-    task: `Perform a paid deep resume review, materially more detailed than a basic ATS scan. Evaluate the six-second recruiter read, ATS structure, role relevance, progression, evidence, language, and rejection risks. Provide exact section and bullet rewrites using only supported facts.
+    task: `Perform a paid deep resume review, materially more detailed than a basic ATS scan. Evaluate the six-second recruiter read, ATS structure, role relevance, progression, evidence, language, and rejection risks. Provide exact section and bullet rewrites using only supported facts. The score must be an integer from 0 to 100.
 
 Return {"summary":"clear recruiter verdict","score":0,"sections":[{"title":"Six-second recruiter read","items":[""]},{"title":"ATS and keyword gaps","items":[""]},{"title":"Rejection risks","items":[""]},{"title":"Exact rewrites","items":[""]},{"title":"Priority correction plan","items":[""]}]}`,
   },
   linkedin_rewrite: {
     system: "You are a senior LinkedIn positioning strategist. Preserve truth. Never invent credentials, employers, outcomes, or metrics. Return strict JSON only.",
-    task: `Rewrite the complete LinkedIn profile around one credible market position. Align the headline, About section, experience, skills, target audience, and future content themes to the same professional identity. Include multiple headline options, a ready-to-use About section, experience bullet rewrites, a skills and keyword map, Featured section recommendations, three evidence-supported content pillars, and a final quality checklist. Do not promise reach or use engagement-bait tactics.
+    task: `Rewrite the complete LinkedIn profile around one credible market position. Align the headline, About section, experience, skills, target audience, and future content themes to the same professional identity. Include multiple headline options, a ready-to-use About section, experience bullet rewrites, a skills and keyword map, Featured section recommendations, three evidence-supported content pillars, and a final quality checklist. Do not promise reach or use engagement-bait tactics. The score must be an integer from 0 to 100.
 
 Return {"summary":"market position","score":0,"sections":[{"title":"Headline options","items":[""]},{"title":"About section","items":[""]},{"title":"Experience rewrites","items":[""]},{"title":"Skills and keyword map","items":[""]},{"title":"Featured section plan","items":[""]},{"title":"Content pillars","items":[""]},{"title":"Final checklist","items":[""]}]}`,
   },
   career_blueprint: {
     system: "You are a pragmatic career strategist. Preserve truth. Do not promise interviews, promotions, or job offers. Return strict JSON only.",
-    task: `Create a software-delivered 90-day career strategy. Diagnose positioning, identify evidence and skill gaps, define target employers, build networking and application systems, recommend credible content themes, and provide weekly milestones with measurable actions.
+    task: `Create a software-delivered 90-day career strategy. Diagnose positioning, identify evidence and skill gaps, define target employers, build networking and application systems, recommend credible content themes, and provide weekly milestones with measurable actions. The score must be an integer from 0 to 100.
 
 Return {"summary":"strategy thesis","score":0,"sections":[{"title":"Positioning diagnosis","items":[""]},{"title":"Evidence and skill gaps","items":[""]},{"title":"Target employer strategy","items":[""]},{"title":"Networking system","items":[""]},{"title":"Application system","items":[""]},{"title":"Content and visibility","items":[""]},{"title":"90-day milestones","items":[""]}]}`,
   },
@@ -63,7 +64,7 @@ const normalizeResult = (value: unknown) => {
     const items = Array.isArray(row.items) ? row.items.map(String).map((item) => item.trim()).filter(Boolean).slice(0, 20) : []
     return title && items.length ? [{ title, items }] : []
   }).slice(0, 10) : []
-  const score = Math.max(0, Math.min(100, Math.round(Number(raw.score) || 0)))
+  const score = toHundredPointScore(raw.score)
   return { summary: String(raw.summary || "").trim(), score, sections }
 }
 

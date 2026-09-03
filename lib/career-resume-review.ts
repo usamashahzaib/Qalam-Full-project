@@ -1,4 +1,5 @@
 import { ATS_FACTORS } from "@/lib/ats-methodology"
+import { toHundredPointScore } from "@/lib/free-tool-scores"
 
 export const RESUME_REVIEW_SCORE_KEYS = [
   "ats_parsing",
@@ -57,10 +58,7 @@ export type ResumeReviewResult = {
   disclaimer: string
 }
 
-const numberScore = (value: unknown) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : 0
-}
+const numberScore = (value: unknown) => toHundredPointScore(value)
 
 const text = (value: unknown, fallback = "Not enough evidence supplied.") =>
   typeof value === "string" && value.trim() ? value.trim() : fallback
@@ -90,7 +88,7 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription || "No job description supplied. Review for general market readiness."}
 
-Return strict JSON only:
+Return strict JSON only. Every score must be an integer from 0 to 100:
 {
   "overall_score": 0,
   "scores": {

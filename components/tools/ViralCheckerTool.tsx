@@ -5,6 +5,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { MicroscopeIcon } from "@/components/ui/qalam-icons"
+import { formatScoreLabel, toHundredPointScore } from "@/lib/free-tool-scores"
 
 type ViralResult = {
   content_quality_score: number
@@ -77,13 +78,13 @@ export function ViralCheckerTool() {
           {result ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Content quality score</p>
-              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{result.content_quality_score}/100</p>
+              <p className="mt-1 text-5xl font-extrabold text-zinc-900">{toHundredPointScore(result.content_quality_score)}/100</p>
               <p className="mt-2 text-sm font-semibold text-teal">{result.verdict}</p>
-              <div className="mt-5 grid gap-2 sm:grid-cols-5">
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {Object.entries(result.breakdown || {}).map(([key, value]) => (
                   <div key={key} className="rounded-xl bg-zinc-50 p-3">
-                    <p className="t-eyebrow text-zinc-400">{key}</p>
-                    <p className="mt-1 text-lg font-bold">{value}</p>
+                    <p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-400">{formatScoreLabel(key)}</p>
+                    <p className="mt-1 text-lg font-bold">{toHundredPointScore(value)}</p>
                   </div>
                 ))}
               </div>

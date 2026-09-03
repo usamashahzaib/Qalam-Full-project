@@ -25,4 +25,13 @@ describe("ATS resume checker", () => {
     expect(result?.scores.ats_parsing).toBe(75)
     expect(result?.risks[0].severity).toBe("high")
   })
+
+  it("repairs ten-point model scores before calculating readiness", () => {
+    const result = normalizeResumeReview({
+      scores: Object.fromEntries(RESUME_REVIEW_SCORE_KEYS.map((key) => [key, 7.2])),
+    })
+
+    expect(result?.overall_score).toBe(72)
+    expect(result?.scores.ats_parsing).toBe(72)
+  })
 })

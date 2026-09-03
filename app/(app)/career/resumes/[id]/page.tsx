@@ -7,6 +7,7 @@ import { emptyResumeData } from "@/lib/career-resume"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ResumePreview } from "@/components/career/ResumePreview"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
+import { toHundredPointScore } from "@/lib/free-tool-scores"
 
 type ResumeDocument = {
   id: string
@@ -124,7 +125,7 @@ export default function ResumeEditorPage() {
           <aside className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 print:hidden">
             <div className="grid grid-cols-2 gap-3">
               <label><span className={label}>Template</span><select className={input} value={document.templateKey} onChange={(event) => setDocument({ ...document, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name}</option>)}</select></label>
-              <label><span className={label}>ATS score</span><div className="rounded-lg bg-teal/8 px-3 py-2.5 text-sm font-bold text-teal">{document.atsScore ?? "Not scored"}{document.atsScore != null ? "/100" : ""}</div></label>
+              <label><span className={label}>ATS score</span><div className="rounded-lg bg-teal/8 px-3 py-2.5 text-sm font-bold text-teal">{document.atsScore != null ? toHundredPointScore(document.atsScore) : "Not scored"}{document.atsScore != null ? "/100" : ""}</div></label>
             </div>
 
             <Section title="Contact">

@@ -8,6 +8,7 @@ import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
+import { normalizeScoreBreakdown, toHundredPointScore } from "@/lib/free-tool-scores"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -16,11 +17,6 @@ const schema = z.object({
   targetRole: z.string().trim().min(2).max(120),
   audience: z.string().trim().max(300).default("Recruiters and decision-makers"),
 })
-
-const score = (value: unknown) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : 0
-}
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -47,6 +43,8 @@ TARGET ROLE: ${input.targetRole}
 TARGET AUDIENCE: ${input.audience}
 HEADLINE: ${input.headline}
 ABOUT: ${input.about}
+
+Every score must be an integer from 0 to 100.
 
 Return:
 {
@@ -79,10 +77,8 @@ Return:
       return NextResponse.json({ error: "The audit could not be completed." }, { status: 503 })
     }
     const result = parsedAi as Record<string, unknown>
-    result.overall_score = score(result.overall_score)
-    if (result.scores && typeof result.scores === "object") {
-      result.scores = Object.fromEntries(Object.entries(result.scores).map(([key, value]) => [key, score(value)]))
-    }
+    result.overall_score = toHundredPointScore(result.overall_score)
+    result.scores = normalizeScoreBreakdown(result.scores)
 
     const { error } = await createScopedClient(planCheck.workspaceId).from("linkedin_audits").insert({
       user_id: user.id,

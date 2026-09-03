@@ -5,6 +5,7 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
+import { toHundredPointScore } from "@/lib/free-tool-scores"
 
 const input = z.object({
   tool: z.enum(["linkedin", "resume", "job-match"]),
@@ -40,7 +41,16 @@ export async function POST(request: NextRequest) {
       { json: true, temperature: 0.25, timeout: 30000, userId: planCheck.billingUserId, plan: limit.plan, cache: false }
     )
     const result = safeParseJson(raw)
-    if (!result) return NextResponse.json({ error: "invalid_ai_response" }, { status: 503 })
+    if (!result || typeof result !== "object") return NextResponse.json({ error: "invalid_ai_response" }, { status: 503 })
+    const normalizedResult = { ...(result as Record<string, unknown>) }
+    normalizedResult.score = toHundredPointScore(normalizedResult.score)
+    if (Array.isArray(normalizedResult.dimensions)) {
+      normalizedResult.dimensions = normalizedResult.dimensions.map((dimension) => (
+        dimension && typeof dimension === "object"
+          ? { ...(dimension as Record<string, unknown>), score: toHundredPointScore((dimension as Record<string, unknown>).score) }
+          : dimension
+      ))
+    }
     const usage = await incrementUsage(planCheck.billingUserId, "analyses")
     if (!usage.allowed) return NextResponse.json({ error: "career_analysis_limit_reached" }, { status: 403 })
     if (planCheck.workspaceId) {
@@ -49,9 +59,9 @@ export async function POST(request: NextRequest) {
         type: `career_${body.tool}`,
         status: "completed",
         payload: { targetRole: body.targetRole, profile: body.profile, resume: body.resume, jobDescription: body.jobDescription },
-        result,
+        result: normalizedResult,
       })
     }
-    return NextResponse.json({ result, usage: { remaining: usage.remaining, limit: usage.limit } })
+    return NextResponse.json({ result: normalizedResult, usage: { remaining: usage.remaining, limit: usage.limit } })
   })(request)
 }

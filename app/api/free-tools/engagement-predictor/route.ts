@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getClientIp, checkRateLimit, checkFreeToolsGlobalBudget } from "@/lib/server/rate-limit"
+import { normalizeScoredFreeToolResult } from "@/lib/free-tool-scores"
 
 const schema = z.object({
   content: z.string().min(10).max(3000),
@@ -35,16 +36,18 @@ export async function POST(req: NextRequest) {
 POST:
 ${parsed.data.content}
 
+Every score must be an integer from 0 to 100.
+
 OUTPUT JSON:
 {
-  "content_readiness_score": number,
+  "content_readiness_score": 0,
   "assessment": "ready / strong with edits / needs focus / rewrite",
   "score_breakdown": {
-    "hook": number,
-    "clarity": number,
-    "specificity": number,
-    "audience_relevance": number,
-    "discussion_potential": number
+    "hook": 0,
+    "clarity": 0,
+    "specificity": 0,
+    "audience_relevance": 0,
+    "discussion_potential": 0
   },
   "strengths": ["specific strength"],
   "risks": ["specific risk"],
@@ -63,8 +66,9 @@ OUTPUT JSON:
     )
 
     const aiJson = safeParseJson(result)
-    if (!aiJson) return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
-    return NextResponse.json(aiJson)
+    const response = normalizeScoredFreeToolResult(aiJson, "content_readiness_score", "score_breakdown")
+    if (!response) return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
+    return NextResponse.json(response)
   } catch (error) {
     console.error("[Free Tool Error]", error)
     return NextResponse.json(

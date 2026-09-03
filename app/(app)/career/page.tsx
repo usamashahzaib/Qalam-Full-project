@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { formatScoreLabel, toHundredPointScore } from "@/lib/free-tool-scores"
 
 type Tab = "overview" | "resume" | "linkedin" | "vault"
 type AuditResult = {
@@ -57,7 +58,7 @@ const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 
 const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500"
 
 function ScorePanel({ title, result }: { title: string; result: AuditResult | ResumeResult }) {
-  const score = Math.max(0, Math.min(100, Number(result.overall_score) || 0))
+  const score = toHundredPointScore(result.overall_score)
   return (
     <div className="rounded-2xl border border-teal/20 bg-teal/[0.035] p-5">
       <div className="mb-5 flex items-end justify-between">
@@ -70,11 +71,11 @@ function ScorePanel({ title, result }: { title: string; result: AuditResult | Re
           <span className="text-sm text-zinc-400">/100</span>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {Object.entries(result.scores || {}).map(([key, value]) => (
           <div key={key} className="rounded-xl border border-zinc-200 bg-white p-3">
-            <p className="truncate t-eyebrow font-semibold capitalize text-zinc-500">{key.replaceAll("_", " ")}</p>
-            <p className="mt-1 text-xl font-bold text-zinc-900">{value}</p>
+            <p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-500">{formatScoreLabel(key)}</p>
+            <p className="mt-1 text-xl font-bold text-zinc-900">{toHundredPointScore(value)}</p>
           </div>
         ))}
       </div>

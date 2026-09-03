@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getClientIp, checkRateLimit, checkFreeToolsGlobalBudget } from "@/lib/server/rate-limit"
+import { toHundredPointScore } from "@/lib/free-tool-scores"
 
 const schema = z.object({
   about: z.string().min(10).max(3000),
@@ -69,10 +70,7 @@ Use profile_score as an integer from 0 to 100.
       return NextResponse.json({ error: "Invalid AI response" }, { status: 503 })
     }
     const data = aiJson as Record<string, unknown>
-    const rawScore = Number(data.profile_score)
-    data.profile_score = Number.isFinite(rawScore)
-      ? Math.max(0, Math.min(100, Math.round(rawScore <= 1 ? rawScore * 100 : rawScore)))
-      : 0
+    data.profile_score = toHundredPointScore(data.profile_score)
     return NextResponse.json(data)
   } catch (error) {
     console.error("[Free Tool Error]", error)

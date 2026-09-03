@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
+import { formatScoreLabel, toHundredPointScore } from "@/lib/free-tool-scores"
 
 type Analysis = {
   content_worth_score?: number
@@ -77,14 +78,14 @@ export default function ContentIntelligencePage() {
             {analysis ? <Result analysis={analysis} /> : <div className="py-16 text-center text-sm text-zinc-400">Your content worth analysis appears here.</div>}
           </aside>
         </div>
-        {history.length > 0 && <section className="mt-5"><h2 className="mb-3 text-lg font-bold text-zinc-900">Imported post history</h2><div className="grid gap-3 md:grid-cols-3">{history.slice(0, 9).map((item) => <article key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold text-teal">Worth score</span><span className="ml-2 font-bold text-gold">{item.analysis?.content_worth_score || 0}</span></div><DeleteArtifactButton itemType="content analysis" itemTitle={item.content.slice(0, 80)} onDelete={() => deleteAnalysis(item.id)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" /></div><p className="mt-3 line-clamp-4 text-xs leading-5 text-zinc-600">{item.content}</p></article>)}</div></section>}
+        {history.length > 0 && <section className="mt-5"><h2 className="mb-3 text-lg font-bold text-zinc-900">Imported post history</h2><div className="grid gap-3 md:grid-cols-3">{history.slice(0, 9).map((item) => <article key={item.id} className="rounded-xl border border-zinc-200 bg-white p-4"><div className="flex items-start justify-between gap-3"><div><span className="text-xs font-bold text-teal">Worth score</span><span className="ml-2 font-bold text-gold">{toHundredPointScore(item.analysis?.content_worth_score)}/100</span></div><DeleteArtifactButton itemType="content analysis" itemTitle={item.content.slice(0, 80)} onDelete={() => deleteAnalysis(item.id)} className="min-h-10 rounded-lg px-2 text-xs font-bold text-zinc-400 transition hover:bg-red-50 hover:text-red-600" /></div><p className="mt-3 line-clamp-4 text-xs leading-5 text-zinc-600">{item.content}</p></article>)}</div></section>}
       </div>
     </main>
   )
 }
 
 function Result({ analysis }: { analysis: Analysis }) {
-  return <div><div className="flex items-end justify-between"><div><p className="text-xs font-bold uppercase text-teal">Content worth</p><p className="mt-1 text-sm text-zinc-600">{analysis.positioning}</p></div><p className="text-4xl font-bold text-gold">{analysis.content_worth_score || 0}</p></div><p className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">{analysis.audience_signal}</p><div className="mt-4 grid grid-cols-2 gap-2">{Object.entries(analysis.scores || {}).map(([key, value]) => <div key={key} className="rounded-lg border border-zinc-200 p-3"><p className="t-eyebrow text-zinc-400">{key}</p><p className="mt-1 font-bold text-zinc-900">{value}</p></div>)}</div><List title="What worked" items={analysis.what_worked} /><List title="Fix next" items={analysis.weaknesses} /><List title="Next post angles" items={analysis.next_post_angles} /></div>
+  return <div><div className="flex items-end justify-between"><div><p className="text-xs font-bold uppercase text-teal">Content worth</p><p className="mt-1 text-sm text-zinc-600">{analysis.positioning}</p></div><p className="text-4xl font-bold text-gold">{toHundredPointScore(analysis.content_worth_score)}/100</p></div><p className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">{analysis.audience_signal}</p><div className="mt-4 grid grid-cols-2 gap-2">{Object.entries(analysis.scores || {}).map(([key, value]) => <div key={key} className="rounded-lg border border-zinc-200 p-3"><p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-400">{formatScoreLabel(key)}</p><p className="mt-1 font-bold text-zinc-900">{toHundredPointScore(value)}</p></div>)}</div><List title="What worked" items={analysis.what_worked} /><List title="Fix next" items={analysis.weaknesses} /><List title="Next post angles" items={analysis.next_post_angles} /></div>
 }
 
 function List({ title, items }: { title: string; items?: string[] }) {

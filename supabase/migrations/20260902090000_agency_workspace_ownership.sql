@@ -35,6 +35,7 @@ security definer
 set search_path = public
 as $$
 declare
+  v_user_id uuid := p_user_id::uuid;
   v_workspace_id uuid;
   v_client_count integer;
   v_name text := trim(p_name);
@@ -54,11 +55,11 @@ begin
     raise exception 'client_contact_email_invalid';
   end if;
 
-  perform pg_advisory_xact_lock(hashtextextended('agency-clients:' || p_user_id, 0));
+  perform pg_advisory_xact_lock(hashtextextended('agency-clients:' || v_user_id::text, 0));
 
   select count(*) into v_client_count
   from public.workspaces
-  where owner_id = p_user_id
+  where owner_id = v_user_id
     and workspace_type = 'client';
 
   if p_max_clients is not null and v_client_count >= p_max_clients then
@@ -73,14 +74,14 @@ begin
     client_contact_email
   ) values (
     v_name,
-    p_user_id,
+    v_user_id,
     'client',
     v_contact_name,
     v_contact_email
   ) returning id into v_workspace_id;
 
   insert into public.workspace_members (workspace_id, user_id, role)
-  values (v_workspace_id, p_user_id, 'owner');
+  values (v_workspace_id, v_user_id, 'owner');
 
   return v_workspace_id;
 end;
@@ -104,7 +105,7 @@ from (
   order by wm.user_id, wm.created_at asc
 ) owner_workspace
 where analysis.workspace_id is null
-  and analysis.user_id = owner_workspace.user_id;
+  and analysis.user_id = owner_workspace.user_id::text;
 
 create index if not exists idx_competitor_analyses_workspace_created
   on public.competitor_analyses (workspace_id, created_at desc);
@@ -124,7 +125,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_owner_id text;
+  v_owner_id uuid;
   v_workspace_type text;
   v_email text := lower(trim(p_email));
   v_reserved integer;
@@ -134,7 +135,7 @@ begin
   if v_owner_id is null then raise exception 'workspace_not_found'; end if;
 
   perform pg_advisory_xact_lock(hashtextextended(
-    case when v_workspace_type = 'client' then 'agency-seats:' || v_owner_id else 'workspace-seats:' || p_workspace_id::text end,
+    case when v_workspace_type = 'client' then 'agency-seats:' || v_owner_id::text else 'workspace-seats:' || p_workspace_id::text end,
     0
   ));
 
@@ -143,7 +144,7 @@ begin
       select lower(u.email) as identity
       from public.workspace_members wm
       join public.workspaces w on w.id = wm.workspace_id
-      join public.users u on u.id::text = wm.user_id
+      join public.users u on u.id = wm.user_id
       where w.owner_id = v_owner_id and w.workspace_type = 'client'
       union
       select lower(wi.email) as identity
@@ -179,7 +180,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_owner_id text;
+  v_owner_id uuid;
   v_workspace_type text;
   v_user_email text;
   v_reserved integer;
@@ -187,11 +188,11 @@ begin
   select owner_id, workspace_type into v_owner_id, v_workspace_type
   from public.workspaces where id = p_workspace_id;
   if v_owner_id is null then raise exception 'workspace_not_found'; end if;
-  if exists (select 1 from public.workspace_members where workspace_id = p_workspace_id and user_id = p_user_id::text) then return true; end if;
+  if exists (select 1 from public.workspace_members where workspace_id = p_workspace_id and user_id = p_user_id) then return true; end if;
 
   select lower(email) into v_user_email from public.users where id = p_user_id;
   perform pg_advisory_xact_lock(hashtextextended(
-    case when v_workspace_type = 'client' then 'agency-seats:' || v_owner_id else 'workspace-seats:' || p_workspace_id::text end,
+    case when v_workspace_type = 'client' then 'agency-seats:' || v_owner_id::text else 'workspace-seats:' || p_workspace_id::text end,
     0
   ));
 
@@ -200,7 +201,7 @@ begin
       select lower(u.email) as identity
       from public.workspace_members wm
       join public.workspaces w on w.id = wm.workspace_id
-      join public.users u on u.id::text = wm.user_id
+      join public.users u on u.id = wm.user_id
       where w.owner_id = v_owner_id and w.workspace_type = 'client'
       union
       select lower(wi.email) as identity
@@ -215,7 +216,7 @@ begin
 
   if p_seat_limit is not null and v_reserved >= p_seat_limit then return false; end if;
   insert into public.workspace_members (workspace_id, user_id, role)
-  values (p_workspace_id, p_user_id::text, p_role);
+  values (p_workspace_id, p_user_id, p_role);
   return true;
 end;
 $$;

@@ -7,6 +7,7 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
+import { normalizeScoreBreakdown, toHundredPointScore } from "@/lib/free-tool-scores"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -60,6 +61,8 @@ ${input.content}
 METRICS:
 ${JSON.stringify({ ...input.metrics, engagementRate })}
 
+Every score must be an integer from 0 to 100.
+
 Return:
 {
   "content_worth_score": 0,
@@ -78,6 +81,8 @@ Return:
     const analysis = safeParseJson(raw)
     if (!analysis || typeof analysis !== "object") return NextResponse.json({ error: "Content analysis failed." }, { status: 503 })
     const normalized = analysis as Record<string, unknown>
+    normalized.content_worth_score = toHundredPointScore(normalized.content_worth_score)
+    normalized.scores = normalizeScoreBreakdown(normalized.scores)
     normalized.engagement_rate = engagementRate
     const { data, error } = await createScopedClient(planCheck.workspaceId).from("career_content_imports").insert({
       user_id: user.id,

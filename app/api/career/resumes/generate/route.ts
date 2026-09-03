@@ -9,6 +9,7 @@ import { isResumeTemplateKey } from "@/lib/resume-templates"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
+import { normalizeScoreBreakdown, toHundredPointScore } from "@/lib/free-tool-scores"
 import {
   claimExtraResumeCredit,
   consumeCareerUsage,
@@ -25,11 +26,6 @@ const schema = z.object({
   jobDescription: z.string().trim().min(80).max(12000),
   sourceResume: z.string().trim().min(200).max(20000),
 })
-
-const numberScore = (value: unknown) => {
-  const number = Number(value)
-  return Number.isFinite(number) ? Math.max(0, Math.min(100, Math.round(number))) : 0
-}
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -77,6 +73,8 @@ ${JSON.stringify(vault || {})}
 SOURCE RESUME:
 ${input.sourceResume}
 
+Every score must be an integer from 0 to 100.
+
 Return:
 {
   "resume": {
@@ -116,8 +114,9 @@ Return:
       return NextResponse.json({ error: "The targeted resume could not be structured safely." }, { status: 503 })
     }
     const analysis = ai?.analysis || {}
-    const atsScore = numberScore((analysis.scores as Record<string, unknown> | undefined)?.ats ?? analysis.overall_score)
-    analysis.overall_score = numberScore(analysis.overall_score)
+    analysis.scores = normalizeScoreBreakdown(analysis.scores)
+    const atsScore = toHundredPointScore((analysis.scores as Record<string, unknown>).ats ?? analysis.overall_score)
+    analysis.overall_score = toHundredPointScore(analysis.overall_score)
 
     const { data, error } = await supabase
       .from("resume_documents")
