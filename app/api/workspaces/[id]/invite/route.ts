@@ -9,15 +9,19 @@ import { APP_URL } from "@/lib/seo"
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
-  role: z.enum(["editor", "viewer", "client_reviewer"]).default("editor"),
+  role: z.enum(["admin", "editor", "viewer", "client_reviewer"]).default("editor"),
 })
+const paramsSchema = z.object({ id: z.string().uuid() })
+const cancelSchema = z.object({ email: z.string().email() })
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   return withAuth(async (req, user) => {
-    const { id: workspaceId } = await context.params
+    const parsedParams = paramsSchema.safeParse(await context.params)
+    if (!parsedParams.success) return NextResponse.json({ error: "invalid_workspace" }, { status: 400 })
+    const workspaceId = parsedParams.data.id
     const planCheck = await requirePlan(req, "Agency", workspaceId)
     if (!planCheck.ok) return planCheck.response
 
@@ -101,7 +105,7 @@ export async function POST(
         text: [
           `You've been invited to join the "${workspace?.name ?? "Qalam"}" workspace.`,
           ``,
-          `Sign up at ${APP_URL} to accept this invitation - you'll be added automatically.`,
+          `Sign up at ${APP_URL}/signup?callbackUrl=${encodeURIComponent(`/dashboard?client=${workspaceId}`)} to accept this invitation. You will be added automatically.`,
           ``,
           `- The Qalam team`,
         ].join("\n"),
@@ -147,12 +151,41 @@ export async function POST(
         ``,
         `You've been added to the "${workspace?.name ?? "Qalam"}" workspace as ${role}.`,
         ``,
-        `Open Qalam: ${APP_URL}/dashboard`,
+        `Open Qalam: ${APP_URL}/dashboard?client=${encodeURIComponent(workspaceId)}`,
         ``,
         `- The Qalam team`,
       ].join("\n"),
     }).catch(() => undefined)
 
     return NextResponse.json({ invited: true, userId: invitee.id, role })
+  })(request)
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  return withAuth(async (req) => {
+    const parsedParams = paramsSchema.safeParse(await context.params)
+    if (!parsedParams.success) return NextResponse.json({ error: "invalid_workspace" }, { status: 400 })
+    const workspaceId = parsedParams.data.id
+    const planCheck = await requirePlan(req, "Agency", workspaceId)
+    if (!planCheck.ok) return planCheck.response
+
+    try {
+      await requireRole(req, workspaceId, "admin")
+    } catch {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 })
+    }
+
+    const parsed = cancelSchema.safeParse({ email: req.nextUrl.searchParams.get("email") })
+    if (!parsed.success) return NextResponse.json({ error: "invalid_email" }, { status: 400 })
+
+    const { error } = await createScopedClient(workspaceId)
+      .from("workspace_invites")
+      .delete()
+      .eq("email", parsed.data.email.toLowerCase().trim())
+    if (error) return NextResponse.json({ error: "invite_cancel_failed" }, { status: 500 })
+    return NextResponse.json({ ok: true })
   })(request)
 }

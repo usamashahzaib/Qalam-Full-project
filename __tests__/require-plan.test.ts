@@ -4,6 +4,7 @@ const workspaceMocks = vi.hoisted(() => ({
   requireAuth: vi.fn(),
   resolveWorkspaceId: vi.fn(),
   resolveEffectivePlan: vi.fn(),
+  resolveWorkspaceBillingPrincipal: vi.fn(),
   getWorkspaceSessionContext: vi.fn(),
 }))
 vi.mock("@/lib/server/workspace", () => workspaceMocks)
@@ -36,6 +37,7 @@ describe("requirePlan (plan gate on paid routes)", () => {
     workspaceMocks.requireAuth.mockResolvedValue("user-1")
     workspaceMocks.getWorkspaceSessionContext.mockResolvedValue(activeSession)
     workspaceMocks.resolveWorkspaceId.mockResolvedValue("ws-1")
+    workspaceMocks.resolveWorkspaceBillingPrincipal.mockResolvedValue({ userId: "supa-user-1", email: "user@example.com" })
     getPlanStatus.mockResolvedValue(activePlanStatus)
   })
 
@@ -47,7 +49,20 @@ describe("requirePlan (plan gate on paid routes)", () => {
     if (result.ok) {
       expect(result.plan).toBe("Pro")
       expect(result.workspaceId).toBe("ws-1")
+      expect(result.billingUserId).toBe("supa-user-1")
     }
+  })
+
+  it("checks plan status against the client workspace owner for a delegated manager", async () => {
+    workspaceMocks.resolveWorkspaceBillingPrincipal.mockResolvedValue({ userId: "agency-owner", email: "owner@example.com" })
+    workspaceMocks.resolveEffectivePlan.mockResolvedValue({ plan: "Agency", status: "active", overrideActive: false, planExpired: false })
+
+    const result = await requirePlan(fakeRequest(), "Agency")
+
+    expect(result.ok).toBe(true)
+    expect(getPlanStatus).toHaveBeenCalledWith("agency-owner")
+    expect(workspaceMocks.resolveEffectivePlan).toHaveBeenCalledWith("ws-1", "owner@example.com", "agency-owner")
+    if (result.ok) expect(result.billingUserId).toBe("agency-owner")
   })
 
   it("blocks a lower plan with a 403 and an upgrade_required payload", async () => {

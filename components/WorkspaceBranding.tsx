@@ -9,10 +9,12 @@ export function WorkspaceBranding({
   workspaceId,
   initialColor,
   onSaved,
+  canManage = true,
 }: {
   workspaceId: string
   initialColor: string | null
   onSaved?: (color: string | null) => void
+  canManage?: boolean
 }) {
   const [color, setColor] = useState(initialColor || DEFAULT_TEAL)
   const [isSaving, setIsSaving] = useState(false)
@@ -51,6 +53,7 @@ export function WorkspaceBranding({
           onChange={(e) => setColor(e.target.value)}
           className="h-9 w-12 cursor-pointer rounded-lg border border-zinc-200 bg-white p-0.5"
           aria-label="Pick branding color"
+          disabled={!canManage}
         />
         <input
           type="text"
@@ -59,15 +62,16 @@ export function WorkspaceBranding({
           placeholder="#0D4A45"
           maxLength={7}
           className="w-28 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-mono outline-none focus:border-teal/50"
+          disabled={!canManage}
         />
         <button
           onClick={() => HEX_RE.test(color) && save(color)}
-          disabled={isSaving || !HEX_RE.test(color)}
+          disabled={!canManage || isSaving || !HEX_RE.test(color)}
           className="rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-zinc-800 disabled:opacity-50"
         >
           {isSaving ? "Saving..." : "Save"}
         </button>
-        {initialColor ? (
+        {canManage && initialColor ? (
           <button
             onClick={() => { setColor(DEFAULT_TEAL); save(null) }}
             disabled={isSaving}
@@ -77,6 +81,7 @@ export function WorkspaceBranding({
           </button>
         ) : null}
       </div>
+      {!canManage ? <p className="mt-2 text-xs text-zinc-500">Only the owner or workspace manager can change branding.</p> : null}
       {!HEX_RE.test(color) ? (
         <p className="mt-2 text-xs text-red-600">Enter a 6-digit hex color, e.g. #0D4A45.</p>
       ) : null}

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { getPlanLimits } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 import type { PlanTier } from "@/lib/entitlements"
 
 type DraftStatus = {
@@ -17,11 +18,12 @@ const NEXT_PLAN: Record<string, PlanTier> = { Free: "Solo", Solo: "Pro", Pro: "A
 
 export function DraftCounter({ className = "", compact = false }: { className?: string; compact?: boolean }) {
   const { billing } = useBilling()
+  const { workspaceId } = useWorkspace()
   const [status, setStatus] = useState<DraftStatus | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
   const fetchStatus = useCallback(() => {
-    fetch("/api/generate")
+    fetch(`/api/generate?workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((data) => {
         // Server may return Free limits due to plan-detection lag;
@@ -38,7 +40,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
         if (typeof remaining === "number" && remaining === 0) setShowUpgrade(true)
       })
       .catch(() => { /* silent - skeleton stays */ })
-  }, [billing.plan])
+  }, [billing.plan, workspaceId])
 
   useEffect(() => {
     fetchStatus()

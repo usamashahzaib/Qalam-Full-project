@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { progressStageFromScore, type CareerMomentumView } from "@/lib/career-momentum"
 import { trackCareerEvent } from "@/lib/career-events"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 const DAY_FORMAT = new Intl.DateTimeFormat("en", { weekday: "narrow" })
 
@@ -29,6 +30,7 @@ function MomentumSkeleton() {
 }
 
 export function DailyMomentumCard() {
+  const { workspaceId } = useWorkspace()
   const [momentum, setMomentum] = useState<CareerMomentumView | null>(null)
   const [note, setNote] = useState("")
   const [loading, setLoading] = useState(true)
@@ -39,14 +41,14 @@ export function DailyMomentumCard() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const response = await fetch(`/api/career/momentum?timezoneOffset=${timezoneOffset}`, {
+    const response = await fetch(`/api/career/momentum?timezoneOffset=${timezoneOffset}&workspaceKey=${encodeURIComponent(workspaceId)}`, {
       cache: "no-store",
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) setError(data.error || "Your progress could not be loaded.")
     else setMomentum(data.momentum)
     setLoading(false)
-  }, [timezoneOffset])
+  }, [timezoneOffset, workspaceId])
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0)
@@ -64,6 +66,7 @@ export function DailyMomentumCard() {
         note,
         promptKey: momentum.prompt.key,
         timezoneOffset,
+        workspaceKey: workspaceId,
       }),
     })
     const data = await response.json().catch(() => ({}))
@@ -87,7 +90,7 @@ export function DailyMomentumCard() {
     const response = await fetch("/api/career/momentum", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled, hour, timezoneOffset }),
+      body: JSON.stringify({ enabled, hour, timezoneOffset, workspaceKey: workspaceId }),
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) setError(data.error || "Reminder settings could not be saved.")

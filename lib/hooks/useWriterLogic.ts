@@ -209,14 +209,15 @@ export function useWriterLogic({
   // ── Effects ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    fetch(API_PATHS.dashboardStats)
+    fetch(`${API_PATHS.dashboardStats}?workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then((r) => r.json())
-      .then((d: { carouselsUsed?: number; draftsUsed?: number }) => {
+      .then((d: { carouselsUsed?: number; draftsUsed?: number; workspaceDraftsUsed?: number }) => {
         if (typeof d.carouselsUsed === "number") setLocalCarouselUsage(d.carouselsUsed)
-        if (typeof d.draftsUsed === "number") setLocalDraftUsage(d.draftsUsed)
+        const draftsUsed = d.workspaceDraftsUsed ?? d.draftsUsed
+        if (typeof draftsUsed === "number") setLocalDraftUsage(draftsUsed)
       })
       .catch(() => undefined)
-  }, [])
+  }, [workspaceId])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -350,7 +351,7 @@ export function useWriterLogic({
     scoreAbortRef.current = controller
     setIsScoring(true)
     try {
-      const data = await apiScorePost({ content, role, attempt: genAttemptRef.current }, controller.signal)
+      const data = await apiScorePost({ content, role, attempt: genAttemptRef.current, workspaceKey: workspaceId }, controller.signal)
       setScores(data)
       showStatus("Draft scored.", "success")
     } catch (e) {
@@ -359,7 +360,7 @@ export function useWriterLogic({
     } finally {
       setIsScoring(false)
     }
-  }, [isScoring, role, showStatus])
+  }, [isScoring, role, showStatus, workspaceId])
 
   // Debounced re-score on manual edits (3 second delay)
   // Skipped when content was just set programmatically by onGeneratePost / onPushTo90
@@ -390,7 +391,7 @@ export function useWriterLogic({
     void fetchDemand()
 
     try {
-      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: generationGoal })
+      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: generationGoal, workspaceKey: workspaceId })
       const items = data.hooks.slice(0, 5)
       if (!items.length) throw new Error("No hooks returned")
       setHooks(items)
@@ -427,6 +428,7 @@ export function useWriterLogic({
         role,
         format,
         goal: generationGoal,
+        workspaceKey: workspaceId,
       })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
@@ -460,7 +462,7 @@ export function useWriterLogic({
     setIsImproving(true)
     showStatus("Improving draft toward 90+...", "info", false)
     try {
-      const data = await apiImprovePost({ content: draftContent, role, scores: scores || {} })
+      const data = await apiImprovePost({ content: draftContent, role, scores: scores || {}, workspaceKey: workspaceId })
       const improved = sanitizeGeneratedText(data.content)
       if (!improved) throw new Error("Returned empty content")
       skipDebounceScore.current = true
@@ -485,7 +487,7 @@ export function useWriterLogic({
     setHookAltOpen(true)
     setHookAlts([])
     try {
-      const data = await apiGenerateHookAlts({ content: draftContent, role })
+      const data = await apiGenerateHookAlts({ content: draftContent, role, workspaceKey: workspaceId })
       setHookAlts((data.hooks || []).slice(0, 3) as HookItem[])
     } catch (e) {
       showStatus((e as Error).message, "error")
@@ -617,6 +619,7 @@ export function useWriterLogic({
         role,
         mode: replyMode,
         ...(replyMode === "reply" && parentCommentInput.trim() ? { parentComment: parentCommentInput } : {}),
+        workspaceKey: workspaceId,
       })
       const mapped = (data.replies || []).slice(0, 3).map((r) => ({ style: r.style, text: r.reply }))
       if (!mapped.length) {
@@ -664,7 +667,7 @@ export function useWriterLogic({
     setCtaAltOpen(true)
     setCtaAlts([])
     try {
-      const data = await apiGenerateCtaAlts({ content: draftContent, role })
+      const data = await apiGenerateCtaAlts({ content: draftContent, role, workspaceKey: workspaceId })
       setCtaAlts((data.alternatives || []).slice(0, 3))
       consumeDraftCredit(1)
     } catch (e) {
@@ -716,7 +719,7 @@ export function useWriterLogic({
     showStatus("Generating carousel slides...", "info", false)
 
     try {
-      const data = await apiGenerateCarousel({ topic: topic.trim(), role, goal: generationGoal })
+      const data = await apiGenerateCarousel({ topic: topic.trim(), role, goal: generationGoal, workspaceKey: workspaceId })
       const items = data.slides || []
       if (!items.length) throw new Error("No slides returned")
       setSlides(items)

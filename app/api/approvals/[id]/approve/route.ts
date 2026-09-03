@@ -76,7 +76,7 @@ export async function POST(
       .eq("id", approval.requester_id)
       .maybeSingle()
     if (requester?.email) {
-      const approvalsUrl = `${env.frontendOrigin}/approvals`
+      const approvalsUrl = `${env.frontendOrigin}/approvals?client=${encodeURIComponent(approval.workspace_id)}`
       await sendTransactionalEmail({
         to: requester.email,
         subject: `Approved: "${approval.post_title}"`,

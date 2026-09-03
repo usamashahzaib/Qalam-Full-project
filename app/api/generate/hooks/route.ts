@@ -43,13 +43,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
     const cacheKey = generateCacheKey({
       task: "hooks",
       topic: parsed.data.topic,
       role: parsed.data.role,
       goal: parsed.data.goal,
-      userId: user.id,
+      userId: planCheck.billingUserId,
       professionalContext: JSON.stringify(voiceProfile?.professionalContext || null),
     })
     const cached = await getCachedResult<{ hooks: Hook[] }>(cacheKey)

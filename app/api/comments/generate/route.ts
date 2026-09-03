@@ -31,7 +31,7 @@ const VARIATIONS_PER_GENERATION = 3
 const MAX_POST_LENGTH = 5000
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     const limits = getPlanLimits(planCheck.plan)
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     if (limits.commentGenerationsPerMonth === "unlimited") {
       return NextResponse.json({ current: 0, remaining: "unlimited", limit: "unlimited" })
     }
-    const usage = await getCommentUsage(user.id, limits.commentGenerationsPerMonth)
+    const usage = await getCommentUsage(planCheck.billingUserId, limits.commentGenerationsPerMonth)
     return NextResponse.json({ ...usage, remaining: Math.max(0, usage.limit - usage.current) })
   })(request)
 }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Pull the user's trained voice + resume-derived professional context so comments
     // sound like this specific person, not a generic "LinkedIn expert". Never fatal - a
     // user with no voice profile still gets comments, just without personalization.
-    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
     const profContext = professionalContextPrompt(voiceProfile?.professionalContext)
 
     const voiceBlock = voiceProfile
@@ -129,7 +129,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
 
     const reservation = limits.commentGenerationsPerMonth === "unlimited"
       ? null
-      : await reserveCommentUsage(user.id, limits.commentGenerationsPerMonth)
+      : await reserveCommentUsage(planCheck.billingUserId, limits.commentGenerationsPerMonth)
     if (reservation && !reservation.allowed) {
       if (reservation.unavailable) {
         return NextResponse.json(
@@ -149,7 +149,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
         json: true,
         temperature: 0.8,
         maxTokens: 320,
-        userId: user.id,
+        userId: planCheck.billingUserId,
         plan: planCheck.plan,
         cache: false,
       })
@@ -164,7 +164,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
     }
 
     if (!comments.length) {
-      if (reservation) await releaseCommentUsage(user.id)
+      if (reservation) await releaseCommentUsage(planCheck.billingUserId)
       log.warn("comments.generate.empty", { userId: user.id, profile })
       return NextResponse.json(
         { error: "ai_unavailable", message: "Comment generation is temporarily unavailable. Please try again in a moment." },

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     if (!planCheck.ok) return planCheck.response
 
     const [history, runsUsed] = await Promise.all([
-      competitorRepo.listAnalyses(user.id, 5),
+      competitorRepo.listAnalyses(planCheck.workspaceId, 5),
       competitorRepo.getRunsUsed(user.id),
     ])
     return NextResponse.json({ history, runsUsed, limit: planCheck.limits.researchRunsPerMonth })

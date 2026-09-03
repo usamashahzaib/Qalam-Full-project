@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
       content: String(body.content || "").trim(),
       role: String(body.role || ""),
       scores: (body.scores || {}) as Record<string, number>,
-      userId: user.id,
+      userId: planCheck.billingUserId,
       internalUserId: user.id,
-      workspaceId: user.workspaceId,
+      workspaceId: planCheck.workspaceId,
       plan: planCheck.plan,
     })
 

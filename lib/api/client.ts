@@ -85,7 +85,7 @@ const resolvedTitle = (title: string | undefined, content: string, fallback = "U
 const scheduledAt = (date?: string, time?: string, scheduledTime?: string) =>
   scheduledTime || (date && time ? new Date(`${date}T${time}:00`).toISOString() : null)
 
-export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string }
+export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string; workspaceKey?: string }
 export type GenerateHooksOutput = { hooks: HookItem[] }
 
 export type GeneratePostInput = {
@@ -96,13 +96,14 @@ export type GeneratePostInput = {
   role?: WriterRole | string
   format?: PostFormat | string
   goal?: string
+  workspaceKey?: string
 }
 export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number }
 
-export type ScorePostInput = { content: string; role?: WriterRole | string; attempt?: number }
+export type ScorePostInput = { content: string; role?: WriterRole | string; attempt?: number; workspaceKey?: string }
 export type ScorePostOutput = ScoreData
 
-export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown> }
+export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown>; workspaceKey?: string }
 export type ImprovePostOutput = { content: string; scores?: ScoreData; remaining?: number }
 
 export type SaveDraftInput = {
@@ -254,16 +255,16 @@ export const analyzeCompetitorPaste = ({
     sourceText,
   })
 
-export type HookAlternativesInput = { content: string; role?: string }
+export type HookAlternativesInput = { content: string; role?: string; workspaceKey?: string }
 export type HookAlternativesOutput = { hooks: HookItem[] }
 
-export type GenerateRepliesInput = { originalPost: string; comments: string; role?: string; mode?: "comment" | "reply"; parentComment?: string }
+export type GenerateRepliesInput = { originalPost: string; comments: string; role?: string; mode?: "comment" | "reply"; parentComment?: string; workspaceKey?: string }
 export type GenerateRepliesOutput = { replies: Array<{ style: string; reply: string }> }
 
-export type CtaAlternativesInput = { content: string; role?: string }
+export type CtaAlternativesInput = { content: string; role?: string; workspaceKey?: string }
 export type CtaAlternativesOutput = { alternatives: string[] }
 
-export type CarouselInput = { topic: string; role?: string; goal?: string }
+export type CarouselInput = { topic: string; role?: string; goal?: string; workspaceKey?: string }
 export type CarouselOutput = { slides: SlideItem[] }
 
 export const generateHookAlternatives = (data: HookAlternativesInput) =>

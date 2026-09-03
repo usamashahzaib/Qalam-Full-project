@@ -198,11 +198,15 @@ export const resolveWorkspaceId = async (
     }
   }
 
-  if (
-    requestedWorkspaceId &&
-    requestedWorkspaceId !== "null" &&
-    requestedWorkspaceId !== "undefined"
-  ) {
+  return resolveWorkspaceForSession(requestedWorkspaceId, ctx)
+}
+
+export const resolveWorkspaceForSession = async (
+  requestedWorkspaceId?: string | null,
+  context?: WorkspaceSessionContext,
+): Promise<string> => {
+  const ctx = context ?? await getWorkspaceSessionContext()
+  if (requestedWorkspaceId && requestedWorkspaceId !== "null" && requestedWorkspaceId !== "undefined") {
     const memberships = await supabaseSelect<{ workspace_id: string }>(
       "workspace_members",
       `user_id=eq.${encodeURIComponent(ctx.supabaseUserId)}&workspace_id=eq.${encodeURIComponent(requestedWorkspaceId)}&select=workspace_id&limit=1`
@@ -212,6 +216,25 @@ export const resolveWorkspaceId = async (
   }
 
   return ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email, firstName: ctx.firstName })
+}
+
+export const resolveWorkspaceBillingPrincipal = async (
+  workspaceId: string,
+  fallbackUserId: string,
+  fallbackEmail?: string | null,
+): Promise<{ userId: string; email: string | null }> => {
+  const workspaces = await supabaseSelect<{ owner_id: string | null }>(
+    "workspaces",
+    `id=eq.${encodeURIComponent(workspaceId)}&select=owner_id&limit=1`
+  ).catch(() => null)
+  const ownerId = workspaces?.[0]?.owner_id || fallbackUserId
+  if (ownerId === fallbackUserId) return { userId: ownerId, email: fallbackEmail ?? null }
+
+  const users = await supabaseSelect<{ email: string | null }>(
+    "users",
+    `id=eq.${encodeURIComponent(ownerId)}&select=email&limit=1`
+  ).catch(() => null)
+  return { userId: ownerId, email: users?.[0]?.email ?? null }
 }
 
 const higherPlan = (a: string, b: string) => {
@@ -259,19 +282,19 @@ const fetchUsersPlanByMemberId = async (memberId: string): Promise<UserPlanInfo 
 
 const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePlanInfo> => {
   try {
-    const workspaces = await supabaseSelect<{ organization_id: string }>(
+    const workspaces = await supabaseSelect<{ organization_id: string; owner_id: string | null }>(
       "workspaces",
-      `id=eq.${encodeURIComponent(workspaceId)}&select=organization_id&limit=1`
+      `id=eq.${encodeURIComponent(workspaceId)}&select=organization_id,owner_id&limit=1`
     )
     const orgId = workspaces?.[0]?.organization_id
+    const workspaceOwnerId = workspaces?.[0]?.owner_id
 
     if (!orgId) {
       // Personal workspace - read plan from workspace member's user record
-      const members = await supabaseSelect<{ user_id: string }>(
+      const memberId = workspaceOwnerId || (await supabaseSelect<{ user_id: string }>(
         "workspace_members",
-        `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=user_id&limit=1`
-      ).catch(() => null)
-      const memberId = members?.[0]?.user_id
+        `workspace_id=eq.${encodeURIComponent(workspaceId)}&role=eq.owner&select=user_id&limit=1`
+      ).catch(() => null))?.[0]?.user_id
       const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
       return { plan: userPlan?.plan ?? "Free", status: "active", expiresAt: userPlan?.expiresAt ?? null }
     }
@@ -299,11 +322,10 @@ const fetchBaseWorkspacePlan = async (workspaceId: string): Promise<WorkspacePla
 
     // Take the higher of org plan vs user's direct plan record (handles sync lag)
     const orgPlan = org.plan || "Free"
-    const members = await supabaseSelect<{ user_id: string }>(
+    const memberId = workspaceOwnerId || (await supabaseSelect<{ user_id: string }>(
       "workspace_members",
-      `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=user_id&limit=1`
-    ).catch(() => null)
-    const memberId = members?.[0]?.user_id
+      `workspace_id=eq.${encodeURIComponent(workspaceId)}&role=eq.owner&select=user_id&limit=1`
+    ).catch(() => null))?.[0]?.user_id
     const userPlan = memberId ? await fetchUsersPlanByMemberId(memberId) : null
     const effectivePlan = userPlan ? higherPlan(orgPlan, userPlan.plan) : orgPlan
     const usesDirectUserPlan = Boolean(userPlan && effectivePlan.toLowerCase() === userPlan.plan.toLowerCase() && (PLAN_PRIORITY[userPlan.plan.toLowerCase()] ?? 0) > (PLAN_PRIORITY[orgPlan.toLowerCase()] ?? 0))

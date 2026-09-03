@@ -31,21 +31,21 @@ export async function POST(request: NextRequest) {
 
     // Atomic check+increment prevents TOCTOU race where concurrent requests
     // both pass a separate read+check and exceed the monthly quota.
-    const allowed = monthlyLimit === "unlimited" || await competitorRepo.atomicIncrementIfAllowed(user.id, monthlyLimit)
+    const allowed = monthlyLimit === "unlimited" || await competitorRepo.atomicIncrementIfAllowed(planCheck.billingUserId, monthlyLimit)
     if (!allowed) {
-      const runsUsed = await competitorRepo.getRunsUsed(user.id)
+      const runsUsed = await competitorRepo.getRunsUsed(planCheck.billingUserId)
       return NextResponse.json(
         { error: "Monthly research limit reached. Resets next billing cycle.", runsUsed, limit: monthlyLimit },
         { status: 429 }
       )
     }
 
-    const result = await analyzeCompetitor({ postText, userId: user.id, plan: planCheck.plan })
+    const result = await analyzeCompetitor({ postText, userId: planCheck.billingUserId, plan: planCheck.plan })
 
     if (!result.ok) {
       // Roll back the increment on AI failure so the user doesn't lose a run
-      const currentRuns = await competitorRepo.getRunsUsed(user.id)
-      await competitorRepo.setRunsUsed(user.id, Math.max(0, currentRuns - 1)).catch(() => undefined)
+      const currentRuns = await competitorRepo.getRunsUsed(planCheck.billingUserId)
+      await competitorRepo.setRunsUsed(planCheck.billingUserId, Math.max(0, currentRuns - 1)).catch(() => undefined)
       return NextResponse.json(
         { error: result.error.userMessage ?? result.error.message },
         { status: errorToStatus(result.error.code) }
@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
     }
 
     const analysis = result.data
-    const runsUsed = await competitorRepo.getRunsUsed(user.id)
+    const runsUsed = await competitorRepo.getRunsUsed(planCheck.billingUserId)
 
-    await competitorRepo.saveAnalysis(user.id, postText, postUrl || null, analysis)
+    await competitorRepo.saveAnalysis(user.id, planCheck.workspaceId, postText, postUrl || null, analysis)
 
     return NextResponse.json({ analysis, runsUsed, limit: monthlyLimit })
   })(request)

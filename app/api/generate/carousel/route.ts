@@ -13,6 +13,7 @@ import { professionalContextPrompt } from "@/lib/professional-context"
 import { LINKEDIN_POSITIONING_RULES } from "@/lib/prompts/role-aware-system"
 import { CAROUSEL_SYSTEM_PROMPT } from "@/lib/prompts/builders/carousel"
 import { authorizeRole } from "@/lib/server/roles"
+import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 
 type Slide = {
   number: number
@@ -44,15 +45,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
     }
 
-    const usage = await incrementUsage(user.id, "carousels")
+    const usage = await incrementUsage(planCheck.billingUserId, "carousels")
     if (!usage.allowed) {
       return NextResponse.json(
         { error: "carousel_quota_exceeded", remaining: 0 },
         { status: 429 }
       )
     }
+    const isAgency = planCheck.plan.toLowerCase() === "agency"
+    if (isAgency) {
+      const workspaceUsage = await incrementWorkspaceUsage(planCheck.workspaceId, "carousels")
+      if (!workspaceUsage.allowed) {
+        await decrementUsage(planCheck.billingUserId, "carousels")
+        return NextResponse.json({ error: "workspace_carousel_quota_exceeded", remaining: 0 }, { status: 429 })
+      }
+    }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
     const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext)
     const system = `${CAROUSEL_SYSTEM_PROMPT}
 
@@ -85,14 +94,16 @@ Return JSON:
         userId: user.id, plan: planCheck.plan, cache: false,
       })
     } catch (genError) {
-      await decrementUsage(user.id, "carousels")
+      await decrementUsage(planCheck.billingUserId, "carousels")
+      if (isAgency) await decrementWorkspaceUsage(planCheck.workspaceId, "carousels")
       log.error("generate-carousel.generation_failed", { userId: user.id, error: (genError as Error).message })
       return NextResponse.json({ error: "Carousel generation is temporarily unavailable. Please try again in a moment." }, { status: 503 })
     }
 
     const parsed = safeParseJson<{ slides: Slide[] }>(raw)
     if (!parsed?.slides?.length) {
-      await decrementUsage(user.id, "carousels")
+      await decrementUsage(planCheck.billingUserId, "carousels")
+      if (isAgency) await decrementWorkspaceUsage(planCheck.workspaceId, "carousels")
       return NextResponse.json({ error: "Carousel generation returned no slides" }, { status: 502 })
     }
 

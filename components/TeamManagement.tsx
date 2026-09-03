@@ -20,19 +20,29 @@ type PendingInvite = {
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
-  admin: "Admin",
+  admin: "Workspace manager",
   editor: "Editor",
   client_reviewer: "Client reviewer",
   viewer: "Viewer",
 }
 
 const INVITE_ROLES: { value: string; label: string; hint: string }[] = [
+  { value: "admin", label: "Workspace manager", hint: "Manages this client workspace, its team, branding, and publishing workflow." },
   { value: "editor", label: "Editor", hint: "Drafts, schedules, and publishes for this client." },
   { value: "client_reviewer", label: "Client reviewer", hint: "Approves or rejects drafts. Can't publish or edit." },
   { value: "viewer", label: "Viewer", hint: "Read-only access to this workspace." },
 ]
 
-export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: string; workspaceName: string }) {
+export function TeamManagement({
+  workspaceId,
+  workspaceName,
+  currentRole,
+}: {
+  workspaceId: string
+  workspaceName: string
+  currentRole: string
+}) {
+  const canManage = currentRole === "owner" || currentRole === "admin"
   const [members, setMembers] = useState<Member[]>([])
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -116,6 +126,24 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
     }
   }
 
+  const handleCancelInvite = async (invite: PendingInvite) => {
+    setBusyInviteEmail(invite.email)
+    setInviteMsg(null)
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/invite?email=${encodeURIComponent(invite.email)}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "invite_cancel_failed")
+      setPendingInvites((prev) => prev.filter((item) => item.email !== invite.email))
+      setInviteMsg({ text: `Invite to ${invite.email} canceled.`, ok: true })
+    } catch {
+      setInviteMsg({ text: "Could not cancel that invite. Try again.", ok: false })
+    } finally {
+      setBusyInviteEmail(null)
+    }
+  }
+
   const handleRoleChange = async (userId: string, role: string) => {
     setBusyUserId(userId)
     try {
@@ -164,8 +192,8 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
                 {m.email ? <p className="text-xs text-zinc-500">{m.email}</p> : null}
               </div>
               <div className="flex items-center gap-2">
-                {m.role === "owner" ? (
-                  <span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow font-semibold text-teal-800">Owner</span>
+                {m.role === "owner" || !canManage ? (
+                  <span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow font-semibold text-teal-800">{ROLE_LABELS[m.role] || m.role}</span>
                 ) : (
                   <select
                     value={m.role}
@@ -179,7 +207,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
                     {!INVITE_ROLES.some((r) => r.value === m.role) ? <option value={m.role}>{ROLE_LABELS[m.role] || m.role}</option> : null}
                   </select>
                 )}
-                {m.role !== "owner" ? (
+                {canManage && m.role !== "owner" ? (
                   confirmRemove === m.userId ? (
                     <span className="flex items-center gap-1.5">
                       <span className="text-xs text-zinc-500">Remove?</span>
@@ -223,13 +251,22 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
                       {ROLE_LABELS[invite.role] || invite.role} - {invite.expired ? "Invite expired" : "Awaiting sign-up"}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleResend(invite)}
-                    disabled={busyInviteEmail === invite.email}
-                    className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
-                  >
-                    {busyInviteEmail === invite.email ? "Resending..." : "Resend invite"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleResend(invite)}
+                      disabled={busyInviteEmail === invite.email}
+                      className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                    >
+                      {busyInviteEmail === invite.email ? "Working..." : "Resend"}
+                    </button>
+                    <button
+                      onClick={() => handleCancelInvite(invite)}
+                      disabled={busyInviteEmail === invite.email}
+                      className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -237,7 +274,7 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
         </div>
       )}
 
-      <div className="flex flex-col gap-2 border-t border-zinc-200 pt-3 sm:flex-row sm:items-center">
+      {canManage ? <div className="flex flex-col gap-2 border-t border-zinc-200 pt-3 sm:flex-row sm:items-center">
         <input
           type="email"
           placeholder="teammate@email.com"
@@ -260,10 +297,12 @@ export function TeamManagement({ workspaceId, workspaceName }: { workspaceId: st
         >
           {isInviting ? "Sending..." : "Invite"}
         </button>
-      </div>
-      <p className="mt-1.5 t-eyebrow text-zinc-400">
+      </div> : (
+        <p className="border-t border-zinc-200 pt-3 text-xs text-zinc-500">Only the owner or workspace manager can change roles and invitations.</p>
+      )}
+      {canManage ? <p className="mt-1.5 t-eyebrow text-zinc-400">
         {INVITE_ROLES.find((r) => r.value === inviteRole)?.hint}
-      </p>
+      </p> : null}
       {inviteMsg ? (
         <p className={`mt-2 text-xs font-medium ${inviteMsg.ok ? "text-emerald-700" : "text-red-600"}`}>{inviteMsg.text}</p>
       ) : null}

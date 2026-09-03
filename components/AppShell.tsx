@@ -180,18 +180,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const switcherRef = useRef<HTMLDivElement>(null)
   const mobileSwitcherRef = useRef<HTMLDivElement>(null)
   const userDropdownRef = useRef<HTMLDivElement>(null)
-  const rawCurrentPlan = billing.plan as string
-  const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
-  const hasAgencyAccess = useMemo(() => currentPlan.startsWith("Agency"), [currentPlan])
-  const canAddWorkspace = hasAgencyAccess
-
   // Every workspace the user belongs to - own account plus any client
   // workspace they were invited into. Not gated on plan: an invited
   // teammate has no Agency plan of their own but still needs to switch
   // into the workspace they were added to.
-  const { workspaces: myWorkspaces } = useMyWorkspaces()
+  const { workspaces: myWorkspaces, canCreateClientWorkspaces } = useMyWorkspaces()
   const clientWorkspaces = useMemo(() => myWorkspaces.filter((w) => !w.isPersonal), [myWorkspaces])
-  const showManageClientList = hasAgencyAccess && clientWorkspaces.length > 0
+  const rawCurrentPlan = billing.plan as string
+  const currentPlan = rawCurrentPlan.charAt(0).toUpperCase() + rawCurrentPlan.slice(1).toLowerCase()
+  const hasManagedWorkspace = useMemo(
+    () => clientWorkspaces.some((workspace) => workspace.role === "owner" || workspace.role === "admin"),
+    [clientWorkspaces]
+  )
+  const hasAgencyAccess = canCreateClientWorkspaces || hasManagedWorkspace
+  const canAddWorkspace = canCreateClientWorkspaces
+  const showManageClientList = hasAgencyAccess
   const showSwitcherList = clientWorkspaces.length > 0
 
   // Nav groups filtered for command menu: strip links flagged hideWhenLocked

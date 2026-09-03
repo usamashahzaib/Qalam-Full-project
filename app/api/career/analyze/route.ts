@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { checkPlanLimit, incrementUsage } from "@/lib/server/plan-limits-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { requirePlan } from "@/lib/server/require-plan"
 
 const input = z.object({
   tool: z.enum(["linkedin", "resume", "job-match"]),
@@ -20,29 +21,31 @@ const prompts = {
 } as const
 
 export async function POST(request: NextRequest) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
+    const planCheck = await requirePlan(req, "Free")
+    if (!planCheck.ok) return planCheck.response
     const parsed = input.safeParse(await req.json().catch(() => ({})))
     if (!parsed.success) return NextResponse.json({ error: "invalid_career_input", details: parsed.error.flatten() }, { status: 400 })
     const body = parsed.data
     if (!body.profile && !body.resume) return NextResponse.json({ error: "profile_or_resume_required" }, { status: 400 })
     if (body.tool === "job-match" && !body.jobDescription) return NextResponse.json({ error: "job_description_required" }, { status: 400 })
 
-    const limit = await checkPlanLimit(user.id, "analyses")
+    const limit = await checkPlanLimit(planCheck.billingUserId, "analyses")
     if (!limit.allowed) return NextResponse.json({ error: "career_analysis_limit_reached", remaining: 0 }, { status: 403 })
 
     const raw = await callAi(
       "voice-profile",
       "Return strict JSON only.",
       `${prompts[body.tool]}\n\nTarget role: ${body.targetRole || "Not supplied"}\n\nLinkedIn profile:\n${body.profile || "Not supplied"}\n\nResume:\n${body.resume || "Not supplied"}\n\nJob description:\n${body.jobDescription || "Not supplied"}\n\nOutput JSON: {"summary":"string","score":number,"dimensions":[{"name":"string","score":number,"reason":"string"}],"recommendations":["string"],"rewrites":[{"section":"string","text":"string"}],"gaps":["string"]}`,
-      { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: limit.plan, cache: false }
+      { json: true, temperature: 0.25, timeout: 30000, userId: planCheck.billingUserId, plan: limit.plan, cache: false }
     )
     const result = safeParseJson(raw)
     if (!result) return NextResponse.json({ error: "invalid_ai_response" }, { status: 503 })
-    const usage = await incrementUsage(user.id, "analyses")
+    const usage = await incrementUsage(planCheck.billingUserId, "analyses")
     if (!usage.allowed) return NextResponse.json({ error: "career_analysis_limit_reached" }, { status: 403 })
-    if (user.workspaceId) {
+    if (planCheck.workspaceId) {
       await createServiceClient().from("jobs").insert({
-        workspace_id: user.workspaceId,
+        workspace_id: planCheck.workspaceId,
         type: `career_${body.tool}`,
         status: "completed",
         payload: { targetRole: body.targetRole, profile: body.profile, resume: body.resume, jobDescription: body.jobDescription },

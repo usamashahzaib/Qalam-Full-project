@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getSessionContext } from "@/lib/server/dashboard"
 import { DailyMomentumCard } from "@/components/dashboard/DailyMomentumCard"
+import { withClientParam } from "@/lib/workspace-navigation"
 
 // ─── Writing Prompts ──────────────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ const ALL_PROMPTS = [
   "What I tell people when they ask if they should enter my field",
 ]
 
-function WritingPromptsCard() {
+function WritingPromptsCard({ activeClientId }: { activeClientId: string | null }) {
   const now = new Date()
   const dayIndex =
     now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()
@@ -63,7 +64,7 @@ function WritingPromptsCard() {
         {prompts.map((prompt) => (
           <Link
             key={prompt}
-            href={`/writer?topic=${encodeURIComponent(prompt)}`}
+            href={withClientParam(`/writer?topic=${encodeURIComponent(prompt)}`, activeClientId)}
             className="group flex min-h-20 items-start gap-3 rounded-2xl border border-zinc-100 bg-white p-4 transition-all hover:-translate-y-0.5 hover:border-teal/30 hover:shadow-card"
           >
             <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal/10 text-teal">
@@ -148,7 +149,7 @@ const QUICK_ACTIONS = [
   },
 ]
 
-function QuickActionsCard() {
+function QuickActionsCard({ activeClientId }: { activeClientId: string | null }) {
   return (
     <div className="h-full rounded-3xl border border-teal/10 bg-teal-800 p-6 text-white shadow-card-raised">
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">Keep moving</p>
@@ -158,7 +159,7 @@ function QuickActionsCard() {
         {QUICK_ACTIONS.map(({ label, href, desc, icon }) => (
           <Link
             key={href}
-            href={href}
+            href={withClientParam(href, activeClientId)}
             className="mt-3 flex min-h-14 items-center justify-between rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 transition-all hover:border-gold/40 hover:bg-white/[0.1]"
           >
             <div className="flex items-center gap-3">
@@ -197,7 +198,11 @@ function QuickActionsCard() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>
+}) {
   let firstName = ""
   try {
     const ctx = await getSessionContext()
@@ -207,6 +212,7 @@ export default async function DashboardPage() {
   }
 
   const greeting = firstName ? `Welcome back, ${firstName}` : "Welcome back"
+  const activeClientId = (await searchParams).client || null
 
   return (
     <>
@@ -220,9 +226,9 @@ export default async function DashboardPage() {
           <p className="mt-2 text-sm text-zinc-500">One useful move at a time. Your work becomes easier to reuse every day.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-        <Link href="/career/resumes" className="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal hover:text-teal">Build resume</Link>
+        <Link href={withClientParam("/career/resumes", activeClientId)} className="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal hover:text-teal">Build resume</Link>
         <Link
-          href="/writer"
+          href={withClientParam("/writer", activeClientId)}
           className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors"
           style={{ backgroundColor: "var(--ws-brand, #0d4a45)" }}
         >
@@ -248,8 +254,8 @@ export default async function DashboardPage() {
 
       {/* Static sections - render immediately, no data dependency */}
       <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <WritingPromptsCard />
-        <QuickActionsCard />
+        <WritingPromptsCard activeClientId={activeClientId} />
+        <QuickActionsCard activeClientId={activeClientId} />
       </div>
     </>
   )

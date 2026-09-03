@@ -9,12 +9,15 @@ const schema = z.object({
   // null clears back to the default Qalam teal.
   brandingColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/, "Must be a hex color like #0D4A45").nullable(),
 })
+const paramsSchema = z.object({ id: z.string().uuid() })
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (req) => {
-    const { id: workspaceId } = await params
+    const parsedParams = paramsSchema.safeParse(await params)
+    if (!parsedParams.success) return NextResponse.json({ error: "invalid_workspace" }, { status: 400 })
+    const workspaceId = parsedParams.data.id
     const planCheck = await requirePlan(req, "Agency", workspaceId)
     if (!planCheck.ok) return planCheck.response
 
@@ -35,12 +38,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     }
 
     const supabase = createServiceClient()
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("workspaces")
       .update({ branding_color: parsed.data.brandingColor })
       .eq("id", workspaceId)
+      .eq("workspace_type", "client")
+      .select("id")
+      .maybeSingle()
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!data) return NextResponse.json({ error: "workspace_not_found" }, { status: 404 })
     return NextResponse.json({ ok: true, brandingColor: parsed.data.brandingColor })
   })(request)
 }

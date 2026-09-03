@@ -6,6 +6,8 @@ import { useBilling } from "@/lib/hooks/useBilling"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanByName } from "@/lib/pricing"
 import { LockedFeature } from "@/components/LockedFeature"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
+import { withClientParam } from "@/lib/workspace-navigation"
 
 type HookStructure = { pattern: string; length: string; type: string }
 type ContentPattern = { framework: string; structure: string; estimatedReadTime: string }
@@ -34,6 +36,7 @@ const formatDate = (iso: string) => {
 export default function CompetitorsPage() {
   const router = useRouter()
   const { billing } = useBilling()
+  const { workspaceId, activeClientId } = useWorkspace()
   const canUse = canAccessPlan(billing.plan, "Pro")
 
   const [postText, setPostText] = useState("")
@@ -54,7 +57,7 @@ export default function CompetitorsPage() {
 
   useEffect(() => {
     if (!canUse) return
-    fetch("/api/competitors/history")
+    fetch(`/api/competitors/history?workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then((r) => r.json())
       .then((data: { history?: HistoryItem[]; runsUsed?: number }) => {
         setHistory(data.history || [])
@@ -62,7 +65,7 @@ export default function CompetitorsPage() {
       })
       .catch(() => null)
       .finally(() => setHistoryLoaded(true))
-  }, [canUse])
+  }, [canUse, workspaceId])
 
   const onAnalyze = async () => {
     if (postText.trim().length < 50) {
@@ -76,7 +79,7 @@ export default function CompetitorsPage() {
       const res = await fetch("/api/competitors/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText: postText.trim() }),
+        body: JSON.stringify({ postText: postText.trim(), workspaceKey: workspaceId }),
       })
       const data = await res.json() as { analysis?: Analysis; runsUsed?: number; limit?: number; error?: string }
       if (!res.ok) throw new Error(data.error || "Analysis failed")
@@ -84,7 +87,7 @@ export default function CompetitorsPage() {
       setRunsUsed(data.runsUsed ?? runsUsed + 1)
       showStatus("Analysis complete.", "success")
       // Refresh history
-      fetch("/api/competitors/history")
+      fetch(`/api/competitors/history?workspaceKey=${encodeURIComponent(workspaceId)}`)
         .then((r) => r.json())
         .then((d: { history?: HistoryItem[] }) => setHistory(d.history || []))
         .catch(() => null)
@@ -107,7 +110,7 @@ export default function CompetitorsPage() {
     if (typeof window !== "undefined") {
       sessionStorage.setItem("competitorInsights", JSON.stringify(insights))
     }
-    router.push("/writer")
+    router.push(withClientParam("/writer", activeClientId))
   }
 
   const loadFromHistory = (item: HistoryItem) => {

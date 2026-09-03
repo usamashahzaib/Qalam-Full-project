@@ -68,8 +68,8 @@ Return JSON:
     }
 
     // Persist to voice_profiles so generation routes pick it up automatically
-    if (user.workspaceId) {
-      const supabase = createScopedClient(user.workspaceId)
+    if (planCheck.workspaceId) {
+      const supabase = createScopedClient(planCheck.workspaceId)
       const { data: existingRaw } = await supabase
         .from("voice_profiles")
         .select("id, characteristics")
@@ -98,6 +98,6 @@ Return JSON:
       }
     }
 
-    return NextResponse.json({ characteristics, saved: Boolean(user.workspaceId) })
+    return NextResponse.json({ characteristics, saved: true })
   })(request)
 }

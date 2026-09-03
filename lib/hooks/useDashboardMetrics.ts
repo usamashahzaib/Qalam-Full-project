@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 export type DashboardStats = {
   postsThisMonth: number
@@ -30,6 +31,7 @@ export type UsageDay = {
 }
 
 export function useDashboardMetrics() {
+  const { workspaceId } = useWorkspace()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [statsError, setStatsError] = useState(false)
   const [posts, setPosts] = useState<DashboardPost[] | null>(null)
@@ -44,7 +46,7 @@ export function useDashboardMetrics() {
   const loadStatsRequest = useCallback(async (signal?: AbortSignal) => {
     const seq = ++statsSeq.current
     try {
-      const res = await fetch("/api/dashboard/stats", { signal })
+      const res = await fetch(`/api/dashboard/stats?workspaceKey=${encodeURIComponent(workspaceId)}`, { signal })
       if (!res.ok) throw new Error("failed")
       const next = await res.json() as DashboardStats
       if (seq !== statsSeq.current) return
@@ -54,12 +56,12 @@ export function useDashboardMetrics() {
       if ((error as Error).name === "AbortError" || seq !== statsSeq.current) return
       setStatsError(true)
     }
-  }, [])
+  }, [workspaceId])
 
   const loadPostsRequest = useCallback(async (signal?: AbortSignal) => {
     const seq = ++postsSeq.current
     try {
-      const res = await fetch("/api/dashboard/recent-posts", { signal })
+      const res = await fetch(`/api/dashboard/recent-posts?workspaceKey=${encodeURIComponent(workspaceId)}`, { signal })
       if (!res.ok) throw new Error("failed")
       const next = await res.json() as DashboardPost[]
       if (seq !== postsSeq.current) return
@@ -69,12 +71,12 @@ export function useDashboardMetrics() {
       if ((error as Error).name === "AbortError" || seq !== postsSeq.current) return
       setPostsError(true)
     }
-  }, [])
+  }, [workspaceId])
 
   const loadUsageRequest = useCallback(async (signal?: AbortSignal) => {
     const seq = ++usageSeq.current
     try {
-      const res = await fetch("/api/dashboard/usage", { signal })
+      const res = await fetch(`/api/dashboard/usage?workspaceKey=${encodeURIComponent(workspaceId)}`, { signal })
       if (!res.ok) throw new Error("failed")
       const next = await res.json() as UsageDay[]
       if (seq !== usageSeq.current) return
@@ -84,7 +86,7 @@ export function useDashboardMetrics() {
       if ((error as Error).name === "AbortError" || seq !== usageSeq.current) return
       setUsageError(true)
     }
-  }, [])
+  }, [workspaceId])
 
   const loadStats = useCallback(() => { void loadStatsRequest() }, [loadStatsRequest])
   const loadPosts = useCallback(() => { void loadPostsRequest() }, [loadPostsRequest])

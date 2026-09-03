@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 type WriterApprovalModalProps = {
   draftContent: string
@@ -19,6 +20,7 @@ export function WriterApprovalModal({
   onSent,
   onError,
 }: WriterApprovalModalProps) {
+  const { workspaceId } = useWorkspace()
   const [reviewerEmail, setReviewerEmail] = useState("")
   const [message, setMessage] = useState("")
   const [isSending, setIsSending] = useState(false)
@@ -36,6 +38,7 @@ export function WriterApprovalModal({
           postContent: draftContent,
           message: message.trim(),
           postId,
+          workspaceKey: workspaceId,
         }),
       })
       const data = await response.json() as { error?: string }

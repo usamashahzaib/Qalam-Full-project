@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Scope fresh generations to the user because Pro output can include saved voice,
     // audience, content pillars, and professional proof loaded inside the use case.
     const cacheKey = !hasOriginalDraft
-      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id })
+      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id, workspaceId: planCheck.workspaceId })
       : null
     if (cacheKey) {
       const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)
@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
       role: String(body.role || ""),
       format: String(body.format || ""),
       goal: String(body.goal || "").trim() || undefined,
-      userId: user.id,
+      userId: planCheck.billingUserId,
       internalUserId: user.id,
-      workspaceId: user.workspaceId,
+      workspaceId: planCheck.workspaceId,
       plan: planCheck.plan,
     })
 

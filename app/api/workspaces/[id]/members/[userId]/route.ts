@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/server/roles"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 
 const patchSchema = z.object({
-  role: z.enum(["editor", "viewer", "client_reviewer"]),
+  role: z.enum(["admin", "editor", "viewer", "client_reviewer"]),
 })
 const memberParamsSchema = z.object({ id: z.string().uuid(), userId: z.string().uuid() })
 

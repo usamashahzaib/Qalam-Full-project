@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Read-only quota check - decrement only after AI call succeeds
-    const precheck = await checkPlanLimit(user.id, "carousels")
+    const precheck = await checkPlanLimit(planCheck.billingUserId, "carousels")
     if (!precheck.allowed) {
       return NextResponse.json(
         { error: "carousel_quota_exceeded", current: precheck.current, limit: precheck.limit },
@@ -149,7 +149,7 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
 
     // cache: false - regenerating the same topic must produce a fresh deck,
     // not yesterday's cached slides.
-    const result = await callAi("carousel-outline", systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 30000, maxTokens: 3000, userId: user.id, plan: planCheck.plan, cache: false })
+    const result = await callAi("carousel-outline", systemPrompt, userMessage, { json: true, temperature: 0.7, timeout: 30000, maxTokens: 3000, userId: planCheck.billingUserId, plan: planCheck.plan, cache: false })
 
     let slides = parseSlides(result, parsed.data.slideCount)
     if (slides.length < 5) {
@@ -157,7 +157,7 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
     }
 
     // AI succeeded - now commit the quota decrement
-    const usage = await incrementUsage(user.id, "carousels")
+    const usage = await incrementUsage(planCheck.billingUserId, "carousels")
     if (!usage.allowed) {
       return NextResponse.json(
         { error: "carousel_quota_exceeded", current: usage.current, limit: usage.limit },
@@ -167,7 +167,7 @@ Return only JSON: { "slides": [{ "title": string, "bullets": string[], "designHi
     if (isAgency) {
       const wsUsage = await incrementWorkspaceUsage(workspaceId, "carousels")
       if (!wsUsage.allowed) {
-        await decrementUsage(user.id, "carousels")
+        await decrementUsage(planCheck.billingUserId, "carousels")
         return NextResponse.json(
           { error: "workspace_carousel_quota_exceeded", current: wsUsage.used, limit: wsUsage.limit },
           { status: 429 }

@@ -9,6 +9,7 @@ import type {
 export class SupabaseCompetitorRepository implements ICompetitorRepository {
   async saveAnalysis(
     userId: string,
+    workspaceId: string,
     postText: string,
     postUrl: string | null,
     analysis: CompetitorAnalysis
@@ -16,6 +17,7 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
     const supabase = createServiceClient()
     const { error } = await supabase.from("competitor_analyses").insert({
       user_id: userId,
+      workspace_id: workspaceId,
       post_text: postText.slice(0, 2000),
       post_url: postUrl || null,
       hook_structure: analysis.hookStructure,
@@ -26,14 +28,14 @@ export class SupabaseCompetitorRepository implements ICompetitorRepository {
     if (error) throw new Error(`saveAnalysis failed: ${error.message}`)
   }
 
-  async listAnalyses(userId: string, limit = 5): Promise<CompetitorAnalysisRecord[]> {
+  async listAnalyses(workspaceId: string, limit = 5): Promise<CompetitorAnalysisRecord[]> {
     const supabase = createServiceClient()
     const { data } = await supabase
       .from("competitor_analyses")
       .select(
         "id, post_text, post_url, hook_structure, engagement_factors, content_pattern, improvements, created_at"
       )
-      .eq("user_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(limit)
     return (data as CompetitorAnalysisRecord[]) || []

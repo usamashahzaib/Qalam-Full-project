@@ -5,6 +5,7 @@ import { useBilling } from "@/lib/hooks/useBilling"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useApprovalQueue } from "@/lib/hooks/useApprovalQueue"
 import type { ApprovalRow } from "@/lib/hooks/useApprovalQueue"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 const STATUS_META: Record<string, { label: string; badge: string }> = {
   pending: { label: "Awaiting review", badge: "bg-amber-50 text-amber-700 border border-amber-200" },
@@ -221,6 +222,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
   onSent: (row: ApprovalRow) => void
   onError: (msg: string) => void
 }) {
+  const { workspaceId } = useWorkspace()
   const [reviewerEmail, setReviewerEmail] = useState("")
   const [postTitle, setPostTitle] = useState("")
   const [postContent, setPostContent] = useState("")
@@ -242,6 +244,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           postTitle: postTitle.trim() || "Untitled post",
           postContent: postContent.trim(),
           message: message.trim(),
+          workspaceKey: workspaceId,
         }),
       })
       const data = await res.json() as { approval?: ApprovalRow; reviewToken?: string; error?: string }

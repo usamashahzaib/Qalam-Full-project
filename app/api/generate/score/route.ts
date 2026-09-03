@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Atomic check+increment using internal UUID - prevents TOCTOU bypass and wrong-ID ghost rows.
-    const usage = await incrementUsage(user.id, "analyses")
+    const usage = await incrementUsage(planCheck.billingUserId, "analyses")
     if (!usage.allowed) {
       return NextResponse.json(
         { error: "You have reached your scoring limit for this billing period." },
@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
     const result = await scorePost({
       content,
       role: String(body.role || ""),
-      userId: user.id,
+      userId: planCheck.billingUserId,
       internalUserId: user.id,
-      workspaceId: user.workspaceId,
+      workspaceId: planCheck.workspaceId,
       plan: planCheck.plan,
       attempt,
     })

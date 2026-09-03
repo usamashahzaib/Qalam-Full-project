@@ -2,6 +2,8 @@ import "server-only"
 
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { decrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { buildPushTo90Prompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { gateScores } from "@/lib/content-score-gate"
@@ -66,6 +68,20 @@ export async function improvePost(
   if (!usage.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
   }
+  const isAgency = plan.toLowerCase() === "agency"
+  if (isAgency && workspaceId) {
+    const workspaceUsage = await incrementWorkspaceUsage(workspaceId, "drafts")
+    if (!workspaceUsage.allowed) {
+      await decrementUsage(userId, "drafts")
+      return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Workspace draft limit reached", userMessage: "This client workspace has used its 60 drafts this month." })
+    }
+    usage = { ...usage, remaining: workspaceUsage.remaining }
+  }
+
+  const refundUsage = async () => {
+    await decrementUsage(userId, "drafts")
+    if (isAgency && workspaceId) await decrementWorkspaceUsage(workspaceId, "drafts")
+  }
 
   const role = rawRole
 
@@ -74,6 +90,7 @@ export async function improvePost(
 
   let artifact = toPostArtifact(content)
   if (!artifact) {
+    await refundUsage()
     return err({ code: "VALIDATION_ERROR", message: "Invalid source post", userMessage: "Content too short to improve." })
   }
 
@@ -101,6 +118,11 @@ export async function improvePost(
     rawScores = safeParseJson<ScorePayload>(scoreRaw) || {}
     scoringSucceeded = Object.values(normalizeScores(rawScores)).some((v) => typeof v === "number" && v > 0)
     if (gateScores(artifact.content, normalizeScores(rawScores)).overall >= 90) break
+  }
+
+  if (!artifact.content.trim()) {
+    await refundUsage()
+    return err({ code: "INTERNAL_ERROR", message: "Improvement failed", userMessage: "Post improvement failed. Please try again." })
   }
 
   return ok({

@@ -6,7 +6,8 @@ import {
   type DashboardStats,
   type UsageDay,
 } from "@/lib/server/dashboard"
-import { ensureWorkspaceForUser } from "@/lib/server/workspace"
+import { resolveWorkspaceForSession } from "@/lib/server/workspace"
+import { withClientParam } from "@/lib/workspace-navigation"
 import { RefreshButton } from "../_components/refresh-button"
 import { UpgradeSpotlight } from "@/components/UpgradeSpotlight"
 
@@ -250,7 +251,7 @@ const QUICK_ACTIONS = [
   },
 ]
 
-function QuickActionsCard() {
+function QuickActionsCard({ activeClientId }: { activeClientId: string | null }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">
@@ -260,7 +261,7 @@ function QuickActionsCard() {
         {QUICK_ACTIONS.map(({ label, href, desc, icon }) => (
           <Link
             key={href}
-            href={href}
+            href={withClientParam(href, activeClientId)}
             className="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-zinc-300 hover:bg-zinc-50"
           >
             <div className="flex items-center gap-3">
@@ -341,18 +342,23 @@ function UsageChart({ usage }: { usage: UsageDay[] }) {
 
 // ─── Stats Slot Page ──────────────────────────────────────────────────────────
 
-export default async function StatsPage() {
+export default async function StatsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>
+}) {
   let stats: DashboardStats | null = null
   let usage: UsageDay[] | null = null
   let statsError = false
   let usageError = false
+  const activeClientId = (await searchParams).client || null
 
   try {
     const ctx = await getSessionContext()
-    const workspaceId = await ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email })
+    const workspaceId = await resolveWorkspaceForSession(activeClientId, ctx)
     const [statsResult, usageResult] = await Promise.allSettled([
-      fetchDashboardStats(ctx.supabaseUserId, workspaceId),
-      fetchDashboardUsage(ctx.userId),
+      fetchDashboardStats(ctx.supabaseUserId, workspaceId, ctx.email),
+      fetchDashboardUsage(workspaceId),
     ])
     if (statsResult.status === "fulfilled") {
       stats = statsResult.value
@@ -437,7 +443,7 @@ export default async function StatsPage() {
         ) : stats ? (
           <PlanCard stats={stats} />
         ) : null}
-        <QuickActionsCard />
+        <QuickActionsCard activeClientId={activeClientId} />
       </div>
 
       {/* Usage chart */}

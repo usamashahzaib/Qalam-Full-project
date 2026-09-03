@@ -32,7 +32,7 @@ const isoDay = (iso: string) => { try { return new Date(iso).toISOString().slice
 const parsePostDate = (s: string) => { try { const d = new Date(s); return isNaN(d.getTime()) ? null : d } catch { return null } }
 
 export default function AnalyticsPage() {
-  const { activeClientId } = useWorkspace()
+  const { activeClientId, workspaceId } = useWorkspace()
   const { posts, drafts, scheduled, published, loadEvents } = usePosts()
   const { profile } = useProfile()
   const [events, setEvents] = useState<RawEvent[]>([])
@@ -50,7 +50,7 @@ export default function AnalyticsPage() {
     Promise.all([
       loadEvents(500),
       fetch(withWorkspaceKey("/api/carousel", activeClientId)).then((r) => r.json()).catch(() => ({ carousels: [] })),
-      fetch("/api/analytics?limit=20").then((r) => r.json()).catch(() => ({ snapshots: [] })),
+      fetch(`/api/analytics?limit=20&workspaceKey=${encodeURIComponent(workspaceId)}`).then((r) => r.json()).catch(() => ({ snapshots: [] })),
     ]).then(([ev, carouselRes, analyticsRes]) => {
       if (!active) return
       setEvents(Array.isArray(ev) ? (ev as RawEvent[]) : [])
@@ -63,7 +63,7 @@ export default function AnalyticsPage() {
       setEvents([])
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [loadEvents, activeClientId])
+  }, [loadEvents, activeClientId, workspaceId])
 
   const analytics = useMemo(() => {
     const analyses = posts
@@ -175,6 +175,7 @@ export default function AnalyticsPage() {
           reposts: Number(snapshotForm.reposts) || 0,
           followerDelta: Number(snapshotForm.followerDelta) || 0,
           notes: snapshotForm.notes.trim() || undefined,
+          workspaceKey: workspaceId,
         }),
       })
       const data = await res.json() as { snapshot?: Snapshot; error?: string }
@@ -187,7 +188,7 @@ export default function AnalyticsPage() {
     } finally {
       setSnapshotSaving(false)
     }
-  }, [snapshotForm])
+  }, [snapshotForm, workspaceId])
 
   return (
     <LockedFeature feature="Analytics dashboard" requiredPlan="Solo">

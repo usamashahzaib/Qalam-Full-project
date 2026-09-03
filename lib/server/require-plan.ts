@@ -2,7 +2,7 @@ import "server-only"
 
 import { NextRequest, NextResponse } from "next/server"
 import { requireAuth } from "@/lib/server/workspace"
-import { resolveWorkspaceId, resolveEffectivePlan, getWorkspaceSessionContext } from "@/lib/server/workspace"
+import { resolveWorkspaceId, resolveEffectivePlan, getWorkspaceSessionContext, resolveWorkspaceBillingPrincipal } from "@/lib/server/workspace"
 import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseCount } from "@/lib/server/supabase-rest"
@@ -13,6 +13,7 @@ type PlanCheckResult =
       ok: true
       session: Awaited<ReturnType<typeof getWorkspaceSessionContext>>
       workspaceId: string
+      billingUserId: string
       plan: string
       status: string
       limits: PlanLimits
@@ -57,12 +58,18 @@ export const requirePlan = async (
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
 
+  const billingPrincipal = await resolveWorkspaceBillingPrincipal(
+    workspaceId,
+    session.supabaseUserId,
+    session.email,
+  )
+
   // Single resolution path: getPlanStatus owns expiry/override data;
   // resolveEffectivePlan owns workspace-owner plan inheritance.
   // Run both in parallel - they use independent DB queries.
   const [planStatus, planInfo] = await Promise.all([
-    getPlanStatus(session.supabaseUserId),
-    resolveEffectivePlan(workspaceId, session.email, session.supabaseUserId),
+    getPlanStatus(billingPrincipal.userId),
+    resolveEffectivePlan(workspaceId, billingPrincipal.email, billingPrincipal.userId),
   ])
 
   // Respect admin override: an override can reactivate an otherwise-expired plan.
@@ -92,6 +99,7 @@ export const requirePlan = async (
     ok: true,
     session,
     workspaceId,
+    billingUserId: billingPrincipal.userId,
     plan: effectivePlan,
     status: planInfo.status,
     limits: getPlanLimits(effectivePlan),

@@ -2,6 +2,7 @@ import "server-only"
 
 import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildHumanizePrompt } from "@/lib/prompts/role-aware-system"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
@@ -39,6 +40,7 @@ export async function generatePostFromHook(
 ): Promise<Result<GeneratePostFromHookOutput>> {
   const { topic, hook, originalContent, role: rawRole, format: rawFormat, goal, userId, workspaceId, plan } = input
 
+  const isAgency = plan.toLowerCase() === "agency"
   let usage: Awaited<ReturnType<typeof incrementUsage>>
   try {
     usage = await incrementUsage(userId, "drafts")
@@ -47,6 +49,19 @@ export async function generatePostFromHook(
   }
   if (!usage.allowed) {
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Draft limit reached", userMessage: "Draft limit reached. Upgrade your plan." })
+  }
+  if (isAgency && workspaceId) {
+    const workspaceUsage = await incrementWorkspaceUsage(workspaceId, "drafts")
+    if (!workspaceUsage.allowed) {
+      await decrementUsage(userId, "drafts")
+      return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Workspace draft limit reached", userMessage: "This client workspace has used its 60 drafts this month." })
+    }
+    usage = { ...usage, remaining: workspaceUsage.remaining }
+  }
+
+  const refundUsage = async () => {
+    await decrementUsage(userId, "drafts")
+    if (isAgency && workspaceId) await decrementWorkspaceUsage(workspaceId, "drafts")
   }
 
   const role = rawRole
@@ -67,7 +82,7 @@ export async function generatePostFromHook(
       userId, plan, cache: false,
     })
   } catch {
-    await decrementUsage(userId, "drafts")
+    await refundUsage()
     return err({ code: "INTERNAL_ERROR", message: "Post generation failed", userMessage: "Post generation failed. Please try again in a moment." })
   }
 
@@ -84,6 +99,7 @@ export async function generatePostFromHook(
 
   const artifact = toPostArtifact(humanized) || toPostArtifact(rawPost)
   if (!artifact) {
+    await refundUsage()
     return err({ code: "INTERNAL_ERROR", message: "Invalid post artifact", userMessage: "Post generation failed. Please try again in a moment." })
   }
 

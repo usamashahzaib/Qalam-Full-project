@@ -17,9 +17,7 @@ const createSchema = z.object({
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req, user) => {
-    if (!user.workspaceId) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
+    void user
     const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
@@ -31,7 +29,7 @@ export async function GET(request: NextRequest) {
     const postId = url.searchParams.get("postId")
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50", 10), 200)
 
-    const supabase = createScopedClient(user.workspaceId)
+    const supabase = createScopedClient(planCheck.workspaceId)
     let query = supabase
       .from("analytics_snapshots")
       .select("id, post_id, impressions, reactions, comments, reposts, follower_delta, notes, captured_at")
@@ -50,14 +48,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    if (!user.workspaceId) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
-    const roleError = await authorizeRole(req, user.workspaceId, "editor")
-    if (roleError) return roleError
     const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     if (planCheck.limits.analyticsDepth === "none") {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
@@ -75,7 +70,7 @@ export async function POST(request: NextRequest) {
     const { postId, impressions, reactions, comments, reposts, followerDelta, notes, capturedAt } = parsed.data
 
     // If postId provided, verify it belongs to this workspace
-    const supabase = createScopedClient(user.workspaceId)
+    const supabase = createScopedClient(planCheck.workspaceId)
     if (postId) {
       const { data: post } = await supabase
         .from("posts")
@@ -108,14 +103,12 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   return withAuth(async (req, user) => {
-    if (!user.workspaceId) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
-    const roleError = await authorizeRole(req, user.workspaceId, "editor")
-    if (roleError) return roleError
+    void user
     const { requirePlan } = await import("@/lib/server/require-plan")
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     if (planCheck.limits.analyticsDepth === "none") {
       return NextResponse.json({ error: "upgrade_required", requiredFeature: "analytics" }, { status: 403 })
     }
@@ -124,7 +117,7 @@ export async function DELETE(request: NextRequest) {
     const id = url.searchParams.get("id")
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
 
-    const { error } = await createScopedClient(user.workspaceId)
+    const { error } = await createScopedClient(planCheck.workspaceId)
       .from("analytics_snapshots")
       .delete()
       .eq("id", id)

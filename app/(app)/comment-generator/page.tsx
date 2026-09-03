@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { CommentIcon } from "@/components/ui/qalam-icons"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 const PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 
@@ -20,6 +21,7 @@ const MAX_POST_LENGTH = 5000
 type Comment = { style: string; text: string }
 
 export default function CommentGeneratorPage() {
+  const { workspaceId } = useWorkspace()
   const [postText, setPostText] = useState("")
   const [profile, setProfile] = useState<(typeof PROFILES)[number]>("Founder")
   const [style, setStyle] = useState<StyleValue>("insightful")
@@ -44,7 +46,7 @@ export default function CommentGeneratorPage() {
       const res = await fetch("/api/comments/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postText: trimmed, profile, style }),
+        body: JSON.stringify({ postText: trimmed, profile, style, workspaceKey: workspaceId }),
       })
 
       const data = await res.json()

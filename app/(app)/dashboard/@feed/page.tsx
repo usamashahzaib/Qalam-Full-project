@@ -4,8 +4,9 @@ import {
   fetchRecentPosts,
   type DashboardPost,
 } from "@/lib/server/dashboard"
-import { ensureWorkspaceForUser } from "@/lib/server/workspace"
+import { resolveWorkspaceForSession } from "@/lib/server/workspace"
 import { RefreshButton } from "../_components/refresh-button"
+import { withClientParam } from "@/lib/workspace-navigation"
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ const STATUS_STYLES: Record<string, string> = {
   archived: "bg-zinc-100 text-zinc-400 border-zinc-200",
 }
 
-function PostRow({ post }: { post: DashboardPost }) {
+function PostRow({ post, activeClientId }: { post: DashboardPost; activeClientId: string | null }) {
   const score = post.score ?? 0
   const scoreColor =
     score >= 80
@@ -35,7 +36,7 @@ function PostRow({ post }: { post: DashboardPost }) {
 
   return (
     <Link
-      href={`/writer?id=${post.id}`}
+      href={withClientParam(`/writer?id=${post.id}`, activeClientId)}
       className="flex items-start justify-between gap-4 px-5 py-4 transition-colors hover:bg-zinc-50"
     >
       <div className="min-w-0 flex-1">
@@ -62,13 +63,18 @@ function PostRow({ post }: { post: DashboardPost }) {
 
 // ─── Feed Slot Page ───────────────────────────────────────────────────────────
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>
+}) {
   let posts: DashboardPost[] | null = null
   let error = false
+  const activeClientId = (await searchParams).client || null
 
   try {
     const ctx = await getSessionContext()
-    const workspaceId = await ensureWorkspaceForUser({ userId: ctx.supabaseUserId, email: ctx.email })
+    const workspaceId = await resolveWorkspaceForSession(activeClientId, ctx)
     posts = await fetchRecentPosts(workspaceId)
   } catch {
     error = true
@@ -79,7 +85,7 @@ export default async function FeedPage() {
       <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
         <h2 className="text-base font-bold text-zinc-950">Recent posts</h2>
         <Link
-          href="/library"
+          href={withClientParam("/library", activeClientId)}
           className="text-sm font-semibold text-teal transition-colors hover:text-teal-700"
         >
           View library
@@ -113,7 +119,7 @@ export default async function FeedPage() {
             AI generates hooks and a full draft in seconds.
           </p>
           <Link
-            href="/writer"
+            href={withClientParam("/writer", activeClientId)}
             className="mt-6 rounded-xl bg-teal px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600"
           >
             Write your first post
@@ -122,7 +128,7 @@ export default async function FeedPage() {
       ) : posts ? (
         <div className="divide-y divide-zinc-100">
           {posts.map((post) => (
-            <PostRow key={post.id} post={post} />
+            <PostRow key={post.id} post={post} activeClientId={activeClientId} />
           ))}
         </div>
       ) : null}

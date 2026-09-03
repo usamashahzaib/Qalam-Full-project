@@ -14,6 +14,7 @@ import type { PlanTier } from "@/types/domain"
 import { errorToStatus } from "@/lib/errors"
 import { canAccessPost } from "@/lib/domain/services/authorization"
 import { authorizeRole } from "@/lib/server/roles"
+import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
 
 const LINKEDIN_MAX_POST_CHARS = 3000
 
@@ -30,15 +31,24 @@ const patchSchema = z.object({
   id: z.string().uuid("Invalid post ID"),
   content: z.string().max(LINKEDIN_MAX_POST_CHARS, "Post exceeds LinkedIn's 3000 character limit.").optional(),
   confirmOnly: z.boolean().optional(),
+  workspaceKey: z.string().uuid().optional(),
 })
 
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (req, user) => {
+  return withAuth(async (req) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
 
-    const status = await checkPlanLimit(user.id, "drafts")
+    const status = planCheck.plan.toLowerCase() === "agency"
+      ? await checkWorkspaceUsage(planCheck.workspaceId, "drafts").then((usage) => ({
+          allowed: usage.allowed,
+          current: usage.used,
+          limit: usage.limit,
+          remaining: usage.remaining,
+          plan: planCheck.plan,
+        }))
+      : await checkPlanLimit(planCheck.billingUserId, "drafts")
     return NextResponse.json({
       allowed: status.allowed,
       current: status.current,
@@ -75,17 +85,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
-    if (!user.workspaceId) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
-    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
 
     const result = await generatePost({
       ...parsed.data,
-      userId: user.id,
+      userId: planCheck.billingUserId,
       authorId: user.id,
-      workspaceId: user.workspaceId,
+      workspaceId: planCheck.workspaceId,
       plan: planCheck.plan,
       reqId,
     })
@@ -115,13 +122,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid input", details: parsed.error.flatten() }, { status: 400 })
     }
 
-    if (!user.workspaceId) {
-      return NextResponse.json({ error: "No workspace found" }, { status: 400 })
-    }
-    const roleError = await authorizeRole(req, user.workspaceId, "editor")
+    const planCheck = await requirePlan(req, "Solo", parsed.data.workspaceKey)
+    if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError
 
-    const supabase = createScopedClient(user.workspaceId)
+    const supabase = createScopedClient(planCheck.workspaceId)
 
     const { data: post } = await supabase
       .from("posts")

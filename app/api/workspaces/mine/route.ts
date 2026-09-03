@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { getCanonicalPlan } from "@/lib/server/plan-limits-v2"
+import { getPlanLimits } from "@/lib/entitlements"
 
 /**
  * Lists every workspace the current user belongs to, regardless of their own
- * plan tier. Unlike /api/agency/clients (which requires the caller to be on
- * the Agency plan and only lists workspaces they created), this covers
- * invited members too - an editor or client_reviewer added to a client
+ * plan tier. This covers invited members too - an editor or client reviewer added to a client
  * workspace has no Agency plan of their own but still needs to see and
  * switch into the workspace they were invited to.
  */
@@ -14,23 +14,29 @@ export async function GET() {
   try {
     const ctx = await getWorkspaceSessionContext()
 
-    const memberships = await supabaseSelect<{ workspace_id: string; role: string }>(
-      "workspace_members",
-      `user_id=eq.${encodeURIComponent(ctx.supabaseUserId)}&select=workspace_id,role`
-    )
+    const [memberships, accountPlan] = await Promise.all([
+      supabaseSelect<{ workspace_id: string; role: string }>(
+        "workspace_members",
+        `user_id=eq.${encodeURIComponent(ctx.supabaseUserId)}&select=workspace_id,role`
+      ),
+      getCanonicalPlan(ctx.supabaseUserId),
+    ])
+    const canCreateClientWorkspaces = getPlanLimits(accountPlan).clientWorkspaces !== 0
     const workspaceIds = [...new Set((memberships || []).map((m) => m.workspace_id).filter(Boolean))]
-    if (!workspaceIds.length) return NextResponse.json({ workspaces: [] })
+    if (!workspaceIds.length) {
+      return NextResponse.json({ workspaces: [], accountPlan, canCreateClientWorkspaces })
+    }
 
-    // branding_color falls back gracefully if migration 0057 hasn't run yet in
-    // this environment - the workspace switcher must not break because of it.
-    const workspaces = await supabaseSelect<{ id: string; name: string; owner_id: string | null; branding_color: string | null }>(
+    const workspaces = await supabaseSelect<{
+      id: string
+      name: string
+      owner_id: string | null
+      branding_color: string | null
+      workspace_type: "personal" | "client"
+      archived_at: string | null
+    }>(
       "workspaces",
-      `id=in.(${workspaceIds.join(",")})&select=id,name,owner_id,branding_color`
-    ).catch(async () =>
-      (await supabaseSelect<{ id: string; name: string; owner_id: string | null }>(
-        "workspaces",
-        `id=in.(${workspaceIds.join(",")})&select=id,name,owner_id`
-      )).map((ws) => ({ ...ws, branding_color: null }))
+      `id=in.(${workspaceIds.map(encodeURIComponent).join(",")})&archived_at=is.null&select=id,name,owner_id,branding_color,workspace_type,archived_at`
     )
 
     const roleByWorkspace = new Map((memberships || []).map((m) => [m.workspace_id, m.role]))
@@ -40,17 +46,12 @@ export async function GET() {
         id: ws.id,
         name: ws.name,
         role,
-        // Heuristic: the workspace created for a user at signup is always
-        // "owner" role for them. Client workspaces created via Agency Hub
-        // are "admin" for the creator; invited teammates get editor/viewer/
-        // client_reviewer. So role === "owner" reliably means "this is my
-        // own workspace", not a client's.
-        isPersonal: role === "owner",
+        isPersonal: ws.workspace_type === "personal",
         brandingColor: ws.branding_color ?? null,
       }
     })
 
-    return NextResponse.json({ workspaces: list })
+    return NextResponse.json({ workspaces: list, accountPlan, canCreateClientWorkspaces })
   } catch (error) {
     const msg = (error as Error).message
     const status = msg === "auth_required" ? 401 : 500

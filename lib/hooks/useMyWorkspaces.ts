@@ -14,6 +14,8 @@ export type MyWorkspace = { id: string; name: string; role: string; isPersonal: 
 export function useMyWorkspaces() {
   const [workspaces, setWorkspaces] = useState<MyWorkspace[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [accountPlan, setAccountPlan] = useState("Free")
+  const [canCreateClientWorkspaces, setCanCreateClientWorkspaces] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -22,6 +24,8 @@ export function useMyWorkspaces() {
       .then((data) => {
         if (!active) return
         setWorkspaces(Array.isArray(data.workspaces) ? data.workspaces : [])
+        setAccountPlan(typeof data.accountPlan === "string" ? data.accountPlan : "Free")
+        setCanCreateClientWorkspaces(data.canCreateClientWorkspaces === true)
       })
       .catch(() => {
         if (active) setWorkspaces([])
@@ -32,5 +36,5 @@ export function useMyWorkspaces() {
     return () => { active = false }
   }, [])
 
-  return { workspaces, isLoading }
+  return { workspaces, isLoading, accountPlan, canCreateClientWorkspaces }
 }

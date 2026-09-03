@@ -1,30 +1,14 @@
-import { NextResponse } from "next/server"
-import { getWorkspaceSessionContext } from "@/lib/server/workspace"
-import { SupabasePlanUsageRepository } from "@/lib/repositories/supabase/SupabasePlanUsageRepository"
+import { NextRequest, NextResponse } from "next/server"
+import { resolveWorkspaceId } from "@/lib/server/workspace"
+import { fetchDashboardUsage } from "@/lib/server/dashboard"
 
-const usageRepo = new SupabasePlanUsageRepository()
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const ctx = await getWorkspaceSessionContext()
-
-    const now = new Date()
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-    const rows = await usageRepo.getDailyActivity(ctx.userId, monthStart)
-
-    const today = now.getDate()
-    const usage = Array.from({ length: today }, (_, i) => i + 1).map((day) => ({
-      day,
-      draftsUsed: rows.filter((r) => new Date(r.created_at).getDate() === day).length,
-    }))
-
-    return NextResponse.json(usage)
-  } catch (err) {
-    const msg = (err as Error).message
-    return NextResponse.json(
-      { error: msg },
-      { status: msg === "auth_required" ? 401 : 500 }
-    )
+    const workspaceId = await resolveWorkspaceId(request)
+    return NextResponse.json(await fetchDashboardUsage(workspaceId))
+  } catch (error) {
+    const message = (error as Error).message
+    const status = message === "auth_required" ? 401 : message === "unauthorized_workspace" ? 403 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }

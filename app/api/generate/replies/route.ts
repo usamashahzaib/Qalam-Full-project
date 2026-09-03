@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: mode === "reply" ? "Reply is required" : "Comment is required" }, { status: 400 })
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
     const context = professionalContextPrompt(voiceProfile?.professionalContext)
     const trustRules = `
 Use the author's professional context only where it is relevant.

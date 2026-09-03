@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { system, user: userMessage } = buildCtaAlternativesPrompt(content, role)
-    const voiceProfile = await getWorkspaceVoiceProfile(user.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
     const context = professionalContextPrompt(voiceProfile?.professionalContext)
     const contextualSystem = context ? `${system}\n\n${context}` : system
     const raw = await callAi("cta-rewrite", contextualSystem, userMessage, {

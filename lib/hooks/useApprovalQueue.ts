@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { canAccessPlan } from "@/lib/entitlements"
+import { useWorkspace } from "@/components/providers/WorkspaceProvider"
 
 export type ApprovalRow = {
   id: string
@@ -26,6 +27,7 @@ export type StatusMsg = { text: string; type: "info" | "error" | "success" }
 
 export function useApprovalQueue(plan: string) {
   const canUse = canAccessPlan(plan, "Pro")
+  const { workspaceId } = useWorkspace()
 
   const [approvals, setApprovals] = useState<ApprovalRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -42,12 +44,12 @@ export function useApprovalQueue(plan: string) {
     if (!canUse) { setIsLoading(false); return }
     setIsLoading(true)
     try {
-      const res = await fetch("/api/approvals")
+      const res = await fetch(`/api/approvals?workspaceKey=${encodeURIComponent(workspaceId)}`)
       const data = await res.json() as { approvals?: ApprovalRow[] }
       setApprovals(data.approvals || [])
     } catch { /* silent */ }
     finally { setIsLoading(false) }
-  }, [canUse])
+  }, [canUse, workspaceId])
 
   useEffect(() => {
     const timer = window.setTimeout(() => void fetchApprovals(), 0)

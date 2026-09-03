@@ -2,8 +2,7 @@ import "server-only"
 import { cache } from "react"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
-import { getWorkspaceSessionContext } from "@/lib/server/workspace"
-import { SupabasePlanUsageRepository } from "@/lib/repositories/supabase/SupabasePlanUsageRepository"
+import { getWorkspaceSessionContext, resolveEffectivePlan, resolveWorkspaceBillingPrincipal } from "@/lib/server/workspace"
 import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
 
 export type DashboardStats = {
@@ -40,16 +39,18 @@ export type UsageDay = {
 // Per-request memoization: all parallel route slots share one context/auth lookup
 export const getSessionContext = cache(getWorkspaceSessionContext)
 
-export async function fetchDashboardStats(supabaseUserId: string, workspaceId: string): Promise<DashboardStats> {
+export async function fetchDashboardStats(supabaseUserId: string, workspaceId: string, email?: string | null): Promise<DashboardStats> {
   const supabase = createServiceClient()
+  const billingPrincipal = await resolveWorkspaceBillingPrincipal(workspaceId, supabaseUserId, email)
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
   // Plan/quota status is per-user (each seat has its own allowance), but post
   // counts must reflect the whole workspace - otherwise a teammate's dashboard
   // understates activity everyone else on the team already produced.
-  const [planStatus, monthPostsRes, libraryRes, publishedRes] = await Promise.allSettled([
-    getPlanStatus(supabaseUserId),
+  const [planStatus, effectivePlan, monthPostsRes, libraryRes, publishedRes] = await Promise.allSettled([
+    getPlanStatus(billingPrincipal.userId),
+    resolveEffectivePlan(workspaceId, billingPrincipal.email, billingPrincipal.userId),
     supabase
       .from("posts")
       .select("engagement_score")
@@ -68,6 +69,7 @@ export async function fetchDashboardStats(supabaseUserId: string, workspaceId: s
   ])
 
   const status = planStatus.status === "fulfilled" ? planStatus.value : null
+  const workspacePlan = effectivePlan.status === "fulfilled" ? effectivePlan.value : null
   const monthPosts =
     monthPostsRes.status === "fulfilled" ? (monthPostsRes.value.data ?? []) : []
   const libraryCount =
@@ -75,12 +77,12 @@ export async function fetchDashboardStats(supabaseUserId: string, workspaceId: s
   const postsPublished =
     publishedRes.status === "fulfilled" ? (publishedRes.value.count ?? 0) : 0
 
-  const planName = status?.plan ?? "Free"
-  const planExpiresAt = status?.planExpiresAt ?? null
+  const planName = workspacePlan?.plan ?? status?.plan ?? "Free"
+  const planExpiresAt = workspacePlan?.expiresAt ?? status?.planExpiresAt ?? null
   const draftsUsed = status?.drafts.used ?? 0
   const draftsTotal = status?.drafts.limit ?? null
   const draftsRemaining = status?.drafts.remaining ?? null
-  const carouselsUsed = status?.carousels.used ?? 0
+  let carouselsUsed = status?.carousels.used ?? 0
 
   type PostRow = { engagement_score?: number | null }
   const scores = (monthPosts as PostRow[])
@@ -99,11 +101,15 @@ export async function fetchDashboardStats(supabaseUserId: string, workspaceId: s
   let workspaceDraftsUsed: number | null = null
   let workspaceDraftsLimit: number | null = null
   if (planName.toLowerCase() === "agency") {
-    const wsUsage = await checkWorkspaceUsage(workspaceId, "drafts").catch(() => null)
-    if (wsUsage) {
-      workspaceDraftsUsed = wsUsage.used
-      workspaceDraftsLimit = wsUsage.limit
+    const [draftUsage, carouselUsage] = await Promise.all([
+      checkWorkspaceUsage(workspaceId, "drafts").catch(() => null),
+      checkWorkspaceUsage(workspaceId, "carousels").catch(() => null),
+    ])
+    if (draftUsage) {
+      workspaceDraftsUsed = draftUsage.used
+      workspaceDraftsLimit = draftUsage.limit
     }
+    if (carouselUsage) carouselsUsed = carouselUsage.used
   }
 
   return {
@@ -152,11 +158,17 @@ export async function fetchRecentPosts(workspaceId: string): Promise<DashboardPo
   }))
 }
 
-export async function fetchDashboardUsage(userId: string): Promise<UsageDay[]> {
-  const usageRepo = new SupabasePlanUsageRepository()
+export async function fetchDashboardUsage(workspaceId: string): Promise<UsageDay[]> {
+  const supabase = createServiceClient()
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const rows = await usageRepo.getDailyActivity(userId, monthStart)
+  const { data } = await supabase
+    .from("posts")
+    .select("created_at")
+    .eq("workspace_id", workspaceId)
+    .gte("created_at", monthStart)
+    .order("created_at", { ascending: true })
+  const rows = (data ?? []) as { created_at: string }[]
   const today = now.getDate()
   return Array.from({ length: today }, (_, i) => i + 1).map((day) => ({
     day,

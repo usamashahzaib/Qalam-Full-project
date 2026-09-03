@@ -8,7 +8,7 @@ export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id: workspaceId } = await params
     // Any member of the workspace can see who else is on the team.
-    await requireRole(request, workspaceId, "viewer")
+    const membership = await requireRole(request, workspaceId, "viewer")
 
     const memberships = await supabaseSelect<{ user_id: string; role: string; created_at: string }>(
       "workspace_members",
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     // Invites for people who don't have a Qalam account yet - they're stored
     // separately and redeemed automatically at signup, so surface them here
     // too or they're otherwise invisible until the invitee actually joins.
-    const pendingInvites = (
+    const pendingInvites = (membership.role === "owner" || membership.role === "admin") ? (
       (await supabaseSelect<{ email: string; role: string; created_at: string; expires_at: string }>(
         "workspace_invites",
         `workspace_id=eq.${encodeURIComponent(workspaceId)}&select=email,role,created_at,expires_at&order=created_at.desc`
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest, { params }: Params) {
       invitedAt: invite.created_at,
       expiresAt: invite.expires_at,
       expired: new Date(invite.expires_at).getTime() < Date.now(),
-    }))
+    })) : []
 
     return NextResponse.json({ members, pendingInvites })
   } catch (error) {
