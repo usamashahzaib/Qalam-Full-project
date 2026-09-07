@@ -18,7 +18,7 @@ describe("audit remediations", () => {
 
   it("derives crawler exclusions from the protected route list", () => {
     const disallow = robots().rules?.find((rule) => rule.userAgent === "*")?.disallow
-    expect(disallow).toEqual(expect.arrayContaining([...PROTECTED_ROUTES]))
+    expect(disallow).toEqual(expect.arrayContaining(PROTECTED_ROUTES.flatMap((route) => [`${route}$`, `${route}?`, `${route}/`])))
   })
 
   it("does not advertise redirected landing pages to LLM crawlers", async () => {
@@ -39,7 +39,9 @@ describe("audit remediations", () => {
 
   it("reserves extension comment quota before calling the model", () => {
     const route = source("app/api/extension/comments/route.ts")
-    expect(route.indexOf("reserveCommentUsage")).toBeLessThan(route.indexOf("callAi(\"chat-strategist\""))
+    // The model call itself lives in the shared generateComments use case now,
+    // so the ordering assertion follows the call site rather than callAi.
+    expect(route.indexOf("reserveCommentUsage")).toBeLessThan(route.indexOf("generateComments({"))
     expect(route).toContain("releaseCommentUsage(identity.userId)")
   })
 

@@ -4,7 +4,9 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { incrementUsage } from "@/lib/server/plan-limits-v2"
 import { decrementUsage } from "@/lib/server/plan-limits-v2"
 import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
-import { buildPushTo90Prompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
+import { buildImprovePrompt, build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
+import { checkText } from "@/lib/prompts/output-checks"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { gateScores } from "@/lib/content-score-gate"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
@@ -94,18 +96,31 @@ export async function improvePost(
     return err({ code: "VALIDATION_ERROR", message: "Invalid source post", userMessage: "Content too short to improve." })
   }
 
+  const checkOptions = { minChars: 40, maxChars: 3000 }
   let rawScores: ScorePayload = {}
   let scoringSucceeded = false
+  // Two improvement attempts at most. A third round of "make it better" is
+  // where a draft stops being the author's and starts being the model's.
   for (let attempt = 1; attempt <= 2; attempt++) {
-    const { system: impSystem, user: impUser } = buildPushTo90Prompt(artifact.content, attempt === 1 ? scores : normalizeScores(rawScores), role, voiceProfile)
+    const previousDefects = checkText(artifact.content, checkOptions)
+    const { system: impSystem, user: impUser } = buildImprovePrompt(
+      artifact.content,
+      attempt === 1 ? scores : normalizeScores(rawScores),
+      role,
+      voiceProfile,
+      previousDefects
+    )
     const candidate = await callAi("post-improvement", impSystem, impUser, {
       temperature: 0.7, maxTokens: 1000,
       userId, plan, cache: false,
     }).catch(() => "")
 
-    // Relaxed validation: accept any non-empty, non-JSON text (don't require 80+ words)
-    const trimmed = candidate.trim()
-    const isValidCandidate = trimmed.length > 30 && !/^\s*[{\[]/.test(trimmed)
+    // Validate the candidate we would actually return. Anything that fails the
+    // objective checks is discarded and the previous version is kept, so a bad
+    // improvement can never replace a usable draft.
+    const trimmed = sanitizeGeneratedText(candidate.trim())
+    const candidateDefects = checkText(trimmed, checkOptions)
+    const isValidCandidate = !candidateDefects.length && !/^\s*[{\[]/.test(trimmed)
     if (!isValidCandidate) continue
     artifact = { content: trimmed, wordCount: trimmed.split(/\s+/).filter(Boolean).length }
 

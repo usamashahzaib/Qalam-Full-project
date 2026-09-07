@@ -114,11 +114,15 @@ const alertOps = async (subject: string, detail: Record<string, unknown>) => {
 export async function publishScheduledPost(postId: string): Promise<PublishOutcome> {
   const rows = await supabaseSelect<ScheduledPost>(
     "posts",
-    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,type,status,scheduled_for,engagement_score,metadata&limit=1`
+    `id=eq.${postId}&select=id,workspace_id,user_id,title,content,status,scheduled_for,engagement_score,metadata&limit=1`
   )
-  const post = rows?.[0]
+  let post = rows?.[0]
   if (!post) return { postId, status: "skipped", reason: "post_not_found" }
   if (post.status !== "scheduled") return { postId, status: "skipped", reason: `not_scheduled:${post.status}` }
+  const dueAt = post.scheduled_for ? Date.parse(post.scheduled_for) : Number.NaN
+  if (!Number.isFinite(dueAt) || dueAt > Date.now()) {
+    return { postId, status: "skipped", reason: "not_due" }
+  }
 
   const lock = await acquireLinkedInPublishLock(postId)
   if (!lock.locked) return { postId, status: "skipped", reason: "publish_lock_active" }
@@ -127,10 +131,13 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
     // Conditional transition - only succeeds while the row is still "scheduled".
     const claimed = await supabasePatch<ScheduledPost>(
       "posts",
-      `id=eq.${postId}&status=eq.scheduled`,
+      `id=eq.${postId}&status=eq.scheduled&scheduled_for=lte.${encodeURIComponent(new Date().toISOString())}`,
       { status: "publishing", updated_at: new Date().toISOString() }
     )
     if (!claimed?.length) return { postId, status: "skipped", reason: "already_claimed" }
+    // Publish the row actually claimed, not an earlier snapshot that an editor
+    // could have changed between the initial read and this conditional update.
+    post = claimed[0]
 
     try {
       const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
@@ -162,7 +169,7 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
         return { postId, status: "failed", reason: "content_score_below_minimum" }
       }
 
-      if (isCarouselPostType(post.type)) {
+      if (isCarouselPostType(post.type || String(post.metadata?.type || ""))) {
         await markFailed(post, "carousel_scheduling_unsupported")
         await logPublish(post.id, account?.id || null, "failed", "carousel_scheduling_unsupported", null)
         await notifyPublishFailure(post, user, "carousel_scheduling_unsupported")
@@ -259,19 +266,19 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
  * Reconciliation pass for the daily safety-net cron: posts stuck in
  * "publishing" for too long (the process died between the LinkedIn share and
  * the DB write, or between claiming the row and calling LinkedIn). Checks
- * publish_logs for a recorded success and finalizes to "published"; otherwise
- * reverts to "scheduled" so the next sweep retries it.
+ * publish_logs for a recorded success and finalizes to "published". Missing
+ * evidence is an unknown outcome, not proof that LinkedIn rejected the post.
  */
-export async function reconcileStuckPublishing(olderThanMs = 10 * 60 * 1000): Promise<{ finalized: number; reverted: number }> {
+export async function reconcileStuckPublishing(olderThanMs = 10 * 60 * 1000): Promise<{ finalized: number; reverted: number; needsReview: number }> {
   const cutoff = new Date(Date.now() - olderThanMs).toISOString()
   const stuck = await supabaseSelect<ScheduledPost>(
     "posts",
     `status=eq.publishing&updated_at=lt.${encodeURIComponent(cutoff)}&select=id,workspace_id,user_id,title,content,status,scheduled_for,metadata&limit=50`
   )
-  if (!stuck?.length) return { finalized: 0, reverted: 0 }
+  if (!stuck?.length) return { finalized: 0, reverted: 0, needsReview: 0 }
 
   let finalized = 0
-  let reverted = 0
+  let needsReview = 0
   for (const post of stuck) {
     const logs = await supabaseSelect<{ post_id: string; status: string; provider_response: { postUrn?: string } | null }>(
       "publish_logs",
@@ -279,24 +286,20 @@ export async function reconcileStuckPublishing(olderThanMs = 10 * 60 * 1000): Pr
     ).catch(() => [])
     const successLog = logs?.[0]
     if (successLog) {
-      await markPost(post, {
+      const finalizedRows = await supabasePatch("posts", `id=eq.${post.id}&status=eq.publishing`, {
         status: "published",
         published_at: new Date().toISOString(),
         linkedin_post_id: successLog.provider_response?.postUrn || null,
-      }).catch(() => undefined)
-      finalized++
-    } else {
-      const priorStatus = String(post.metadata?.manual_publish_previous_status || "")
-      const restoredStatus = ["draft", "approved", "scheduled", "notified", "failed"].includes(priorStatus)
-        ? priorStatus
-        : "scheduled"
-      await supabasePatch("posts", `id=eq.${post.id}&status=eq.publishing`, {
-        status: restoredStatus,
-        metadata: { ...(post.metadata || {}), manual_publish_previous_status: undefined },
         updated_at: new Date().toISOString(),
-      }).catch(() => undefined)
-      reverted++
+      }).catch(() => [])
+      if (finalizedRows?.length) finalized++
+      else needsReview++
+    } else {
+      // This includes an unavailable log lookup. Never turn uncertainty into
+      // another external publish, which could duplicate an already-live post.
+      log.error("linkedin_publish.outcome_needs_review", { postId: post.id })
+      needsReview++
     }
   }
-  return { finalized, reverted }
+  return { finalized, reverted: 0, needsReview }
 }

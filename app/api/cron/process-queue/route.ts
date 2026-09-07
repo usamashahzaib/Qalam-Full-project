@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
 
   return runTrackedCron("process-queue", async () => {
     try {
-      const { finalized, reverted } = await reconcileStuckPublishing()
-      return NextResponse.json({ recovered: finalized + reverted, finalized, reverted })
+      const { finalized, reverted, needsReview } = await reconcileStuckPublishing()
+      return NextResponse.json({ recovered: finalized + reverted, finalized, reverted, needsReview })
     } catch (error) {
       console.error("[cron/process-queue] reconciliation error:", (error as Error).message)
       return NextResponse.json({ error: (error as Error).message }, { status: 500 })

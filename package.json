@@ -18,7 +18,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "node scripts/clean-next-dev-types.mjs && next typegen && tsc --noEmit"
+    "typecheck": "node scripts/clean-next-dev-types.mjs && next typegen && tsc --noEmit",
+    "eval:prompts": "vitest run --config vitest.eval.config.ts scripts/eval/prompt-contract.eval.ts",
+    "eval:live": "vitest run --config vitest.eval.config.ts scripts/eval/live-generation.eval.ts"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.67.0",

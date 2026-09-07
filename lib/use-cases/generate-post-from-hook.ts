@@ -4,7 +4,9 @@ import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
-import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildHumanizePrompt } from "@/lib/prompts/role-aware-system"
+import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildRevisePrompt } from "@/lib/prompts/role-aware-system"
+import { checkText } from "@/lib/prompts/output-checks"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
@@ -86,18 +88,27 @@ export async function generatePostFromHook(
     return err({ code: "INTERNAL_ERROR", message: "Post generation failed", userMessage: "Post generation failed. Please try again in a moment." })
   }
 
-  let humanized: string
-  try {
-    const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-    humanized = await callAi("post-improvement", humSystem, humUser, {
-      temperature: 0.4, maxTokens: 1000,
-      userId, plan, cache: false,
-    })
-  } catch {
-    humanized = rawPost
+  // Revise only when the deterministic checks find something wrong, and tell
+  // the revision what to fix. The old unconditional humanize pass ran on every
+  // draft without the voice profile, which is how a hook the user picked came
+  // back attached to a body that no longer sounded like them.
+  let content = sanitizeGeneratedText(rawPost.trim())
+  const checkOptions = { minChars: 80, maxChars: 3000 }
+  const defects = checkText(content, checkOptions)
+  if (defects.length) {
+    try {
+      const { system: revSystem, user: revUser } = buildRevisePrompt(content, role, defects, voiceProfile, { topic, goal: goal || undefined })
+      const revised = sanitizeGeneratedText((await callAi("post-improvement", revSystem, revUser, {
+        temperature: 0.4, maxTokens: 1000,
+        userId, plan, cache: false,
+      })).trim())
+      if (revised && checkText(revised, checkOptions).length < defects.length) content = revised
+    } catch {
+      // Keep the sanitized original.
+    }
   }
 
-  const artifact = toPostArtifact(humanized) || toPostArtifact(rawPost)
+  const artifact = toPostArtifact(content) || toPostArtifact(rawPost)
   if (!artifact) {
     await refundUsage()
     return err({ code: "INTERNAL_ERROR", message: "Invalid post artifact", userMessage: "Post generation failed. Please try again in a moment." })

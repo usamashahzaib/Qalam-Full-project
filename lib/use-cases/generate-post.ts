@@ -7,14 +7,15 @@ import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
-import { hasAiSlop, sanitizeGeneratedText } from "@/lib/content-guard"
+import { sanitizeGeneratedText } from "@/lib/content-guard"
 import {
   buildGeneratePrompt,
-  buildHumanizePrompt,
+  buildRevisePrompt,
   buildScorePrompt,
   buildRewritePrompt,
   buildHookVariantsPrompt,
 } from "@/lib/prompts/role-aware-system"
+import { checkText } from "@/lib/prompts/output-checks"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 import { MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
@@ -116,19 +117,29 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     return err({ code: "INTERNAL_ERROR", message: "AI generation failed" })
   }
 
-  // Pass 2: Humanize
-  const { system: humSystem, user: humUser } = buildHumanizePrompt(rawPost, role)
-  let content: string
-  try {
-    content = (await callAi("post-improvement", humSystem, humUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
-  } catch {
-    content = rawPost.trim()
-  }
-
-  // Sanitize and flag AI slop before scoring
-  content = sanitizeGeneratedText(content)
-  if (hasAiSlop(content)) {
-    log.warn("generate-post.ai_slop_detected", { reqId, userId, preview: content.slice(0, 80) })
+  // Pass 2 (conditional): targeted revision.
+  //
+  // This used to be an unconditional "humanize" call with no voice profile and
+  // a standing order to break up the draft's rhythm. It ran on good drafts as
+  // often as bad ones and cost a model call every time. It now runs only when
+  // the deterministic checks find something objectively wrong, and it is told
+  // exactly what to fix.
+  let content = sanitizeGeneratedText(rawPost.trim())
+  const checkOptions = { minChars: 80, maxChars: LINKEDIN_MAX_POST_CHARS }
+  const defects = checkText(content, checkOptions)
+  if (defects.length) {
+    log.info("generate-post.revision_needed", { reqId, userId, codes: defects.map((d) => d.code) })
+    try {
+      const { system: revSystem, user: revUser } = buildRevisePrompt(content, role, defects, voiceProfile || undefined, { topic, goal })
+      const revised = sanitizeGeneratedText(
+        (await callAi("post-improvement", revSystem, revUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
+      )
+      // Only keep the revision if it actually improved things.
+      const revisedDefects = checkText(revised, checkOptions)
+      if (revised && revisedDefects.length < defects.length) content = revised
+    } catch {
+      // Keep the sanitized original. A failed repair must not lose the draft.
+    }
   }
 
   // Pass 3: Score and improve every generated draft to the publish-ready floor.
@@ -149,8 +160,10 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
       if (!Number.isFinite(total) || total >= MIN_READY_CONTENT_SCORE || !score?.fix_instruction) break
       try {
         const { system: rw, user: ru } = buildRewritePrompt(content, score.fix_instruction as string, score.biggest_weakness as string, role, voiceProfile || undefined)
-        const rewritten = await callAi("post-improvement", rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })
-        content = sanitizeGeneratedText(rewritten.trim())
+        const rewritten = sanitizeGeneratedText((await callAi("post-improvement", rw, ru, { temperature: 0.7, maxTokens: 900, userId, plan, cache: false })).trim())
+        // A rewrite that came back empty or truncated must not replace a usable draft.
+        if (checkText(rewritten, checkOptions).some((d) => d.code === "empty" || d.code === "too_short")) break
+        content = rewritten
         score = await scoreContent()
       } catch {
         break
@@ -158,9 +171,21 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     }
   }
 
+  // Final validation runs on the candidate we are about to save, after every
+  // rewrite. Validating only the first draft let a later rewrite reintroduce
+  // exactly what the earlier pass removed.
+  const finalDefects = checkText(content, checkOptions)
+  if (finalDefects.some((d) => d.code === "empty")) {
+    await refundDraftUsage()
+    log.error("generate-post.empty_final_candidate", { reqId, userId })
+    return err({ code: "INTERNAL_ERROR", message: "AI generation failed" })
+  }
   if (content.length > LINKEDIN_MAX_POST_CHARS) {
     await refundDraftUsage()
     return err({ code: "VALIDATION_ERROR", message: "linkedin_content_too_long", userMessage: "Post exceeds LinkedIn's 3000 character limit." })
+  }
+  if (finalDefects.length) {
+    log.warn("generate-post.defects_remaining", { reqId, userId, codes: finalDefects.map((d) => d.code) })
   }
 
   const { hook, body, cta, hashtags } = splitPost(content)
@@ -188,7 +213,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   // Pass 4: Hook variants (cached, best-effort)
   let hooks: Array<{ style: string; hook: string }> = []
   try {
-    const { system: hs, user: hu } = buildHookVariantsPrompt(topic, role)
+    const { system: hs, user: hu } = buildHookVariantsPrompt(topic, role, voiceProfile || undefined)
     const hooksRaw = await callAi("hook-generation", hs, hu, { json: true, temperature: 0.9, maxTokens: 400, userId, plan, cache: true, cacheTtl: 3600 })
     hooks = (parseJson<Array<{ style: string; hook: string }>>(hooksRaw) || []).slice(0, 3)
   } catch { hooks = [] }

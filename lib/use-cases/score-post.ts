@@ -57,27 +57,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
       userId, plan, cache: false,
     })
   } catch {
-    const base = Math.max(45, Math.min(72, trimmed.length * 3))
-    const gated = gateScores(trimmed, {
-      hook: base, readability: base, authority: base - 5, specificity: base - 8, cta: base - 10, human: base, voiceFit: base - 6,
-      overall: base - 4,
-      tips: { specificity: "Add a concrete example or result.", cta: "End with a clear next step." },
-      hashtags: [],
-    }, freeCap)
-    return ok({
-      scores: {
-        hook: gated.hook,
-        readability: gated.readability,
-        authority: gated.authority,
-        specificity: gated.specificity,
-        cta: gated.cta,
-        human: gated.human,
-        voiceFit: gated.voiceFit,
-      },
-      overall: gated.overall,
-      tips: gated.tips ?? {},
-      hashtags: gated.hashtags ?? [],
-    })
+    return err({ code: "AI_UNAVAILABLE", message: "Scoring unavailable", userMessage: "Could not evaluate this post. Please try again." })
   }
 
   const parsed = safeParseJson<{
@@ -99,11 +79,13 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     human: parsed.human,
     voiceFit: parsed.voiceFit,
   }
-  const rawOverall = parsed.overall ?? Math.round(Object.values(rawScores).reduce((a, b) => a + b, 0) / 7)
+  if (!Object.values(rawScores).every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100)) {
+    return err({ code: "AI_UNAVAILABLE", message: "Scoring returned invalid dimensions" })
+  }
+  const rawOverall = Math.round(Object.values(rawScores).reduce((a, b) => a + b, 0) / 7)
 
-  // AI sometimes returns 0-10 scale despite prompt saying 0-100 - normalize
-  const isZeroToTen = rawOverall < 15 && Object.values(rawScores).every((v) => v <= 10)
-  const m = isZeroToTen ? 10 : 1
+  // The prompt's contract is 0-100. Low evaluations are not a different scale.
+  const m = 1
   const gated = gateScores(trimmed, {
     hook: rawScores.hook * m,
     readability: rawScores.readability * m,

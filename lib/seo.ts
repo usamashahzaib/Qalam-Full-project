@@ -1,7 +1,8 @@
 import type { Metadata } from "next"
 import { MARKETING_LAST_MODIFIED } from "@/lib/marketing-content"
-import { SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
+import { SEO_LANDING_PAGES, SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+import { PROTECTED_ROUTES } from "@/lib/protected-routes"
 
 export type PublicRoute = {
   path: string
@@ -18,7 +19,8 @@ export const SITE_DOMAIN_LABEL = "byqalam.com"
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
 // Auth and authenticated product routes resolve directly to the app domain.
 export const resolvePublicHref = (href: string) =>
-  /^\/(?:login|signup|dashboard|settings|career)(?:[/?]|$)/.test(href)
+  ["/login", "/signup", "/forgot-password", "/reset-password", "/verify-email", "/upgrade", "/billing", "/extension/connect", ...PROTECTED_ROUTES]
+    .some((path) => href === path || href.startsWith(`${path}/`) || href.startsWith(`${path}?`) || href.startsWith(`${path}#`))
     ? process.env.NODE_ENV === "development" ? href : `${APP_URL}${href}`
     : href
 
@@ -101,11 +103,6 @@ export const buildWebSiteSchema = () => ({
   name: SITE_NAME,
   publisher: { "@id": `${SITE_URL}/#organization` },
   inLanguage: "en",
-  potentialAction: {
-    "@type": "SearchAction",
-    target: `${SITE_URL}/blog?q={search_term_string}`,
-    "query-input": "required name=search_term_string",
-  },
 })
 
 export const buildFaqSchema = (faqs: { q: string; a: string }[]) => ({
@@ -195,7 +192,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     path,
     priority: 0.91,
     changeFrequency: "weekly" as const,
-    lastModified: "2026-08-17",
+    lastModified: SEO_LANDING_PAGES[path.slice(1)].updatedAt,
   })),
   { path: "/ai-linkedin-writer", priority: 0.96, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/linkedin-extension", priority: 0.9, changeFrequency: "weekly", lastModified: "2026-08-18" },

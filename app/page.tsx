@@ -122,7 +122,7 @@ export default function HomePage() {
               Publish on LinkedIn without <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">sounding like everyone else.</span>
             </h1>
             <p className="mt-7 max-w-[610px] text-lg leading-8 text-zinc-600 sm:text-xl">
-              Anyone can generate a polished post now, which is exactly why polished stopped working. Qalam drafts from writing examples and professional context you save yourself, so posts, carousels, and comments come back in your register instead of the same flattened AI register as everyone else.
+              Bring your ideas, writing samples, and the details you want to share. Qalam uses that context to draft LinkedIn content you can edit, review, and publish from one workspace.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <TrackedHomepageLink

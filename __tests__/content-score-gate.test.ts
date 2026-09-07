@@ -4,7 +4,6 @@ import {
   freeTierAttemptCap,
   gateScores,
   isReadyContentScore,
-  MIN_READY_CONTENT_SCORE,
 } from "@/lib/content-score-gate"
 
 const highScores = {
@@ -45,14 +44,14 @@ describe("freeTierAttemptCap", () => {
   const line = "This is a concrete sentence with a real example and clear context."
   const completeContent = Array.from({ length: 10 }, () => line).join("\n\n")
 
-  it("keeps the first complete free-plan draft at the ready-content floor", () => {
-    expect(freeTierAttemptCap(1)).toBe(MIN_READY_CONTENT_SCORE)
-    expect(gateScores(completeContent, highScores, freeTierAttemptCap(1)).overall).toBe(MIN_READY_CONTENT_SCORE)
+  it("keeps the earned score on the first attempt", () => {
+    expect(freeTierAttemptCap(1)).toBe(100)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(1)).overall).toBe(96)
   })
 
-  it("allows up to 90 after one regenerate", () => {
-    expect(freeTierAttemptCap(2)).toBe(90)
-    expect(gateScores(completeContent, highScores, freeTierAttemptCap(2)).overall).toBe(90)
+  it("does not change the cap after regeneration", () => {
+    expect(freeTierAttemptCap(2)).toBe(100)
+    expect(gateScores(completeContent, highScores, freeTierAttemptCap(2)).overall).toBe(96)
   })
 
   it("removes the cap after two regenerates", () => {
@@ -65,9 +64,10 @@ describe("freeTierAttemptCap", () => {
     expect(gateScores(thin, highScores, freeTierAttemptCap(3)).overall).toBe(68)
   })
 
-  it("floors a complete scored draft at 82 without inflating unfinished content", () => {
+  it("does not promote an unready evaluation to the publishing threshold", () => {
     const lowScores = { ...highScores, overall: 79 }
-    expect(gateScores(completeContent, lowScores).overall).toBe(MIN_READY_CONTENT_SCORE)
+    expect(gateScores(completeContent, lowScores).overall).toBe(79)
+    expect(isReadyContentScore(gateScores(completeContent, lowScores).overall)).toBe(false)
   })
 })
 

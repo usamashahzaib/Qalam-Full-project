@@ -289,7 +289,7 @@ export default function CalendarPage() {
                     <div key={post.id} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-100 p-3">
                       <div className="min-w-0">
                         <p className="truncate text-xs font-semibold text-zinc-900">{post.title}</p>
-                        <p className="t-eyebrow text-zinc-400">{post.date}{post.scheduledTime ? ` · ${post.scheduledTime.slice(11, 16)}` : ""}</p>
+                        <p className="t-eyebrow text-zinc-400">{post.scheduledTime ? formatDateTime(post.scheduledTime) : post.date}</p>
                       </div>
                       <button
                         onClick={() => goToWriter(router, activeClientId, post, post.date)}

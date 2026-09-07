@@ -1,20 +1,18 @@
-// Critical rules injected into all hook-generation system prompts.
-// Imported by role-aware-system.ts and applied inside buildHook5StylesPrompt,
-// buildHookVariantsPrompt, and buildHookAlternativesPrompt.
+// Hook-specific rules layered on top of lib/prompts/writing-policy.
+//
+// The previous version required every hook to be a "pattern interrupt: shock,
+// curiosity, or contrarian take" with an "emotional trigger: fear, hope,
+// anger, curiosity", banned ending on a question mark, and asked for something
+// that "sounds like a human wrote it at 2am after breakthrough". Between them
+// those rules guaranteed five variations of the same overwrought sentence.
 
-export const HOOKS_CRITICAL_RULES = `
-CRITICAL RULES - VIOLATION = REJECTED OUTPUT:
-1. NEVER start with: "In today's world...", "Did you know...", "With over X years..."
-2. NEVER use words: leverage, synergy, optimize, strategic, holistic, paradigm, transformative, elevate, unlock
-3. NEVER end with question mark (banned pattern)
-4. ALWAYS pattern interrupt: shock, curiosity, or contrarian take
-5. ALWAYS specific, but use numbers, names, employers, and outcomes only when the user supplied them. Never invent personal proof.
-6. ALWAYS emotional trigger: fear, hope, anger, curiosity
-7. Under 150 characters for mobile
-8. NO em-dashes (—) or en-dashes (–). Only hyphens (-).
-9. Sounds like human wrote it at 2am after breakthrough
-10. NEVER use filler openers: "here's the thing", "make no mistake", "needless to say", "at the end of the day", "let me be clear", "the bottom line is", "the truth is"
-11. NEVER use validation phrases: "this is real", "I've seen this", "the problem is real", "this framing is right"
-12. NEVER frame with "the easy part" or "the hard part" - state the point directly.
-13. NEVER use engagement bait or imply guaranteed reach. The hook earns attention through relevance, not manipulation.
-`.trim()
+export const HOOK_TASK_RULES = `
+WRITING AN OPENING LINE:
+- The job of an opening line is to make the subject worth reading about. Being specific usually does that on its own. Drama is one option among several, not the requirement.
+- Concrete beats clever. A real detail, a named situation, or a plain statement of the actual point will outperform a manufactured tease.
+- Numbers, employers, clients, dates and outcomes only when the author supplied them. A hook is the easiest place to fabricate credibility, so do not.
+- Keep it to one or two sentences and short enough to survive the mobile truncation, roughly 150 characters. Going a little over is better than cutting the substance out.
+- A question can be an opening line when it is a real question. Do not force one, and do not add a question mark to a statement.
+- Each variant is a different way into the subject, not the same sentence with different adjectives.
+`.trim();
+

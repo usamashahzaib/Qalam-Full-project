@@ -189,6 +189,7 @@ export const APP_ONLY_EXTRA_PATHS = [
 // serve every route on one origin, unaffected.
 
 const APP_HOST = "app.byqalam.com"
+const APP_RUNTIME_PATHS = new Set(["/sw.js", "/offline.html", "/manifest.webmanifest"])
 const MARKETING_HOSTS = new Set(["byqalam.com", "www.byqalam.com"])
 
 function isAppOnlyPath(pathname: string): boolean {
@@ -380,7 +381,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
         const url = new URL("/dashboard", `https://${APP_HOST}`)
         return await addSecurityHeaders(NextResponse.redirect(url))
       }
-      if (!isAppHostPath(pathname)) {
+      if (!isAppHostPath(pathname) && !APP_RUNTIME_PATHS.has(pathname)) {
         const url = new URL(`${pathname}${request.nextUrl.search}`, "https://www.byqalam.com")
         return await addSecurityHeaders(NextResponse.redirect(url, 308))
       }

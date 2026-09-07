@@ -22,7 +22,7 @@ const toClientPost = (post: DbPost): ClientPost => ({
   createdAt: post.created_at,
 })
 
-const DB_STATUSES = new Set(["draft", "published", "scheduled", "archived"])
+const DB_STATUSES = new Set(["draft", "pending_approval", "approved", "rejected", "scheduled", "notified", "publishing", "published", "failed", "archived"])
 
 const POST_COLUMNS = "id,workspace_id,user_id,title,content,status,scheduled_for,published_at,linkedin_post_id,engagement_score,metadata,created_at,updated_at"
 
@@ -55,6 +55,7 @@ export class SupabasePostRepository implements IPostRepository {
       scheduledTime, publishedAt, externalPostUrn, engagementScore,
     } = params
     const now = new Date().toISOString()
+    const savedStatus = DB_STATUSES.has(status) ? status : "draft"
     const { data: post, error } = await createServiceClient()
       .from("posts")
       .insert({
@@ -62,7 +63,7 @@ export class SupabasePostRepository implements IPostRepository {
         workspace_id: workspaceId,
         title,
         content: content ?? "",
-        status: DB_STATUSES.has(status) ? status : "draft",
+        status: savedStatus,
         scheduled_for: scheduledTime ?? null,
         published_at: publishedAt ?? null,
         linkedin_post_id: externalPostUrn ?? null,
@@ -79,7 +80,7 @@ export class SupabasePostRepository implements IPostRepository {
       title,
       content: content ?? "",
       type,
-      status,
+      status: savedStatus,
       date: (scheduledTime || publishedAt || now).slice(0, 10),
       scheduledTime: scheduledTime ?? null,
       externalPostUrn: externalPostUrn ?? null,
@@ -170,7 +171,7 @@ export class SupabasePostRepository implements IPostRepository {
         content: original.content ?? "",
         status: "draft",
         engagement_score: original.engagement_score ?? null,
-        metadata: { type: original.type ?? "linkedin", authorId },
+        metadata: { type: original.type ?? original.metadata?.type ?? "linkedin", authorId },
         created_at: now,
         updated_at: now,
       })
@@ -181,7 +182,7 @@ export class SupabasePostRepository implements IPostRepository {
       id: post.id as string,
       title: `${original.title} (copy)`,
       content: original.content ?? "",
-      type: original.type ?? "linkedin",
+      type: original.type ?? original.metadata?.type ?? "linkedin",
       status: "draft",
       date: now.slice(0, 10),
       scheduledTime: null,

@@ -12,17 +12,12 @@ const DASH_RE = /[–—]/
 // to avoid) rather than as prose punctuation. Keep in sync with any file
 // moves.
 const ALLOWED = new Set([
-  "lib/server/ai-router-v2.ts:33",
   "lib/server/embeddings.ts:9",
-  "lib/prompts/role-aware-system.ts:84",
-  "lib/prompts/builders/voice.ts:12",
-  "lib/prompts/builders/hooks.ts:14",
-  "lib/prompts/builders/generate.ts:14",
   "lib/prompts/builders/carousel.ts:13",
   "scripts/check-no-dashes.mjs:2",
   "scripts/check-no-dashes.mjs:3",
   "scripts/check-no-dashes.mjs:8",
-  "scripts/check-no-dashes.mjs:59",
+  "scripts/check-no-dashes.mjs:54",
 ])
 
 const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|svg|woff2?|ttf|eot|pdf|zip|lock)$/i

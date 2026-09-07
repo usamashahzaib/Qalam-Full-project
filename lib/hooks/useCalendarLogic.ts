@@ -5,6 +5,7 @@ import { shareToLinkedIn } from "@/lib/api/client"
 import { isCarouselPostType } from "@/lib/post-content"
 import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 import type { WorkspacePost } from "@/types/domain"
+import { rescheduledInstant } from "@/lib/calendar-date"
 
 // ─── Helpers (kept local - calendar-specific) ─────────────────────────────────
 
@@ -198,7 +199,10 @@ export function useCalendarLogic({
       const res = await fetch("/api/posts/reschedule", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId, date: newDate, workspaceKey: workspaceId }),
+        body: JSON.stringify({
+          postId, date: newDate, workspaceKey: workspaceId,
+          scheduledTime: rescheduledInstant(newDate, [...scheduled, ...drafts].find((post) => post.id === postId)?.scheduledTime ?? null),
+        }),
       })
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as { error?: string }

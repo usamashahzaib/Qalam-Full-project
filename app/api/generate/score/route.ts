@@ -5,7 +5,7 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { scorePost } from "@/lib/use-cases/score-post"
-import { incrementUsage } from "@/lib/server/plan-limits-v2"
+import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { requirePlan } from "@/lib/server/require-plan"
 import { errorToStatus } from "@/lib/errors"
 import { enqueueRequest } from "@/lib/server/queue"
@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     }
 
     const content = String(body.content || body.postContent || "")
+    if (content.trim().length < 4 || content.length > 3000) {
+      return NextResponse.json({ error: "Post must be between 4 and 3000 characters to score." }, { status: 400 })
+    }
     const attempt = Number.isFinite(Number(body.attempt)) ? Number(body.attempt) : 1
 
     // Cache key scoped to user + role + attempt so a free-plan cap change never bleeds into a
@@ -35,9 +38,10 @@ export async function POST(request: NextRequest) {
       task: "score",
       content,
       userId: user.id,
+      workspaceId: planCheck.workspaceId,
       role: String(body.role || ""),
       attempt,
-      scorePolicy: "ready-floor-82-v1",
+      scorePolicy: "measured-score-v2",
     })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
@@ -54,8 +58,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "score", {})
+    let queueResult: Awaited<ReturnType<typeof enqueueRequest>>
+    try {
+      queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "score", {})
+    } catch (error) {
+      await decrementUsage(planCheck.billingUserId, "analyses")
+      throw error
+    }
     if (queueResult.rateLimited) {
+      await decrementUsage(planCheck.billingUserId, "analyses")
       return NextResponse.json(
         { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
         { status: 429 }
@@ -73,6 +84,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!result.ok) {
+      await decrementUsage(planCheck.billingUserId, "analyses")
       return NextResponse.json(
         { error: result.error.userMessage ?? result.error.message },
         { status: errorToStatus(result.error.code) }

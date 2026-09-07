@@ -5,30 +5,23 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
-import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getPlanLimits } from "@/lib/entitlements"
 import { getCommentUsage, releaseCommentUsage, reserveCommentUsage } from "@/lib/server/comment-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
-import { professionalContextPrompt } from "@/lib/professional-context"
+import { generateComments } from "@/lib/use-cases/generate-comments"
+import { COMMENT_STYLES, COMMENT_SOURCE_BUDGET, type CommentStyle } from "@/lib/prompts/builders/comment"
 import { log } from "@/lib/server/logging"
 
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 type Profile = (typeof VALID_PROFILES)[number]
 
-const VALID_STYLES = ["insightful", "supportive", "engaging"] as const
-type Style = (typeof VALID_STYLES)[number]
-
-// One comment style per generation - the user picks what they want, we return a few
-// variations of that single style instead of all three styles at once.
-const STYLE_GUIDES: Record<Style, string> = {
-  insightful: "Add ONE sharp, specific observation or angle that builds on the post. One point, not a lecture.",
-  supportive: "Genuine, warm encouragement in their own words. Specific about what landed. Not gushing.",
-  engaging: "React to the post, then ask ONE natural follow-up question. Casual, not interview-style.",
-}
+const VALID_STYLES = COMMENT_STYLES
 
 const VARIATIONS_PER_GENERATION = 3
 
-const MAX_POST_LENGTH = 5000
+// The prompt builder reads the whole post up to this budget, so the accepted
+// input length and the length the model actually sees are the same number.
+const MAX_POST_LENGTH = COMMENT_SOURCE_BUDGET
 
 export async function GET(request: NextRequest) {
   return withAuth(async (req) => {
@@ -82,50 +75,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: `style must be one of: ${VALID_STYLES.join(", ")}` }, { status: 400 })
     }
     const profile = profileInput as Profile
-    const style = styleInput as Style
+    const style = styleInput as CommentStyle
 
     // Pull the user's trained voice + resume-derived professional context so comments
     // sound like this specific person, not a generic "LinkedIn expert". Never fatal - a
     // user with no voice profile still gets comments, just without personalization.
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
-    const profContext = professionalContextPrompt(voiceProfile?.professionalContext)
-
-    const voiceBlock = voiceProfile
-      ? `WRITE IN THIS PERSON'S OWN VOICE:
-Tone: ${voiceProfile.tone || "natural and direct"}
-Typical sentence length: ${voiceProfile.sentenceLength || "short"}
-Phrases they actually use (weave in only where it fits naturally): ${(voiceProfile.vocabulary ?? []).join(", ") || "none on file"}
-Speech patterns: ${(voiceProfile.patterns ?? []).join(", ") || "none on file"}${
-          voiceProfile.examples?.length
-            ? `\n\nHOW THEY ACTUALLY WRITE (match the rhythm and word choice, do NOT copy the content):\n${voiceProfile.examples.slice(0, 3).map((ex) => `- ${ex.replace(/\s+/g, " ").trim().slice(0, 280)}`).join("\n")}`
-            : ""
-        }`
-      : ""
-
-    const system = `You help a real person write short, authentic LinkedIn comments on someone else's post. You are NOT writing a post or a paragraph - you are writing a quick human reply that sounds like this person dashed it off in ten seconds.
-
-WHO THIS PERSON IS:
-${profContext || `A ${profile}.`}
-
-${voiceBlock}
-
-Write exactly ${VARIATIONS_PER_GENERATION} comments, all in ONE style the person chose: "${style}".
-${style} means: ${STYLE_GUIDES[style]}
-Give ${VARIATIONS_PER_GENERATION} genuinely different takes on this one style - different angle, opening, and wording each time. Not minor rewrites of the same sentence.
-
-HARD RULES (breaking these makes it read as AI):
-- Each comment is 1 to 2 sentences and never more than ~35 words. Short is the entire point.
-- Sound like a person typing on their phone. Contractions, plain words, a real reaction.
-- React to the SPECIFIC thing in this post - reference an actual detail from it. No generic praise.
-- Do not restate the post back at them. Add something of your own.
-- No em dashes and no en dashes. Use a plain hyphen or split into two sentences.
-- Never use these words: delve, leverage, elevate, seamless, unlock, empower, resonate, insightful, thought-provoking, holistic, game-changer.
-- Never use these filler openers: "Great post", "Well said", "Couldn't agree more", "Spot on", "This resonates", "Thanks for sharing", "Love this", "As a ${profile}".
-- No hashtags. No emoji.
-
-Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
-
-    const userMsg = `Post to comment on:\n${postText.slice(0, 1200)}`
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, postText.slice(0, 500)).catch(() => undefined)
 
     const reservation = limits.commentGenerationsPerMonth === "unlimited"
       ? null
@@ -144,21 +99,26 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
     }
 
     let comments: Array<{ style: string; text: string }> = []
+    let modelCalls = 0
     try {
-      const raw = await callAi("chat-strategist", system, userMsg, {
-        json: true,
-        temperature: 0.8,
-        maxTokens: 320,
+      const result = await generateComments({
+        postText,
+        style,
+        profileLabel: profile,
+        voiceProfile,
+        variants: VARIATIONS_PER_GENERATION,
         userId: planCheck.billingUserId,
         plan: planCheck.plan,
-        cache: false,
       })
-      const parsed = safeParseJson<{ comments?: Array<{ style?: string; text: string }> }>(raw)
-      comments = Array.isArray(parsed?.comments)
-        ? parsed.comments
-            .filter((c) => c && typeof c.text === "string" && c.text.trim().length > 0)
-            .map((c) => ({ style, text: c.text }))
-        : []
+      comments = result.comments
+      modelCalls = result.modelCalls
+      if (result.remainingDefects.length) {
+        log.warn("comments.generate.defects_remaining", {
+          userId: user.id,
+          style,
+          codes: result.remainingDefects.map((d) => d.code),
+        })
+      }
     } catch (err) {
       log.warn("comments.generate.ai_failed", { userId: user.id, error: (err as Error).message })
     }
@@ -182,7 +142,7 @@ Return JSON only, no other text: { "comments": [{ "text": "string" }] }`
       responseUsage = { ...reservation!, remaining: Math.max(0, reservation!.limit - reservation!.current) }
     }
 
-    log.info("comments.generate.done", { userId: user.id, profile, style, count: comments.length })
+    log.info("comments.generate.done", { userId: user.id, profile, style, count: comments.length, modelCalls })
 
     return NextResponse.json({
       comments: comments.slice(0, VARIATIONS_PER_GENERATION),

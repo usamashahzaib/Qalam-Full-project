@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { cleanErrorMessage } from "@/lib/content-guard"
 import type { WorkspacePost } from "@/types/domain"
+import { localCalendarDate } from "@/lib/calendar-date"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -66,7 +67,10 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       const res = await fetch(`/api/posts?workspaceKey=${encodeURIComponent(workspaceId)}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to load posts")
-      setPosts(Array.isArray(data.posts) ? data.posts : [])
+      setPosts(Array.isArray(data.posts) ? data.posts.map((post: WorkspacePost) => ({
+        ...post,
+        date: post.scheduledTime ? localCalendarDate(post.scheduledTime) || post.date : post.date,
+      })) : [])
     } catch (error) {
       setPostsError((error as Error).message)
     } finally {
@@ -164,7 +168,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         status: "scheduled",
-        scheduledTime: new Date().toISOString(),
+        scheduledTime: new Date(Date.now() + 60_000).toISOString(),
         workspaceKey: workspaceId,
       }),
     })

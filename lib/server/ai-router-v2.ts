@@ -25,35 +25,22 @@ export type AiTask =
 type CallOptions = { json: boolean; temperature: number; maxTokens: number }
 type AiResponse = OpenAiCompatibleResult
 
-// ── 1.4: Output sanitizer applied to every provider response ─────────────────
-// Normalises typography and strips AI-tell phrases that slip through prompts.
+// Output sanitizer applied to every provider response.
+//
+// Scope is deliberately narrow: normalise typography and collapse runaway
+// blank lines. Nothing else.
+//
+// It used to also delete a list of phrases ("here's the thing", "at the end
+// of the day", "make no mistake", "I've seen this") from every response.
+// That was blacklist quality control in the worst possible place: it ran on
+// JSON payloads as well as prose, it edited words the model had chosen for a
+// reason, and it silently deleted whole lines. Those phrases are usually
+// filler, so the writing policy tells the model not to reach for them and the
+// scorer marks them down. Neither pretends a phrase is defective in every
+// context.
 export function sanitizeOutput(text: string): string {
   return text
-    // ── Typography ─────────────────────────────────────────────────────────────
-    .replace(/[—–]/g, "-")
-    // ── Standalone AI-validation sentences (whole line = just the phrase) ─────
-    // These add zero meaning and are a dead giveaway of AI authorship.
-    .replace(
-      /^[ \t]*(?:this framing is (?:right|correct|wrong)|the problem is real|this(?: part)? is real|i'?ve seen this(?: firsthand)?)[\.\!\?]?\s*$/gim,
-      ""
-    )
-    // ── Sentence-start transitional filler ─────────────────────────────────────
-    // Strip the phrase AND capitalize the word it exposes in one pass, so
-    // recapitalization only ever touches the exact spot we just edited - never
-    // a blanket pass over the whole output, which would otherwise mangle any
-    // sentence that legitimately starts lowercase-then-capital (iPhone, eBay).
-    .replace(
-      /(^|[.!?]\s+|\n)(?:needless to say|suffice it to say|without further ado|make no mistake|let me be (?:clear|honest)|here'?s the thing|at the end of the day|that being said|having said that|it goes without saying that)[,:\s]+([a-z])/gi,
-      (_match, prefix: string, letter: string) => prefix + letter.toUpperCase()
-    )
-    // ── Same fillers mid-sentence ────────────────────────────────────────────
-    // No sentence-start capitalization needed here - just remove.
-    .replace(
-      /\b(?:needless to say|suffice it to say|without further ado|make no mistake|let me be (?:clear|honest)|here'?s the thing|at the end of the day|that being said|having said that)[,:\s]+/gi,
-      ""
-    )
-    .replace(/\bit goes without saying that\s+/gi, "")
-    // ── Whitespace ─────────────────────────────────────────────────────────────
+    .replace(/[\u2014\u2013]/g, "-")
     .replace(/\n{3,}/g, "\n\n")
     .trim()
 }

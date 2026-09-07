@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { getPlanLimits } from "@/lib/entitlements"
 import { getCommentUsage, releaseCommentUsage, reserveCommentUsage } from "@/lib/server/comment-usage"
 import { getPlanStatus } from "@/lib/server/plan-limits-v2"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
-import { professionalContextPrompt } from "@/lib/professional-context"
 import { readExtensionToken, resolveExtensionWorkspace } from "@/lib/server/extension-auth"
+import { generateComments } from "@/lib/use-cases/generate-comments"
+import { COMMENT_STYLES, COMMENT_SOURCE_BUDGET, type CommentStyle } from "@/lib/prompts/builders/comment"
+import { log } from "@/lib/server/logging"
 
-const styles = ["insightful", "supportive", "engaging"] as const
-type Style = (typeof styles)[number]
-const styleGuide: Record<Style, string> = {
-  insightful: "Add one sharp, specific observation that builds on the post.",
-  supportive: "Offer genuine, specific encouragement without gushing.",
-  engaging: "React to a detail, then ask one natural follow-up question.",
-}
+// Same prompt, same validation, same repair pass as the in-app generator. The
+// extension used to carry its own one-line prompt with no voice profile.
+const styles = COMMENT_STYLES
+type Style = CommentStyle
+const VARIANTS = 3
 
 const identityFor = (request: NextRequest) => readExtensionToken(request.headers.get("authorization"))
 
@@ -36,15 +35,13 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null) as { postText?: unknown; style?: unknown } | null
   const postText = String(body?.postText || "").trim()
   const style = String(body?.style || "insightful").toLowerCase() as Style
-  if (postText.length < 10 || postText.length > 5000) return NextResponse.json({ error: "postText must be 10 to 5000 characters" }, { status: 400 })
+  if (postText.length < 10 || postText.length > COMMENT_SOURCE_BUDGET) return NextResponse.json({ error: `postText must be 10 to ${COMMENT_SOURCE_BUDGET} characters` }, { status: 400 })
   if (!styles.includes(style)) return NextResponse.json({ error: "Invalid comment style" }, { status: 400 })
   const workspaceId = await resolveExtensionWorkspace(identity.userId)
   if (!workspaceId) {
     return NextResponse.json({ error: "workspace_access_revoked" }, { status: 403 })
   }
-  const voice = await getWorkspaceVoiceProfile(workspaceId).catch(() => undefined)
-  const context = professionalContextPrompt(voice?.professionalContext)
-  const prompt = `Write exactly 3 short LinkedIn comments in the ${style} style. ${styleGuide[style]} Use the professional context and voice when supplied. Reference a specific detail in the post. Do not use generic praise, hashtags, emoji, em dashes, or en dashes. Each comment is one or two sentences, under 35 words. Return JSON only: {"comments":[{"text":"string"}]}.\n\nProfessional context:\n${context || "Professional LinkedIn user"}\n\nPost:\n${postText.slice(0, 1200)}`
+  const voice = await getWorkspaceVoiceProfile(workspaceId, postText.slice(0, 500)).catch(() => undefined)
 
   const reservation = limit === "unlimited" ? null : await reserveCommentUsage(identity.userId, limit)
   if (reservation && !reservation.allowed) {
@@ -59,10 +56,19 @@ export async function POST(request: NextRequest) {
 
   let completed = false
   try {
-    const raw = await callAi("chat-strategist", prompt, "Generate the comments.", { json: true, temperature: 0.8, maxTokens: 320, userId: identity.userId, plan: status.plan, cache: false })
-    const parsed = safeParseJson<{ comments?: Array<{ text?: string }> }>(raw)
-    const comments = (parsed?.comments || []).filter((item) => typeof item?.text === "string" && item.text.trim()).slice(0, 3).map((item) => ({ style, text: item.text!.trim() }))
+    const result = await generateComments({
+      postText,
+      style,
+      voiceProfile: voice,
+      variants: VARIANTS,
+      userId: identity.userId,
+      plan: status.plan,
+    })
+    const comments = result.comments
     if (!comments.length) return NextResponse.json({ error: "ai_unavailable" }, { status: 503 })
+    if (result.remainingDefects.length) {
+      log.warn("extension.comments.defects_remaining", { userId: identity.userId, style, codes: result.remainingDefects.map((d) => d.code) })
+    }
     completed = true
     if (limit === "unlimited") {
       return NextResponse.json({ comments, plan: status.plan, usage: { current: 0, limit, remaining: limit } }, { headers: { "Cache-Control": "no-store" } })

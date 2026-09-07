@@ -1,5 +1,5 @@
-const CACHE_NAME = 'qalam-v1.3';
-const OFFLINE_URL = '/';
+const CACHE_NAME = 'qalam-v1.4';
+const OFFLINE_URL = '/offline.html';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -20,7 +20,7 @@ self.addEventListener('activate', (event) => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames.map((name) => {
-          if (name !== CACHE_NAME) {
+          if (name.startsWith('qalam-') && name !== CACHE_NAME) {
             return caches.delete(name);
           }
         })
@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
           return await fetch(event.request);
         } catch {
           const cache = await caches.open(CACHE_NAME);
-          return await cache.match(OFFLINE_URL);
+          return await cache.match(OFFLINE_URL) || new Response('You are offline. Reconnect and reload Qalam.', { status: 503, headers: { 'Content-Type': 'text/plain' } });
         }
       })()
     );

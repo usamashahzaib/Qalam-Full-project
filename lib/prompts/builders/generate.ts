@@ -1,24 +1,21 @@
-// Critical rules injected into all post-generation system prompts.
-// Imported by role-aware-system.ts and applied inside buildGeneratePrompt / buildPostFromHookPrompt.
+// Post-specific rules layered on top of lib/prompts/writing-policy.
+//
+// What used to live here was a numbered list of 18 "CRITICAL RULES - VIOLATION
+// = REJECTED OUTPUT" that duplicated the anti-AI block, the positioning block
+// and the hook block, and contradicted all three. Rule 10 required every post
+// to open with a "pattern interrupt: shock, curiosity, or contrarian take",
+// rule 3 banned bullet points outright, and rule 2 banned a list of words
+// regardless of context. That is what produced the identical, over-polished
+// template. Those rules are gone. Only the genuinely post-specific constraints
+// stay, and the shared writing policy carries the rest.
 
-export const GENERATE_CRITICAL_RULES = `
-CRITICAL RULES - VIOLATION = REJECTED OUTPUT:
-1. NEVER start with: "In today's world...", "Did you know...", "With over X years...", "The shift to...", "As we all know..."
-2. NEVER use words: leverage, synergy, optimize, strategic, holistic, paradigm, disruptive, innovative, game-changer, transformative, elevate, unlock, empower
-3. NEVER use bullet points, numbered lists, or "Here are 3 reasons..."
-4. NEVER end with "In conclusion...", "To sum up...", "Remember that..."
-5. Use personal voice only when the supplied context supports it. Never turn general knowledge into a first-person experience.
-6. Use specific examples, numbers, employers, and outcomes only when the user supplied them. If proof is missing, make the insight concrete without inventing evidence.
-7. Take a clear, useful angle. Contrarian framing is optional and must never distort the author's real view.
-8. Invite a genuine response only when it fits. Never ask readers to tag people, comment a keyword, or perform engagement bait.
-9. NO em-dashes (—) or en-dashes (–). Only hyphens (-).
-10. First line MUST be pattern interrupt. Shock, curiosity, or contrarian take.
-11. NEVER use filler openers: "at the end of the day", "needless to say", "make no mistake", "that being said", "having said that", "let me be clear", "let me be honest", "without further ado", "suffice it to say", "here's the thing", "the bottom line is", "the truth is", "it goes without saying"
-12. NEVER use AI-validation phrases: "this is real", "the problem is real", "I've seen this", "I've seen this firsthand", "this framing is right", "this part is real", "this is important", "I cannot stress this enough"
-13. NEVER frame with: "the easy part is", "the hard part is", "the real issue is", "the tricky part is". Just state the point directly.
-14. NEVER use hollow affirmations: "absolutely", "certainly", "definitely", "of course", "for sure" as standalone responses or sentence openers.
-15. Choose one clear target audience and one saved content pillar when professional context is available. The post must reinforce the author's real positioning, not drift into an unrelated topic bubble.
-16. Match the requested content intent: Authority teaches from earned expertise, Personal builds recognition through a true moment or belief, and Offer connects a real problem to a relevant service without sounding like an ad.
-17. Build reading momentum with a clear payoff, useful detail, and mobile-friendly spacing. Never promise reach, virality, impressions, or algorithmic distribution.
-18. Use 0-3 precise hashtags. Skip generic tags and do not force hashtags when none add useful topic context.
-`.trim()
+export const POST_TASK_RULES = `
+WRITING A LINKEDIN POST:
+- One post, one point. Decide what this post is actually for: teaching something the author knows, sharing something that happened or that they believe, or connecting a real problem to what they offer. Then write only that.
+- Open with whatever gets to the point fastest for this particular subject. A plain factual first line is a good hook when the fact is interesting. Do not add drama, a contrarian claim, or a cliffhanger that the post does not pay off.
+- The close follows the content. Sometimes that is a question, sometimes a next step, sometimes just the last thing worth saying. It is fine to stop without a closing flourish, and never end with a summary of what the reader just read.
+- No engagement bait. Never ask readers to comment a keyword, tag someone, or join a pod, and never claim a format guarantees reach, views, or algorithmic distribution.
+- Use line breaks so it is readable on a phone. That is a spacing decision, not a requirement that every paragraph be one sentence.
+- 0 to 3 precise hashtags on the final line, or none. Never mid-sentence.
+`.trim();
+

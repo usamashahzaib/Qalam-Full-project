@@ -1,16 +1,22 @@
-export const AI_BANNED_TERMS = [
-  "as we navigate",
-  "rapidly evolving landscape",
-  "future belongs",
-  "unlock the full potential",
-  "transformative technology",
-  "game-changer",
-  "delve",
-  "leverage",
-  "foster",
-  "it is worth noting",
-  "in conclusion",
-]
+// Objective text cleanup applied to model output before it reaches a user.
+//
+// What is deliberately NOT here any more:
+//
+// - AI_BANNED_TERMS / hasAiSlop(). A substring blacklist flagged "leverage" and
+//   "foster" in any context, which is wrong ("we leverage the existing index"
+//   is a normal sentence) and, more importantly, useless: generate-post.ts
+//   logged the finding and shipped the draft anyway. Judgment about phrasing
+//   now lives in the task prompts, and objective checks live in
+//   lib/prompts/output-checks.ts where each defect carries a repair
+//   instruction.
+//
+// - fallbackHooks(). It returned canned lines including "After seeing this up
+//   close, one pattern keeps repeating" and "I used to think X was simple",
+//   both of which assert personal experience the user never claimed. Nothing
+//   imported it, so it shipped no fabricated text, but a fallback that invents
+//   a lived experience must not exist where someone can wire it up later. When
+//   a provider fails, the caller returns an error. It does not substitute
+//   generic content.
 
 export const sanitizeGeneratedText = (value: string) =>
   value
@@ -22,11 +28,6 @@ export const sanitizeGeneratedText = (value: string) =>
     .replace(/\n{3,}/g, "\n\n")
     .trim()
 
-export const hasAiSlop = (value: string) => {
-  const lower = value.toLowerCase()
-  return AI_BANNED_TERMS.some((term) => lower.includes(term))
-}
-
 export const cleanErrorMessage = (message = "") => {
   const lower = message.toLowerCase()
   if (lower.includes("json") || lower.includes("failed_generation") || lower.includes("groq") || lower.includes("schema")) {
@@ -35,15 +36,4 @@ export const cleanErrorMessage = (message = "") => {
   if (lower.includes("rate limit")) return "Too many requests. Try again in a minute."
   if (lower.includes("auth")) return "Please sign in again."
   return message || "Something went wrong. Try again."
-}
-
-export const fallbackHooks = (content: string, title = "") => {
-  const topic = (title || content.split(/\n/).find(Boolean) || "this topic").replace(/[^\w\s-]/g, "").trim().slice(0, 48) || "this topic"
-  return [
-    { style: "Sharp", text: `Most teams are handling ${topic} too late.` },
-    { style: "Authority", text: "After seeing this up close, one pattern keeps repeating." },
-    { style: "Story", text: `I used to think ${topic} was simple. It is not.` },
-    { style: "Curiosity", text: `The quiet mistake behind ${topic} is easy to miss.` },
-    { style: "Direct", text: `Here is the practical way to think about ${topic}.` },
-  ].map((hook) => ({ ...hook, text: sanitizeGeneratedText(hook.text).slice(0, 100) }))
 }
