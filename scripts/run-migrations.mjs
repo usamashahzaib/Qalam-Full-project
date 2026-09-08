@@ -52,9 +52,12 @@ async function runViaDbUrl(dbUrl, sql) {
     const { default: pg } = await import("pg")
     const client = new pg.Client({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
     await client.connect()
-    const result = await client.query(sql)
-    return result.rows
-    await client.end()
+    try {
+      const result = await client.query(sql)
+      return result.rows
+    } finally {
+      await client.end()
+    }
   } catch (err) {
     if (err.code === "MODULE_NOT_FOUND") {
       console.error("Install pg first: npm install --save-dev pg")

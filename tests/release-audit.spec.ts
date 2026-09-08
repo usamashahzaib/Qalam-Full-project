@@ -163,14 +163,26 @@ test.describe("keyboard and focus", () => {
     })
   }
 
-  test("homepage offers a skip link as the first tab stop", async ({ page }) => {
+  test("homepage offers a working skip link at the start of the page", async ({ page, browserName }) => {
     await settle(page, "/")
-    await page.keyboard.press("Tab")
+    const skipLink = page.locator('a[href="#main-content"]').first()
+    await expect(skipLink).toHaveText(/skip/i)
+
+    // WebKit follows Safari's macOS default, where Tab skips links unless the
+    // user's Full Keyboard Access preference is enabled. Playwright cannot
+    // toggle that host preference. Focus the link directly there; the other
+    // engines still verify that it is the first real Tab stop.
+    if (browserName === "webkit") await skipLink.focus()
+    else await page.keyboard.press("Tab")
+
+    await expect.poll(async () => (await skipLink.boundingBox())?.y ?? -1).toBeGreaterThanOrEqual(0)
     const first = await page.evaluate(() => ({
       text: (document.activeElement?.textContent || "").trim().toLowerCase(),
       href: document.activeElement?.getAttribute("href") || "",
     }))
     expect(first.text.includes("skip") || first.href.startsWith("#")).toBe(true)
+    await page.keyboard.press("Enter")
+    await expect(page).toHaveURL(/#main-content$/)
   })
 })
 

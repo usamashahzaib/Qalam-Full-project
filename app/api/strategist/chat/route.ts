@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi } from "@/lib/server/ai-router-v2"
+import { authorizeRole } from "@/lib/server/roles"
 
 type ConversationMessage = {
   role: "user" | "assistant"
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
         .select("id, title, role_context, updated_at")
         .eq("id", conversationId)
         .eq("user_id", userId)
+        .eq("workspace_id", planCheck.workspaceId)
         .single()
       if (convError) throw new Error(convError.message)
 
@@ -50,6 +52,7 @@ export async function GET(req: NextRequest) {
       .from("conversations")
       .select("id, title, role_context, updated_at")
       .eq("user_id", userId)
+      .eq("workspace_id", planCheck.workspaceId)
       .order("updated_at", { ascending: false })
       .limit(50)
     if (error) throw new Error(error.message)
@@ -65,6 +68,8 @@ export async function POST(req: NextRequest) {
   try {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const userId = planCheck.session.userId
     const { message, conversationId, role = "general" } = await req.json()
     const cleanMessage = String(message || "").trim()
@@ -91,6 +96,7 @@ Message: ${cleanMessage}`
         .select("id, title")
         .eq("id", convId)
         .eq("user_id", userId)
+        .eq("workspace_id", planCheck.workspaceId)
         .single()
       if (error || !existing?.id) return NextResponse.json({ error: "Conversation not found" }, { status: 404 })
       title = existing.title
@@ -100,10 +106,10 @@ Message: ${cleanMessage}`
       .from("conversation_messages")
       .select("role, content")
       .eq("conversation_id", convId)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(20)
 
-    const typedHistory = (history || []) as ConversationMessage[]
+    const typedHistory = ((history || []) as ConversationMessage[]).reverse()
     const roleContext = role !== "general" ? `The user is a ${String(role).replace("_", " ")}. Tailor advice accordingly.` : ""
     const prompt = `You are Qalam, an expert LinkedIn content strategist. ${roleContext}
 
@@ -121,7 +127,8 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
     )
 
     if (!conversationId) {
-      const { data: createdId, error } = await supabase.rpc("create_conversation_with_message", {
+      const { data: createdId, error } = await supabase.rpc("create_workspace_conversation_with_message", {
+        p_workspace_id: planCheck.workspaceId,
         p_user_id: userId,
         p_title: title,
         p_role_context: role,
@@ -131,7 +138,8 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
       if (error || !createdId) throw new Error(error?.message || "Failed to create conversation")
       convId = createdId
     } else {
-      const { error } = await supabase.rpc("append_conversation_turn", {
+      const { error } = await supabase.rpc("append_workspace_conversation_turn", {
+        p_workspace_id: planCheck.workspaceId,
         p_user_id: userId,
         p_conversation_id: convId,
         p_user_message: cleanMessage,
@@ -145,6 +153,7 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
       .from("conversations")
       .select("title")
       .eq("id", convId)
+      .eq("workspace_id", planCheck.workspaceId)
       .single()
 
     return NextResponse.json({

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,6 +13,7 @@ export async function GET(request: NextRequest) {
       .from("conversations")
       .select("id, title, updated_at")
       .eq("user_id", userId)
+      .eq("workspace_id", planCheck.workspaceId)
       .order("updated_at", { ascending: false })
     if (error) throw new Error(error.message)
     return NextResponse.json({ conversations: data || [] })
@@ -24,13 +26,15 @@ export async function POST(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(request, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const userId = planCheck.session.userId
     const body = await request.json()
     const title = String(body.title || "New Conversation").trim() || "New Conversation"
     const supabase = createServiceClient()
     const { data, error } = await supabase
       .from("conversations")
-      .insert({ user_id: userId, title })
+      .insert({ user_id: userId, workspace_id: planCheck.workspaceId, title })
       .select("id, title, updated_at")
       .single()
     if (error) throw new Error(error.message)
@@ -44,6 +48,8 @@ export async function PATCH(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(request, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const userId = planCheck.session.userId
     const body = await request.json()
     const conversationId = String(body.conversationId || "")
@@ -59,6 +65,7 @@ export async function PATCH(request: NextRequest) {
       .update({ title, updated_at: new Date().toISOString() })
       .eq("id", conversationId)
       .eq("user_id", userId)
+      .eq("workspace_id", planCheck.workspaceId)
       .select("id, title, updated_at")
       .single()
     if (error) throw new Error(error.message)
@@ -72,6 +79,8 @@ export async function DELETE(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(request, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const userId = planCheck.session.userId
     const conversationId = request.nextUrl.searchParams.get("conversationId")
     if (!conversationId) return NextResponse.json({ error: "Missing conversationId" }, { status: 400 })
@@ -82,6 +91,7 @@ export async function DELETE(request: NextRequest) {
       .delete()
       .eq("id", conversationId)
       .eq("user_id", userId)
+      .eq("workspace_id", planCheck.workspaceId)
     if (error) throw new Error(error.message)
 
     return NextResponse.json({ ok: true })

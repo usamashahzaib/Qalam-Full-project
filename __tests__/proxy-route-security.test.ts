@@ -52,4 +52,8 @@ describe("proxy route security tables", () => {
   it("keeps local development on HTTP", async () => {
     expect(await buildCsp({ nonce: "test-nonce", isDev: true })).not.toContain("upgrade-insecure-requests")
   })
+
+  it("keeps an explicitly HTTP production preview on HTTP", async () => {
+    expect(await buildCsp({ isDev: false, upgradeInsecureRequests: false })).not.toContain("upgrade-insecure-requests")
+  })
 })

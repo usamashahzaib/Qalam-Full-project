@@ -8,6 +8,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { analyzeCompetitor } from "@/lib/use-cases/analyze-competitor"
 import { errorToStatus } from "@/lib/errors"
 import { SupabaseCompetitorRepository } from "@/lib/repositories/supabase/SupabaseCompetitorRepository"
+import { authorizeRole } from "@/lib/server/roles"
 
 const competitorRepo = new SupabaseCompetitorRepository()
 
@@ -15,6 +16,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const monthlyLimit = planCheck.limits.researchRunsPerMonth
 
     let body: Record<string, unknown>

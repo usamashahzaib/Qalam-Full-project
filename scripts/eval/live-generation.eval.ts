@@ -27,6 +27,7 @@ import { buildCommentPrompt } from "@/lib/prompts/builders/comment";
 import { buildGeneratePrompt } from "@/lib/prompts/role-aware-system";
 import { baselineCommentPrompt } from "./baseline-prompts";
 import { gradeRelevance, gradeGrounding, gradeVoice, gradePhrasing, gradeVariation } from "./graders";
+import { sanitizeGeneratedText } from "@/lib/content-guard";
 
 const OUT_DIR = path.join(process.cwd(), "scripts", "eval", "output");
 const REPEATS = Number(process.env.QALAM_EVAL_REPEATS || 3);
@@ -40,23 +41,39 @@ const LIVE =
 // would distort an evaluation.
 async function complete(system: string, user: string, json: boolean): Promise<string> {
   if (process.env.GROQ_API_KEY) {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
-      body: JSON.stringify({
-        model: process.env.QALAM_EVAL_MODEL || "openai/gpt-oss-20b",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        temperature: 0.8,
-        max_tokens: 900,
-        ...(json ? { response_format: { type: "json_object" } } : {}),
-      }),
-    });
-    if (!res.ok) throw new Error(`groq ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    const body = await res.json();
-    return body.choices?.[0]?.message?.content ?? "";
+    let useJsonMode = json;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: process.env.QALAM_EVAL_MODEL || "openai/gpt-oss-20b",
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+          temperature: 0.8,
+          max_tokens: 900,
+          ...(useJsonMode ? { response_format: { type: "json_object" } } : {}),
+        }),
+      });
+      if (res.ok) {
+        const body = await res.json();
+        return body.choices?.[0]?.message?.content ?? "";
+      }
+      const detail = await res.text();
+      if (res.status === 400 && useJsonMode && detail.includes("json_validate_failed")) {
+        useJsonMode = false;
+        continue;
+      }
+      if (res.status === 429 && attempt < 4) {
+        const retrySeconds = Math.min(60, Math.max(10, Number(res.headers.get("retry-after")) || 20));
+        await new Promise((resolve) => setTimeout(resolve, retrySeconds * 1000));
+        continue;
+      }
+      throw new Error(`groq ${res.status}: ${detail.slice(0, 200)}`);
+    }
+    throw new Error("groq retry limit reached");
   }
   throw new Error("No supported provider key set. This harness supports GROQ_API_KEY.");
 }
@@ -65,7 +82,9 @@ const parseComments = (raw: string): string[] => {
   try {
     const parsed = JSON.parse(raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim());
     const list = Array.isArray(parsed) ? parsed : parsed.comments;
-    return Array.isArray(list) ? list.map((c: { text?: string }) => String(c?.text ?? "")).filter(Boolean) : [];
+    return Array.isArray(list)
+      ? list.map((c: { text?: string }) => sanitizeGeneratedText(String(c?.text ?? ""))).filter(Boolean)
+      : [];
   } catch {
     return [];
   }
@@ -74,6 +93,7 @@ const parseComments = (raw: string): string[] => {
 interface ArmResult {
   arm: "baseline" | "current";
   caseId: string;
+  kind: "comment" | "post";
   runs: string[][];
 }
 
@@ -106,8 +126,8 @@ describe.skipIf(!LIVE)("live generation", () => {
         baseline.push(parseComments(await complete(before.system, before.user, true)));
       }
 
-      results.push({ arm: "current", caseId: testCase.id, runs: current });
-      results.push({ arm: "baseline", caseId: testCase.id, runs: baseline });
+      results.push({ arm: "current", caseId: testCase.id, kind: "comment", runs: current });
+      results.push({ arm: "baseline", caseId: testCase.id, kind: "comment", runs: baseline });
     }
     expect(results.length).toBe(COMMENT_CASES.length * 2);
   });
@@ -123,9 +143,9 @@ describe.skipIf(!LIVE)("live generation", () => {
           testCase.goal,
           testCase.voiceProfile
         );
-        runs.push([await complete(system, user, false)]);
+        runs.push([sanitizeGeneratedText(await complete(system, user, false))]);
       }
-      results.push({ arm: "current", caseId: testCase.id, runs });
+      results.push({ arm: "current", caseId: testCase.id, kind: "post", runs });
     }
   });
 
@@ -150,6 +170,7 @@ describe.skipIf(!LIVE)("live generation", () => {
         if (!flat.length) return { empty: true };
         return {
           outputs: flat.length,
+          samples: flat,
           relevance: flat.map((o) => gradeRelevance(o, testCase.sourceAnchors, "tailAnchors" in testCase ? testCase.tailAnchors ?? [] : [], sourceText)),
           grounding: flat.map((o) => gradeGrounding(o, testCase.forbiddenClaims ?? [], sourceText)),
           voice: flat.map((o) => gradeVoice(o, samples, vocabulary)),
@@ -161,7 +182,7 @@ describe.skipIf(!LIVE)("live generation", () => {
         };
       };
 
-      return { caseId, probe: testCase.probe, current: measure(arms.current), baseline: measure(arms.baseline) };
+      return { caseId, kind: testCase.kind, probe: testCase.probe, current: measure(arms.current), baseline: measure(arms.baseline) };
     });
 
     fs.writeFileSync(path.join(OUT_DIR, "metrics.json"), JSON.stringify(metrics, null, 2), "utf8");
@@ -214,8 +235,11 @@ describe.skipIf(!LIVE)("live generation", () => {
     fs.writeFileSync(path.join(OUT_DIR, "blinded.md"), blinded.join("\n"), "utf8");
     fs.writeFileSync(path.join(OUT_DIR, "blinded-key.json"), JSON.stringify(key, null, 2), "utf8");
 
-    const summarise = (arm: "current" | "baseline") => {
-      const entries = metrics.map((m) => m[arm]).filter((m): m is NonNullable<typeof m> => Boolean(m) && !("empty" in m!));
+    const summarise = (arm: "current" | "baseline", kind: "comment" | "post") => {
+      const entries = metrics
+        .filter((m) => m.kind === kind)
+        .map((m) => m[arm])
+        .filter((m): m is NonNullable<typeof m> => Boolean(m) && !("empty" in m!));
       if (!entries.length) return "no data";
       const flat = <T,>(pick: (e: (typeof entries)[number]) => T[]) => entries.flatMap(pick);
       const anchorRates = flat((e) => (e as never as { relevance: Array<{ anchorHitRate: number }> }).relevance.map((r) => r.anchorHitRate));
@@ -243,11 +267,14 @@ describe.skipIf(!LIVE)("live generation", () => {
         "These are proxy measurements. They can show a regression. They cannot show",
         "that the writing is good. The blinded ratings in blinded.md are the result.",
         "",
-        "## current",
-        `  ${summarise("current")}`,
+        "## Comments: current",
+        `  ${summarise("current", "comment")}`,
         "",
-        "## baseline (the prompt before this change)",
-        `  ${summarise("baseline")}`,
+        "## Comments: baseline (the prompt before this change)",
+        `  ${summarise("baseline", "comment")}`,
+        "",
+        "## Posts: current",
+        `  ${summarise("current", "post")}`,
         "",
       ].join("\n"),
       "utf8"

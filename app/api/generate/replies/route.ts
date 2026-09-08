@@ -11,6 +11,7 @@ import { buildReplyPrompt } from "@/lib/prompts/builders/comment"
 import { checkVariants } from "@/lib/prompts/output-checks"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { log } from "@/lib/server/logging"
+import { authorizeRole } from "@/lib/server/roles"
 
 const VARIANTS = 3
 const MAX_REPLY_CHARS = 600
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Solo")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {

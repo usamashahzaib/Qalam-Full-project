@@ -154,6 +154,15 @@ type RouteCase = {
 }
 
 const CASES: RouteCase[] = [
+  { file: "@/app/api/comments/generate/route", method: "POST" },
+  { file: "@/app/api/generate/replies/route", method: "POST" },
+  { file: "@/app/api/generate/hook-alternatives/route", method: "POST" },
+  { file: "@/app/api/competitors/analyze/route", method: "POST" },
+  { file: "@/app/api/strategist/route", method: "POST" },
+  { file: "@/app/api/strategist/chat/route", method: "POST" },
+  { file: "@/app/api/chat/conversations/route", method: "POST" },
+  { file: "@/app/api/chat/conversations/route", method: "PATCH" },
+  { file: "@/app/api/chat/conversations/route", method: "DELETE" },
   { file: "@/app/api/linkedin/token/route", method: "DELETE" },
   { file: "@/app/api/posts/reschedule/route", method: "POST" },
   { file: "@/app/api/posts/unschedule/route", method: "POST" },

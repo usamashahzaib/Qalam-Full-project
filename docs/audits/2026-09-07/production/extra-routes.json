@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-09-07T12:24:08.406Z",
+  "origin": "http://localhost:3101",
+  "results": [
+    {
+      "path": "/login",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/signup",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/ai-content-writer",
+      "status": 308,
+      "location": "/linkedin-post-writer",
+      "contentType": null
+    },
+    {
+      "path": "/ai-linkedin-post-generator",
+      "status": 308,
+      "location": "/linkedin-post-writer",
+      "contentType": null
+    },
+    {
+      "path": "/downloads/qalam-linkedin-extension.zip",
+      "status": 200,
+      "location": null,
+      "contentType": "application/zip"
+    },
+    {
+      "path": "/extension/connect",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/login?callbackUrl=/career",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/login?callbackUrl=/career/resumes",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/docs",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=utf-8"
+    },
+    {
+      "path": "/offline.html",
+      "status": 200,
+      "location": null,
+      "contentType": "text/html; charset=UTF-8"
+    },
+    {
+      "path": "/sw.js",
+      "status": 200,
+      "location": null,
+      "contentType": "application/javascript; charset=UTF-8"
+    }
+  ]
+}

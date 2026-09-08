@@ -1,6 +1,12 @@
 import { defineConfig, devices } from "@playwright/test"
 
 const productionServer = process.env.PLAYWRIGHT_PRODUCTION === "1"
+const selectedBrowser = process.env.PLAYWRIGHT_BROWSER
+const browserProjects = selectedBrowser === "firefox"
+  ? [{ name: "firefox", use: { ...devices["Desktop Firefox"] } }]
+  : selectedBrowser === "webkit"
+    ? [{ name: "webkit", use: { ...devices["Desktop Safari"] } }]
+    : [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }]
 
 export default defineConfig({
   testDir: "./tests",
@@ -13,12 +19,7 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
     trace: "on-first-retry",
   },
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-  ],
+  projects: browserProjects,
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER ? undefined : {
     command: productionServer ? "npm run start -- --port 3000" : "npm run dev -- --port 3000",
     url: "http://localhost:3000",

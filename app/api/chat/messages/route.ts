@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       .select("id")
       .eq("id", conversationId)
       .eq("user_id", userId)
+      .eq("workspace_id", planCheck.workspaceId)
       .maybeSingle()
     if (!owner) return NextResponse.json({ error: "Unauthorized conversation" }, { status: 403 })
 

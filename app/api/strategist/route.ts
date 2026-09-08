@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi } from "@/lib/server/ai-router-v2"
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { authorizeRole } from "@/lib/server/roles"
 
 type HistoryMessage = { role: "user" | "assistant"; content: string }
 
@@ -13,6 +14,8 @@ export async function POST(request: NextRequest) {
   try {
     const planCheck = await requirePlan(request, "Pro")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(request, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
     const userId = planCheck.session.userId
     const body = await request.json()
     const message = String(body.message || "").trim()
@@ -32,6 +35,7 @@ export async function POST(request: NextRequest) {
         .select("id, title")
         .eq("id", conversationId)
         .eq("user_id", userId)
+        .eq("workspace_id", planCheck.workspaceId)
         .maybeSingle()
       if (error || !conversation) return NextResponse.json({ error: "conversation_not_found" }, { status: 404 })
       title = conversation.title
@@ -40,9 +44,9 @@ export async function POST(request: NextRequest) {
         .from("conversation_messages")
         .select("role, content")
         .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
         .limit(20)
-      history = (data || []) as HistoryMessage[]
+      history = ((data || []) as HistoryMessage[]).reverse()
     }
 
     if (!conversationId || shouldNameExisting(title)) {
@@ -73,7 +77,8 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
     })
 
     if (conversationId) {
-      const { error } = await supabase.rpc("append_conversation_turn", {
+      const { error } = await supabase.rpc("append_workspace_conversation_turn", {
+        p_workspace_id: planCheck.workspaceId,
         p_user_id: userId,
         p_conversation_id: conversationId,
         p_user_message: message,
@@ -83,7 +88,8 @@ Respond with specific, actionable LinkedIn strategy advice. Be concise. Give exa
       })
       if (error) throw new Error(error.message)
     } else {
-      const { data: createdId, error } = await supabase.rpc("create_conversation_with_message", {
+      const { data: createdId, error } = await supabase.rpc("create_workspace_conversation_with_message", {
+        p_workspace_id: planCheck.workspaceId,
         p_user_id: userId,
         p_title: title,
         p_role_context: role,

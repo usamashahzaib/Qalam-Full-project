@@ -32,8 +32,7 @@ export async function POST(request: NextRequest) {
     }
     const attempt = Number.isFinite(Number(body.attempt)) ? Number(body.attempt) : 1
 
-    // Cache key scoped to user + role + attempt so a free-plan cap change never bleeds into a
-    // previously cached score for the same content at a different regenerate count.
+    // Workspace scope prevents one client's voice evaluation from reaching another.
     const cacheKey = generateCacheKey({
       task: "score",
       content,
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
       workspaceId: planCheck.workspaceId,
       role: String(body.role || ""),
       attempt,
-      scorePolicy: "measured-score-v2",
+      scorePolicy: "measured-score-v3",
     })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
@@ -73,15 +72,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await scorePost({
-      content,
-      role: String(body.role || ""),
-      userId: planCheck.billingUserId,
-      internalUserId: user.id,
-      workspaceId: planCheck.workspaceId,
-      plan: planCheck.plan,
-      attempt,
-    })
+    let result: Awaited<ReturnType<typeof scorePost>>
+    try {
+      result = await scorePost({
+        content,
+        role: String(body.role || ""),
+        userId: planCheck.billingUserId,
+        internalUserId: user.id,
+        workspaceId: planCheck.workspaceId,
+        plan: planCheck.plan,
+        attempt,
+      })
+    } catch (error) {
+      await decrementUsage(planCheck.billingUserId, "analyses")
+      throw error
+    }
 
     if (!result.ok) {
       await decrementUsage(planCheck.billingUserId, "analyses")
@@ -91,7 +96,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await setCachedResult(cacheKey, result.data, 7200)
+    await setCachedResult(cacheKey, result.data, 7200).catch(() => undefined)
     const { scores, overall, tips, hashtags } = result.data
     return NextResponse.json({ ...scores, overall, tips, hashtags })
   })(request)

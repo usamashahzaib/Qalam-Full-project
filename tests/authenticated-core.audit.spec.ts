@@ -151,13 +151,15 @@ test("authenticated writer, dashboard, settings, and account deletion", async ({
       ["/chat", "Upgrade to Pro"],
       ["/approvals", "Upgrade to Pro"],
       ["/competitors", "Upgrade to Pro"],
-      ["/agency", "Upgrade to Agency"],
     ] as const
     for (const [path, upgradeLabel] of freeGates) {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" })
       expect(response?.status(), path).toBeLessThan(400)
       await expect(page.locator("#main-content").getByRole("button", { name: upgradeLabel }).last(), path).toBeVisible()
     }
+    const agencyResponse = await page.goto("/agency", { waitUntil: "domcontentloaded" })
+    expect(agencyResponse?.status()).toBeLessThan(400)
+    await expect(page.locator("#main-content").getByRole("link", { name: "View Agency plan" })).toBeVisible()
 
     const careerResponse = await page.goto("/career")
     expect(careerResponse?.status()).toBeLessThan(400)

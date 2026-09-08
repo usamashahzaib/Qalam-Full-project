@@ -141,10 +141,15 @@ export async function publishScheduledPost(postId: string): Promise<PublishOutco
 
     try {
       const { getPlanStatus } = await import("@/lib/server/plan-limits-v2")
+      const { resolveWorkspaceBillingPrincipal, resolveEffectivePlan } = await import("@/lib/server/workspace")
       const { PLAN_LIMITS } = await import("@/lib/entitlements")
-      const status = await getPlanStatus(post.user_id)
-      const limits = PLAN_LIMITS[status.plan as keyof typeof PLAN_LIMITS]
-      if (!limits?.scheduling || !limits?.linkedinPublish) {
+      const principal = await resolveWorkspaceBillingPrincipal(post.workspace_id, post.user_id)
+      const [status, effective] = await Promise.all([
+        getPlanStatus(principal.userId),
+        resolveEffectivePlan(post.workspace_id, principal.email, principal.userId),
+      ])
+      const limits = PLAN_LIMITS[effective.plan as keyof typeof PLAN_LIMITS]
+      if ((!status.isActive && !effective.overrideActive) || !limits?.scheduling || !limits?.linkedinPublish) {
         await markFailed(post, "plan_downgraded")
         return { postId, status: "failed", reason: "plan_downgraded" }
       }

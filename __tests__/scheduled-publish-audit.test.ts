@@ -1,13 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const mocks = vi.hoisted(() => ({ select: vi.fn(), patch: vi.fn(), share: vi.fn(), lock: vi.fn(), release: vi.fn() }))
+const mocks = vi.hoisted(() => ({ select: vi.fn(), patch: vi.fn(), share: vi.fn(), lock: vi.fn(), release: vi.fn(), plan: vi.fn(), effective: vi.fn() }))
 vi.mock("@/lib/server/supabase-rest", () => ({ supabaseSelect: mocks.select, supabasePatch: mocks.patch, supabaseInsert: vi.fn().mockResolvedValue([]) }))
 vi.mock("@/lib/server/linkedin", () => ({ shareToLinkedIn: mocks.share, LinkedInApiError: class extends Error {}, LINKEDIN_MAX_POST_CHARS: 3000 }))
 vi.mock("@/lib/server/linkedin-publish-lock", () => ({ acquireLinkedInPublishLock: mocks.lock }))
 vi.mock("@/lib/server/linkedin-credentials", () => ({ ensureFreshLinkedInPublishingAccount: vi.fn().mockResolvedValue({ id: "account", access_token: "test", provider_account_id: "author" }) }))
 vi.mock("@/lib/server/email", () => ({ sendTransactionalEmail: vi.fn().mockResolvedValue(undefined) }))
 vi.mock("@/lib/server/notifications", () => ({ createNotification: vi.fn().mockResolvedValue(undefined) }))
-vi.mock("@/lib/server/plan-limits-v2", () => ({ getPlanStatus: vi.fn().mockResolvedValue({ plan: "Pro" }) }))
+vi.mock("@/lib/server/plan-limits-v2", () => ({ getPlanStatus: mocks.plan }))
+vi.mock("@/lib/server/workspace", () => ({
+  resolveWorkspaceBillingPrincipal: vi.fn().mockResolvedValue({ userId: "agency-owner", email: null }),
+  resolveEffectivePlan: mocks.effective,
+}))
 vi.mock("@/lib/server/env", () => ({ supportEnv: { email: "test@example.invalid" } }))
 vi.mock("@/lib/server/logging", () => ({ log: { error: vi.fn(), warn: vi.fn(), info: vi.fn() } }))
 import { publishScheduledPost, reconcileStuckPublishing } from "@/lib/server/linkedin-publish"
@@ -22,6 +26,8 @@ describe("scheduled publishing safety", () => {
     mocks.lock.mockResolvedValue({ locked: true, release: mocks.release })
     mocks.release.mockResolvedValue(undefined)
     mocks.share.mockResolvedValue({ postUrn: "urn:li:share:test" })
+    mocks.plan.mockResolvedValue({ plan: "Pro", isActive: true })
+    mocks.effective.mockResolvedValue({ plan: "Pro", overrideActive: false })
   })
   it("ignores a stale delivery after a post was moved to a future date", async () => {
     mocks.select.mockResolvedValue([{ ...post, scheduled_for: "2099-01-01T12:00:00Z" }])
@@ -41,6 +47,21 @@ describe("scheduled publishing safety", () => {
     mocks.patch.mockResolvedValueOnce([{ ...post, content: "Latest approved content", status: "publishing" }]).mockResolvedValue([post])
     expect(await publishScheduledPost("post")).toMatchObject({ status: "published" })
     expect(mocks.share).toHaveBeenCalledWith(expect.objectContaining({ content: "Latest approved content" }))
+    expect(mocks.plan).toHaveBeenCalledWith("agency-owner")
+  })
+  it("blocks an expired workspace entitlement before calling LinkedIn", async () => {
+    mocks.select.mockResolvedValue([post])
+    mocks.patch.mockResolvedValue([post])
+    mocks.plan.mockResolvedValue({ plan: "Pro", isActive: false })
+    expect(await publishScheduledPost("post")).toMatchObject({ status: "failed", reason: "plan_downgraded" })
+    expect(mocks.share).not.toHaveBeenCalled()
+  })
+  it("honors a workspace override when the underlying subscription expired", async () => {
+    mocks.select.mockResolvedValueOnce([post]).mockResolvedValue([])
+    mocks.patch.mockResolvedValue([post])
+    mocks.plan.mockResolvedValue({ plan: "Free", isActive: false })
+    mocks.effective.mockResolvedValue({ plan: "Pro", overrideActive: true })
+    expect(await publishScheduledPost("post")).toMatchObject({ status: "published" })
   })
   it("does not auto-retry an uncertain external publish when the log lookup fails", async () => {
     mocks.select.mockResolvedValueOnce([{ ...post, status: "publishing" }]).mockRejectedValueOnce(new Error("database unavailable"))

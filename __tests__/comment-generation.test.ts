@@ -113,6 +113,8 @@ describe("style handling", () => {
 
     expect(supportive).toContain("Simple and short is correct here")
     expect(insightful).toContain("It does not have to sound profound")
+    expect(insightful).toContain("Do not invent an incident, measurement, timeline, implementation detail")
+    expect(insightful).toContain("present it as a possibility or ask about it")
     expect(engaging).toContain("Do not interrogate them")
     // The old prompt prescribed "react, THEN ask one follow-up question".
     expect(engaging).not.toMatch(/then ask ONE/i)

@@ -230,16 +230,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-2">
+          <div className="mt-12 grid min-w-0 gap-6 lg:grid-cols-2">
             {productScreens.map((screen, index) => (
-              <figure key={screen.src} className={`overflow-hidden rounded-2xl border border-zinc-200 bg-[#f7f3ea] shadow-[0_18px_50px_rgba(13,74,69,0.08)] ${index === 0 ? "lg:col-span-2" : ""}`}>
+              <figure key={screen.src} className={`min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-[#f7f3ea] shadow-[0_18px_50px_rgba(13,74,69,0.08)] ${index === 0 ? "lg:col-span-2" : ""}`}>
                 <Image
                   src={screen.src}
                   alt={screen.alt}
                   width={1440}
                   height={1050}
                   sizes={index === 0 ? "(max-width: 1200px) 100vw, 1200px" : "(max-width: 1024px) 100vw, 600px"}
-                  className="h-auto w-full border-b border-zinc-200"
+                  className="h-auto max-w-full border-b border-zinc-200"
                 />
                 <figcaption className="p-6">
                   <p className="text-lg font-bold text-zinc-900">{screen.title}</p>
@@ -378,7 +378,7 @@ export default function HomePage() {
                   </div>
                   <p className={`mt-2 text-xs ${highlighted ? "text-white/65" : "text-zinc-500"}`}>{plan.plan === "Free" ? effective : `Billed quarterly. ${effective}.`}</p>
                   {plan.plan !== "Free" && plan.monthlyUsd ? (
-                    <p className={`mt-1 text-xs ${highlighted ? "text-white/55" : "text-zinc-400"}`}>
+                    <p className={`mt-1 text-xs ${highlighted ? "text-white/70" : "text-zinc-400"}`}>
                       <span className="line-through">{formatPrice(plan.monthlyUsd * 3)}</span> if billed monthly.
                     </p>
                   ) : null}

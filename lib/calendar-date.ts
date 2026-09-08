@@ -13,3 +13,7 @@ export function localCalendarDate(instant: string): string {
   if (!Number.isFinite(date.getTime())) return ""
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 }
+
+export function withLocalCalendarDate<T extends { scheduledTime?: string | null; date?: string | null }>(post: T): T {
+  return { ...post, date: post.scheduledTime ? localCalendarDate(post.scheduledTime) || post.date : post.date }
+}

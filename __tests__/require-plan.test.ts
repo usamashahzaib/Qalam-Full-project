@@ -111,6 +111,7 @@ describe("requirePlan (plan gate on paid routes)", () => {
 
     const result = await requirePlan(fakeRequest(), "Pro")
     expect(result.ok).toBe(true)
+    if (result.ok) expect(result.isActive).toBe(true)
   })
 
   it("returns 401 when there is no authenticated session", async () => {

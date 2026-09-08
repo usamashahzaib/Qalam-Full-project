@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
 
   let claimed = false
   let sharedOnLinkedIn = false
+  let outcomeUnknown = false
   try {
     const service = createServiceClient()
     const { data: claimState, error: claimError } = await service.rpc("claim_manual_linkedin_publish", {
@@ -136,6 +137,11 @@ export async function POST(request: NextRequest) {
       sharedOnLinkedIn = true
     } catch (error) {
       const publishError = (error as Error).message || "linkedin_publish_failed"
+      if (!(error instanceof LinkedInApiError)) {
+        outcomeUnknown = true
+        console.error("linkedin_publish.outcome_needs_review", { postId: body.postId, workspaceId, error: publishError })
+        return NextResponse.json({ error: "linkedin_publish_outcome_unknown", reviewRequired: true }, { status: 503 })
+      }
       await supabaseInsert(
         "publish_logs",
         {
@@ -183,7 +189,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ...shared, tokenNearExpiry })
   } finally {
-    if (claimed && !sharedOnLinkedIn) {
+    if (claimed && !sharedOnLinkedIn && !outcomeUnknown) {
       try {
         await createServiceClient().rpc("release_manual_linkedin_publish", {
           p_post_id: body.postId,

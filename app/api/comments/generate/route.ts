@@ -11,6 +11,7 @@ import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { generateComments } from "@/lib/use-cases/generate-comments"
 import { COMMENT_STYLES, COMMENT_SOURCE_BUDGET, type CommentStyle } from "@/lib/prompts/builders/comment"
 import { log } from "@/lib/server/logging"
+import { authorizeRole } from "@/lib/server/roles"
 
 const VALID_PROFILES = ["Founder", "Engineer", "HR", "Marketing", "Sales", "Consultant", "Tech", "Other"] as const
 type Profile = (typeof VALID_PROFILES)[number]
@@ -41,6 +42,8 @@ export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     if (!planCheck.isActive) {
       return NextResponse.json(

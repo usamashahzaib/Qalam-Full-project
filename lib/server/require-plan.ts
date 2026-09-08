@@ -103,7 +103,7 @@ export const requirePlan = async (
     plan: effectivePlan,
     status: planInfo.status,
     limits: getPlanLimits(effectivePlan),
-    isActive: planStatus.isActive,
+    isActive: planStatus.isActive || Boolean(planInfo.overrideActive),
     expiresAt: planStatus.expiresAt,
     renewalDue: planStatus.renewalDue,
     daysUntilExpiry: planStatus.daysUntilExpiry,

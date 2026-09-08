@@ -109,11 +109,11 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json()
     const { title, content, type, status, scheduledTime, publishedAt, externalPostUrn, engagementScore } = body
-    // A post mid-publish must not change status or schedule from here - the
-    // publish worker owns it until it lands on published/failed (or the
-    // reconciler reverts it). Flipping it back to "scheduled" now would set
-    // up a duplicate publish.
-    if (existing.status === "publishing" && (status !== undefined || scheduledTime !== undefined)) {
+    if (type !== undefined && (typeof type !== "string" || !type.trim() || type.length > 80)) {
+      return NextResponse.json({ error: "invalid_post_type" }, { status: 400 })
+    }
+    // The publish worker owns the full row until the outcome is resolved.
+    if (existing.status === "publishing") {
       return NextResponse.json({ error: "post_is_publishing" }, { status: 409 })
     }
     const nextStatus = status !== undefined && VALID_STATUSES.includes(status) ? status : existing.status
@@ -143,7 +143,7 @@ export async function PATCH(request: NextRequest) {
     const patch: Record<string, unknown> = {}
     if (title !== undefined) patch.title = title
     if (content !== undefined) patch.content = content
-    if (type !== undefined) patch.type = type
+    if (type !== undefined) patch.type = type.trim()
     if (status !== undefined && VALID_STATUSES.includes(status)) patch.status = status
     if (scheduledTime !== undefined) patch.scheduledTime = scheduledTime
     if (publishedAt !== undefined) patch.publishedAt = publishedAt
@@ -186,9 +186,8 @@ export async function DELETE(request: NextRequest) {
     if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
     // Deleting a post mid-publish would orphan an in-flight LinkedIn share
-    // (content goes live with no record on our side). The reconciler moves
-    // stuck posts out of "publishing" within ~10 minutes, so ask the user to
-    // retry after that instead.
+    // (content goes live with no record on our side). The reconciler finalizes
+    // verified successes; unknown outcomes require review before deletion.
     if (existing.status === "publishing") {
       return NextResponse.json({ error: "post_is_publishing" }, { status: 409 })
     }

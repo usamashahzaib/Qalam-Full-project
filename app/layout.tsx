@@ -16,7 +16,7 @@ import { auth } from "@/auth"
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
-  display: "swap",
+  display: "optional",
 })
 
 const cormorant = Cormorant_Garamond({

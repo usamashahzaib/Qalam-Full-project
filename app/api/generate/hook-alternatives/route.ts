@@ -7,11 +7,14 @@ import { withAuth } from "@/lib/server/auth"
 import { requirePlan } from "@/lib/server/require-plan"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { buildHookAlternativesPrompt } from "@/lib/prompts/role-aware-system"
+import { authorizeRole } from "@/lib/server/roles"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
     const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
+    const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
+    if (roleError) return roleError
 
     let body: Record<string, unknown>
     try { body = await req.json() } catch {

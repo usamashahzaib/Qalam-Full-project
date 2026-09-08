@@ -99,14 +99,14 @@ export default function ChatWorkspace() {
       setMessages([])
       return
     }
-    fetch(`/api/chat/messages?conversationId=${activeConvId}`)
+    fetch(`/api/chat/messages?conversationId=${activeConvId}&workspaceKey=${encodeURIComponent(workspaceId)}`)
       .then(res => res.json())
       .then(data => {
         if (data.messages) {
           setMessages(data.messages)
         }
       })
-  }, [activeConvId])
+  }, [activeConvId, workspaceId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -145,7 +145,7 @@ export default function ChatWorkspace() {
     const res = await fetch("/api/chat/conversations", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ conversationId: renamingId, title }),
+      body: JSON.stringify({ conversationId: renamingId, title, workspaceKey: workspaceId || undefined }),
     })
     const data = await res.json()
     if (data.conversation) {
@@ -166,7 +166,7 @@ export default function ChatWorkspace() {
       setActiveConvId(nextConversations[0]?.id || null)
       setMessages([])
     }
-    const res = await fetch(`/api/chat/conversations?conversationId=${encodeURIComponent(conversationId)}`, { method: "DELETE" })
+    const res = await fetch(`/api/chat/conversations?conversationId=${encodeURIComponent(conversationId)}&workspaceKey=${encodeURIComponent(workspaceId)}`, { method: "DELETE" })
     if (!res.ok) {
       setConversations(previousConversations)
       setActiveConvId(previousActiveId)

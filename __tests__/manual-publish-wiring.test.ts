@@ -1,10 +1,6 @@
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { NextRequest } from "next/server"
 
-const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8")
-const worker = read("lib/server/linkedin-publish.ts")
 
 // A retry after a network failure mid-publish must never double-post to
 // LinkedIn. The route tracks this with two flags: `claimed` (a DB claim was
@@ -38,16 +34,16 @@ vi.mock("@/lib/repositories/supabase/SupabasePostRepository", () => ({
 const { acquireLinkedInPublishLock } = vi.hoisted(() => ({ acquireLinkedInPublishLock: vi.fn() }))
 vi.mock("@/lib/server/linkedin-publish-lock", () => ({ acquireLinkedInPublishLock }))
 
-const { shareToLinkedIn } = vi.hoisted(() => ({ shareToLinkedIn: vi.fn() }))
-vi.mock("@/lib/server/linkedin", () => ({
-  shareToLinkedIn,
+const { shareToLinkedIn, LinkedInApiError } = vi.hoisted(() => ({
+  shareToLinkedIn: vi.fn(),
   LinkedInApiError: class LinkedInApiError extends Error {
     status: number
-    constructor(message: string, status = 502) {
-      super(message)
-      this.status = status
-    }
+    constructor(message: string, status = 502) { super(message); this.status = status }
   },
+}))
+vi.mock("@/lib/server/linkedin", () => ({
+  shareToLinkedIn,
+  LinkedInApiError,
   LINKEDIN_MAX_POST_CHARS: 3000,
 }))
 
@@ -119,16 +115,25 @@ describe("manual LinkedIn publish wiring", () => {
     expect(rpc).not.toHaveBeenCalledWith("release_manual_linkedin_publish", expect.anything())
   })
 
-  it("releases the claim when the LinkedIn API call throws before confirming", async () => {
-    shareToLinkedIn.mockRejectedValue(new Error("linkedin_down"))
+  it("releases the claim after an explicit LinkedIn rejection", async () => {
+    shareToLinkedIn.mockRejectedValue(new LinkedInApiError("linkedin_rejected", 429))
 
     const res = await postShare()
 
-    expect(res.status).toBe(502)
+    expect(res.status).toBe(429)
     expect(rpc).toHaveBeenCalledWith("release_manual_linkedin_publish", {
       p_post_id: "post-1",
       p_workspace_id: "ws-1",
     })
+  })
+
+  it("keeps the claim and requests review after a network-level unknown outcome", async () => {
+    shareToLinkedIn.mockRejectedValue(new Error("socket_closed"))
+    const res = await postShare()
+    expect(res.status).toBe(503)
+    expect(await res.json()).toMatchObject({ error: "linkedin_publish_outcome_unknown", reviewRequired: true })
+    expect(rpc).not.toHaveBeenCalledWith("release_manual_linkedin_publish", expect.anything())
+    expect(supabaseInsert).not.toHaveBeenCalledWith("publish_logs", expect.objectContaining({ status: "failed" }), expect.anything())
   })
 
   it("does NOT release the claim once LinkedIn confirms the share, even if finalize keeps failing", async () => {
@@ -148,8 +153,6 @@ describe("manual LinkedIn publish wiring", () => {
     expect(postUpdate).toHaveBeenCalledWith("post-1", "ws-1", expect.objectContaining({ status: "published" }))
   })
 
-  it("restores the original status during reconciliation", () => {
-    expect(worker).toContain("manual_publish_previous_status")
-    expect(worker).toContain("restoredStatus")
-  })
+  // Reconciliation of unknown outcomes is exercised behaviorally in
+  // scheduled-publish-audit.test.ts; absent success logs must not trigger retries.
 })

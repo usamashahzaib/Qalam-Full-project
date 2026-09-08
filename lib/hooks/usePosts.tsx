@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { cleanErrorMessage } from "@/lib/content-guard"
 import type { WorkspacePost } from "@/types/domain"
-import { localCalendarDate } from "@/lib/calendar-date"
+import { withLocalCalendarDate } from "@/lib/calendar-date"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -67,10 +67,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       const res = await fetch(`/api/posts?workspaceKey=${encodeURIComponent(workspaceId)}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to load posts")
-      setPosts(Array.isArray(data.posts) ? data.posts.map((post: WorkspacePost) => ({
-        ...post,
-        date: post.scheduledTime ? localCalendarDate(post.scheduledTime) || post.date : post.date,
-      })) : [])
+      setPosts(Array.isArray(data.posts) ? data.posts.map((post: WorkspacePost) => withLocalCalendarDate(post)) : [])
     } catch (error) {
       setPostsError((error as Error).message)
     } finally {
@@ -93,7 +90,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update draft")
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
+      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? withLocalCalendarDate(data.post) : post)))
       await trackEvent("draft_saved", { postId: id, source: "writer" })
       return id
     }
@@ -104,7 +101,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Failed to create draft")
-    if (data.post) setPosts((prev) => [data.post, ...prev])
+    if (data.post) setPosts((prev) => [withLocalCalendarDate(data.post), ...prev])
     await trackEvent("draft_saved", { postId: data.post?.id ?? null, source: "writer" })
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
@@ -120,7 +117,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       })
       const data = await res.json()
       if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
+      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? withLocalCalendarDate(data.post) : post)))
       await trackEvent("post_scheduled", { postId: id, scheduledTime })
       return id
     }
@@ -131,7 +128,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     })
     const data = await res.json()
     if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to schedule post"))
-    if (data.post) setPosts((prev) => [data.post, ...prev])
+    if (data.post) setPosts((prev) => [withLocalCalendarDate(data.post), ...prev])
     await trackEvent("post_scheduled", { postId: data.post?.id ?? null, scheduledTime })
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
@@ -146,7 +143,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to update post")
-      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
+      if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? withLocalCalendarDate(data.post) : post)))
       await trackEvent("post_published", { postId: id, publishedAt, externalPostUrn: externalPostUrn ?? null })
       return id
     }
@@ -157,7 +154,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     })
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || "Failed to create published post")
-    if (data.post) setPosts((prev) => [data.post, ...prev])
+    if (data.post) setPosts((prev) => [withLocalCalendarDate(data.post), ...prev])
     await trackEvent("post_published", { postId: data.post?.id ?? null, publishedAt, externalPostUrn: externalPostUrn ?? null })
     return data.post?.id ?? ""
   }, [trackEvent, workspaceId])
@@ -174,7 +171,7 @@ export function PostsProvider({ children, workspaceId }: { children: React.React
     })
     const data = await res.json()
     if (!res.ok) throw new Error(friendlyPostError(data.error || "Failed to retry post"))
-    if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? data.post : post)))
+    if (data.post) setPosts((prev) => prev.map((post) => (post.id === id ? withLocalCalendarDate(data.post) : post)))
     await trackEvent("post_retry", { postId: id })
   }, [trackEvent, workspaceId])
 

@@ -275,8 +275,8 @@ export const RATE_LIMITED_API_PREFIXES = [
 // lemon.js (LemonSqueezy checkout overlay) is only ever injected from
 // auth-gated app pages, so it's host-allowed on that branch only.
 
-export async function buildCsp(opts: { nonce?: string; isDev: boolean }): Promise<string> {
-  const { nonce, isDev } = opts
+export async function buildCsp(opts: { nonce?: string; isDev: boolean; upgradeInsecureRequests?: boolean }): Promise<string> {
+  const { nonce, isDev, upgradeInsecureRequests = !isDev } = opts
   const gaHash = await gaScriptHash()
   const gaSource = gaHash ? ` 'sha256-${gaHash}'` : ""
 
@@ -311,7 +311,7 @@ export async function buildCsp(opts: { nonce?: string; isDev: boolean }): Promis
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
-    isDev ? "" : "upgrade-insecure-requests",
+    upgradeInsecureRequests ? "upgrade-insecure-requests" : "",
   ].filter(Boolean).join("; ")
 }
 
@@ -328,9 +328,17 @@ async function addSecurityHeaders(response: NextResponse, csp?: { nonce?: string
   response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
   if (csp) {
+    const publicOrigin = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
     response.headers.set(
       "Content-Security-Policy",
-      await buildCsp({ nonce: csp.nonce, isDev: process.env.NODE_ENV === "development" })
+      await buildCsp({
+        nonce: csp.nonce,
+        isDev: process.env.NODE_ENV === "development",
+        // Safari applies this directive to same-origin CSS and JS on localhost,
+        // which makes a production-mode HTTP preview unusable. The deployed
+        // HTTPS origin keeps the directive; an explicitly HTTP origin does not.
+        upgradeInsecureRequests: publicOrigin.startsWith("https://"),
+      })
     )
   }
   return response

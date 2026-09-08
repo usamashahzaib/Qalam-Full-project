@@ -92,50 +92,15 @@ export class SupabasePostRepository implements IPostRepository {
 
   async update(id: string, workspaceId: string, patch: PostPatch, authorId?: string): Promise<ClientPost | null> {
     const supabase = createServiceClient()
-
-    // When content changes, snapshot the old version via RPC before overwriting
-    if (patch.content !== undefined) {
-      const { error: rpcErr } = await supabase.rpc("update_post_with_version", {
-        p_post_id: id,
-        p_workspace_id: workspaceId,
-        p_new_content: patch.content,
-        p_created_by: authorId ?? null,
-      })
-      // If versioning RPC fails, fall through to plain update so writes never block
-      if (rpcErr) {
-        console.warn("[SupabasePostRepository] versioning RPC failed, falling back to plain update:", rpcErr.message)
-      } else {
-        // Content was handled by the RPC; remove from dbPatch to avoid double-update
-        const rest = { ...patch }
-        delete rest.content
-        patch = rest
-      }
-    }
-
-    const dbPatch: Record<string, unknown> = { updated_at: new Date().toISOString() }
-    if (patch.title !== undefined) dbPatch.title = patch.title
-    if (patch.content !== undefined) dbPatch.content = patch.content
-    if (patch.status !== undefined) dbPatch.status = patch.status
-    if (patch.scheduledTime !== undefined) dbPatch.scheduled_for = patch.scheduledTime
-    if (patch.publishedAt !== undefined) dbPatch.published_at = patch.publishedAt
-    if (patch.externalPostUrn !== undefined) dbPatch.linkedin_post_id = patch.externalPostUrn
-    if (patch.engagementScore !== undefined) dbPatch.engagement_score = patch.engagementScore
-
-    // If only updated_at remains (all changes handled by RPC) skip the extra UPDATE
-    if (Object.keys(dbPatch).length > 1) {
-      const { data, error } = await supabase
-        .from("posts")
-        .update(dbPatch)
-        .eq("id", id)
-        .eq("workspace_id", workspaceId)
-        .select(POST_COLUMNS)
-      if (error) throw new Error(error.message)
-      const row = data?.[0] as DbPost | undefined
-      return row ? toClientPost(row) : null
-    }
-
-    // Fetch and return the updated post
-    return this.get(id, workspaceId).then(r => r ? toClientPost(r) : null)
+    const { data, error } = await supabase.rpc("update_post_atomically", {
+      p_post_id: id,
+      p_workspace_id: workspaceId,
+      p_patch: patch,
+      p_created_by: authorId ?? null,
+    })
+    if (error) throw new Error(error.message)
+    const row = (Array.isArray(data) ? data[0] : data) as DbPost | undefined
+    return row ? toClientPost(row) : null
   }
 
   async delete(id: string, workspaceId: string): Promise<void> {

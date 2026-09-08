@@ -18,4 +18,4 @@ const robotText = results.find((row) => row.url.endsWith("robots.txt"))?.body ||
 const prefixes = [...new Set([...robotText.matchAll(/^Disallow: (.+)$/gm)].map((match) => match[1].trim()))]
 const blockedPublicUrls = [...new Set(locations)].filter((url) => prefixes.some((prefix) => new URL(url).pathname.startsWith(prefix)))
 await writeFile(`${output}/live-discovery.json`, JSON.stringify({ checkedAt: new Date().toISOString(), results, sitemapEntries: locations.length, duplicates, blockedPublicUrls }, null, 2))
-console.log(JSON.stringify({ results: results.map(({ body, ...row }) => row), sitemapEntries: locations.length, duplicates, blockedPublicUrls }, null, 2))
+console.log(JSON.stringify({ results: results.map(({ url, status, finalUrl, error }) => ({ url, status, finalUrl, error })), sitemapEntries: locations.length, duplicates, blockedPublicUrls }, null, 2))

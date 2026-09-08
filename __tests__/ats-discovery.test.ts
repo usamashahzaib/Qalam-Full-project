@@ -17,5 +17,6 @@ describe("ATS search and answer discovery", () => {
     expect(paths).toContain("/methodology/ats-resume-readiness")
     expect(readFileSync(resolve(process.cwd(), "app/robots.ts"), "utf8")).toContain('userAgent: "OAI-SearchBot"')
     expect(readFileSync(resolve(process.cwd(), "app/llms.txt/route.ts"), "utf8")).toContain("Evidence-First Resume Readiness Framework")
+    expect(readFileSync(resolve(process.cwd(), "app/llms.txt/route.ts"), "utf8")).toContain("[Canonical site]")
   })
 })

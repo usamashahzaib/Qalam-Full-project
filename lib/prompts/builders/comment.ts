@@ -28,7 +28,7 @@ export const MAX_COMMENT_CHARS = 400;
 // engaging comment came out as the same two-clause sentence.
 const STYLE_INTENT: Record<CommentStyle, string> = {
   insightful:
-    "Contribute one thing the author did not say: a consequence they did not mention, a case where it works differently, a relevant detail from your own area. One idea, said plainly. It does not have to sound profound, and a small concrete point beats a grand one.",
+    "Contribute one grounded thought that follows from the post: a logical implication, a plainly marked opinion, or a question about a real gap. Do not invent an incident, measurement, timeline, implementation detail, cause, result, client, employer, or personal experience to make the comment sound concrete. If a point depends on information the post does not give, present it as a possibility or ask about it. One idea, said plainly. It does not have to sound profound, and an honest small point beats a manufactured insight.",
   supportive:
     "Respond warmly to something specific in the post. Say what actually landed and why. Simple and short is correct here. Do not inflate it into a lesson or add advice they did not ask for.",
   engaging:

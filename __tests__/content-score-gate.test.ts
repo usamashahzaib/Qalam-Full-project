@@ -20,16 +20,16 @@ const highScores = {
 }
 
 describe("contentScoreCap", () => {
-  it("keeps unfinished drafts from reaching 90", () => {
-    const gated = gateScores("Just a hook.", highScores)
-    expect(gated.overall).toBe(35)
-    expect(gated.hook).toBe(35)
-    expect(gated.tips.overall).toMatch(/actual post/i)
+  it("does not give an empty draft a publish-ready score", () => {
+    const gated = gateScores("  ", highScores)
+    expect(gated.overall).toBe(0)
+    expect(gated.hook).toBe(0)
+    expect(gated.tips.overall).toMatch(/write a post/i)
   })
 
-  it("caps thin drafts below copy-ready range", () => {
-    const content = Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ")
-    expect(gateScores(content, highScores).overall).toBe(68)
+  it("does not force a short evaluated post to add filler to reach 80 words", () => {
+    const content = "The launch moved to Friday. Existing appointments stay unchanged. If you booked a demo, your invitation still has the right time."
+    expect(gateScores(content, highScores).overall).toBe(96)
   })
 
   it("allows complete, structured drafts to keep earned scores", () => {
@@ -59,9 +59,8 @@ describe("freeTierAttemptCap", () => {
     expect(gateScores(completeContent, highScores, freeTierAttemptCap(3)).overall).toBe(96)
   })
 
-  it("still respects the quality cap even when the attempt cap is higher", () => {
-    const thin = Array.from({ length: 60 }, (_, i) => `word${i}`).join(" ")
-    expect(gateScores(thin, highScores, freeTierAttemptCap(3)).overall).toBe(68)
+  it("still prevents oversized posts from meeting the ready threshold", () => {
+    expect(gateScores("word ".repeat(650), highScores, freeTierAttemptCap(3)).overall).toBe(81)
   })
 
   it("does not promote an unready evaluation to the publishing threshold", () => {
