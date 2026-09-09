@@ -37,3 +37,12 @@ export const RESUME_TEMPLATES: ResumeTemplate[] = [
 
 export const isResumeTemplateKey = (value: string): value is ResumeTemplateKey =>
   RESUME_TEMPLATES.some((template) => template.key === value)
+
+/** Shared design choices for the preview and both downloadable formats. */
+export function resumeTemplateStyle(key: string): { font: "serif" | "sans"; header: "centered" | "band" | "plain" | "rule" } {
+  if (["executive", "finance", "academic"].includes(key)) return { font: "serif", header: "centered" }
+  if (["modern", "product", "creative", "graduate"].includes(key)) return { font: "sans", header: "band" }
+  if (["minimal", "compact"].includes(key)) return { font: "sans", header: "plain" }
+  if (key === "consulting") return { font: "serif", header: "rule" }
+  return { font: "sans", header: "rule" }
+}

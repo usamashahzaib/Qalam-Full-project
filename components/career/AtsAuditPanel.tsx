@@ -30,7 +30,7 @@ const stateLabel: Record<AtsCheck["state"], string> = {
 
 const barTone = (score: number) => (score >= 80 ? "bg-teal" : score >= 60 ? "bg-gold" : "bg-red-500")
 
-function FactorRow({ factor }: { factor: AtsFactorResult }) {
+function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; baseline?: AtsFactorResult; onFix?: (checkId: string) => void }) {
   const [open, setOpen] = useState(false)
   return (
     <div className="border-t border-zinc-100 first:border-t-0">
@@ -44,10 +44,11 @@ function FactorRow({ factor }: { factor: AtsFactorResult }) {
           <span className="block text-sm font-semibold text-zinc-900">{factor.name}</span>
           <span className="block text-xs text-zinc-500">
             {factor.earned} of {factor.weight} points
+            {baseline && factor.score !== baseline.score && <span className="ml-2 font-semibold">({factor.score > baseline.score ? "+" : ""}{factor.score - baseline.score} since save)</span>}
           </span>
         </span>
         <span className="h-1.5 w-20 shrink-0 overflow-hidden rounded-full bg-zinc-100">
-          <span className={`block h-full rounded-full ${barTone(factor.score)}`} style={{ width: `${factor.score}%` }} />
+          <span className={`block h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none ${barTone(factor.score)}`} style={{ width: `${factor.score}%` }} />
         </span>
         <span className="w-10 shrink-0 text-right text-sm font-bold tabular-nums text-zinc-900">{factor.score}</span>
         <span aria-hidden className="w-3 shrink-0 text-xs text-zinc-400">{open ? "-" : "+"}</span>
@@ -69,6 +70,7 @@ function FactorRow({ factor }: { factor: AtsFactorResult }) {
                   )}
                 </div>
                 <p className="mt-1.5 text-xs text-zinc-600">{check.detail}</p>
+                {onFix && check.fix && <button type="button" onClick={() => onFix(check.id)} className="mt-2 text-sm font-bold text-teal underline">Improve this section</button>}
                 {check.fix && <p className="mt-1.5 text-xs leading-relaxed text-zinc-700">{check.fix}</p>}
               </li>
             ))}
@@ -79,7 +81,7 @@ function FactorRow({ factor }: { factor: AtsFactorResult }) {
   )
 }
 
-export function AtsAuditPanel({ audit }: { audit: AtsAudit }) {
+export function AtsAuditPanel({ audit, baseline, onFix }: { audit: AtsAudit; baseline?: AtsAudit; onFix?: (checkId: string) => void }) {
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-zinc-200 bg-white p-4">
@@ -110,10 +112,11 @@ export function AtsAuditPanel({ audit }: { audit: AtsAudit }) {
               <li key={item.checkId} className="rounded-lg border border-zinc-200 bg-white p-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="text-xs font-bold uppercase tracking-wide text-teal">{item.factor}</span>
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-gold-700">+{item.pointsAvailable}</span>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-gold-700">Up to +{item.pointsAvailable}</span>
                 </div>
                 <p className="mt-1 text-xs text-zinc-500">{item.detail}</p>
                 <p className="mt-1 text-sm leading-relaxed text-zinc-800">{item.action}</p>
+                {onFix && <button type="button" onClick={() => onFix(item.checkId)} className="mt-3 rounded-lg bg-teal/10 px-3 py-2 text-sm font-bold text-teal">Review and apply fix</button>}
               </li>
             ))}
           </ol>
@@ -124,7 +127,7 @@ export function AtsAuditPanel({ audit }: { audit: AtsAudit }) {
         <h3 className="mb-1 text-sm font-bold text-zinc-900">Score breakdown</h3>
         <div className="rounded-xl border border-zinc-200 bg-white px-4">
           {audit.factors.map((factor) => (
-            <FactorRow key={factor.key} factor={factor} />
+            <FactorRow key={factor.key} factor={factor} baseline={baseline?.factors.find((item) => item.key === factor.key)} onFix={onFix} />
           ))}
         </div>
       </section>

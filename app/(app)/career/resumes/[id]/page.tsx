@@ -1,15 +1,16 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import type { ResumeData } from "@/lib/career-resume"
 import { emptyResumeData } from "@/lib/career-resume"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ResumePreview } from "@/components/career/ResumePreview"
 import { AtsAuditPanel } from "@/components/career/AtsAuditPanel"
-import type { AtsAudit } from "@/lib/ats-engine"
+import { scoreResume } from "@/lib/ats-engine"
+import { normalizeResumeData } from "@/lib/ats-normalize"
+import { ResumeFixDialog } from "@/components/career/ResumeFixDialog"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
-import { toHundredPointScore } from "@/lib/free-tool-scores"
 import { downloadBlob, sanitizeFilename } from "@/lib/download"
 
 type ResumeDocument = {
@@ -39,12 +40,30 @@ export default function ResumeEditorPage() {
   const [saving, setSaving] = useState(false)
   const [downloading, setDownloading] = useState<"pdf" | "docx" | null>(null)
 
+  const [activeFix, setActiveFix] = useState<string | null>(null)
+  const [undoData, setUndoData] = useState<ResumeData | null>(null)
+  const [savedSnapshot, setSavedSnapshot] = useState("")
+  const audit = useMemo(() => document ? scoreResume({ resume: normalizeResumeData(document.resumeData || emptyResumeData), targetRole: document.targetRole, jobDescription: document.jobDescription }) : null, [document])
+  const savedAudit = useMemo(() => {
+    if (!savedSnapshot) return null
+    const saved = JSON.parse(savedSnapshot) as ResumeDocument
+    return scoreResume({ resume: normalizeResumeData(saved.resumeData || emptyResumeData), targetRole: saved.targetRole, jobDescription: saved.jobDescription })
+  }, [savedSnapshot])
+  const dirty = document !== null && JSON.stringify(document) !== savedSnapshot
+
   useEffect(() => {
     fetch(`/api/career/resumes/${params.id}${suffix}`)
       .then((response) => response.ok ? response.json() : Promise.reject())
-      .then((data) => setDocument(data.resume))
+      .then((data) => { setDocument(data.resume); setSavedSnapshot(JSON.stringify(data.resume)) })
       .catch(() => setMessage("Resume could not be loaded."))
   }, [params.id, suffix])
+
+  useEffect(() => {
+    if (!dirty) return
+    const warnOnLeave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = "" }
+    window.addEventListener("beforeunload", warnOnLeave)
+    return () => window.removeEventListener("beforeunload", warnOnLeave)
+  }, [dirty])
 
   const setData = (patch: Partial<ResumeData>) => {
     if (!document) return
@@ -52,20 +71,26 @@ export default function ResumeEditorPage() {
   }
 
   const save = async () => {
-    if (!document) return
+    if (!document) return false
     setSaving(true)
     setMessage("")
-    const response = await fetch(`/api/career/resumes/${params.id}${suffix}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...document, workspaceKey }),
-    })
-    const data = await response.json().catch(() => ({}))
-    if (response.ok) {
-      setDocument(data.resume)
-      setMessage("Resume saved. A version snapshot was created.")
-    } else setMessage(data.error || "Resume could not be saved.")
-    setSaving(false)
+    try {
+      const response = await fetch(`/api/career/resumes/${params.id}${suffix}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...document, workspaceKey }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok) {
+        setDocument(data.resume)
+        setSavedSnapshot(JSON.stringify(data.resume))
+        setMessage("Resume saved. A version snapshot was created.")
+      } else setMessage(data.error || "Resume could not be saved.")
+      return response.ok
+    } catch {
+      setMessage("Resume could not be saved. Your edits are still here. Please retry.")
+      return false
+    } finally { setSaving(false) }
   }
 
   // Both formats come from routes that differ only in the path segment and the
@@ -76,6 +101,7 @@ export default function ResumeEditorPage() {
     setDownloading(format)
     setMessage("")
     try {
+      if (dirty && !(await save())) return
       const response = await fetch(`/api/career/resumes/${params.id}/${format}${suffix}`)
       if (!response.ok) {
         const body = await response.json().catch(() => ({}))
@@ -102,12 +128,17 @@ export default function ResumeEditorPage() {
 
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading resume..."}</main>
   const data = document.resumeData || emptyResumeData
-  // Written by the server on generation and on every save. Older resumes
-  // created before the audit existed simply have no panel until the next save.
-  const audit = (document.analysis?.audit as AtsAudit | undefined) || null
+  const selectedCheck = audit?.factors.flatMap((factor) => factor.checks).find((check) => check.id === activeFix)
+
 
   return (
     <main className="min-h-full bg-zinc-100 px-4 py-5 lg:px-6">
+      {selectedCheck && <ResumeFixDialog key={selectedCheck.id} data={data} check={selectedCheck} targetRole={document.targetRole} jobDescription={document.jobDescription} onClose={() => setActiveFix(null)} onApply={(next) => {
+        setUndoData(structuredClone(data))
+        setData(next)
+        setActiveFix(null)
+        setMessage("Suggestion applied. Your CV and score have updated. Save a version to keep it.")
+      }} />}
       <style jsx global>{`
         @media print {
           body * { visibility: hidden !important; }
@@ -118,16 +149,18 @@ export default function ResumeEditorPage() {
       `}</style>
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
-          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
-          <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={() => download("docx")} disabled={downloading !== null} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "docx" ? "Preparing Word..." : "Download Word"}</button><button onClick={() => download("pdf")} disabled={downloading !== null} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "pdf" ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" disabled={saving || downloading !== null} value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
+          <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={() => download("docx")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "docx" ? "Preparing Word..." : "Download Word"}</button><button onClick={() => download("pdf")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "pdf" ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving || downloading !== null} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
+        <p className="mb-3 text-sm text-zinc-600 print:hidden" role="status">{dirty ? "Unsaved changes. Downloads save your latest edits first." : "All changes saved."}</p>
+        {undoData && <button className="mb-3 text-sm font-bold text-teal print:hidden" disabled={saving || downloading !== null} onClick={() => { setData(undoData); setUndoData(null); setMessage("Suggestion undone.") }}>Undo last suggestion</button>}
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 
         <div className="grid items-start gap-5 xl:grid-cols-[440px_1fr]">
-          <aside className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 print:hidden">
+          <fieldset disabled={saving || downloading !== null} className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 print:hidden">
             <div className="grid grid-cols-2 gap-3">
               <label><span className={label}>Template</span><select className={input} value={document.templateKey} onChange={(event) => setDocument({ ...document, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name}</option>)}</select></label>
-              <label><span className={label}>ATS score</span><div className="rounded-lg bg-teal/8 px-3 py-2.5 text-sm font-bold text-teal">{document.atsScore != null ? toHundredPointScore(document.atsScore) : "Not scored"}{document.atsScore != null ? "/100" : ""}</div></label>
+              <label><span className={label}>Live readiness</span><div className="rounded-lg bg-teal/8 px-3 py-2.5 text-sm font-bold text-teal">{audit?.overall ?? "Not scored"}{audit ? "/100" : ""}</div>{audit && savedAudit && audit.overall !== savedAudit.overall && <span className="mt-1 block text-xs text-teal">{audit.overall > savedAudit.overall ? "+" : ""}{audit.overall - savedAudit.overall} since last save</span>}<a href="#resume-audit" className="mt-1 block text-xs font-semibold text-teal underline">See fixes and breakdown</a></label>
             </div>
 
             <label className="block"><span className={label}>Target role</span><input className={input} value={document.targetRole} onChange={(event) => setDocument({ ...document, targetRole: event.target.value })} /></label>
@@ -144,7 +177,7 @@ export default function ResumeEditorPage() {
 
             <Section title="Summary and skills">
               <textarea className={`${input} min-h-28 resize-y`} value={data.summary} onChange={(event) => setData({ summary: event.target.value })} />
-              <label className="mt-3 block"><span className={label}>Skills, comma separated</span><textarea className={`${input} min-h-20 resize-y`} value={data.skills.join(", ")} onChange={(event) => setData({ skills: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+              <label className="mt-3 block"><span className={label}>Skills, comma separated</span><textarea className={`${input} min-h-20 resize-y`} value={data.skills.join(", ")} onChange={(event) => setData({ skills: event.target.value.split(",") })} /></label>
             </Section>
 
             <Section title="Experience">
@@ -157,7 +190,7 @@ export default function ResumeEditorPage() {
                       <input className={input} placeholder="Start date" value={entry.startDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, startDate: event.target.value } : item) })} />
                       <input className={input} placeholder="End date" value={entry.endDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, endDate: event.target.value } : item) })} />
                     </div>
-                    <textarea className={`${input} mt-2 min-h-28 resize-y`} value={entry.bullets.join("\n")} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, bullets: event.target.value.split("\n").map((bullet) => bullet.trim()).filter(Boolean) } : item) })} />
+                    <textarea className={`${input} mt-2 min-h-28 resize-y`} value={entry.bullets.join("\n")} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, bullets: event.target.value.split("\n") } : item) })} />
                     <button onClick={() => setData({ experience: data.experience.filter((_, itemIndex) => itemIndex !== index) })} className="mt-2 text-xs font-semibold text-red-600">Remove role</button>
                   </div>
                 ))}
@@ -167,17 +200,17 @@ export default function ResumeEditorPage() {
 
             <Section title="Education and certifications">
               <textarea className={`${input} min-h-24 resize-y`} value={data.education.map((item) => [item.title, item.organization, item.startDate, item.endDate].join(" | ")).join("\n")} onChange={(event) => setData({ education: event.target.value.split("\n").filter(Boolean).map((line) => { const [title, organization, startDate, endDate] = line.split("|").map((item) => item.trim()); return { title: title || "", organization: organization || "", location: "", startDate: startDate || "", endDate: endDate || "", bullets: [] } }) })} />
-              <label className="mt-3 block"><span className={label}>Certifications, one per line</span><textarea className={`${input} min-h-20 resize-y`} value={data.certifications.join("\n")} onChange={(event) => setData({ certifications: event.target.value.split("\n").map((item) => item.trim()).filter(Boolean) })} /></label>
+              <label className="mt-3 block"><span className={label}>Certifications, one per line</span><textarea className={`${input} min-h-20 resize-y`} value={data.certifications.join("\n")} onChange={(event) => setData({ certifications: event.target.value.split("\n") })} /></label>
             </Section>
-          </aside>
+          </fieldset>
 
           <div className="space-y-5">
             <div id="resume-print" className="overflow-auto"><ResumePreview data={data} templateKey={document.templateKey} /></div>
             {audit && (
-              <section className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 print:hidden">
+              <section id="resume-audit" className="scroll-mt-5 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 print:hidden">
                 <h2 className="mb-1 text-sm font-bold text-zinc-900">ATS readiness audit</h2>
-                <p className="mb-4 text-xs text-zinc-500">Recalculated every time you save a version.</p>
-                <AtsAuditPanel audit={audit} />
+                <p className="mb-4 text-xs text-zinc-500">Updates as you edit. The same scoring rules are used when you save. Design changes alone do not earn points.</p>
+                <AtsAuditPanel audit={audit} baseline={savedAudit ?? undefined} onFix={setActiveFix} />
               </section>
             )}
           </div>

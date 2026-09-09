@@ -1,5 +1,6 @@
 "use client"
 
+import { emptyResumeContact, type ResumeContact } from "@/lib/resume-contact"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { APP_URL } from "@/lib/seo"
@@ -30,6 +31,7 @@ const uploadError = (code: string) => resumeUploadErrorMessage(code)
 
 export function AtsResumeCheckerTool() {
   const [resumeText, setResumeText] = useState("")
+  const [resumeContact, setResumeContact] = useState<ResumeContact>(emptyResumeContact)
   const [jobDescription, setJobDescription] = useState("")
   const [result, setResult] = useState<ResumeReviewResult | null>(null)
   const [loading, setLoading] = useState(false)
@@ -48,9 +50,14 @@ export function AtsResumeCheckerTool() {
     let handoffTimer: ReturnType<typeof setTimeout> | undefined
     try {
       const handoff = sessionStorage.getItem(RESUME_HANDOFF_KEY)
+      const contactHandoff = sessionStorage.getItem(`${RESUME_HANDOFF_KEY}:contact`)
       if (handoff) {
         handoffTimer = setTimeout(() => {
           setResumeText(handoff)
+          if (contactHandoff) {
+            try { setResumeContact(JSON.parse(contactHandoff)) } catch { setResumeContact(emptyResumeContact) }
+          }
+          sessionStorage.removeItem(`${RESUME_HANDOFF_KEY}:contact`)
           sessionStorage.removeItem(RESUME_HANDOFF_KEY)
         }, 0)
       }
@@ -76,6 +83,7 @@ export function AtsResumeCheckerTool() {
         throw new Error(uploadError(data.error || "This file could not be read. Upload a text-based PDF or DOCX."))
       }
       setResumeText(data.text)
+      setResumeContact(data.contact || emptyResumeContact)
       setSourceName(file.name)
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Resume upload failed.")
@@ -101,7 +109,7 @@ export function AtsResumeCheckerTool() {
       const response = await fetch("/api/free-tools/ats-resume-checker", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeText, jobDescription }),
+        body: JSON.stringify({ resumeText, jobDescription, contact: resumeContact }),
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error || "Resume check failed.")
@@ -172,7 +180,7 @@ export function AtsResumeCheckerTool() {
               <label className="block">
                 <span className="text-sm font-bold text-zinc-900">Your resume</span>
                 <span className="mt-1 block text-xs text-zinc-500">Required. Upload above, then correct extraction only if needed.</span>
-                <textarea value={resumeText} onChange={(event) => { setResumeText(event.target.value); setSourceName("") }} rows={16} maxLength={20000} placeholder="Upload a resume, LinkedIn PDF, or paste complete resume text..." className="mt-3 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm leading-6 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20" />
+                <textarea value={resumeText} onChange={(event) => { setResumeText(event.target.value); setResumeContact(emptyResumeContact); setSourceName("") }} rows={16} maxLength={20000} placeholder="Upload a resume, LinkedIn PDF, or paste complete resume text..." className="mt-3 w-full resize-y rounded-xl border border-zinc-300 px-4 py-3 text-sm leading-6 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/20" />
                 <span className="mt-2 block text-xs text-zinc-400">{wordCount(resumeText)} words</span>
               </label>
               <label className="block">

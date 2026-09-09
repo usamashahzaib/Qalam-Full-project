@@ -2,6 +2,8 @@ export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { resumeContactSchema } from "@/lib/career-resume"
+import { mergeResumeContact } from "@/lib/resume-contact"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { createScopedClient } from "@/lib/server/supabase-rest"
@@ -14,6 +16,7 @@ import { normalizeResumeData } from "@/lib/ats-normalize"
 import { parseConfidence, parseResumeText } from "@/lib/ats-text-parse"
 
 const schema = z.object({
+  contact: resumeContactSchema.optional(),
   workspaceKey: z.string().uuid().optional(),
   resumeText: z.string().trim().min(200).max(20000),
   jobDescription: z.string().trim().max(12000).default(""),
@@ -35,7 +38,7 @@ export async function POST(request: NextRequest) {
     const input = parsed.data
     // Same deterministic scoring path as the free checker, so the paid deep
     // review never disagrees with the public tool about the same resume.
-    const structured = normalizeResumeData(parseResumeText(input.resumeText))
+    const structured = normalizeResumeData(mergeResumeContact(parseResumeText(input.resumeText), input.contact))
     const confidence = parseConfidence(structured, input.resumeText)
     const audit = confidence >= 40 ? scoreResume({ resume: structured, jobDescription: input.jobDescription }) : null
 

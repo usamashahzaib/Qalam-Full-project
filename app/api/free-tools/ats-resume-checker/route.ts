@@ -2,6 +2,8 @@ export const maxDuration = 60
 
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
+import { resumeContactSchema } from "@/lib/career-resume"
+import { mergeResumeContact } from "@/lib/resume-contact"
 import { buildResumeReviewPrompt, normalizeResumeReview } from "@/lib/career-resume-review"
 import { scoreResume } from "@/lib/ats-engine"
 import { normalizeResumeData } from "@/lib/ats-normalize"
@@ -10,6 +12,7 @@ import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { checkFreeToolsGlobalBudget, checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 
 const schema = z.object({
+  contact: resumeContactSchema.optional(),
   resumeText: z.string().trim().min(200).max(20000),
   jobDescription: z.string().trim().max(12000).default(""),
 })
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
     // public number is reproducible and every point can be traced to a named
     // check. The model is still asked for the recruiter judgement, which is
     // the part a rule cannot supply.
-    const structured = normalizeResumeData(parseResumeText(parsed.data.resumeText))
+    const structured = normalizeResumeData(mergeResumeContact(parseResumeText(parsed.data.resumeText), parsed.data.contact))
     const confidence = parseConfidence(structured, parsed.data.resumeText)
     const audit = confidence >= 40
       ? scoreResume({ resume: structured, jobDescription: parsed.data.jobDescription })

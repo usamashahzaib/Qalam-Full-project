@@ -1,5 +1,6 @@
 "use client"
 
+import { emptyResumeContact, type ResumeContact } from "@/lib/resume-contact"
 import { useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { analyzeResume, MIN_RESUME_CHARS, RESUME_HANDOFF_KEY, type SignalState } from "@/lib/resume-signals"
@@ -29,6 +30,7 @@ const STATE_LABEL: Record<SignalState, string> = {
 export function HeroChecker() {
   const router = useRouter()
   const [resumeText, setResumeText] = useState("")
+  const [resumeContact, setResumeContact] = useState<ResumeContact>(emptyResumeContact)
   const [sourceName, setSourceName] = useState("")
   const [pasting, setPasting] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -54,6 +56,7 @@ export function HeroChecker() {
         throw new Error(UPLOAD_ERRORS[data.error] || "That file could not be read. Try a text based PDF or DOCX.")
       }
       setResumeText(data.text)
+      setResumeContact(data.contact || emptyResumeContact)
       setSourceName(file.name)
       setPasting(false)
     } catch (uploadFailure) {
@@ -66,6 +69,7 @@ export function HeroChecker() {
   const runFullReview = () => {
     try {
       sessionStorage.setItem(RESUME_HANDOFF_KEY, resumeText)
+      sessionStorage.setItem(`${RESUME_HANDOFF_KEY}:contact`, JSON.stringify(resumeContact))
     } catch {
       // Private browsing can block sessionStorage. The checker page still works,
       // the visitor just re-adds their resume there.
@@ -112,7 +116,7 @@ export function HeroChecker() {
                 rows={6}
                 autoFocus
                 value={resumeText}
-                onChange={(event) => setResumeText(event.target.value)}
+                onChange={(event) => { setResumeText(event.target.value); setResumeContact(emptyResumeContact) }}
                 placeholder="Paste at least a couple of paragraphs from your resume."
                 className="w-full resize-y rounded-xl border border-white/15 bg-[oklch(0.1_0.014_196)] p-3 text-sm leading-relaxed text-white/90 placeholder:text-white/30 focus:border-white/30 focus:outline-none"
               />

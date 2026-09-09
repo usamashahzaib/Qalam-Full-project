@@ -1,5 +1,6 @@
 "use client"
 
+import { emptyResumeContact, type ResumeContact } from "@/lib/resume-contact"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -115,6 +116,7 @@ export default function CareerPage() {
   const [audience, setAudience] = useState("Recruiters and hiring managers")
   const [audit, setAudit] = useState<AuditResult | null>(null)
   const [resumeText, setResumeText] = useState("")
+  const [resumeContact, setResumeContact] = useState<ResumeContact>(emptyResumeContact)
   const [jobDescription, setJobDescription] = useState("")
   const [resumeResult, setResumeResult] = useState<ResumeResult | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -183,8 +185,9 @@ export default function CareerPage() {
         return
       }
       setResumeText(data.text)
+      setResumeContact(data.contact || emptyResumeContact)
       setMessage("File extracted. Assessing ATS readiness...")
-      await runResumeReview(data.text)
+      await runResumeReview(data.text, data.contact || emptyResumeContact)
     } catch {
       setMessage("Resume upload failed.")
     } finally {
@@ -192,14 +195,14 @@ export default function CareerPage() {
     }
   }
 
-  const runResumeReview = async (text = resumeText) => {
+  const runResumeReview = async (text = resumeText, contact = resumeContact) => {
     setLoading("resume")
     setMessage("")
     setResumeResult(null)
     const response = await fetch(`/api/career/resume-review${apiSuffix}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ workspaceKey, resumeText: text, jobDescription }),
+      body: JSON.stringify({ workspaceKey, resumeText: text, jobDescription, contact }),
     })
     const data = await response.json().catch(() => ({}))
     if (response.ok) setResumeResult(data)
@@ -389,7 +392,7 @@ export default function CareerPage() {
               <label className="mt-5 flex flex-col items-start gap-2 rounded-xl border border-dashed border-teal/40 bg-teal/[0.03] px-4 py-4 text-sm sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="font-semibold text-zinc-900">Upload LinkedIn PDF, resume, or CV</p>
-                  <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted, contact details are stripped, then ATS assessment starts automatically.</p>
+                  <p className="text-xs text-zinc-500">PDF or DOCX up to 5 MB. Text is extracted and assessed automatically. Contact details are checked separately from AI writing feedback.</p>
                 </div>
                 <span className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-teal px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-600">
                   {uploading ? "Reading file..." : "Choose file"}
@@ -408,7 +411,7 @@ export default function CareerPage() {
               </label>
 
               <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                <label><span className={labelClass}>Resume text</span><textarea className={`${inputClass} min-h-80 resize-y`} value={resumeText} onChange={(event) => setResumeText(event.target.value)} placeholder="Paste your full resume text, or upload above" /></label>
+                <label><span className={labelClass}>Resume text</span><textarea className={`${inputClass} min-h-80 resize-y`} value={resumeText} onChange={(event) => { setResumeText(event.target.value); setResumeContact(emptyResumeContact) }} placeholder="Paste your full resume text, or upload above" /></label>
                 <label><span className={labelClass}>Job description, optional</span><textarea className={`${inputClass} min-h-80 resize-y`} value={jobDescription} onChange={(event) => setJobDescription(event.target.value)} placeholder="Paste the exact job description for a targeted review" /></label>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">

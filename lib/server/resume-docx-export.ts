@@ -2,7 +2,7 @@ import "server-only"
 
 import JSZip from "jszip"
 import type { ResumeData } from "@/lib/career-resume"
-import { RESUME_TEMPLATES } from "@/lib/resume-templates"
+import { RESUME_TEMPLATES, resumeTemplateStyle } from "@/lib/resume-templates"
 
 /**
  * Builds an editable .docx from resume data.
@@ -43,11 +43,11 @@ const DOCUMENT_RELS = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
  * what lets a parser recognise "Experience" as a section rather than a line
  * that happens to be bold.
  */
-const styles = (accent: string) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+const styles = (accent: string, font: string, compact: boolean, header: string) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
-<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
+<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}" w:cs="${font}"/><w:sz w:val="${compact ? 20 : 22}"/><w:szCs w:val="${compact ? 20 : 22}"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="60" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
-<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="40"/></w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="80"/>${header === "centered" ? '<w:jc w:val="center"/>' : ""}${header === "band" ? `<w:pBdr><w:top w:val="single" w:sz="36" w:space="12" w:color="${accent}"/></w:pBdr>` : ""}</w:pPr><w:rPr><w:b/><w:sz w:val="40"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="6" w:space="2" w:color="${accent}"/></w:pBdr><w:spacing w:before="220" w:after="80"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:caps/><w:color w:val="${accent}"/><w:sz w:val="20"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:before="120" w:after="0"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="21"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="20"/><w:ind w:left="360" w:hanging="180"/></w:pPr></w:style>
@@ -72,9 +72,9 @@ const run = (text: string, options: RunOptions = {}) => {
   return `<w:r>${properties ? `<w:rPr>${properties}</w:rPr>` : ""}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`
 }
 
-const paragraph = (text: string, options: RunOptions & { style?: string } = {}) => {
+const paragraph = (text: string, options: RunOptions & { style?: string; centered?: boolean } = {}) => {
   if (!text) return ""
-  const style = options.style ? `<w:pPr><w:pStyle w:val="${options.style}"/></w:pPr>` : ""
+  const style = `<w:pPr>${options.style ? `<w:pStyle w:val="${options.style}"/>` : ""}${options.centered ? '<w:jc w:val="center"/>' : ""}</w:pPr>`
   return `<w:p>${style}${run(text, options)}</w:p>`
 }
 
@@ -85,6 +85,8 @@ const joinParts = (parts: (string | undefined)[], separator = " | ") => parts.fi
 
 export async function buildResumeDocx(data: ResumeData, templateKey: string): Promise<Uint8Array> {
   const template = RESUME_TEMPLATES.find((item) => item.key === templateKey) || RESUME_TEMPLATES[0]
+  const design = resumeTemplateStyle(template.key)
+  const centered = design.header === "centered"
   const accent = template.accent.replace("#", "").toUpperCase()
 
   const entryBlock = (entries: ResumeData["experience"]) =>
@@ -103,8 +105,8 @@ export async function buildResumeDocx(data: ResumeData, templateKey: string): Pr
 
   const body = [
     paragraph(data.fullName || "Your Name", { style: "Title" }),
-    paragraph(data.headline, { bold: true, size: 22, color: accent }),
-    paragraph(joinParts([data.email, data.phone, data.location, data.linkedinUrl]), { size: 17, color: "555555" }),
+    paragraph(data.headline, { bold: true, size: 22, color: accent, centered }),
+    paragraph(joinParts([data.email, data.phone, data.location, data.linkedinUrl]), { size: 18, color: "555555", centered }),
     section("Professional Summary", paragraph(data.summary)),
     section("Core Skills", paragraph(data.skills.join(" | "))),
     section("Professional Experience", entryBlock(data.experience)),
@@ -127,7 +129,7 @@ export async function buildResumeDocx(data: ResumeData, templateKey: string): Pr
   zip.file("docProps/core.xml", core(`${data.fullName || "Candidate"} Resume`))
   zip.file("word/document.xml", document)
   zip.file("word/_rels/document.xml.rels", DOCUMENT_RELS)
-  zip.file("word/styles.xml", styles(accent))
+  zip.file("word/styles.xml", styles(accent, design.font === "serif" ? "Georgia" : "Arial", template.density === "compact", design.header))
   zip.file("word/numbering.xml", NUMBERING)
 
   return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" })

@@ -87,3 +87,12 @@ export function extractResumeContact(rawText: string): ResumeContact {
     linkedinUrl: linkedinUrl.slice(0, 300),
   }
 }
+
+/** Restore parser-owned fields for deterministic checks, outside AI prompts. */
+export function mergeResumeContact<T extends ResumeContact>(resume: T, contact?: Partial<ResumeContact>): T {
+  const merged = { ...resume }
+  for (const key of Object.keys(emptyResumeContact) as (keyof ResumeContact)[]) {
+    if (contact?.[key]?.trim()) merged[key] = contact[key]!.trim()
+  }
+  return merged
+}
