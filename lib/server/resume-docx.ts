@@ -3,6 +3,7 @@ import "server-only"
 import mammoth from "mammoth"
 import JSZip from "jszip"
 import { redactSensitiveResumeText } from "@/lib/professional-context"
+import { extractResumeContact, type ResumeContact } from "@/lib/resume-contact"
 
 export const MAX_RESUME_DOCX_BYTES = 5 * 1024 * 1024
 export const MAX_RESUME_DOCX_ENTRIES = 256
@@ -13,6 +14,8 @@ const DOCX_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 
 export type ResumeDocxText = {
   text: string
+  /** Lifted from the raw text before redaction. Never sent to a model. */
+  contact: ResumeContact
 }
 
 export async function extractResumeDocxText(file: File): Promise<ResumeDocxText> {
@@ -60,7 +63,8 @@ export async function extractResumeDocxText(file: File): Promise<ResumeDocxText>
     throw new Error("resume_docx_parse_failed")
   }
 
+  const contact = extractResumeContact(raw)
   const text = redactSensitiveResumeText(raw)
   if (text.length < 120) throw new Error("resume_docx_text_missing")
-  return { text }
+  return { text, contact }
 }

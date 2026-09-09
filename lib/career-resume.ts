@@ -10,6 +10,17 @@ export const resumeEntrySchema = z.object({
   bullets: z.array(z.string().trim().max(500)).max(12).default([]),
 })
 
+/** Contact block lifted from an uploaded resume on the server, sent back to
+ * the client and merged into a generated resume without passing through a
+ * model prompt. See lib/resume-contact.ts. */
+export const resumeContactSchema = z.object({
+  fullName: z.string().trim().max(160).default(""),
+  email: z.string().trim().max(200).default(""),
+  phone: z.string().trim().max(80).default(""),
+  location: z.string().trim().max(120).default(""),
+  linkedinUrl: z.string().trim().max(300).default(""),
+})
+
 export const resumeDataSchema = z.object({
   fullName: z.string().trim().max(160).default(""),
   email: z.string().trim().max(200).default(""),

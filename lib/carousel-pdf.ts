@@ -1,3 +1,5 @@
+import { downloadBytes, sanitizeFilename } from "@/lib/download"
+
 export type CarouselSlide = {
   number: number
   title: string
@@ -72,13 +74,5 @@ export async function downloadCarouselPdf(slides: CarouselSlide[]): Promise<void
   }
 
   const pdfBytes = await pdfDoc.save()
-  const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `${(slides[0]?.title ?? "carousel").replace(/[^\w\s-]/g, "").trim().slice(0, 60)}.pdf`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  setTimeout(() => URL.revokeObjectURL(url), 5000)
+  downloadBytes(pdfBytes, `${sanitizeFilename(slides[0]?.title ?? "", "carousel")}.pdf`, "application/pdf")
 }

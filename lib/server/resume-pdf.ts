@@ -2,6 +2,7 @@ import "server-only"
 
 import { extractText, getDocumentProxy } from "unpdf"
 import { redactSensitiveResumeText } from "@/lib/professional-context"
+import { extractResumeContact, type ResumeContact } from "@/lib/resume-contact"
 
 export const MAX_RESUME_PDF_BYTES = 5 * 1024 * 1024
 export const MAX_RESUME_PDF_PAGES = 15
@@ -12,6 +13,8 @@ const PDF_SIGNATURE = Buffer.from("%PDF-")
 export type ResumePdfText = {
   text: string
   totalPages: number
+  /** Lifted from the raw text before redaction. Never sent to a model. */
+  contact: ResumeContact
 }
 
 export async function extractResumePdfText(file: File): Promise<ResumePdfText> {
@@ -32,9 +35,10 @@ export async function extractResumePdfText(file: File): Promise<ResumePdfText> {
 
   try {
     const result = await extractText(pdf, { mergePages: true })
+    const contact = extractResumeContact(result.text)
     const text = redactSensitiveResumeText(result.text)
     if (text.length < 120) throw new Error("resume_pdf_text_missing")
-    return { text, totalPages: result.totalPages }
+    return { text, totalPages: result.totalPages, contact }
   } finally {
     await pdf.destroy()
   }

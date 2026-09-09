@@ -8,6 +8,7 @@ import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ResumePreview } from "@/components/career/ResumePreview"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 import { toHundredPointScore } from "@/lib/free-tool-scores"
+import { downloadBlob, sanitizeFilename } from "@/lib/download"
 
 type ResumeDocument = {
   id: string
@@ -76,14 +77,7 @@ export default function ResumeEditorPage() {
         throw new Error(body.error || "PDF could not be generated.")
       }
       const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const anchor = window.document.createElement("a")
-      anchor.href = url
-      anchor.download = `${document.title.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "") || "ats-resume"}.pdf`
-      window.document.body.appendChild(anchor)
-      anchor.click()
-      anchor.remove()
-      URL.revokeObjectURL(url)
+      downloadBlob(blob, `${sanitizeFilename(document.title, "ats-resume")}.pdf`)
       setMessage("ATS-safe PDF downloaded.")
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "PDF could not be downloaded.")

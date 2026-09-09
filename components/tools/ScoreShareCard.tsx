@@ -1,9 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { toPng } from "html-to-image"
 import { trackMarketingEvent } from "@/lib/marketing-events"
 import { isScorePubliclyShareable, resumeScoreBand, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
+import { downloadDataUrl } from "@/lib/download"
+import { nodeToPngDataUrl } from "@/lib/node-to-png"
 
 /**
  * Shareable readiness score card.
@@ -140,13 +141,8 @@ export function ScoreShareCard({ result }: { result: ResumeReviewResult }) {
     setBusy(true)
     setError("")
     try {
-      const dataUrl = await toPng(element, { cacheBust: true, pixelRatio: 1, skipAutoScale: true })
-      const link = document.createElement("a")
-      link.href = dataUrl
-      link.download = `qalam-readiness-score-${score}.png`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const dataUrl = await nodeToPngDataUrl(element, 1)
+      downloadDataUrl(dataUrl, `qalam-readiness-score-${score}.png`)
       trackMarketingEvent("score_card_download", { score_band: resumeScoreBand(score) })
     } catch {
       setError("The image could not be generated. Try copying the text instead.")

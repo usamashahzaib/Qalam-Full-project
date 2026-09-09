@@ -1,13 +1,10 @@
-import { toPng } from "html-to-image"
 import JSZip from "jszip"
 import { PDFDocument } from "pdf-lib"
+import { downloadBlob, downloadBytes, downloadDataUrl, sanitizeFilename } from "@/lib/download"
+import { nodeToPngDataUrl } from "@/lib/node-to-png"
 
 export async function captureSlide(element: HTMLElement): Promise<string> {
-  const dataUrl = await toPng(element, {
-    cacheBust: true,
-    pixelRatio: 1,
-    skipAutoScale: true,
-  })
+  const dataUrl = await nodeToPngDataUrl(element, 1)
   return dataUrl.split(",")[1] ?? dataUrl
 }
 
@@ -33,14 +30,17 @@ export async function generateCarouselZip(
   }
 
   const blob = await zip.generateAsync({ type: "blob" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `${filename}.zip`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  downloadBlob(blob, `${sanitizeFilename(filename, "qalam-carousel")}.zip`)
+}
+
+/** Captures a single slide as a PNG. The free carousel tool exports one slide,
+ * and handing the visitor a one-file ZIP to unpack was needless friction. */
+export async function downloadSlidePng(
+  element: HTMLElement,
+  filename = "qalam-carousel-slide"
+): Promise<void> {
+  const dataUrl = await nodeToPngDataUrl(element, 1)
+  downloadDataUrl(dataUrl, `${sanitizeFilename(filename, "qalam-carousel-slide")}.png`)
 }
 
 /**
@@ -58,11 +58,7 @@ export async function captureCarouselPdfBytes(
     const el = slideRefs[i].current
     if (!el) continue
 
-    const dataUrl = await toPng(el, {
-      cacheBust: true,
-      pixelRatio: 2,
-      skipAutoScale: true,
-    })
+    const dataUrl = await nodeToPngDataUrl(el, 2)
 
     const base64 = dataUrl.replace(/^data:image\/png;base64,/, "")
     const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0))
@@ -85,13 +81,5 @@ export async function generateCarouselPdf(
   filename = "qalam-carousel"
 ): Promise<void> {
   const pdfBytes = await captureCarouselPdfBytes(slideRefs)
-  const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = `${filename}.pdf`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  downloadBytes(pdfBytes, `${sanitizeFilename(filename, "qalam-carousel")}.pdf`, "application/pdf")
 }

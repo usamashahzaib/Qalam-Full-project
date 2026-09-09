@@ -12,7 +12,12 @@ const safeText = (value: string) => value
   .replace(/[\u2018\u2019]/g, "'")
   .replace(/[\u201c\u201d]/g, '"')
   .replace(/\u2022/g, "*")
-  .replace(/[^\x20-\x7E]/g, " ")
+  .replace(/[\u2013\u2014]/g, "-")
+  .replace(/\u2026/g, "...")
+  // The standard PDF fonts use WinAnsi, which covers the printable Latin-1
+  // range. Dropping everything above ASCII would blank out accented names;
+  // 0x80-0x9F still has to go because WinAnsi does not map that block.
+  .replace(/[^\x20-\x7E\xA0-\xFF]/g, " ")
   .replace(/\s+/g, " ")
   .trim()
 

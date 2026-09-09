@@ -29,6 +29,7 @@ import { CONTENT_INTENTS, ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORM
 import { QueueOverlay } from "@/components/QueueOverlay"
 
 import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
+import { downloadBytes, sanitizeFilename } from "@/lib/download"
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -177,15 +178,7 @@ export default function WriterPage() {
       }
 
       const pdfBytes = await pdfDoc.save()
-      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `${(slides[0]?.title ?? "carousel").replace(/[^\w\s-]/g, "").trim().slice(0, 60)}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 5000)
+      downloadBytes(pdfBytes, `${sanitizeFilename(slides[0]?.title ?? "", "carousel")}.pdf`, "application/pdf")
       showStatus("PDF downloaded", "success")
     } catch {
       showStatus("PDF generation failed. Try again.", "error")

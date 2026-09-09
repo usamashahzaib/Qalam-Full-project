@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { downloadText } from "@/lib/download"
 
 type LeaderboardEntry = {
   referrerName: string
@@ -82,15 +83,11 @@ const toCsv = (rows: LeaderboardEntry[]): string => {
 
 const downloadCsv = (rows: LeaderboardEntry[]) => {
   const csv = toCsv(rows)
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement("a")
-  link.href = url
-  link.download = `qalam-referral-leaderboard-${new Date().toISOString().slice(0, 10)}.csv`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+  downloadText(
+    csv,
+    `qalam-referral-leaderboard-${new Date().toISOString().slice(0, 10)}.csv`,
+    "text/csv;charset=utf-8;"
+  )
 }
 
 export function AdminReferralsClient() {

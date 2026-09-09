@@ -10,6 +10,7 @@ import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
 import { ScoreShareCard } from "@/components/tools/ScoreShareCard"
 import { trackMarketingEvent } from "@/lib/marketing-events"
 import { ATS_FUNNEL_SOURCE, buildAtsResumeLoginUrl, type AtsCtaPlacement } from "@/lib/ats-funnel"
+import { resumeUploadErrorMessage } from "@/lib/resume-upload-errors"
 
 const scoreLabels: Record<ResumeReviewScoreKey, string> = {
   ats_parsing: "ATS parsing",
@@ -24,13 +25,7 @@ const scoreLabels: Record<ResumeReviewScoreKey, string> = {
 
 const wordCount = (value: string) => value.trim().split(/\s+/).filter(Boolean).length
 const scoreTone = (score: number) => score >= 80 ? "text-emerald-700" : score >= 60 ? "text-gold-700" : "text-red-700"
-const uploadError = (code: string) => ({
-  resume_pdf_too_large: "This file is over 5 MB. Upload a smaller PDF or DOCX.",
-  resume_pdf_too_many_pages: "This file has more than 15 pages. Upload a shorter resume.",
-  resume_pdf_text_missing: "This PDF appears to be scanned or image-only. Upload a text-based PDF or DOCX.",
-  resume_docx_text_missing: "This DOCX has too little readable text to review.",
-  resume_file_type_unsupported: "Upload a PDF or DOCX resume.",
-} as Record<string, string>)[code] || code
+const uploadError = (code: string) => resumeUploadErrorMessage(code)
 
 export function AtsResumeCheckerTool() {
   const [resumeText, setResumeText] = useState("")

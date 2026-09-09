@@ -21,6 +21,7 @@ import { ContentSlide } from "@/components/carousel/ContentSlide"
 import { CTASlide } from "@/components/carousel/CTASlide"
 import { generateCarouselZip, generateCarouselPdf, captureCarouselPdfBytes } from "@/lib/carousel-generator"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
+import { downloadText } from "@/lib/download"
 
 const SLIDE_SCALE = 0.40
 const PREVIEW_W = Math.round(CANVAS.width * SLIDE_SCALE)
@@ -242,13 +243,7 @@ export default function CarouselEditorPage() {
     const text = slides.map((slide, index) =>
       `--- Slide ${index + 1} ---\n${slide.title ? `TITLE: ${slide.title}\n` : ""}${slide.content || ""}`
     ).join("\n\n")
-    const blob = new Blob([text], { type: "text/plain" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `carousel-${id.slice(0, 8)}.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+    downloadText(text, `carousel-${id.slice(0, 8)}.txt`)
   }
 
   const handleExportPdf = async () => {

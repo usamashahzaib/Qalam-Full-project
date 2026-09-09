@@ -8,6 +8,8 @@ import { ATS_FUNNEL_SOURCE, ATS_RESUME_DESTINATION, isAtsCtaPlacement } from "@/
 import { trackMarketingEvent } from "@/lib/marketing-events"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 import { toHundredPointScore } from "@/lib/free-tool-scores"
+import { resumeUploadErrorMessage } from "@/lib/resume-upload-errors"
+import { emptyResumeContact, type ResumeContact } from "@/lib/resume-contact"
 
 type ResumeListItem = {
   id: string
@@ -20,6 +22,9 @@ type ResumeListItem = {
 }
 
 const field = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm outline-none focus:border-teal focus:ring-2 focus:ring-teal/10"
+
+const MIN_SOURCE_RESUME_CHARS = 200
+const MIN_JOB_DESCRIPTION_CHARS = 80
 
 const defaultForm = { title: "", templateKey: "clean", targetRole: "", targetCompany: "", jobDescription: "", sourceResume: "" }
 
@@ -62,6 +67,7 @@ export default function ResumesPage() {
   const [form, setForm] = useState(handoff.form)
   const [uploading, setUploading] = useState(false)
   const [sourceLabel, setSourceLabel] = useState("")
+  const [contact, setContact] = useState<ResumeContact>(emptyResumeContact)
   const trackedHandoff = useRef(false)
 
   useEffect(() => {
@@ -90,10 +96,13 @@ export default function ResumesPage() {
       const response = await fetch(`/api/career/resume-parse${suffix}`, { method: "POST", body })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || typeof data.text !== "string") {
-        setError(data.error ? `Upload failed: ${data.error}` : "Resume file could not be read.")
+        setError(resumeUploadErrorMessage(data.error))
         return
       }
       setForm((prev) => ({ ...prev, sourceResume: data.text }))
+      // Contact details are redacted out of the text before it can reach a
+      // model, so they come back separately and are carried to generation here.
+      setContact({ ...emptyResumeContact, ...(data.contact || {}) })
       setSourceLabel(source === "linkedin" ? `LinkedIn profile imported: ${file.name}` : `Resume imported: ${file.name}`)
     } catch {
       setError("Resume upload failed.")
@@ -102,20 +111,44 @@ export default function ResumesPage() {
     }
   }
 
+  // Validate here as well as on the server so a missing field is named the
+  // moment the button is pressed, instead of after a round trip.
+  const validationError = () => {
+    if (form.title.trim().length < 2) return "Give the resume a name of at least 2 characters."
+    if (form.targetRole.trim().length < 2) return "Add the role you are targeting."
+    if (form.sourceResume.trim().length < MIN_SOURCE_RESUME_CHARS) {
+      return `Import a resume or paste at least ${MIN_SOURCE_RESUME_CHARS} characters of your experience. Currently ${form.sourceResume.trim().length}.`
+    }
+    const jd = form.jobDescription.trim()
+    if (jd.length > 0 && jd.length < MIN_JOB_DESCRIPTION_CHARS) {
+      return `Paste at least ${MIN_JOB_DESCRIPTION_CHARS} characters of the job description, or clear it to build a role-targeted resume.`
+    }
+    return ""
+  }
+
   const generate = async () => {
-    setLoading(true)
-    setError("")
-    const response = await fetch(`/api/career/resumes/generate${suffix}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, workspaceKey }),
-    })
-    const data = await response.json().catch(() => ({}))
-    if (response.ok) {
-      window.location.href = `/career/resumes/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`
+    const invalid = validationError()
+    if (invalid) {
+      setError(invalid)
       return
     }
-    setError(data.error || "Resume generation failed.")
+    setLoading(true)
+    setError("")
+    try {
+      const response = await fetch(`/api/career/resumes/generate${suffix}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, contact, workspaceKey }),
+      })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.id) {
+        window.location.href = `/career/resumes/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`
+        return
+      }
+      setError(data.error || "Resume generation failed. Try again in a moment.")
+    } catch {
+      setError("Resume generation could not reach the server. Check your connection and try again.")
+    }
     setLoading(false)
   }
 
@@ -130,7 +163,7 @@ export default function ResumesPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 rounded-3xl bg-[#073f3b] px-7 py-8 text-white sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, match the exact JD, edit every line, and export an ATS-safe PDF.</p></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, target a job description or just the role, edit every line, and export an ATS-safe PDF.</p></div>
           <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">{showCreate ? "Close" : "Create targeted resume"}</button>
         </header>
 
@@ -184,8 +217,18 @@ export default function ResumesPage() {
               <input className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
               <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
               <select className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
-              <textarea className={`${field} min-h-64 resize-y`} placeholder="Imported source appears here, or paste your resume or LinkedIn profile text" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
-              <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
+              <div>
+                <textarea className={`${field} min-h-64 resize-y`} placeholder="Imported source appears here, or paste your resume or LinkedIn profile text" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                  Required. {form.sourceResume.trim().length} of {MIN_SOURCE_RESUME_CHARS} characters minimum.
+                </p>
+              </div>
+              <div>
+                <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description, or leave this empty" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
+                <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+                  Optional. With a job description Qalam targets that exact posting. Without one it builds an ATS-safe resume against the standard expectations of your target role.
+                </p>
+              </div>
             </div>
             <button disabled={loading || uploading} onClick={generate} className="mt-5 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{loading ? "Building targeted resume..." : "Generate ATS resume"}</button>
           </section>

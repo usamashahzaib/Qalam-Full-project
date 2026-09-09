@@ -16,7 +16,7 @@ import {
   type CarouselThemeId,
   type CarouselSlide,
 } from "@/lib/carousel-design"
-import { generateCarouselZip } from "@/lib/carousel-generator"
+import { downloadSlidePng } from "@/lib/carousel-generator"
 
 const ACCENT_SWATCHES = [
   { label: "Theme default", value: "" },
@@ -59,6 +59,7 @@ export function CarouselBuilderTool() {
   const [activeSlide, setActiveSlide] = useState(0)
   const [exporting, setExporting] = useState(false)
   const [exportDone, setExportDone] = useState(false)
+  const [exportError, setExportError] = useState("")
   const [building, setBuilding] = useState(false)
   const [error, setError] = useState("")
   const [showAllThemes, setShowAllThemes] = useState(false)
@@ -111,13 +112,20 @@ export function CarouselBuilderTool() {
 
   const handleExport = async () => {
     if (!slides.length || exporting) return
+    const cover = slideRefs[0]?.current
+    if (!cover) {
+      setExportError("The cover is still rendering. Try again in a moment.")
+      return
+    }
     setExporting(true)
+    setExportError("")
     try {
-      await generateCarouselZip(slideRefs.slice(0, 1) as RefObject<HTMLDivElement | null>[], "carousel")
+      await downloadSlidePng(cover, "qalam-carousel-cover")
       setExportDone(true)
       setTimeout(() => setExportDone(false), 3000)
-    } catch (e) {
-      console.error("Export failed:", e)
+    } catch (error) {
+      console.error("Export failed:", error)
+      setExportError("The image could not be generated. Reload the page and try again.")
     } finally {
       setExporting(false)
     }
@@ -386,11 +394,17 @@ export function CarouselBuilderTool() {
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Download Slide 1 (PNG)
+                        Download cover (PNG)
                       </>
                     )}
                   </motion.button>
                 </div>
+
+                {exportError && (
+                  <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {exportError}
+                  </p>
+                )}
 
                 {/* Slide thumbnails strip */}
                 <div className="flex gap-3 overflow-x-auto pb-2">
@@ -498,7 +512,7 @@ export function CarouselBuilderTool() {
                       </button>
                     </div>
                     <div className="rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-xs text-zinc-500">
-                      <strong className="text-zinc-700">Export tip:</strong> The free download saves slide 1 as a 1080x1080 PNG. Sign up free to download every slide.
+                      <strong className="text-zinc-700">Export tip:</strong> The free download saves the cover as a 1080x1080 PNG. Sign up free to download every slide.
                     </div>
                   </div>
                 </div>

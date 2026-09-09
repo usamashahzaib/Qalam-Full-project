@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
     try {
       if (isPdf) {
         const extracted = await extractResumePdfText(file)
-        return NextResponse.json({ text: extracted.text, pages: extracted.totalPages, kind: "pdf" })
+        return NextResponse.json({ text: extracted.text, pages: extracted.totalPages, kind: "pdf", contact: extracted.contact })
       }
       if (isDocx) {
         const extracted = await extractResumeDocxText(file)
-        return NextResponse.json({ text: extracted.text, kind: "docx" })
+        return NextResponse.json({ text: extracted.text, kind: "docx", contact: extracted.contact })
       }
       return responseError("resume_file_type_unsupported", 415)
     } catch (error) {
