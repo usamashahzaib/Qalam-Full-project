@@ -6,10 +6,12 @@ import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { resumeContactSchema, resumeDataSchema } from "@/lib/career-resume"
 import { isResumeTemplateKey } from "@/lib/resume-templates"
+import { extractJobKeywords, scoreResume } from "@/lib/ats-engine"
+import { normalizeResumeData } from "@/lib/ats-normalize"
+import { ATS_RESUME_WRITING_RULES, targetKeywordBrief } from "@/lib/ats-writing-rules"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
-import { normalizeScoreBreakdown, toHundredPointScore } from "@/lib/free-tool-scores"
 import {
   claimExtraResumeCredit,
   consumeCareerUsage,
@@ -91,16 +93,23 @@ export async function POST(request: NextRequest) {
     const hasJobDescription = input.jobDescription.length > 0
     const { data: vault } = await supabase.from("career_profiles").select("*").maybeSingle()
 
+    // Keywords are extracted deterministically before the model is called, so
+    // the writer is aiming at the same target the scorer measures against.
+    // Leaving the model to infer them produced a resume that read well and
+    // then scored badly on the terms the posting actually repeated.
+    const targetKeywords = hasJobDescription ? extractJobKeywords(input.jobDescription) : []
+
     const targetingBrief = hasJobDescription
-      ? `Create a targeted ATS resume for this role. Reorder and rewrite only supported facts. Use relevant keywords naturally. Make every bullet action-led and concise.
+      ? `Create a targeted ATS resume for this role. Reorder and rewrite only supported facts.
 
 TARGET ROLE: ${input.targetRole}
 TARGET COMPANY: ${input.targetCompany || "Not specified"}
 JOB DESCRIPTION:
-${input.jobDescription}`
-      : `Create an ATS-safe resume aimed at this role. There is no job posting to match against, so target the standard expectations of the role rather than a specific advert. Infer the keywords, skills and section order that a recruiter and an applicant tracking system would expect for this role in this industry, and use only the keywords the source material actually supports. Reorder and rewrite only supported facts. Make every bullet action-led and concise. Keep it single column with plain section headings, no tables, no columns and no graphics.
+${input.jobDescription}
+${targetKeywordBrief(targetKeywords)}`
+      : `Create an ATS-safe resume aimed at this role. There is no job posting to match against, so target the standard expectations of the role rather than a specific advert. Infer the keywords, skills and section order that a recruiter and an applicant tracking system would expect for this role in this industry, and use only the keywords the source material actually supports. Reorder and rewrite only supported facts.
 
-In analysis.matched_keywords list the role-standard keywords the resume already evidences. In analysis.missing_keywords list the role-standard keywords the source material does not support, so the candidate can add them if they are genuinely true. Score "relevance" against the standard expectations of the role.
+In analysis.matched_keywords list the role-standard keywords the resume already evidences. In analysis.missing_keywords list the role-standard keywords the source material does not support, so the candidate can add them if they are genuinely true.
 
 TARGET ROLE: ${input.targetRole}
 TARGET COMPANY: ${input.targetCompany || "Not specified"}`
@@ -112,6 +121,8 @@ TARGET COMPANY: ${input.targetCompany || "Not specified"}`
         "You are a senior recruiter and ATS resume writer. Return strict JSON only. Preserve facts. Never invent employers, dates, qualifications, job titles, metrics, tools, or achievements.",
         `${targetingBrief}
 
+${ATS_RESUME_WRITING_RULES}
+
 CAREER VAULT:
 ${JSON.stringify(vault || {})}
 
@@ -119,8 +130,6 @@ SOURCE RESUME:
 ${input.sourceResume}
 
 The source text may contain the placeholders [email removed], [phone removed] and [national id removed]. Those are deliberate redactions. Leave fullName, email, phone, location and linkedinUrl as empty strings rather than copying a placeholder or inventing a value.
-
-Every score must be an integer from 0 to 100.
 
 Return:
 {
@@ -139,14 +148,13 @@ Return:
     "projects": []
   },
   "analysis": {
-    "overall_score": 0,
-    "scores": {"ats":0,"relevance":0,"impact":0,"clarity":0,"career_progression":0},
-    "matched_keywords": [""],
-    "missing_keywords": [""],
-    "warnings": [""],
-    "changes": [""]
+    "warnings": ["a claim in the source that a screener would question, and why"],
+    "changes": ["a specific rewrite made and the reason for it"],
+    "evidence_gaps": ["a target keyword or requirement the source material does not support"]
   }
-}`,
+}
+
+Do not return any score. The readiness score is computed separately from the resume you return, against published rules, so an estimate here would only conflict with it.`,
         { json: true, temperature: 0.2, timeout: 35000, userId: user.id, plan: planCheck.plan }
       )
     } catch (error) {
@@ -169,10 +177,31 @@ Return:
       if (REDACTION_PLACEHOLDER.test(resumeData[key])) resumeData[key] = ""
     }
 
-    const analysis = ai?.analysis || {}
-    analysis.scores = normalizeScoreBreakdown(analysis.scores)
-    const atsScore = toHundredPointScore((analysis.scores as Record<string, unknown>).ats ?? analysis.overall_score)
-    analysis.overall_score = toHundredPointScore(analysis.overall_score)
+    // Mechanical clean up before scoring. The model writes good sentences but
+    // is inconsistent about date format, bullet punctuation, pronouns and
+    // duplicate skills, and every one of those is a scored ATS rule.
+    const normalized = normalizeResumeData(resumeData)
+
+    // The score is computed here, from the resume that was actually produced,
+    // against the published factor weights. It is not asked of the model,
+    // because a model guessed number cannot be defended check by check when a
+    // recruiter or a candidate asks how it was reached.
+    const audit = scoreResume({
+      resume: normalized,
+      jobDescription: input.jobDescription,
+      targetRole: input.targetRole,
+    })
+
+    const analysis: Record<string, unknown> = {
+      ...(ai?.analysis || {}),
+      audit,
+      overall_score: audit.overall,
+      scores: Object.fromEntries(audit.factors.map((factor) => [factor.key, factor.score])),
+      matched_keywords: audit.keywords.matched.map((item) => item.keyword),
+      missing_keywords: audit.keywords.missing.map((item) => item.keyword),
+      suggestions: audit.suggestions,
+    }
+    const atsScore = audit.overall
 
     const { data, error } = await supabase
       .from("resume_documents")
@@ -183,7 +212,7 @@ Return:
         target_role: input.targetRole,
         target_company: input.targetCompany,
         job_description: input.jobDescription,
-        resume_data: resumeData,
+        resume_data: normalized,
         analysis,
         ats_score: atsScore,
         status: "ready",
@@ -198,12 +227,12 @@ Return:
     const savedResume = data as unknown as { id: string }
     // resume_versions has no workspace_id column of its own (scoped
     // indirectly via resume_id, just created above) - use .raw.
-    const { error: versionError } = await supabase.from("resume_versions").raw.insert({ resume_id: savedResume.id, version_number: 1, resume_data: resumeData, analysis })
+    const { error: versionError } = await supabase.from("resume_versions").raw.insert({ resume_id: savedResume.id, version_number: 1, resume_data: normalized, analysis })
     if (versionError) {
       await supabase.from("resume_documents").delete().eq("id", savedResume.id)
       await releaseReservation()
       return NextResponse.json({ error: "The resume could not be versioned." }, { status: 500 })
     }
-    return NextResponse.json({ id: savedResume.id, resumeData, analysis, atsScore }, { status: 201 })
+    return NextResponse.json({ id: savedResume.id, resumeData: normalized, analysis, atsScore, audit }, { status: 201 })
   })(request)
 }

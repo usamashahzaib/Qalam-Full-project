@@ -9,6 +9,9 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
 import { consumeCareerUsage, refundCareerUsage } from "@/lib/server/career-usage"
 import { buildResumeReviewPrompt, normalizeResumeReview } from "@/lib/career-resume-review"
+import { scoreResume } from "@/lib/ats-engine"
+import { normalizeResumeData } from "@/lib/ats-normalize"
+import { parseConfidence, parseResumeText } from "@/lib/ats-text-parse"
 
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
@@ -30,6 +33,12 @@ export async function POST(request: NextRequest) {
     if (!usage.allowed) return NextResponse.json({ error: "Your resume review limit is reached for this month." }, { status: 429 })
 
     const input = parsed.data
+    // Same deterministic scoring path as the free checker, so the paid deep
+    // review never disagrees with the public tool about the same resume.
+    const structured = normalizeResumeData(parseResumeText(input.resumeText))
+    const confidence = parseConfidence(structured, input.resumeText)
+    const audit = confidence >= 40 ? scoreResume({ resume: structured, jobDescription: input.jobDescription }) : null
+
     let raw: string
     try {
       raw = await callAi(
@@ -43,7 +52,7 @@ export async function POST(request: NextRequest) {
       throw error
     }
 
-    const result = normalizeResumeReview(safeParseJson(raw))
+    const result = normalizeResumeReview(safeParseJson(raw), audit, confidence)
     if (!result) {
       await refundCareerUsage(user.id, "resume_review")
       return NextResponse.json({ error: "The resume review could not be completed." }, { status: 503 })

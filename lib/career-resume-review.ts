@@ -1,5 +1,6 @@
 import { ATS_FACTORS } from "@/lib/ats-methodology"
 import { toHundredPointScore } from "@/lib/free-tool-scores"
+import type { AtsAudit } from "@/lib/ats-engine"
 
 export const RESUME_REVIEW_SCORE_KEYS = [
   "ats_parsing",
@@ -56,6 +57,19 @@ export type ResumeReviewResult = {
   rewritten_summary: string
   next_step: string
   disclaimer: string
+  /**
+   * The deterministic audit behind every number above.
+   *
+   * Present whenever the resume text could be parsed into a structure. The
+   * model supplies the recruiter judgement; this supplies the score, so a
+   * candidate can open any factor and see the exact checks that produced it.
+   */
+  audit: AtsAudit | null
+  /**
+   * How much of the pasted text the parser understood, 0 to 100. A low value
+   * means the layout is fighting the parser, which is itself the finding.
+   */
+  parse_confidence: number
 }
 
 const numberScore = (value: unknown) => toHundredPointScore(value)
@@ -117,15 +131,32 @@ Return strict JSON only. Every score must be an integer from 0 to 100:
   "disclaimer": "Independent Qalam diagnostic, not an employer ATS result or hiring guarantee."
 }`
 
-export function normalizeResumeReview(value: unknown): ResumeReviewResult | null {
+/**
+ * @param audit deterministic scores computed from the parsed resume. When it
+ * is supplied it replaces the model's own numbers entirely, because a score
+ * a candidate cannot audit is not a score worth publishing. The model's
+ * qualitative fields are kept either way.
+ */
+export function normalizeResumeReview(
+  value: unknown,
+  audit: AtsAudit | null = null,
+  parseConfidence = 0,
+): ResumeReviewResult | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null
   const source = value as Record<string, unknown>
   const scores = object(source.scores)
   const recruiterRead = object(source.recruiter_read)
-  const normalizedScores = Object.fromEntries(RESUME_REVIEW_SCORE_KEYS.map((key) => [key, numberScore(scores[key])])) as Record<ResumeReviewScoreKey, number>
-  const weightedScore = Math.round(ATS_FACTORS.reduce((total, factor) => total + normalizedScores[factor.key] * factor.weight, 0) / 100)
+  const modelScores = Object.fromEntries(RESUME_REVIEW_SCORE_KEYS.map((key) => [key, numberScore(scores[key])])) as Record<ResumeReviewScoreKey, number>
+  const normalizedScores = audit
+    ? (Object.fromEntries(audit.factors.map((factor) => [factor.key, factor.score])) as Record<ResumeReviewScoreKey, number>)
+    : modelScores
+  const weightedScore = audit
+    ? audit.overall
+    : Math.round(ATS_FACTORS.reduce((total, factor) => total + normalizedScores[factor.key] * factor.weight, 0) / 100)
 
   return {
+    audit,
+    parse_confidence: parseConfidence,
     overall_score: weightedScore,
     scores: normalizedScores,
     verdict: text(source.verdict),
@@ -141,16 +172,30 @@ export function normalizeResumeReview(value: unknown): ResumeReviewResult | null
       const severity = risk.severity === "high" || risk.severity === "low" ? risk.severity : "medium"
       return { severity, issue: text(risk.issue), why: text(risk.why) }
     }),
-    missing_keywords: list(source.missing_keywords).slice(0, 12).map((item) => {
-      const keyword = object(item)
-      const evidence = keyword.evidence_status
-      const evidence_status = evidence === "supported" || evidence === "unsupported" ? evidence : "unclear"
-      return { keyword: text(keyword.keyword), evidence_status }
-    }),
-    priority_fixes: list(source.priority_fixes).slice(0, 7).map((item, index) => {
-      const fix = object(item)
-      return { priority: index + 1, section: text(fix.section), action: text(fix.action), example: text(fix.example) }
-    }),
+    // Missing keywords come from the audit when there is one. The model's own
+    // list drifts between runs and sometimes names terms the resume already
+    // contains, which reads as carelessness on a paid diagnostic.
+    missing_keywords: audit
+      ? audit.keywords.missing.slice(0, 12).map((item) => ({ keyword: item.keyword, evidence_status: "unsupported" as const }))
+      : list(source.missing_keywords).slice(0, 12).map((item) => {
+          const keyword = object(item)
+          const evidence = keyword.evidence_status
+          const evidence_status = evidence === "supported" || evidence === "unsupported" ? evidence : "unclear"
+          return { keyword: text(keyword.keyword), evidence_status }
+        }),
+    // Fixes are ranked by the points each one actually recovers, so the order
+    // is an argument rather than an opinion.
+    priority_fixes: audit
+      ? audit.suggestions.slice(0, 7).map((item) => ({
+          priority: item.priority,
+          section: item.factor,
+          action: item.action,
+          example: `${item.detail}. Worth ${item.pointsAvailable} points.`,
+        }))
+      : list(source.priority_fixes).slice(0, 7).map((item, index) => {
+          const fix = object(item)
+          return { priority: index + 1, section: text(fix.section), action: text(fix.action), example: text(fix.example) }
+        }),
     rewritten_summary: text(source.rewritten_summary),
     next_step: text(source.next_step),
     disclaimer: "Independent Qalam diagnostic, not an employer ATS result or hiring guarantee.",
@@ -180,5 +225,9 @@ export function parseResumeReviewResponse(value: unknown): ResumeReviewResult | 
   )
   if (!everyScorePresent) return null
 
-  return normalizeResumeReview(source)
+  const audit = (source.audit && typeof source.audit === "object" && !Array.isArray(source.audit)
+    ? (source.audit as AtsAudit)
+    : null)
+  const confidence = typeof source.parse_confidence === "number" ? source.parse_confidence : 0
+  return normalizeResumeReview(source, audit, confidence)
 }

@@ -3,6 +3,9 @@ export const maxDuration = 60
 import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { buildResumeReviewPrompt, normalizeResumeReview } from "@/lib/career-resume-review"
+import { scoreResume } from "@/lib/ats-engine"
+import { normalizeResumeData } from "@/lib/ats-normalize"
+import { parseConfidence, parseResumeText } from "@/lib/ats-text-parse"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { checkFreeToolsGlobalBudget, checkRateLimit, getClientIp } from "@/lib/server/rate-limit"
 
@@ -24,13 +27,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Paste at least 200 characters from your resume." }, { status: 400 })
     }
 
+    // The score is computed from the text before the model is called, so the
+    // public number is reproducible and every point can be traced to a named
+    // check. The model is still asked for the recruiter judgement, which is
+    // the part a rule cannot supply.
+    const structured = normalizeResumeData(parseResumeText(parsed.data.resumeText))
+    const confidence = parseConfidence(structured, parsed.data.resumeText)
+    const audit = confidence >= 40
+      ? scoreResume({ resume: structured, jobDescription: parsed.data.jobDescription })
+      : null
+
     const raw = await callAi(
       "voice-profile",
       "Return strict JSON only. Preserve candidate truth and evaluate only job-relevant evidence.",
       buildResumeReviewPrompt(parsed.data.resumeText, parsed.data.jobDescription),
       { json: true, temperature: 0.2, timeout: 30000, userId: `free_ats_${ip}`, plan: "free", cache: true, cacheTtl: 3600 }
     )
-    const result = normalizeResumeReview(safeParseJson(raw))
+    const result = normalizeResumeReview(safeParseJson(raw), audit, confidence)
     return result
       ? NextResponse.json(result)
       : NextResponse.json({ error: "The resume check could not be completed." }, { status: 503 })

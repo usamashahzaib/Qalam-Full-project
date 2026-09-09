@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { withAuth } from "@/lib/server/auth"
 import { resumeDocumentSchema } from "@/lib/career-resume"
+import { scoreResume } from "@/lib/ats-engine"
+import { normalizeResumeData } from "@/lib/ats-normalize"
 import { createServiceClient, createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
@@ -44,6 +46,28 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const supabase = createScopedClient(planCheck.workspaceId)
     const { data: existing } = await supabase.from("resume_documents").select("id").eq("id", id).maybeSingle()
     if (!existing) return NextResponse.json({ error: "Resume not found." }, { status: 404 })
+
+    // The score is recomputed here rather than trusted from the request. The
+    // client sends back whatever score it was last shown, so accepting it
+    // would freeze the number at generation time and let every later edit,
+    // helpful or harmful, go unmeasured. Rescoring also means a hand written
+    // resume is judged by exactly the same rules as a generated one.
+    const resumeData = normalizeResumeData(input.resumeData)
+    const audit = scoreResume({
+      resume: resumeData,
+      jobDescription: input.jobDescription,
+      targetRole: input.targetRole,
+    })
+    const analysis: Record<string, unknown> = {
+      ...input.analysis,
+      audit,
+      overall_score: audit.overall,
+      scores: Object.fromEntries(audit.factors.map((factor) => [factor.key, factor.score])),
+      matched_keywords: audit.keywords.matched.map((item) => item.keyword),
+      missing_keywords: audit.keywords.missing.map((item) => item.keyword),
+      suggestions: audit.suggestions,
+    }
+
     const { data, error } = await supabase
       .from("resume_documents")
       .update({
@@ -52,9 +76,9 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         target_role: input.targetRole,
         target_company: input.targetCompany,
         job_description: input.jobDescription,
-        resume_data: input.resumeData,
-        analysis: input.analysis,
-        ats_score: input.atsScore,
+        resume_data: resumeData,
+        analysis,
+        ats_score: audit.overall,
         status: input.status,
         updated_at: new Date().toISOString(),
       })
@@ -67,8 +91,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     // verified by the workspace-scoped lookup above.
     const { error: versionError } = await createServiceClient().rpc("append_resume_version", {
       p_resume_id: id,
-      p_resume_data: input.resumeData,
-      p_analysis: input.analysis,
+      p_resume_data: resumeData,
+      p_analysis: analysis,
     })
     if (versionError) return NextResponse.json({ error: "Resume saved, but its version history could not be updated." }, { status: 500 })
     return NextResponse.json({ resume: toClient(data as unknown as Record<string, unknown>) })

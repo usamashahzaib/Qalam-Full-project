@@ -6,6 +6,8 @@ import type { ResumeData } from "@/lib/career-resume"
 import { emptyResumeData } from "@/lib/career-resume"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ResumePreview } from "@/components/career/ResumePreview"
+import { AtsAuditPanel } from "@/components/career/AtsAuditPanel"
+import type { AtsAudit } from "@/lib/ats-engine"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 import { toHundredPointScore } from "@/lib/free-tool-scores"
 import { downloadBlob, sanitizeFilename } from "@/lib/download"
@@ -35,7 +37,7 @@ export default function ResumeEditorPage() {
   const [document, setDocument] = useState<ResumeDocument | null>(null)
   const [message, setMessage] = useState("")
   const [saving, setSaving] = useState(false)
-  const [downloading, setDownloading] = useState(false)
+  const [downloading, setDownloading] = useState<"pdf" | "docx" | null>(null)
 
   useEffect(() => {
     fetch(`/api/career/resumes/${params.id}${suffix}`)
@@ -66,23 +68,26 @@ export default function ResumeEditorPage() {
     setSaving(false)
   }
 
-  const downloadPdf = async () => {
+  // Both formats come from routes that differ only in the path segment and the
+  // extension. Word matters as much as PDF here: several ATS extract text more
+  // reliably from it, and a recruiter working the file needs to edit it.
+  const download = async (format: "pdf" | "docx") => {
     if (!document) return
-    setDownloading(true)
+    setDownloading(format)
     setMessage("")
     try {
-      const response = await fetch(`/api/career/resumes/${params.id}/pdf${suffix}`)
+      const response = await fetch(`/api/career/resumes/${params.id}/${format}${suffix}`)
       if (!response.ok) {
         const body = await response.json().catch(() => ({}))
-        throw new Error(body.error || "PDF could not be generated.")
+        throw new Error(body.error || `The ${format.toUpperCase()} could not be generated.`)
       }
       const blob = await response.blob()
-      downloadBlob(blob, `${sanitizeFilename(document.title, "ats-resume")}.pdf`)
-      setMessage("ATS-safe PDF downloaded.")
+      downloadBlob(blob, `${sanitizeFilename(document.title, "ats-resume")}.${format}`)
+      setMessage(`ATS-safe ${format.toUpperCase()} downloaded.`)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "PDF could not be downloaded.")
+      setMessage(error instanceof Error ? error.message : `The ${format.toUpperCase()} could not be downloaded.`)
     } finally {
-      setDownloading(false)
+      setDownloading(null)
     }
   }
 
@@ -97,6 +102,9 @@ export default function ResumeEditorPage() {
 
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading resume..."}</main>
   const data = document.resumeData || emptyResumeData
+  // Written by the server on generation and on every save. Older resumes
+  // created before the audit existed simply have no panel until the next save.
+  const audit = (document.analysis?.audit as AtsAudit | undefined) || null
 
   return (
     <main className="min-h-full bg-zinc-100 px-4 py-5 lg:px-6">
@@ -111,7 +119,7 @@ export default function ResumeEditorPage() {
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
           <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
-          <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={downloadPdf} disabled={downloading} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
+          <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={() => download("docx")} disabled={downloading !== null} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "docx" ? "Preparing Word..." : "Download Word"}</button><button onClick={() => download("pdf")} disabled={downloading !== null} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "pdf" ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 
@@ -121,6 +129,12 @@ export default function ResumeEditorPage() {
               <label><span className={label}>Template</span><select className={input} value={document.templateKey} onChange={(event) => setDocument({ ...document, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name}</option>)}</select></label>
               <label><span className={label}>ATS score</span><div className="rounded-lg bg-teal/8 px-3 py-2.5 text-sm font-bold text-teal">{document.atsScore != null ? toHundredPointScore(document.atsScore) : "Not scored"}{document.atsScore != null ? "/100" : ""}</div></label>
             </div>
+
+            <label className="block"><span className={label}>Target role</span><input className={input} value={document.targetRole} onChange={(event) => setDocument({ ...document, targetRole: event.target.value })} /></label>
+            <label className="block">
+              <span className={label}>Job description, optional</span>
+              <textarea className={`${input} min-h-24 resize-y`} value={document.jobDescription} onChange={(event) => setDocument({ ...document, jobDescription: event.target.value })} placeholder="Paste the posting to score keyword coverage against the exact advert." />
+            </label>
 
             <Section title="Contact">
               <div className="grid gap-3 sm:grid-cols-2">
@@ -157,7 +171,16 @@ export default function ResumeEditorPage() {
             </Section>
           </aside>
 
-          <div id="resume-print" className="overflow-auto"><ResumePreview data={data} templateKey={document.templateKey} /></div>
+          <div className="space-y-5">
+            <div id="resume-print" className="overflow-auto"><ResumePreview data={data} templateKey={document.templateKey} /></div>
+            {audit && (
+              <section className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-5 print:hidden">
+                <h2 className="mb-1 text-sm font-bold text-zinc-900">ATS readiness audit</h2>
+                <p className="mb-4 text-xs text-zinc-500">Recalculated every time you save a version.</p>
+                <AtsAuditPanel audit={audit} />
+              </section>
+            )}
+          </div>
         </div>
       </div>
     </main>

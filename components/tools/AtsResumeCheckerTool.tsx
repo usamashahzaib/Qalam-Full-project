@@ -6,6 +6,7 @@ import { APP_URL } from "@/lib/seo"
 import { RESUME_HANDOFF_KEY } from "@/lib/resume-signals"
 import { parseResumeReviewResponse, resumeScoreBand, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
 import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_STEPS } from "@/lib/ats-methodology"
+import { AtsAuditPanel } from "@/components/career/AtsAuditPanel"
 import { CheckIcon, MicroscopeIcon } from "@/components/ui/qalam-icons"
 import { ScoreShareCard } from "@/components/tools/ScoreShareCard"
 import { trackMarketingEvent } from "@/lib/marketing-events"
@@ -228,6 +229,28 @@ export function AtsResumeCheckerTool() {
                   </div>
                 ))}
               </div>
+
+              {result.audit && (
+                <div className="mt-8 border-t border-zinc-100 pt-6">
+                  <h3 className="text-lg font-bold text-zinc-900">Why this number</h3>
+                  <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-600">
+                    Every point above is computed from the checks below, not estimated. Open a factor to see the exact
+                    fact observed and what recovers the missing points.
+                  </p>
+                  <div className="mt-5">
+                    <AtsAuditPanel audit={result.audit} />
+                  </div>
+                </div>
+              )}
+
+              {!result.audit && (
+                <p className="mt-6 rounded-xl bg-gold/10 px-4 py-3 text-sm leading-6 text-zinc-700">
+                  Only {result.parse_confidence} percent of this resume could be read as structured sections, so the
+                  detailed check by check breakdown is not shown. That low a parse result is itself the finding: a
+                  layout an applicant tracking system cannot section is one it cannot index. Rebuild it as a single
+                  column with standard headings and run the check again.
+                </p>
+              )}
             </section>
 
             {/* Placed after the scorecard and before the risks: the reader has
