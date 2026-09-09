@@ -32,6 +32,11 @@ const PHONE = /(\+?\d[\d\s().-]{7,}\d)/
 const LINKEDIN = /((?:https?:\/\/)?(?:www\.)?linkedin\.com\/(?:in|company)\/[^\s,|]+)/i
 const BULLET_MARKER = /^\s*([-*•●▪‣⁃>]|\d+[.)])\s+/
 
+// PDF and LinkedIn exports sometimes flatten visual rows into one line. Split
+// only known section labels and list markers back into lines before parsing.
+// This is deliberately narrow so normal prose is never treated as a heading.
+const INLINE_SECTION_HEADING = /\s+((?:PROFESSIONAL\s+)?SUMMARY|PROFILE|OBJECTIVE|CAREER\s+SUMMARY|EXECUTIVE\s+SUMMARY|(?:CORE\s+|TECHNICAL\s+|KEY\s+)?(?:SKILLS|COMPETENCIES|COMPETENCES|EXPERTISE|TECHNOLOGIES|TOOLS)|(?:WORK\s+|PROFESSIONAL\s+|EMPLOYMENT\s+|RELEVANT\s+)?(?:EXPERIENCE|HISTORY|EMPLOYMENT|BACKGROUND)|EDUCATION|ACADEMIC|QUALIFICATIONS?|ACADEMICS|CERTIFICATIONS?|LICEN[CS]ES?|COURSES|TRAINING|ACCREDITATIONS?|PROJECTS?|SELECTED\s+PROJECTS?|PORTFOLIO)\s+/g
+
 /**
  * A date range on its own or trailing a role line, for example
  * "Mar 2021 - Present" or "2018 to 2021".
@@ -61,12 +66,15 @@ const splitRoleHeader = (line: string) => {
   const range = text.match(DATE_RANGE)
   if (!range) return null
   const head = clean(text.slice(0, range.index).replace(/[|,\-\u2013\u2014]+$/, ""))
+  const trailing = clean(text.slice((range.index || 0) + range[0].length).replace(/^[|,\-\u2013\u2014\s]+/, ""))
   // "Senior Analyst at Acme", "Senior Analyst | Acme", "Senior Analyst, Acme"
-  const parts = head.split(/\s+(?:at|@)\s+|\s*[|,]\s*/).map(clean).filter(Boolean)
+  const pipeParts = head.split(/\s*[|]\s*/).map(clean).filter(Boolean)
+  const parts = (pipeParts.length > 1 ? pipeParts : head.split(/\s+(?:at|@)\s+|\s*,\s*/)).map(clean).filter(Boolean)
+  const trailingParts = trailing.split(/\s*[|,]\s*/).map(clean).filter(Boolean)
   return {
     title: parts[0] || "",
-    organization: parts[1] || "",
-    location: parts[2] || "",
+    organization: parts[1] || trailingParts[0] || "",
+    location: parts[2] || trailingParts.slice(1).join(", ") || "",
     startDate: clean(range[1]),
     endDate: clean(range[2]),
   }
@@ -79,7 +87,10 @@ const splitSkills = (lines: string[]) =>
     .filter((skill) => skill.length > 1 && skill.length < 60)
 
 export function parseResumeText(rawText: string): ResumeData {
-  const lines = (rawText || "").split(/\r?\n/).map((line) => line.replace(/\t/g, " "))
+  const structuredText = (rawText || "")
+    .replace(INLINE_SECTION_HEADING, "\n$1\n")
+    .replace(/\s+(?=[•●▪‣⁃]\s+)/g, "\n")
+  const lines = structuredText.split(/\r?\n/).map((line) => line.replace(/\t/g, " "))
   const nonEmpty = lines.filter((line) => line.trim())
 
   const emailMatch = rawText.match(EMAIL)

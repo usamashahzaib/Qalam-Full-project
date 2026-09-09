@@ -144,6 +144,30 @@ describe("targeted resume generation without a job description", () => {
     expect(saved.resumeData.email).toBe("")
   })
 
+  it("recovers an editable resume from the source when the AI output is malformed", async () => {
+    mocks.callAi.mockResolvedValue(JSON.stringify({ resume: { experience: "not an array" } }))
+    const response = await post(body({
+      sourceResume: [
+        "Ayesha Khan",
+        "PROFESSIONAL SUMMARY",
+        "People operations manager with five years of experience supporting recruiting and onboarding for distributed teams.",
+        "CORE COMPETENCIES",
+        "Recruitment | Onboarding | HR Operations | Employee Relations",
+        "PROFESSIONAL EXPERIENCE",
+        "People Operations Manager | Example Company | Lahore | Jan 2023 - Present",
+        "- Built onboarding workflows for new employees",
+        "- Coordinated structured recruitment processes",
+        "EDUCATION",
+        "BBA | Example University | 2020",
+      ].join("\n"),
+    }))
+
+    expect(response.status).toBe(201)
+    const saved = await response.json()
+    expect(saved.resumeData.experience[0]).toMatchObject({ title: "People Operations Manager", organization: "Example Company" })
+    expect(saved.analysis.generation_notice).toContain("editable draft")
+  })
+
   it("names the offending field instead of returning one generic message", async () => {
     const response = await post(body({ sourceResume: "too short" }))
 

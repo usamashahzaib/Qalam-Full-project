@@ -4,11 +4,13 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { withAuth } from "@/lib/server/auth"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
-import { resumeContactSchema, resumeDataSchema } from "@/lib/career-resume"
+import { resumeContactSchema, resumeDataSchema, type ResumeData } from "@/lib/career-resume"
 import { isResumeTemplateKey } from "@/lib/resume-templates"
 import { extractJobKeywords, scoreResume } from "@/lib/ats-engine"
 import { normalizeResumeData } from "@/lib/ats-normalize"
+import { parseResumeText } from "@/lib/ats-text-parse"
 import { ATS_RESUME_WRITING_RULES, targetKeywordBrief } from "@/lib/ats-writing-rules"
+import { mergeResumeContact } from "@/lib/resume-contact"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
 import { authorizeRole } from "@/lib/server/roles"
@@ -20,6 +22,9 @@ import {
 } from "@/lib/server/career-usage"
 
 const REDACTION_PLACEHOLDER = /\[(email|phone|national id) removed\]/i
+
+const hasUsableResumeContent = (resume: Partial<ResumeData>) =>
+  (resume.experience?.length || 0) > 0 || (resume.summary?.length || 0) >= 40 || (resume.skills?.length || 0) >= 4
 
 export const MIN_SOURCE_RESUME_CHARS = 200
 export const MIN_JOB_DESCRIPTION_CHARS = 80
@@ -155,7 +160,7 @@ Return:
 }
 
 Do not return any score. The readiness score is computed separately from the resume you return, against published rules, so an estimate here would only conflict with it.`,
-        { json: true, temperature: 0.2, timeout: 35000, userId: user.id, plan: planCheck.plan }
+        { json: true, temperature: 0.2, timeout: 35000, maxTokens: 4000, userId: user.id, plan: planCheck.plan }
       )
     } catch (error) {
       await releaseReservation()
@@ -164,13 +169,16 @@ Do not return any score. The readiness score is computed separately from the res
 
     const ai = safeParseJson(raw) as { resume?: unknown; analysis?: Record<string, unknown> } | null
     const resumeParsed = resumeDataSchema.safeParse(ai?.resume)
-    if (!resumeParsed.success) {
+    const recoveredSource = normalizeResumeData(mergeResumeContact(parseResumeText(input.sourceResume), input.contact))
+    const recoveredParsed = resumeDataSchema.safeParse(recoveredSource)
+    const useRecoveredSource = !resumeParsed.success || !hasUsableResumeContent(resumeParsed.data)
+    if (useRecoveredSource && (!recoveredParsed.success || !hasUsableResumeContent(recoveredParsed.data))) {
       await releaseReservation()
-      return NextResponse.json({ error: "The targeted resume could not be structured safely." }, { status: 503 })
+      return NextResponse.json({ error: "We could not read enough structured experience from this file. Paste the text with your role titles, employers, dates, and achievements, then try again." }, { status: 422 })
     }
     // Contact details are stripped from the source before it reaches the model,
     // so they arrive from the parser instead and are merged back in here.
-    const resumeData = { ...resumeParsed.data }
+    const resumeData: ResumeData = { ...((useRecoveredSource ? recoveredParsed.data : resumeParsed.data) as ResumeData) }
     const contactKeys = ["fullName", "email", "phone", "location", "linkedinUrl"] as const
     for (const key of contactKeys) {
       if (input.contact?.[key]) resumeData[key] = input.contact[key]
@@ -194,6 +202,7 @@ Do not return any score. The readiness score is computed separately from the res
 
     const analysis: Record<string, unknown> = {
       ...(ai?.analysis || {}),
+      ...(useRecoveredSource ? { generation_notice: "The source resume was saved as an editable draft because the rewrite response was incomplete. Review the highlighted suggestions and save a version after editing." } : {}),
       audit,
       overall_score: audit.overall,
       scores: Object.fromEntries(audit.factors.map((factor) => [factor.key, factor.score])),

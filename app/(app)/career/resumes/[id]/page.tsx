@@ -129,6 +129,7 @@ export default function ResumeEditorPage() {
   if (!document) return <main className="p-8 text-sm text-zinc-500">{message || "Loading resume..."}</main>
   const data = document.resumeData || emptyResumeData
   const selectedCheck = audit?.factors.flatMap((factor) => factor.checks).find((check) => check.id === activeFix)
+  const generationNotice = typeof document.analysis?.generation_notice === "string" ? document.analysis.generation_notice : ""
 
 
   return (
@@ -153,6 +154,7 @@ export default function ResumeEditorPage() {
           <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={() => download("docx")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "docx" ? "Preparing Word..." : "Download Word"}</button><button onClick={() => download("pdf")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "pdf" ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving || downloading !== null} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
         <p className="mb-3 text-sm text-zinc-600 print:hidden" role="status">{dirty ? "Unsaved changes. Downloads save your latest edits first." : "All changes saved."}</p>
+        {generationNotice && <p className="mb-3 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{generationNotice}</p>}
         {undoData && <button className="mb-3 text-sm font-bold text-teal print:hidden" disabled={saving || downloading !== null} onClick={() => { setData(undoData); setUndoData(null); setMessage("Suggestion undone.") }}>Undo last suggestion</button>}
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 
