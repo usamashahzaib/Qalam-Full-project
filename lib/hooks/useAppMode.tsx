@@ -22,6 +22,13 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       const resolved = resolveStoredMode(localStorage.getItem(MODE_STORAGE_KEY))
+      // A one-shot read of an external store on mount. It cannot move into a
+      // lazy useState initializer, because the server has no localStorage and
+      // would render a different mode than the client, breaking hydration.
+      // The lint-clean form is useSyncExternalStore; that is a behavioural
+      // change to a provider used app-wide, so it wants browser verification
+      // rather than a blind swap.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setModeState(resolved.mode)
       setNeedsOnboarding(resolved.needsOnboarding)
     } catch {
