@@ -21,6 +21,8 @@ import { useBilling } from "@/lib/hooks/useBilling"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CheckIcon } from "@/components/ui/qalam-icons"
 import { SILENT_GROWTH_LIVE } from "@/lib/constants"
+import { useAppMode } from "@/lib/hooks/useAppMode"
+import { isVisibleInMode } from "@/lib/app-mode"
 
 type MobileLink = {
   href: string
@@ -66,16 +68,19 @@ export function AppMobileNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { billing } = useBilling()
+  const { mode } = useAppMode()
   const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
   const visibleMoreLinks = useMemo(
     () => MOBILE_MORE_LINKS.filter((link) => (
-      !link.hideWhenLocked
-      || !link.requiredPlan
-      || hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)
+      isVisibleInMode(link.href, mode) && (
+        !link.hideWhenLocked
+        || !link.requiredPlan
+        || hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)
+      )
     )),
-    [billing.featureFlags, billing.plan],
+    [billing.featureFlags, billing.plan, mode],
   )
 
   const isMoreActive = visibleMoreLinks.some(
@@ -122,7 +127,7 @@ export function AppMobileNav() {
 
       <nav className="qalam-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="mx-auto grid max-w-screen-sm grid-cols-5 px-2 py-2">
-          {MOBILE_PRIMARY_LINKS.map((link) => {
+          {MOBILE_PRIMARY_LINKS.filter((link) => isVisibleInMode(link.href, mode)).map((link) => {
             const { href, label, icon: Icon } = link
             const active = pathname === href || pathname.startsWith(`${href}/`)
             return (
