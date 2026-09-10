@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
-import { type AppMode, MODE_STORAGE_KEY } from "@/lib/app-mode"
+import { type AppMode, DEFAULT_MODE, MODE_STORAGE_KEY, resolveStoredMode } from "@/lib/app-mode"
 
 type AppModeContextValue = {
   mode: AppMode
@@ -14,25 +14,18 @@ type AppModeContextValue = {
 
 const AppModeContext = createContext<AppModeContextValue | null>(null)
 
-const isValidMode = (value: unknown): value is AppMode =>
-  value === "career" || value === "linkedin" || value === "everything"
-
 export function AppModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<AppMode>("everything")
+  const [mode, setModeState] = useState<AppMode>(DEFAULT_MODE)
   const [pending, setPending] = useState(true)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(MODE_STORAGE_KEY)
-      if (stored && isValidMode(stored)) {
-        setModeState(stored)
-      } else {
-        // No mode stored yet - flag for onboarding
-        setNeedsOnboarding(true)
-      }
+      const resolved = resolveStoredMode(localStorage.getItem(MODE_STORAGE_KEY))
+      setModeState(resolved.mode)
+      setNeedsOnboarding(resolved.needsOnboarding)
     } catch {
-      // localStorage blocked - default to everything
+      // localStorage blocked - keep the default and do not nag
     }
     setPending(false)
   }, [])

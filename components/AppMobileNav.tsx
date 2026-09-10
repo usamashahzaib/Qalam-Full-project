@@ -12,7 +12,6 @@ import {
   MicroscopeIcon,
   ProfileIcon,
   StealthIcon,
-  TeamIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
 import { withClientParam } from "@/lib/workspace-navigation"
@@ -22,7 +21,7 @@ import { UpgradeModal } from "@/components/UpgradeModal"
 import { CheckIcon } from "@/components/ui/qalam-icons"
 import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { useAppMode } from "@/lib/hooks/useAppMode"
-import { isVisibleInMode } from "@/lib/app-mode"
+import { isVisibleInMode, APP_MODES, type AppMode } from "@/lib/app-mode"
 
 type MobileLink = {
   href: string
@@ -32,12 +31,24 @@ type MobileLink = {
   hideWhenLocked?: boolean
 }
 
-export const MOBILE_PRIMARY_LINKS: MobileLink[] = [
+const CAREER_PRIMARY_LINKS: MobileLink[] = [
+  { href: "/dashboard", label: "Home", icon: GrowthIcon },
+  { href: "/career", label: "Career", icon: ProfileIcon },
+  { href: "/career/applications", label: "Apps", icon: GrowthIcon },
+  { href: "/career/evidence", label: "Evidence", icon: CheckIcon },
+]
+
+const LINKEDIN_PRIMARY_LINKS: MobileLink[] = [
   { href: "/dashboard", label: "Home", icon: GrowthIcon },
   { href: "/writer", label: "Write", icon: ComposeIcon },
   { href: "/calendar", label: "Plan", icon: CalendarIcon, requiredPlan: "Solo" },
   { href: "/analytics", label: "Track", icon: AnalyticsIcon, requiredPlan: "Solo" },
 ]
+
+export const MOBILE_PRIMARY_LINKS: Record<AppMode, MobileLink[]> = {
+  career: CAREER_PRIMARY_LINKS,
+  linkedin: LINKEDIN_PRIMARY_LINKS,
+}
 
 export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/chat", label: "AI Chat", icon: VoiceIcon, requiredPlan: "Pro" },
@@ -50,7 +61,6 @@ export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
   ...(SILENT_GROWTH_LIVE ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }] : []),
-  { href: "/agency", label: "Team", icon: TeamIcon, requiredPlan: "Agency", hideWhenLocked: true },
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]
 
@@ -68,19 +78,22 @@ export function AppMobileNav() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { billing } = useBilling()
-  const { mode } = useAppMode()
+  const { mode, setMode } = useAppMode()
   const activeClientId = searchParams.get("client")
   const [moreOpen, setMoreOpen] = useState(false)
   const [upgradePrompt, setUpgradePrompt] = useState<{ plan: PlanTier; reason: string } | null>(null)
+  const primaryLinks = MOBILE_PRIMARY_LINKS[mode]
+  const primaryHrefs = useMemo(() => new Set(primaryLinks.map((l) => l.href)), [primaryLinks])
   const visibleMoreLinks = useMemo(
     () => MOBILE_MORE_LINKS.filter((link) => (
+      !primaryHrefs.has(link.href) &&
       isVisibleInMode(link.href, mode) && (
         !link.hideWhenLocked
         || !link.requiredPlan
         || hasFeatureAccess(billing.plan, link.requiredPlan, link.label, billing.featureFlags)
       )
     )),
-    [billing.featureFlags, billing.plan, mode],
+    [billing.featureFlags, billing.plan, mode, primaryHrefs],
   )
 
   const isMoreActive = visibleMoreLinks.some(
@@ -103,6 +116,17 @@ export function AppMobileNav() {
 
       {moreOpen && (
         <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 max-h-[62dvh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
+          <div className="mb-2 flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+            {APP_MODES.map((m) => (
+              <button
+                key={m.key}
+                onClick={() => { setMode(m.key); setMoreOpen(false) }}
+                className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${mode === m.key ? "bg-teal text-white shadow-sm" : "text-zinc-400 hover:text-zinc-600"}`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
             {visibleMoreLinks.map((link) => {
               const { href, label, icon: Icon } = link
@@ -127,7 +151,7 @@ export function AppMobileNav() {
 
       <nav className="qalam-mobile-nav fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200/80 bg-white/95 backdrop-blur md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         <div className="mx-auto grid max-w-screen-sm grid-cols-5 px-2 py-2">
-          {MOBILE_PRIMARY_LINKS.filter((link) => isVisibleInMode(link.href, mode)).map((link) => {
+          {primaryLinks.map((link) => {
             const { href, label, icon: Icon } = link
             const active = pathname === href || pathname.startsWith(`${href}/`)
             return (

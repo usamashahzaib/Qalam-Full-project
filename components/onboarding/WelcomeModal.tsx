@@ -5,26 +5,24 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { useAppMode } from "@/lib/hooks/useAppMode"
 import { APP_MODES, type AppMode } from "@/lib/app-mode"
-import { ProfileIcon, ComposeIcon, CheckIcon } from "@/components/ui/qalam-icons"
+import { ProfileIcon, ComposeIcon } from "@/components/ui/qalam-icons"
 
 const STORAGE_KEY = "onboarding_completed"
 
 const MODE_ICONS: Record<AppMode, (props: { className?: string }) => React.ReactElement> = {
   career: ProfileIcon,
   linkedin: ComposeIcon,
-  everything: CheckIcon,
 }
 
 const MODE_DESTINATIONS: Record<AppMode, string> = {
   career: "/career",
   linkedin: "/writer?compose=new",
-  everything: "/dashboard",
 }
 
 export function WelcomeModal() {
   const { status } = useSession()
   const router = useRouter()
-  const { needsOnboarding, setMode, pending } = useAppMode()
+  const { mode, needsOnboarding, setMode, pending } = useAppMode()
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
@@ -52,6 +50,10 @@ export function WelcomeModal() {
   }
 
   const dismiss = () => {
+    // Persist the current default so needsOnboarding clears. Without this a
+    // user carrying the retired "everything" preference is re-prompted on
+    // every load, because no valid mode ever reaches storage.
+    setMode(mode)
     try {
       localStorage.setItem(STORAGE_KEY, "true")
     } catch {

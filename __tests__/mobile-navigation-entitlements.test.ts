@@ -8,7 +8,8 @@ describe("mobile navigation entitlements", () => {
       NAV_GROUPS.flatMap((group) => group.links).map((link) => [link.href, link.requiredPlan])
     )
 
-    for (const link of [...MOBILE_PRIMARY_LINKS, ...MOBILE_MORE_LINKS]) {
+    const allPrimaryLinks = Object.values(MOBILE_PRIMARY_LINKS).flat()
+    for (const link of [...allPrimaryLinks, ...MOBILE_MORE_LINKS]) {
       expect(link.requiredPlan).toBe(desktop.get(link.href))
     }
   })

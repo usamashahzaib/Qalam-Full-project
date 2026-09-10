@@ -2,6 +2,8 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { getSessionContext } from "@/lib/server/dashboard"
 import { DailyMomentumCard } from "@/components/dashboard/DailyMomentumCard"
+import { DashboardHero } from "@/components/dashboard/DashboardHero"
+import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { withClientParam } from "@/lib/workspace-navigation"
 
 // ─── Writing Prompts ──────────────────────────────────────────────────────────
@@ -216,47 +218,21 @@ export default async function DashboardPage({
 
   return (
     <>
-      {/* Header */}
-      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Your Qalam</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950">
-            {greeting}
-          </h1>
-          <p className="mt-2 text-sm text-zinc-500">One useful move at a time. Your work becomes easier to reuse every day.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-        <Link href={withClientParam("/career/resumes", activeClientId)} className="inline-flex min-h-11 items-center rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition-colors hover:border-teal hover:text-teal">Build resume</Link>
-        <Link
-          href={withClientParam("/writer", activeClientId)}
-          className="inline-flex min-h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition-colors"
-          style={{ backgroundColor: "var(--ws-brand, #0d4a45)" }}
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Create LinkedIn post
-        </Link>
-        </div>
-      </header>
+      <DashboardHero greeting={greeting} activeClientId={activeClientId} />
 
       <DailyMomentumCard />
 
-      {/* Static sections - render immediately, no data dependency */}
-      <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <WritingPromptsCard activeClientId={activeClientId} />
-        <QuickActionsCard activeClientId={activeClientId} />
-      </div>
+      <DashboardContent
+        linkedinContent={
+          <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+            <WritingPromptsCard activeClientId={activeClientId} />
+            <QuickActionsCard activeClientId={activeClientId} />
+          </div>
+        }
+        careerContent={
+          <QuickActionsCard activeClientId={activeClientId} />
+        }
+      />
     </>
   )
 }

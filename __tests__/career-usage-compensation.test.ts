@@ -97,8 +97,14 @@ describe("career usage compensation", () => {
         },
       })
     )
-    callAi.mockResolvedValue('{"resume":{},"analysis":{}}')
-    safeParseJson.mockReturnValue({ resume: {}, analysis: {} })
+    // The resume needs usable content, otherwise the route's readability guard
+    // returns 422 before the save is ever attempted and this stops covering the
+    // refund-on-save-failure path it exists to check.
+    const usableResume = {
+      summary: "Engineering manager who led platform teams and delivery.",
+    }
+    callAi.mockResolvedValue(JSON.stringify({ resume: usableResume, analysis: {} }))
+    safeParseJson.mockReturnValue({ resume: usableResume, analysis: {} })
 
     const mod = await import("@/app/api/career/resumes/generate/route")
     const request = new NextRequest("http://localhost/api/career/resumes/generate", {

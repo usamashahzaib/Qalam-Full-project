@@ -36,7 +36,7 @@ import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { NotificationBell } from "@/components/NotificationBell"
 import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { useAppMode } from "@/lib/hooks/useAppMode"
-import { isVisibleInMode, APP_MODES, type AppMode } from "@/lib/app-mode"
+import { isVisibleInMode, APP_MODES } from "@/lib/app-mode"
 
 // Update launchDate when a feature actually ships - the badge auto-hides 14 days after.
 const NEW_FEATURES: Record<string, { launchDate: string; tooltip: string }> = {}
@@ -77,7 +77,6 @@ export const NAV_GROUPS = [
   {
     label: "Account",
     links: [
-      { href: "/agency", label: "Agency Hub", icon: TeamIcon, requiredPlan: "Agency" as PlanTier, hideWhenLocked: true },
       { href: "/settings/referrals", label: "Refer & Earn", icon: GiftIcon },
       { href: "/settings", label: "Settings", icon: ProfileIcon },
     ],
@@ -328,6 +327,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
+          {/* Mode switcher */}
+          <div className="shrink-0 px-4 pb-3">
+            <div className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-800/40 p-1">
+              {APP_MODES.map((m) => (
+                <button
+                  key={m.key}
+                  onClick={() => setMode(m.key)}
+                  className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${mode === m.key ? "bg-teal text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}
+                  title={m.description}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <nav className="qalam-scrollbar-dark min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
             {NAV_GROUPS.map((group) => ({ ...group, links: group.links.filter((link) => isVisibleInMode(link.href, mode)) })).filter((group) => group.links.length > 0).map((group) => (
               <div key={group.label}>
@@ -405,20 +420,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-1.5"><p className="text-sm font-bold text-white truncate leading-none">{user?.fullName}</p><span className="shrink-0 rounded-full bg-gold/10 px-1.5 py-0.5 t-eyebrow text-goldr">{billing.plan}</span>{billing.overrideActive ? <span className="shrink-0 rounded-full bg-teal/15 px-1.5 py-0.5 t-eyebrowr text-teal-100">Override active</span> : null}{user?.role === "admin" ? <span className="shrink-0 rounded-full bg-red-500/15 px-1.5 py-0.5 t-eyebrowr text-red-200">Admin</span> : null}</div>
               <p className="text-xs text-zinc-500 truncate mt-1">{user?.email}</p>
             </div>
-          </div>
-
-          {/* Mode switcher */}
-          <div className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-800/40 p-1">
-            {APP_MODES.map((m) => (
-              <button
-                key={m.key}
-                onClick={() => setMode(m.key)}
-                className={`flex-1 cursor-pointer rounded-lg px-2 py-1.5 t-eyebrow font-bold transition-colors ${mode === m.key ? "bg-teal text-white" : "text-zinc-500 hover:text-zinc-300"}`}
-                title={m.description}
-              >
-                {m.label}
-              </button>
-            ))}
           </div>
 
           <button onClick={() => signOut({ callbackUrl: "/" })} className="w-full cursor-pointer flex items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-800/40 hover:bg-zinc-800 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 transition-colors">Sign out</button>
@@ -529,7 +530,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-16 w-full items-center justify-between px-3 sm:px-4">
           <div className="flex items-center gap-2"><QalamMark size={28} /><span className="text-sm font-extrabold text-zinc-900 tracking-tight">Qalam</span></div>
           <div className="flex items-center gap-2">
-            <span className="hidden max-w-[120px] truncate rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal min-[400px]:inline-flex">{activeClientName}</span>
+            {activeClientId ? (
+              <span className="hidden max-w-[110px] truncate rounded-full border border-gold/20 bg-gold-50 px-2.5 py-0.5 text-xs font-bold text-gold-700 min-[400px]:inline-flex" title={activeClientName}>{activeClientName}</span>
+            ) : null}
+            <span className="hidden rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal min-[400px]:inline-flex">{mode === "career" ? "Career" : "LinkedIn"}</span>
             <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
             <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
             <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
