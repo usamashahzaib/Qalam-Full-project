@@ -1,3 +1,4 @@
+import { buildOgImageUrl } from "@/lib/seo"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     "Start with Qalam's free ATS Resume Checker, then improve your LinkedIn profile, writing, carousels, and engagement. Most tools need no account.",
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
+    images: [{ url: buildOgImageUrl("Free ATS Resume Checker and Career Tools | Qalam", "Qalam", "free-tools"), width: 1200, height: 630, alt: "Free ATS Resume Checker and Career Tools | Qalam" }],
     title: "Free ATS Resume Checker and Career Tools | Qalam",
     description:
       "Start with a recruiter-grade ATS resume check, then use seven focused LinkedIn tools. Most work with no sign-in.",
@@ -28,6 +30,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
+    images: [buildOgImageUrl("Free ATS Resume Checker and Career Tools | Qalam", "Qalam", "free-tools")],
     card: "summary_large_image",
     title: "Free ATS Resume Checker and Career Tools | Qalam",
     description:

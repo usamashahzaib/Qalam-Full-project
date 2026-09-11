@@ -476,7 +476,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     ],
     related: [
       { label: "Free Carousel Builder", href: "/free-tools/carousel-builder" },
-      { label: "AI Content Writer", href: "/ai-content-writer" },
+      { label: "AI Content Writer", href: "/linkedin-post-writer" },
       { label: "Free Tools", href: "/free-tools" },
     ],
   },
@@ -1025,7 +1025,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     ],
     example: { heading: "A simple before-and-after", body: "Before: 'Helping businesses grow | Strategy | Innovation'. After: 'Growth strategist for B2B service firms | Positioning, demand generation, and sales enablement'. The second version makes the audience and work more concrete without inventing proof." },
     faqs: [{ q: "How long should a LinkedIn headline be?", a: "Use enough words to make the role and value clear, then remove repetition. A short specific headline is stronger than a full character limit of disconnected terms." }, { q: "Should I include Open to Work in my headline?", a: "Use the platform setting when appropriate. Keep the headline focused on the target professional position and strengths you want a reader to understand." }],
-    related: [{ label: "Free Profile Optimizer", href: "/free-tools/profile-optimizer" }, { label: "LinkedIn profile optimization", href: "/linkedin-profile-optimization" }, { label: "AI LinkedIn post generator", href: "/ai-linkedin-post-generator" }],
+    related: [{ label: "Free Profile Optimizer", href: "/free-tools/profile-optimizer" }, { label: "LinkedIn profile optimization", href: "/linkedin-profile-optimization" }, { label: "AI LinkedIn post generator", href: "/linkedin-post-writer" }],
   },
   "linkedin-about-examples": {
     slug: "linkedin-about-examples",

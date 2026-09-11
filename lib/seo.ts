@@ -216,9 +216,6 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/partners", priority: 0.84, changeFrequency: "monthly", lastModified: "2026-09-01" },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  ...(AGENCY_PLAN_LIVE
-    ? [{ path: "/agency-setup", priority: 0.76, changeFrequency: "monthly" as const, lastModified: MARKETING_LAST_MODIFIED }]
-    : []),
   { path: "/managed/apply", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/demo", priority: 0.85, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/docs", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
@@ -253,7 +250,6 @@ export const LLM_ROUTES = [
   "/about",
   "/partners",
   "/contact",
-  ...(AGENCY_PLAN_LIVE ? ["/agency-setup"] : []),
   "/blog",
   "/changelog",
   "/product/post-writer",

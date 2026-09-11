@@ -1,3 +1,4 @@
+import { buildOgImageUrl } from "@/lib/seo"
 ﻿import type { Metadata } from "next"
 import { HeadlineAnalyzerTool } from "@/components/tools/HeadlineAnalyzerTool"
 import { SITE_URL } from "@/lib/seo"
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
     "Score your LinkedIn headline instantly across 5 proven dimensions: length, power words, specificity, structure, and role clarity. Free, no account required.",
   alternates: { canonical: `${SITE_URL}/free-tools/headline-analyzer` },
   openGraph: {
+    images: [{ url: buildOgImageUrl("LinkedIn Headline Analyzer - Free | Qalam", "Qalam", "headline-analyzer"), width: 1200, height: 630, alt: "LinkedIn Headline Analyzer - Free | Qalam" }],
     title: "LinkedIn Headline Analyzer - Free | Qalam",
     description:
       "Score your LinkedIn headline across 5 proven dimensions with specific improvement suggestions. No sign-in required.",
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
+    images: [buildOgImageUrl("LinkedIn Headline Analyzer - Free | Qalam", "Qalam", "headline-analyzer")],
     card: "summary_large_image",
     title: "LinkedIn Headline Analyzer - Free | Qalam",
     description:

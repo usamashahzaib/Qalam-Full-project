@@ -1,3 +1,4 @@
+import { buildOgImageUrl } from "@/lib/seo"
 ﻿import type { Metadata } from "next"
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
   title: "Contact - Support & Plan Upgrades",
   description: "Contact the Qalam team for support, plan upgrades via JazzCash or Easypaisa, partnerships, or commercial questions. Response within 24 hours.",
   alternates: { canonical: "https://www.byqalam.com/contact" },
+  twitter: { card: "summary_large_image", images: [buildOgImageUrl("Contact Qalam", "Qalam", "contact")] },
   openGraph: {
+    images: [{ url: buildOgImageUrl("Contact Qalam", "Qalam", "contact"), width: 1200, height: 630, alt: "Contact Qalam" }],
     title: "Contact Qalam",
     description: "Reach the Qalam team for support or plan upgrades. JazzCash and Easypaisa accepted.",
     url: "https://www.byqalam.com/contact",

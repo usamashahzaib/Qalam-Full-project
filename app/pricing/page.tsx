@@ -1,3 +1,4 @@
+import { buildOgImageUrl } from "@/lib/seo"
 ﻿import type { Metadata } from "next"
 import { PricingPageContent } from "@/components/PricingPageContent"
 import { SITE_URL, APP_URL } from "@/lib/seo"
@@ -23,6 +24,7 @@ export const metadata: Metadata = {
       : `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
+    images: [{ url: buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing"), width: 1200, height: 630, alt: "Qalam Pricing - Career Visibility Plans" }],
     title: "Qalam Pricing - Career Visibility Plans",
     description:
       AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
@@ -30,6 +32,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
+    images: [buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing")],
     card: "summary_large_image",
     title: "Qalam Pricing - Career Visibility Plans",
     description:
