@@ -1,3 +1,4 @@
+import { buildOgImageUrl } from "@/lib/seo"
 import type { Metadata } from "next"
 import { CommentGeneratorTool } from "@/components/tools/CommentGeneratorTool"
 import { SITE_URL } from "@/lib/seo"
@@ -8,6 +9,7 @@ export const metadata: Metadata = {
     "Draft sharp, on-voice LinkedIn comments for any post in seconds. Pick the style you want and get options written in your own voice. Free sign-in required.",
   alternates: { canonical: `${SITE_URL}/free-tools/comment-generator` },
   openGraph: {
+    images: [{ url: buildOgImageUrl("Free LinkedIn Comment Generator - On-Voice Replies | Qalam", "Qalam", "comment-generator"), width: 1200, height: 630, alt: "Free LinkedIn Comment Generator - On-Voice Replies | Qalam" }],
     title: "Free LinkedIn Comment Generator - On-Voice Replies | Qalam",
     description:
       "Paste a post, pick the style you want, and get comment options written in your own voice. Free sign-in required. Built by Qalam, the AI LinkedIn writer.",
@@ -15,6 +17,7 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: {
+    images: [buildOgImageUrl("Free LinkedIn Comment Generator - On-Voice Replies | Qalam", "Qalam", "comment-generator")],
     card: "summary_large_image",
     title: "Free LinkedIn Comment Generator | Qalam",
     description:

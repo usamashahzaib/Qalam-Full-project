@@ -41,6 +41,8 @@ describe("SEO discovery sprint", () => {
 
   it("keeps redirected intent variants out of discovery registries", () => {
     const publicPaths = PUBLIC_ROUTES.map(({ path }) => path)
+    expect(publicPaths).not.toContain("/agency-setup")
+    expect(LLM_ROUTES).not.toContain("/agency-setup")
     for (const [source, destination] of Object.entries(SEO_CANONICAL_REDIRECTS)) {
       expect(publicPaths).not.toContain(source)
       expect(publicPaths).toContain(destination)
