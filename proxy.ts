@@ -171,6 +171,10 @@ export function authenticatedAuthRedirect(callbackUrl: string | null): string {
   return pointsBackToAuth ? "/dashboard" : destination
 }
 
+export function shouldRedirectAuthenticatedAuthRoute(callbackUrl: string | null): boolean {
+  return callbackUrl === null
+}
+
 // Page routes with no auth gate of their own (token-based, not session-based)
 // that still belong on the app subdomain rather than the marketing site.
 export const APP_ONLY_EXTRA_PATHS = [
@@ -487,8 +491,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     )
   }
 
-  if (isAuthOnly && userId) {
-    const destination = authenticatedAuthRedirect(request.nextUrl.searchParams.get("callbackUrl"))
+  const authCallbackUrl = request.nextUrl.searchParams.get("callbackUrl")
+  if (isAuthOnly && userId && shouldRedirectAuthenticatedAuthRoute(authCallbackUrl)) {
+    const destination = authenticatedAuthRedirect(authCallbackUrl)
     return await addSecurityHeaders(
       NextResponse.redirect(new URL(destination, request.url)),
       { nonce }

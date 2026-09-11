@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
 import { QalamMark } from "@/components/QalamLogo"
 import { VALID_PLAN_NAMES } from "@/lib/entitlements"
 import { SUPPORT_EMAIL } from "@/lib/contact"
@@ -64,6 +64,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [resolveError, setResolveError] = useState<string | null>(null)
   const [isResolving, setIsResolving] = useState(true)
 
+  const currentDestination = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
+  const loginUrl = `/login?callbackUrl=${encodeURIComponent(currentDestination)}`
+
   // Plan-only re-read, used after a Lemon Squeezy checkout completes. Deliberately
   // narrower than the boot effect below: it never clears workspaceId or surfaces a
   // boot error, so a transient failure while polling cannot blank the whole app.
@@ -93,8 +96,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController()
     const timer = window.setTimeout(() => {
       if (status !== "authenticated" || !session?.user?.email) {
-        const next = `${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`
-        router.replace(`/login?callbackUrl=${encodeURIComponent(next)}`)
+        router.replace(loginUrl)
         setWorkspaceId(null)
         setResolveError("auth_required")
         setIsResolving(false)
@@ -122,6 +124,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       fetch(url, { signal: controller.signal })
         .then(async (res) => {
           const data = await res.json().catch(() => ({}))
+          if (res.status === 401) {
+            try {
+              sessionStorage.removeItem(workspaceCacheKey(clientParam))
+              sessionStorage.removeItem(billingCacheKey(clientParam))
+            } catch {}
+            await signOut({ redirectTo: loginUrl })
+            return
+          }
           if (!res.ok || !data.workspaceId) throw new Error(data.error || "Failed to resolve workspace")
           setWorkspaceId(data.workspaceId)
           const rawPlan = data.plan as string | undefined
@@ -203,7 +213,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             {isAuthError ? (
-              <Link href={`/login?callbackUrl=${encodeURIComponent(`${pathname || "/dashboard"}${searchParams.toString() ? `?${searchParams.toString()}` : ""}`)}`} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">
+              <Link href={loginUrl} className="rounded-lg bg-teal px-4 py-2 text-sm font-semibold text-white hover:bg-teal-600">
                 Sign in
               </Link>
             ) : (

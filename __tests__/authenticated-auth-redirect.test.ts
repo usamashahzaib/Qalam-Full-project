@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { authenticatedAuthRedirect } from "@/proxy"
+import { authenticatedAuthRedirect, shouldRedirectAuthenticatedAuthRoute } from "@/proxy"
 
 describe("authenticated auth redirect", () => {
   it("preserves a safe destination for a signed-in user", () => {
@@ -11,5 +11,11 @@ describe("authenticated auth redirect", () => {
     expect(authenticatedAuthRedirect("//example.com")).toBe("/dashboard")
     expect(authenticatedAuthRedirect("/login")).toBe("/dashboard")
     expect(authenticatedAuthRedirect(null)).toBe("/dashboard")
+  })
+
+  it("allows callback-based login pages to recover stale signed sessions", () => {
+    expect(shouldRedirectAuthenticatedAuthRoute("/dashboard")).toBe(false)
+    expect(shouldRedirectAuthenticatedAuthRoute("/admin")).toBe(false)
+    expect(shouldRedirectAuthenticatedAuthRoute(null)).toBe(true)
   })
 })
