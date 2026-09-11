@@ -83,49 +83,62 @@ const config: NextAuthConfig = {
     async signIn({ user, account }) {
       log.info("auth.sign_in", { provider: account?.provider, email: user.email })
 
-      // Logging in via LinkedIn already grants w_member_social (see provider config
-      // above), so persist that token as the workspace's publishing connection too -
-      // otherwise the dashboard would ask the user to "Connect LinkedIn" again even
-      // though they just authorized posting access during login.
-      if (account?.provider === "linkedin" && account.access_token && user.email) {
+      if (account?.provider === "linkedin" && user.email) {
+        const externalUserId = account.providerAccountId || user.id
+        if (!externalUserId) {
+          log.error("auth.linkedin_identity_missing")
+          return false
+        }
+
+        let supabaseUserId: string
+        let workspaceId: string
         try {
           const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/identity")
-          const { storeLinkedInToken, storeLinkedInPublishingAccount } = await import("@/lib/server/linkedin-credentials")
 
           const email = user.email.toLowerCase()
-          const supabaseUserId = await ensureSupabaseUser({
-            userId: user.id!,
+          supabaseUserId = await ensureSupabaseUser({
+            userId: externalUserId,
             email,
             fullName: user.name || "",
             imageUrl: user.image || null,
           })
-          const workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email })
-
-          const memberId = account.providerAccountId || null
-          const tokenExpiresAt = account.expires_at ? account.expires_at * 1000 : null
-          const refreshToken = (account.refresh_token as string | undefined) || null
-          const refreshTokenExpiresIn = (account as { refresh_token_expires_in?: number }).refresh_token_expires_in
-          const refreshTokenExpiresAt = refreshTokenExpiresIn ? Date.now() + refreshTokenExpiresIn * 1000 : null
-
-          await storeLinkedInToken({
-            userId: supabaseUserId,
-            accessToken: account.access_token,
-            memberId,
-            tokenExpiresAt,
-            refreshToken,
-            refreshTokenExpiresAt,
-          })
-          await storeLinkedInPublishingAccount({
-            workspaceId,
-            accessToken: account.access_token,
-            memberId,
-            tokenExpiresAt,
-            refreshToken,
-            refreshTokenExpiresAt,
-          })
+          workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email })
         } catch (err) {
-          // Don't block login on this - user can still connect manually from settings.
-          log.error("auth.linkedin_publishing_link_failed", { error: (err as Error).message })
+          log.error("auth.linkedin_provisioning_failed", { error: (err as Error).message })
+          return false
+        }
+
+        // Publishing setup is optional. Account provisioning above is not.
+        if (account.access_token) {
+          try {
+            const { storeLinkedInToken, storeLinkedInPublishingAccount } = await import("@/lib/server/linkedin-credentials")
+
+            const memberId = account.providerAccountId || null
+            const tokenExpiresAt = account.expires_at ? account.expires_at * 1000 : null
+            const refreshToken = (account.refresh_token as string | undefined) || null
+            const refreshTokenExpiresIn = (account as { refresh_token_expires_in?: number }).refresh_token_expires_in
+            const refreshTokenExpiresAt = refreshTokenExpiresIn ? Date.now() + refreshTokenExpiresIn * 1000 : null
+
+            await storeLinkedInToken({
+              userId: supabaseUserId,
+              accessToken: account.access_token,
+              memberId,
+              tokenExpiresAt,
+              refreshToken,
+              refreshTokenExpiresAt,
+            })
+            await storeLinkedInPublishingAccount({
+              workspaceId,
+              accessToken: account.access_token,
+              memberId,
+              tokenExpiresAt,
+              refreshToken,
+              refreshTokenExpiresAt,
+            })
+          } catch (err) {
+            // Login remains valid even if optional LinkedIn publishing setup fails.
+            log.error("auth.linkedin_publishing_link_failed", { error: (err as Error).message })
+          }
         }
       }
 
@@ -133,8 +146,10 @@ const config: NextAuthConfig = {
     },
 
     async jwt({ token, user, account, trigger }) {
-      if (trigger === "signIn" && user) {
-        token.id = user.id
+      if ((trigger === "signIn" || trigger === "signUp") && user) {
+        token.id = account?.provider === "linkedin"
+          ? account.providerAccountId || user.id
+          : user.id
         token.email = user.email ?? undefined
         token.name = user.name ?? undefined
         token.picture = user.image ?? undefined
