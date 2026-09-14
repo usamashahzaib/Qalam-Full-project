@@ -544,16 +544,16 @@ export type PurchasableBillingCycle = Exclude<BillingCycle, "annual">
 // Hosted checkout links from the Lemon Squeezy store. Not secret - safe in a shared module.
 export const LEMONSQUEEZY_CHECKOUT_URLS: Partial<Record<PlanName, Partial<Record<PurchasableBillingCycle, string>>>> = {
   Solo: {
-    monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6c516b74-52b6-4ae9-b0f1-6c571d877839",
-    // Quarterly product. Env var still overrides if set.
-    quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_SOLO_QUARTERLY_URL
-      || "https://byqalam.lemonsqueezy.com/checkout/buy/a1e289b6-9c8b-42f5-b2ad-b9b36b7aff3b",
+    monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/8a6858c5-4230-4111-be0a-2c823dfd6a85",
+    quarterly: "https://byqalam.lemonsqueezy.com/checkout/buy/d1cb2e4f-4928-4125-a38e-23915114c6f9",
   },
   Pro: {
     monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/f1c488db-da8a-491d-8b9f-af1ef96a63f3",
-    // Quarterly product. Env var still overrides if set.
-    quarterly: process.env.NEXT_PUBLIC_LEMONSQUEEZY_PRO_QUARTERLY_URL
-      || "https://byqalam.lemonsqueezy.com/checkout/buy/c3036b23-7f98-4a58-ad09-c2ddbe2483c2",
+    quarterly: "https://byqalam.lemonsqueezy.com/checkout/buy/c3036b23-7f98-4a58-ad09-c2ddbe2483c2",
+  },
+  Agency: {
+    monthly: "https://byqalam.lemonsqueezy.com/checkout/buy/6a22c0c0-8ab7-47ff-8cbd-070187d8d32e",
+    quarterly: "https://byqalam.lemonsqueezy.com/checkout/buy/47aa2226-9f64-4bfc-89ef-7d6d0b83b11c",
   },
 }
 
