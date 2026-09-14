@@ -31,7 +31,7 @@ export async function ensureSupabaseUser({
 
   const { data: userByEmail, error: emailLookupError } = await supabase
     .from("users")
-    .select("id, external_user_id, auth_provider")
+    .select("id, external_user_id")
     .eq("email", email)
     .maybeSingle()
 
@@ -60,9 +60,13 @@ export async function ensureSupabaseUser({
     if (userByEmail.external_user_id !== userId) {
       // LinkedIn's subject identifier can change when an application is
       // reconfigured. The provider has already verified this email address,
-      // so reconnect an existing LinkedIn-only identity by email. Keep the
-      // default strict behavior for every other caller and provider.
-      if (verifiedOAuthProvider === "linkedin" && userByEmail.auth_provider === "linkedin") {
+      // and external_user_id being set at all here means LinkedIn was
+      // legitimately linked to this account before (via the branch above or
+      // a prior relink) - regardless of what auth_provider says, since that
+      // column tracks the original signup method and is never updated when
+      // an email/password account later links LinkedIn. Keep the default
+      // strict behavior for every other caller and provider.
+      if (verifiedOAuthProvider === "linkedin") {
         const { data: relinkedUser, error: relinkError } = await supabase
           .from("users")
           .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })

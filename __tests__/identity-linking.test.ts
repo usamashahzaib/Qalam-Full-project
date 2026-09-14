@@ -45,6 +45,31 @@ describe("OAuth identity linking", () => {
     })
   })
 
+  it("reconnects a LinkedIn subject change even when auth_provider is still 'email' (originally signed up with a password, LinkedIn linked later)", async () => {
+    let userQuery = 0
+    const client = createFakeSupabase({
+      tableResponses: {
+        users: () => {
+          userQuery += 1
+          if (userQuery === 1) return ok(null)
+          if (userQuery === 2) {
+            return ok({ id: "internal-user", external_user_id: "old-subject", auth_provider: "email" })
+          }
+          return ok({ id: "internal-user", external_user_id: "new-subject" })
+        },
+      },
+    })
+    createServiceClient.mockReturnValue(client)
+
+    await expect(ensureSupabaseUser({
+      userId: "new-subject",
+      email: "user@example.com",
+      fullName: "User",
+      imageUrl: null,
+      verifiedOAuthProvider: "linkedin",
+    })).resolves.toBe("internal-user")
+  })
+
   it("keeps mismatched identities blocked outside a verified LinkedIn login", async () => {
     let userQuery = 0
     createServiceClient.mockReturnValue(createFakeSupabase({
