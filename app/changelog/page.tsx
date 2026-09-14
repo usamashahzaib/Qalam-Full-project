@@ -9,6 +9,17 @@ export const metadata = buildPageMetadata({
 
 const UPDATES = [
   {
+    date: "September 2026",
+    title: "ATS resume fixes now apply, and scoring is calibrated against a real test resume",
+    items: [
+      "Fixed the Review and Apply Fix flow: it was rendering blank fields and doing nothing. It now shows the exact line costing points, three AI rewrites scored for their real point impact, and a bracketed prompt for any figure only the candidate knows - Qalam never invents a number.",
+      "Recalibrated the readiness score against a resume scored 76/100 by a competitor's checker. A resume with no measurable results, no job-description match, or no reachable contact details is now capped well below the competitive band, regardless of how clean the formatting is. The cap and its reason are shown next to the score.",
+      "Fixed keyword extraction dropping multi-word requirements such as \"labour law compliance\" into disconnected fragments, and fixed bullets with a real count (\"18 contracts\", \"450 workers\") not being recognized as quantified evidence.",
+      "Job-description tailoring now rewrites the headline, summary, skills, and bullets around the posting instead of returning the source resume nearly untouched with only the headline changed.",
+      "Added public documentation of what each score band means, when a score is capped and why, and the outside standards and research (HR Open Standards, Europass CV, ISO 24495-1 Plain Language, O*NET/ESCO, the Ladders eye-tracking study, STAR/XYZ) each scoring factor is written against.",
+    ],
+  },
+  {
     date: "July 2026",
     title: "Career Hub, publishing hardening, and plan gating",
     items: [
