@@ -2,11 +2,13 @@ import "server-only"
 
 import { createClient } from "@supabase/supabase-js"
 import { env, requireSupabaseEnv } from "@/lib/server/env"
+import { fetchWithRetry } from "@/lib/server/retry-fetch"
 
 export function createServiceClient() {
   requireSupabaseEnv()
   return createClient(env.supabaseUrl, env.supabaseServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: (input, init) => fetchWithRetry(input, init) },
   })
 }
 
@@ -30,7 +32,12 @@ type RestResponse<T> = {
 
 const parseBody = <T>(raw: string): T => {
   if (!raw) return null as T
-  return JSON.parse(raw) as T
+  // Gateway errors arrive as HTML, not JSON. Let the status code report them.
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null as T
+  }
 }
 
 const key = () => env.supabaseServiceRoleKey
@@ -58,7 +65,7 @@ const withTimeout = (init: RequestInit = {}, ms = 15000): { init: RequestInit; c
 
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<RestResponse<T>> => {
   const timed = withTimeout(init)
-  const response = await fetch(url, timed.init).finally(timed.cleanup)
+  const response = await fetchWithRetry(url, timed.init).finally(timed.cleanup)
   const text = await response.text()
   const payload = parseBody<T>(text)
   if (!response.ok) {

@@ -24,6 +24,18 @@ import { createServiceClient } from "./supabase-rest"
 import { log } from "./logging"
 import { getPlanStatus } from "./plan-limits-v2"
 
+// A database outage is not an expired session. Answering 401 here would sign
+// the user out over a gateway blip, so it is reported as a retryable 503.
+const unavailable = (message: string) => {
+  log.error("auth.user_lookup_unavailable", { error: message })
+  return {
+    userId: null,
+    externalUserId: null,
+    error: NextResponse.json({ error: "service_unavailable" }, { status: 503 }),
+    session: null,
+  }
+}
+
 export async function requireAuthApi(request: NextRequest) {
   void request
   const session = await auth()
@@ -43,12 +55,13 @@ export async function requireAuthApi(request: NextRequest) {
 
   // ── Credentials user: tokenId IS the internal Supabase UUID ─────────────────
   if (provider === "credentials") {
-    const { data: user } = await supabase
+    const { data: user, error: lookupError } = await supabase
       .from("users")
       .select("id, email, full_name, image_url, password_version")
       .eq("id", tokenId)
       .maybeSingle()
 
+    if (lookupError) return unavailable(lookupError.message)
     if (!user) {
       return {
         userId: null,
@@ -104,12 +117,13 @@ export async function requireAuthApi(request: NextRequest) {
   // ── OAuth user (LinkedIn): tokenId is the provider's user ID ─────────────────
   const externalId = tokenId
 
-  const { data: user } = await supabase
+  const { data: user, error: lookupError } = await supabase
     .from("users")
     .select("id, external_user_id, email, full_name, image_url")
     .eq("external_user_id", externalId)
     .maybeSingle()
 
+  if (lookupError) return unavailable(lookupError.message)
   if (!user) {
     return {
       userId: null,

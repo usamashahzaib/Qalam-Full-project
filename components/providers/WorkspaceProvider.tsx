@@ -25,6 +25,26 @@ type WorkspaceContextValue = {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
 
 const workspaceCacheKey = (clientId: string | null) => `qalam-workspace:${clientId || "personal"}`
+
+const BOOT_RETRY_DELAYS_MS = [600, 1500, 3000]
+
+// The workspace boot is the single request the whole app waits on, so a
+// transient failure (network drop, deploy swap, database gateway error) is
+// retried before any error screen is shown. 401 and 403 are real answers and
+// return immediately.
+async function fetchWorkspaceWithRetry(url: string, signal: AbortSignal): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    const last = attempt >= BOOT_RETRY_DELAYS_MS.length
+    try {
+      const res = await fetch(url, { signal, cache: "no-store" })
+      if (last || (res.status < 500 && res.status !== 408 && res.status !== 429)) return res
+    } catch (error) {
+      if (last || signal.aborted) throw error
+    }
+    await new Promise((resolve) => setTimeout(resolve, BOOT_RETRY_DELAYS_MS[attempt]))
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError")
+  }
+}
 const billingCacheKey = (clientId: string | null) => `qalam-billing:${clientId || "personal"}`
 
 function WorkspaceProviderInner({
@@ -117,11 +137,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {}
 
+      // Last workspace this account opened, kept across tabs so a failed boot
+      // can still open the app. Keyed by email so a shared browser never hands
+      // one account another account's workspace.
+      const lastKnownKey = `${workspaceCacheKey(clientParam)}:${session.user.email.toLowerCase()}`
+      const fallbackWorkspaceId = cached || (() => { try { return localStorage.getItem(lastKnownKey) } catch { return null } })()
+
       setIsResolving(true)
       setResolveError(null)
       const url = clientParam ? `/api/workspace?workspaceKey=${encodeURIComponent(clientParam)}` : "/api/workspace"
 
-      fetch(url, { signal: controller.signal })
+      fetchWorkspaceWithRetry(url, controller.signal)
         .then(async (res) => {
           const data = await res.json().catch(() => ({}))
           if (res.status === 401) {
@@ -151,12 +177,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             try { sessionStorage.setItem(billingCacheKey(clientParam), JSON.stringify(freshBilling)) } catch {}
           }
           try { sessionStorage.setItem(workspaceCacheKey(clientParam), data.workspaceId) } catch {}
+          try { localStorage.setItem(lastKnownKey, data.workspaceId) } catch {}
           setResolveError(null)
         })
         .catch((error) => {
           if ((error as Error).name === "AbortError") return
-          setWorkspaceId(null)
-          setResolveError((error as Error).message || "Failed to resolve workspace")
+          const message = (error as Error).message || "Failed to resolve workspace"
+          // Access was actually refused: never fall back to a remembered workspace.
+          if (message === "unauthorized_workspace" || message === "schema_not_applied" || !fallbackWorkspaceId) {
+            setWorkspaceId(null)
+            setResolveError(message)
+            return
+          }
+          // Temporary outage: open the workspace this account last used. Each
+          // page's own API calls still enforce access on the server.
+          setWorkspaceId(fallbackWorkspaceId)
         })
         .finally(() => {
           if (!controller.signal.aborted) setIsResolving(false)

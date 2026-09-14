@@ -126,7 +126,7 @@ export async function ensureSupabaseUser({
 
 const getOrCreateWorkspaceForUser = async (userId: string, ownerEmail?: string) => {
   const supabase = createServiceClient()
-  const { data: membership } = await supabase
+  const { data: membership, error: membershipLookupError } = await supabase
     .from("workspace_members")
     .select("workspace_id, role")
     .eq("user_id", userId)
@@ -134,6 +134,12 @@ const getOrCreateWorkspaceForUser = async (userId: string, ownerEmail?: string) 
     .limit(1)
     .maybeSingle()
 
+  // A failed lookup is not "no workspace". Creating one here would give the
+  // user an empty duplicate Personal workspace every time Supabase blips.
+  if (membershipLookupError) {
+    log.error("workspace.membership_lookup_failed", { error: membershipLookupError.message })
+    throw new Error("failed_to_lookup_workspace")
+  }
   if (membership) return membership.workspace_id
 
   const payload: Record<string, string> = { name: "Personal", owner_id: userId }

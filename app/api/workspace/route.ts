@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext, requireAuth, resolveWorkspaceId, resolveEffectivePlan } from "@/lib/server/workspace"
+import { TRANSIENT_ERROR_CODES } from "@/lib/server/transient-errors"
 
 const toStatus = (message: string) => {
+  if (TRANSIENT_ERROR_CODES.has(message)) return 503
   switch (message) {
     case "auth_required":
     case "Unauthorized":

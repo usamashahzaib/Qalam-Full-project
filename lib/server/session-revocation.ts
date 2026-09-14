@@ -9,6 +9,16 @@ export function passwordVersionsMatch(databaseVersion: unknown, tokenVersion: un
   return typeof databaseVersion === "number" && typeof tokenVersion === "number" && databaseVersion === tokenVersion
 }
 
+// A failed lookup says nothing about whether the session was revoked. Treating
+// it as revoked signed people out whenever Supabase returned a gateway error,
+// so it surfaces as a retryable failure instead.
+const SESSION_CHECK_UNAVAILABLE = "session_check_unavailable"
+
+const sessionCheckUnavailable = (message: string) => {
+  log.error("auth.session_check_unavailable", { error: message })
+  return new Error(SESSION_CHECK_UNAVAILABLE)
+}
+
 async function isSessionCurrentImpl(session: Session | null): Promise<boolean> {
   if (!session?.user?.id) return false
   const user = session.user as typeof session.user & { provider?: string; passwordVersion?: number }
@@ -19,7 +29,8 @@ async function isSessionCurrentImpl(session: Session | null): Promise<boolean> {
       .eq("external_user_id", user.id)
       .maybeSingle()
 
-    if (error || !data) {
+    if (error) throw sessionCheckUnavailable(error.message)
+    if (!data) {
       log.warn("auth.stale_oauth_session", { externalUserId: user.id })
       return false
     }
@@ -32,7 +43,8 @@ async function isSessionCurrentImpl(session: Session | null): Promise<boolean> {
     .eq("id", user.id)
     .maybeSingle()
 
-  if (error || !data || !passwordVersionsMatch(data.password_version, user.passwordVersion)) {
+  if (error) throw sessionCheckUnavailable(error.message)
+  if (!data || !passwordVersionsMatch(data.password_version, user.passwordVersion)) {
     log.warn("auth.stale_credentials_session", { userId: user.id })
     return false
   }

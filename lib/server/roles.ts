@@ -3,6 +3,7 @@ import "server-only"
 import { NextRequest, NextResponse } from "next/server"
 import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { TRANSIENT_ERROR_CODES, isTransientError } from "@/lib/server/transient-errors"
 
 export type WorkspaceRole = "owner" | "admin" | "editor" | "client_reviewer" | "viewer"
 
@@ -34,7 +35,8 @@ export const resolveWorkspaceMembership = async (
   // which is the LinkedIn external ID for OAuth users, but workspace_members stores
   // the internal Supabase UUID. Using getWorkspaceSessionContext().supabaseUserId
   // ensures consistent lookups for both credentials and OAuth users.
-  const ctx = await getWorkspaceSessionContext().catch(() => {
+  const ctx = await getWorkspaceSessionContext().catch((error) => {
+    if (isTransientError(error)) throw error
     throw new Error("auth_required")
   })
   const userId = ctx.supabaseUserId
@@ -78,6 +80,7 @@ export const authorizeRole = async (
 }
 
 export const errorToStatus = (msg: string): number => {
+  if (TRANSIENT_ERROR_CODES.has(msg)) return 503
   if ((msg === "auth_required" || msg === "Unauthorized")) return 401
   if (msg === "forbidden") return 403
   if (msg === "unauthorized_workspace") return 403

@@ -14,6 +14,7 @@ import { log } from "@/lib/server/logging"
 import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 import { isSessionCurrent } from "@/lib/server/session-revocation"
 import { isPlanExpired } from "@/lib/plan-expiry"
+import { isTransientError } from "@/lib/server/transient-errors"
 
 export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
 
@@ -110,7 +111,10 @@ export const requireAdminPage = async () => {
 }
 
 const getWorkspaceSessionContextImpl = async (): Promise<WorkspaceSessionContext> => {
-  const session = await getAuthenticatedSession().catch(() => null)
+  const session = await getAuthenticatedSession().catch((error) => {
+    if (isTransientError(error)) throw error
+    return null
+  })
   const userId = session?.user?.id
   const email = session?.user?.email?.trim().toLowerCase()
   if (!userId || !email) throw new Error("auth_required")

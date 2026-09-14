@@ -7,6 +7,9 @@ import { canAccessPlan } from "@/lib/entitlements"
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
 import { supabaseCount } from "@/lib/server/supabase-rest"
 import { getPlanStatus } from "./plan-limits-v2"
+import { isTransientError } from "@/lib/server/transient-errors"
+
+const serviceUnavailable = () => NextResponse.json({ error: "service_unavailable" }, { status: 503 })
 
 type PlanCheckResult =
   | {
@@ -37,7 +40,9 @@ export const requirePlan = async (
   requiredPlan: PlanTier,
   explicitWorkspaceId?: string
 ): Promise<PlanCheckResult> => {
-  const userId = await requireAuth().catch(() => null)
+  let authError: unknown = null
+  const userId = await requireAuth().catch((error) => { authError = error; return null })
+  if (isTransientError(authError)) return { ok: false, response: serviceUnavailable() }
   if (!userId) {
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
@@ -45,7 +50,8 @@ export const requirePlan = async (
   let session: Awaited<ReturnType<typeof getWorkspaceSessionContext>>
   try {
     session = await getWorkspaceSessionContext()
-  } catch {
+  } catch (error) {
+    if (isTransientError(error)) return { ok: false, response: serviceUnavailable() }
     return { ok: false, response: NextResponse.json({ error: "auth_required" }, { status: 401 }) }
   }
 
@@ -54,6 +60,7 @@ export const requirePlan = async (
     workspaceId = await resolveWorkspaceId(request, explicitWorkspaceId)
   } catch (err) {
     const msg = (err as Error).message || "server_error"
+    if (isTransientError(err)) return { ok: false, response: serviceUnavailable() }
     const status = (msg === "auth_required" || msg === "Unauthorized") ? 401 : msg === "unauthorized_workspace" ? 403 : 500
     return { ok: false, response: NextResponse.json({ error: msg }, { status }) }
   }
