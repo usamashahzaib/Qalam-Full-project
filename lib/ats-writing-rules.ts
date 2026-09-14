@@ -40,6 +40,23 @@ Truth
 - Never use filler such as "proven track record", "results driven", "team player", "detail oriented", "passionate about" or "highly motivated". State the evidence instead.
 - Do not use em dashes or en dashes. Use a plain hyphen.`
 
+/**
+ * Told to the model when a job description is supplied. Without this the
+ * truth rules above made the model play safe: it swapped the headline and
+ * returned the source resume almost untouched. A targeted resume has to be
+ * rebuilt around the posting, while the hard facts stay fixed.
+ */
+export const JD_TAILORING_RULES = `JOB DESCRIPTION TAILORING, mandatory when a posting is supplied:
+
+The output must read as if the candidate wrote this resume for this exact posting. Returning the source resume with only the headline changed is a failed task.
+
+- Headline: use the job title from the posting as the first words, optionally joined with the candidate's closest real function, for example "HR & Operations Manager" or "Administration Manager | HR, Compliance & Vendor Management".
+- Summary: rewrite from scratch around the posting's purpose and top requirements, using only the candidate's real years, domains and proof points.
+- Skills: rebuild the list from the posting's competencies and keywords. Include a posting term when the candidate's real roles would normally involve that work (for example an HR Manager who built policies covers labour law compliance; a manager who ran vendors within a budget covers vendor management and cost control). Drop skills the posting does not care about.
+- Experience: keep every employer, title and date exactly as in the source. Rewrite and reorder each role's bullets so the ones closest to the posting's responsibilities come first, phrased in the posting's vocabulary. Add bullets that describe work the candidate's actual role plainly included and the posting asks for, stated without invented figures. Cut or shorten bullets that are irrelevant to the posting, and give roles unrelated to the posting at most one or two bullets.
+- Remove sections, affiliations and certifications that add nothing for this posting, unless they are formal qualifications.
+- Still never invent an employer, date, past job title, degree, certification, metric, tool name or a specific named authority the source gives no basis for. Requirements the candidate clearly lacks go in analysis.evidence_gaps, not in the resume.`
+
 /** Told to the model when the caller supplied a job description to target. */
 export const targetKeywordBrief = (keywords: { keyword: string; weight: number }[]) =>
   keywords.length === 0
@@ -48,4 +65,4 @@ export const targetKeywordBrief = (keywords: { keyword: string; weight: number }
         .map((item) => `- ${item.keyword}`)
         .join(
           "\n",
-        )}\n\nUse the exact spelling above wherever the source material genuinely supports the term, in the Skills list and in the bullet describing the work where it was used. Leave out every term the source does not support and list it under analysis.missing_keywords.`
+        )}\n\nUse the exact spelling above wherever the candidate's real experience covers the term, in the Skills list and in the bullet describing that work. List terms the candidate clearly lacks under analysis.missing_keywords.`

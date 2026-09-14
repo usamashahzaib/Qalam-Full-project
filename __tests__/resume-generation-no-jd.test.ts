@@ -125,6 +125,25 @@ describe("targeted resume generation without a job description", () => {
     expect(String(mocks.callAi.mock.calls[0][2])).toContain("Create a targeted ATS resume for this role")
   })
 
+  it("tailors to the posting without a target role or resume name", async () => {
+    const response = await post(body({ title: "", targetRole: "", jobDescription: "Job Title: HR & Operations Manager. Oversee plant administration and compliance. ".repeat(2) }))
+
+    expect(response.status).toBe(201)
+    const prompt = String(mocks.callAi.mock.calls[0][2])
+    expect(prompt).toContain("JOB DESCRIPTION TAILORING")
+    expect(prompt).toContain("Use the job title stated in the job description")
+    const saved = insertedRows.find((row) => row.table === "resume_documents")
+    expect(saved?.target_role).toBe("Senior Backend Engineer")
+    expect(saved?.title).toBe("Senior Backend Engineer resume")
+  })
+
+  it("still requires a target role when there is no job description", async () => {
+    const response = await post(body({ targetRole: "" }))
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toMatchObject({ field: "targetRole" })
+  })
+
   it("merges the parsed contact block back in and drops redaction placeholders", async () => {
     const response = await post(
       body({ contact: { fullName: "Ayesha Khan", email: "ayesha@example.com", phone: "+92 300 1234567", location: "Lahore, Pakistan", linkedinUrl: "https://linkedin.com/in/ayesha" } })

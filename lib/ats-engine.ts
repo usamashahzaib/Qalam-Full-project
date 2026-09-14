@@ -19,7 +19,7 @@
 import { ATS_FACTORS } from "@/lib/ats-methodology"
 import type { ResumeData } from "@/lib/career-resume"
 
-export const ATS_ENGINE_VERSION = "2.0"
+export const ATS_ENGINE_VERSION = "2.1"
 
 export type AtsFactorKey = (typeof ATS_FACTORS)[number]["key"]
 export type AtsCheckState = "pass" | "warn" | "fail" | "na"
@@ -78,10 +78,22 @@ export type AtsStats = {
   estimatedPages: number
 }
 
+export type AtsCap = { limit: number; reason: string }
+
+export type AtsBand = "strong" | "competitive" | "developing" | "at_risk"
+
+/** Published bands. See SCORE_BANDS in lib/ats-methodology.ts for what each one means. */
+export const scoreBand = (overall: number): AtsBand =>
+  overall >= 85 ? "strong" : overall >= 70 ? "competitive" : overall >= 50 ? "developing" : "at_risk"
+
 export type AtsAudit = {
   version: string
   overall: number
-  band: "strong" | "developing" | "at_risk"
+  /** Weighted factor total before any ceiling applied. */
+  rawOverall: number
+  /** Ceilings that held the overall below the weighted total. */
+  caps: AtsCap[]
+  band: AtsBand
   /** True when no job description was supplied, so alignment is role standard. */
   provisional: boolean
   factors: AtsFactorResult[]
@@ -151,6 +163,22 @@ const ACTION_VERBS = new Set(
   ),
 )
 
+/** Past-tense words that are adjectives, not actions, at the start of a line. */
+const NOT_ACTION_VERBS = new Set([
+  "experienced", "detailed", "skilled", "talented", "dedicated", "motivated", "qualified", "certified",
+  "seasoned", "accomplished", "organized", "organised", "focused", "based", "red", "need", "used", "tasked",
+])
+
+/** A bullet opens with an action when its first word is a known verb or a past-tense action. */
+const isActionVerb = (word: string) =>
+  ACTION_VERBS.has(word) || (word.length >= 5 && /ed$/.test(word) && !NOT_ACTION_VERBS.has(word))
+
+/** Verbs that open posting sentences. A bigram that starts with one is a phrase, not a keyword. */
+const JD_LEADING_VERBS = new Set([
+  "oversee", "ensure", "manage", "handle", "lead", "prepare", "coordinate", "serve", "secure", "support",
+  "maintain", "supervise", "develop", "drive", "own", "deliver", "build", "work", "provide", "assist",
+])
+
 const DUTY_PHRASES = [
   "responsible for", "duties included", "duties include", "tasked with", "in charge of",
   "worked on", "helped with", "assisted with", "involved in", "participated in",
@@ -171,11 +199,23 @@ const FIRST_PERSON = /\b(i|me|my|mine|myself|we|our|ours)\b/i
 const UNSAFE_CHARS =
   /[\u2028\u2029\uFFFD\u200B-\u200F\u202A-\u202E]|[\u{1F300}-\u{1FAFF}]|[\u2190-\u21FF]|[\u2500-\u257F]|[\u25A0-\u25FF]/u
 
-const QUANTIFIED =
-  /(\d+\s*%|\bpercent\b|[$£€₨]\s?\d|\b(pkr|usd|eur|gbp|inr|aed|sar)\s?\d|\b\d+(\.\d+)?\s?(x|times)\b|\b\d+(\.\d+)?\s?(k|m|bn|million|billion|lakh|crore)\b|\b\d{2,}(,\d{3})*(\.\d+)?\b)/i
+const QUANTIFIED_EXPLICIT =
+  /(\d+\s*%|\bpercent\b|[$£€₨]\s?\d|\b(pkr|usd|eur|gbp|inr|aed|sar|rs)\.?\s?\d|\b\d+(\.\d+)?\s?(x|times)\b|\b\d+(\.\d+)?\s?(k|m|bn|million|billion|lakh|crore)\b)/i
+
+/**
+ * A bullet is quantified when it carries a figure that describes scale or
+ * change: a percentage, an amount, or a plain count such as "18 contracts" or
+ * "7-section handbook". A bare year is a date, not evidence, so it does not
+ * count.
+ */
+const isQuantified = (text: string) => {
+  if (QUANTIFIED_EXPLICIT.test(text)) return true
+  const numbers = text.match(/\b\d+(?:[.,]\d+)*\b/g) || []
+  return numbers.some((value) => !/^(19|20)\d{2}$/.test(value))
+}
 
 const OUTCOME_WORDS =
-  /\b(result|resulted|resulting|driving|drove|leading to|led to|enabling|enabled|delivering|delivered|saving|saved|increasing|increased|reducing|reduced|growing|grew|improving|improved|cutting|generating|generated|unlocking|achieving|achieved)\b/i
+  /\b(result|resulted|resulting|driving|drove|leading to|led to|enabling|enabled|delivering|delivered|saving|saved|increasing|increased|reducing|reduced|growing|grew|improving|improved|cutting|cut|generating|generated|unlocking|achieving|achieved|lowering|lowered|raising|raised|boosting|boosted|clearing|cleared|eliminating|eliminated|preventing|prevented|securing|secured|winning|won|shortening|shortened|accelerating|accelerated|protecting|zero|no audit|from .{1,30} to)\b/i
 
 const MONTHS: Record<string, number> = {
   jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
@@ -273,6 +313,16 @@ export function parseResumeDate(value: string): ParsedDate {
 
 const monthIndex = (date: NonNullable<ParsedDate>) => date.year * 12 + date.month
 
+/**
+ * An end date written as a bare year means "some time that year". Reading it
+ * as January invented a gap of up to twelve months against the next role.
+ */
+const parseEndDate = (value: string): ParsedDate => {
+  const parsed = parseResumeDate(value)
+  if (!parsed || parsed.present) return parsed
+  return /^\s*(19|20)\d{2}\s*$/.test(value) ? { ...parsed, month: 12 } : parsed
+}
+
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 /** "Mon YYYY" is the format every major parser reads without ambiguity. */
@@ -313,7 +363,7 @@ export function extractJobKeywords(jobDescription: string, limit = 28): { keywor
   // a posting yields phantom phrases such as "generation deep" that no
   // resume could ever contain, which understates coverage.
   const segments = lower(raw)
-    .split(/[.;:!?\n\r•|]+|(?:\s-\s)/)
+    .split(/[.,;:!?()\n\r•|]+|(?:\s-\s)/)
     .map((segment) => segment.replace(/[^a-z0-9+#&\/\s-]/g, " ").replace(/\s+/g, " ").trim())
     .filter(Boolean)
   const counts = new Map<string, number>()
@@ -341,7 +391,13 @@ export function extractJobKeywords(jobDescription: string, limit = 28): { keywor
       if (STOPWORDS.has(token) || STOPWORDS.has(next)) return
       if (JD_NOISE.has(token) || JD_NOISE.has(next)) return
       if (token.length < 3 || next.length < 3) return
+      if (JD_LEADING_VERBS.has(token)) return
       bump(`${token} ${next}`, 1.4)
+      // Three-word requirements such as "labour law compliance" or "OPEX
+      // cost control" are one screening term, not two overlapping bigrams.
+      const third = tokens[index + 2]
+      if (!third || STOPWORDS.has(third) || JD_NOISE.has(third) || third.length < 3) return
+      bump(`${token} ${next} ${third}`, 1.6)
     })
   }
 
@@ -349,16 +405,31 @@ export function extractJobKeywords(jobDescription: string, limit = 28): { keywor
     if (requirementBlock.includes(term)) counts.set(term, count * 1.8)
   }
 
-  const ranked = Array.from(counts.entries())
-    .filter(([term, count]) => count >= 1.4 || SHORT_KEYWORD_ALLOW.has(term))
-    .sort((a, b) => b[1] - a[1])
+  const flatJd = ` ${segments.join(" | ")} `
+  // Terms are normalised to letters, digits and a few symbols, so a padded
+  // substring count is an exact whole-phrase count.
+  const occurrences = (term: string) => flatJd.split(` ${term} `).length - 1
 
-  // Drop a unigram when a stronger bigram already contains it, so "project"
-  // and "project management" do not both consume a keyword slot.
+  const ranked = Array.from(counts.entries())
+    // A trigram seen once outside the requirements block is usually a phrase
+    // fragment, so trigrams need the same support as a repeated bigram.
+    .filter(([term, count]) => (term.split(" ").length === 3 ? count >= 2.8 : count >= 1.4) || SHORT_KEYWORD_ALLOW.has(term))
+    .sort((a, b) => b[1] - a[1] || b[0].split(" ").length - a[0].split(" ").length)
+
+  // A term that never appears outside longer ranked phrases is only a piece
+  // of them: "management" inside "vendor management", or "labour law" inside
+  // "labour law compliance". It does not get its own keyword slot.
+  const onlyInsidePhrases = (term: string) => {
+    const containing = ranked.filter(([other]) => other !== term && other.split(" ").length > term.split(" ").length && ` ${other} `.includes(` ${term} `))
+    if (containing.length === 0) return false
+    return occurrences(term) <= containing.reduce((total, [other]) => total + occurrences(other), 0)
+  }
+
   const chosen: { keyword: string; weight: number }[] = []
   for (const [term, count] of ranked) {
     if (chosen.length >= limit) break
-    if (chosen.some((item) => item.keyword !== term && item.keyword.includes(term))) continue
+    if (chosen.some((item) => item.keyword !== term && ` ${item.keyword} `.includes(` ${term} `))) continue
+    if (onlyInsidePhrases(term)) continue
     chosen.push({ keyword: term, weight: count })
   }
 
@@ -368,6 +439,44 @@ export function extractJobKeywords(jobDescription: string, limit = 28): { keywor
     weight: Math.max(1, Math.round((item.weight / top) * 10)),
   }))
 }
+
+// --------------------------------------------------------------------------
+// Per-line signals
+// --------------------------------------------------------------------------
+
+export type LineSignals = {
+  quantified: boolean
+  actionLed: boolean
+  outcome: boolean
+  duty: boolean
+  pronoun: boolean
+  long: boolean
+  buzzwords: string[]
+  opener: string
+}
+
+/**
+ * The same tests the factor checks run, exposed per line so the fix flow can
+ * point at the exact bullet that is costing points instead of a count.
+ */
+export function lineSignals(text: string): LineSignals {
+  const value = lower(text)
+  const opener = value.split(/\s+/)[0]?.replace(/[^a-z]/g, "") || ""
+  const duty = DUTY_PHRASES.some((phrase) => value.includes(phrase))
+  return {
+    quantified: isQuantified(text),
+    actionLed: isActionVerb(opener) && !duty,
+    outcome: OUTCOME_WORDS.test(text) || QUANTIFIED_EXPLICIT.test(text),
+    duty,
+    pronoun: FIRST_PERSON.test(text),
+    long: words(text).length > 32,
+    buzzwords: BUZZWORDS.filter((phrase) => value.includes(phrase)),
+    opener,
+  }
+}
+
+/** True when a resume term evidences the keyword, using the scorer's own matching. */
+export const termEvidenced = (text: string, keyword: string) => containsTerm(lower(text), keyword)
 
 // --------------------------------------------------------------------------
 // Resume flattening
@@ -526,10 +635,10 @@ function parsingChecks(shape: ResumeShape): AtsCheck[] {
       label: "Length fits recruiter expectation",
       weight: 8,
       score:
-        shape.wordCount < 180 ? 20 : shape.wordCount < 260 ? 70 : pages <= pageTarget ? 100 : pages === pageTarget + 1 ? 60 : 25,
+        shape.wordCount < 150 ? 20 : shape.wordCount < 220 ? 70 : pages <= pageTarget ? 100 : pages === pageTarget + 1 ? 60 : 25,
       detail: `About ${shape.wordCount} words, roughly ${pages} page${pages === 1 ? "" : "s"}`,
       fix:
-        shape.wordCount < 260
+        shape.wordCount < 220
           ? "The resume is too thin to screen. Add scope, tools and outcomes to each recent role."
           : `Trim to ${pageTarget} pages by cutting older roles down to one or two lines.`,
     }),
@@ -687,12 +796,13 @@ function recruiterReadChecks(shape: ResumeShape): AtsCheck[] {
 
 function evidenceChecks(shape: ResumeShape): AtsCheck[] {
   const bullets = shape.bullets
-  const quantified = bullets.filter((bullet) => QUANTIFIED.test(bullet)).length
+  const quantified = bullets.filter((bullet) => isQuantified(bullet)).length
   const verbLed = bullets.filter((bullet) => {
     const first = lower(words(bullet)[0] || "").replace(/[^a-z]/g, "")
-    return ACTION_VERBS.has(first)
+    return isActionVerb(first) && !DUTY_PHRASES.some((phrase) => lower(bullet).includes(phrase))
   }).length
-  const outcomes = bullets.filter((bullet) => OUTCOME_WORDS.test(bullet)).length
+  // A measured change is an outcome even without a signal word.
+  const outcomes = bullets.filter((bullet) => OUTCOME_WORDS.test(bullet) || QUANTIFIED_EXPLICIT.test(bullet)).length
   const duties = bullets.filter((bullet) => DUTY_PHRASES.some((phrase) => lower(bullet).includes(phrase)))
 
   return [
@@ -740,7 +850,7 @@ function evidenceChecks(shape: ResumeShape): AtsCheck[] {
 function progressionChecks(shape: ResumeShape): AtsCheck[] {
   const { data } = shape
   const entries = data.experience
-    .map((entry) => ({ entry, start: parseResumeDate(entry.startDate), end: parseResumeDate(entry.endDate) }))
+    .map((entry) => ({ entry, start: parseResumeDate(entry.startDate), end: parseEndDate(entry.endDate) }))
     .filter((item) => item.start) as {
     entry: ResumeData["experience"][number]
     start: NonNullable<ParsedDate>
@@ -936,7 +1046,10 @@ function hygieneChecks(shape: ResumeShape): AtsCheck[] {
   const linkedin = data.linkedinUrl.trim()
   const linkedinValid = linkedin === "" || /linkedin\.com\/(in|company)\//i.test(linkedin)
   const placeholders = [data.summary, data.headline, ...shape.bullets].filter((value) =>
-    /\b(lorem ipsum|tbd|xxx+|todo|placeholder|insert |your name here)\b/i.test(value),
+    // Square-bracket prompts such as "[number of vendors]" are what the fix
+    // flow inserts for a figure only the candidate knows. Left unfilled they
+    // would ship to an employer, so they fail this check until replaced.
+    /\b(lorem ipsum|tbd|xxx+|todo|placeholder|insert |your name here)\b|\[[^\]\n]{1,60}\]/i.test(value),
   )
 
   return [
@@ -1081,7 +1194,25 @@ export function scoreResume({ resume, jobDescription = "", targetRole = "" }: Sc
     buildFactor("professional_hygiene", hygieneChecks(shape)),
   ]
 
-  const overall = clampScore(factors.reduce((total, factor) => total + factor.earned, 0))
+  const rawOverall = clampScore(factors.reduce((total, factor) => total + factor.earned, 0))
+
+  // Ceilings, not penalties. A recruiter does not shortlist a resume with no
+  // measurable evidence or no way to contact the candidate, however clean its
+  // formatting. Without these, easy mechanical points lifted a duty list into
+  // the competitive band.
+  const factorScore = (key: AtsFactorKey) => factors.find((factor) => factor.key === key)?.score ?? 100
+  const caps: AtsCap[] = []
+  if (!resume.email.trim() || resume.phone.replace(/\D/g, "").length < 9) {
+    caps.push({ limit: 60, reason: "A reachable email and phone number are missing, so a recruiter cannot act on the resume." })
+  }
+  if (shape.bullets.length === 0 || factorScore("achievement_evidence") < 35) {
+    caps.push({ limit: 49, reason: "Bullets describe duties without measurable results, which recruiters read as low impact." })
+  }
+  if (hasJd && extracted.length > 0 && factorScore("role_alignment") < 70) {
+    caps.push({ limit: 69, reason: "Role alignment is below 70 against the job description, so the resume is not yet a competitive match for this posting." })
+  }
+  const ceiling = Math.min(100, ...caps.map((item) => item.limit))
+  const overall = Math.min(rawOverall, ceiling)
 
   const suggestions: AtsSuggestion[] = factors
     .flatMap((factor) =>
@@ -1106,7 +1237,9 @@ export function scoreResume({ resume, jobDescription = "", targetRole = "" }: Sc
   return {
     version: ATS_ENGINE_VERSION,
     overall,
-    band: overall >= 80 ? "strong" : overall >= 60 ? "developing" : "at_risk",
+    rawOverall,
+    caps: caps.filter((item) => item.limit < rawOverall),
+    band: scoreBand(overall),
     provisional: !hasJd,
     factors,
     keywords: {
@@ -1118,7 +1251,7 @@ export function scoreResume({ resume, jobDescription = "", targetRole = "" }: Sc
     stats: {
       words: shape.wordCount,
       bullets: shape.bullets.length,
-      quantifiedBullets: shape.bullets.filter((bullet) => QUANTIFIED.test(bullet)).length,
+      quantifiedBullets: shape.bullets.filter((bullet) => isQuantified(bullet)).length,
       roles: resume.experience.length,
       estimatedPages: Math.max(1, Math.ceil(shape.wordCount / 480)),
     },

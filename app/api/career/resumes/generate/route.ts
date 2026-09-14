@@ -9,7 +9,7 @@ import { isResumeTemplateKey } from "@/lib/resume-templates"
 import { extractJobKeywords, scoreResume } from "@/lib/ats-engine"
 import { normalizeResumeData } from "@/lib/ats-normalize"
 import { parseResumeText } from "@/lib/ats-text-parse"
-import { ATS_RESUME_WRITING_RULES, targetKeywordBrief } from "@/lib/ats-writing-rules"
+import { ATS_RESUME_WRITING_RULES, JD_TAILORING_RULES, targetKeywordBrief } from "@/lib/ats-writing-rules"
 import { mergeResumeContact } from "@/lib/resume-contact"
 import { createScopedClient } from "@/lib/server/supabase-rest"
 import { requirePlan } from "@/lib/server/require-plan"
@@ -35,9 +35,11 @@ export const MIN_JOB_DESCRIPTION_CHARS = 80
 // to target against; when it is absent the route builds a role-targeted resume.
 const schema = z.object({
   workspaceKey: z.string().uuid().optional(),
-  title: z.string().trim().min(2, "Give the resume a name of at least 2 characters.").max(160),
+  // Optional: named after the target role when left empty.
+  title: z.string().trim().max(160).default(""),
   templateKey: z.string().trim(),
-  targetRole: z.string().trim().min(2, "Add the role you are targeting.").max(160),
+  // Optional when a job description is supplied: the posting names the role.
+  targetRole: z.string().trim().max(160).default(""),
   targetCompany: z.string().trim().max(160).default(""),
   jobDescription: z
     .string()
@@ -57,6 +59,9 @@ const schema = z.object({
     )
     .max(20000),
   contact: resumeContactSchema.optional(),
+}).refine((value) => value.jobDescription.length > 0 || value.targetRole.length >= 2, {
+  message: "Add the role you are targeting, or paste the job description.",
+  path: ["targetRole"],
 })
 
 export async function POST(request: NextRequest) {
@@ -105,13 +110,15 @@ export async function POST(request: NextRequest) {
     const targetKeywords = hasJobDescription ? extractJobKeywords(input.jobDescription) : []
 
     const targetingBrief = hasJobDescription
-      ? `Create a targeted ATS resume for this role. Reorder and rewrite only supported facts.
+      ? `Create a targeted ATS resume for this role. Rebuild the headline, summary, skills and bullets around the job description below. Where these tailoring rules and the keyword rule in the ATS rules disagree, the tailoring rules win. The posting also overrides any target role stored in the career vault.
 
-TARGET ROLE: ${input.targetRole}
+TARGET ROLE: ${input.targetRole || "Use the job title stated in the job description"}
 TARGET COMPANY: ${input.targetCompany || "Not specified"}
 JOB DESCRIPTION:
 ${input.jobDescription}
-${targetKeywordBrief(targetKeywords)}`
+${targetKeywordBrief(targetKeywords)}
+
+${JD_TAILORING_RULES}`
       : `Create an ATS-safe resume aimed at this role. There is no job posting to match against, so target the standard expectations of the role rather than a specific advert. Infer the keywords, skills and section order that a recruiter and an applicant tracking system would expect for this role in this industry, and use only the keywords the source material actually supports. Reorder and rewrite only supported facts.
 
 In analysis.matched_keywords list the role-standard keywords the resume already evidences. In analysis.missing_keywords list the role-standard keywords the source material does not support, so the candidate can add them if they are genuinely true.
@@ -123,7 +130,7 @@ TARGET COMPANY: ${input.targetCompany || "Not specified"}`
     try {
       raw = await callAi(
         "voice-profile",
-        "You are a senior recruiter and ATS resume writer. Return strict JSON only. Preserve facts. Never invent employers, dates, qualifications, job titles, metrics, tools, or achievements.",
+        "You are a senior recruiter and ATS resume writer who tailors each resume to the target posting. Return strict JSON only. Preserve hard facts: never invent employers, dates, qualifications, past job titles, metrics, tools, or achievements.",
         `${targetingBrief}
 
 ${ATS_RESUME_WRITING_RULES}
@@ -134,7 +141,7 @@ ${JSON.stringify(vault || {})}
 SOURCE RESUME:
 ${input.sourceResume}
 
-The source text may contain the placeholders [email removed], [phone removed] and [national id removed]. Those are deliberate redactions. Leave fullName, email, phone, location and linkedinUrl as empty strings rather than copying a placeholder or inventing a value.
+The source text may contain the placeholders [email removed], [phone removed] and [national id removed]. Those are deliberate redactions. Leave email and phone as empty strings rather than copying a placeholder. Copy fullName, location (city and country) and linkedinUrl exactly as the source states them, and leave them empty only when the source does not state them.
 
 Return:
 {
@@ -160,7 +167,10 @@ Return:
 }
 
 Do not return any score. The readiness score is computed separately from the resume you return, against published rules, so an estimate here would only conflict with it.`,
-        { json: true, temperature: 0.2, timeout: 35000, maxTokens: 4000, userId: user.id, plan: planCheck.plan }
+        // A full two-page resume plus analysis overran 4000 tokens (thinking
+        // models spend part of the budget before writing), the JSON came back
+        // truncated, and the route silently saved the untouched source instead.
+        { json: true, temperature: 0.3, timeout: 45000, maxTokens: 8192, userId: user.id, plan: planCheck.plan }
       )
     } catch (error) {
       await releaseReservation()
@@ -182,6 +192,9 @@ Do not return any score. The readiness score is computed separately from the res
     const contactKeys = ["fullName", "email", "phone", "location", "linkedinUrl"] as const
     for (const key of contactKeys) {
       if (input.contact?.[key]) resumeData[key] = input.contact[key]
+      // A model that dropped the name or city left the resume failing the
+      // contact check. The deterministic parse of the source fills the gap.
+      if (!resumeData[key]?.trim() && recoveredSource[key]) resumeData[key] = recoveredSource[key]
       if (REDACTION_PLACEHOLDER.test(resumeData[key])) resumeData[key] = ""
     }
 
@@ -212,13 +225,14 @@ Do not return any score. The readiness score is computed separately from the res
     }
     const atsScore = audit.overall
 
+    const targetRole = input.targetRole || normalized.headline.split("|")[0].trim().slice(0, 160)
     const { data, error } = await supabase
       .from("resume_documents")
       .insert({
         user_id: user.id,
-        title: input.title,
+        title: input.title || `${targetRole || "Targeted"} resume`.slice(0, 160),
         template_key: input.templateKey,
-        target_role: input.targetRole,
+        target_role: targetRole,
         target_company: input.targetCompany,
         job_description: input.jobDescription,
         resume_data: normalized,

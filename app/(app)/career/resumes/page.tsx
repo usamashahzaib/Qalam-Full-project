@@ -114,8 +114,7 @@ export default function ResumesPage() {
   // Validate here as well as on the server so a missing field is named the
   // moment the button is pressed, instead of after a round trip.
   const validationError = () => {
-    if (form.title.trim().length < 2) return "Give the resume a name of at least 2 characters."
-    if (form.targetRole.trim().length < 2) return "Add the role you are targeting."
+    if (form.targetRole.trim().length < 2 && !form.jobDescription.trim()) return "Add the role you are targeting, or paste the job description."
     if (form.sourceResume.trim().length < MIN_SOURCE_RESUME_CHARS) {
       return `Import a resume or paste at least ${MIN_SOURCE_RESUME_CHARS} characters of your experience. Currently ${form.sourceResume.trim().length}.`
     }
@@ -213,8 +212,8 @@ export default function ResumesPage() {
             {sourceLabel && <p className="mt-3 rounded-lg bg-teal/5 px-3 py-2 text-xs font-semibold text-teal">{sourceLabel}</p>}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <input className={field} placeholder="Resume name" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-              <input className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
+              <input className={field} placeholder="Resume name, optional" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+              <input className={field} placeholder="Target role, optional with a job description" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
               <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
               <select className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
               <div>
