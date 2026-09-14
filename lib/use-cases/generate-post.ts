@@ -4,6 +4,7 @@ import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { retrieveWritingReferences } from "@/lib/server/writing-library"
 import { log } from "@/lib/server/logging"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
@@ -104,7 +105,9 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, `${role} ${topic} ${goal ?? ""}`).catch(() => undefined)
 
   // Pass 1: Generate raw post
-  const { system: genSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)
+  const { system: baseSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)
+  const references = await retrieveWritingReferences(`${role}\n${topic}\n${goal ?? ""}`)
+  const genSystem = [baseSystem, references].filter(Boolean).join("\n\n")
   let rawPost: string
   try {
     rawPost = await callAi("post-generation", genSystem, genUser, {

@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, parsed.data.topic).catch(() => undefined)
     const cacheKey = generateCacheKey({
       task: "hooks",
       topic: parsed.data.topic,

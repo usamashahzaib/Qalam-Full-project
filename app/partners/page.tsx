@@ -1,8 +1,13 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 import { buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const faqs = [
+  {
+    q: "Can we see which agencies or clients already use Qalam?",
+    a: "No. Many clients publish under their own name or write for someone else. We keep their names, faces, logos, and work out of our website, sales calls, and case studies. The same promise applies to you and the clients you write for. You can try the demo to see how Qalam works.",
+  },
   {
     q: "What can Qalam run for a multi-client LinkedIn operation today?",
     a: "Each client gets a separate workspace with its own voice profile, drafts, hooks, carousels, archive, and analytics. Team members are invited per workspace with owner, admin, editor, client reviewer, or viewer roles. Workspaces that want sign-off can route drafts to a named reviewer, and each workspace carries its own accent colour across the interface.",
@@ -92,6 +97,10 @@ const boundaries = [
   [
     "Your content stays yours",
     "Workspace content belongs to the account that created it. Nothing written in a client workspace is reused as Qalam marketing material without written permission.",
+  ],
+  [
+    "Nobody learns who you work with",
+    "We never name our clients or their clients, and we never reveal whose content was drafted in Qalam. Not on the site, not on calls, not in case studies.",
   ],
   [
     "Nothing acts under your name",
@@ -297,6 +306,8 @@ export default function PartnersPage() {
           </div>
         </div>
       </section>
+
+      <ClientDiscretion variant="compact" />
 
       <section className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[900px]">

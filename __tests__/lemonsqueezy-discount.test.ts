@@ -5,6 +5,7 @@ vi.mock("@/lib/server/env", () => ({
 }))
 
 import { createReferralDiscountCode } from "@/lib/server/lemonsqueezy-api"
+import { LEMONSQUEEZY_VARIANT_PLANS } from "@/lib/server/lemon-variant-plans"
 
 describe("Lemon Squeezy referral discounts", () => {
   beforeEach(() => {
@@ -29,7 +30,7 @@ describe("Lemon Squeezy referral discounts", () => {
       is_limited_redemptions: true,
       max_redemptions: 1,
     }))
-    expect(body.data.relationships.variants.data).toHaveLength(4)
+    expect(body.data.relationships.variants.data).toHaveLength(Object.keys(LEMONSQUEEZY_VARIANT_PLANS).length)
     expect(new Date(body.data.attributes.expires_at).getTime()).toBeGreaterThan(Date.now())
   })
 

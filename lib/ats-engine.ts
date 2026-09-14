@@ -646,7 +646,7 @@ function parsingChecks(shape: ResumeShape): AtsCheck[] {
 }
 
 function alignmentChecks(shape: ResumeShape, targetRole: string, keywords: AtsKeyword[], hasJd: boolean): AtsCheck[] {
-  const { data, allText } = shape
+  const { data } = shape
   const weightTotal = keywords.reduce((total, item) => total + item.weight, 0)
   const weightFound = keywords.filter((item) => item.found).reduce((total, item) => total + item.weight, 0)
   const coverage = weightTotal > 0 ? weightFound / weightTotal : 0

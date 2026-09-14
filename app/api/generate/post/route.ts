@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
 
     // Scope fresh generations to the user because Pro output can include saved voice,
     // audience, content pillars, and professional proof loaded inside the use case.
-    const cacheKey = !hasOriginalDraft
+    // Library permissions can change between requests. Do not reuse a draft
+    // generated against a reference that has since been removed or expired.
+    const cacheKey = !hasOriginalDraft && process.env.WRITING_REFERENCE_LIBRARY_ENABLED !== "true"
       ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id, workspaceId: planCheck.workspaceId })
       : null
     if (cacheKey) {

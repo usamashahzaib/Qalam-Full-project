@@ -4,6 +4,7 @@ import { callAi } from "@/lib/server/ai-router-v2"
 import { incrementUsage, decrementUsage } from "@/lib/server/plan-limits-v2"
 import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
+import { retrieveWritingReferences } from "@/lib/server/writing-library"
 import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildRevisePrompt } from "@/lib/prompts/role-aware-system"
 import { checkText } from "@/lib/prompts/output-checks"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
@@ -73,9 +74,11 @@ export async function generatePostFromHook(
   const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, `${topic} ${hook} ${originalContent ?? ""}`).catch(() => undefined) : undefined
 
   const hasDraft = Boolean(originalContent && originalContent.length >= 20)
-  const { system: genSystem, user: genUser } = hasDraft
+  const { system: baseSystem, user: genUser } = hasDraft
     ? buildPostWithReplacedHookPrompt(hook, originalContent!, role, goal || undefined, voiceProfile)
     : buildPostFromHookPrompt(hook, topic, role, format, goal || undefined, voiceProfile)
+  const references = hasDraft ? "" : await retrieveWritingReferences(`${role}\n${topic}\n${hook}\n${goal ?? ""}`)
+  const genSystem = [baseSystem, references].filter(Boolean).join("\n\n")
 
   let rawPost: string
   try {

@@ -10,6 +10,7 @@ import { PLANS, formatPrice, getQuarterlyMonthlyEquivalent, quarterlyFraming } f
 import { LANDING_FAQ } from "@/lib/marketing-content"
 import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
+import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 
 export const metadata: Metadata = {
   title: "Qalam | LinkedIn Publishing System With Voice Memory",
@@ -52,7 +53,7 @@ const proofRules = [
   },
 ]
 
-const focusedFaq = LANDING_FAQ.slice(0, 4)
+const focusedFaq = LANDING_FAQ.slice(0, 5)
 
 const productScreens = [
   {
@@ -122,7 +123,7 @@ export default function HomePage() {
               Publish on LinkedIn without <span className="gold-underline font-cormorant font-semibold italic tracking-[-0.035em] text-gold-700">sounding like everyone else.</span>
             </h1>
             <p className="mt-7 max-w-[610px] text-lg leading-8 text-zinc-600 sm:text-xl">
-              Bring your ideas, writing samples, and the details you want to share. Qalam uses that context to draft LinkedIn content you can edit, review, and publish from one workspace.
+              Bring your ideas, facts, and writing samples. Qalam uses them to draft LinkedIn posts in your voice, ready for you to edit and review.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <TrackedHomepageLink
@@ -177,7 +178,7 @@ export default function HomePage() {
       <section className="border-y border-teal/10 bg-teal px-6 py-9 text-white">
         <div className="mx-auto grid max-w-[1200px] gap-6 md:grid-cols-3 md:divide-x md:divide-white/15">
           {[
-            ["Built on what you saved", "Saved writing examples, professional context, and supplied evidence stay in the workspace and feed every draft, hook, carousel, and comment."],
+            ["Your writing guides each draft", "Qalam uses your saved examples and professional context to shape your drafts. You choose the writing it draws from and review the result before publishing."],
             ["Keep the workflow", "Drafts, versions, reviewer approvals, scheduling, and the archive live in one place instead of five tabs and a spreadsheet."],
             ["Separate the clients", "Agencies and content teams give each client an isolated workspace with its own voice profile, archive, and approval queue."],
           ].map(([title, copy]) => (
@@ -351,6 +352,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <ClientDiscretion />
 
       <section id="pricing" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">

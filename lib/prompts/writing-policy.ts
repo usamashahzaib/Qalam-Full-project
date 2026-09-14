@@ -53,6 +53,9 @@ GROUNDING:
 export const NATURAL_WRITING_RULES = `
 HOW TO WRITE IT:
 - Write as this specific person having one relevant thought, in the words they would use.
+- Use the plain, conversational language someone would use to explain their work to another person. Follow the author's voice where supplied. Do not turn an ordinary observation into a pitch.
+- Lead with the actual point, explain why it matters in concrete terms, and stop when it is clear. Keep warmth in the wording without adding praise, hype, or filler.
+- Prefer specific actions to vague promises. Do not add claims such as "game-changing", "seamless", or "revolutionary" just to make something sound impressive.
 - Nothing in this list is required. Use an opening that fits the thought, not a formula. A dramatic or contrarian opening, a three-part structure, one-sentence paragraphs, a closing lesson, a question, a call to action, a personal anecdote, a quotable line: each is allowed when the material genuinely supports it, and none should appear because the format seems to expect it.
 - Ordinary professional vocabulary is fine. A word is only wrong when it is doing no work. "We leverage the existing index" is a normal sentence. "Leverage synergies to unlock potential" is not.
 - Bullets are fine when the content is genuinely a list. Longer sentences are fine when the idea needs them. Vary sentence length because the thought varies, not to perform variety.

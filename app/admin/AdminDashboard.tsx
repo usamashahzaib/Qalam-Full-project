@@ -76,6 +76,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
             <p className="mt-0.5 text-sm text-zinc-500">{adminEmail}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link href="/admin/writing-library" className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Writing library</Link>
             <Link href="/admin/publish-reviews" className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">
               Publish Reviews
             </Link>

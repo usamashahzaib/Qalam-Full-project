@@ -16,8 +16,13 @@ import { isAddonSelfServe } from "@/lib/career-checkout"
 import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
 import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
+import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 
 const PRICING_FAQ = [
+  {
+    q: "Why are there no client names or reviews with photos?",
+    a: "Most clients publish under their own name, and some write for people who want that help kept private. We keep their names, faces, logos, and work out of our website, sales calls, and case studies. That applies to every plan. The feedback shared here came from conversations, so we describe it as a summary. Try the demo to see the product for yourself.",
+  },
   {
     q: "Is there a free plan?",
     a: "Yes. Free includes unlimited public ATS checks with abuse protection, 1 targeted resume per month, 10 active applications, a 15-item Evidence Vault, 5 AI posts, and core writing tools. No payment card is required.",
@@ -609,6 +614,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
           </FadeUp>
         </div>
       </section>
+
+      <ClientDiscretion variant="compact" />
 
       {/* FAQ */}
       <section id="faq" className="bg-white px-6 py-20">

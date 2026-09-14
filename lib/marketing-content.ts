@@ -892,6 +892,10 @@ export const LIVE_SURFACE: LiveSurfaceSection[] = [
 // answer engine can quote, and must not exceed what the product implements.
 export const LANDING_FAQ: { q: string; a: string }[] = [
   {
+    q: "Will you show my name, company, or posts?",
+    a: "No. We keep your name, face, company logo, and work out of our website, sales calls, and case studies. If you write for clients, the same promise covers their identities and content. You decide what to share about how you work.",
+  },
+  {
     q: "What is Qalam?",
     a: "Qalam is a LinkedIn publishing system with voice memory. It drafts posts, hooks, carousels, and comments using writing examples and professional context you save, then routes each draft through your review, optional reviewer approval, scheduling, and a searchable archive. Agencies and content teams can run each client in a separate workspace with its own voice profile.",
   },
