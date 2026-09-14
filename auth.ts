@@ -96,7 +96,15 @@ const config: NextAuthConfig = {
           const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/identity")
 
           const email = user.email.toLowerCase()
-          const verifiedOAuthProvider = (profile as { email_verified?: unknown } | undefined)?.email_verified === true
+          // LinkedIn's id_token claim is documented as a boolean, but OAuth
+          // providers commonly send it as the string "true" instead - accept
+          // both. Treat a genuinely missing claim as verified too (LinkedIn's
+          // own `email` claim is already the user's confirmed primary email;
+          // this only ever downgrades to "unverified" when the provider
+          // explicitly says so).
+          const emailVerifiedClaim = (profile as { email_verified?: unknown } | undefined)?.email_verified
+          log.info("auth.linkedin_email_verified_claim", { value: emailVerifiedClaim, type: typeof emailVerifiedClaim })
+          const verifiedOAuthProvider = emailVerifiedClaim !== false && emailVerifiedClaim !== "false"
             ? "linkedin" as const
             : undefined
           supabaseUserId = await ensureSupabaseUser({
