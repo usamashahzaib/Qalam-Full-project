@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import type { AtsAudit, AtsCheck, AtsFactorResult } from "@/lib/ats-engine"
-import { ATS_METHODOLOGY_PATH } from "@/lib/ats-methodology"
+import { ATS_FACTORS, ATS_METHODOLOGY_PATH, ATS_STANDARDS, SCORE_BANDS } from "@/lib/ats-methodology"
+import { titleCase } from "@/lib/title-case"
 
 /**
  * Renders the deterministic audit behind a readiness score.
@@ -11,7 +12,7 @@ import { ATS_METHODOLOGY_PATH } from "@/lib/ats-methodology"
  * to the checks that produced it, each check states the fact it observed and
  * the fix that recovers the points, and the fixes are ordered by how many
  * points they are actually worth. A candidate who disputes the score can find
- * the exact line they disagree with.
+ * the exact line they disagree with, and the standard it was written against.
  */
 
 const stateStyles: Record<AtsCheck["state"], string> = {
@@ -25,13 +26,29 @@ const stateLabel: Record<AtsCheck["state"], string> = {
   pass: "Pass",
   warn: "Partial",
   fail: "Fail",
-  na: "Not scored",
+  na: "Not Scored",
 }
 
 const barTone = (score: number) => (score >= 80 ? "bg-teal" : score >= 60 ? "bg-gold" : "bg-red-500")
 
+const factorStandards = (factorName: string) => {
+  const key = ATS_FACTORS.find((factor) => factor.name === factorName)?.key
+  const matches: Record<string, string[]> = {
+    ats_parsing: ["HR Open Standards (formerly HR-XML)", "Europass CV"],
+    role_alignment: ["O*NET and ESCO occupation frameworks"],
+    recruiter_read: ["Ladders eye-tracking research (2012, updated 2018)"],
+    achievement_evidence: ["Accomplishment statement formulas (STAR, CAR and XYZ)"],
+    career_progression: ["Europass CV"],
+    skills_credibility: ["O*NET and ESCO occupation frameworks"],
+    clarity: ["ISO 24495-1:2023 Plain language"],
+    professional_hygiene: ["HR Open Standards (formerly HR-XML)", "Europass CV"],
+  }
+  return ATS_STANDARDS.filter((standard) => (matches[key || ""] || []).includes(standard.name))
+}
+
 function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; baseline?: AtsFactorResult; onFix?: (checkId: string) => void }) {
   const [open, setOpen] = useState(false)
+  const standards = factorStandards(factor.name)
   return (
     <div className="border-t border-zinc-100 first:border-t-0">
       <button
@@ -41,7 +58,7 @@ function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; basel
         className="flex w-full items-center gap-3 py-3 text-left"
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-zinc-900">{factor.name}</span>
+          <span className="block text-sm font-semibold text-zinc-900">{titleCase(factor.name)}</span>
           <span className="block text-xs text-zinc-500">
             {factor.earned} of {factor.weight} points
             {baseline && factor.score !== baseline.score && <span className="ml-2 font-semibold">({factor.score > baseline.score ? "+" : ""}{factor.score - baseline.score} since save)</span>}
@@ -56,7 +73,12 @@ function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; basel
 
       {open && (
         <div className="pb-4">
-          <p className="mb-3 text-xs leading-relaxed text-zinc-500">{factor.definition}</p>
+          <p className="text-xs leading-relaxed text-zinc-500">{factor.definition}</p>
+          {standards.length > 0 && (
+            <p className="mb-3 mt-1 text-xs text-zinc-500">
+              Based on: {standards.map((standard, index) => <span key={standard.name}>{index > 0 ? ", " : ""}<a href={standard.url} target="_blank" rel="noreferrer" className="font-semibold text-teal underline underline-offset-2">{standard.name}</a></span>)}
+            </p>
+          )}
           <ul className="space-y-2.5">
             {factor.checks.map((check) => (
               <li key={check.id} className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
@@ -64,14 +86,14 @@ function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; basel
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${stateStyles[check.state]}`}>
                     {stateLabel[check.state]}
                   </span>
-                  <span className="text-sm font-semibold text-zinc-900">{check.label}</span>
+                  <span className="text-sm font-semibold text-zinc-900">{titleCase(check.label)}</span>
                   {check.pointsAtStake > 0 && (
                     <span className="text-[11px] font-semibold text-zinc-500">{check.pointsAtStake} points available</span>
                   )}
                 </div>
                 <p className="mt-1.5 text-xs text-zinc-600">{check.detail}</p>
-                {onFix && check.fix && <button type="button" onClick={() => onFix(check.id)} className="mt-2 text-sm font-bold text-teal underline">Improve this section</button>}
                 {check.fix && <p className="mt-1.5 text-xs leading-relaxed text-zinc-700">{check.fix}</p>}
+                {onFix && check.fix && <button type="button" onClick={() => onFix(check.id)} className="mt-2 min-h-9 rounded-lg bg-teal/10 px-3 text-sm font-bold text-teal">Review and Apply Fix</button>}
               </li>
             ))}
           </ul>
@@ -82,19 +104,26 @@ function FactorRow({ factor, baseline, onFix }: { factor: AtsFactorResult; basel
 }
 
 export function AtsAuditPanel({ audit, baseline, onFix }: { audit: AtsAudit; baseline?: AtsAudit; onFix?: (checkId: string) => void }) {
+  const band = SCORE_BANDS.find((item) => audit.overall >= item.min) || SCORE_BANDS[SCORE_BANDS.length - 1]
+  const caps = audit.caps || []
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-zinc-200 bg-white p-4">
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <span className="text-4xl font-bold leading-none tabular-nums text-zinc-900">{audit.overall}</span>
           <span className="pb-1 text-sm text-zinc-500">/ 100</span>
+          <span className={`mb-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${audit.overall >= 85 ? "bg-teal/10 text-teal" : audit.overall >= 70 ? "bg-teal/5 text-teal" : audit.overall >= 50 ? "bg-gold/15 text-gold-700" : "bg-red-50 text-red-700"}`}>{band.label}</span>
         </div>
-        <p className="mt-2 text-xs leading-relaxed text-zinc-600">
-          Computed from {audit.factors.reduce((total, factor) => total + factor.checks.length, 0)} checks against the
-          published factor weights. Open any factor below to see the checks that produced it.{" "}
-          <a href={ATS_METHODOLOGY_PATH} className="font-semibold text-teal underline underline-offset-2">
-            Methodology
-          </a>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-700">{band.meaning}</p>
+        {caps.length > 0 && (
+          <div className="mt-3 rounded-lg bg-gold/10 px-3 py-2 text-xs text-zinc-700">
+            <p className="font-bold">Held below its weighted total of {audit.rawOverall}</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">{caps.map((cap) => <li key={cap.reason}>{cap.reason} Ceiling: {cap.limit}.</li>)}</ul>
+          </div>
+        )}
+        <p className="mt-3 text-xs leading-relaxed text-zinc-600">
+          Computed from {audit.factors.reduce((total, factor) => total + factor.checks.length, 0)} rule-based checks across 8 weighted factors. The same resume always gets the same score, and no AI guesses the number.{" "}
+          <a href={ATS_METHODOLOGY_PATH} className="font-semibold text-teal underline underline-offset-2">How We Score</a>
         </p>
         {audit.provisional && (
           <p className="mt-2 rounded-lg bg-gold/10 px-3 py-2 text-xs text-zinc-700">
@@ -106,25 +135,28 @@ export function AtsAuditPanel({ audit, baseline, onFix }: { audit: AtsAudit; bas
 
       {audit.suggestions.length > 0 && (
         <section>
-          <h3 className="mb-2 text-sm font-bold text-zinc-900">Highest value fixes</h3>
+          <h3 className="mb-2 text-sm font-bold text-zinc-900">Highest Value Fixes</h3>
           <ol className="space-y-2">
-            {audit.suggestions.slice(0, 5).map((item) => (
-              <li key={item.checkId} className="rounded-lg border border-zinc-200 bg-white p-3">
-                <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-xs font-bold uppercase tracking-wide text-teal">{item.factor}</span>
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-gold-700">Up to +{item.pointsAvailable}</span>
-                </div>
-                <p className="mt-1 text-xs text-zinc-500">{item.detail}</p>
-                <p className="mt-1 text-sm leading-relaxed text-zinc-800">{item.action}</p>
-                {onFix && <button type="button" onClick={() => onFix(item.checkId)} className="mt-3 rounded-lg bg-teal/10 px-3 py-2 text-sm font-bold text-teal">Review and apply fix</button>}
-              </li>
-            ))}
+            {audit.suggestions.slice(0, 5).map((item) => {
+              const check = audit.factors.flatMap((factor) => factor.checks).find((entry) => entry.id === item.checkId)
+              return (
+                <li key={item.checkId} className="rounded-lg border border-zinc-200 bg-white p-3">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm font-bold text-teal">{titleCase(check?.label || item.factor)}</span>
+                    <span className="shrink-0 text-xs font-bold tabular-nums text-gold-700">Up to +{item.pointsAvailable}</span>
+                  </div>
+                  <p className="mt-0.5 text-xs font-semibold text-zinc-500">{titleCase(item.factor)}: {item.detail}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-800">{item.action}</p>
+                  {onFix && <button type="button" onClick={() => onFix(item.checkId)} className="mt-3 min-h-9 rounded-lg bg-teal/10 px-3 py-2 text-sm font-bold text-teal">Review and Apply Fix</button>}
+                </li>
+              )
+            })}
           </ol>
         </section>
       )}
 
       <section>
-        <h3 className="mb-1 text-sm font-bold text-zinc-900">Score breakdown</h3>
+        <h3 className="mb-1 text-sm font-bold text-zinc-900">Score Breakdown</h3>
         <div className="rounded-xl border border-zinc-200 bg-white px-4">
           {audit.factors.map((factor) => (
             <FactorRow key={factor.key} factor={factor} baseline={baseline?.factors.find((item) => item.key === factor.key)} onFix={onFix} />
@@ -135,7 +167,7 @@ export function AtsAuditPanel({ audit, baseline, onFix }: { audit: AtsAudit; bas
       {(audit.keywords.matched.length > 0 || audit.keywords.missing.length > 0) && (
         <section>
           <h3 className="mb-2 text-sm font-bold text-zinc-900">
-            Keyword coverage <span className="font-normal text-zinc-500">{audit.keywords.coverage} percent</span>
+            Keyword Coverage <span className="font-normal text-zinc-500">{audit.keywords.coverage} percent</span>
           </h3>
           <div className="flex flex-wrap gap-1.5">
             {audit.keywords.matched.map((item) => (
@@ -158,6 +190,20 @@ export function AtsAuditPanel({ audit, baseline, onFix }: { audit: AtsAudit; bas
           </p>
         </section>
       )}
+
+      <details className="rounded-xl border border-zinc-200 bg-white p-4">
+        <summary className="cursor-pointer text-sm font-bold text-zinc-900">Standards Behind This Score</summary>
+        <p className="mt-2 text-xs leading-relaxed text-zinc-600">Qalam is not certified by these bodies. They are the public standards and research each check is written against, so you can verify the reasoning yourself.</p>
+        <ul className="mt-3 space-y-3">
+          {ATS_STANDARDS.map((standard) => (
+            <li key={standard.name} className="text-xs leading-relaxed text-zinc-700">
+              <a href={standard.url} target="_blank" rel="noreferrer" className="font-bold text-teal underline underline-offset-2">{standard.name}</a>
+              <span className="text-zinc-500"> - {standard.publisher}. Used for {standard.usedFor.toLowerCase()}.</span>
+              <p className="mt-0.5">{standard.how}</p>
+            </li>
+          ))}
+        </ul>
+      </details>
     </div>
   )
 }

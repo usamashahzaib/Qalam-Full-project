@@ -17,7 +17,9 @@ const ALLOWED = new Set([
   "scripts/check-no-dashes.mjs:2",
   "scripts/check-no-dashes.mjs:3",
   "scripts/check-no-dashes.mjs:8",
-  "scripts/check-no-dashes.mjs:54",
+  "scripts/check-no-dashes.mjs:56",
+  "app/api/career/resumes/fix-suggestions/route.ts:24",
+  "__tests__/resume-fix-suggestions.test.ts:34",
 ])
 
 const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|svg|woff2?|ttf|eot|pdf|zip|lock)$/i

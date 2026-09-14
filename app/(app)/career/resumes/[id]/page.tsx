@@ -134,7 +134,7 @@ export default function ResumeEditorPage() {
 
   return (
     <main className="min-h-full bg-zinc-100 px-4 py-5 lg:px-6">
-      {selectedCheck && <ResumeFixDialog key={selectedCheck.id} data={data} check={selectedCheck} targetRole={document.targetRole} jobDescription={document.jobDescription} onClose={() => setActiveFix(null)} onApply={(next) => {
+      {selectedCheck && <ResumeFixDialog key={selectedCheck.id} data={data} check={selectedCheck} targetRole={document.targetRole} jobDescription={document.jobDescription} workspaceKey={workspaceKey} onClose={() => setActiveFix(null)} onApply={(next) => {
         setUndoData(structuredClone(data))
         setData(next)
         setActiveFix(null)
