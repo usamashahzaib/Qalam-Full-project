@@ -80,7 +80,7 @@ const config: NextAuthConfig = {
   pages: { signIn: "/login", error: "/login" },
 
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       log.info("auth.sign_in", { provider: account?.provider, email: user.email })
 
       if (account?.provider === "linkedin" && user.email) {
@@ -96,11 +96,15 @@ const config: NextAuthConfig = {
           const { ensureSupabaseUser, ensureWorkspaceForUser } = await import("@/lib/server/identity")
 
           const email = user.email.toLowerCase()
+          const verifiedOAuthProvider = (profile as { email_verified?: unknown } | undefined)?.email_verified === true
+            ? "linkedin" as const
+            : undefined
           supabaseUserId = await ensureSupabaseUser({
             userId: externalUserId,
             email,
             fullName: user.name || "",
             imageUrl: user.image || null,
+            verifiedOAuthProvider,
           })
           workspaceId = await ensureWorkspaceForUser({ userId: supabaseUserId, email })
         } catch (err) {

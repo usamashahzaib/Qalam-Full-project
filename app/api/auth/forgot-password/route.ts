@@ -35,12 +35,13 @@ export async function POST(req: NextRequest) {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id, email, full_name, auth_provider")
+    .select("id, email, full_name")
     .eq("email", email)
     .maybeSingle()
 
-  // Only send reset link for email-auth users (OAuth users can't set a password here)
-  if (user && user.auth_provider === "email") {
+  // A reset email proves control of the account email, so it can also add a
+  // password to an account that originally used LinkedIn.
+  if (user) {
     const token = generateToken()
     const tokenHash = hashToken(token)
 

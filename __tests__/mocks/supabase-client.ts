@@ -13,7 +13,7 @@ export const fail = (message: string): FakeResponse<null> => ({ data: null, erro
 
 function makeChain(response: FakeResponse<unknown>) {
   const chain: Record<string, unknown> = {}
-  const methods = ["select", "eq", "neq", "gte", "lte", "or", "in", "ilike", "order", "limit", "update", "insert", "upsert", "delete", "range"]
+  const methods = ["select", "eq", "neq", "gte", "lte", "or", "in", "is", "ilike", "order", "limit", "update", "insert", "upsert", "delete", "range"]
   for (const m of methods) chain[m] = vi.fn(() => chain)
   chain.maybeSingle = vi.fn(async () => response)
   chain.single = vi.fn(async () => response)

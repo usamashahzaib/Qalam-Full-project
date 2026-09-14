@@ -8,11 +8,13 @@ export async function ensureSupabaseUser({
   email,
   fullName,
   imageUrl,
+  verifiedOAuthProvider,
 }: {
   userId: string
   email: string
   fullName: string
   imageUrl: string | null
+  verifiedOAuthProvider?: "linkedin"
 }): Promise<string> {
   const supabase = createServiceClient()
   const { data: userByExt, error: externalLookupError } = await supabase
@@ -29,7 +31,7 @@ export async function ensureSupabaseUser({
 
   const { data: userByEmail, error: emailLookupError } = await supabase
     .from("users")
-    .select("id, external_user_id")
+    .select("id, external_user_id, auth_provider")
     .eq("email", email)
     .maybeSingle()
 
@@ -56,6 +58,27 @@ export async function ensureSupabaseUser({
     }
 
     if (userByEmail.external_user_id !== userId) {
+      // LinkedIn's subject identifier can change when an application is
+      // reconfigured. The provider has already verified this email address,
+      // so reconnect an existing LinkedIn-only identity by email. Keep the
+      // default strict behavior for every other caller and provider.
+      if (verifiedOAuthProvider === "linkedin" && userByEmail.auth_provider === "linkedin") {
+        const { data: relinkedUser, error: relinkError } = await supabase
+          .from("users")
+          .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })
+          .eq("id", userByEmail.id)
+          .eq("external_user_id", userByEmail.external_user_id)
+          .select("id, external_user_id")
+          .maybeSingle()
+
+        if (relinkError || relinkedUser?.external_user_id !== userId) {
+          log.error("identity.oauth_relink_failed", { error: relinkError?.message, userId: userByEmail.id })
+          throw new Error("failed_to_relink_oauth_user")
+        }
+        log.info("identity.oauth_identity_relinked", { userId: userByEmail.id, provider: verifiedOAuthProvider })
+        return relinkedUser.id
+      }
+
       log.warn("identity.oauth_identity_mismatch", { userId: userByEmail.id })
       throw new Error("oauth_identity_mismatch")
     }

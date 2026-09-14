@@ -49,6 +49,7 @@ describe("LinkedIn authentication provisioning", () => {
     const result = await callbacks().signIn({
       user: { id: "profile-id", email: "USER@EXAMPLE.COM", name: "User", image: null },
       account: { provider: "linkedin", providerAccountId: "linkedin-id", type: "oidc" },
+      profile: { email_verified: true },
     } as never)
 
     expect(result).toBe(true)
@@ -57,6 +58,7 @@ describe("LinkedIn authentication provisioning", () => {
       email: "user@example.com",
       fullName: "User",
       imageUrl: null,
+      verifiedOAuthProvider: "linkedin",
     })
     expect(mocks.ensureWorkspaceForUser).toHaveBeenCalledWith({
       userId: "internal-user-id",
@@ -74,6 +76,19 @@ describe("LinkedIn authentication provisioning", () => {
     } as never)
 
     expect(result).toBe(false)
+  })
+
+  it("does not authorize identity relinking when LinkedIn omits email verification", async () => {
+    const result = await callbacks().signIn({
+      user: { id: "profile-id", email: "user@example.com", name: "User", image: null },
+      account: { provider: "linkedin", providerAccountId: "linkedin-id", type: "oidc" },
+      profile: { email_verified: false },
+    } as never)
+
+    expect(result).toBe(true)
+    expect(mocks.ensureSupabaseUser).toHaveBeenCalledWith(expect.objectContaining({
+      verifiedOAuthProvider: undefined,
+    }))
   })
 
   it("stores the stable LinkedIn account ID in the session token", async () => {
