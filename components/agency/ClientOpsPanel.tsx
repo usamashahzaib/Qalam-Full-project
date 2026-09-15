@@ -138,7 +138,7 @@ function HandoffTab({ workspaceId, onChanged }: { workspaceId: string; onChanged
   )
 }
 
-type Settings = { cadencePostsPerWeek: number; autoApproveHours: number | null; voiceDropEnabled: boolean; clientContactName: string | null; clientContactEmail: string | null }
+type Settings = { cadencePostsPerWeek: number; autoApproveHours: number | null; voiceDropEnabled: boolean; monthlyProofEnabled: boolean; clientContactName: string | null; clientContactEmail: string | null }
 
 function RulesTab({ workspaceId, onChanged }: { workspaceId: string; onChanged?: () => void }) {
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -211,6 +211,21 @@ function RulesTab({ workspaceId, onChanged }: { workspaceId: string; onChanged?:
             className="h-4 w-4 rounded border-zinc-300 accent-teal"
           />
           {settings.clientContactEmail ? `Send weekly to ${settings.clientContactEmail}` : "Add a client contact email in Client details first"}
+        </label>
+      </div>
+
+      <div>
+        <p className="text-sm font-semibold text-zinc-900">Monthly proof report</p>
+        <p className="text-xs text-zinc-500">On the 1st, the client gets a private report of last month&apos;s published posts and synced metrics. Months with nothing published are skipped and you are notified instead.</p>
+        <label className={`mt-2 inline-flex items-center gap-2 text-sm ${settings.clientContactEmail ? "text-zinc-800" : "text-zinc-400"}`}>
+          <input
+            type="checkbox"
+            checked={settings.monthlyProofEnabled}
+            disabled={saving !== null || !settings.clientContactEmail}
+            onChange={(event) => void save({ monthlyProofEnabled: event.target.checked }, "proof")}
+            className="h-4 w-4 rounded border-zinc-300 accent-teal"
+          />
+          {settings.clientContactEmail ? `Send monthly to ${settings.clientContactEmail}` : "Add a client contact email in Client details first"}
         </label>
       </div>
 

@@ -20,6 +20,7 @@ const UPDATES = [
       "Voice Passport stores the rules a team saves for each client (always, never, banned words, corrections), and every generation in that workspace follows them. Qalam does not add rules on its own.",
       "Voice Drop sends a client one question by email; they answer by typing or recording a voice note, which is transcribed and the audio discarded.",
       "Proof reports share a frozen, private summary of posts published through Qalam and their synced LinkedIn metrics. Posts without synced metrics are listed but never estimated.",
+      "Agencies can switch on a monthly proof report per client. On the 1st, the client is emailed a private report for the previous month; months with nothing published are skipped.",
       "Pitch Mode turns a prospect's pasted public posts into three sample drafts behind a private preview link. The pasted posts are not stored.",
     ],
   },

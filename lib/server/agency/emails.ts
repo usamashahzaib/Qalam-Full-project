@@ -4,6 +4,7 @@ import { sendTransactionalEmail } from "@/lib/server/email"
 import { log } from "@/lib/server/logging"
 import type { ClientException } from "@/lib/agency/health"
 import type { ClientHealth } from "@/lib/server/agency/portfolio"
+import type { ProofSnapshot } from "@/lib/agency/proof"
 
 type Email = { subject: string; text: string }
 
@@ -64,6 +65,30 @@ export function voiceDropEmail(input: { workspaceName: string; question: string;
       input.url,
       "",
       "Your real answers are what make the posts sound like you.",
+    ].join("\n"),
+  }
+}
+
+export function monthlyProofEmail(input: { recipientName: string | null; senderName: string; workspaceName: string; monthLabel: string; url: string; snapshot: ProofSnapshot; expiresAt: Date }): Email {
+  const { totals } = input.snapshot
+  const plural = (count: number, word: string) => `${count.toLocaleString("en-US")} ${word}${count === 1 ? "" : "s"}`
+  const metrics = totals.postsWithMetrics
+    ? `Across the ${plural(totals.postsWithMetrics, "post")} with synced LinkedIn metrics: ${plural(totals.impressions, "impression")}, ${plural(totals.reactions, "reaction")}, ${plural(totals.comments, "comment")}, and ${plural(totals.reposts, "repost")}.`
+    : "LinkedIn metrics have not synced for these posts yet, so the report lists them without numbers rather than estimating."
+  const expires = input.expiresAt.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" })
+  return {
+    subject: `Your LinkedIn report for ${input.monthLabel}`,
+    text: [
+      greet(input.recipientName),
+      "",
+      `${input.senderName} published ${plural(totals.postsPublished, "LinkedIn post")} for ${input.workspaceName} in ${input.monthLabel}.`,
+      "",
+      metrics,
+      "",
+      "See every post and the full summary here:",
+      input.url,
+      "",
+      `This private link works until ${expires}.`,
     ].join("\n"),
   }
 }

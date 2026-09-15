@@ -20,13 +20,14 @@ export type AgencyWorkspace = {
   cadence_posts_per_week: number
   auto_approve_hours: number | null
   voice_drop_enabled: boolean
+  monthly_proof_enabled: boolean
   voice_passport_summary: string | null
 }
 
 export type MemberWorkspace = AgencyWorkspace & { role: WorkspaceRole }
 
 export const WORKSPACE_COLUMNS =
-  "id,name,owner_id,workspace_type,archived_at,branding_color,client_contact_name,client_contact_email,cadence_posts_per_week,auto_approve_hours,voice_drop_enabled,voice_passport_summary"
+  "id,name,owner_id,workspace_type,archived_at,branding_color,client_contact_name,client_contact_email,cadence_posts_per_week,auto_approve_hours,voice_drop_enabled,monthly_proof_enabled,voice_passport_summary"
 
 export { isUuid, inList, issuePublicToken, hashPublicToken }
 

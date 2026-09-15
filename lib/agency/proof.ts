@@ -42,6 +42,18 @@ export type ProofInput = {
   approvals: { created_at: string; decided_at: string | null; auto_approved: boolean; status: string }[]
 }
 
+/** The full calendar month before `now`, in UTC. */
+export function previousMonthPeriod(now: Date) {
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+  const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 1, 1))
+  return {
+    start,
+    end,
+    key: `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`,
+    label: start.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }),
+  }
+}
+
 export function linkedInPostUrl(urn: string | null): string | null {
   if (!urn || !/^urn:li:(share|ugcPost|activity):[A-Za-z0-9_-]+$/.test(urn)) return null
   return `https://www.linkedin.com/feed/update/${urn}/`

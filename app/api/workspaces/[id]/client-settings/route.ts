@@ -11,12 +11,14 @@ const settingsSchema = z.object({
   cadencePostsPerWeek: z.number().int().min(1).max(14).optional(),
   autoApproveHours: z.union([z.null(), z.number().int().refine((value) => (AUTO_APPROVE_HOUR_OPTIONS as readonly number[]).includes(value))]).optional(),
   voiceDropEnabled: z.boolean().optional(),
+  monthlyProofEnabled: z.boolean().optional(),
 }).strict()
 
 const toSettings = (workspace: AgencyWorkspace) => ({
   cadencePostsPerWeek: workspace.cadence_posts_per_week,
   autoApproveHours: workspace.auto_approve_hours,
   voiceDropEnabled: workspace.voice_drop_enabled,
+  monthlyProofEnabled: workspace.monthly_proof_enabled,
   clientContactName: workspace.client_contact_name,
   clientContactEmail: workspace.client_contact_email,
 })
@@ -41,7 +43,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     const parsed = settingsSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return NextResponse.json({ error: "invalid_input" }, { status: 400 })
     const input = parsed.data
-    if (input.voiceDropEnabled && !workspace.client_contact_email) {
+    if ((input.voiceDropEnabled || input.monthlyProofEnabled) && !workspace.client_contact_email) {
       return NextResponse.json({ error: "client_contact_email_required" }, { status: 400 })
     }
 
@@ -49,6 +51,7 @@ export async function PATCH(request: NextRequest, context: Context) {
     if (input.cadencePostsPerWeek !== undefined) patch.cadence_posts_per_week = input.cadencePostsPerWeek
     if (input.autoApproveHours !== undefined) patch.auto_approve_hours = input.autoApproveHours
     if (input.voiceDropEnabled !== undefined) patch.voice_drop_enabled = input.voiceDropEnabled
+    if (input.monthlyProofEnabled !== undefined) patch.monthly_proof_enabled = input.monthlyProofEnabled
 
     const rows = await supabasePatch<AgencyWorkspace>("workspaces", `id=eq.${workspace.id}`, patch)
     const updated = rows?.[0]

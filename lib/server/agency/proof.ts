@@ -80,7 +80,10 @@ export async function collectProofSnapshot(workspace: AgencyWorkspace, days: num
 }
 
 export async function createProofReport(workspace: AgencyWorkspace, days: number, createdBy: string) {
-  const snapshot = await collectProofSnapshot(workspace, days)
+  return storeProofReport(workspace, await collectProofSnapshot(workspace, days), createdBy)
+}
+
+export async function storeProofReport(workspace: AgencyWorkspace, snapshot: ProofSnapshot, createdBy: string | null) {
   const { token, hash } = issuePublicToken()
   const rows = await supabaseInsert<ReportRow>("client_proof_reports", {
     workspace_id: workspace.id,

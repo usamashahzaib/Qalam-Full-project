@@ -13,7 +13,9 @@ import { effectiveExpiry } from "@/lib/server/agency/linkedin-status"
 import { createHandoffLink } from "@/lib/server/agency/handoff"
 import { createVoiceDrop } from "@/lib/server/agency/voice-drops"
 import { buildClientHealth } from "@/lib/server/agency/portfolio"
-import { fridayWrapEmail, sendAgencyEmail } from "@/lib/server/agency/emails"
+import { fridayWrapEmail, monthlyProofEmail, sendAgencyEmail } from "@/lib/server/agency/emails"
+import { collectProofSnapshot, storeProofReport } from "@/lib/server/agency/proof"
+import { previousMonthPeriod } from "@/lib/agency/proof"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -163,6 +165,67 @@ export async function runWeeklyVoiceDrops(now = new Date(), scope: JobScope = {}
     }
   }
   return { sent, created }
+}
+
+/**
+ * On the 1st of each month, clients whose agency opted in receive a proof
+ * report for the previous calendar month. Months with nothing published send
+ * no client email; managers are told instead.
+ */
+export async function runMonthlyProofReports(now = new Date(), scope: JobScope = {}) {
+  if (now.getUTCDate() !== 1) return { skipped: "not_first_of_month" as const, sent: 0, empty: 0 }
+  const period = previousMonthPeriod(now)
+  const days = Math.round((period.end.getTime() - period.start.getTime()) / DAY_MS)
+  const workspaces = await supabaseSelect<AgencyWorkspace>(
+    "workspaces",
+    `workspace_type=eq.client&archived_at=is.null&monthly_proof_enabled=eq.true&client_contact_email=not.is.null${scopeFilter("id", scope)}&select=${WORKSPACE_COLUMNS}&limit=500`
+  )
+  let sent = 0
+  let empty = 0
+  for (const workspace of workspaces || []) {
+    if (!workspace.client_contact_email || !(await claimJob(`monthly-proof:${workspace.id}:${period.key}`))) continue
+    try {
+      const snapshot = await collectProofSnapshot(workspace, days, period.end)
+      const managers = await managersOf(workspace.id)
+      if (!snapshot.totals.postsPublished) {
+        empty++
+        await Promise.all(managers.map((userId) => createNotification({
+          userId,
+          workspaceId: workspace.id,
+          type: "agency_alert",
+          title: `No ${period.label} report sent to ${workspace.name}`,
+          body: `Nothing was published for this client in ${period.label}, so the monthly proof report was skipped.`,
+          link: `/agency?client=${workspace.id}`,
+        })))
+        continue
+      }
+      const owners = await supabaseSelect<{ full_name: string | null }>("users", `id=eq.${workspace.owner_id}&select=full_name&limit=1`).catch(() => [])
+      const { report, url } = await storeProofReport(workspace, snapshot, null)
+      const emailed = await sendAgencyEmail(workspace.client_contact_email, monthlyProofEmail({
+        recipientName: workspace.client_contact_name,
+        senderName: owners?.[0]?.full_name || "Your agency team",
+        workspaceName: workspace.name,
+        monthLabel: period.label,
+        url,
+        snapshot,
+        expiresAt: new Date(report.expires_at),
+      }), "agency.monthly_proof")
+      if (emailed) sent++
+      await Promise.all(managers.map((userId) => createNotification({
+        userId,
+        workspaceId: workspace.id,
+        type: "agency_alert",
+        title: emailed ? `${period.label} report sent to ${workspace.name}` : `${period.label} report for ${workspace.name} was not emailed`,
+        body: emailed
+          ? `${workspace.client_contact_name || "The client"} received a private link covering ${snapshot.totals.postsPublished} published post${snapshot.totals.postsPublished === 1 ? "" : "s"}.`
+          : "The report was created but the email failed. Share it from the Agency Hub proof tab.",
+        link: `/agency?client=${workspace.id}`,
+      })))
+    } catch (error) {
+      log.error("agency.monthly_proof_failed", { workspaceId: workspace.id, error: (error as Error).message })
+    }
+  }
+  return { sent, empty }
 }
 
 export async function runFridayWrap(now = new Date(), scope: JobScope = {}) {
