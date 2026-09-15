@@ -13,6 +13,8 @@ export const PROTECTED_ROUTES = [
   "/career",
   "/settings",
   "/agency",
+  "/desk",
+  "/passport",
   "/competitors",
   "/calendar",
   "/approvals",

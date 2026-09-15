@@ -1,33 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createServiceClient } from "@/lib/server/supabase-rest"
-import { hashToken } from "@/lib/server/password"
+import { loadApproval, publicApprovalView, reviewTokenMatches } from "@/lib/server/agency/approval-decision"
+import { publicShareLimit } from "@/lib/server/agency/public-limit"
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const limited = await publicShareLimit(request, "review")
+  if (limited) return limited
+
   const { id } = await params
-  const token = _request.nextUrl.searchParams.get("token")?.trim() || ""
+  const token = request.nextUrl.searchParams.get("token")?.trim() || ""
+  const approval = await loadApproval(id).catch(() => null)
 
-  const supabase = createServiceClient()
-
-  const { data: approval } = await supabase
-    .from("approvals")
-    .select("id, post_title, post_content, status, message, comment, created_at, updated_at, review_token_hash, review_token_expires_at")
-    .eq("id", id)
-    .maybeSingle()
-
-  if (!approval) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 })
-  }
   // Require a valid token always. A null hash means the row was created without
-  // token generation - treat as inaccessible rather than world-readable.
-  if (!approval.review_token_hash || !approval.review_token_expires_at || new Date(approval.review_token_expires_at).getTime() <= Date.now() || hashToken(token) !== approval.review_token_hash) {
+  // token generation, or it was already decided - treat as inaccessible.
+  if (!approval || !reviewTokenMatches(approval, token)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
-
-  const safeApproval = { ...approval }
-  delete safeApproval.review_token_hash
-  delete safeApproval.review_token_expires_at
-  return NextResponse.json({ approval: safeApproval })
+  return NextResponse.json({ approval: publicApprovalView(approval) }, { headers: { "Cache-Control": "no-store" } })
 }

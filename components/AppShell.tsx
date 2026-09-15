@@ -26,6 +26,7 @@ import {
   CommentIcon,
   StealthIcon,
   GiftIcon,
+  PenIcon,
 } from "@/components/ui/qalam-icons"
 import { getActiveNavigationHref, persistWriterIntent, withClientParam } from "@/lib/workspace-navigation"
 import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
@@ -48,6 +49,13 @@ export const NAV_GROUPS = [
       { href: "/dashboard", label: "Dashboard", icon: GrowthIcon },
       { href: "/chat", label: "AI Strategist", icon: BrainIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/writer", label: "AI Writer", icon: ComposeIcon },
+    ],
+  },
+  {
+    label: "Clients",
+    links: [
+      { href: "/desk", label: "My Desk", icon: CheckIcon, agencyOnly: true, requiredPlan: undefined as PlanTier | undefined },
+      { href: "/passport", label: "Voice Passport", icon: PenIcon, agencyOnly: true, requiredPlan: undefined as PlanTier | undefined },
     ],
   },
   {
@@ -198,6 +206,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const canAddWorkspace = canCreateClientWorkspaces
   const showManageClientList = hasAgencyAccess
   const showSwitcherList = clientWorkspaces.length > 0
+  const isAgencyLinkVisible = (link: { href: string; agencyOnly?: boolean }) => {
+    if (!link.agencyOnly) return true
+    return clientWorkspaces.length > 0 || canCreateClientWorkspaces
+  }
 
   // Nav groups filtered for command menu: strip links flagged hideWhenLocked
   // that the current plan can't access, so ⌘K matches the sidebar's visibility.
@@ -206,12 +218,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ...group,
       links: group.links.filter((link) => {
         if (!isVisibleInMode(link.href, mode)) return false
+        if (!isAgencyLinkVisible(link)) return false
         if (!("hideWhenLocked" in link) || !link.hideWhenLocked) return true
         if (!link.requiredPlan) return true
         return hasFeatureAccess(currentPlan, link.requiredPlan, link.label, billing.featureFlags)
       }),
     })).filter((group) => group.links.length > 0),
-    [currentPlan, billing.featureFlags, mode]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currentPlan, billing.featureFlags, mode, clientWorkspaces.length, canCreateClientWorkspaces]
   )
 
   const activeClientName = useMemo(() => {
@@ -344,7 +358,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="qalam-scrollbar-dark min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
-            {NAV_GROUPS.map((group) => ({ ...group, links: group.links.filter((link) => isVisibleInMode(link.href, mode)) })).filter((group) => group.links.length > 0).map((group) => (
+            {NAV_GROUPS.map((group) => ({ ...group, links: group.links.filter((link) => isVisibleInMode(link.href, mode) && isAgencyLinkVisible(link)) })).filter((group) => group.links.length > 0).map((group) => (
               <div key={group.label}>
                 <button
                   onClick={() => toggleSection(group.label)}

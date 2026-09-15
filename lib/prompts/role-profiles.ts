@@ -14,6 +14,16 @@ export interface VoiceProfile {
   patterns?: string[];
   examples?: string[];
   professionalContext?: import("@/lib/professional-context").ProfessionalContext;
+  passport?: VoicePassportPrompt;
+}
+
+/** Rules the team deliberately saved for this author. Hard constraints, not style hints. */
+export interface VoicePassportPrompt {
+  summary?: string;
+  do: string[];
+  dont: string[];
+  bannedPhrases: string[];
+  corrections: string[];
 }
 
 export interface RoleProfile {

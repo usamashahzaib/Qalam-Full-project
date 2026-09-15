@@ -3,7 +3,16 @@ import "server-only"
 import { supabaseInsert } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 
-export type NotificationType = "post_published" | "post_failed" | "post_reminder" | "career_addon_paid" | "career_momentum_reminder"
+export type NotificationType =
+  | "post_published"
+  | "post_failed"
+  | "post_reminder"
+  | "career_addon_paid"
+  | "career_momentum_reminder"
+  | "agency_alert"
+  | "approval_decided"
+  | "voice_drop_answered"
+  | "linkedin_connected"
 
 /**
  * Best-effort in-app notification insert. Never throws - a notification is a

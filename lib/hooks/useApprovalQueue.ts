@@ -15,6 +15,10 @@ export type ApprovalRow = {
   comment: string | null
   created_at: string
   updated_at: string
+  auto_approve_at?: string | null
+  auto_approved?: boolean
+  decided_at?: string | null
+  inline_comments?: { quote: string; note: string }[]
   /**
    * Only present right after creation, this session - the server only stores a hash,
    * so a reloaded/refetched row never has this. Lets the requester open their own

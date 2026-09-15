@@ -179,6 +179,13 @@ export function shouldRedirectAuthenticatedAuthRoute(callbackUrl: string | null)
 // that still belong on the app subdomain rather than the marketing site.
 export const APP_ONLY_EXTRA_PATHS = [
   "/verify-email",
+  // Client-facing token pages (connect LinkedIn, voice drop, proof report,
+  // pitch preview). They share the app host with the LinkedIn OAuth callback
+  // so the state cookie set when the flow starts is sent back to it.
+  "/connect",
+  "/drop",
+  "/proof",
+  "/pitch",
   "/sso-callback",
   "/upgrade",
   "/billing",
@@ -244,6 +251,9 @@ export const PUBLIC_API_PREFIXES = [
   // Qalam account or session. GET/POST /api/approvals itself stays
   // protected: it enforces its own session check via withAuth().
   "/api/approvals",
+  // Client-facing agency links (handoff, voice drop, proof, pitch). Every
+  // route resolves a hashed, expiring token and applies its own per-IP limit.
+  "/api/share",
 ]
 
 export const PROTECTED_API_ROUTES = [
@@ -485,10 +495,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (!isProtectedRoute && !isAuthOnly && !isApiRoute) {
     const requestHeaders = baseHeaders()
     if (nonce) requestHeaders.set("x-nonce", nonce)
-    return await addSecurityHeaders(
+    const response = await addSecurityHeaders(
       NextResponse.next({ request: { headers: requestHeaders } }),
       { nonce }
     )
+    // Voice Drop lets a client record a voice note, so only that page may ask for the microphone.
+    if (pathname.startsWith("/drop/")) {
+      response.headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=()")
+    }
+    return response
   }
 
   const authCallbackUrl = request.nextUrl.searchParams.get("callbackUrl")

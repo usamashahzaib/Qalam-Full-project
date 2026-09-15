@@ -4,6 +4,10 @@ import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { requireRole } from "@/lib/server/roles"
 import { storeLinkedInPublishingAccount, storeLinkedInToken } from "@/lib/server/linkedin-credentials"
 import { verifyOAuthState } from "@/lib/server/oauth-state"
+import { exchangeLinkedInCode, LINKEDIN_STATE_COOKIE } from "@/lib/server/linkedin-oauth"
+import { completeHandoff } from "@/lib/server/agency/handoff"
+
+type StatePayload = { kind?: string | null; workspaceId: string | null; handoffId?: string | null }
 
 const redirectToSettings = (request: NextRequest, status: "success" | "error", message?: string) => {
   const url = new URL(`/settings?linkedin=${status}`, request.nextUrl.origin)
@@ -11,23 +15,51 @@ const redirectToSettings = (request: NextRequest, status: "success" | "error", m
   return NextResponse.redirect(url)
 }
 
+const redirectToHandoffResult = (request: NextRequest, status: "success" | "error", reason?: string) => {
+  const url = new URL(`/connect/done`, request.nextUrl.origin)
+  url.searchParams.set("status", status)
+  if (reason) url.searchParams.set("reason", reason)
+  return NextResponse.redirect(url)
+}
+
+const withClearedState = (response: NextResponse) => {
+  response.cookies.delete(LINKEDIN_STATE_COOKIE)
+  return response
+}
+
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
-  const expectedState = cookieStore.get("linkedin_oauth_state")?.value || ""
+  const expectedState = cookieStore.get(LINKEDIN_STATE_COOKIE)?.value || ""
   const state = request.nextUrl.searchParams.get("state") || ""
   const code = request.nextUrl.searchParams.get("code") || ""
+  const statePayload = state ? verifyOAuthState<StatePayload>(state) : null
+  const isHandoff = statePayload?.kind === "handoff"
 
   if (!code || !state || state !== expectedState) {
-    const response = redirectToSettings(request, "error")
-    response.cookies.delete("linkedin_oauth_state")
-    return response
+    const denied = request.nextUrl.searchParams.get("error") === "user_cancelled_authorize"
+    return withClearedState(isHandoff
+      ? redirectToHandoffResult(request, "error", denied ? "cancelled" : "state_mismatch")
+      : redirectToSettings(request, "error"))
   }
 
-  const statePayload = verifyOAuthState<{ workspaceId: string | null }>(state)
   if (!statePayload?.workspaceId) {
-    const response = redirectToSettings(request, "error", "invalid_state")
-    response.cookies.delete("linkedin_oauth_state")
-    return response
+    return withClearedState(redirectToSettings(request, "error", "invalid_state"))
+  }
+
+  // Client handoff: the person on LinkedIn's consent screen is the client, who
+  // has no Qalam session. Authority comes from the signed state naming a
+  // single-use handoff link, which completeHandoff claims atomically.
+  if (isHandoff) {
+    if (!statePayload.handoffId) return withClearedState(redirectToHandoffResult(request, "error", "invalid_state"))
+    try {
+      const connection = await exchangeLinkedInCode(code, request.nextUrl.origin)
+      await completeHandoff(statePayload.handoffId, connection)
+      return withClearedState(redirectToHandoffResult(request, "success"))
+    } catch (error) {
+      const message = (error as Error).message || "linkedin_connect_failed"
+      console.error("[linkedin/callback] handoff failed:", message)
+      return withClearedState(redirectToHandoffResult(request, "error", message === "handoff_unavailable" ? "link_used" : "connect_failed"))
+    }
   }
 
   try {
@@ -37,62 +69,20 @@ export async function GET(request: NextRequest) {
     // started - roles can change in the minute the user spends on LinkedIn's
     // consent screen.
     await requireRole(request, workspaceId, "editor")
-    const origin = process.env.FRONTEND_ORIGIN || request.nextUrl.origin
-    const redirectUri = process.env.LINKEDIN_REDIRECT_URI || `${origin}/api/linkedin/callback`
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        code,
-        redirect_uri: redirectUri,
-        client_id: process.env.LINKEDIN_CLIENT_ID || "",
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET || "",
-      }),
-      signal: AbortSignal.timeout(15000),
-    })
-
-    if (!tokenRes.ok) throw new Error("linkedin_token_exchange_failed")
-    const tokenData = await tokenRes.json() as {
-      access_token?: string
-      expires_in?: number
-      refresh_token?: string
-      refresh_token_expires_in?: number
+    const connection = await exchangeLinkedInCode(code, request.nextUrl.origin)
+    const stored = {
+      accessToken: connection.accessToken,
+      memberId: connection.memberId,
+      tokenExpiresAt: connection.expiresAt,
+      refreshToken: connection.refreshToken,
+      refreshTokenExpiresAt: connection.refreshTokenExpiresAt,
     }
-    const accessToken = tokenData.access_token
-    if (!accessToken) throw new Error("linkedin_token_missing")
-    const refreshToken = tokenData.refresh_token || null
-    const refreshTokenExpiresAt = tokenData.refresh_token_expires_in
-      ? Date.now() + tokenData.refresh_token_expires_in * 1000
-      : null
-
-    // OIDC userinfo: the connect route requests OIDC scopes (openid profile email),
-    // under which the legacy /v2/me endpoint returns 403. The OIDC `sub` claim is the
-    // member id; the author URN is built elsewhere as `urn:li:person:{sub}`.
-    const profileRes = await fetch("https://api.linkedin.com/v2/userinfo", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    })
-    if (!profileRes.ok) throw new Error("linkedin_profile_failed")
-    const profile = await profileRes.json() as { sub?: string }
-    const memberId = profile.sub || null
-    if (!memberId) throw new Error("linkedin_member_id_missing")
-    const expiresAt = tokenData.expires_in ? Date.now() + tokenData.expires_in * 1000 : null
-
-    await storeLinkedInToken({ userId: ctx.supabaseUserId, accessToken, memberId, tokenExpiresAt: expiresAt, refreshToken, refreshTokenExpiresAt })
-    await storeLinkedInPublishingAccount({ workspaceId, accessToken, memberId, tokenExpiresAt: expiresAt, refreshToken, refreshTokenExpiresAt })
-
-    const response = redirectToSettings(request, "success")
-    response.cookies.delete("linkedin_oauth_state")
-    return response
+    await storeLinkedInToken({ userId: ctx.supabaseUserId, ...stored })
+    await storeLinkedInPublishingAccount({ workspaceId, ...stored })
+    return withClearedState(redirectToSettings(request, "success"))
   } catch (error) {
     const message = (error as Error).message || "linkedin_connect_failed"
     console.error("[linkedin/callback] failed:", message)
-    const response = redirectToSettings(request, "error", message)
-    response.cookies.delete("linkedin_oauth_state")
-    return response
+    return withClearedState(redirectToSettings(request, "error", message))
   }
 }

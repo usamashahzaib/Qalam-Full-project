@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { TeamManagement } from "@/components/TeamManagement"
 import { WorkspaceBranding } from "@/components/WorkspaceBranding"
 import { useSearchParams } from "next/navigation"
+import { ControlRoom, type ControlRoomData } from "@/components/agency/ControlRoom"
+import { ClientOpsPanel, type OpsTab } from "@/components/agency/ClientOpsPanel"
 
 type Client = {
   id: string
@@ -177,6 +179,27 @@ export default function AgencyDashboard() {
   const [brandingOpenFor, setBrandingOpenFor] = useState<string | null>(null)
   const [busyArchiveId, setBusyArchiveId] = useState<string | null>(null)
   const [showArchived, setShowArchived] = useState(false)
+  const [controlRoom, setControlRoom] = useState<ControlRoomData | null>(null)
+  const [controlRoomLoading, setControlRoomLoading] = useState(true)
+  const [opsOpen, setOpsOpen] = useState<{ id: string; tab: OpsTab } | null>(null)
+
+  const loadControlRoom = useCallback(() => {
+    fetch("/api/agency/control-room", { cache: "no-store" })
+      .then(async (res) => (res.ok ? res.json() as Promise<ControlRoomData> : null))
+      .then((data) => setControlRoom(data))
+      .catch(() => setControlRoom(null))
+      .finally(() => setControlRoomLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadControlRoom, 0)
+    return () => window.clearTimeout(timer)
+  }, [loadControlRoom])
+
+  const openOps = (clientId: string, tab: OpsTab) => {
+    setOpsOpen({ id: clientId, tab })
+    window.setTimeout(() => document.getElementById(`client-${clientId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50)
+  }
 
   useEffect(() => {
     fetch("/api/agency/clients", { cache: "no-store" })
@@ -236,8 +259,10 @@ export default function AgencyDashboard() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Agency operations</p>
             <h1 className="mt-1 text-3xl font-bold text-zinc-900">Agency Hub</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">One control room for client names, assigned managers, voice-isolated workspaces, approvals, and monthly usage.</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">See which clients need you, hand LinkedIn access over without passwords, and prove results with a link your client can open.</p>
           </div>
+          <div className="flex flex-wrap gap-2">
+          {access.canCreate ? <Link href="/agency/pitch" className="rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-50">Pitch Mode</Link> : null}
           <button
             onClick={() => setShowCreateModal(true)}
             disabled={createDisabled}
@@ -246,6 +271,7 @@ export default function AgencyDashboard() {
           >
             Create client workspace
           </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -272,6 +298,8 @@ export default function AgencyDashboard() {
           </div>
         ) : null}
       </div>
+
+      <ControlRoom data={controlRoom} loading={controlRoomLoading} onOpenTab={openOps} />
 
       {fetchError ? <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{fetchError}</div> : null}
 
@@ -307,7 +335,7 @@ export default function AgencyDashboard() {
             const draftsPct = client.draftsLimit ? Math.min(100, ((client.draftsUsed ?? 0) / client.draftsLimit) * 100) : 0
             const expiry = fmtDate(client.planExpiresAt)
             return (
-              <article key={client.id} className={`rounded-2xl border bg-white p-5 shadow-sm ${active ? "border-teal/40 ring-2 ring-teal/10" : "border-zinc-200"} ${archived ? "opacity-65" : ""}`}>
+              <article key={client.id} id={`client-${client.id}`} className={`scroll-mt-6 rounded-2xl border bg-white p-5 shadow-sm ${active ? "border-teal/40 ring-2 ring-teal/10" : "border-zinc-200"} ${archived ? "opacity-65" : ""} ${opsOpen?.id === client.id ? "lg:col-span-2" : ""}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal/10 text-sm font-bold uppercase text-teal-800" style={client.brandingColor ? { backgroundColor: `${client.brandingColor}1a`, color: client.brandingColor } : undefined}>{client.client_name.charAt(0)}</div>
@@ -337,6 +365,8 @@ export default function AgencyDashboard() {
 
                 <div className="mt-5 flex flex-wrap gap-2">
                   {!archived ? <Link href={`/dashboard?client=${client.id}`} className="rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold text-white hover:bg-zinc-800">Open workspace</Link> : null}
+                  {!archived ? <button onClick={() => setOpsOpen((current) => current?.id === client.id ? null : { id: client.id, tab: "link" })} className="rounded-lg bg-teal px-3 py-2 text-xs font-semibold text-white hover:bg-teal-600">{opsOpen?.id === client.id ? "Close operations" : "Operations"}</button> : null}
+                  {!archived ? <Link href={`/passport?client=${client.id}`} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Voice Passport</Link> : null}
                   {!archived ? <Link href={`/approvals?client=${client.id}`} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Approvals</Link> : null}
                   <button onClick={() => setTeamOpenFor((current) => current === client.id ? null : client.id)} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">{teamOpenFor === client.id ? "Close team" : "Team"}</button>
                   <button onClick={() => setEditingClient(client)} className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-50">Client details</button>
@@ -344,6 +374,7 @@ export default function AgencyDashboard() {
                   <button onClick={() => void handleToggleArchive(client)} disabled={busyArchiveId === client.id} className="rounded-lg px-3 py-2 text-xs font-semibold text-zinc-500 hover:bg-zinc-50 disabled:opacity-50">{busyArchiveId === client.id ? "Saving..." : archived ? "Restore" : "Archive"}</button>
                 </div>
 
+                {opsOpen?.id === client.id && !archived ? <div className="mt-4"><ClientOpsPanel key={`${client.id}-${opsOpen.tab}`} workspaceId={client.id} workspaceName={client.client_name} canManage={client.canManage} initialTab={opsOpen.tab} onChanged={loadControlRoom} /></div> : null}
                 {teamOpenFor === client.id ? <div className="mt-4"><TeamManagement workspaceId={client.id} workspaceName={client.client_name} currentRole={client.role} /></div> : null}
                 {brandingOpenFor === client.id ? <div className="mt-4"><WorkspaceBranding workspaceId={client.id} initialColor={client.brandingColor ?? null} canManage={client.canManage} onSaved={(color) => setClients((current) => current.map((item) => item.id === client.id ? { ...item, brandingColor: color } : item))} /></div> : null}
               </article>
@@ -356,7 +387,7 @@ export default function AgencyDashboard() {
         {[
           ["Agency owner", "Creates up to five client workspaces and controls all workspace managers."],
           ["Workspace manager", "Runs one assigned client workspace, including its team, branding, approvals, and publishing."],
-          ["Editor and reviewer", "Editors create and publish. Client reviewers approve through a private review link. Viewers stay read-only."],
+          ["Editor and reviewer", "Editors work from My Desk across every assigned client. Clients approve, comment, and connect LinkedIn through private links, without an account."],
         ].map(([title, body]) => <div key={title} className="rounded-xl border border-zinc-200 bg-white p-4"><p className="text-sm font-bold text-zinc-900">{title}</p><p className="mt-1 text-xs leading-5 text-zinc-500">{body}</p></div>)}
       </div>
 

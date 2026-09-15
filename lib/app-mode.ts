@@ -34,6 +34,8 @@ const CAREER_HREFS = new Set([
 
 const LINKEDIN_HREFS = new Set([
   "/dashboard",
+  "/desk",
+  "/passport",
   "/writer",
   "/chat",
   "/calendar",

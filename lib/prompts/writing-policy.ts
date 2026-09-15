@@ -127,9 +127,12 @@ export function voiceGuidance(
     ? voice.examples.slice(0, sampleCount).map((ex, i) => `[sample ${i + 1}]\n${clean(ex, sampleChars)}`).join("\n\n")
     : "";
 
-  if (!traits.length && !samples) return "";
+  const passport = voicePassportGuidance(voice.passport);
+
+  if (!traits.length && !samples) return passport;
 
   return [
+    passport,
     "THE AUTHOR'S VOICE:",
     ...traits,
     samples
@@ -140,6 +143,24 @@ export function voiceGuidance(
       "Where the voice evidence is thin, stay plain and specific to the subject. Do not invent a personality to fill the gap.",
     ].join("\n"),
   ].filter(Boolean).join("\n");
+}
+
+/**
+ * The Voice Passport is written by the author's team on purpose, often after
+ * the author corrected a draft. These rules outrank inferred style.
+ */
+export function voicePassportGuidance(passport?: VoiceProfile["passport"]): string {
+  if (!passport) return "";
+  const list = (items: string[], max: number) => items.slice(0, max).map((item) => `- ${clean(item, 300)}`);
+  const sections = [
+    passport.summary ? `Who they are and how they want to come across: ${clean(passport.summary, 800)}` : "",
+    passport.do.length ? ["Always:", ...list(passport.do, 20)].join("\n") : "",
+    passport.dont.length ? ["Never:", ...list(passport.dont, 20)].join("\n") : "",
+    passport.bannedPhrases.length ? `Do not use these words or phrases in any form: ${passport.bannedPhrases.slice(0, 30).map((item) => `"${clean(item, 80)}"`).join(", ")}` : "",
+    passport.corrections.length ? ["Corrections the author made to earlier drafts. Do not repeat these mistakes:", ...list(passport.corrections, 15)].join("\n") : "",
+  ].filter(Boolean);
+  if (!sections.length) return "";
+  return ["THE AUTHOR'S VOICE PASSPORT (rules set by their team; follow them strictly, they override the style notes below):", ...sections].join("\n");
 }
 
 /** Voice guidance plus resume-derived professional context, in a stable order. */

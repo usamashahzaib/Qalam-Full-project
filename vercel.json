@@ -7,6 +7,10 @@
     {
       "path": "/api/linkedin/publish-scheduled",
       "schedule": "10 0 * * *"
+    },
+    {
+      "path": "/api/cron/agency",
+      "schedule": "0 9 * * *"
     }
   ]
 }

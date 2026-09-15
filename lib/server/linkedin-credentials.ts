@@ -137,6 +137,8 @@ export const storeLinkedInPublishingAccount = async ({
       `id=eq.${existing[0].id}`,
       payload
     )
+    // Separate write so a database without the guardian column still connects.
+    await supabasePatch("publishing_accounts", `id=eq.${existing[0].id}`, { expiry_warning_sent_at: null }).catch(() => undefined)
     return rows?.[0] || existing[0]
   }
 

@@ -1,11 +1,13 @@
 import "server-only"
 
 import { z } from "zod"
-import { createScopedClient, createServiceClient } from "@/lib/server/supabase-rest"
+import { createScopedClient, createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 import { sendTransactionalEmail } from "@/lib/server/email"
 import { env } from "@/lib/server/env"
 import { generateToken, hashToken } from "@/lib/server/password"
 import { ok, err } from "@/lib/errors"
+import { autoApproveAt, describeAutoApproveHours } from "@/lib/agency/approval-timing"
+import { scheduleAutoApproveCallbacks } from "@/lib/server/agency/approval-decision"
 import type { Result } from "@/lib/errors"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ export interface RunApprovalOutput {
     comment?: string | null
     created_at: string
     updated_at?: string | null
+    auto_approve_at?: string | null
   }
 }
 
@@ -80,6 +83,14 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     }
   }
 
+  // Silence-as-consent is a per-client agreement stored on the workspace.
+  const workspaceSettings = await supabaseSelect<{ auto_approve_hours: number | null }>(
+    "workspaces",
+    `id=eq.${encodeURIComponent(workspaceId)}&select=auto_approve_hours&limit=1`
+  ).catch(() => null)
+  const autoApproveHours = workspaceSettings?.[0]?.auto_approve_hours ?? null
+  const autoApproveDeadline = autoApproveAt(new Date(), autoApproveHours)
+
   const { data: approval, error } = await supabase
     .from("approvals")
     .insert({
@@ -93,6 +104,7 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       message: message || null,
       review_token_hash: hashToken(reviewToken),
       review_token_expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      ...(autoApproveDeadline ? { auto_approve_at: autoApproveDeadline.toISOString() } : {}),
     })
     .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
     .single()
@@ -130,8 +142,11 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
       "",
       `Review it here: ${reviewUrl}`,
       "",
-      "You can approve or request changes at the link above.",
-    ].filter((l) => l !== undefined).join("\n"),
+      "You can approve, comment on specific lines, or request changes at the link above.",
+      autoApproveHours
+        ? `As agreed, if there is no reply within ${describeAutoApproveHours(autoApproveHours)}, this draft will be treated as approved. You will get a heads-up two hours before.`
+        : "",
+    ].filter((l) => l !== undefined).join("\n").replace(/\n{3,}/g, "\n\n"),
   })
   if (!sent.ok) {
     await supabase.from("approvals").delete().eq("id", approval.id)
@@ -144,5 +159,12 @@ export async function runApproval(input: RunApprovalInput): Promise<Result<RunAp
     })
   }
 
-  return ok({ approvalId: approval.id as string, postTitle: title, reviewToken, approval })
+  if (autoApproveDeadline) await scheduleAutoApproveCallbacks(approval.id as string, autoApproveDeadline)
+
+  return ok({
+    approvalId: approval.id as string,
+    postTitle: title,
+    reviewToken,
+    approval: { ...approval, auto_approve_at: autoApproveDeadline?.toISOString() ?? null },
+  })
 }

@@ -10,6 +10,21 @@ export const metadata = buildPageMetadata({
 const UPDATES = [
   {
     date: "September 2026",
+    title: "Agency operations: client links, My Desk, Voice Passport, and proof reports",
+    items: [
+      "Clients connect LinkedIn through a private, single-use link and approve access on LinkedIn's own page. No password sharing and no Qalam account needed.",
+      "Seven days before a client's LinkedIn access expires, the client is emailed a fresh connect link and workspace managers are alerted.",
+      "My Desk gives writers one queue across every assigned client: failed posts, client change requests, approved drafts, fresh client answers, and what goes out this week.",
+      "The Agency Hub Control Room shows posting cadence, weekly streaks, approval waits, and LinkedIn status per client, with problems sorted to the top.",
+      "Clients can comment on the exact line of a draft. Agencies can agree an optional no-reply approval window, and the client always gets a heads-up two hours before a draft is treated as approved.",
+      "Voice Passport stores the rules a team saves for each client (always, never, banned words, corrections), and every generation in that workspace follows them. Qalam does not add rules on its own.",
+      "Voice Drop sends a client one question by email; they answer by typing or recording a voice note, which is transcribed and the audio discarded.",
+      "Proof reports share a frozen, private summary of posts published through Qalam and their synced LinkedIn metrics. Posts without synced metrics are listed but never estimated.",
+      "Pitch Mode turns a prospect's pasted public posts into three sample drafts behind a private preview link. The pasted posts are not stored.",
+    ],
+  },
+  {
+    date: "September 2026",
     title: "ATS resume fixes now apply, and scoring is calibrated against a real test resume",
     items: [
       "Fixed the Review and Apply Fix flow: it was rendering blank fields and doing nothing. It now shows the exact line costing points, three AI rewrites scored for their real point impact, and a bracketed prompt for any figure only the candidate knows - Qalam never invents a number.",

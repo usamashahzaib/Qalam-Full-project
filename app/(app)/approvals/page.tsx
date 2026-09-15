@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useApprovalQueue } from "@/lib/hooks/useApprovalQueue"
@@ -160,6 +161,9 @@ function ApprovalCard({ row, expanded, onToggle }: {
                 {meta.label}
               </span>
               <span className="text-xs text-zinc-400">{row.reviewer_email}</span>
+              {row.status === "pending" && row.auto_approve_at ? <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">Auto-approves {formatDate(row.auto_approve_at)}</span> : null}
+              {row.auto_approved ? <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600">Approved by no reply</span> : null}
+              {row.inline_comments?.length ? <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">{row.inline_comments.length} line comment{row.inline_comments.length === 1 ? "" : "s"}</span> : null}
             </div>
             <p className="mt-1 truncate text-sm font-semibold text-zinc-900">{row.post_title}</p>
             <p className="mt-0.5 t-eyebrow text-zinc-400">{formatDate(row.created_at)}</p>
@@ -197,6 +201,20 @@ function ApprovalCard({ row, expanded, onToggle }: {
               </p>
             </div>
           )}
+          {row.inline_comments?.length ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+              <p className="mb-2 t-eyebrow text-amber-800">Line comments</p>
+              <ul className="space-y-2">
+                {row.inline_comments.map((item, index) => (
+                  <li key={`${item.quote}-${index}`} className="text-sm">
+                    <mark className="rounded bg-amber-100 px-1 text-zinc-800">{item.quote}</mark>
+                    <p className="mt-0.5 text-zinc-700">{item.note}</p>
+                  </li>
+                ))}
+              </ul>
+              <Link href="/desk" className="mt-2 inline-block text-xs font-semibold text-teal-700 hover:underline">Save these to the Voice Passport from My Desk</Link>
+            </div>
+          ) : null}
           {row.reviewToken ? (
             <a
               href={`/approvals/${row.id}/review?token=${encodeURIComponent(row.reviewToken)}`}

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServiceClient()
     const { data: rows } = await supabase
       .from("approvals")
-      .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at")
+      .select("id, post_id, reviewer_email, post_title, post_content, status, message, comment, created_at, updated_at, auto_approve_at, auto_approved, decided_at, inline_comments")
       .or(`workspace_id.eq.${planCheck.workspaceId},and(workspace_id.is.null,requester_id.eq.${user.id})`)
       .order("created_at", { ascending: false })
       .limit(50)
