@@ -104,3 +104,6 @@ next-start-*.log
 # Machine-specific AI tool configs
 .abacusai/
 .claude/settings.local.json
+
+# local scratch output
+.tmp/
