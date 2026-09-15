@@ -82,7 +82,7 @@ const ORDER: Record<string, unknown> = {
   workspace_id: "ws-1",
   addon_key: "career_blueprint",
   quantity: 1,
-  amount_pkr: 5000,
+  amount_pkr: 12,
   status: "pending",
 }
 
@@ -108,8 +108,8 @@ const orderCreatedPayload = (overrides: Record<string, unknown> = {}) => JSON.st
     id: "ls-order-1",
     attributes: {
       status: "paid",
-      currency: "PKR",
-      subtotal: 500000, // amount_pkr(5000) * 100
+      currency: "USD",
+      subtotal: 1200, // amount_pkr holds whole dollars: 12 * 100 cents
       discount_total: 0,
       first_order_item: { variant_id: "v-1", quantity: 1 },
       ...overrides,
@@ -118,7 +118,7 @@ const orderCreatedPayload = (overrides: Record<string, unknown> = {}) => JSON.st
 })
 
 describe("career add-on webhook fulfillment integrity", () => {
-  it("verifies add-on variant, PKR subtotal, and quantity before fulfillment", async () => {
+  it("verifies add-on variant, USD subtotal, and quantity before fulfillment", async () => {
     const { handleCareerAddonWebhook } = await import("@/lib/server/career-addon-payments")
 
     const res = await handleCareerAddonWebhook(orderCreatedPayload(), "sig", "order_created")
@@ -141,15 +141,15 @@ describe("career add-on webhook fulfillment integrity", () => {
   it("rejects a subtotal that doesn't match the reserved order's price", async () => {
     const { handleCareerAddonWebhook } = await import("@/lib/server/career-addon-payments")
 
-    const res = await handleCareerAddonWebhook(orderCreatedPayload({ subtotal: 100000 }), "sig", "order_created")
+    const res = await handleCareerAddonWebhook(orderCreatedPayload({ subtotal: 300 }), "sig", "order_created")
 
     expect(res.body).toMatchObject({ ok: false, error: "addon_amount_mismatch" })
   })
 
-  it("rejects a non-PKR currency even if the subtotal number matches", async () => {
+  it("rejects a non-USD currency even if the subtotal number matches", async () => {
     const { handleCareerAddonWebhook } = await import("@/lib/server/career-addon-payments")
 
-    const res = await handleCareerAddonWebhook(orderCreatedPayload({ currency: "USD" }), "sig", "order_created")
+    const res = await handleCareerAddonWebhook(orderCreatedPayload({ currency: "PKR" }), "sig", "order_created")
 
     expect(res.body).toMatchObject({ ok: false, error: "addon_amount_mismatch" })
   })
@@ -158,7 +158,7 @@ describe("career add-on webhook fulfillment integrity", () => {
     const { handleCareerAddonWebhook } = await import("@/lib/server/career-addon-payments")
 
     const res = await handleCareerAddonWebhook(
-      orderCreatedPayload({ discount_total: 50000 }), // 50% off - subtotal unchanged
+      orderCreatedPayload({ discount_total: 600 }), // 50% off - subtotal unchanged
       "sig",
       "order_created"
     )

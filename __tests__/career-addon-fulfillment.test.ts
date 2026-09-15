@@ -76,7 +76,7 @@ const payload = (variantId: string, id: string) => JSON.stringify({
     id,
     attributes: {
       status: "paid",
-      currency: "PKR",
+      currency: "USD",
       subtotal: CAREER_PRODUCTS.find(({ key }) => key === currentAddonKey)!.price * 100,
       discount_total: 0,
       first_order_item: { variant_id: variantId, quantity: 1 },
