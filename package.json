@@ -33,7 +33,7 @@
     "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",
     "mammoth": "^1.12.0",
-    "next": "^16.2.12",
+    "next": "^16.3.5",
     "next-auth": "5.0.0-beta.32",
     "pdf-lib": "^1.17.1",
     "react": "^19.2.8",
@@ -44,7 +44,7 @@
   "overrides": {
     "brace-expansion": "^5.0.8",
     "minimatch": "^10.2.5",
-    "sharp": "^0.35.3",
+    "sharp": "^0.35.4",
     "postcss": "^8.5.10"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.2.12",
+    "eslint-config-next": "16.3.5",
     "eslint-plugin-unused-imports": "^4.4.1",
     "pg": "^8.22.0",
     "tailwindcss": "^4",
