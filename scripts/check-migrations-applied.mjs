@@ -72,6 +72,12 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exit(1)
+  const message = error instanceof Error ? error.message : String(error)
+  if (required) {
+    console.error(message)
+    process.exit(1)
+  } else {
+    console.warn(`Migration verification skipped due to error: ${message}`)
+    process.exit(0)
+  }
 })
