@@ -53,6 +53,29 @@ const proofRules = [
   },
 ]
 
+const agencyTools = [
+  {
+    label: "Connect",
+    title: "Clients connect LinkedIn without sharing a password",
+    copy: "Send a private, single-use link. The client approves access on LinkedIn's own page and never needs a Qalam account. Seven days before access lapses, managers are alerted and a client with a contact email on file gets a fresh link.",
+  },
+  {
+    label: "Approve",
+    title: "Feedback on the exact line, not a vague email",
+    copy: "Clients comment on the sentence they want changed. If you agree a no-reply window with a client, they get a heads-up two hours before a draft counts as approved, and it still waits for you to schedule it.",
+  },
+  {
+    label: "Voice",
+    title: "Rules your team saves, followed on every draft",
+    copy: "Voice Passport holds each client's always, never, banned words, and past corrections. Voice Drop emails the client one question they can answer by typing or recording a note.",
+  },
+  {
+    label: "Retain",
+    title: "Proof reports and pitch previews you can send",
+    copy: "Share a private report of posts published through Qalam with their synced LinkedIn metrics, never estimated. Pitch Mode turns a prospect's pasted posts into three sample drafts behind a private link.",
+  },
+]
+
 const focusedFaq = LANDING_FAQ.slice(0, 5)
 
 const productScreens = [
@@ -327,16 +350,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-zinc-200 bg-white px-6 py-20 sm:py-24">
-        <div className="mx-auto grid max-w-[1100px] items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Running more than one account</p>
-            <h2 className="t-h2 mt-4 max-w-xl text-teal">Every client in their own voice, not the same one.</h2>
-            <p className="t-lead mt-5 max-w-xl text-zinc-600">
-              Agencies, ghostwriters, and content teams give each client a separate workspace with its own voice profile, archive, and analytics. Invite the client as a reviewer and use the approval step when an account needs one, then schedule from the same workspace.
+      <section id="agencies" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end lg:gap-16">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">For agencies and ghostwriters</p>
+              <h2 className="t-h2 mt-4 max-w-xl text-teal">Every client in their own voice, without the chasing.</h2>
+            </div>
+            <p className="t-lead max-w-2xl text-zinc-600">
+              Each client gets a separate workspace with its own voice profile, archive, approvals, and analytics. My Desk puts every assigned client in one queue, and the Control Room shows cadence, approval waits, and LinkedIn status with problems sorted to the top.
             </p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col lg:items-stretch">
+
+          <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 md:grid-cols-2">
+            {agencyTools.map((tool) => (
+              <div key={tool.label} className="bg-white p-7 sm:p-8">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">{tool.label}</p>
+                <h3 className="mt-3 text-xl font-bold tracking-tight text-zinc-900">{tool.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-600">{tool.copy}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/partners"
               className="press inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 text-sm font-bold text-white shadow-[0_14px_30px_rgba(13,74,69,0.2)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:bg-teal-600"
