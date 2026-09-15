@@ -17,7 +17,7 @@ export default async function ConnectDonePage({ searchParams }: { searchParams: 
   const reason = typeof params.reason === "string" ? params.reason : "connect_failed"
 
   return (
-    <ClientLinkShell>
+    <ClientLinkShell source="connect">
       {success ? (
         <ClientLinkMessage
           tone="success"

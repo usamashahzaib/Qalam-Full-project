@@ -1,6 +1,11 @@
 import { QalamLogo } from "@/components/QalamLogo"
 
-export function ClientLinkShell({ children, width = "narrow" }: { children: React.ReactNode; width?: "narrow" | "wide" }) {
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com").replace(/\/$/, "")
+
+export type ClientLinkSource = "connect" | "drop" | "proof" | "pitch"
+
+export function ClientLinkShell({ children, source, width = "narrow" }: { children: React.ReactNode; source: ClientLinkSource; width?: "narrow" | "wide" }) {
+  const poweredByHref = `${SITE_URL}/?utm_source=client_link&utm_medium=referral&utm_campaign=${source}`
   return (
     <div className="min-h-screen bg-zinc-50 font-jakarta text-zinc-900">
       <header className="border-b border-zinc-200 bg-white px-4 py-3 sm:px-6">
@@ -13,6 +18,16 @@ export function ClientLinkShell({ children, width = "narrow" }: { children: Reac
         </div>
       </header>
       <main className={`mx-auto px-4 py-8 sm:py-12 ${width === "wide" ? "max-w-4xl" : "max-w-xl"}`}>{children}</main>
+      <footer className="px-4 pb-10 text-center">
+        <a
+          href={poweredByHref}
+          target="_blank"
+          rel="noopener"
+          className="inline-block max-w-xs py-3 text-xs font-medium leading-5 text-zinc-500 transition-colors hover:text-teal"
+        >
+          Powered by <span className="font-bold text-zinc-700">Qalam</span>, the LinkedIn publishing system with voice memory
+        </a>
+      </footer>
     </div>
   )
 }

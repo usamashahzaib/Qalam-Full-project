@@ -132,7 +132,7 @@ export default function VoiceDropPage() {
   const clock = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
 
   return (
-    <ClientLinkShell>
+    <ClientLinkShell source="drop">
       {stage === "loading" ? <ClientLinkSkeleton /> : null}
       {stage === "invalid" ? <ClientLinkMessage tone="error" title="This link is not valid" body="It may have been copied incompletely. Ask your agency contact to send the question again." /> : null}
       {stage === "closed" ? <ClientLinkMessage tone="neutral" title="This question is closed" body="It was already answered or has expired. Thank you. Your team will send the next one soon." /> : null}

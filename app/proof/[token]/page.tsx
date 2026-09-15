@@ -31,7 +31,7 @@ export default function ProofReportPage() {
   const measured = snapshot?.totals.postsWithMetrics ?? 0
 
   return (
-    <ClientLinkShell width="wide">
+    <ClientLinkShell source="proof" width="wide">
       {!snapshot && !failed ? <ClientLinkSkeleton /> : null}
       {failed ? <ClientLinkMessage tone="error" title="This report is not available" body="The link may have expired or been withdrawn. Ask your agency contact for a current report." /> : null}
 

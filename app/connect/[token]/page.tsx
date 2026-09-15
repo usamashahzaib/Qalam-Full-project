@@ -40,7 +40,7 @@ export default function ConnectLinkedInPage() {
   }, [token])
 
   return (
-    <ClientLinkShell>
+    <ClientLinkShell source="connect">
       {!handoff && !failed ? <ClientLinkSkeleton /> : null}
       {failed ? (
         <ClientLinkMessage tone="error" title="This link is not valid" body="It may have been copied incompletely or withdrawn. Ask your agency contact for a fresh link." />

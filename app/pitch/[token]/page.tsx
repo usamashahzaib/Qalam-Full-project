@@ -28,7 +28,7 @@ export default function PitchPreviewPage() {
   const firstName = pitch?.prospectName.split(" ")[0] || ""
 
   return (
-    <ClientLinkShell>
+    <ClientLinkShell source="pitch">
       {!pitch && !failed ? <ClientLinkSkeleton /> : null}
       {failed ? <ClientLinkMessage tone="error" title="This preview is no longer available" body="Preview links expire after 30 days. Ask the team who sent it for a fresh one." /> : null}
 
