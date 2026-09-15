@@ -229,7 +229,6 @@ export const PUBLIC_API_PREFIXES = [
   "/api/payments/webhook",
   "/api/free-tools",
   "/api/tools",
-  "/api/geo",
   // Vercel cron endpoints authenticate with CRON_SECRET (Bearer header), not a
   // session cookie - each route validates the secret itself.
   "/api/cron",
