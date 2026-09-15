@@ -5,6 +5,8 @@ import { callAi, safeParseJson, sanitizeOutput } from "@/lib/server/ai-router-v2
 import { createServiceClient, supabaseInsert, supabasePatch, supabaseSelect } from "@/lib/server/supabase-rest"
 import { LANGUAGE_RULE, WRITING_POLICY, fitSourceText, sourceMaterial } from "@/lib/prompts/writing-policy"
 import { hashPublicToken, isUuid, issuePublicToken } from "@/lib/server/agency/access"
+import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
+import { log } from "@/lib/server/logging"
 
 export const PITCH_TTL_DAYS = 30
 export const PITCH_MONTHLY_LIMIT = 30
@@ -22,10 +24,12 @@ type PitchRow = {
   revoked_at: string | null
   view_count: number
   last_viewed_at: string | null
+  converted_at: string | null
+  converted_workspace_id: string | null
   created_at: string
 }
 
-const COLUMNS = "id,owner_id,agency_name,prospect_name,prospect_role,samples,expires_at,revoked_at,view_count,last_viewed_at,created_at"
+const COLUMNS = "id,owner_id,agency_name,prospect_name,prospect_role,samples,expires_at,revoked_at,view_count,last_viewed_at,converted_at,converted_workspace_id,created_at"
 
 const PITCH_TASK = `
 TASK:
@@ -105,6 +109,58 @@ export async function revokePitch(ownerId: string, pitchId: string) {
   if (!isUuid(pitchId)) throw new Error("not_found")
   const rows = await supabasePatch("pitch_previews", `id=eq.${pitchId}&owner_id=eq.${ownerId}&revoked_at=is.null`, { revoked_at: new Date().toISOString() })
   if (!rows?.length) throw new Error("not_found")
+}
+
+/**
+ * Claim first, create second: the conditional PATCH on converted_at is the
+ * single-use guard, and it is released if the workspace cannot be created.
+ */
+export async function convertPitchToClient(input: { ownerId: string; pitchId: string; maxClients: number | null }) {
+  if (!isUuid(input.pitchId)) throw new Error("not_found")
+  const claimed = await supabasePatch<PitchRow>(
+    "pitch_previews",
+    `id=eq.${input.pitchId}&owner_id=eq.${input.ownerId}&converted_at=is.null`,
+    { converted_at: new Date().toISOString() }
+  )
+  const pitch = claimed?.[0]
+  if (!pitch) {
+    const existing = await supabaseSelect<PitchRow>("pitch_previews", `id=eq.${input.pitchId}&owner_id=eq.${input.ownerId}&select=id,converted_workspace_id&limit=1`)
+    if (existing?.[0]) throw new Error("pitch_already_converted")
+    throw new Error("not_found")
+  }
+
+  const { data: workspaceId, error } = await createServiceClient().rpc("create_client_workspace_with_limit", {
+    p_user_id: input.ownerId,
+    p_name: pitch.prospect_name,
+    p_client_contact_name: pitch.prospect_name,
+    p_client_contact_email: null,
+    p_max_clients: input.maxClients,
+  })
+  if (error || !workspaceId) {
+    await supabasePatch("pitch_previews", `id=eq.${pitch.id}`, { converted_at: null }).catch(() => undefined)
+    throw new Error(error?.message?.includes("client_workspace_limit_reached") ? "workspace_limit_reached" : "workspace_create_failed")
+  }
+
+  const posts = new SupabasePostRepository()
+  let drafts = 0
+  for (const sample of pitch.samples) {
+    const created = await posts.create({
+      userId: input.ownerId,
+      workspaceId: String(workspaceId),
+      authorId: input.ownerId,
+      title: sample.angle,
+      content: sample.content,
+      type: "linkedin",
+      status: "draft",
+    }).catch((caught) => {
+      log.error("agency.pitch_convert_draft_failed", { pitchId: pitch.id, error: (caught as Error).message })
+      return null
+    })
+    if (created) drafts++
+  }
+
+  await supabasePatch("pitch_previews", `id=eq.${pitch.id}`, { converted_workspace_id: workspaceId })
+  return { workspaceId: String(workspaceId), workspaceName: pitch.prospect_name, drafts }
 }
 
 export async function loadPublicPitch(token: string) {

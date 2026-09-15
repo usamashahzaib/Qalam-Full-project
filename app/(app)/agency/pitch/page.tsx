@@ -5,7 +5,7 @@ import Link from "next/link"
 import { OneTimeLink, fetchJson, formatDateTime, friendlyError, relativeTime } from "@/components/agency/agency-ui"
 
 type Sample = { angle: string; content: string }
-type Pitch = { id: string; agency_name: string; prospect_name: string; prospect_role: string | null; samples: Sample[]; created_at: string; expires_at: string; revoked_at: string | null; view_count: number; last_viewed_at: string | null }
+type Pitch = { id: string; agency_name: string; prospect_name: string; prospect_role: string | null; samples: Sample[]; created_at: string; expires_at: string; revoked_at: string | null; view_count: number; last_viewed_at: string | null; converted_at: string | null; converted_workspace_id: string | null }
 
 const AGENCY_NAME_KEY = "qalam-pitch-agency-name"
 
@@ -17,6 +17,7 @@ export default function PitchModePage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ pitch: Pitch; url: string } | null>(null)
+  const [converting, setConverting] = useState<string | null>(null)
 
   const [now] = useState(() => Date.now())
 
@@ -62,6 +63,19 @@ export default function PitchModePage() {
       setPitches((current) => current.map((item) => item.id === pitch.id ? { ...item, revoked_at: new Date().toISOString() } : item))
     } catch (caught) {
       setError(friendlyError((caught as Error).message))
+    }
+  }
+
+  const convert = async (pitch: Pitch) => {
+    setConverting(pitch.id)
+    setError(null)
+    try {
+      const data = await fetchJson<{ workspaceId: string; drafts: number }>("/api/agency/pitch/convert", { method: "POST", body: JSON.stringify({ pitchId: pitch.id }) })
+      setPitches((current) => current.map((item) => item.id === pitch.id ? { ...item, converted_at: new Date().toISOString(), converted_workspace_id: data.workspaceId } : item))
+    } catch (caught) {
+      setError(friendlyError((caught as Error).message))
+    } finally {
+      setConverting(null)
     }
   }
 
@@ -140,7 +154,14 @@ export default function PitchModePage() {
                 <p className={`mt-1 text-xs font-semibold ${pitch.view_count ? "text-emerald-700" : "text-zinc-500"}`}>
                   {pitch.view_count ? `Opened ${pitch.view_count} time${pitch.view_count === 1 ? "" : "s"}, last ${formatDateTime(pitch.last_viewed_at)}` : "Not opened yet"}
                 </p>
-                {live ? <button onClick={() => void revoke(pitch)} className="mt-2 text-[11px] font-semibold text-zinc-500 hover:text-red-600">Withdraw link</button> : <p className="mt-2 text-[11px] text-zinc-400">{pitch.revoked_at ? "Withdrawn" : "Expired"}</p>}
+                {pitch.converted_workspace_id ? (
+                  <Link href={`/agency?client=${pitch.converted_workspace_id}`} className="mt-2 inline-flex min-h-9 items-center text-xs font-bold text-teal-700 hover:underline">Client created. Open workspace</Link>
+                ) : (
+                  <button onClick={() => void convert(pitch)} disabled={converting !== null || Boolean(pitch.converted_at)} className="mt-2 inline-flex min-h-9 w-full items-center justify-center rounded-lg bg-teal px-3 text-xs font-bold text-white hover:bg-teal-600 disabled:opacity-40">
+                    {converting === pitch.id ? "Creating client..." : "Won them? Create client"}
+                  </button>
+                )}
+                {live ? <button onClick={() => void revoke(pitch)} className="mt-2 block text-[11px] font-semibold text-zinc-500 hover:text-red-600">Withdraw link</button> : <p className="mt-2 text-[11px] text-zinc-400">{pitch.revoked_at ? "Withdrawn" : "Expired"}</p>}
               </div>
             )
           })}

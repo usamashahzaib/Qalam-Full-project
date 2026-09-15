@@ -91,6 +91,8 @@ export function agencyErrorResponse(error: unknown, scope: string) {
     invalid_input: 400,
     upgrade_required: 403,
     rate_limited: 429,
+    pitch_already_converted: 409,
+    workspace_limit_reached: 403,
   }
   const status = known[message] ?? errorToStatus(message)
   if (status >= 500) log.error(`${scope}.failed`, { error: message })

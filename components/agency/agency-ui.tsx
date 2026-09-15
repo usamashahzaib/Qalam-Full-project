@@ -19,6 +19,8 @@ export const AGENCY_ERRORS: Record<string, string> = {
   pitch_limit_reached: "You have reached this month's pitch limit.",
   draft_limit_reached: "Your monthly draft allowance is used up.",
   generation_failed: "The samples could not be generated. Try again in a moment.",
+  pitch_already_converted: "This pitch is already a client workspace.",
+  workspace_limit_reached: "You are at your client workspace limit. Archive a client or upgrade first.",
   auth_required: "Your session ended. Sign in again.",
 }
 
