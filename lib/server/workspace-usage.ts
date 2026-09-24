@@ -4,22 +4,62 @@ import "server-only"
 // Per-workspace usage enforcement for the Agency tier. plan_usage (see
 // plan-limits-v2.ts) is keyed by user_id, so an Agency owner's client
 // workspaces all shared one draft counter - this tracks usage per
-// workspace per calendar month instead, matching the "60 posts x 5
-// workspaces" allowance sold on the Agency plan.
+// workspace per calendar month instead, matching the shared pool sold on the
+// Agency plan (see AGENCY_CLIENT_DRAFT_POOL / AGENCY_CLIENT_CAROUSEL_POOL in
+// lib/pricing.ts, the single source of truth for that number - this module
+// used to hardcode its own copy, which could silently drift from what the
+// plan actually sells).
 
 import { createServiceClient } from "./supabase-rest"
 import { log } from "./logging"
+import { AGENCY_DEFAULT_WORKSPACE_DRAFT_ALLOWANCE, AGENCY_DEFAULT_WORKSPACE_CAROUSEL_ALLOWANCE } from "@/lib/pricing"
 
 export type WorkspaceUsageFeature = "drafts" | "carousels"
 
+// The default share of the shared pool a client workspace gets until the
+// owner customizes it. Kept under the old exported name so existing callers
+// and tests are unaffected by this rename-in-place.
 export const WORKSPACE_USAGE_LIMITS: Record<WorkspaceUsageFeature, number> = {
-  drafts: 60,
-  carousels: 10,
+  drafts: AGENCY_DEFAULT_WORKSPACE_DRAFT_ALLOWANCE,
+  carousels: AGENCY_DEFAULT_WORKSPACE_CAROUSEL_ALLOWANCE,
 }
 
 const FIELD_MAP: Record<WorkspaceUsageFeature, string> = {
   drafts: "ai_drafts_used",
   carousels: "carousels_used",
+}
+
+// F2: an owner can reallocate the shared pool per client (see
+// supabase/migrations/20260924130000_agency_workspace_pool_allocation.sql and
+// the client-settings route, which validates the sum against the pool via
+// checkPoolAllocation). Null means "use the plan default" from the table above.
+const ALLOWANCE_COLUMN: Record<WorkspaceUsageFeature, string> = {
+  drafts: "monthly_draft_allowance",
+  carousels: "monthly_carousel_allowance",
+}
+
+async function resolveWorkspaceLimit(
+  supabase: ReturnType<typeof createServiceClient>,
+  workspaceId: string,
+  feature: WorkspaceUsageFeature
+): Promise<number> {
+  const column = ALLOWANCE_COLUMN[feature]
+  // supabase-js reports query failures in `error` rather than throwing, so
+  // both paths are handled. On failure (for example the allocation columns
+  // not migrated yet) this falls back to the plan default share rather than
+  // blocking generation, matching this file's existing RPC fallback.
+  try {
+    const { data, error } = await supabase.from("workspaces").select(column).eq("id", workspaceId).maybeSingle()
+    if (error) {
+      log.error("workspace_usage.allowance_lookup_failed", { workspaceId, feature, error: error.message })
+    } else {
+      const custom = (data as Record<string, number | null> | null)?.[column]
+      if (typeof custom === "number" && custom >= 0) return custom
+    }
+  } catch (err) {
+    log.error("workspace_usage.allowance_lookup_failed", { workspaceId, feature, error: (err as Error).message })
+  }
+  return WORKSPACE_USAGE_LIMITS[feature]
 }
 
 const currentPeriod = () => {
@@ -42,7 +82,7 @@ export async function checkWorkspaceUsage(
   const supabase = createServiceClient()
   const { month, year } = currentPeriod()
   const field = FIELD_MAP[feature]
-  const limit = WORKSPACE_USAGE_LIMITS[feature]
+  const limit = await resolveWorkspaceLimit(supabase, workspaceId, feature)
 
   const { data } = await supabase
     .from("workspace_usage")
@@ -65,7 +105,7 @@ export async function incrementWorkspaceUsage(
   const supabase = createServiceClient()
   const { month, year } = currentPeriod()
   const field = FIELD_MAP[feature]
-  const limit = WORKSPACE_USAGE_LIMITS[feature]
+  const limit = await resolveWorkspaceLimit(supabase, workspaceId, feature)
 
   try {
     const { data, error } = await supabase.rpc("increment_workspace_usage", {

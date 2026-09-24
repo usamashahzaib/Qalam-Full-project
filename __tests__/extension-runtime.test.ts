@@ -1,11 +1,10 @@
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
+import { readFileSync, readdirSync } from "node:fs"
+import { relative, resolve } from "node:path"
 import JSZip from "jszip"
 import { describe, expect, it } from "vitest"
 import { PUBLIC_API_PREFIXES } from "@/proxy"
 
 const source = (file: string) => readFileSync(resolve(process.cwd(), file), "utf8")
-const normalizeNewlines = (value: string | undefined) => value?.replace(/\r\n/g, "\n")
 
 describe("LinkedIn extension runtime", () => {
   it("allows the Bearer-token comment endpoint to reach its own validator", () => {
@@ -22,7 +21,7 @@ describe("LinkedIn extension runtime", () => {
 
   it("ships a loadable package with the matching extension version", () => {
     const manifest = source("extension/manifest.json")
-    expect(manifest).toContain('"version": "1.2.0"')
+    expect(manifest).toContain('"version": "1.3.0"')
     expect(source("extension/README.md")).toContain("qalam-linkedin-extension")
   })
 
@@ -35,9 +34,29 @@ describe("LinkedIn extension runtime", () => {
     expect(content).toContain("You review the text before anything is posted.")
   })
 
+  // This used to compare manifest.json alone, so a content-script or
+  // service-worker change shipped a stale zip without anything failing. Every
+  // file is compared now, in both directions.
   it("keeps the downloadable package aligned with its extension source", async () => {
     const archive = await JSZip.loadAsync(readFileSync(resolve(process.cwd(), "public/downloads/qalam-linkedin-extension.zip")))
-    const packagedManifest = await archive.file("qalam-linkedin-extension/manifest.json")?.async("string")
-    expect(normalizeNewlines(packagedManifest)).toBe(normalizeNewlines(source("extension/manifest.json")))
+    const sourceFiles = readdirSync(resolve(process.cwd(), "extension"), { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => relative(resolve(process.cwd(), "extension"), resolve(entry.parentPath, entry.name)).replaceAll("\\", "/"))
+      .sort()
+    const packagedFiles = Object.values(archive.files)
+      .filter((entry) => !entry.dir)
+      .map((entry) => entry.name.replace(/^qalam-linkedin-extension\//, ""))
+      .sort()
+
+    expect(sourceFiles.length).toBeGreaterThan(0)
+    expect(packagedFiles).toEqual(sourceFiles)
+
+    // Compared as bytes, not text: the package carries PNG icons, and the zip
+    // is built from the same bytes so an exact match is the correct assertion.
+    for (const file of sourceFiles) {
+      const packaged = await archive.file(`qalam-linkedin-extension/${file}`)?.async("base64")
+      expect(packaged, `${file} in the zip does not match extension/${file}. Run npm run package:extension.`)
+        .toBe(readFileSync(resolve(process.cwd(), "extension", file)).toString("base64"))
+    }
   })
 })

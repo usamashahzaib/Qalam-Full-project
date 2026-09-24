@@ -1,0 +1,9 @@
+# The browser extension ships as a zip built from these files (see
+# scripts/package-extension.mjs), and a test compares the zip byte for byte
+# with the committed source. Pin its text files to LF on every OS so a Windows
+# checkout with core.autocrlf cannot bake CRLF into the package.
+extension/**/*.js text eol=lf
+extension/**/*.css text eol=lf
+extension/**/*.json text eol=lf
+extension/**/*.html text eol=lf
+extension/**/*.md text eol=lf

@@ -1,13 +1,17 @@
 /* global chrome */
 
-const QALAM_ORIGIN = "https://www.byqalam.com"
+// Signed-in Qalam surfaces (connect page, writer) and the extension API all
+// live on the app domain. lib/seo.ts resolvePublicHref is the source of truth
+// for that split; www.byqalam.com serves marketing pages only and cannot carry
+// a Qalam session cookie.
+const QALAM_APP_ORIGIN = "https://app.byqalam.com"
 
 const readConnectionStatus = async () => {
   const { qalam_extension_token: token } = await chrome.storage.local.get(["qalam_extension_token"])
   if (!token) return { connected: false, error: "extension_auth_required" }
 
   try {
-    const response = await fetch(`${QALAM_ORIGIN}/api/extension/comments`, {
+    const response = await fetch(`${QALAM_APP_ORIGIN}/api/extension/comments`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (response.status === 401) {
@@ -24,12 +28,17 @@ const readConnectionStatus = async () => {
 
 chrome.runtime.onMessage.addListener((message, _sender, respond) => {
   if (message.type === "qalam:open-connect") {
-    chrome.tabs.create({ url: `${QALAM_ORIGIN}/extension/connect` })
+    chrome.tabs.create({ url: `${QALAM_APP_ORIGIN}/extension/connect` })
+    respond({ ok: true })
+    return
+  }
+  if (message.type === "qalam:open-upgrade") {
+    chrome.tabs.create({ url: `${QALAM_APP_ORIGIN}/upgrade` })
     respond({ ok: true })
     return
   }
   if (message.type === "qalam:open-writer") {
-    chrome.tabs.create({ url: `${QALAM_ORIGIN}/writer?topic=${encodeURIComponent(String(message.postText || "").slice(0, 3000))}` })
+    chrome.tabs.create({ url: `${QALAM_APP_ORIGIN}/writer?topic=${encodeURIComponent(String(message.postText || "").slice(0, 3000))}` })
     respond({ ok: true })
     return
   }
@@ -41,7 +50,7 @@ chrome.runtime.onMessage.addListener((message, _sender, respond) => {
   chrome.storage.local.get(["qalam_extension_token"], async ({ qalam_extension_token: token }) => {
     if (!token) return respond({ error: "extension_auth_required" })
     try {
-      const response = await fetch(`${QALAM_ORIGIN}/api/extension/comments`, {
+      const response = await fetch(`${QALAM_APP_ORIGIN}/api/extension/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ postText: message.postText, style: message.style }),

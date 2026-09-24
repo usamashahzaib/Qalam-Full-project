@@ -80,7 +80,14 @@ node_modules/
 /.codex-temp/
 /.codex-api-start.*
 /.fallow/
+/.gstack/
+/.codex-qa/
+/.resume-qa/
 *.png
+# The extension manifest references these icons, and prebuild repackages the
+# downloadable zip from the committed folder. Without them Chrome refuses to
+# load the extension.
+!extension/icons/*.png
 !public/brand/linkedin/*.png
 !assets/brand/*.png
 !public/product/*.png

@@ -9,14 +9,17 @@ Qalam for LinkedIn helps you respond thoughtfully while you browse. On a LinkedI
 3. Open `chrome://extensions` in Chrome or Chromium.
 4. Turn on Developer mode.
 5. Select Load unpacked and choose the extracted `qalam-linkedin-extension` folder.
-6. Open the Qalam extension, choose Connect Qalam, then paste a connection code from `https://www.byqalam.com/extension/connect`.
+6. Open the Qalam extension, choose Connect Qalam, then paste a connection code from `https://app.byqalam.com/extension/connect`.
 
 ## Permissions
 
 - `storage` keeps the short-lived Qalam connection code in this browser.
-- `tabs` opens Qalam pages only after you choose Connect or Open in Qalam Writer.
-- LinkedIn access adds a Generate with Qalam button to supported feed and post cards after they load.
-- ByQalam access sends the visible post text to Qalam only after you select a comment style.
+- LinkedIn access adds a Draft a comment with Qalam button to supported feed and post cards after they load.
+- Qalam app access sends the visible post text to `app.byqalam.com` only after you select a comment style.
+
+The extension does not request the `tabs` permission, so it cannot read your
+open tabs or your browsing history. Choosing Connect, See plans, or Open in
+Qalam Writer opens a new Qalam tab, which needs no permission at all.
 
 ## Privacy and limits
 

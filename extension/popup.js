@@ -1,6 +1,14 @@
 /* global chrome */
 
 const status = document.querySelector("#status")
+// Kept in step with ERROR_MESSAGES in content-script.js. A person who cannot
+// connect needs to know which of the two things went wrong: the code, or the
+// network.
+const DISCONNECTED_MESSAGES = {
+  extension_auth_required: "Not connected. Generate a new connection code in Qalam and paste it below.",
+  network_error: "Could not reach Qalam. Check your internet connection and try again.",
+  connection_check_failed: "Qalam could not confirm this connection. Try again in a moment.",
+}
 const refreshStatus = () => {
   chrome.runtime.sendMessage({ type: "qalam:connection-status" }, (result) => {
     if (chrome.runtime.lastError) {
@@ -8,11 +16,18 @@ const refreshStatus = () => {
       return
     }
     if (!result?.connected) {
-      status.textContent = result?.error === "network_error" ? "Connection check failed. Check your internet and try again." : "Not connected. Generate a new connection code in Qalam."
+      status.textContent = DISCONNECTED_MESSAGES[result?.error] || "Not connected. Generate a new connection code in Qalam."
       return
     }
-    const allowance = result.limit === "unlimited" ? "Unlimited comments available." : `${result.remaining} of ${result.limit} comment sets remaining.`
-    status.textContent = `Connected. ${allowance}`
+    if (result.limit === "unlimited") {
+      status.textContent = "Connected. Unlimited comment sets on your plan."
+      return
+    }
+    if (result.remaining === 0) {
+      status.textContent = `Connected. You have used all ${result.limit} comment sets this month. They reset at the start of next month.`
+      return
+    }
+    status.textContent = `Connected. ${result.remaining} of ${result.limit} comment sets remaining.`
   })
 }
 refreshStatus()

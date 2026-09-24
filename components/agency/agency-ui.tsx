@@ -22,6 +22,8 @@ export const AGENCY_ERRORS: Record<string, string> = {
   pitch_already_converted: "This pitch is already a client workspace.",
   workspace_limit_reached: "You are at your client workspace limit. Archive a client or upgrade first.",
   auth_required: "Your session ended. Sign in again.",
+  allocation_exceeds_pool: "That would exceed your account's shared pool. Lower another client's allocation first.",
+  workspace_owner_missing: "This workspace has no owner on record. Contact support.",
 }
 
 export const friendlyError = (code: string | undefined, fallback = "Something went wrong. Try again.") =>

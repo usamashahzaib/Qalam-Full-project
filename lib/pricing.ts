@@ -38,6 +38,44 @@ export const quarterlyFraming = "1 month free"
 // Agency uses reviewed onboarding rather than card checkout. An approved
 // application is followed by workspace activation and team setup.
 export const AGENCY_PLAN_LIVE = true
+// Single source of truth for the Agency tier's shared client capacity - the
+// number sold as "300 posts / 50 carousels across 5 client workspaces". This
+// pool is split across whichever client workspaces the owner actually has
+// (see lib/server/workspace-usage.ts), not divided evenly by fiat, so a
+// heavier client can draw more than a lighter one without exceeding the total
+// the plan sells. lib/server/workspace-usage.ts imports this directly instead
+// of hardcoding its own copy of these numbers, so the sold and enforced
+// numbers cannot drift apart.
+export const AGENCY_CLIENT_WORKSPACE_COUNT = 5
+export const AGENCY_CLIENT_DRAFT_POOL = 300
+export const AGENCY_CLIENT_CAROUSEL_POOL = 50
+
+// An Agency owner's own LinkedIn presence is how most of them win clients in
+// the first place, but the account-wide usage counter (lib/server/plan-limits-v2.ts
+// incrementUsage) is shared by every workspace including their personal one.
+// Fully subscribed client workspaces (5 x the pool above) left literally zero
+// headroom for the owner's own posts - this reserve is added on top of the
+// client pool for the account-wide cap only; it never touches what's sold or
+// enforced per client workspace. Sized to match what a Pro-plan individual
+// gets, since an agency owner is also one.
+export const AGENCY_OWNER_DRAFT_RESERVE = 60
+export const AGENCY_OWNER_CAROUSEL_RESERVE = 10
+
+/**
+ * The default per-workspace share of a shared pool, before an owner
+ * customizes it. Floored so the sum of every workspace's default never
+ * exceeds the pool even if it doesn't divide evenly (e.g. a future pricing
+ * change to a pool that isn't a multiple of the workspace count).
+ */
+export const deriveDefaultWorkspaceAllowance = (pool: number, workspaceCount: number): number =>
+  workspaceCount <= 0 ? 0 : Math.floor(pool / workspaceCount)
+
+// The default per-workspace share before an owner customizes it - what a
+// newly created client workspace gets until reallocated. Not a hard ceiling:
+// see checkPoolAllocation in lib/agency/capacity.ts.
+export const AGENCY_DEFAULT_WORKSPACE_DRAFT_ALLOWANCE = deriveDefaultWorkspaceAllowance(AGENCY_CLIENT_DRAFT_POOL, AGENCY_CLIENT_WORKSPACE_COUNT)
+export const AGENCY_DEFAULT_WORKSPACE_CAROUSEL_ALLOWANCE = deriveDefaultWorkspaceAllowance(AGENCY_CLIENT_CAROUSEL_POOL, AGENCY_CLIENT_WORKSPACE_COUNT)
+
 
 export const plans: Plan[] = [
   {
@@ -126,17 +164,17 @@ export const plans: Plan[] = [
     name: "Agency",
     monthlyPrice: 19,
     quarterlyPrice: 38,
-    postsPerMonth: 300,
-    draftsPerMonth: 300,
-    carouselsPerMonth: 50,
+    postsPerMonth: AGENCY_CLIENT_DRAFT_POOL,
+    draftsPerMonth: AGENCY_CLIENT_DRAFT_POOL,
+    carouselsPerMonth: AGENCY_CLIENT_CAROUSEL_POOL,
     researchPerMonth: 25,
     voiceProfiles: 5,
-    workspaces: 5,
+    workspaces: AGENCY_CLIENT_WORKSPACE_COUNT,
     audience: "Run multiple client workspaces",
     featureLead: "Everything in Pro, plus",
     features: [
-      "300 posts/month across 5 workspaces",
-      "50 carousels/month",
+      "300 posts/month across 5 client workspaces, plus 60 for your own presence",
+      "50 carousels/month for clients, plus 10 for your own",
       "Competitor Research (25/month)",
       "Per-workspace accent branding",
       "Team seats with My Desk across every client",
@@ -301,7 +339,7 @@ export const COMPARISON_ROWS = [
     free: "5",
     solo: "30",
     pro: "60",
-    agency: "60 x 5 workspaces",
+    agency: `${AGENCY_DEFAULT_WORKSPACE_DRAFT_ALLOWANCE} x ${AGENCY_CLIENT_WORKSPACE_COUNT} workspaces, reallocable, plus ${AGENCY_OWNER_DRAFT_RESERVE} for your own`,
   },
   {
     group: "Creation",
@@ -309,7 +347,7 @@ export const COMPARISON_ROWS = [
     free: "1",
     solo: "3",
     pro: "10",
-    agency: "10 x 5 workspaces",
+    agency: `${AGENCY_DEFAULT_WORKSPACE_CAROUSEL_ALLOWANCE} x ${AGENCY_CLIENT_WORKSPACE_COUNT} workspaces, reallocable, plus ${AGENCY_OWNER_CAROUSEL_RESERVE} for your own`,
   },
   {
     group: "Creation",
@@ -631,7 +669,11 @@ export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
     flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 0, seats: 1, researchRuns: 5, carouselSlides: 10 },
   },
   Agency: {
-    limits: { drafts: 300, carousels: 50, hooks: 300, analyses: 100 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: 5, seats: 5, researchRuns: 25, carouselSlides: 10 },
+    // The account-wide cap is the client pool PLUS the owner's own reserve
+    // (see AGENCY_OWNER_DRAFT_RESERVE above) - this is the only place that
+    // reserve is added. The client pool itself (what a workspace can be
+    // allocated) stays exactly AGENCY_CLIENT_DRAFT_POOL / _CAROUSEL_POOL.
+    limits: { drafts: AGENCY_CLIENT_DRAFT_POOL + AGENCY_OWNER_DRAFT_RESERVE, carousels: AGENCY_CLIENT_CAROUSEL_POOL + AGENCY_OWNER_CAROUSEL_RESERVE, hooks: 300, analyses: 100 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: true, canExport: true, analyticsDepth: "full", voiceTraining: true, competitorResearch: true, clientWorkspaces: AGENCY_CLIENT_WORKSPACE_COUNT, seats: 5, researchRuns: 25, carouselSlides: 10 },
   },
 }

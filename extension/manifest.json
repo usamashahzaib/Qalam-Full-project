@@ -1,11 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Qalam for LinkedIn",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Turn a LinkedIn post into three comment drafts you review before posting.",
-  "permissions": ["storage", "tabs"],
-  "host_permissions": ["https://www.linkedin.com/*", "https://www.byqalam.com/*"],
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.linkedin.com/*", "https://app.byqalam.com/*"],
   "background": { "service_worker": "service-worker.js", "type": "module" },
-  "action": { "default_title": "Qalam for LinkedIn", "default_popup": "popup.html" },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "Qalam for LinkedIn",
+    "default_popup": "popup.html",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
   "content_scripts": [{ "matches": ["https://www.linkedin.com/*"], "js": ["content-script.js"], "css": ["content.css"], "run_at": "document_idle" }]
 }

@@ -158,3 +158,78 @@ describe("workspace usage (per-workspace Agency quotas)", () => {
     })
   })
 })
+
+describe("F2: an owner-configured allowance overrides the plan default", () => {
+  it("checkWorkspaceUsage uses the workspace's custom draft allowance when set", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: {
+        workspaces: () => ok({ monthly_draft_allowance: 120 }),
+        workspace_usage: () => ok({ ai_drafts_used: 90 }),
+      },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await checkWorkspaceUsage("ws-heavy", "drafts")
+    expect(result).toEqual({ allowed: true, used: 90, limit: 120, remaining: 30 })
+  })
+
+  it("falls back to the plan default when the workspace has no custom allowance (null)", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: {
+        workspaces: () => ok({ monthly_draft_allowance: null }),
+        workspace_usage: () => ok({ ai_drafts_used: 10 }),
+      },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await checkWorkspaceUsage("ws-default", "drafts")
+    expect(result.limit).toBe(WORKSPACE_USAGE_LIMITS.drafts)
+  })
+
+  it("falls back to the plan default when the allowance columns are not deployed yet (workspaces select errors)", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: {
+        workspaces: () => fail("column workspaces.monthly_draft_allowance does not exist"),
+        workspace_usage: () => ok({ ai_drafts_used: 5 }),
+      },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await checkWorkspaceUsage("ws-undeployed", "drafts")
+    expect(result.limit).toBe(WORKSPACE_USAGE_LIMITS.drafts)
+    expect(result.allowed).toBe(true)
+  })
+
+  it("RESOLVES the audit's lumpy-portfolio finding: a heavy client can now be allocated above the 60-draft default", async () => {
+    // The audit's exact scenario: one client needs 120 drafts, four need 20.
+    // Before F2, ws-heavy was hard-capped at 60 regardless of what the owner
+    // wanted to give it. After F2, the owner allocates 120 to it (validated
+    // against the pool by checkPoolAllocation in the client-settings route)
+    // and generation for that workspace is now checked against 120, not 60.
+    const fake = createFakeSupabase({
+      tableResponses: {
+        workspaces: () => ok({ monthly_draft_allowance: 120 }),
+        workspace_usage: () => ok({ ai_drafts_used: 100 }),
+      },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await checkWorkspaceUsage("ws-heavy", "drafts")
+    // Under the old fixed 60 cap this workspace would already show
+    // allowed:false at 60 used; it is now allowed all the way to 120.
+    expect(result.allowed).toBe(true)
+    expect(result.remaining).toBe(20)
+  })
+
+  it("incrementWorkspaceUsage passes the resolved custom limit to the RPC as p_max_allowed", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: { workspaces: () => ok({ monthly_carousel_allowance: 25 }) },
+      rpcResponses: { increment_workspace_usage: () => ok({ allowed: true, current: 24 }) },
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const result = await incrementWorkspaceUsage("ws-heavy", "carousels")
+    expect(result.limit).toBe(25)
+    expect(fake.rpc).toHaveBeenCalledWith("increment_workspace_usage", expect.objectContaining({ p_max_allowed: 25 }))
+  })
+})

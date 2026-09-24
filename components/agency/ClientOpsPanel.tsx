@@ -138,7 +138,119 @@ function HandoffTab({ workspaceId, onChanged }: { workspaceId: string; onChanged
   )
 }
 
-type Settings = { cadencePostsPerWeek: number; autoApproveHours: number | null; voiceDropEnabled: boolean; monthlyProofEnabled: boolean; clientContactName: string | null; clientContactEmail: string | null }
+type PoolStatus = { poolTotal: number; allocatedToOthers: number; mine: number; defaultAllowance: number; unallocated: number }
+type Settings = {
+  cadencePostsPerWeek: number
+  autoApproveHours: number | null
+  voiceDropEnabled: boolean
+  monthlyProofEnabled: boolean
+  clientContactName: string | null
+  clientContactEmail: string | null
+  draftAllowance: number | null
+  carouselAllowance: number | null
+  draftPool: PoolStatus | null
+  carouselPool: PoolStatus | null
+}
+
+/**
+ * One feature's share of the shared pool. Uses a bespoke fetch rather than
+ * the shared fetchJson helper because a rejected allocation carries `remaining`
+ * in its body - the number that actually tells the owner what to do next
+ * ("give this client less, or take some from another client first").
+ */
+function AllocationRow({
+  label,
+  pool,
+  workspaceId,
+  field,
+  onSaved,
+}: {
+  label: string
+  pool: PoolStatus | null
+  workspaceId: string
+  field: "draftAllowance" | "carouselAllowance"
+  onSaved: (next: Partial<Settings>) => void
+}) {
+  const [value, setValue] = useState(String(pool?.mine ?? ""))
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+
+  if (!pool) return null
+  const isCustom = pool.mine !== pool.defaultAllowance
+
+  const commit = async (nextValue: number | null): Promise<boolean> => {
+    setBusy(true)
+    setError(null)
+    setSaved(false)
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}/client-settings`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: nextValue }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        if (data.error === "allocation_exceeds_pool") {
+          setError(`Only ${data.remaining} left in your pool for this client (${data.allocatedToOthers} already committed to your other clients).`)
+        } else {
+          setError(friendlyError(data.error))
+        }
+        return false
+      }
+      onSaved(data.settings)
+      setSaved(true)
+      return true
+    } catch {
+      setError("Could not save this allocation. Try again.")
+      return false
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-zinc-700">{label} / month</p>
+        <p className="text-[11px] text-zinc-500">{pool.unallocated} unallocated in your pool right now</p>
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <input
+          type="number"
+          min={0}
+          inputMode="numeric"
+          value={value}
+          disabled={busy}
+          onChange={(event) => setValue(event.target.value)}
+          className="w-24 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-sm font-semibold text-zinc-800"
+          aria-label={`${label} allowance for this client`}
+        />
+        <button
+          type="button"
+          disabled={busy || value.trim() === "" || Number(value) === pool.mine}
+          onClick={() => void commit(Math.max(0, Math.floor(Number(value))))}
+          className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Save
+        </button>
+        {isCustom ? (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => { void commit(null).then((ok) => { if (ok) setValue(String(pool.defaultAllowance)) }) }}
+            className="text-xs font-semibold text-zinc-500 hover:underline"
+          >
+            Reset to default ({pool.defaultAllowance})
+          </button>
+        ) : (
+          <span className="text-[11px] text-zinc-400">Plan default</span>
+        )}
+      </div>
+      {error ? <p className="mt-1 text-[11px] font-medium text-red-600">{error}</p> : saved ? <p className="mt-1 text-[11px] font-medium text-emerald-700">Saved</p> : null}
+    </div>
+  )
+}
 
 function RulesTab({ workspaceId, onChanged }: { workspaceId: string; onChanged?: () => void }) {
   const [settings, setSettings] = useState<Settings | null>(null)
@@ -227,6 +339,15 @@ function RulesTab({ workspaceId, onChanged }: { workspaceId: string; onChanged?:
           />
           {settings.clientContactEmail ? `Send monthly to ${settings.clientContactEmail}` : "Add a client contact email in Client details first"}
         </label>
+      </div>
+
+      <div className="rounded-lg border border-zinc-200 bg-white p-3">
+        <p className="text-sm font-semibold text-zinc-900">Client capacity</p>
+        <p className="text-xs text-zinc-500">Your account&apos;s monthly pool is shared across every client. Give a busier client more of it - the rest go back into what you can give the others.</p>
+        <div className="mt-3 space-y-3">
+          <AllocationRow label="Drafts" pool={settings.draftPool} workspaceId={workspaceId} field="draftAllowance" onSaved={(next) => { setSettings((current) => current ? { ...current, ...next } : current); onChanged?.() }} />
+          <AllocationRow label="Carousels" pool={settings.carouselPool} workspaceId={workspaceId} field="carouselAllowance" onSaved={(next) => { setSettings((current) => current ? { ...current, ...next } : current); onChanged?.() }} />
+        </div>
       </div>
 
       <div className="flex items-center gap-3 text-xs" aria-live="polite">

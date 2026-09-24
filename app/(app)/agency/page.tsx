@@ -278,6 +278,7 @@ export default function AgencyDashboard() {
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
             <p className="text-xs font-medium text-zinc-500">Owned client workspaces</p>
             <p className="mt-1 text-xl font-bold text-zinc-900">{access.ownedClientCount}{numericLimit !== null ? ` of ${numericLimit}` : ""}</p>
+            {archivedCount ? <p className="mt-0.5 text-[11px] text-zinc-500">Archiving a client frees its slot immediately.</p> : null}
           </div>
           <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
             <p className="text-xs font-medium text-zinc-500">Assigned workspaces</p>

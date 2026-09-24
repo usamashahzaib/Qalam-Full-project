@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "prepare": "node scripts/setup-git-hooks.mjs",
-    "prebuild": "node scripts/clean-next-dev-types.mjs && node scripts/check-career-addon-readiness.mjs && node scripts/check-migrations-applied.mjs",
+    "prebuild": "node scripts/clean-next-dev-types.mjs && node scripts/package-extension.mjs && node scripts/check-career-addon-readiness.mjs && node scripts/check-migrations-applied.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

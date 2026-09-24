@@ -90,12 +90,17 @@ describe("getPlanLimits", () => {
     expect(limits.clientWorkspaces).toBe(0)
   })
 
-  it("Agency: 5 client workspaces, 5 seats, 300 drafts", () => {
+  it("Agency: 5 client workspaces, 5 seats, 300 pooled client drafts plus a 60 reserve for the owner's own workspace", () => {
     const limits = getPlanLimits("Agency")
     expect(limits.clientWorkspaces).toBe(5)
     expect(limits.seats).toBe(5)
-    expect(limits.aiDraftsPerMonth).toBe(300)
-    expect(limits.carouselGenerationsPerMonth).toBe(50)
+    // Account-wide cap = the 300-draft / 50-carousel client pool (what the
+    // plan sells per client workspace, see AGENCY_CLIENT_DRAFT_POOL) plus the
+    // owner's own reserve (AGENCY_OWNER_DRAFT_RESERVE) - see lib/pricing.ts.
+    // Fully allocating the client pool no longer leaves the owner's own
+    // workspace with zero headroom to post for themselves.
+    expect(limits.aiDraftsPerMonth).toBe(360)
+    expect(limits.carouselGenerationsPerMonth).toBe(60)
     expect(limits.researchRunsPerMonth).toBe(25)
   })
 

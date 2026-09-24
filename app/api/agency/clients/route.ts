@@ -4,6 +4,7 @@ import { getWorkspaceSessionContext } from "@/lib/server/workspace"
 import { errorToStatus } from "@/lib/server/roles"
 import { createServiceClient, supabaseSelect } from "@/lib/server/supabase-rest"
 import { checkWorkspaceUsage } from "@/lib/server/workspace-usage"
+import { POOL_RPC_ARGS } from "@/lib/server/agency/pool"
 import { getCanonicalPlan } from "@/lib/server/plan-limits-v2"
 import { getPlanLimits } from "@/lib/entitlements"
 
@@ -62,7 +63,11 @@ export async function GET() {
       const role = roleByWorkspace.get(workspace.id) ?? "viewer"
       return workspace.owner_id === dbUserId || isManager(role)
     })
-    const ownedClientCount = visibleWorkspaces.filter((workspace) => workspace.owner_id === dbUserId).length
+    // Archived workspaces stay owned (and stay in `clients` below, behind the
+    // UI's "Show archived" toggle) but no longer occupy a paid slot - the
+    // create RPC excludes them from its own count too (see the migration
+    // fixing create_client_workspace_with_limit), so this must match.
+    const ownedClientCount = visibleWorkspaces.filter((workspace) => workspace.owner_id === dbUserId && !workspace.archived_at).length
 
     const ownerIds = [...new Set(visibleWorkspaces.map((workspace) => workspace.owner_id).filter(Boolean))] as string[]
     const ownerPlans: Record<string, { plan: string; expiresAt: string | null }> = {}
@@ -166,6 +171,9 @@ export async function POST(request: NextRequest) {
       p_client_contact_name: parsed.data.primaryContactName || null,
       p_client_contact_email: parsed.data.primaryContactEmail || null,
       p_max_clients: limits.clientWorkspaces === "unlimited" ? null : limits.clientWorkspaces,
+      // Fits the new workspace into whatever share of the pool is still free,
+      // inside the same lock as the slot check.
+      ...POOL_RPC_ARGS,
     })
     if (error || !workspaceId) {
       const message = error?.message || "workspace_create_failed"
