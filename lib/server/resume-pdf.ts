@@ -4,7 +4,7 @@ import { extractText, getDocumentProxy } from "unpdf"
 import { redactSensitiveResumeText } from "@/lib/professional-context"
 import { extractResumeContact, type ResumeContact } from "@/lib/resume-contact"
 
-export const MAX_RESUME_PDF_BYTES = 5 * 1024 * 1024
+const MAX_RESUME_PDF_BYTES = 5 * 1024 * 1024
 export const MAX_RESUME_PDF_PAGES = 15
 export const MAX_RESUME_MULTIPART_BYTES = MAX_RESUME_PDF_BYTES + 1024 * 1024
 

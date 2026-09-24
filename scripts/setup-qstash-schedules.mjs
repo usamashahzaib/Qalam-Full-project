@@ -2,10 +2,9 @@
 /**
  * Registers QStash Schedules for cron routes that Vercel Hobby cannot run.
  *
- * Vercel Hobby allows only 2 cron jobs, both once per day (already used by
- * /api/cron/schedule and /api/linkedin/publish-scheduled in vercel.json).
- * QStash's free tier allows cron schedules at any frequency, so these
- * maintenance routes are triggered from QStash instead:
+ * Vercel Hobby cron jobs may run at most once per day, with up to an hour of
+ * jitter (vercel.json holds the daily ones). QStash allows any frequency, so
+ * the hourly jobs, and the daily jobs kept alongside them, run from QStash:
  *
  *   - /api/cron/process-queue  hourly   (recovers posts stuck in "queued")
  *   - /api/cron/cleanup-pdfs   daily    (clears expired generated PDFs)

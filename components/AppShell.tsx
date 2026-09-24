@@ -24,7 +24,6 @@ import {
   BrainIcon,
   CheckIcon,
   CommentIcon,
-  StealthIcon,
   GiftIcon,
   PenIcon,
 } from "@/components/ui/qalam-icons"
@@ -35,7 +34,6 @@ import { CommandMenu } from "@/components/CommandMenu"
 import { HelpPanel } from "@/components/HelpPanel"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { NotificationBell } from "@/components/NotificationBell"
-import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { useAppMode } from "@/lib/hooks/useAppMode"
 import { isVisibleInMode, APP_MODES } from "@/lib/app-mode"
 
@@ -77,9 +75,6 @@ export const NAV_GROUPS = [
       { href: "/carousels", label: "Carousels", icon: CarouselIcon },
       { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" as PlanTier },
       { href: "/comment-generator", label: "Comment Generator", icon: CommentIcon },
-      ...(SILENT_GROWTH_LIVE
-        ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }]
-        : []),
     ],
   },
   {
@@ -444,7 +439,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="relative w-80" ref={searchRef}>
           <div className="relative flex items-center">
             <svg className="absolute left-3.5 h-4 w-4 text-zinc-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <input type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setSearchFocused(true)} className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 pl-10 pr-16 py-2 text-sm text-zinc-900 outline-none focus:bg-white focus:border-teal/50 focus:ring-4 focus:ring-teal/10 transition-all" />
+            <input aria-label="Search posts" type="text" placeholder="Search posts..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onFocus={() => setSearchFocused(true)} className="w-full rounded-xl border border-zinc-200 bg-zinc-50/80 pl-10 pr-16 py-2 text-sm text-zinc-900 outline-none focus:bg-white focus:border-teal/50 focus:ring-4 focus:ring-teal/10 transition-all" />
             <button
               onClick={() => setCommandMenuOpen(true)}
               className="press absolute right-2 flex items-center gap-0.5 rounded-md border border-zinc-200 bg-white px-1.5 py-1 t-eyebrow font-semibold text-zinc-400 transition-colors hover:border-teal/30 hover:text-teal"

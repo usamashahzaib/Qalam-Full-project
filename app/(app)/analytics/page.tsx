@@ -229,7 +229,7 @@ export default function AnalyticsPage() {
                   <h2 className="text-base font-bold text-zinc-900">Activity timeline</h2>
                   <p className="mt-0.5 text-xs text-zinc-500">Real event activity for the selected range.</p>
                 </div>
-                <select value={String(rangeDays)} onChange={(e) => setRangeDays(e.target.value === "all" ? "all" : Number(e.target.value))} className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 outline-none focus:border-teal">
+                <select aria-label="Activity date range" value={String(rangeDays)} onChange={(e) => setRangeDays(e.target.value === "all" ? "all" : Number(e.target.value))} className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600 outline-none focus:border-teal">
                   {analytics.rangeOptions.map((option) => <option key={String(option.value)} value={String(option.value)}>{option.label}</option>)}
                 </select>
               </div>
@@ -313,7 +313,7 @@ export default function AnalyticsPage() {
                   <label className="mb-1 block t-eyebrow text-zinc-400">
                     {field === "followerDelta" ? "Follower change" : field.charAt(0).toUpperCase() + field.slice(1)}
                   </label>
-                  <input
+                  <input aria-label={field === "followerDelta" ? "Follower change" : field.charAt(0).toUpperCase() + field.slice(1)}
                     type="number"
                     min={field === "followerDelta" ? undefined : "0"}
                     value={snapshotForm[field]}
@@ -326,7 +326,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="mt-3">
               <label className="mb-1 block t-eyebrow text-zinc-400">Notes (optional)</label>
-              <input
+              <input aria-label="Notes"
                 type="text"
                 value={snapshotForm.notes}
                 onChange={(e) => setSnapshotForm((f) => ({ ...f, notes: e.target.value }))}

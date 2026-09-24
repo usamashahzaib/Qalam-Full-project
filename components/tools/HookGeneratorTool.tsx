@@ -99,7 +99,7 @@ export function HookGeneratorTool() {
               <div className="border-b border-zinc-100 p-6">
                 <label className="mb-2 block text-sm font-semibold text-zinc-800">What&apos;s your post about?</label>
                 <div className="flex gap-3">
-                  <input
+                  <input aria-label="What your post is about"
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}

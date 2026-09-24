@@ -66,8 +66,8 @@ export default function ContentIntelligencePage() {
         <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Post Intelligence</p><h1 className="mt-2 text-3xl font-bold">Know what your content is worth.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Import your own post and real metrics. Qalam finds the positioning, performance patterns, weaknesses, and next angles.</p></header>
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-            <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste your LinkedIn post" value={content} onChange={(event) => setContent(event.target.value)} />
-            <input className={`${field} mt-3`} placeholder="LinkedIn post URL, optional" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
+            <textarea aria-label="LinkedIn post" className={`${field} min-h-64 resize-y`} placeholder="Paste your LinkedIn post" value={content} onChange={(event) => setContent(event.target.value)} />
+            <input aria-label="LinkedIn post URL" className={`${field} mt-3`} placeholder="LinkedIn post URL, optional" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} />
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">{Object.keys(metrics).map((key) => <label key={key}><span className="mb-1 block t-eyebrow text-zinc-500">{key}</span><input type="number" min={0} className={field} value={metrics[key as keyof typeof metrics]} onChange={(event) => setMetrics({ ...metrics, [key]: Number(event.target.value) })} /></label>)}</div>
             <label className="mt-4 flex items-start gap-2 text-xs leading-5 text-zinc-600"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} className="mt-1" />I own this content or have permission to analyze it.</label>
             {message && <p className="mt-3 text-sm text-red-600">{message}</p>}

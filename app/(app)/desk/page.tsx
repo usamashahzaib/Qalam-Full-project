@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { LinkedInStatus } from "@/lib/agency/health"
 import {
   CadenceMeter,
@@ -68,6 +69,7 @@ function ClientChip({ item }: { item: Pick<DeskItem, "workspaceName" | "branding
 }
 
 export default function DeskPage() {
+  const router = useRouter()
   const [data, setData] = useState<DeskResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -127,7 +129,7 @@ export default function DeskPage() {
     const topic = `${item.title}\n\nClient's answer: ${item.detail || ""}`.slice(0, 1500)
     const params = new URLSearchParams({ topic, compose: "new" })
     if (item.workspaceType === "client") params.set("client", item.workspaceId)
-    void markDrop(item, "used").finally(() => { window.location.href = `/writer?${params.toString()}` })
+    void markDrop(item, "used").finally(() => router.push(`/writer?${params.toString()}`))
   }
 
   const counts = data?.counts

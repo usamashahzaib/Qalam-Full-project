@@ -77,7 +77,7 @@ export function EngagementPredictorTool() {
           <FadeUp>
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <label className="mb-2 block text-sm font-semibold text-zinc-800">Paste a draft</label>
-              <textarea
+              <textarea aria-label="Draft post"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={8}

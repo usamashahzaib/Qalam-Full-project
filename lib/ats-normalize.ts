@@ -46,7 +46,7 @@ const capitalise = (value: string) => (value ? value[0].toUpperCase() + value.sl
  * A bullet has to open with a verb and carry no trailing full stop, because
  * both are read as noise by a parser and as sloppiness by a recruiter.
  */
-export function normalizeBullet(raw: string): string {
+function normalizeBullet(raw: string): string {
   let value = collapse(raw).replace(LEADING_MARKER, "")
   for (const opener of PRONOUN_OPENERS) value = value.replace(opener, "")
   for (const duty of DUTY_OPENERS) value = value.replace(duty.pattern, duty.replacement)

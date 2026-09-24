@@ -94,7 +94,6 @@ export type CareerPackKey = (typeof CAREER_PACKS)[number]["key"]
 export type CareerProductKey = AddonKey | CareerPackKey
 export const CAREER_PRODUCTS = [...CAREER_ADD_ONS, ...CAREER_PACKS] as const
 export const getCareerProduct = (key: string) => CAREER_PRODUCTS.find((product) => product.key === key)
-export const isCareerPack = (key: string): key is CareerPackKey => CAREER_PACKS.some((pack) => pack.key === key)
 
 export const CAREER_PLAN_CREDITS = {
   Free: { monthly: 0, quarterly: 0, annual: 0 },
@@ -104,9 +103,3 @@ export const CAREER_PLAN_CREDITS = {
 } as const
 
 export const PLAN_CREDIT_ELIGIBLE_ADDONS: readonly AddonKey[] = CAREER_ADD_ONS.map(({ key }) => key)
-
-export const formatQuarterlyPrice = (price: number) =>
-  price === 0 ? "Free" : `$${price.toLocaleString("en-US")} / quarter`
-
-export const formatMonthlyPrice = (price: number) =>
-  price === 0 ? "Free" : `$${price.toLocaleString("en-US")} / month`

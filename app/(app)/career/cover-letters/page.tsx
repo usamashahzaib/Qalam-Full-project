@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DeleteArtifactButton } from "@/components/DeleteArtifactButton"
 
 type CoverLetterListItem = {
@@ -18,6 +18,7 @@ const field = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-
 const defaultForm = { title: "", targetRole: "", targetCompany: "", hiringManager: "", jobDescription: "", sourceResume: "" }
 
 export default function CoverLettersPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
   const suffix = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
@@ -45,7 +46,7 @@ export default function CoverLettersPage() {
     })
     const data = await response.json().catch(() => ({}))
     if (response.ok) {
-      window.location.href = `/career/cover-letters/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`
+      router.push(`/career/cover-letters/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
       return
     }
     if (response.status === 402) {
@@ -87,12 +88,12 @@ export default function CoverLettersPage() {
             <p className="mt-1 text-sm text-zinc-500">Uses your Career Vault plus anything you paste below. Qalam will not invent experience.</p>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <input className={field} placeholder="Letter name" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-              <input className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
-              <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
-              <input className={field} placeholder="Hiring manager name, optional" value={form.hiringManager} onChange={(event) => setForm({ ...form, hiringManager: event.target.value })} />
-              <textarea className={`${field} min-h-56 resize-y md:col-span-2`} placeholder="Paste the exact job description" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
-              <textarea className={`${field} min-h-40 resize-y md:col-span-2`} placeholder="Paste your resume or background, optional if your Career Vault is filled in" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
+              <input aria-label="Letter name" className={field} placeholder="Letter name" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+              <input aria-label="Target role" className={field} placeholder="Target role" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
+              <input aria-label="Target company" className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
+              <input aria-label="Hiring manager name" className={field} placeholder="Hiring manager name, optional" value={form.hiringManager} onChange={(event) => setForm({ ...form, hiringManager: event.target.value })} />
+              <textarea aria-label="Job description" className={`${field} min-h-56 resize-y md:col-span-2`} placeholder="Paste the exact job description" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
+              <textarea aria-label="Resume or background" className={`${field} min-h-40 resize-y md:col-span-2`} placeholder="Paste your resume or background, optional if your Career Vault is filled in" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
             </div>
             <button disabled={loading} onClick={generate} className="mt-5 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{loading ? "Writing your cover letter..." : "Generate cover letter"}</button>
           </section>

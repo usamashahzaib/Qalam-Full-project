@@ -100,6 +100,3 @@ export function agencyErrorResponse(error: unknown, scope: string) {
   if (status >= 500) log.error(`${scope}.failed`, { error: message })
   return NextResponse.json({ error: status >= 500 && !isTransientError(error) ? "server_error" : message }, { status })
 }
-
-export const isLive = (row: { expires_at: string; revoked_at?: string | null }, now = Date.now()) =>
-  !row.revoked_at && Date.parse(row.expires_at) > now

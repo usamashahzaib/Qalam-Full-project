@@ -5,7 +5,7 @@ import { generateEmbedding } from "@/lib/server/embeddings"
 import { log } from "@/lib/server/logging"
 import { referenceGuidance, type WritingReferenceInput } from "@/lib/writing-library"
 
-export const normalizeWriting = (value: string) => value.normalize("NFKC").toLowerCase().replace(/\s+/gu, " ").trim()
+const normalizeWriting = (value: string) => value.normalize("NFKC").toLowerCase().replace(/\s+/gu, " ").trim()
 const digest = (value: string) => createHash("sha256").update(normalizeWriting(value)).digest("hex")
 
 // All records by the same author remain in one split. Keep the salt stable.

@@ -4,7 +4,7 @@ import { createServiceClient } from "@/lib/server/supabase-rest"
 
 // Splits raw example posts text into individual post chunks.
 // Posts are separated by blank lines, "---", or "***".
-export function chunkExamplePosts(raw: string): string[] {
+function chunkExamplePosts(raw: string): string[] {
   return raw
     .split(/\n(?:---|\*\*\*|———)\n|\n{2,}/)
     .map((s) => s.trim())

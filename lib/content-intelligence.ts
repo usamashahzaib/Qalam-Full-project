@@ -96,7 +96,7 @@ const ROLE_TAG_MAP: Array<{ pattern: RegExp; tags: string[] }> = [
   { pattern: /vp.*(people|hr|talent|human)/i, tags: ["#VPOfPeople", "#HRLeadership"] },
 ]
 
-export const buildHashtags = (text: string, profile?: Partial<WorkspaceProfile> | null): string[] => {
+const buildHashtags = (text: string, profile?: Partial<WorkspaceProfile> | null): string[] => {
   const seen = new Set<string>()
   const result: string[] = []
 

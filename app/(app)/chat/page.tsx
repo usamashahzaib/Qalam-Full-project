@@ -295,7 +295,7 @@ export default function ChatWorkspace() {
                 <div className="flex items-start justify-between gap-2">
                   <button onClick={() => setActiveConvId(conv.id)} className="min-w-0 flex-1 text-left">
                     {renamingId === conv.id ? (
-                      <input
+                      <input aria-label="Conversation name"
                         autoFocus
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
@@ -395,7 +395,7 @@ export default function ChatWorkspace() {
 
             <div className="border-t border-zinc-100 p-4">
               <div className="flex items-end gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/60 p-2 shadow-sm transition-all focus-within:border-teal/40 focus-within:bg-white focus-within:ring-4 focus-within:ring-teal/8">
-                <textarea
+                <textarea aria-label="Message"
                   value={input}
                   onChange={e => {
                     setInput(e.target.value)

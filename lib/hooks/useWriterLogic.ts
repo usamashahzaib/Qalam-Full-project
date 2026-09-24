@@ -44,7 +44,7 @@ export const nowTimeInput = () => {
   return d.toISOString().slice(11, 16)
 }
 
-export const scheduleValidationError = (date: string, time: string): string | null => {
+const scheduleValidationError = (date: string, time: string): string | null => {
   if (!date || !time) return "Select date and time"
   // Append local timezone offset so the browser constructs the correct UTC timestamp.
   // Without the offset, `new Date("2026-07-09T09:00:00")` is ambiguous (parsed as local

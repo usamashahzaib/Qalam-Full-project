@@ -1,9 +1,12 @@
-import JSZip from "jszip"
-import { PDFDocument } from "pdf-lib"
 import { downloadBlob, downloadBytes, downloadDataUrl, sanitizeFilename } from "@/lib/download"
-import { nodeToPngDataUrl } from "@/lib/node-to-png"
 
-export async function captureSlide(element: HTMLElement): Promise<string> {
+// jszip, pdf-lib and html-to-image are loaded on demand. They only run when
+// someone exports, and importing them at module scope shipped all three to
+// every visitor of the pages that merely offer an export button.
+const nodeToPngDataUrl = async (element: HTMLElement, pixelRatio: number) =>
+  (await import("@/lib/node-to-png")).nodeToPngDataUrl(element, pixelRatio)
+
+async function captureSlide(element: HTMLElement): Promise<string> {
   const dataUrl = await nodeToPngDataUrl(element, 1)
   return dataUrl.split(",")[1] ?? dataUrl
 }
@@ -17,6 +20,7 @@ export async function generateCarouselZip(
   slideRefs: React.RefObject<HTMLDivElement | null>[],
   filename = "qalam-carousel"
 ): Promise<void> {
+  const { default: JSZip } = await import("jszip")
   const zip = new JSZip()
   const folder = zip.folder("slides")
 
@@ -52,6 +56,7 @@ export async function downloadSlidePng(
 export async function captureCarouselPdfBytes(
   slideRefs: React.RefObject<HTMLDivElement | null>[]
 ): Promise<Uint8Array> {
+  const { PDFDocument } = await import("pdf-lib")
   const pdf = await PDFDocument.create()
 
   for (let i = 0; i < slideRefs.length; i++) {

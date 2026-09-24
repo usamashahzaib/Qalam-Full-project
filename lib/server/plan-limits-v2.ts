@@ -8,7 +8,7 @@ import { cache } from "react"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { PLAN_CONFIG } from "@/lib/pricing"
 import { getMonthlyQuotaWindow, resolvePlanExpiry } from "@/lib/plan-expiry"
-import { getPlanStatus as getExpiryPlanStatus, getQuotaResetDate } from "./plan-expiry"
+import { getQuotaResetDate, planStatusFromUserRow } from "./plan-expiry"
 import { log } from "./logging"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
@@ -42,10 +42,18 @@ export async function getCanonicalPlan(userId: string): Promise<string> {
 // single server request (API route or Server Component) hit the DB only once.
 export const getPlanStatus = cache(async function getPlanStatusImpl(userId: string) {
   const supabase = createServiceClient()
-  const expiryStatus = await getExpiryPlanStatus(userId)
+  type OverrideRow = { user_id: string; plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null }
+  const fetchOverrides = (ids: string[]) =>
+    supabase
+      .from("user_overrides")
+      .select("user_id, plan_override, draft_limit_override, expires_at")
+      .in("user_id", ids)
+      .then((r) => (r.data || []) as OverrideRow[], () => [] as OverrideRow[])
 
-  // Phase 1 (parallel): usage + users.plan + payment - no inter-dependencies
-  const [usageResult, usersResult, paymentResult] = await Promise.all([
+  // Phase 1 (parallel): usage + users row + payment + overrides keyed by the id
+  // we were called with. This runs on every authenticated API request, so
+  // nothing here waits on anything it does not depend on.
+  const [usageResult, usersResult, paymentResult, directOverrides] = await Promise.all([
     supabase.rpc("get_or_create_plan_usage", { p_user_id: userId }),
     // users.plan + plan_expires_at are updated by payment webhook - authoritative source
     // Include id + external_user_id so we can check overrides under either ID in phase 2
@@ -66,22 +74,23 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
         .limit(1)
         .maybeSingle()
     ).catch(() => ({ data: null })) as Promise<{ data: { created_at?: string | null; processed_at?: string | null } | null }>,
+    fetchOverrides([userId]),
   ])
 
-  // Phase 2: check user_overrides with ALL matching IDs in one query.
-  // Admin panel stores overrides under externalId (OAuth sub) but getPlanStatus is called
-  // with the internal Supabase UUID - need to try both so overrides are never missed.
-  const idsToCheck = [userId, usersResult.data?.id, usersResult.data?.external_user_id]
-    .filter((id): id is string => typeof id === "string" && id.length > 0)
-  const uniqueIds = [...new Set(idsToCheck)]
-  type OverrideRow = { user_id: string; plan_override?: string | null; draft_limit_override?: number | null; expires_at?: string | null }
-  const { data: overrideRows } = await supabase
-    .from("user_overrides")
-    .select("user_id, plan_override, draft_limit_override, expires_at")
-    .in("user_id", uniqueIds)
-    .then((r) => r, () => ({ data: null as OverrideRow[] | null }))
-  // Prefer a row keyed by the exact id we were called with, then fall back to any match.
-  const overrideData = (overrideRows || []).find((row) => row.user_id === userId) || overrideRows?.[0] || null
+  // Expiry comes from the users row fetched above rather than a second,
+  // sequential query for the same row.
+  const expiryStatus = planStatusFromUserRow(usersResult.data)
+
+  // Phase 2, only when needed: the admin panel can store an override under
+  // the user's other id (OAuth sub vs internal UUID). A row keyed by the exact
+  // id we were called with always wins, so the other ids are only consulted
+  // when there is no direct override.
+  let overrideData = directOverrides.find((row) => row.user_id === userId) || null
+  if (!overrideData) {
+    const otherIds = [...new Set([usersResult.data?.id, usersResult.data?.external_user_id])]
+      .filter((id): id is string => typeof id === "string" && id.length > 0 && id !== userId)
+    if (otherIds.length) overrideData = (await fetchOverrides(otherIds))[0] || null
+  }
   const overrideResult = { data: overrideData }
 
   // Try RPC result first; fall back to direct table query if RPC is unavailable
@@ -305,6 +314,3 @@ export async function decrementUsage(userId: string, feature: Feature): Promise<
     }
   }
 }
-
-// Single source of truth for feature gating - delegates to lib/pricing.ts.
-export { isFeatureAllowed } from "@/lib/pricing"

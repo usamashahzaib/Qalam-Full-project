@@ -265,7 +265,7 @@ export default function WriterPage() {
             <div className="p-5">
               {/* Topic */}
               <div className="mb-4">
-                <textarea
+                <textarea aria-label="Post topic"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
                   rows={3}
@@ -279,7 +279,7 @@ export default function WriterPage() {
               <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1.5 block t-eyebrowst text-zinc-400">Role</label>
-                  <input
+                  <input aria-label="Role"
                     type="text"
                     list="role-suggestions"
                     value={role}
@@ -358,7 +358,7 @@ export default function WriterPage() {
                   })}
                 </div>
                 <label className="mt-3 block t-eyebrow text-zinc-400">Specific outcome <span className="font-normal normal-case">(optional)</span></label>
-                <input
+                <input aria-label="Specific outcome"
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   placeholder="Choose an intent above or describe the result you want"
@@ -618,7 +618,7 @@ export default function WriterPage() {
 
               {/* Draft textarea */}
               <div className="relative">
-                <textarea
+                <textarea aria-label="Post content"
                   ref={draftRef}
                   value={draftContent}
                   onChange={(e) => onDraftContentChange(e.target.value)}
@@ -818,7 +818,7 @@ export default function WriterPage() {
 
                           {/* Editable content */}
                           <div className="flex flex-1 flex-col px-4 pb-3">
-                            <textarea
+                            <textarea aria-label="Slide title"
                               value={slide.title}
                               onChange={(e) => updateSlide(idx, "title", e.target.value)}
                               placeholder="Slide title..."
@@ -827,7 +827,7 @@ export default function WriterPage() {
                                 isFirst || isLast ? "text-white placeholder:text-white/60" : "text-zinc-900 placeholder:text-zinc-300"
                               }`}
                             />
-                            <textarea
+                            <textarea aria-label="Slide supporting copy"
                               value={slide.body ?? ""}
                               onChange={(e) => updateSlide(idx, "body", e.target.value)}
                               placeholder="Supporting copy..."
@@ -1114,7 +1114,7 @@ export default function WriterPage() {
                   {replyMode === "reply" && (
                     <div className="mb-3">
                       <label className="mb-1.5 block t-eyebrowst text-zinc-400">Original comment (optional, for context)</label>
-                      <textarea
+                      <textarea aria-label="Original comment"
                         value={parentCommentInput}
                         onChange={(e) => setParentCommentInput(e.target.value)}
                         rows={2}
@@ -1127,7 +1127,7 @@ export default function WriterPage() {
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">
                       {replyMode === "reply" ? "Paste the reply you received" : "Paste a comment to reply to"}
                     </label>
-                    <textarea
+                    <textarea aria-label={replyMode === "reply" ? "Reply you received" : "Comment to reply to"}
                       value={commentInput}
                       onChange={(e) => setCommentInput(e.target.value)}
                       rows={3}

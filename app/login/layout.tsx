@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppHostHead } from "@/components/AppHostHead"
 
 // Reads callbackUrl from the query string; forced dynamic so useSearchParams
 // doesn't need a Suspense boundary and static generation isn't attempted.
@@ -11,5 +12,5 @@ export const metadata: Metadata = {
 }
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return <><AppHostHead />{children}</>
 }

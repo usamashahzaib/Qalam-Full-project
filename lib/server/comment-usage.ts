@@ -57,6 +57,3 @@ export async function releaseCommentUsage(userId: string): Promise<void> {
   const { error } = await createServiceClient().rpc("release_comment_generation", { p_user_id: userId })
   if (error) log.error("comment_usage.release_failed", { userId, error: error.message })
 }
-
-// Kept as a compatibility alias for callers updated in separate deployments.
-export const checkAndIncrementCommentUsage = reserveCommentUsage

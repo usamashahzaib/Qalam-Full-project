@@ -46,7 +46,6 @@ const LINKEDIN_HREFS = new Set([
   "/carousels",
   "/competitors",
   "/comment-generator",
-  "/silent-growth",
   "/settings",
   "/settings/referrals",
   "/upgrade",
@@ -65,7 +64,7 @@ export const MODE_STORAGE_KEY = "qalam_app_mode"
 
 export const DEFAULT_MODE: AppMode = "linkedin"
 
-export function isAppMode(value: unknown): value is AppMode {
+function isAppMode(value: unknown): value is AppMode {
   return value === "career" || value === "linkedin"
 }
 

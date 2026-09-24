@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { motion } from "framer-motion"
 import { CheckIcon } from "@/components/ui/qalam-icons"
 
 interface PricingCardProps {
@@ -56,15 +55,13 @@ export function PricingCard({
   const isComingSoon = comingSoon || featureStatus === "coming_soon"
 
   return (
-    <motion.div
-      whileHover={{ scale: isComingSoon ? 1.005 : 1.02, transition: { duration: 0.22, ease: "easeOut" } }}
-      whileTap={{ scale: 0.995 }}
-      className={`relative flex flex-col rounded-2xl border p-6 xl:p-7 ${
+    <div
+      className={`relative flex flex-col rounded-2xl border p-6 xl:p-7 active:scale-[0.995] ${
         isComingSoon
-          ? "border-zinc-200 bg-white/60 opacity-70 shadow-sm"
+          ? "border-zinc-200 bg-white/60 opacity-70 shadow-sm transition-transform duration-200 ease-out hover:scale-[1.005]"
           : highlighted
-          ? "border-teal bg-teal shadow-[0_8px_40px_rgba(13,74,69,0.28)]"
-          : "border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:border-gold/50 hover:shadow-card-raised"
+          ? "border-teal bg-teal shadow-[0_8px_40px_rgba(13,74,69,0.28)] transition-transform duration-200 ease-out hover:scale-[1.02]"
+          : "border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:scale-[1.02] hover:border-gold/50 hover:shadow-card-raised"
       }`}
     >
       {badge && (
@@ -154,6 +151,6 @@ export function PricingCard({
           {note}
         </p>
       )}
-    </motion.div>
+    </div>
   )
 }

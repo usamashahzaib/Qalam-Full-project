@@ -63,7 +63,7 @@ const withTimeout = (init: RequestInit = {}, ms = 15000): { init: RequestInit; c
   }
 }
 
-export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<RestResponse<T>> => {
+const fetchJson = async <T>(url: string, init?: RequestInit): Promise<RestResponse<T>> => {
   const timed = withTimeout(init)
   const response = await fetchWithRetry(url, timed.init).finally(timed.cleanup)
   const text = await response.text()

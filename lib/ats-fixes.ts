@@ -68,14 +68,6 @@ export function writePath(resume: ResumeData, path: FixPath, text: string): Resu
   }
 }
 
-/** Appends a bullet to a role, used when a role needs more proof. */
-export function addBullet(resume: ResumeData, role: number, text: string): ResumeData {
-  return {
-    ...resume,
-    experience: resume.experience.map((entry, index) => (index === role ? { ...entry, bullets: [...entry.bullets, text] } : entry)),
-  }
-}
-
 const roleContext = (resume: ResumeData, role: number) => {
   const entry = resume.experience[role]
   return [entry?.title, entry?.organization].filter(Boolean).join(", ") || `Role ${role + 1}`

@@ -32,7 +32,7 @@ const normalizePlan = (plan?: string | null) => {
   return "Free"
 }
 
-export async function getPlanStatus(userId: string): Promise<PlanStatus> {
+async function getPlanStatus(userId: string): Promise<PlanStatus> {
   const supabase = createServiceClient()
   const safeId = sanitizeOrFilterValue(userId)
   const { data: user } = await supabase
@@ -41,17 +41,27 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
     .or(`id.eq.${safeId},external_user_id.eq.${safeId}`)
     .maybeSingle()
 
+  return planStatusFromUserRow(user as UserPlanRow | null)
+}
+
+/**
+ * Pure expiry resolution for a users row the caller already holds, so hot
+ * paths that fetched the row for other reasons do not query it a second time.
+ */
+export function planStatusFromUserRow(
+  user: Pick<UserPlanRow, "plan" | "plan_expires_at"> | null | undefined,
+  now: Date = new Date(),
+): PlanStatus {
   if (!user) {
     return { plan: "Free", originalPlan: "Free", isActive: true, expiresAt: null, renewalDue: false, daysUntilExpiry: null }
   }
 
-  const originalPlan = normalizePlan((user as UserPlanRow).plan)
-  const expiresAt = endOfPlanExpiryDay((user as UserPlanRow).plan_expires_at)
+  const originalPlan = normalizePlan(user.plan)
+  const expiresAt = endOfPlanExpiryDay(user.plan_expires_at)
   if (originalPlan === "Free" || !expiresAt) {
     return { plan: originalPlan, originalPlan, isActive: true, expiresAt: null, renewalDue: false, daysUntilExpiry: null }
   }
 
-  const now = new Date()
   const isActive = now <= expiresAt
   const daysUntilExpiry = Math.max(0, Math.ceil((expiresAt.getTime() - now.getTime()) / MS_DAY))
   return {
@@ -64,7 +74,7 @@ export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   }
 }
 
-export async function checkAndDowngradeIfExpired(userId: string): Promise<boolean> {
+async function checkAndDowngradeIfExpired(userId: string): Promise<boolean> {
   const supabase = createServiceClient()
   const safeId = sanitizeOrFilterValue(userId)
   const status = await getPlanStatus(userId)

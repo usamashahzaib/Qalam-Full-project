@@ -81,7 +81,7 @@ export const getPlanLimits = (plan: string): PlanLimits =>
 export const getEffectivePlanLimits = (plan: string, overrideLimits?: PlanLimits): PlanLimits =>
   overrideLimits ?? getPlanLimits(plan)
 
-export const featureOverrideKey = (feature: string) => {
+const featureOverrideKey = (feature: string) => {
   const normalized = feature.toLowerCase()
   if (normalized.includes("schedul") || normalized.includes("planner")) return "scheduling"
   if (normalized.includes("voice")) return "voiceProfiles"

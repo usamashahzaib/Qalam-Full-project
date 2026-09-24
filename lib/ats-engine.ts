@@ -19,7 +19,7 @@
 import { ATS_FACTORS } from "@/lib/ats-methodology"
 import type { ResumeData } from "@/lib/career-resume"
 
-export const ATS_ENGINE_VERSION = "2.1"
+const ATS_ENGINE_VERSION = "2.1"
 
 export type AtsFactorKey = (typeof ATS_FACTORS)[number]["key"]
 export type AtsCheckState = "pass" | "warn" | "fail" | "na"
@@ -83,7 +83,7 @@ export type AtsCap = { limit: number; reason: string }
 export type AtsBand = "strong" | "competitive" | "developing" | "at_risk"
 
 /** Published bands. See SCORE_BANDS in lib/ats-methodology.ts for what each one means. */
-export const scoreBand = (overall: number): AtsBand =>
+const scoreBand = (overall: number): AtsBand =>
   overall >= 85 ? "strong" : overall >= 70 ? "competitive" : overall >= 50 ? "developing" : "at_risk"
 
 export type AtsAudit = {

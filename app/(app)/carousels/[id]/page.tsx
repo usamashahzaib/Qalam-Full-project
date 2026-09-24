@@ -475,11 +475,11 @@ export default function CarouselEditorPage() {
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-500">Your name</label>
-            <input type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="e.g. Sarah Ahmed" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
+            <input aria-label="Your name" type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} placeholder="e.g. Sarah Ahmed" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-500">Designation / tagline</label>
-            <input type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="e.g. Founder | LinkedIn Strategist" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
+            <input aria-label="Designation or tagline" type="text" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="e.g. Founder | LinkedIn Strategist" className="w-full rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal/50 focus:outline-none focus:ring-2 focus:ring-teal/20" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-zinc-500">Background photo (optional)</label>
@@ -664,11 +664,11 @@ export default function CarouselEditorPage() {
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Slide Title</label>
-                  <input type="text" value={currentSlide.title || ""} onChange={(e) => updateSlide(currentSlide.id, "title", e.target.value)} className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Short headline" />
+                  <input aria-label="Slide title" type="text" value={currentSlide.title || ""} onChange={(e) => updateSlide(currentSlide.id, "title", e.target.value)} className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Short headline" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Slide Content</label>
-                  <textarea value={currentSlide.content || ""} onChange={(e) => updateSlide(currentSlide.id, "content", e.target.value)} rows={4} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Supporting detail or bullet points (one per line)" />
+                  <textarea aria-label="Slide content" value={currentSlide.content || ""} onChange={(e) => updateSlide(currentSlide.id, "content", e.target.value)} rows={4} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-2.5 text-sm text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10" placeholder="Supporting detail or bullet points (one per line)" />
                 </div>
               </div>
 
@@ -701,7 +701,7 @@ export default function CarouselEditorPage() {
             <p className="mt-1 text-sm text-zinc-500">This uploads the {slides.length}-slide PDF as a LinkedIn document post and shares it immediately - it goes live on your feed right away.</p>
             <div className="mt-4">
               <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Post caption</label>
-              <textarea
+              <textarea aria-label="Post caption"
                 value={commentary}
                 onChange={(e) => setCommentary(e.target.value)}
                 rows={5}

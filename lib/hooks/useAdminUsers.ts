@@ -35,7 +35,7 @@ export const USAGE_FIELDS = [
 
 export type UsageFieldKey = (typeof USAGE_FIELDS)[number][0]
 
-export const emptyFlags = () =>
+const emptyFlags = () =>
   Object.fromEntries(FEATURES.map(([key]) => [key, false])) as Record<string, boolean>
 
 export interface AdminFormState {

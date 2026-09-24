@@ -14,11 +14,6 @@ export function normalizeLinkedInUrl(value: string): string | null {
 }
 
 export const isValidLinkedInUrl = (value: string): boolean => normalizeLinkedInUrl(value) !== null
-
-export function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-}
-
 /**
  * Narrows an attacker-supplied post-login redirect to a same-origin path.
  *

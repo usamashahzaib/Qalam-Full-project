@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react"
 import { trackMarketingEvent } from "@/lib/marketing-events"
 import { isScorePubliclyShareable, resumeScoreBand, type ResumeReviewResult, type ResumeReviewScoreKey } from "@/lib/career-resume-review"
 import { downloadDataUrl } from "@/lib/download"
-import { nodeToPngDataUrl } from "@/lib/node-to-png"
 
 /**
  * Shareable readiness score card.
@@ -141,6 +140,7 @@ export function ScoreShareCard({ result }: { result: ResumeReviewResult }) {
     setBusy(true)
     setError("")
     try {
+      const { nodeToPngDataUrl } = await import("@/lib/node-to-png")
       const dataUrl = await nodeToPngDataUrl(element, 1)
       downloadDataUrl(dataUrl, `qalam-readiness-score-${score}.png`)
       trackMarketingEvent("score_card_download", { score_band: resumeScoreBand(score) })

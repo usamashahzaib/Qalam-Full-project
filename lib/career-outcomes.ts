@@ -47,7 +47,7 @@ export const applicationUpdateSchema = z.object({
   offerCurrency: z.string().trim().max(8).nullable().optional(),
 })
 
-export const evidenceTypes = ["achievement", "skill", "credential", "work_sample", "experience", "education"] as const
+const evidenceTypes = ["achievement", "skill", "credential", "work_sample", "experience", "education"] as const
 
 export const evidenceSchema = z.object({
   workspaceKey: z.string().uuid().optional(),

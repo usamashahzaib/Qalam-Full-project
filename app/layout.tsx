@@ -1,17 +1,13 @@
 ﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
-import { headers } from "next/headers"
 import "./globals.css"
 import { buildOgImageUrl } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
-import { ContentProtection } from "@/components/providers/ContentProtection"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
-import { AccessibleControlNames } from "@/components/AccessibleControlNames"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
-import { auth } from "@/auth"
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -171,36 +167,34 @@ const appSchema = {
   ],
 }
 
-export default async function RootLayout({
+// The root layout reads no request data (no auth(), headers() or cookies()).
+// That is what lets every marketing page be statically generated and served
+// from the CDN. Per-request concerns live in the layouts that need them:
+// app/(app)/layout.tsx hydrates the session from the server and renders the
+// app-host head tags, and every other app-host route is force-dynamic so the
+// proxy nonce reaches its scripts (enforced by
+// __tests__/app-host-dynamic-routes.test.ts).
+export default function RootLayout({
   children,
 }: { children: React.ReactNode }) {
-  const [session, headersList] = await Promise.all([auth(), headers()])
-  const nonce = headersList.get("x-nonce") ?? undefined
-  const host = (headersList.get("x-forwarded-host") || headersList.get("host") || "").split(":")[0].toLowerCase()
-  const pwaEnabled = host === "app.byqalam.com" || host === "localhost" || host === "127.0.0.1"
-
   const app = (
-    <SessionProvider session={session}>
-      <ContentProtection />
-      <AccessibleControlNames />
+    // No initial session here: marketing pages resolve it on the client, and
+    // the app group passes the server session to its own nested provider.
+    <SessionProvider>
       <div className="min-h-screen w-full bg-[#f7f3ea]">
         <NavWrapper>{children}</NavWrapper>
       </div>
-      <PwaRegistration enabled={pwaEnabled} />
+      <PwaRegistration />
     </SessionProvider>
   )
 
   return (
     <html lang="en" className={`${jakarta.variable} ${cormorant.variable}`} suppressHydrationWarning>
       <head>
-        {pwaEnabled ? <link rel="manifest" href="/manifest.webmanifest" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-capable" content="yes" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-title" content="Qalam" /> : null}
-        {pwaEnabled ? <meta name="apple-mobile-web-app-status-bar-style" content="default" /> : null}
-        <GoogleAnalytics nonce={nonce} />
-        {/* suppressHydrationWarning: browsers hide the nonce attribute from the
-            DOM after parsing, so the client always sees "" vs the server value. */}
-        <script type="application/ld+json" nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
+        {/* GA is allowed by host and inline-script hash on both CSP branches,
+            so it needs no nonce. JSON-LD is a data block CSP never executes. */}
+        <GoogleAnalytics />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appSchema).replace(/</g, "\\u003c") }} />
       </head>
       <body className="flex min-h-screen flex-col antialiased" suppressHydrationWarning>
         {app}

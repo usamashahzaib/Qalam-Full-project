@@ -161,7 +161,7 @@ const verifySortedFieldHmac = (
 }
 
 // JazzCash signature scheme: HMAC-SHA256 of sorted pp_* field values. Verify this matches your JazzCash dashboard settings.
-export const verifyJazzCashHmac = (body: Record<string, string>, secret: string): boolean =>
+const verifyJazzCashHmac = (body: Record<string, string>, secret: string): boolean =>
   verifySortedFieldHmac(body, secret, {
     include: (key) => key.toLowerCase().startsWith("pp_"),
     signatureKeys: ["pp_securehash"],
@@ -170,7 +170,7 @@ export const verifyJazzCashHmac = (body: Record<string, string>, secret: string)
 
 // Easypaisa signature scheme: HMAC-SHA256 of sorted signed field values (storeId, orderId,
 // transactionAmount, mobileAccountNo, ...). Verify this matches your Easypaisa merchant settings.
-export const verifyEasypaisaHmac = (body: Record<string, string>, secret: string): boolean =>
+const verifyEasypaisaHmac = (body: Record<string, string>, secret: string): boolean =>
   verifySortedFieldHmac(body, secret, {
     include: (key) => !["signature", "securehash", "hmac", "merchanthashedreq", "hashrequest"].includes(key.toLowerCase()),
     signatureKeys: ["signature", "securehash", "hmac", "merchanthashedreq", "hashrequest"],

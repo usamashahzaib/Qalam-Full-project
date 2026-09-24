@@ -12,7 +12,7 @@ export const addMonthsIso = (iso: string | null | undefined, months = 1) => {
 
 export type BillingCycle = "monthly" | "quarterly" | "annual"
 
-export const billingCycleMonths = (billingCycle: string | null | undefined): number =>
+const billingCycleMonths = (billingCycle: string | null | undefined): number =>
   billingCycle === "annual" ? 12 : billingCycle === "quarterly" ? 3 : 1
 
 const addUtcCalendarMonths = (base: Date, months: number, endOfDay: boolean) => {

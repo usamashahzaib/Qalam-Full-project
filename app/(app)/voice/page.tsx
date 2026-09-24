@@ -178,7 +178,7 @@ export default function VoicePage() {
                 <div className="grid gap-4 p-5 sm:grid-cols-2">
                   <div>
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">Name</label>
-                    <input
+                    <input aria-label="Name"
                       value={profile.name}
                       onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
                       placeholder="Your full name"
@@ -187,7 +187,7 @@ export default function VoicePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">Job Title</label>
-                    <input
+                    <input aria-label="Job title"
                       value={profile.title}
                       onChange={(e) => setProfile((p) => ({ ...p, title: e.target.value }))}
                       placeholder="e.g. Founder & CEO"
@@ -196,7 +196,7 @@ export default function VoicePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">Industry</label>
-                    <input
+                    <input aria-label="Industry"
                       value={profile.industry}
                       onChange={(e) => setProfile((p) => ({ ...p, industry: e.target.value }))}
                       placeholder="e.g. SaaS, Consulting, HR Tech"
@@ -205,7 +205,7 @@ export default function VoicePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">LinkedIn URL</label>
-                    <input
+                    <input aria-label="LinkedIn URL"
                       value={profile.linkedinUrl}
                       onChange={(e) => setProfile((p) => ({ ...p, linkedinUrl: e.target.value }))}
                       placeholder="linkedin.com/in/yourprofile"
@@ -237,7 +237,7 @@ export default function VoicePage() {
                     <label className="mb-1.5 block t-eyebrowst text-zinc-400">
                       Goals <span className="font-normal normal-case text-zinc-400">(optional)</span>
                     </label>
-                    <textarea
+                    <textarea aria-label="Goals"
                       value={profile.goals}
                       onChange={(e) => setProfile((p) => ({ ...p, goals: e.target.value }))}
                       rows={2}
@@ -280,7 +280,7 @@ export default function VoicePage() {
                     <p className="mt-0.5 text-xs text-zinc-500">Paste 3-5 of your best LinkedIn posts. Qalam extracts your tone, patterns, and phrases.</p>
                   </div>
                   <div className="p-5">
-                    <textarea
+                    <textarea aria-label="Example posts"
                       value={examplePosts}
                       onChange={(e) => setExamplePosts(e.target.value)}
                       rows={8}

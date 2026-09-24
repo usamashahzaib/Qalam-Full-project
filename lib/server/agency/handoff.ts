@@ -9,7 +9,7 @@ import type { LinkedInConnection } from "@/lib/server/linkedin-oauth"
 import { hashPublicToken, issuePublicToken, isUuid } from "@/lib/server/agency/access"
 import { handoffEmail, sendAgencyEmail } from "@/lib/server/agency/emails"
 
-export const HANDOFF_TTL_DAYS = 7
+const HANDOFF_TTL_DAYS = 7
 export const HANDOFF_DAILY_LIMIT = 20
 
 export type HandoffRow = {
@@ -27,7 +27,7 @@ export type HandoffRow = {
 
 const HANDOFF_COLUMNS = "id,workspace_id,recipient_name,recipient_email,created_by,source,expires_at,used_at,revoked_at,created_at"
 
-export const handoffUrl = (token: string) => `${env.frontendOrigin}/connect/${token}`
+const handoffUrl = (token: string) => `${env.frontendOrigin}/connect/${token}`
 
 export type HandoffStatus = "ready" | "used" | "expired" | "revoked"
 

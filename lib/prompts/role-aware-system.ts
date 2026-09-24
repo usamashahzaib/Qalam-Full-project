@@ -10,7 +10,6 @@
 // Role profiles live in ./role-profiles - add a new role there.
 
 export type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
-export { ROLE_PROFILES, GENERIC_PROFILE, resolveRoleProfile } from "./role-profiles";
 
 import type { PostFormat, VoiceProfile, RoleProfile } from "./role-profiles";
 import { GENERIC_PROFILE, resolveRoleProfile } from "./role-profiles";

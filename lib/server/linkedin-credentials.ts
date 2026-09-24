@@ -150,7 +150,7 @@ export const storeLinkedInPublishingAccount = async ({
   return rows?.[0] || null
 }
 
-export const getLinkedInPublishingAccount = async (workspaceId: string): Promise<PublishingAccount | null> => {
+const getLinkedInPublishingAccount = async (workspaceId: string): Promise<PublishingAccount | null> => {
   try {
     const rows = await supabaseSelect<PublishingAccount>(
       "publishing_accounts",
@@ -239,7 +239,7 @@ type RefreshedLinkedInToken = {
   refreshTokenExpiresAt: number | null
 }
 
-export const refreshLinkedInAccessToken = async (refreshToken: string): Promise<RefreshedLinkedInToken> => {
+const refreshLinkedInAccessToken = async (refreshToken: string): Promise<RefreshedLinkedInToken> => {
   const clientId = process.env.LINKEDIN_CLIENT_ID || ""
   const clientSecret = process.env.LINKEDIN_CLIENT_SECRET || ""
   const res = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
@@ -273,7 +273,7 @@ export const deleteLinkedInPublishingAccount = async (workspaceId: string) => {
   await supabaseDelete("publishing_accounts", `workspace_id=eq.${workspaceId}&provider=eq.linkedin`)
 }
 
-export const getLinkedInToken = async (userId: string): Promise<LinkedInCredential | null> => {
+const getLinkedInToken = async (userId: string): Promise<LinkedInCredential | null> => {
   try {
     const rows = await supabaseSelect<LinkedInCredential>(
       "linkedin_credentials",
@@ -299,45 +299,11 @@ export const deleteLinkedInToken = async (userId: string) => {
   )
 }
 
-export const getAllLinkedInTokens = async (): Promise<LinkedInCredential[]> => {
-  const now = Date.now()
-  const pageSize = 100
-  const tokens: LinkedInCredential[] = []
-  try {
-    for (let offset = 0; ; offset += pageSize) {
-      const rows = await supabaseSelect<LinkedInCredential>(
-        "linkedin_credentials",
-        `token_expires_at=gt.${now}&select=user_id,access_token,member_id,token_expires_at&order=updated_at.asc&limit=${pageSize}&offset=${offset}`
-      )
-      if (!rows?.length) break
-      // Decrypt per-row so one corrupt/key-mismatched token does not drop the whole batch.
-      for (const row of rows) {
-        try {
-          tokens.push({ ...row, access_token: decryptToken(row.access_token) })
-        } catch (err) {
-          console.warn("linkedin_token_decrypt_skipped", {
-            userId: row.user_id,
-            error: err instanceof Error ? err.message : String(err),
-          })
-        }
-      }
-      if (rows.length < pageSize) break
-    }
-  } catch (err) {
-    // Do not swallow silently - log and return whatever was successfully loaded so far.
-    console.error("linkedin_tokens_load_failed", {
-      error: err instanceof Error ? err.message : String(err),
-      recovered: tokens.length,
-    })
-  }
-  return tokens
-}
-
 /**
  * Mark a user's LinkedIn token as invalid/expired after the API rejects it (401).
  * We do not have a dedicated `token_valid` column, so we set the existing
  * `token_expires_at` (and publishing_accounts.expires_at) into the past. This
- * makes getAllLinkedInTokens skip it and the profile/share routes report
+ * makes the profile/share routes report
  * `linkedin_token_expired`, which the settings page surfaces as a reconnect prompt.
  */
 export const markLinkedInTokenInvalid = async ({

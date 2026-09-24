@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest"
 import { formatPrice, getQuarterlyMonthlyEquivalent, plans, PLANS, PLAN_PRICES, COMPARISON_ROWS, AGENCY_PLAN_LIVE, MANAGED_PLANS } from "@/lib/pricing"
-import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 
 describe("formatPrice", () => {
   it("returns 'Free' for zero", () => {
@@ -169,12 +168,13 @@ describe("COMPARISON_ROWS integrity", () => {
       "Competitor research",
       "AI Strategist",
     ]))
-    expect(labels.includes("Silent Growth tools")).toBe(SILENT_GROWTH_LIVE)
+    // Silent Growth was removed; it must never reappear in the comparison.
+    expect(labels.includes("Silent Growth tools")).toBe(false)
   })
 
-  it("never advertises disabled Silent Growth tools in plan cards", () => {
+  it("never advertises the removed Silent Growth tools in plan cards", () => {
     const advertised = PLANS.some((plan) => plan.features.some((feature) => feature.includes("Silent Growth")))
-    expect(advertised).toBe(SILENT_GROWTH_LIVE)
+    expect(advertised).toBe(false)
   })
 
   it("does not mislabel personal workspaces as client workspaces", () => {

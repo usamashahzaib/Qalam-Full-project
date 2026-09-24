@@ -225,16 +225,12 @@ export function isAppHostPath(pathname: string): boolean {
 export const PUBLIC_API_PREFIXES = [
   "/api/auth",
   "/api/health",
-  "/api/webhooks",
   "/api/payments/webhook",
   "/api/free-tools",
-  "/api/tools",
   // Vercel cron endpoints authenticate with CRON_SECRET (Bearer header), not a
   // session cookie - each route validates the secret itself.
   "/api/cron",
   "/api/linkedin/publish-scheduled",
-  "/api/linkedin/sync-analytics",
-  "/api/admin/backfill-scores",
   // Anonymous marketing surfaces: contact form and referral landing tracking.
   // Each route enforces its own Redis-backed rate limit.
   "/api/contact",
@@ -357,6 +353,27 @@ async function addSecurityHeaders(response: NextResponse, csp?: { nonce?: string
   return response
 }
 
+// Auth.js names the session cookie by transport and splits a large one into
+// numbered chunks (name.0, name.1, ...). Only a name actually present on the
+// request is decrypted, so anonymous traffic (most marketing visits) skips JWT
+// decryption entirely instead of paying for two failed attempts.
+const SESSION_COOKIE_NAMES = ["__Secure-authjs.session-token", "authjs.session-token"] as const
+
+export function presentSessionCookieNames(cookieNames: string[]): string[] {
+  return SESSION_COOKIE_NAMES.filter((name) =>
+    cookieNames.some((cookie) => cookie === name || cookie.startsWith(`${name}.`))
+  )
+}
+
+async function readSessionToken(request: NextRequest) {
+  const present = presentSessionCookieNames(request.cookies.getAll().map((cookie) => cookie.name))
+  for (const cookieName of present) {
+    const token = await getToken({ req: request, secret: process.env.AUTH_SECRET, cookieName })
+    if (token) return token
+  }
+  return null
+}
+
 // ─── Proxy ────────────────────────────────────────────────────────────────────
 
 const MAX_BODY_BYTES = 4 * 1024 * 1024 // 4 MB
@@ -412,17 +429,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Read the signed session before applying the general limiter. Authenticated
   // traffic is isolated by account so people sharing an office or carrier IP
   // cannot exhaust one another's workspace quota.
-  const isHttps = request.url.startsWith("https://")
-  const cookieName = isHttps ? "__Secure-authjs.session-token" : "authjs.session-token"
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    cookieName,
-  }) ?? await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-    cookieName: isHttps ? "authjs.session-token" : "__Secure-authjs.session-token",
-  })
+  const token = await readSessionToken(request)
   const userId = token?.id as string | undefined
   const userEmail = token?.email as string | undefined
 

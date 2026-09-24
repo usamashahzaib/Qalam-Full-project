@@ -158,7 +158,7 @@ export default function CompetitorsPage() {
                 <label className="mb-1.5 block t-eyebrowst text-zinc-400">
                   Post text <span className="font-normal normal-case text-zinc-400">(required)</span>
                 </label>
-                <textarea
+                <textarea aria-label="Post text"
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
                   rows={8}

@@ -55,7 +55,7 @@ export function WorkspaceBranding({
           aria-label="Pick branding color"
           disabled={!canManage}
         />
-        <input
+        <input aria-label="Branding color hex value"
           type="text"
           value={color}
           onChange={(e) => setColor(e.target.value)}

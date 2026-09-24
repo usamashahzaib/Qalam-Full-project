@@ -3,7 +3,6 @@ import type { WorkspacePost } from "@/types/domain"
 
 type ApiErrorBody = { error?: string; message?: string }
 type PostType = "LinkedIn - Text post" | "LinkedIn - Carousel" | string
-type PostStatus = "draft" | "scheduled" | "published"
 
 export type WorkspaceEventInput = {
   id?: string
@@ -50,27 +49,6 @@ const postJson = async <TOut, TIn extends Record<string, unknown>>(url: string, 
   return readJson<TOut>(res)
 }
 
-const patchJson = async <TOut, TIn extends Record<string, unknown>>(url: string, data: TIn) => {
-  const res = await fetch(url, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-  return readJson<TOut>(res)
-}
-
-const requestJson = <T>(path: string, options: RequestInit = {}) =>
-  fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  }).then(readJson<T>)
-
-const withWorkspaceKey = (path: string, workspaceKey?: string) =>
-  workspaceKey ? `${path}${path.includes("?") ? "&" : "?"}workspaceKey=${encodeURIComponent(workspaceKey)}` : path
-
 export const API_PATHS = {
   dashboardStats: "/api/dashboard/stats",
   hookAlternatives: "/api/generate/hook-alternatives",
@@ -78,12 +56,6 @@ export const API_PATHS = {
   ctaAlternatives: "/api/generate/cta-rewrite",
   carouselGenerate: "/api/generate/carousel",
 }
-
-const resolvedTitle = (title: string | undefined, content: string, fallback = "Untitled post") =>
-  title || content.trim().split("\n")[0]?.slice(0, 80) || fallback
-
-const scheduledAt = (date?: string, time?: string, scheduledTime?: string) =>
-  scheduledTime || (date && time ? new Date(`${date}T${time}:00`).toISOString() : null)
 
 export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string; workspaceKey?: string }
 export type GenerateHooksOutput = { hooks: HookItem[] }
@@ -147,114 +119,8 @@ export const scorePost = (data: ScorePostInput, signal?: AbortSignal) =>
 export const improvePost = (data: ImprovePostInput) =>
   postJson<ImprovePostOutput, ImprovePostInput>("/api/generate/improve", data)
 
-export const saveDraft = (data: SaveDraftInput) =>
-  postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", {
-    ...data,
-    title: resolvedTitle(data.title, data.content, "Untitled draft"),
-    status: "draft" satisfies PostStatus,
-  })
-
-export const schedulePost = async (data: SchedulePostInput) => {
-  const scheduledTime = scheduledAt(data.date, data.time, data.scheduledTime)
-  const body = {
-    ...data,
-    title: resolvedTitle(data.title, data.content),
-    status: "scheduled" satisfies PostStatus,
-    scheduledTime,
-  }
-  if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
-  return patchJson<SchedulePostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
-}
-
-export const publishPost = async (data: PublishPostInput) => {
-  const body = {
-    ...data,
-    title: resolvedTitle(data.title, data.content),
-    status: "published" satisfies PostStatus,
-    publishedAt: data.publishedAt || new Date().toISOString(),
-    externalPostUrn: data.externalPostUrn ?? null,
-  }
-  if (!data.id) return postJson<SaveDraftOutput, Record<string, unknown>>("/api/posts", body)
-  return patchJson<PublishPostOutput, Record<string, unknown>>(`/api/posts?id=${encodeURIComponent(data.id)}`, body)
-}
-
-export const exportPost = ({ id, ...data }: ExportPostInput) =>
-  postJson<ExportPostOutput, Record<string, unknown>>(`/api/export/${id}`, data)
-
 export const shareToLinkedIn = (data: ShareToLinkedInInput) =>
   postJson<ShareToLinkedInOutput, Record<string, unknown>>("/api/linkedin/share", data)
-
-export const loadWorkspaceSnapshot = async (workspaceKey?: string) => {
-  const qs = workspaceKey ? `?workspaceKey=${encodeURIComponent(workspaceKey)}` : ""
-  const res = await fetch(`/api/workspace${qs}`)
-  const data = await readJson<Omit<WorkspaceSnapshotOutput, "state"> & { state?: Record<string, unknown> }>(res)
-  return { ...data, state: data.state || {} }
-}
-
-export const saveWorkspaceSnapshot = (state: Record<string, unknown>, workspaceKey?: string) =>
-  fetch("/api/workspace", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ state, workspaceKey }),
-  }).then(readJson)
-
-export const trackWorkspaceEvent = (
-  type: string,
-  payload: Record<string, unknown> = {},
-  workspaceKey?: string
-) =>
-  postJson<{ saved: boolean; event: unknown }, Record<string, unknown>>("/api/events", {
-    workspaceKey,
-    type,
-    payload,
-    createdAt: new Date().toISOString(),
-  })
-
-export const fetchWorkspaceEvents = (limit = 100, workspaceKey?: string) =>
-  requestJson<{ events: unknown[] }>(withWorkspaceKey(`/api/events?limit=${limit}`, workspaceKey))
-
-export const fetchWorkspaceJobs = (type = "", limit = 100, workspaceKey?: string) =>
-  requestJson<{ jobs: unknown[] }>(
-    withWorkspaceKey(`/api/jobs?type=${encodeURIComponent(type)}&limit=${limit}`, workspaceKey)
-  )
-
-export const createWorkspaceJob = ({
-  type,
-  title,
-  payload = {},
-  status = "completed",
-  workspaceKey,
-}: WorkspaceJobInput) =>
-  postJson<{ saved: boolean; job: unknown }, Record<string, unknown>>("/api/jobs", {
-    workspaceKey,
-    type,
-    title,
-    status,
-    payload,
-    createdAt: new Date().toISOString(),
-  })
-
-export const analyzeCompetitorPaste = ({
-  profileId,
-  profileName,
-  platform,
-  sourceText,
-  workspaceKey,
-}: {
-  profileId?: string
-  profileName?: string
-  platform?: string
-  sourceText?: string
-  workspaceKey?: string
-}) =>
-  postJson<{ analysis: unknown; job: unknown }, Record<string, unknown>>("/api/competitors/analyze", {
-    workspaceKey,
-    profileId,
-    profileName,
-    platform,
-    sourceText,
-  })
-
 export type HookAlternativesInput = { content: string; role?: string; workspaceKey?: string }
 export type HookAlternativesOutput = { hooks: HookItem[] }
 
@@ -278,12 +144,3 @@ export const generateCtaAlternatives = (data: CtaAlternativesInput) =>
 
 export const generateCarousel = (data: CarouselInput) =>
   postJson<CarouselOutput, Record<string, unknown>>(API_PATHS.carouselGenerate, data)
-
-export const fetchDashboardStats = () =>
-  requestJson<Record<string, unknown>>(API_PATHS.dashboardStats)
-
-export const fetchDashboardRecentPosts = () =>
-  requestJson<{ posts?: WorkspacePost[] } | WorkspacePost[]>("/api/dashboard/recent-posts")
-
-export const fetchWorkspace = (workspaceKey?: string) =>
-  requestJson<Record<string, unknown>>(withWorkspaceKey("/api/workspace", workspaceKey))

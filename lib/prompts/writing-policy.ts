@@ -67,7 +67,7 @@ HOW TO WRITE IT:
 
 // Conversation-specific guidance. Used for comments and replies, where the job
 // is to respond to someone else rather than to publish a piece of your own.
-export const REPLY_RULES = `
+const REPLY_RULES = `
 REPLYING TO SOMEONE ELSE:
 - This is a reply, not a post. Respond to something concrete that the other person actually wrote.
 - Do the reply's real work: add an observation, contribute a relevant detail, react specifically, or ask something you would genuinely want answered.

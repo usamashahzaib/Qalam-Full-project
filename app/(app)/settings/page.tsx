@@ -765,7 +765,7 @@ export default function SettingsPage() {
                 <code className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-xs">delete my account</code>
                 {" "}to confirm:
               </p>
-              <input
+              <input aria-label="Type delete my account to confirm"
                 value={deleteConfirm}
                 onChange={(e) => setDeleteConfirm(e.target.value)}
                 className="w-full max-w-xs rounded-lg border border-red-200 px-3 py-2 text-sm text-zinc-900 focus:border-red-400 focus:outline-none"

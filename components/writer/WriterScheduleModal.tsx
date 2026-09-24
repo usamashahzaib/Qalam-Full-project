@@ -25,7 +25,7 @@ export function WriterScheduleModal({
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className="relative">
             <label className="absolute -top-2 left-2.5 bg-white px-1 t-eyebrowr text-teal">Date</label>
-            <input
+            <input aria-label="Date"
               type="date"
               min={todayInput()}
               value={scheduleDate}
@@ -35,7 +35,7 @@ export function WriterScheduleModal({
           </div>
           <div className="relative">
             <label className="absolute -top-2 left-2.5 bg-white px-1 t-eyebrowr text-teal">Time</label>
-            <input
+            <input aria-label="Time"
               type="time"
               min={scheduleDate === todayInput() ? nowTimeInput() : undefined}
               value={scheduleTime}

@@ -37,15 +37,7 @@ export type EffectiveOverrideInfo = {
   overridePlan: string | null
 }
 
-export const getUserIdByEmail = async (email: string) => {
-  const users = await supabaseSelect<{ id: string }>(
-    "users",
-    `email=eq.${encodeURIComponent(email.trim().toLowerCase())}&select=id&limit=1`
-  )
-  return users?.[0]?.id || null
-}
-
-export const getUserOverrideByEmail = async (email: string): Promise<UserOverrideRow | null> => {
+const getUserOverrideByEmail = async (email: string): Promise<UserOverrideRow | null> => {
   // Fetch both internal UUID and external_user_id (LinkedIn provider ID) so we can
   // match whichever one was stored in user_overrides.user_id by the admin panel.
   const users = await supabaseSelect<{ id: string; external_user_id: string | null }>(
@@ -75,7 +67,7 @@ export const getUserOverrideByEmail = async (email: string): Promise<UserOverrid
 
 const toTitleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 
-export const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | null): EffectiveOverrideInfo => {
+const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | null): EffectiveOverrideInfo => {
   const featureFlags = override?.feature_flags || {}
   const rawPlan = override?.plan_override || basePlan || "Free"
   // Normalize to titlecase ("pro" → "Pro") so PLAN_ORDER lookup always works

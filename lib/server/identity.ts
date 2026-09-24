@@ -3,6 +3,27 @@ import "server-only"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 
+// Pre-hijack defence. Anyone can register a password for an address they do
+// not own; the account just stays unverified. If the real owner later signs
+// in with a provider that verified the address, linking must not keep the
+// stranger's password, or the owner clicking any later verification email
+// would activate it. Drop the password, mark the address verified (the
+// provider just proved ownership), and bump password_version so nothing
+// issued against the old credential survives.
+function unverifiedAccountTakeoverGuard(row: {
+  email_verified?: boolean | null
+  password_hash?: string | null
+  password_version?: number | null
+}) {
+  if (row.email_verified || !row.password_hash) return {}
+  return {
+    password_hash: null,
+    email_verified: true,
+    password_version: (typeof row.password_version === "number" ? row.password_version : 0) + 1,
+    updated_at: new Date().toISOString(),
+  }
+}
+
 export async function ensureSupabaseUser({
   userId,
   email,
@@ -31,7 +52,7 @@ export async function ensureSupabaseUser({
 
   const { data: userByEmail, error: emailLookupError } = await supabase
     .from("users")
-    .select("id, external_user_id")
+    .select("id, external_user_id, email_verified, password_hash, password_version")
     .eq("email", email)
     .maybeSingle()
 
@@ -41,10 +62,21 @@ export async function ensureSupabaseUser({
   }
 
   if (userByEmail) {
+    const isSelfLink = userId === userByEmail.id
+    const takeover = isSelfLink ? {} : unverifiedAccountTakeoverGuard(userByEmail)
+
     if (!userByEmail.external_user_id) {
+      // A session resolving its own row (a password account whose id is the
+      // session subject) may always link to itself. Any other subject claiming
+      // an existing account by email must come from a provider that verified
+      // that email, or an unverified OAuth email could take over the account.
+      if (!isSelfLink && !verifiedOAuthProvider) {
+        log.warn("identity.unverified_oauth_email_claim", { userId: userByEmail.id })
+        throw new Error("oauth_email_unverified")
+      }
       const { data: linkedUser, error: linkError } = await supabase
         .from("users")
-        .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })
+        .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl, ...takeover })
         .eq("id", userByEmail.id)
         .is("external_user_id", null)
         .select("id, external_user_id")
@@ -69,7 +101,7 @@ export async function ensureSupabaseUser({
       if (verifiedOAuthProvider === "linkedin") {
         const { data: relinkedUser, error: relinkError } = await supabase
           .from("users")
-          .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl })
+          .update({ external_user_id: userId, full_name: fullName, image_url: imageUrl, ...takeover })
           .eq("id", userByEmail.id)
           .eq("external_user_id", userByEmail.external_user_id)
           .select("id, external_user_id")

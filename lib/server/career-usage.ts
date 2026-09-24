@@ -6,7 +6,7 @@ import { getCareerEntitlements } from "@/lib/career-entitlements"
 
 type CareerFeature = "linkedin_audit" | "resume_review" | "resume_generation"
 
-export const getCareerLimit = (plan: string, feature: CareerFeature) => {
+const getCareerLimit = (plan: string, feature: CareerFeature) => {
   const config = getCareerEntitlements(plan)
   if (feature === "linkedin_audit") return config.linkedinAuditsPerMonth
   if (feature === "resume_review") return config.atsReviewsPerMonth

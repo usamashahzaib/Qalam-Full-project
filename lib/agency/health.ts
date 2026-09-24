@@ -2,7 +2,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const WEEK_MS = 7 * DAY_MS
 
 export const TOKEN_WARNING_DAYS = 7
-export const APPROVAL_STALE_HOURS = 72
+const APPROVAL_STALE_HOURS = 72
 
 /** Monday 00:00 UTC of the week containing `at`. */
 export function weekStartUtc(at: Date): Date {

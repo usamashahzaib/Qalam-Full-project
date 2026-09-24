@@ -98,7 +98,7 @@ export function buildCommentPrompt(input: CommentPromptInput): { system: string;
 // regardless of what the other person actually said.
 // ---------------------------------------------------------------------------
 
-export const REPLY_SOURCE_BUDGET = 2500;
+const REPLY_SOURCE_BUDGET = 2500;
 
 export interface ReplyPromptInput {
   /** The comment or reply this person is responding to. Always present. */

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react"
 import Link from "next/link"
 import { QalamLogo } from "@/components/QalamLogo"
 
-export function AuthGuardian({ watching }: { watching: boolean }) {
+function AuthGuardian({ watching }: { watching: boolean }) {
   return (
     <div className="flex items-center gap-4" role="img" aria-label={watching ? "Password entry is private" : "Evidence stays under your control"}>
       <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-white/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">

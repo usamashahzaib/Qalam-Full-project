@@ -13,9 +13,9 @@ export type ClientWord = {
   tenure?: string
 }
 
-export const CLIENT_WORDS: ClientWord[] = []
+const CLIENT_WORDS: ClientWord[] = []
 
-export const CLIENT_DISCRETION_NOTE =
+const CLIENT_DISCRETION_NOTE =
   "Most people who use Qalam publish under their own name. Some are founders, some write for executives, some run agencies for clients who never want it known that anyone helps them write. So we keep it simple: we never show who our clients are, and we never show whose content was written with Qalam. Not on this site, not in sales calls, not in case studies."
 
 const promises = [

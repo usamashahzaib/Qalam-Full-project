@@ -5,7 +5,6 @@ import { NextRequest } from "next/server"
 import { redirect } from "next/navigation"
 import { cache } from "react"
 import { supabaseSelect, supabasePatch } from "@/lib/server/supabase-rest"
-import { createServiceClient } from "@/lib/server/supabase-rest"
 import { applyUserOverrides } from "@/lib/server/overrides"
 import { auth } from "@/auth"
 import { PLAN_PRIORITY } from "@/lib/server/plan-priority"
@@ -15,15 +14,12 @@ import { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identit
 import { isSessionCurrent } from "@/lib/server/session-revocation"
 import { isPlanExpired } from "@/lib/plan-expiry"
 import { isTransientError } from "@/lib/server/transient-errors"
-
-export { ensureSupabaseUser, ensureWorkspaceForUser } from "@/lib/server/identity"
-
 const getAuthenticatedSessionImpl = async () => {
   const session = await auth()
   return await isSessionCurrent(session) ? session : null
 }
 
-export const getAuthenticatedSession = cache(getAuthenticatedSessionImpl)
+const getAuthenticatedSession = cache(getAuthenticatedSessionImpl)
 
 export async function requireAuth(): Promise<string> {
   const session = await getAuthenticatedSession()
@@ -32,7 +28,7 @@ export async function requireAuth(): Promise<string> {
   return id
 }
 
-export function isAdminEmail(email?: string | null): boolean {
+function isAdminEmail(email?: string | null): boolean {
   if (!email) return false
   const envList = env.appAdminEmails
   if (!envList) {
@@ -43,11 +39,11 @@ export function isAdminEmail(email?: string | null): boolean {
   return adminEmails.includes(email.trim().toLowerCase())
 }
 
-export function getAuthRole(email?: string | null): "admin" | "user" {
+function getAuthRole(email?: string | null): "admin" | "user" {
   return isAdminEmail(email) ? "admin" : "user"
 }
 
-export function toNames(name: string | null, email?: string | null) {
+function toNames(name: string | null, email?: string | null) {
   const cleanName = name?.trim() || email?.split("@")[0] || "User"
   const firstName = cleanName.split(" ")[0] || "User"
   return { firstName, fullName: cleanName }
@@ -139,50 +135,6 @@ const getWorkspaceSessionContextImpl = async (): Promise<WorkspaceSessionContext
 }
 
 export const getWorkspaceSessionContext = cache(getWorkspaceSessionContextImpl)
-
-export const toPublicAuthUser = (ctx: WorkspaceSessionContext) => ({
-  email: ctx.email,
-  fullName: ctx.fullName,
-  firstName: ctx.firstName,
-  role: ctx.role,
-  imageUrl: ctx.imageUrl,
-  linkedinMemberId: null as string | null,
-  linkedinTokenExpiresAt: null as number | null,
-})
-
-export const ensureWorkspaceForEmail = async ({
-  email,
-  firstName,
-}: {
-  email: string
-  firstName: string
-}) => {
-  const userId = await requireAuth().catch(() => "")
-  if (!userId) throw new Error("auth_required")
-  return ensureWorkspaceForUser({ userId, email, firstName })
-}
-
-export async function getCurrentWorkspace() {
-  const userId = await requireAuth()
-  const supabase = createServiceClient()
-
-  const { data: membership } = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (membership) return { workspaceId: membership.workspace_id, role: membership.role }
-
-  const { data: workspaceId } = await supabase.rpc("create_personal_workspace", {
-    p_user_id: userId,
-    p_name: "Personal",
-  })
-
-  return { workspaceId: workspaceId || undefined, role: workspaceId ? "owner" : undefined }
-}
 
 export const resolveWorkspaceId = async (
   request: NextRequest,

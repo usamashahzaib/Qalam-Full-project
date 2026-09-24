@@ -27,7 +27,7 @@ export const hasPermission = (userRole: WorkspaceRole, requiredRole: WorkspaceRo
   return userIdx <= requiredIdx
 }
 
-export const resolveWorkspaceMembership = async (
+const resolveWorkspaceMembership = async (
   _request: NextRequest,
   workspaceId: string
 ): Promise<{ userId: string; role: WorkspaceRole }> => {

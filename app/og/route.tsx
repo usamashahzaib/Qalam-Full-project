@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og"
 import { type NextRequest } from "next/server"
 
-export const runtime = "edge"
+// Node.js runtime (the default). The Edge runtime is deprecated in Next 16.
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl

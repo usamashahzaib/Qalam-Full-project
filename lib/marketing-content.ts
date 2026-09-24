@@ -807,50 +807,6 @@ export const PUBLISHED_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === 
 export const UPCOMING_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "scheduled")
 
 export const MARKETING_LAST_MODIFIED = "2026-09-01"
-
-export const LINKEDIN_NICHES = [
-  "Founders",
-  "HR Directors",
-  "SaaS Marketers",
-  "Recruiters",
-  "Consultants",
-  "Agency Owners",
-  "Product Managers",
-  "Sales Directors",
-  "Investment Bankers",
-  "Financial Analysts",
-  "Software Engineers",
-  "Data Scientists",
-  "UX Designers",
-  "Brand Strategists",
-  "Marketing Directors",
-  "Operations Managers",
-  "Supply Chain Leads",
-  "Legal Counsels",
-  "Management Consultants",
-  "Business Analysts",
-  "Talent Acquisition",
-  "L&D Managers",
-  "PR Professionals",
-  "CFOs",
-  "CTOs",
-  "COOs",
-  "Creative Directors",
-  "Account Managers",
-  "Risk Analysts",
-  "Wealth Managers",
-  "Healthcare Administrators",
-  "Project Managers",
-  "Growth Marketers",
-  "Content Strategists",
-  "Executive Coaches",
-  "Corporate Trainers",
-  "Venture Capitalists",
-  "Policy Advisors",
-  "Procurement Leads",
-  "Research Directors",
-] as const
-
 export type LiveSurfaceSection = { title: string; items: string[] }
 
 export const LIVE_SURFACE: LiveSurfaceSection[] = [

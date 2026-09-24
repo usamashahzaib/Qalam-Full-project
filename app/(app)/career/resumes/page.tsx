@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 import { ATS_FUNNEL_SOURCE, ATS_RESUME_DESTINATION, isAtsCtaPlacement } from "@/lib/ats-funnel"
 import { trackMarketingEvent } from "@/lib/marketing-events"
@@ -52,6 +52,7 @@ function readResumeHandoff(): { form: typeof defaultForm; open: boolean } {
 }
 
 export default function ResumesPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const workspaceKey = searchParams.get("client") || undefined
   const handoffSource = searchParams.get("source")
@@ -141,7 +142,7 @@ export default function ResumesPage() {
       })
       const data = await response.json().catch(() => ({}))
       if (response.ok && data.id) {
-        window.location.href = `/career/resumes/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`
+        router.push(`/career/resumes/${data.id}${workspaceKey ? `?client=${encodeURIComponent(workspaceKey)}` : ""}`)
         return
       }
       setError(data.error || "Resume generation failed. Try again in a moment.")
@@ -212,18 +213,18 @@ export default function ResumesPage() {
             {sourceLabel && <p className="mt-3 rounded-lg bg-teal/5 px-3 py-2 text-xs font-semibold text-teal">{sourceLabel}</p>}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <input className={field} placeholder="Resume name, optional" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
-              <input className={field} placeholder="Target role, optional with a job description" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
-              <input className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
-              <select className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
+              <input aria-label="Resume name" className={field} placeholder="Resume name, optional" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+              <input aria-label="Target role" className={field} placeholder="Target role, optional with a job description" value={form.targetRole} onChange={(event) => setForm({ ...form, targetRole: event.target.value })} />
+              <input aria-label="Target company" className={field} placeholder="Target company, optional" value={form.targetCompany} onChange={(event) => setForm({ ...form, targetCompany: event.target.value })} />
+              <select aria-label="Resume template" className={field} value={form.templateKey} onChange={(event) => setForm({ ...form, templateKey: event.target.value })}>{RESUME_TEMPLATES.map((template) => <option key={template.key} value={template.key}>{template.name} - {template.bestFor}</option>)}</select>
               <div>
-                <textarea className={`${field} min-h-64 resize-y`} placeholder="Imported source appears here, or paste your resume or LinkedIn profile text" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
+                <textarea aria-label="Source resume or LinkedIn profile text" className={`${field} min-h-64 resize-y`} placeholder="Imported source appears here, or paste your resume or LinkedIn profile text" value={form.sourceResume} onChange={(event) => setForm({ ...form, sourceResume: event.target.value })} />
                 <p className="mt-2 text-xs leading-relaxed text-zinc-500">
                   Required. {form.sourceResume.trim().length} of {MIN_SOURCE_RESUME_CHARS} characters minimum.
                 </p>
               </div>
               <div>
-                <textarea className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description, or leave this empty" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
+                <textarea aria-label="Job description" className={`${field} min-h-64 resize-y`} placeholder="Paste the exact job description, or leave this empty" value={form.jobDescription} onChange={(event) => setForm({ ...form, jobDescription: event.target.value })} />
                 <p className="mt-2 text-xs leading-relaxed text-zinc-500">
                   Optional. With a job description Qalam targets that exact posting. Without one it builds an ATS-safe resume against the standard expectations of your target role.
                 </p>

@@ -81,7 +81,7 @@ export default function CoverLetterEditorPage() {
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Cover letter</p>
-            <input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} />
+            <input aria-label="Cover letter title" className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} />
             <p className="mt-1 text-sm text-zinc-500">{document.targetRole}{document.targetCompany ? ` at ${document.targetCompany}` : ""}</p>
           </div>
           <div className="flex gap-2">
@@ -94,7 +94,7 @@ export default function CoverLetterEditorPage() {
         {message && <p className="mb-4 rounded-xl border border-gold/20 bg-gold/10 px-4 py-3 text-sm text-zinc-700 print:hidden">{message}</p>}
 
         <div id="letter-print" className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-          <textarea
+          <textarea aria-label="Cover letter text"
             className="min-h-[600px] w-full resize-y border-0 p-0 font-serif text-[15px] leading-7 text-zinc-800 outline-none print:min-h-0"
             value={document.content}
             onChange={(event) => setDocument({ ...document, content: event.target.value })}

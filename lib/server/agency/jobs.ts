@@ -20,7 +20,7 @@ import { previousMonthPeriod } from "@/lib/agency/proof"
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** Insert-as-lock. A duplicate key means another run already did this job. */
-export async function claimJob(jobKey: string): Promise<boolean> {
+async function claimJob(jobKey: string): Promise<boolean> {
   try {
     await supabaseInsert("agency_job_claims", { job_key: jobKey.slice(0, 200) }, "return=minimal")
     return true

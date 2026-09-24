@@ -145,18 +145,3 @@ export const getMonthlyCount = async (
     `${filterField}=eq.${workspaceId}&created_at=gte.${isoStart}&select=id`
   )
 }
-
-export const enforceMonthlyLimit = (
-  current: number,
-  limit: number | "unlimited",
-  featureName: string
-): NextResponse | null => {
-  if (limit === "unlimited") return null
-  if (current >= limit) {
-    return NextResponse.json(
-      { error: "monthly_limit_reached", featureName, limit, current },
-      { status: 403 }
-    )
-  }
-  return null
-}

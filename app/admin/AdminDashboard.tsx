@@ -103,7 +103,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
           <section className="max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-bold text-zinc-900">Enter admin key to continue</h2>
             <p className="mt-1 text-xs text-zinc-500">Set <code className="rounded bg-zinc-100 px-1">ADMIN_SECRET_KEY</code> in Vercel environment variables.</p>
-            <input
+            <input aria-label="Admin secret key"
               value={adminKey}
               onChange={(e) => setAdminKey(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") unlock().catch(() => undefined) }}
@@ -284,7 +284,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                     onSubmit={(e) => { e.preventDefault(); load(query).catch((err) => setMsg((err as Error).message, "err")) }}
                     className="flex gap-2"
                   >
-                    <input
+                    <input aria-label="Search users"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       placeholder="Search by email or name..."
@@ -371,7 +371,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       {/* Plan override */}
                       <div>
                         <label className="mb-1.5 block t-eyebrowst text-zinc-400">Plan override</label>
-                        <select
+                        <select aria-label="Plan override"
                           value={form.planOverride}
                           onChange={(e) => setForm((p) => ({ ...p, planOverride: e.target.value }))}
                           className="w-full cursor-pointer rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-teal"
@@ -385,7 +385,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <label className="mb-1 block t-eyebrowst text-zinc-400">Draft limit</label>
-                          <input
+                          <input aria-label="Draft limit"
                             type="number"
                             min="0"
                             value={form.draftLimitOverride}
@@ -396,7 +396,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                         </div>
                         <div>
                           <label className="mb-1 block t-eyebrowst text-zinc-400">WS limit</label>
-                          <input
+                          <input aria-label="Workspace limit"
                             type="number"
                             min="0"
                             value={form.workspaceLimitOverride}
@@ -454,7 +454,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       {/* Notes */}
                       <div>
                         <label className="mb-1 block t-eyebrowst text-zinc-400">Internal notes</label>
-                        <textarea
+                        <textarea aria-label="Internal notes"
                           value={form.notes}
                           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                           placeholder="e.g. Beta tester, 30-day trial..."

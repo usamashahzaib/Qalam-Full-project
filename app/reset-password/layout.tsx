@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { AppHostHead } from "@/components/AppHostHead"
 
 export const dynamic = "force-dynamic"
 
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 }
 
 export default function ResetPasswordLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return <><AppHostHead />{children}</>
 }

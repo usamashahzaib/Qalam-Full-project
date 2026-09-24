@@ -38,13 +38,6 @@ export function getClientIp(request: NextRequest): string {
 
   return "unknown"
 }
-
-export async function checkBotDetection(ip: string, userAgent: string | null): Promise<boolean> {
-  void ip
-  if (!userAgent?.trim()) return true
-  return /bot|crawler|spider|headless|python-requests|curl|wget|postman|Chrome-Lighthouse|PageSpeed/i.test(userAgent)
-}
-
 // ── In-memory fallback ────────────────────────────────────────────────────────
 // Only used when Redis isn't configured. Per-instance, not globally consistent
 // across serverless instances, but prevents unlimited usage rather than

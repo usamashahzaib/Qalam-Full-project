@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 const DAYS_VISIBLE = 14
 const seenKey = (featureKey: string) => `qalam_feature_seen_${featureKey}`
 
-export function isNewFeature(launchDate: string): boolean {
+function isNewFeature(launchDate: string): boolean {
   const elapsedDays = (Date.now() - new Date(launchDate).getTime()) / 86400000
   return elapsedDays >= 0 && elapsedDays <= DAYS_VISIBLE
 }

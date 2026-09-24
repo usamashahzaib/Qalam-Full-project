@@ -225,3 +225,68 @@ describe("plan-limits-v2 (quota enforcement)", () => {
     })
   })
 })
+
+describe("getPlanStatus - lookup shape", () => {
+  beforeEach(() => {
+    vi.resetAllMocks()
+  })
+
+  const proUser = { id: "internal-1", external_user_id: "linkedin-sub", plan: "Pro", plan_expires_at: null, plan_started_at: null, billing_cycle: null, created_at: null }
+
+  it("reads the users row once and derives expiry from it", async () => {
+    const fake = createFakeSupabase({ tableResponses: baseTables({ users: () => ok(proUser) }) })
+    createServiceClient.mockReturnValue(fake)
+
+    const status = await getPlanStatus("internal-1")
+
+    expect(status.plan).toBe("Pro")
+    expect(status.isActive).toBe(true)
+    expect(fake.from.mock.calls.filter(([table]) => table === "users")).toHaveLength(1)
+  })
+
+  it("skips the second override lookup when the called id has an override", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: baseTables({
+        users: () => ok(proUser),
+        user_overrides: () => ok([{ user_id: "internal-1", plan_override: "Agency", expires_at: null }]),
+      }),
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const status = await getPlanStatus("internal-1")
+
+    expect(status.plan).toBe("Agency")
+    expect(fake.from.mock.calls.filter(([table]) => table === "user_overrides")).toHaveLength(1)
+  })
+
+  it("still finds an override stored under the user's other id", async () => {
+    let overrideQuery = 0
+    const fake = createFakeSupabase({
+      tableResponses: baseTables({
+        users: () => ok(proUser),
+        user_overrides: () => {
+          overrideQuery += 1
+          return overrideQuery === 1 ? ok([]) : ok([{ user_id: "linkedin-sub", plan_override: "Agency", expires_at: null }])
+        },
+      }),
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const status = await getPlanStatus("internal-1")
+
+    expect(status.plan).toBe("Agency")
+    expect(overrideQuery).toBe(2)
+  })
+
+  it("downgrades an expired paid plan to Free from the same users row", async () => {
+    const fake = createFakeSupabase({
+      tableResponses: baseTables({ users: () => ok({ ...proUser, plan_expires_at: "2020-01-01T00:00:00.000Z" }) }),
+    })
+    createServiceClient.mockReturnValue(fake)
+
+    const status = await getPlanStatus("internal-1")
+
+    expect(status.plan).toBe("Free")
+    expect(status.isActive).toBe(false)
+  })
+})

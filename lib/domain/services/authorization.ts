@@ -21,7 +21,7 @@ export async function canAccessPost(userId: string, postId: string): Promise<Res
   }
 }
 
-export async function canAccessWorkspace(userId: string, workspaceId: string): Promise<Result<boolean>> {
+async function canAccessWorkspace(userId: string, workspaceId: string): Promise<Result<boolean>> {
   if (!userId || !workspaceId) return err({ code: "VALIDATION_ERROR", message: "userId and workspaceId are required" })
 
   try {

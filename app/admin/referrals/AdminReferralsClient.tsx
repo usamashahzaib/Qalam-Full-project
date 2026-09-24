@@ -188,14 +188,14 @@ export function AdminReferralsClient() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-base font-semibold text-zinc-900">Create a code for a colleague</h2>
           <form onSubmit={onCreate} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <input
+            <input aria-label="Full name"
               required
               value={form.colleagueName}
               onChange={(e) => setForm((prev) => ({ ...prev, colleagueName: e.target.value }))}
               placeholder="Full name"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
-            <input
+            <input aria-label="Email"
               required
               type="email"
               value={form.colleagueEmail}
@@ -203,13 +203,13 @@ export function AdminReferralsClient() {
               placeholder="colleague@company.com"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
-            <input
+            <input aria-label="Department"
               value={form.department}
               onChange={(e) => setForm((prev) => ({ ...prev, department: e.target.value }))}
               placeholder="Department (e.g. HR)"
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
-            <input
+            <input aria-label="Discount percent"
               type="number"
               min={0}
               max={100}
@@ -367,7 +367,7 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
           </span>
         ) : (
           <>
-            <select
+            <select aria-label="Plan purchased"
               value={planName}
               onChange={(e) => setPlanName(e.target.value)}
               className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-900 focus:border-teal focus:outline-none"
@@ -376,7 +376,7 @@ function ReferredUserRow({ use, onPaid }: { use: ReferralUseDetail; onPaid: () =
                 <option key={p} value={p}>{p}</option>
               ))}
             </select>
-            <input
+            <input aria-label="Amount paid in USD"
               type="number"
               min={0}
               value={amountPaid}
@@ -460,7 +460,7 @@ function PayoutQueueRow({ payout, onChanged }: { payout: AdminPayout; onChanged:
 
         {payout.status === "processing" && (
           <>
-            <input
+            <input aria-label="Transfer reference"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="Transfer reference"

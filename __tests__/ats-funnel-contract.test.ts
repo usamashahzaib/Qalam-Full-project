@@ -70,12 +70,14 @@ describe("ATS funnel event contract", () => {
     const signup = source("app/signup/page.tsx")
     const signupApi = source("app/api/auth/signup/route.ts")
     const verification = source("app/api/auth/verify-email/route.ts")
-    const authConfig = source("auth.config.ts")
+    const proxy = source("proxy.ts")
 
     expect(login).toContain("signupUrl")
     expect(signup).toContain("callbackUrl")
     expect(signupApi).toContain("encodeURIComponent(callbackUrl)")
     expect(verification).toContain('loginUrl.searchParams.set("callbackUrl", callbackUrl)')
-    expect(authConfig).toContain('safeRedirectPath(request.nextUrl.searchParams.get("callbackUrl"))')
+    // Signed-in visitors on an auth screen are sent to the sanitized callback.
+    expect(proxy).toContain("const destination = safeRedirectPath(callbackUrl)")
+    expect(proxy).toContain("authenticatedAuthRedirect(authCallbackUrl)")
   })
 })

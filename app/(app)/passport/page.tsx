@@ -122,7 +122,7 @@ export default function VoicePassportPage() {
             </div>
             {data.permissions.canManage ? (
               <>
-                <textarea
+                <textarea aria-label="Voice passport summary"
                   value={summaryDraft}
                   onChange={(event) => setSummaryDraft(event.target.value)}
                   maxLength={2000}

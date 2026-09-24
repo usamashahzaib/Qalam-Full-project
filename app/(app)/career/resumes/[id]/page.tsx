@@ -150,7 +150,7 @@ export default function ResumeEditorPage() {
       `}</style>
       <div className="mx-auto max-w-[1500px]">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
-          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" disabled={saving || downloading !== null} value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
+          <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Resume editor</p><input aria-label="Resume title" className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" disabled={saving || downloading !== null} value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} /></div>
           <div className="flex flex-wrap gap-2"><DeleteArtifactButton itemType="resume" itemTitle={document.title} onDelete={deleteResume} onDeleted={leaveDeletedResume} /><button onClick={() => download("docx")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "docx" ? "Preparing Word..." : "Download Word"}</button><button onClick={() => download("pdf")} disabled={downloading !== null || saving} className="min-h-11 rounded-xl border border-zinc-300 bg-white px-4 text-sm font-bold text-zinc-700 disabled:opacity-50">{downloading === "pdf" ? "Preparing PDF..." : "Download PDF"}</button><button onClick={save} disabled={saving || downloading !== null} className="min-h-11 rounded-xl bg-teal px-4 text-sm font-bold text-white disabled:opacity-50">{saving ? "Saving..." : "Save version"}</button></div>
         </header>
         <p className="mb-3 text-sm text-zinc-600 print:hidden" role="status">{dirty ? "Unsaved changes. Downloads save your latest edits first." : "All changes saved."}</p>
@@ -178,7 +178,7 @@ export default function ResumeEditorPage() {
             </Section>
 
             <Section title="Summary and skills">
-              <textarea className={`${input} min-h-28 resize-y`} value={data.summary} onChange={(event) => setData({ summary: event.target.value })} />
+              <textarea aria-label="Professional summary" className={`${input} min-h-28 resize-y`} value={data.summary} onChange={(event) => setData({ summary: event.target.value })} />
               <label className="mt-3 block"><span className={label}>Skills, comma separated</span><textarea className={`${input} min-h-20 resize-y`} value={data.skills.join(", ")} onChange={(event) => setData({ skills: event.target.value.split(",") })} /></label>
             </Section>
 
@@ -187,12 +187,12 @@ export default function ResumeEditorPage() {
                 {data.experience.map((entry, index) => (
                   <div key={index} className="rounded-xl border border-zinc-200 p-3">
                     <div className="grid gap-2 sm:grid-cols-2">
-                      <input className={input} placeholder="Job title" value={entry.title} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) })} />
-                      <input className={input} placeholder="Organization" value={entry.organization} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, organization: event.target.value } : item) })} />
-                      <input className={input} placeholder="Start date" value={entry.startDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, startDate: event.target.value } : item) })} />
-                      <input className={input} placeholder="End date" value={entry.endDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, endDate: event.target.value } : item) })} />
+                      <input aria-label="Job title" className={input} placeholder="Job title" value={entry.title} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) })} />
+                      <input aria-label="Organization" className={input} placeholder="Organization" value={entry.organization} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, organization: event.target.value } : item) })} />
+                      <input aria-label="Start date" className={input} placeholder="Start date" value={entry.startDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, startDate: event.target.value } : item) })} />
+                      <input aria-label="End date" className={input} placeholder="End date" value={entry.endDate} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, endDate: event.target.value } : item) })} />
                     </div>
-                    <textarea className={`${input} mt-2 min-h-28 resize-y`} value={entry.bullets.join("\n")} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, bullets: event.target.value.split("\n") } : item) })} />
+                    <textarea aria-label="Role achievements, one per line" className={`${input} mt-2 min-h-28 resize-y`} value={entry.bullets.join("\n")} onChange={(event) => setData({ experience: data.experience.map((item, itemIndex) => itemIndex === index ? { ...item, bullets: event.target.value.split("\n") } : item) })} />
                     <button onClick={() => setData({ experience: data.experience.filter((_, itemIndex) => itemIndex !== index) })} className="mt-2 text-xs font-semibold text-red-600">Remove role</button>
                   </div>
                 ))}
@@ -201,7 +201,7 @@ export default function ResumeEditorPage() {
             </Section>
 
             <Section title="Education and certifications">
-              <textarea className={`${input} min-h-24 resize-y`} value={data.education.map((item) => [item.title, item.organization, item.startDate, item.endDate].join(" | ")).join("\n")} onChange={(event) => setData({ education: event.target.value.split("\n").filter(Boolean).map((line) => { const [title, organization, startDate, endDate] = line.split("|").map((item) => item.trim()); return { title: title || "", organization: organization || "", location: "", startDate: startDate || "", endDate: endDate || "", bullets: [] } }) })} />
+              <textarea aria-label="Education, one per line" className={`${input} min-h-24 resize-y`} value={data.education.map((item) => [item.title, item.organization, item.startDate, item.endDate].join(" | ")).join("\n")} onChange={(event) => setData({ education: event.target.value.split("\n").filter(Boolean).map((line) => { const [title, organization, startDate, endDate] = line.split("|").map((item) => item.trim()); return { title: title || "", organization: organization || "", location: "", startDate: startDate || "", endDate: endDate || "", bullets: [] } }) })} />
               <label className="mt-3 block"><span className={label}>Certifications, one per line</span><textarea className={`${input} min-h-20 resize-y`} value={data.certifications.join("\n")} onChange={(event) => setData({ certifications: event.target.value.split("\n") })} /></label>
             </Section>
           </fieldset>

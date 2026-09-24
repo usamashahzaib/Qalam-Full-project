@@ -17,6 +17,17 @@ const eslintConfig = defineConfig([
     "output/**",
     "outputs/**",
     "test-results/**",
+    "playwright-report/**",
+    // Local tool scratch folders. .gstack is not readable by every OS user,
+    // and scanning it crashed `eslint .` outright.
+    ".gstack/**",
+    ".codex/**",
+    ".codex-qa/**",
+    ".codex-temp/**",
+    ".resume-qa/**",
+    ".fallow/**",
+    ".tmp/**",
+    ".vercel/**",
   ]),
 ]);
 

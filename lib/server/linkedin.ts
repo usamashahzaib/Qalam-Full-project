@@ -8,22 +8,6 @@ const CIRCUIT_KEY = "linkedin"
 export const LINKEDIN_MAX_POST_CHARS = 3000
 const USER_AGENT = "Qalam/1.0 (+https://byqalam.com)"
 
-export type LinkedInPostAnalytics = {
-  impressions: number
-  reactions: number | null
-  comments: number | null
-  reposts: number | null
-  engagementRate: number | null
-}
-
-const EMPTY_ANALYTICS: LinkedInPostAnalytics = {
-  impressions: 0,
-  reactions: null,
-  comments: null,
-  reposts: null,
-  engagementRate: null,
-}
-
 type LinkedInPostPayload = {
   accessToken: string
   authorId: string
@@ -181,56 +165,5 @@ export const uploadLinkedInDocument = async (payload: DocumentUploadPayload): Pr
   } catch (err) {
     await recordFailure(CIRCUIT_KEY)
     throw err
-  }
-}
-
-export const pollLinkedInAnalytics = async (
-  accessToken: string,
-  postUrn: string,
-  userId?: string | null
-): Promise<LinkedInPostAnalytics> => {
-  const url = `https://api.linkedin.com/rest/posts/${encodeURIComponent(postUrn)}?fields=lifecycleState,totalShareStatistics`
-
-  if (!(await checkCircuit(CIRCUIT_KEY))) {
-    console.warn("LinkedIn circuit open, skipping analytics poll")
-    return { ...EMPTY_ANALYTICS }
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: linkedInHeaders(accessToken),
-      cache: "no-store",
-    })
-
-    if (!response.ok) {
-      if (response.status === 401 && userId) {
-        await markLinkedInTokenInvalid({ userId })
-      }
-      throw new LinkedInApiError("linkedin_analytics_failed", response.status)
-    }
-    const data = await response.json() as {
-      totalShareStatistics?: {
-        impressionCount?: number
-        engagementRate?: number
-        likeCount?: number
-        commentCount?: number
-        shareCount?: number
-      }
-    }
-    const stats = data.totalShareStatistics
-
-    await recordSuccess(CIRCUIT_KEY)
-    return {
-      impressions: stats?.impressionCount ?? 0,
-      reactions: stats?.likeCount ?? null,
-      comments: stats?.commentCount ?? null,
-      reposts: stats?.shareCount ?? null,
-      engagementRate: stats?.engagementRate ?? null,
-    }
-  } catch (e) {
-    await recordFailure(CIRCUIT_KEY)
-    console.error("LinkedIn Analytics API error", e)
-    return { ...EMPTY_ANALYTICS }
   }
 }

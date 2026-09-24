@@ -286,7 +286,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
             <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Reviewer email <span className="text-red-500">*</span>
             </label>
-            <input
+            <input aria-label="Reviewer email"
               type="email"
               value={reviewerEmail}
               onChange={(e) => setReviewerEmail(e.target.value)}
@@ -299,7 +299,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
             <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Post title <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
-            <input
+            <input aria-label="Post title"
               value={postTitle}
               onChange={(e) => setPostTitle(e.target.value)}
               placeholder="e.g. Thought leadership piece on AI"
@@ -311,7 +311,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
             <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Post content <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <textarea aria-label="Post content"
               value={postContent}
               onChange={(e) => setPostContent(e.target.value)}
               rows={6}
@@ -324,7 +324,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
             <label className="mb-1.5 block t-eyebrowst text-zinc-400">
               Message to reviewer <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
-            <textarea
+            <textarea aria-label="Message to reviewer"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={2}

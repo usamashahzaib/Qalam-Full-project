@@ -21,11 +21,6 @@ export function qstashReceiver(): Receiver | null {
     nextSigningKey: env.qstashNextSigningKey,
   }))
 }
-
-export function qstashConfigured(): boolean {
-  return Boolean(env.qstashToken)
-}
-
 /**
  * Schedule a one-time LinkedIn publish callback for a post at its exact
  * scheduled time. Returns the QStash message id - callers must persist it
@@ -34,7 +29,7 @@ export function qstashConfigured(): boolean {
  * the daily safety-net cron (/api/linkedin/publish-scheduled) still catches
  * these posts, just with up to ~24h of delay.
  */
-export async function scheduleLinkedInPublish(postId: string, publishAt: Date): Promise<string | null> {
+async function scheduleLinkedInPublish(postId: string, publishAt: Date): Promise<string | null> {
   const client = qstashClient()
   if (!client) return null
   const notBefore = Math.floor(publishAt.getTime() / 1000)
@@ -53,7 +48,7 @@ export async function scheduleLinkedInPublish(postId: string, publishAt: Date): 
 }
 
 /** Cancel a previously scheduled delivery (reschedule/unschedule/delete). Best-effort. */
-export async function cancelLinkedInPublish(messageId: string): Promise<void> {
+async function cancelLinkedInPublish(messageId: string): Promise<void> {
   const client = qstashClient()
   if (!client) return
   try {

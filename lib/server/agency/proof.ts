@@ -7,7 +7,7 @@ import { summarizeCadence } from "@/lib/agency/health"
 import { buildProofSnapshot, type ProofMetrics, type ProofSnapshot } from "@/lib/agency/proof"
 import { hashPublicToken, inList, isUuid, issuePublicToken, type AgencyWorkspace } from "@/lib/server/agency/access"
 
-export const PROOF_TTL_DAYS = 90
+const PROOF_TTL_DAYS = 90
 export const PROOF_DAILY_LIMIT = 10
 const DAY_MS = 24 * 60 * 60 * 1000
 

@@ -11,7 +11,6 @@ import {
   LibraryIcon,
   MicroscopeIcon,
   ProfileIcon,
-  StealthIcon,
   VoiceIcon,
 } from "@/components/ui/qalam-icons"
 import { withClientParam } from "@/lib/workspace-navigation"
@@ -19,7 +18,6 @@ import { getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitle
 import { useBilling } from "@/lib/hooks/useBilling"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { CheckIcon } from "@/components/ui/qalam-icons"
-import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { useAppMode } from "@/lib/hooks/useAppMode"
 import { isVisibleInMode, APP_MODES, type AppMode } from "@/lib/app-mode"
 
@@ -60,7 +58,6 @@ export const MOBILE_MORE_LINKS: MobileLink[] = [
   { href: "/carousels", label: "Carousels", icon: LibraryIcon },
   { href: "/approvals", label: "Approvals", icon: CheckIcon, requiredPlan: "Pro" },
   { href: "/competitors", label: "Research", icon: MicroscopeIcon, requiredPlan: "Pro" },
-  ...(SILENT_GROWTH_LIVE ? [{ href: "/silent-growth", label: "Silent Growth", icon: StealthIcon }] : []),
   { href: "/settings", label: "Settings", icon: ProfileIcon },
 ]
 

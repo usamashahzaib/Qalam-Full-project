@@ -6,7 +6,7 @@ import { createNotification } from "@/lib/server/notifications"
 import { hashPublicToken, isUuid, issuePublicToken } from "@/lib/server/agency/access"
 import { sendAgencyEmail, voiceDropEmail } from "@/lib/server/agency/emails"
 
-export const VOICE_DROP_TTL_DAYS = 14
+const VOICE_DROP_TTL_DAYS = 14
 export const VOICE_DROP_DAILY_LIMIT = 10
 
 export type VoiceDropRow = {

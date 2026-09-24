@@ -1,9 +1,9 @@
 import "server-only"
 
-export const LINKEDIN_OAUTH_SCOPE = "openid profile email w_member_social"
+const LINKEDIN_OAUTH_SCOPE = "openid profile email w_member_social"
 export const LINKEDIN_STATE_COOKIE = "linkedin_oauth_state"
 
-export function linkedInRedirectUri(requestOrigin: string): string {
+function linkedInRedirectUri(requestOrigin: string): string {
   const origin = process.env.FRONTEND_ORIGIN || requestOrigin
   return process.env.LINKEDIN_REDIRECT_URI || `${origin}/api/linkedin/callback`
 }

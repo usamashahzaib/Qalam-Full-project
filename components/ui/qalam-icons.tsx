@@ -22,16 +22,6 @@ function Svg({ className, children, ...props }: IconProps & { children: React.Re
   )
 }
 
-export function BrandMarkIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" className={props.className ?? "h-4 w-4"} aria-hidden="true" {...props}>
-      <path d="M3 13C3 13 5 11 8 7C11 3 13 2 13 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="13" cy="2" r="1.5" fill="currentColor" stroke="none" />
-      <path d="M3 13L2 14.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  )
-}
-
 export const VoiceIcon = (props: IconProps) => (
   <Svg {...props}>
     <path d="M12 4a3 3 0 0 1 3 3v4a3 3 0 1 1-6 0V7a3 3 0 0 1 3-3Z" />
@@ -175,23 +165,6 @@ export const CheckIcon = (props: IconProps) => (
 export const CommentIcon = (props: IconProps) => (
   <Svg {...props}>
     <path d="M5 18.5 3 21V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5Z" />
-  </Svg>
-)
-
-export const RepostIcon = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M7 7h10l-2.5-2.5" />
-    <path d="M17 7 14.5 9.5" />
-    <path d="M17 17H7l2.5 2.5" />
-    <path d="M7 17 9.5 14.5" />
-  </Svg>
-)
-
-export const StealthIcon = (props: IconProps) => (
-  <Svg {...props}>
-    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" opacity="0.35" />
-    <circle cx="12" cy="12" r="3" />
-    <path d="M4 4l16 16" />
   </Svg>
 )
 

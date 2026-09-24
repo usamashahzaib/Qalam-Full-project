@@ -5,6 +5,7 @@ import { env } from "@/lib/server/env"
 import { signCheckoutToken } from "@/lib/server/checkout-token"
 import { verifyAndExtractPayment, recordPaymentWebhook } from "@/lib/server/payments"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
+import { isTestWebhookEnabled } from "@/lib/server/test-webhook-gate"
 
 const notFound = () => NextResponse.json({ error: "not_found" }, { status: 404 })
 
@@ -23,6 +24,8 @@ const SUPPORTED_EVENTS = new Set([
 const REQUIRES_VARIANT = new Set(["order_created", "subscription_created", "subscription_updated"])
 
 export async function POST(request: NextRequest) {
+  if (!isTestWebhookEnabled()) return notFound()
+
   try {
     await requireAdminOps(request)
   } catch {

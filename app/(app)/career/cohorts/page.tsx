@@ -36,14 +36,14 @@ export default function CohortsPage() {
         <div className="mt-5 grid gap-5 md:grid-cols-2">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
             <h2 className="font-bold text-zinc-900">Create instructor cohort</h2>
-            <input className="mt-4 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm" placeholder="Cohort name" value={name} onChange={(event) => setName(event.target.value)} />
-            <textarea className="mt-3 min-h-24 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm" placeholder="Module description" value={description} onChange={(event) => setDescription(event.target.value)} />
+            <input aria-label="Cohort name" className="mt-4 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm" placeholder="Cohort name" value={name} onChange={(event) => setName(event.target.value)} />
+            <textarea aria-label="Module description" className="mt-3 min-h-24 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm" placeholder="Module description" value={description} onChange={(event) => setDescription(event.target.value)} />
             <button onClick={() => submit({ action: "create", name, description, workspaceKey })} className="mt-3 rounded-xl bg-teal px-5 py-3 text-sm font-bold text-white">Create cohort</button>
             <p className="mt-2 text-xs text-zinc-400">Instructor cohorts require Pro.</p>
           </section>
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
             <h2 className="font-bold text-zinc-900">Join learner cohort</h2>
-            <input className="mt-4 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm uppercase" placeholder="Enter cohort code" value={code} onChange={(event) => setCode(event.target.value)} />
+            <input aria-label="Cohort code" className="mt-4 w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm uppercase" placeholder="Enter cohort code" value={code} onChange={(event) => setCode(event.target.value)} />
             <button onClick={() => submit({ action: "join", code })} className="mt-3 rounded-xl bg-zinc-900 px-5 py-3 text-sm font-bold text-white">Join cohort</button>
           </section>
         </div>

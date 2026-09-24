@@ -14,8 +14,6 @@ export type PublicRoute = {
 export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com").replace(/\/$/, "")
 export const APP_URL = (process.env.NEXT_PUBLIC_APP_URL || "https://app.byqalam.com").replace(/\/$/, "")
 export const SITE_NAME = "Qalam"
-export const SITE_DOMAIN_LABEL = "byqalam.com"
-
 export const absoluteUrl = (path = "/") => `${SITE_URL}${path === "/" ? "" : path}`
 // Auth and authenticated product routes resolve directly to the app domain.
 export const resolvePublicHref = (href: string) =>
@@ -39,47 +37,6 @@ export const buildBreadcrumbSchema = (items: { name: string; path: string }[]) =
     name: item.name,
     item: absoluteUrl(item.path),
   })),
-})
-
-export const buildArticleSchema = ({
-  title,
-  description,
-  url,
-  datePublished,
-  dateModified,
-  image,
-  wordCount,
-}: {
-  title: string
-  description: string
-  url: string
-  datePublished: string
-  dateModified: string
-  image: string
-  wordCount?: number
-}) => ({
-  "@context": "https://schema.org",
-  "@type": "Article",
-  headline: title,
-  description,
-  datePublished,
-  dateModified,
-  image,
-  ...(wordCount ? { wordCount } : {}),
-  author: {
-    "@type": "Organization",
-    name: SITE_NAME,
-    url: SITE_URL,
-    logo: `${SITE_URL}/icon.png`,
-  },
-  publisher: {
-    "@type": "Organization",
-    name: SITE_NAME,
-    url: SITE_URL,
-    logo: { "@type": "ImageObject", url: `${SITE_URL}/icon.png` },
-  },
-  mainEntityOfPage: { "@type": "WebPage", "@id": url },
-  url,
 })
 
 export const buildOrganizationSchema = () => ({

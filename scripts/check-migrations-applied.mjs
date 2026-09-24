@@ -2,6 +2,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
+import { UnappliedMigrationsError, exitCodeFor } from "./migration-guard-policy.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const migrationsDir = join(root, "supabase", "migrations")
@@ -67,17 +68,18 @@ async function main() {
       : await queryWithManagementApi(accessToken, supabaseUrl),
   )
   const missing = migrationVersions().filter((version) => !applied.has(version))
-  if (missing.length) throw new Error(`Unapplied Supabase migrations: ${missing.join(", ")}`)
+  if (missing.length) throw new UnappliedMigrationsError(missing)
   console.log(`Migration verification passed: ${applied.size} applied migration(s).`)
 }
 
-main().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error)
-  if (required) {
-    console.error(message)
-    process.exit(1)
-  } else {
-    console.warn(`Migration verification skipped due to error: ${message}`)
-    process.exit(0)
-  }
-})
+const isEntryPoint = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+
+if (isEntryPoint) {
+  main().catch((error) => {
+    const message = error instanceof Error ? error.message : String(error)
+    const code = exitCodeFor(error, required)
+    if (code) console.error(message)
+    else console.warn(`Migration verification skipped because the check could not run: ${message}`)
+    process.exit(code)
+  })
+}

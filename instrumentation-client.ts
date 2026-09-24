@@ -25,7 +25,6 @@ const monitoredRoutePrefixes = [
   "/dashboard",
   "/library",
   "/settings",
-  "/silent-growth",
   "/upgrade",
   "/voice",
   "/writer",

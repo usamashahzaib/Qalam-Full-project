@@ -11,7 +11,7 @@ import {
 } from "@/lib/matching"
 
 export const MATCH_DOMAIN = "professional"
-export const MATCH_CONSENT_PURPOSE = "peer_matching"
+const MATCH_CONSENT_PURPOSE = "peer_matching"
 export const MATCH_POLICY_VERSION = "2026-08-25"
 
 // Cap on how much of the opted in pool one scoring pass considers. The engine is
@@ -66,7 +66,7 @@ export type SuggestionView = {
 const PROFILE_COLUMNS =
   "workspace_id, user_id, domain, opted_in, display_name, headline, industry, seniority, location, expertise, audience, goals, contact_email, linkedin_url"
 
-export const toParticipant = (row: MatchProfileRow): MatchParticipant => ({
+const toParticipant = (row: MatchProfileRow): MatchParticipant => ({
   userId: row.user_id,
   workspaceId: row.workspace_id,
   displayName: row.display_name || "Qalam member",

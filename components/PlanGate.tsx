@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useBilling } from "@/lib/hooks/useBilling"
-import { canAccessPlan, getPlanSummary, getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
+import { getPlanSummary, getUpgradeTarget, hasFeatureAccess, type PlanTier } from "@/lib/entitlements"
 import { UpgradeModal } from "@/components/UpgradeModal"
 
 interface PlanGateProps {
@@ -74,9 +74,4 @@ export function PlanGate({ requiredPlan, feature, description, children }: PlanG
       currentPlan={billing.plan}
     />
   )
-}
-
-export function usePlanAccess(requiredPlan: PlanTier) {
-  const { billing } = useBilling()
-  return canAccessPlan(billing.plan, requiredPlan)
 }

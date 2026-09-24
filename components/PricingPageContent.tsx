@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
-import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { AnimatePresence, motion } from "framer-motion"
 import { FadeUp } from "@/components/FadeUp"
 import { PricingCard } from "@/components/PricingCard"
 import { ReferralBadge } from "@/components/ReferralBadge"
@@ -74,15 +72,9 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
   const monthlySaving = plan.originalMonthlyPrice - plan.monthlyPrice
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut", delay: index * 0.08 }}
-    >
-      <motion.div
-        whileHover={{ scale: 1.02, transition: { duration: 0.22, ease: "easeOut" } }}
-        whileTap={{ scale: 0.995 }}
-        className={`relative flex flex-col rounded-2xl border p-8 shadow-md transition-all duration-300 ${
+    <div className="fade-in" style={{ animationDuration: "350ms", animationDelay: `${index * 80}ms` }}>
+      <div
+        className={`relative flex flex-col rounded-2xl border p-8 shadow-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.995] ${
           isPremium
             ? "border-gold/40 bg-gradient-to-br from-amber-50 to-white hover:shadow-[0_12px_40px_rgba(180,83,9,0.18)]"
             : "border-zinc-200 bg-white hover:border-gold/50 hover:shadow-card-raised"
@@ -145,8 +137,8 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
           </Link>
         </div>
         <p className="mt-3 text-center t-eyebrow text-zinc-400">Application reviewed before managed service begins</p>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   )
 }
 
@@ -155,10 +147,24 @@ export function PricingPageContent({}: PricingPageContentProps) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [currentPlan, setCurrentPlan] = useState<string | null>(null)
   const [referralDiscountPercent, setReferralDiscountPercent] = useState(0)
-  const searchParams = useSearchParams()
-  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">(
-    searchParams.get("tab") === "managed" ? "managed" : "selfserve"
-  )
+  const [pricingTab, setPricingTab] = useState<"selfserve" | "managed">("selfserve")
+  // Only a tab switch animates. The first paint shows the plans immediately so
+  // the pricing grid is never held invisible behind an entrance animation.
+  const [tabSwitched, setTabSwitched] = useState(false)
+  const selectPricingTab = (tab: "selfserve" | "managed") => {
+    setTabSwitched(true)
+    setPricingTab(tab)
+  }
+
+  // ?tab=managed deep links are honoured after mount. Reading the query with
+  // useSearchParams() would opt this whole page out of static rendering and
+  // drop the plans from the prerendered HTML that crawlers and first paint see.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "managed") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from the URL, which does not exist during static prerender
+      setPricingTab("managed")
+    }
+  }, [])
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user?.id) return
@@ -308,7 +314,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="inline-flex rounded-2xl border border-zinc-200 bg-white p-1 shadow-sm">
               <button
                 type="button"
-                onClick={() => setPricingTab("selfserve")}
+                onClick={() => selectPricingTab("selfserve")}
                 aria-pressed={pricingTab === "selfserve"}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "selfserve"
@@ -320,7 +326,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               </button>
               <button
                 type="button"
-                onClick={() => setPricingTab("managed")}
+                onClick={() => selectPricingTab("managed")}
                 aria-pressed={pricingTab === "managed"}
                 className={`min-h-11 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-200 ${
                   pricingTab === "managed"
@@ -333,15 +339,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
             </div>
           </FadeUp>
 
-          <AnimatePresence mode="wait">
-            {pricingTab === "selfserve" ? (
-              <motion.div
-                key="selfserve"
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
+          {pricingTab === "selfserve" ? (
+              <div key="selfserve" className={tabSwitched ? "fade-in" : undefined} style={tabSwitched ? { animationDuration: "300ms" } : undefined}>
                 <FadeUp className="mb-8 text-center">
                   <p className="text-lg font-medium text-zinc-600">
                     Start free. Stay free if you want. Upgrade when posting becomes the habit you don&apos;t want to lose.
@@ -350,36 +349,16 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
                 <div className="mb-8 flex justify-center"><span className="rounded-full bg-teal px-4 py-2 text-sm font-bold text-white">Quarterly plans</span></div>
 
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key="quarterly"
-                    initial={false}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="mx-auto grid max-w-[1240px] grid-cols-1 items-start gap-5 sm:grid-cols-2 min-[1180px]:grid-cols-4"
-                  >
-                    {displayPlans.map((plan, i) => (
-                      <motion.div
-                        key={plan.plan}
-                        initial={false}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, ease: "easeOut", delay: i * 0.07 }}
-                      >
-                        <PricingCard {...plan} />
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-              </motion.div>
+                <div className="mx-auto grid max-w-[1240px] grid-cols-1 items-start gap-5 sm:grid-cols-2 min-[1180px]:grid-cols-4">
+                  {displayPlans.map((plan) => (
+                    <div key={plan.plan}>
+                      <PricingCard {...plan} />
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
-              <motion.div
-                key="managed"
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-              >
+              <div key="managed" className={tabSwitched ? "fade-in" : undefined} style={tabSwitched ? { animationDuration: "300ms" } : undefined}>
                 <FadeUp className="mb-10 text-center">
                   <p className="mx-auto max-w-2xl text-lg font-medium text-zinc-600">
                     We do the writing for you. A dedicated Qalam writer creates and posts content on your behalf - you just approve before it goes live.
@@ -412,9 +391,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                     Managed plans are capacity-limited and begin after a fit review.
                   </p>
                 </FadeUp>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       </section>
 
@@ -568,12 +546,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
                           <th colSpan={AGENCY_PLAN_LIVE ? 5 : 4} className="px-5 py-2.5 text-left t-eyebrow text-zinc-500">{row.group}</th>
                         </tr>
                       ) : null,
-                      <motion.tr
+                      <tr
                         key={row.label}
-                        initial={{ opacity: 0, x: -12 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.4, delay: i * 0.03 }}
                         className="transition-colors hover:bg-zinc-50/50"
                       >
                         <td className="px-5 py-3.5 text-sm font-medium text-zinc-700">{row.label}</td>
@@ -581,7 +555,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
                         <td className="bg-teal-50/40 px-4 py-3.5 text-center text-sm font-semibold text-teal">{row.solo}</td>
                         <td className="px-4 py-3.5 text-center text-sm font-semibold text-zinc-700">{row.pro}</td>
                         {AGENCY_PLAN_LIVE ? <td className="px-4 py-3.5 text-center text-sm text-zinc-700">{row.agency}</td> : null}
-                      </motion.tr>,
+                      </tr>,
                     ]
                   })}
                 </tbody>
@@ -639,27 +613,25 @@ export function PricingPageContent({}: PricingPageContentProps) {
                           aria-expanded={openFaq === i}
                         >
                           <span className="text-sm font-semibold text-zinc-900 sm:text-base">{item.q}</span>
-                          <motion.span
-                            animate={{ rotate: openFaq === i ? 45 : 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500"
+                          <span
+                            aria-hidden="true"
+                            className={`ml-4 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300/60 text-lg font-light text-zinc-500 transition-transform duration-200 ${openFaq === i ? "rotate-45" : ""}`}
                           >
                             +
-                          </motion.span>
+                          </span>
                         </button>
-                        <AnimatePresence>
-                          {openFaq === i && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: "auto", opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{ duration: 0.3, ease: "easeInOut" }}
-                              className="overflow-hidden"
-                            >
-                              <p className="px-5 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                        {/* Grid-row transition animates to the answer's natural height
+                            without measuring it. Closed answers stay in the HTML (so they
+                            are indexable) but are inert and hidden from assistive tech. */}
+                        <div
+                          inert={openFaq !== i}
+                          aria-hidden={openFaq !== i}
+                          className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${openFaq === i ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                        >
+                          <div className="overflow-hidden">
+                            <p className="px-5 pb-5 text-sm leading-relaxed text-zinc-600">{item.a}</p>
+                          </div>
+                        </div>
                       </div>
                     </FadeUp>
                   )

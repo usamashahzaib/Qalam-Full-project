@@ -195,7 +195,7 @@ export function TeamManagement({
                 {m.role === "owner" || !canManage ? (
                   <span className="rounded-full bg-teal/10 px-2.5 py-1 t-eyebrow font-semibold text-teal-800">{ROLE_LABELS[m.role] || m.role}</span>
                 ) : (
-                  <select
+                  <select aria-label={`Role for ${m.fullName || m.email || "pending member"}`}
                     value={m.role}
                     disabled={busyUserId === m.userId}
                     onChange={(e) => handleRoleChange(m.userId, e.target.value)}
@@ -275,7 +275,7 @@ export function TeamManagement({
       )}
 
       {canManage ? <div className="flex flex-col gap-2 border-t border-zinc-200 pt-3 sm:flex-row sm:items-center">
-        <input
+        <input aria-label="Teammate email"
           type="email"
           placeholder="teammate@email.com"
           value={inviteEmail}
@@ -283,7 +283,7 @@ export function TeamManagement({
           className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm outline-none focus:border-teal/50"
           onKeyDown={(e) => e.key === "Enter" && handleInvite()}
         />
-        <select
+        <select aria-label="Role for new teammate"
           value={inviteRole}
           onChange={(e) => setInviteRole(e.target.value)}
           className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs font-medium text-zinc-700 outline-none focus:border-teal/50"

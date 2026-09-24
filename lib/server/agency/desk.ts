@@ -17,7 +17,7 @@ export type DeskKind =
   | "awaiting_client"
   | "scheduled"
 
-export const DESK_ORDER: DeskKind[] = ["failed", "needs_revision", "approved_ready", "fresh_material", "draft", "awaiting_client", "scheduled"]
+const DESK_ORDER: DeskKind[] = ["failed", "needs_revision", "approved_ready", "fresh_material", "draft", "awaiting_client", "scheduled"]
 
 export type DeskItem = {
   id: string

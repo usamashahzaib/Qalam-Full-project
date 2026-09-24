@@ -1,5 +1,4 @@
 import type { PlanTier } from "@/types/domain"
-import { SILENT_GROWTH_LIVE } from "@/lib/constants"
 import { CAREER_PLAN_CONFIG, formatCareerLimit } from "@/lib/career-entitlements"
 
 export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
@@ -38,6 +37,7 @@ export const quarterlyFraming = "1 month free"
 // Agency uses reviewed onboarding rather than card checkout. An approved
 // application is followed by workspace activation and team setup.
 export const AGENCY_PLAN_LIVE = true
+
 // Single source of truth for the Agency tier's shared client capacity - the
 // number sold as "300 posts / 50 carousels across 5 client workspaces". This
 // pool is split across whichever client workspaces the owner actually has
@@ -76,7 +76,6 @@ export const deriveDefaultWorkspaceAllowance = (pool: number, workspaceCount: nu
 export const AGENCY_DEFAULT_WORKSPACE_DRAFT_ALLOWANCE = deriveDefaultWorkspaceAllowance(AGENCY_CLIENT_DRAFT_POOL, AGENCY_CLIENT_WORKSPACE_COUNT)
 export const AGENCY_DEFAULT_WORKSPACE_CAROUSEL_ALLOWANCE = deriveDefaultWorkspaceAllowance(AGENCY_CLIENT_CAROUSEL_POOL, AGENCY_CLIENT_WORKSPACE_COUNT)
 
-
 export const plans: Plan[] = [
   {
     name: "Free",
@@ -100,7 +99,6 @@ export const plans: Plan[] = [
       "Free ATS checker + 1 targeted resume/month",
       "Track 10 active applications + outcomes",
       "15-item verified Evidence Vault",
-      ...(SILENT_GROWTH_LIVE ? ["Silent Growth tools"] : []),
     ],
     cta: "Start Free",
     badge: "No card required",
@@ -195,7 +193,7 @@ export const plans: Plan[] = [
 ]
 
 // Plans visible on the public pricing page.
-export const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
+const publicPlans: Plan[] = plans.filter((p) => !p.hidden)
 
 export const MANAGED_PLANS: ManagedPlan[] = [
   {
@@ -237,30 +235,6 @@ export const MANAGED_PLANS: ManagedPlan[] = [
 
 export const getPlanByName = (name: string): Plan =>
   plans.find((p) => p.name.toLowerCase() === name.toLowerCase()) ?? plans[0]
-
-export const getPlanFeatures = (name: string): string[] => getPlanByName(name).features
-
-export const getCarouselLimit = (plan: string): number => getPlanByName(plan).carouselsPerMonth ?? 0
-
-export const getPostLimit = (plan: string): number => getPlanByName(plan).postsPerMonth ?? 0
-
-export const canUseVoice = (plan: string): boolean => getPlanByName(plan).voiceProfiles > 0
-
-export const isComingSoon = (plan: string): boolean => getPlanByName(plan).comingSoon === true
-
-export function isFeatureAllowed(plan: string, feature: string): boolean {
-  const current = getPlanByName(plan)
-  if (feature === "carousel" || feature === "carousel_standard") return (current.carouselsPerMonth ?? 0) > 0
-  if (feature === "voiceProfile" || feature === "basic_voice") return true
-  if (feature === "voice" || feature === "voiceTraining") return current.voiceProfiles > 0
-  if (feature === "research" || feature === "competitorResearch") return current.researchPerMonth > 0
-  if (feature === "teamSeats") return current.name === "Agency"
-  if (feature === "approvalWorkflow") return current.name === "Pro" || current.name === "Agency"
-  if (feature === "basic_analytics") return current.name !== "Free"
-  return current.name !== "Free"
-}
-
-export const hasFeature = isFeatureAllowed
 
 export interface PricingPlan {
   plan: string
@@ -477,14 +451,6 @@ export const COMPARISON_ROWS = [
     pro: "Included",
     agency: "Included",
   },
-  ...(SILENT_GROWTH_LIVE ? [{
-    group: "Intelligence",
-    label: "Silent Growth tools",
-    free: "Included",
-    solo: "Included",
-    pro: "Included",
-    agency: "Included",
-  }] : []),
   {
     group: "Career",
     label: "LinkedIn positioning audits",

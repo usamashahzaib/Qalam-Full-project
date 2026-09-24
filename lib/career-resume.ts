@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { RESUME_TEMPLATES } from "@/lib/resume-templates"
 
-export const resumeEntrySchema = z.object({
+const resumeEntrySchema = z.object({
   title: z.string().trim().max(160).default(""),
   organization: z.string().trim().max(160).default(""),
   location: z.string().trim().max(120).default(""),

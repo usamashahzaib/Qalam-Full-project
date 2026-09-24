@@ -19,7 +19,7 @@ export interface Defect {
   repair: string;
 }
 
-export const LONG_DASH_RE = /[\u2013\u2014]/;
+const LONG_DASH_RE = /[\u2013\u2014]/;
 
 // Structural leftovers from the model narrating its own output. These are
 // artefacts, not style choices, so they are safe to check mechanically.

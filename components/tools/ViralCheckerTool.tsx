@@ -65,7 +65,7 @@ export function ViralCheckerTool() {
           <FadeUp>
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
               <label className="mb-2 block text-sm font-semibold text-zinc-800">Paste your LinkedIn post</label>
-              <textarea value={post} onChange={(e) => setPost(e.target.value)} rows={8} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/30" />
+              <textarea aria-label="LinkedIn post" value={post} onChange={(e) => setPost(e.target.value)} rows={8} className="w-full resize-none rounded-xl border border-zinc-200 px-4 py-3 text-sm outline-none focus:border-teal/50 focus:ring-2 focus:ring-teal/30" />
               <div className="mt-3 flex items-center justify-between">
                 <p className="text-xs text-zinc-400">{post.trim().split(/\s+/).filter(Boolean).length} words</p>
                 <motion.button whileTap={{ scale: 0.97 }} onClick={analyze} disabled={!post.trim() || loading} className="rounded-xl bg-teal px-5 py-2.5 text-sm font-semibold text-white disabled:bg-zinc-200 disabled:text-zinc-400">

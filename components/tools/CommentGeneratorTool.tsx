@@ -66,6 +66,7 @@ function CommentGeneratorInner() {
       })
 
       if (res.status === 401) {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- sign-in lives on the app host (absolute APP_URL), so this must leave the marketing origin
         window.location.href = `${APP_URL}/login?callbackUrl=${encodeURIComponent("/free-tools/comment-generator")}`
         return
       }

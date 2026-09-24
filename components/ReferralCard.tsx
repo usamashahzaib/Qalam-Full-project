@@ -306,7 +306,7 @@ export function ReferralCard() {
           </p>
 
           <form onSubmit={onRequestPayout} className="mt-3 grid gap-3 sm:grid-cols-3">
-            <input
+            <input aria-label="Payout amount in USD"
               type="number"
               min={MIN_PAYOUT_USD}
               max={balance.availableBalance}
@@ -315,7 +315,7 @@ export function ReferralCard() {
               placeholder={`Amount (max $${balance.availableBalance.toLocaleString("en-US")})`}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
             />
-            <select
+            <select aria-label="Payout method"
               value={payoutMethod}
               onChange={(e) => setPayoutMethod(e.target.value)}
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:border-teal focus:outline-none"
@@ -324,7 +324,7 @@ export function ReferralCard() {
                 <option key={m.value} value={m.value}>{m.label}</option>
               ))}
             </select>
-            <input
+            <input aria-label="Account number or IBAN"
               value={payoutAccount}
               onChange={(e) => setPayoutAccount(e.target.value)}
               placeholder="Account number / IBAN"

@@ -39,7 +39,7 @@ export interface RoleProfile {
 // ---------------------------------------------------------------------------
 // ROLE LIBRARY
 // ---------------------------------------------------------------------------
-export const ROLE_PROFILES: Record<string, RoleProfile> = {
+const ROLE_PROFILES: Record<string, RoleProfile> = {
   developer: {
     label: "Software Developer",
     voice:

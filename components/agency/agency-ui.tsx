@@ -5,7 +5,7 @@ import type { LinkedInStatus } from "@/lib/agency/health"
 
 export type ClientCadence = { target: number; publishedThisWeek: number; scheduledThisWeek: number; onTrack: boolean; streakWeeks: number }
 
-export const AGENCY_ERRORS: Record<string, string> = {
+const AGENCY_ERRORS: Record<string, string> = {
   forbidden: "Your role in this workspace cannot do that.",
   unauthorized_workspace: "You are not a member of this workspace.",
   upgrade_required: "This needs the Agency plan on the workspace owner's account.",
@@ -94,7 +94,7 @@ export function CadenceMeter({ cadence, color }: { cadence: ClientCadence; color
   )
 }
 
-export function CopyButton({ value, label = "Copy link", className = "" }: { value: string; label?: string; className?: string }) {
+function CopyButton({ value, label = "Copy link", className = "" }: { value: string; label?: string; className?: string }) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -121,20 +121,5 @@ export function OneTimeLink({ url, note }: { url: string; note: string }) {
         <CopyButton value={url} />
       </div>
     </div>
-  )
-}
-
-export function SectionCard({ title, description, children, action }: { title: string; description?: string; children: React.ReactNode; action?: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold text-zinc-900">{title}</h2>
-          {description ? <p className="mt-0.5 text-xs leading-5 text-zinc-500">{description}</p> : null}
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
   )
 }

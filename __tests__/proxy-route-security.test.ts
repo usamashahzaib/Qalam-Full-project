@@ -57,3 +57,23 @@ describe("proxy route security tables", () => {
     expect(await buildCsp({ isDev: false, upgradeInsecureRequests: false })).not.toContain("upgrade-insecure-requests")
   })
 })
+
+describe("session cookie detection", () => {
+  it("skips JWT decryption when no session cookie is present", async () => {
+    const { presentSessionCookieNames } = await import("@/proxy")
+    expect(presentSessionCookieNames([])).toEqual([])
+    expect(presentSessionCookieNames(["_ga", "theme"])).toEqual([])
+  })
+
+  it("finds plain, secure and chunked session cookies", async () => {
+    const { presentSessionCookieNames } = await import("@/proxy")
+    expect(presentSessionCookieNames(["authjs.session-token"])).toEqual(["authjs.session-token"])
+    expect(presentSessionCookieNames(["__Secure-authjs.session-token.0", "__Secure-authjs.session-token.1"])).toEqual(["__Secure-authjs.session-token"])
+    expect(presentSessionCookieNames(["authjs.session-token", "__Secure-authjs.session-token"])).toEqual(["__Secure-authjs.session-token", "authjs.session-token"])
+  })
+
+  it("does not treat look-alike cookies as a session", async () => {
+    const { presentSessionCookieNames } = await import("@/proxy")
+    expect(presentSessionCookieNames(["authjs.session-tokenx", "authjs.csrf-token"])).toEqual([])
+  })
+})

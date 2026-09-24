@@ -5,10 +5,10 @@ import JSZip from "jszip"
 import { redactSensitiveResumeText } from "@/lib/professional-context"
 import { extractResumeContact, type ResumeContact } from "@/lib/resume-contact"
 
-export const MAX_RESUME_DOCX_BYTES = 5 * 1024 * 1024
-export const MAX_RESUME_DOCX_ENTRIES = 256
-export const MAX_RESUME_DOCX_EXPANDED_BYTES = 20 * 1024 * 1024
-export const MAX_RESUME_DOCX_COMPRESSION_RATIO = 100
+const MAX_RESUME_DOCX_BYTES = 5 * 1024 * 1024
+const MAX_RESUME_DOCX_ENTRIES = 256
+const MAX_RESUME_DOCX_EXPANDED_BYTES = 20 * 1024 * 1024
+const MAX_RESUME_DOCX_COMPRESSION_RATIO = 100
 
 const DOCX_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04])
 

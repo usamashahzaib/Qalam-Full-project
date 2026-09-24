@@ -65,44 +65,13 @@ export const requireSupabaseEnv = () => {
   }
 }
 
-export function requireAiEnv(): void {
-  // Only the providers actually wired into the router (ai-router-v2.ts: groq | gemini
-  // | mistral) count toward this check. CEREBRAS_API_KEY / OPENROUTER_API_KEY can be
-  // present in the environment but have no client in the routing path, so a deploy
-  // configured with only those keys would pass this check and then fail every callAi()
-  // with "All AI services unavailable". Do not add them back here until they are wired
-  // into providerOrder / taskModelMap / callProvider.
-  if (!env.groqApiKey && !env.geminiApiKey && !env.mistralApiKey) {
-    throw new Error("At least one wired AI provider key (GROQ_API_KEY, GEMINI_API_KEY, or MISTRAL_API_KEY) is required")
-  }
-}
-
-export function requireAuthEnv(): void {
-  if (!env.authSecret) {
-    throw new Error("AUTH_SECRET is required")
-  }
-}
-
 export function requireRedisEnv(): { url: string; token: string } | null {
   if (!env.upstashRedisUrl || !env.upstashRedisToken) return null
   return { url: env.upstashRedisUrl, token: env.upstashRedisToken }
-}
-
-export function requireCronEnv(): string {
-  if (!env.cronSecret) throw new Error("CRON_SECRET is required for cron endpoints")
-  return env.cronSecret
 }
 
 export const supportEnv = {
   email: read("APP_SUPPORT_EMAIL") || "info@byqalam.com",
 }
 
-export const groqApiKey = env.groqApiKey
-export const geminiApiKey = env.geminiApiKey
-export const mistralApiKey = env.mistralApiKey
-export const cerebrasApiKey = env.cerebrasApiKey
-export const openrouterApiKey = env.openrouterApiKey
 export const authSecret = env.authSecret
-export const upstashRedisUrl = env.upstashRedisUrl
-export const upstashRedisToken = env.upstashRedisToken
-export const appAdminEmails = env.appAdminEmails

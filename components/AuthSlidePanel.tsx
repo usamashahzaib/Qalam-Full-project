@@ -30,6 +30,7 @@ export function AuthSlidePanel() {
     // (app.byqalam.com) - starting it from the marketing origin would send
     // LinkedIn a redirect_uri it doesn't recognize.
     if (typeof window !== "undefined" && window.location.hostname !== new URL(APP_URL).hostname) {
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- APP_URL is an absolute URL on another host; a full navigation is required
       window.location.href = `${APP_URL}/login`
       return
     }

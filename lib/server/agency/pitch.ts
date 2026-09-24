@@ -8,7 +8,7 @@ import { hashPublicToken, isUuid, issuePublicToken } from "@/lib/server/agency/a
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 import { log } from "@/lib/server/logging"
 
-export const PITCH_TTL_DAYS = 30
+const PITCH_TTL_DAYS = 30
 export const PITCH_MONTHLY_LIMIT = 30
 
 export type PitchSample = { angle: string; content: string }
@@ -43,7 +43,7 @@ You are preparing sample LinkedIn posts that show a prospective client what thei
 Return JSON only: {"samples":[{"angle":"...","content":"..."},{"angle":"...","content":"..."},{"angle":"...","content":"..."}]}
 `.trim()
 
-export function parsePitchSamples(raw: string): PitchSample[] | null {
+function parsePitchSamples(raw: string): PitchSample[] | null {
   const parsed = safeParseJson<{ samples?: unknown }>(raw)
   if (!parsed || !Array.isArray(parsed.samples)) return null
   const samples = parsed.samples

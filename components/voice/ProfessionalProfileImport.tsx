@@ -96,7 +96,7 @@ export function ProfessionalProfileImport({
 
       <div className="space-y-4 p-5">
         <div className="grid gap-3 sm:grid-cols-[160px_1fr]">
-          <select
+          <select aria-label="Profile source"
             value={source}
             onChange={(event) => setSource(event.target.value as ProfessionalContext["source"])}
             className="rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-800 outline-none focus:border-teal"
@@ -104,7 +104,7 @@ export function ProfessionalProfileImport({
             <option value="resume_pdf">Resume / CV PDF</option>
             <option value="linkedin_pdf">LinkedIn profile PDF</option>
           </select>
-          <input
+          <input aria-label="Profile PDF file"
             ref={inputRef}
             type="file"
             accept="application/pdf,.pdf"

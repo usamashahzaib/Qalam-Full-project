@@ -53,7 +53,7 @@ export function sanitizeOutput(text: string): string {
 // Transient = server-side capacity issue; do NOT count toward circuit breaker.
 // Rate-limit = quota exhausted; counts toward circuit but not as hard failure.
 // Config error = key / model wrong; skip silently without any failure mark.
-export function classifyAiError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
+function classifyAiError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
   if (/not configured|api.?key|401|403|404|not.?found|no longer available|expired|api_key_invalid|invalid.?model|model.*(?:retired|deprecated|unsupported)/i.test(msg)) return "config"
   if (/503|overloaded|capacity|unavailable|service.?unavailable/i.test(msg)) return "transient"
   if (/429|rate.?limit|too many requests|quota/i.test(msg)) return "rate-limit"

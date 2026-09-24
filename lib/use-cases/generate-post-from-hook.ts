@@ -13,7 +13,7 @@ import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 import type { PostFormat } from "@/lib/prompts/role-aware-system"
 
-export const FORMAT_MAP: Record<string, PostFormat> = {
+const FORMAT_MAP: Record<string, PostFormat> = {
   Short: "short",
   Medium: "medium",
   Long: "long",

@@ -22,16 +22,11 @@ const CAPTURE_TIMEOUT_MS = 30_000
 let fontEmbedCssPromise: Promise<string> | null = null
 
 /** Resolves the page font CSS once per session. Safe to call repeatedly. */
-export function loadFontEmbedCss(element: HTMLElement): Promise<string> {
+function loadFontEmbedCss(element: HTMLElement): Promise<string> {
   if (!fontEmbedCssPromise) {
     fontEmbedCssPromise = getFontEmbedCSS(element).catch(() => "")
   }
   return fontEmbedCssPromise
-}
-
-/** Drops the cached font CSS. Only needed if the page swaps fonts at runtime. */
-export function resetFontEmbedCss(): void {
-  fontEmbedCssPromise = null
 }
 
 function withTimeout<T>(work: Promise<T>, label: string): Promise<T> {

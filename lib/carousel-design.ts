@@ -365,7 +365,7 @@ export const TONE_THEME_MAP: Record<string, CarouselThemeId> = {
 }
 
 /** Tone-compatible theme pools. Generation picks randomly from the pool so two decks with the same tone don't come out looking identical. */
-export const TONE_THEME_POOLS: Record<string, CarouselThemeId[]> = {
+const TONE_THEME_POOLS: Record<string, CarouselThemeId[]> = {
   "Authority Playbook": ["forest", "editorial", "obsidian", "navy-split"],
   "Executive Brief": ["navy-split", "editorial", "ruled", "obsidian"],
   "Contrarian Breakdown": ["nightfire", "obsidian", "ruled", "thread"],
@@ -420,30 +420,3 @@ export type CarouselSlide = {
   accentLabel?: string
   backgroundPhoto?: string
 }
-
-// Legacy compat
-export const CAROUSEL_TOKENS = {
-  canvasWidth: CANVAS.width,
-  canvasHeight: CANVAS.height,
-  fontFamily: CANVAS.fontFamily,
-  padding: CANVAS.padding,
-  bgColor: "#080F1E",
-  circleColor: "#1D4ED8",
-  accentColor: "#F59E0B",
-  textPrimary: "#FFFFFF",
-  textSecondary: "rgba(255,255,255,0.72)",
-  textMuted: "rgba(255,255,255,0.38)",
-  dividerColor: "rgba(255,255,255,0.10)",
-  chipBg: "rgba(29,78,216,0.22)",
-  chipBorder: "rgba(59,130,246,0.5)",
-  titleSize: "64px",
-  subtitleSize: "42px",
-  bodySize: "34px",
-  labelSize: "22px",
-  captionSize: "18px",
-  circleDiameter: 520,
-  circleOffsetX: 680,
-  circleOffsetY: -100,
-  brandName: "",
-  brandUrl: "",
-} as const
