@@ -195,7 +195,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
     title: "Qalam for Job Seekers",
     summary: "Turn verified experience into a clearer LinkedIn profile, an ATS-safe resume, and stronger role-specific applications.",
     description:
-      "Job seekers often maintain separate versions of the same career story across LinkedIn, resumes, and applications. Qalam keeps the evidence connected, identifies gaps, and helps each output match the role without inventing experience.",
+      "Most job seekers end up with several versions of the same career story, one on LinkedIn and another in every resume they send. Qalam keeps the evidence in one place. It shows the gaps, then fits each version to the role without inventing experience.",
     bullets: [
       "Free ATS resume analysis with actionable findings",
       "Role-specific keyword and evidence matching",
@@ -220,7 +220,7 @@ export const USE_CASE_PAGES: Record<string, UseCasePageContent> = {
     title: "Qalam for Recruiters",
     summary: "Help candidates present evidence clearly while building an informed, credible recruiting voice on LinkedIn.",
     description:
-      "Recruiters work across candidate quality, employer narrative, and public credibility. Qalam supports structured resume feedback, repeatable content workflows, and clearer communication without claiming access to private hiring systems.",
+      "A recruiter's week swings between judging candidates and selling the employer. Qalam helps with both: structured resume feedback for the first, a repeatable content workflow for the second. It does not claim access to private hiring systems.",
     bullets: [
       "Evidence-first resume review structure",
       "Reusable hiring and employer-brand narratives",

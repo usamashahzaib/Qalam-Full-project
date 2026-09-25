@@ -123,7 +123,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         heading: "Better archive, better future posts",
-        body: "Finished posts, hooks, and versions form a searchable record of the ideas you have already used. The archive helps you develop themes over time, avoid accidental repetition, and reuse a strong insight in a new format without copying the old post.",
+        body: "Every finished post, hook, and version goes into a searchable record of ideas you have already used. You can see which themes keep coming back. And before you repeat yourself by accident, you can find the old post and rework its insight in a new format instead of copying it.",
       },
     ],
     example: {
@@ -453,7 +453,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         heading: "Keep the asset in the content system",
-        body: "A carousel should stay tied to the original post, hook, and archive rather than becoming a disconnected file on someone's desktop. Kept in the system, it can be updated, reused, and measured alongside the rest of your content.",
+        body: "A carousel should stay attached to the post and hook it came from. Otherwise it becomes a PDF on someone's desktop that nobody can find in March. Kept in Qalam, it can be updated later and measured next to everything else you publish.",
       },
     ],
     example: {
@@ -849,7 +849,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         heading: "What each tool does",
-        body: "Hook Generator creates 5 opening line variants for a LinkedIn topic. Comment Generator drafts voice-aware replies and requires free sign-in. Headline Analyzer reviews a profile headline across 5 criteria. Profile Optimizer provides a structured audit with specific rewrites. Post Quality Checker reviews clarity, specificity, usefulness, and the hook. Carousel Builder converts a post or outline into branded slide assets. Post Readiness Review gives a pre-publish quality score without predicting reach.",
+        body: "Seven tools. Hook Generator gives you 5 opening lines for a LinkedIn topic. Comment Generator drafts replies in your voice, though it needs a free sign-in first. Headline Analyzer checks a profile headline against 5 criteria. Profile Optimizer is the deep one: a structured audit that comes back with specific rewrites you can paste straight in. Post Quality Checker looks at clarity, specificity, usefulness, and the hook. Carousel Builder turns a post or outline into branded slides. Post Readiness Review scores a draft before you publish, and it does not pretend to predict reach.",
       },
       {
         heading: "Built as a trust surface, not a paywall",
@@ -895,7 +895,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     sections: [
       {
         heading: "The problem with generic AI ghostwriting",
-        body: "A general prompt can produce a reasonable LinkedIn draft while missing the writer's vocabulary, structure, and personal detail. A useful ghostwriting workflow should begin with the client's own stories, examples, and perspectives, then keep final review with the publisher.",
+        body: "A general prompt can get you a decent LinkedIn draft. It just won't use the words the writer actually uses, or know the small personal details that make a post theirs. Good ghostwriting starts from the client's own stories and opinions. And the person whose name is on the post gets the final read.",
       },
       {
         heading: "How Qalam's voice memory changes the output",
@@ -1053,7 +1053,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "LinkedIn Profile Optimization with Free Tools",
     h1: "Optimize a LinkedIn profile around role clarity, proof, and search relevance",
     description: "Use Qalam's free Profile Optimizer and Headline Analyzer to improve LinkedIn role clarity, evidence, keywords, About copy, experience sections, and content alignment.",
-    summary: "LinkedIn profile optimization is the work of making a real professional story easier to understand, find, and trust. It is not a promise of views, leads, or recruiter replies.",
+    summary: "LinkedIn profile optimization means making a real professional story easier to follow and easier to trust. Nobody can honestly promise you views or recruiter replies from it.",
     intent: "LinkedIn profile optimization, optimize LinkedIn profile, LinkedIn profile review, LinkedIn profile analyzer",
     primaryKeyword: "LinkedIn profile optimization",
     keywords: ["LinkedIn profile optimization", "optimize LinkedIn profile", "LinkedIn profile review", "LinkedIn profile analyzer", "LinkedIn profile improvement"],

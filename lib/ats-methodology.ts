@@ -5,7 +5,7 @@ export const ATS_METHODOLOGY_PATH = "/methodology/ats-resume-readiness"
 export const ATS_FACTORS = [
   { key: "ats_parsing", name: "ATS parsing", weight: 15, definition: "Whether headings, chronology, contact details, and text structure can be interpreted reliably." },
   { key: "role_alignment", name: "Role alignment", weight: 20, definition: "How directly verified experience matches the target role, seniority, domain, responsibilities, and tools." },
-  { key: "recruiter_read", name: "Six-second recruiter read", weight: 15, definition: "How quickly a recruiter can identify professional identity, recent scope, value proposition, and strongest proof." },
+  { key: "recruiter_read", name: "Six-second recruiter read", weight: 15, definition: "How quickly a recruiter can tell who you are professionally, your recent scope, what you offer, and your strongest proof." },
   { key: "achievement_evidence", name: "Achievement evidence", weight: 15, definition: "Whether claims show action, context, scale, outcome, and credible evidence instead of duties alone." },
   { key: "career_progression", name: "Career progression", weight: 10, definition: "Whether chronology shows expanding scope, promotions, deliberate transitions, and understandable tenure patterns." },
   { key: "skills_credibility", name: "Skills credibility", weight: 10, definition: "Whether listed skills are supported by recent work, projects, qualifications, or other supplied evidence." },

@@ -26,7 +26,8 @@ const w = (source: string) => new RegExp(`\\b(?:${source})\\b`, "gi");
 
 // Model narrating itself, or an unfilled template. Always a defect.
 const BOILERPLATE: PhraseRule[] = [
-  { re: w("as an ai|as a language model|i hope this helps|hope this helps|i'?m happy to help|great question|feel free to reach out|i can'?t browse") },
+  { re: /\bas an ai(?:[,.]| language model| assistant)/gi, label: "As an AI" },
+  { re: w("as a language model|i hope this helps|hope this helps|i'?m happy to help|great question|feel free to reach out|i can'?t browse") },
   { re: /^\s*(?:certainly|absolutely|of course|sure)[!,.]/gim, label: "opening 'Certainly!'" },
 ];
 
@@ -64,10 +65,17 @@ const CLUSTER_WORDS = w(
   "robust|leverag(?:e|es|ed|ing)|harness(?:es|ed|ing)?|streamlin(?:e|es|ed|ing)|optimi[sz](?:e|es|ed|ing)|scalable|synergy|synergies|stakeholders?|actionable|data[- ]driven|best practices|elevat(?:e|es|ed|ing)|empower(?:s|ed|ing)?|foster(?:s|ed|ing)?|navigat(?:e|es|ed|ing)|landscape|journey|transformative|transformation|holistic|thrive|thriving|flourish(?:ing)?|embrac(?:e|es|ed|ing)|comprehensive|nuanced|invaluable|indispensable|imperative|utili[sz](?:e|es|ed|ing|ation)|facilitat(?:e|es|ed|ing)|notably|additionally|consequently|crucial|vital|dynamic|innovative|impactful|insightful|showcas(?:e|es|ed|ing)|resonat(?:e|es|ed|ing)|vibrant|bustling|boasts?|numerous|countless|diverse|various|that said|on the other hand|in many ways|to some extent|more often than not|by and large|arguably|generally speaking|ultimately"
 );
 
-const PARTICIPIAL_TAIL_RE = /,\s+(?:ensuring|allowing|enabling|empowering|paving|positioning|fostering|highlighting|underscoring|showcasing|cementing|solidifying|reflecting|marking|driving|creating an? |making it (?:easier|possible|clear|simple))\b[^.!?\n]{0,60}/gi;
+// The verb must be followed by an object-like word, so list nouns such as
+// ", positioning decisions, and" are not mistaken for a trailing clause.
+const TAIL_OBJECT = "(?:the|a|an|that|it|its|them|you|your|our|their|his|her|every|each|users?|teams?|people|brands?|companies|us|this|these|more|greater|better|for|to)";
+const PARTICIPIAL_TAIL_RE = new RegExp(
+  `,\\s+(?:(?:ensuring|allowing|enabling|empowering|paving|fostering|highlighting|underscoring|showcasing|cementing|solidifying|reflecting|marking|driving|creating) ${TAIL_OBJECT}\\b|positioning \\w+(?: \\w+)? as\\b|making it (?:easier|possible|clear|simple)\\b)[^.!?\\n]{0,60}`,
+  "gi"
+);
 const WHICH_TAIL_RE = /,\s+which (?:means that|is why|allows|enables|makes it|helps)\b[^.!?\n]{0,40}/gi;
 const THIS_NOUN_OPENER_RE = /(?:^|[.!?]\s+)(?:this|these) (?:approach|method|strategy|shift|framework|mindset|process|highlights|underscores|demonstrates|ensures|allows|means|is why|challenges|insights?)\b/gim;
-const TRIAD_RE = /\b[A-Za-z'-]+(?: [A-Za-z'-]+){0,2}, [A-Za-z'-]+(?: [A-Za-z'-]+){0,2},? (?:and|or) [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}(?=[.,;:!?\s]|$)/g;
+// Exactly three items. The lookbehind rejects the tail end of a longer list.
+const TRIAD_RE = /(?<!,\s(?:[A-Za-z'-]+\s){0,2})\b[A-Za-z'-]+(?: [A-Za-z'-]+){0,2}, [A-Za-z'-]+(?: [A-Za-z'-]+){0,2},? (?:and|or) [A-Za-z'-]+(?: [A-Za-z'-]+){0,2}(?=[.,;:!?\s]|$)/g;
 const CLOSER_RE = /^(?:ultimately|in the end|in short|in summary|overall|to conclude|so,? remember|remember,)\b/i;
 const PSEUDO_BOLD_RE = /[\u{1D400}-\u{1D7FF}]/u;
 
@@ -104,7 +112,9 @@ export function isFlatRhythm(text: string): { flat: boolean; lengths: number[] }
 export function detectAiPatterns(text: string, options: AiPatternOptions = {}): Defect[] {
   // Quoted spans are someone else's words (feedback quoting a client's draft,
   // a cited line). Editing them would falsify the quote, so they are not scanned.
-  const trimmed = text.trim().replace(/"[^"\n]{1,200}"|“[^”\n]{1,200}”/g, '""');
+  const trimmed = text
+    .trim()
+    .replace(/"[^"\n]{1,200}"|“[^”\n]{1,200}”|&ldquo;[^\n]{1,200}?&rdquo;|&quot;[^\n]{1,200}?&quot;/g, '""');
   if (!trimmed.replace(/""/g, "").trim()) return [];
   const defects: Defect[] = [];
 
@@ -192,7 +202,7 @@ export function detectAiPatterns(text: string, options: AiPatternOptions = {}): 
     });
   }
 
-  const semicolons = (trimmed.match(/;/g) || []).length;
+  const semicolons = (trimmed.replace(/&#?\w+;/g, "").match(/;/g) || []).length;
   const ellipses = (trimmed.match(/\.\.\.|…/g) || []).length;
   if (semicolons >= 2 || ellipses >= 2) {
     defects.push({

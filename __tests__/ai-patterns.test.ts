@@ -48,6 +48,20 @@ describe("detectAiPatterns", () => {
     expect(codes("Kal client ne poocha ke post kab jayegi. Maine kaha jab tak draft theek nahi hota, tab tak nahi.")).toEqual([])
   })
 
+  it("counts only real three-item lists, not the end of a longer list", () => {
+    expect(codes("Each workspace has its own voice profile, drafts, hooks, carousels, archive, and analytics. Roles are owner, admin, editor, client reviewer, or viewer.")).toEqual([])
+  })
+
+  it("does not read list nouns or product names as trailing clauses or boilerplate", () => {
+    expect(codes("Client facts, resume versions, positioning decisions, and action plans get scattered.")).toEqual([])
+    expect(codes("Agencies use Qalam as an AI ghostwriting tool for client work.")).toEqual([])
+    expect(codes("The rollout slipped, allowing the team to fix billing first.")).toContain("ai_participial_tail")
+  })
+
+  it("does not count HTML entities as semicolons", () => {
+    expect(codes("A tool that writes in anybody&rsquo;s voice is writing in nobody&rsquo;s.")).toEqual([])
+  })
+
   it("catches boilerplate and unfilled placeholders", () => {
     expect(codes("Certainly! Here is a note for [Client Name]. I hope this helps.")).toEqual(expect.arrayContaining(["ai_boilerplate", "ai_placeholder"]))
     expect(detectAiPatterns("Cut costs by [% cost saved].", { allowPlaceholders: true })).toEqual([])

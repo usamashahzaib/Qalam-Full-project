@@ -7,7 +7,7 @@ const page: CareerAnswerPageData = {
   eyebrow: "LinkedIn positioning",
   title: "LinkedIn optimization that ends with specific changes",
   summary: "Audit how clearly your profile explains your value, how well your evidence supports it, and what to improve in each section.",
-  directAnswer: "LinkedIn optimization makes a profile easier to understand, easier to find, and more credible to the people you want to reach. Qalam reviews the information you provide, explains the gaps, and turns findings into section-specific actions.",
+  directAnswer: "LinkedIn optimization makes your profile easier to find and easier to believe for the people you want to reach. Qalam reads what you give it and turns each gap it finds into a fix for a specific section.",
   status: "Available in Career Visibility",
   statusDetail: "Profile audits use information you provide in your Qalam workspace. Qalam does not claim access to private LinkedIn analytics or recruiter activity.",
   problemTitle: "A polished profile can still be unclear",

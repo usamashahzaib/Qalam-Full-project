@@ -210,8 +210,8 @@ export default function AiLinkedInWriterPage() {
                   uses the writing examples you explicitly save as a reusable voice profile.
                 </p>
                 <p>
-                  The result? Posts that sound like <em>you</em> - with your vocabulary, your rhythm, your perspective -
-                  created in minutes instead of hours.
+                  So the drafts come out sounding like <em>you</em>, down to the words you favour and how long you let a
+                  sentence run. Minutes, not hours.
                 </p>
               </div>
             </FadeUp>
@@ -377,7 +377,7 @@ export default function AiLinkedInWriterPage() {
           <div className="mx-auto max-w-[860px]">
             <FadeUp className="mb-14 text-center">
               <h2 className="mb-4 text-4xl font-bold text-zinc-900">Frequently asked questions</h2>
-              <p className="text-lg text-zinc-600">Everything you need to know about AI LinkedIn writing with Qalam.</p>
+              <p className="text-lg text-zinc-600">The questions people ask before they trust Qalam with their name.</p>
             </FadeUp>
             <div className="space-y-4">
               {FAQS.map((faq, i) => (

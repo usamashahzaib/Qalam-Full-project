@@ -498,7 +498,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
         paragraphs: [
           "Authority on LinkedIn is built through repetition of a specific perspective, not through one viral post. An account that returns consistently to the same territory with fresh examples, contrasting takes, and updated thinking builds something a one-off viral moment cannot: a reader who trusts their investment in following you.",
           "This is why content archives matter. If you are posting without keeping a searchable record of what you have said, you are building nothing that compounds. The archive is what makes past posts contribute to the authority signal of future posts.",
-          "Qalam is built specifically for this problem: saved posts, hooks, and voice patterns stay in one workspace alongside the drafts, schedule, and archive that use them, so the context a new draft needs is already where the draft is written.",
+          "Qalam was built for this exact problem. Your saved posts, hooks, and voice patterns live in the same workspace as your drafts and schedule. When you start a new draft, the context it needs is already there.",
         ],
       },
     ],
@@ -783,7 +783,7 @@ export const BLOG_POSTS: MarketingArticle[] = [
     faqs: [
       {
         q: "Is Qalam better than ChatGPT for LinkedIn posts?",
-        a: "Qalam is more suitable for consistent LinkedIn publishing because it retains voice memory, draft history, and hook archives across sessions. For occasional one-off posts, ChatGPT is simpler and does not require a separate tool. The choice depends on your publishing frequency and consistency goals.",
+        a: "If you publish on LinkedIn every week, Qalam fits better, because it remembers your voice and your past drafts and hooks between sessions. If you post twice a year, just use ChatGPT. It's simpler and you don't need another tool.",
       },
       {
         q: "Can I use ChatGPT to write LinkedIn posts?",
@@ -857,7 +857,7 @@ export const LANDING_FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How does the Voice Profile work?",
-    a: "You save LinkedIn posts you have written and are happy to be judged by, plus your role, industry, and audience. Qalam analyses those samples into tone, sentence length, vocabulary, and structural characteristics, then retrieves the most relevant examples each time it drafts. It does not learn silently from your edits or from post performance. To change the voice, you update the profile, which is why it does not drift without you knowing.",
+    a: "You save LinkedIn posts you have written and are happy to be judged by, plus your role, industry, and audience. Qalam analyses those samples into tone, sentence length, vocabulary, and structural characteristics, then retrieves the most relevant examples each time it drafts. It does not learn silently from your edits or from post performance. To change the voice, you update the profile yourself. Nothing drifts behind your back.",
   },
   {
     q: "Does Qalam post to LinkedIn automatically?",
