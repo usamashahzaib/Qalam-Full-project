@@ -60,5 +60,10 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.7"
+  },
+  "allowScripts": {
+    "argon2@0.44.0": true,
+    "@sentry/cli@2.58.6": true,
+    "unrs-resolver@1.11.1": true
   }
 }
