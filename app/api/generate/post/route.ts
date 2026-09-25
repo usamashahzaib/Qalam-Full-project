@@ -14,6 +14,7 @@ import type { PlanTier } from "@/types/domain"
 import type { GeneratePostFromHookOutput } from "@/lib/use-cases/generate-post-from-hook"
 import { authorizeRole } from "@/lib/server/roles"
 import { recordProductEventSafely } from "@/lib/server/product-events"
+import { signDraftToken } from "@/lib/server/draft-token"
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Library permissions can change between requests. Do not reuse a draft
     // generated against a reference that has since been removed or expired.
     const cacheKey = !hasOriginalDraft && process.env.WRITING_REFERENCE_LIBRARY_ENABLED !== "true"
-      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id, workspaceId: planCheck.workspaceId })
+      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id, workspaceId: planCheck.workspaceId, plan: planCheck.plan })
       : null
     if (cacheKey) {
       const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
           idempotencyKey,
           contentType: "linkedin_post",
         })
-        return NextResponse.json(cached)
+        return NextResponse.json({ ...cached, draftToken: signDraftToken(planCheck.billingUserId, planCheck.workspaceId) })
       }
     }
 
@@ -97,6 +98,6 @@ export async function POST(request: NextRequest) {
       contentType: "linkedin_post",
     })
     if (cacheKey) await setCachedResult(cacheKey, result.data, 1800)
-    return NextResponse.json(result.data)
+    return NextResponse.json({ ...result.data, draftToken: signDraftToken(planCheck.billingUserId, planCheck.workspaceId) })
   })(request)
 }

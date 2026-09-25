@@ -4,6 +4,7 @@ import {
   freeTierAttemptCap,
   gateScores,
   isReadyContentScore,
+  MIN_READY_CONTENT_SCORE,
 } from "@/lib/content-score-gate"
 
 const highScores = {
@@ -60,22 +61,22 @@ describe("freeTierAttemptCap", () => {
   })
 
   it("still prevents oversized posts from meeting the ready threshold", () => {
-    expect(gateScores("word ".repeat(650), highScores, freeTierAttemptCap(3)).overall).toBe(81)
+    expect(gateScores("word ".repeat(650), highScores, freeTierAttemptCap(3)).overall).toBe(MIN_READY_CONTENT_SCORE - 1)
   })
 
   it("does not promote an unready evaluation to the publishing threshold", () => {
-    const lowScores = { ...highScores, overall: 79 }
-    expect(gateScores(completeContent, lowScores).overall).toBe(79)
+    const lowScores = { ...highScores, overall: 60 }
+    expect(gateScores(completeContent, lowScores).overall).toBe(60)
     expect(isReadyContentScore(gateScores(completeContent, lowScores).overall)).toBe(false)
   })
 })
 
 describe("isReadyContentScore", () => {
-  it.each([82, 90, 100])("accepts a publish-ready score: %s", (score) => {
+  it.each([65, 90, 100])("accepts a publish-ready score: %s", (score) => {
     expect(isReadyContentScore(score)).toBe(true)
   })
 
-  it.each([undefined, null, 81, 101, Number.NaN, "90"])("rejects an invalid or unready score: %s", (score) => {
+  it.each([undefined, null, 64, 101, Number.NaN, "90"])("rejects an invalid or unready score: %s", (score) => {
     expect(isReadyContentScore(score)).toBe(false)
   })
 })

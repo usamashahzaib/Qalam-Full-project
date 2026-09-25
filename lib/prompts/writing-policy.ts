@@ -143,6 +143,9 @@ export function voiceGuidance(
     voice.patterns?.length
       ? `Recurring habits: ${voice.patterns.slice(0, 8).map((v) => clean(v, 80)).join(", ")}`
       : "",
+    voice.vocabularyLevel ? `Vocabulary level: ${clean(voice.vocabularyLevel, 40)}` : "",
+    voice.closingStyle ? `How they usually close a post: ${clean(voice.closingStyle, 40)}` : "",
+    ...measuredVoiceLines(voice.measured),
   ].filter(Boolean);
 
   const samples = voice.examples?.length
@@ -167,6 +170,20 @@ export function voiceGuidance(
   ].filter(Boolean).join("\n");
 }
 
+/** Counted from their example posts, so these are stated as facts, not impressions. */
+function measuredVoiceLines(measured?: VoiceProfile["measured"]): string[] {
+  if (!measured) return [];
+  return [
+    `Measured from ${measured.postCount} of their posts: about ${measured.wordsPerPost} words per post.`,
+    measured.signOff ? `They end their posts with the line "${clean(measured.signOff, 80)}". End this one with it too, on its own line.` : "",
+    measured.spelling ? `They use ${measured.spelling} spelling. Use it throughout.` : "",
+    measured.hashtags === "never" ? "They never use hashtags. Use none." : measured.hashtags === "usually" ? "They usually end with a few hashtags." : "",
+    measured.emoji === "never" ? "They never use emoji." : "",
+    measured.closesWithQuestion === "never" ? "They never close on a question." : "",
+    measured.blankLineParagraphs ? "They put a blank line between every paragraph." : "",
+  ].filter(Boolean);
+}
+
 /**
  * The Voice Passport is written by the author's team on purpose, often after
  * the author corrected a draft. These rules outrank inferred style.
@@ -185,11 +202,36 @@ export function voicePassportGuidance(passport?: VoiceProfile["passport"]): stri
   return ["THE AUTHOR'S VOICE PASSPORT (rules set by their team; follow them strictly, they override the style notes below):", ...sections].join("\n");
 }
 
+/** The basic profile every plan saves: what they do and what they want from LinkedIn. */
+function identityBlock(identity?: VoiceProfile["identity"]): string {
+  if (!identity) return "";
+  const lines = [
+    identity.title ? `Title: ${clean(identity.title, 120)}` : "",
+    identity.industry ? `Industry: ${clean(identity.industry, 120)}` : "",
+    identity.goals ? `What they want their LinkedIn writing to do: ${clean(identity.goals, 400)}` : "",
+  ].filter(Boolean);
+  // Background, not subject matter: a startup-hiring post ended "#Logistics #Ops" because the
+  // profile said Logistics.
+  return lines.length
+    ? ["ABOUT THE AUTHOR (from their profile; background for how they see things, not the subject of this piece, and not a source of hashtags):", ...lines].join("\n")
+    : "";
+}
+
+/**
+ * Everything the author has told us about themselves, as plain text. The grounding check
+ * treats a figure or claim found here as supplied rather than invented.
+ */
+export function authorFacts(voice?: VoiceProfile | null): string {
+  return [identityBlock(voice?.identity), professionalContextPrompt(voice?.professionalContext), voice?.passport?.summary ?? ""]
+    .filter(Boolean)
+    .join("\n");
+}
+
 /** Voice guidance plus resume-derived professional context, in a stable order. */
 export function authorContext(voice?: VoiceProfile | null, fallbackDescription?: string): string {
   const professional = professionalContextPrompt(voice?.professionalContext);
   const voiceBlock = voiceGuidance(voice);
-  const parts = [professional, voiceBlock].filter(Boolean);
+  const parts = [identityBlock(voice?.identity), professional, voiceBlock].filter(Boolean);
   if (parts.length) return parts.join("\n\n");
   return fallbackDescription ? `WHO THIS PERSON IS:\n${fallbackDescription}` : "";
 }

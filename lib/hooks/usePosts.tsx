@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { cleanErrorMessage } from "@/lib/content-guard"
 import type { WorkspacePost } from "@/types/domain"
 import { withLocalCalendarDate } from "@/lib/calendar-date"
+import { MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
 export type PostStatus = "draft" | "pending_approval" | "approved" | "rejected" | "scheduled" | "published" | "failed"
 
@@ -41,7 +42,7 @@ const friendlyPostError = (message?: string) => {
   if (message === "scheduled_time_must_be_future") return "Choose a future time. Past dates and current minutes are locked."
   if (message === "scheduled_time_required") return "Select date and time"
   if (message === "invalid_scheduled_time") return "Select a valid date and time"
-  if (message === "content_score_below_minimum") return "Improve this post to a content score of 82+ first."
+  if (message === "content_score_below_minimum") return `Improve this post to a content score of ${MIN_READY_CONTENT_SCORE}+ first.`
   if (message === "upgrade_required" || message?.includes("upgrade")) return "Scheduling requires Solo or above. Upgrade your plan."
   if (message === "auth_required" || message === "plan_expired") return "Your session has expired. Please reload and sign in again."
   return cleanErrorMessage(message)

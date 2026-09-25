@@ -16,7 +16,8 @@ import {
   buildRewritePrompt,
   buildHookVariantsPrompt,
 } from "@/lib/prompts/role-aware-system"
-import { checkText } from "@/lib/prompts/output-checks"
+import { checkGrounding, checkText, defectWeight } from "@/lib/prompts/output-checks"
+import { authorFacts } from "@/lib/prompts/writing-policy"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 import { MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
@@ -102,7 +103,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
     if (isAgency) await decrementWorkspaceUsage(workspaceId, "drafts")
   }
 
-  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, `${role} ${topic} ${goal ?? ""}`).catch(() => undefined)
+  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, `${role} ${topic} ${goal ?? ""}`, plan).catch(() => undefined)
 
   // Pass 1: Generate raw post
   const { system: baseSystem, user: genUser } = buildGeneratePrompt(role, topic, format, goal, voiceProfile || undefined)
@@ -129,7 +130,10 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   // exactly what to fix.
   let content = sanitizeGeneratedText(rawPost.trim())
   const checkOptions = { minChars: 80, maxChars: LINKEDIN_MAX_POST_CHARS }
-  const defects = checkText(content, checkOptions)
+  const brief = [topic, goal].filter(Boolean).join("\n")
+  const sources = [brief, authorFacts(voiceProfile)].filter(Boolean).join("\n")
+  const findDefects = (text: string) => [...checkText(text, checkOptions), ...checkGrounding(text, sources, { brief })]
+  const defects = findDefects(content)
   if (defects.length) {
     log.info("generate-post.revision_needed", { reqId, userId, codes: defects.map((d) => d.code) })
     try {
@@ -138,8 +142,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
         (await callAi("post-improvement", revSystem, revUser, { temperature: 0.4, maxTokens: 900, userId, plan, cache: false })).trim()
       )
       // Only keep the revision if it actually improved things.
-      const revisedDefects = checkText(revised, checkOptions)
-      if (revised && revisedDefects.length < defects.length) content = revised
+      if (revised && defectWeight(findDefects(revised)) < defectWeight(defects)) content = revised
     } catch {
       // Keep the sanitized original. A failed repair must not lose the draft.
     }
@@ -150,7 +153,7 @@ export async function generatePost(input: GeneratePostInput): Promise<Result<Gen
   const scoreContent = async () => {
     try {
       const { system: scoreSystem, user: scoreUser } = buildScorePrompt(content, role)
-      const scoreRaw = await callAi("post-scoring", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false })
+      const scoreRaw = await callAi("post-scoring", scoreSystem, scoreUser, { json: true, temperature: 0.2, maxTokens: 400, userId, plan, cache: false, humanWriting: false })
       return parseJson<Record<string, unknown>>(scoreRaw)
     } catch {
       return null

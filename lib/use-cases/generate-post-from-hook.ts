@@ -6,7 +6,9 @@ import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/w
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { retrieveWritingReferences } from "@/lib/server/writing-library"
 import { buildPostFromHookPrompt, buildPostWithReplacedHookPrompt, buildRevisePrompt } from "@/lib/prompts/role-aware-system"
-import { checkText } from "@/lib/prompts/output-checks"
+import { checkGrounding, checkSampleEcho, checkText, defectWeight, removeInventedSentences } from "@/lib/prompts/output-checks"
+import { applyVoiceMechanics, wordTargetFor } from "@/lib/voice-measure"
+import { authorFacts } from "@/lib/prompts/writing-policy"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { toPostArtifact } from "@/lib/use-cases/post-artifact"
 import { ok, err } from "@/lib/errors"
@@ -70,8 +72,7 @@ export async function generatePostFromHook(
   const role = rawRole
   const format: PostFormat = FORMAT_MAP[rawFormat] || "medium"
 
-  const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, `${topic} ${hook} ${originalContent ?? ""}`).catch(() => undefined) : undefined
+  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, `${topic} ${hook} ${originalContent ?? ""}`, plan).catch(() => undefined)
 
   const hasDraft = Boolean(originalContent && originalContent.length >= 20)
   const { system: baseSystem, user: genUser } = hasDraft
@@ -97,21 +98,46 @@ export async function generatePostFromHook(
   // back attached to a body that no longer sounded like them.
   let content = sanitizeGeneratedText(rawPost.trim())
   const checkOptions = { minChars: 80, maxChars: 3000 }
-  const defects = checkText(content, checkOptions)
-  if (defects.length) {
+  // Everything the author actually supplied. A figure or a first-person event that is not
+  // in here was made up by the model, and the revise pass is told to take it out.
+  const brief = [topic, goal].filter(Boolean).join("\n")
+  const sources = [brief, hook, originalContent, authorFacts(voiceProfile)]
+    .filter(Boolean)
+    .join("\n")
+  // The hook is the user's pick and has to stay word for word, so only the body is checked.
+  const findDefects = (text: string) => [
+    ...checkText(text, checkOptions),
+    ...checkGrounding(text.replace(hook, ""), sources, { brief }),
+    ...checkSampleEcho(text.replace(hook, ""), voiceProfile?.examples, [voiceProfile?.measured?.signOff ?? "", ...(voiceProfile?.vocabulary ?? []), sources]),
+  ]
+  // A single pass often fixes three invented sentences out of four, so a second pass runs
+  // while the first is still making progress. Never more: each round costs a full call.
+  let defects = findDefects(content)
+  for (let round = 0; round < 2 && defects.length; round++) {
     try {
       const { system: revSystem, user: revUser } = buildRevisePrompt(content, role, defects, voiceProfile, { topic, goal: goal || undefined })
       const revised = sanitizeGeneratedText((await callAi("post-improvement", revSystem, revUser, {
         temperature: 0.4, maxTokens: 1000,
         userId, plan, cache: false,
       })).trim())
-      if (revised && checkText(revised, checkOptions).length < defects.length) content = revised
+      const revisedDefects = revised ? findDefects(revised) : defects
+      if (defectWeight(revisedDefects) >= defectWeight(defects)) break
+      content = revised
+      defects = revisedDefects
     } catch {
-      // Keep the sanitized original.
+      // Keep the best version so far.
+      break
     }
   }
+  if (defects.some((d) => d.code === "unsupported_experience" || d.code === "unsupported_source")) {
+    const trimmedPost = removeInventedSentences(content, defects)
+    if (!checkText(trimmedPost, checkOptions).length) content = trimmedPost
+  }
+  content = applyVoiceMechanics(content, voiceProfile?.measured)
 
-  const artifact = toPostArtifact(content) || toPostArtifact(rawPost)
+  const target = wordTargetFor(format, voiceProfile?.measured)
+  const artifactOptions = { minWords: target ? Math.round(target.min * 0.6) : undefined }
+  const artifact = toPostArtifact(content, artifactOptions) || toPostArtifact(rawPost, artifactOptions)
   if (!artifact) {
     await refundUsage()
     return err({ code: "INTERNAL_ERROR", message: "Invalid post artifact", userMessage: "Post generation failed. Please try again in a moment." })

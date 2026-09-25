@@ -27,6 +27,8 @@ export interface ScoreData {
   overall: number
   tips: Record<string, string>
   hashtags: string[]
+  /** Sentences in an AI draft that the author's brief does not support. */
+  unsupported?: string[]
 }
 
 export interface DraftVersion {

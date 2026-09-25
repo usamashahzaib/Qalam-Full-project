@@ -7,6 +7,8 @@ import type { Result } from "@/lib/errors"
 import { buildHook5StylesPrompt } from "@/lib/prompts/role-aware-system"
 import { log } from "@/lib/server/logging"
 import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
+import { checkGrounding } from "@/lib/prompts/output-checks"
+import { authorFacts } from "@/lib/prompts/writing-policy"
 
 export interface GenerateHooksInput {
   topic: string
@@ -64,5 +66,15 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
     return err({ code: "INTERNAL_ERROR", message: "ai_unavailable", userMessage: "Hook generation is temporarily unavailable. Please try again in a moment." })
   }
 
-  return ok({ hooks: hooks.slice(0, 5), remaining: usage.remaining })
+  // The AUTHORITY and STORY styles kept producing "Data shows that 70%..." and "When I walked
+  // the floor..." for topics that supplied neither. The chosen hook becomes the post's first line
+  // verbatim, so an invented hook is an invented post. Drop those, unless that leaves too few.
+  const brief = [topic, goal].filter(Boolean).join("\n")
+  const sources = [brief, authorFacts(input.voiceProfile)]
+    .filter(Boolean)
+    .join("\n")
+  const grounded = hooks.filter((hook) => typeof hook?.text === "string" && !checkGrounding(hook.text, sources, { brief }).length)
+  if (grounded.length < hooks.length) log.info("generate-hooks.dropped_ungrounded", { userId, dropped: hooks.length - grounded.length })
+
+  return ok({ hooks: (grounded.length >= 2 ? grounded : hooks).slice(0, 5), remaining: usage.remaining })
 }

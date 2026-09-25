@@ -7,6 +7,7 @@ import { usePosts } from "@/lib/hooks/usePosts"
 import { useProfile } from "@/lib/hooks/useProfile"
 import { LockedFeature } from "@/components/LockedFeature"
 import { analyzeContent } from "@/lib/content-intelligence"
+import { MIN_READY_CONTENT_SCORE, STRONG_CONTENT_SCORE } from "@/lib/content-score-gate"
 import { withClientParam, withWorkspaceKey } from "@/lib/workspace-navigation"
 
 type RawEvent = { event_type?: string; payload?: Record<string, unknown>; created_at?: string }
@@ -118,9 +119,9 @@ export default function AnalyticsPage() {
     const dimensionSums: Record<string, number> = {}
     for (const item of analyses) {
       const score = item.analysis.overallScore
-      if (score >= 90) scoreBuckets.strong++
-      else if (score >= 75) scoreBuckets.solid++
-      else if (score >= 60) scoreBuckets.needsPolish++
+      if (score >= STRONG_CONTENT_SCORE) scoreBuckets.strong++
+      else if (score >= MIN_READY_CONTENT_SCORE) scoreBuckets.solid++
+      else if (score >= 50) scoreBuckets.needsPolish++
       else scoreBuckets.weak++
       for (const dimension of item.analysis.scores) {
         dimensionSums[dimension.label] = (dimensionSums[dimension.label] || 0) + dimension.score
@@ -131,7 +132,7 @@ export default function AnalyticsPage() {
     const dimensionAverages = Object.entries(dimensionSums).map(([label, total]) => ({ label, score: Math.round(total / Math.max(1, analyses.length)) })).sort((a, b) => a.score - b.score)
     const weakestDimension = dimensionAverages[0] || null
     const strongestType = typeRows[0] || null
-    const publishReady = analyses.filter((item) => item.analysis.overallScore >= 90).length
+    const publishReady = analyses.filter((item) => item.analysis.overallScore >= STRONG_CONTENT_SCORE).length
     const reviewPressure = pendingApproval > 0 ? "Approval queue has active work." : rejected > 0 ? "Rejections need revision attention." : "Review flow is clear."
 
     return {
@@ -216,8 +217,8 @@ export default function AnalyticsPage() {
             <Stat label="Total posts" value={analytics.byStatus.total} note="all statuses" accent="zinc" />
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Stat label="Avg score" value={analytics.avgScore} note="quality baseline" accent={analytics.avgScore >= 90 ? "teal" : analytics.avgScore >= 75 ? "amber" : "red"} />
-            <Stat label="90+ ready" value={analytics.publishReady} note="copy-paste ready" accent="teal" />
+            <Stat label="Avg score" value={analytics.avgScore} note="quality baseline" accent={analytics.avgScore >= STRONG_CONTENT_SCORE ? "teal" : analytics.avgScore >= MIN_READY_CONTENT_SCORE ? "amber" : "red"} />
+            <Stat label={`${STRONG_CONTENT_SCORE}+ strong`} value={analytics.publishReady} note="strong on every check" accent="teal" />
             <Stat label="In review" value={analytics.pendingApproval} note="approval queue" accent="blue" />
             <Stat label="Carousel jobs" value={analytics.carouselCount} note="deck generation" accent="zinc" />
           </div>
@@ -284,10 +285,10 @@ export default function AnalyticsPage() {
             {analytics.byStatus.total === 0 ? <p className="text-sm text-zinc-400">No posts to score yet.</p> : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                  { label: "Strong", count: analytics.scoreBuckets.strong, bar: "bg-teal", range: "90-100", valueColor: "text-teal" },
-                  { label: "Solid", count: analytics.scoreBuckets.solid, bar: "bg-teal/50", range: "75-89", valueColor: "text-teal/80" },
-                  { label: "Needs polish", count: analytics.scoreBuckets.needsPolish, bar: "bg-amber-400", range: "60-74", valueColor: "text-amber-700" },
-                  { label: "Weak", count: analytics.scoreBuckets.weak, bar: "bg-zinc-300", range: "0-59", valueColor: "text-zinc-500" },
+                  { label: "Strong", count: analytics.scoreBuckets.strong, bar: "bg-teal", range: `${STRONG_CONTENT_SCORE}-100`, valueColor: "text-teal" },
+                  { label: "Solid", count: analytics.scoreBuckets.solid, bar: "bg-teal/50", range: `${MIN_READY_CONTENT_SCORE}-${STRONG_CONTENT_SCORE - 1}`, valueColor: "text-teal/80" },
+                  { label: "Needs polish", count: analytics.scoreBuckets.needsPolish, bar: "bg-amber-400", range: `50-${MIN_READY_CONTENT_SCORE - 1}`, valueColor: "text-amber-700" },
+                  { label: "Weak", count: analytics.scoreBuckets.weak, bar: "bg-zinc-300", range: "0-49", valueColor: "text-zinc-500" },
                 ].map((bucket) => (
                   <div key={bucket.label} className="rounded-xl border border-zinc-100 bg-zinc-50/60 p-4">
                     <div className="mb-2 flex items-center justify-between">
@@ -404,9 +405,9 @@ export default function AnalyticsPage() {
                   <div key={item.label}>
                     <div className="mb-1.5 flex items-center justify-between">
                       <span className="text-sm text-zinc-700">{item.label}</span>
-                      <span className={`text-sm font-bold ${item.score >= 90 ? "text-teal" : item.score >= 75 ? "text-amber-700" : "text-red-500"}`}>{item.score}</span>
+                      <span className={`text-sm font-bold ${item.score >= STRONG_CONTENT_SCORE ? "text-teal" : item.score >= MIN_READY_CONTENT_SCORE ? "text-amber-700" : "text-red-500"}`}>{item.score}</span>
                     </div>
-                    <div className="h-2 rounded-full bg-zinc-100"><div className={`h-full rounded-full ${item.score >= 90 ? "bg-teal" : item.score >= 75 ? "bg-amber-400" : "bg-red-400"}`} style={{ width: `${item.score}%` }} /></div>
+                    <div className="h-2 rounded-full bg-zinc-100"><div className={`h-full rounded-full ${item.score >= STRONG_CONTENT_SCORE ? "bg-teal" : item.score >= MIN_READY_CONTENT_SCORE ? "bg-amber-400" : "bg-red-400"}`} style={{ width: `${item.score}%` }} /></div>
                   </div>
                 ))}
               </div>

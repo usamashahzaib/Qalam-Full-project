@@ -16,6 +16,9 @@ import {
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
 import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
+
+// A draft that states things the author never said does not go out under their name.
+const UNSUPPORTED_BLOCK_MESSAGE = "This draft says things you never told Qalam. Cut the sentences under \"Not in your brief\", or add the real detail to your topic and rescore."
 import { trackActivationOnce } from "@/lib/marketing-events"
 import type {
   WriterRole as Role,
@@ -137,7 +140,14 @@ export function useWriterLogic({
   const [scores, setScores] = useState<ScoreData | null>(null)
   const [isScoring, setIsScoring] = useState(false)
   const [isImproving, setIsImproving] = useState(false)
+  // True while the draft started life as AI output. The scorer then gets the brief it was
+  // written from, so it can tell the author's facts from ones the model made up. A loaded or
+  // hand-written post is the author's own text and is scored without one.
+  const draftFromAiRef = useRef(false)
+  // Signed by the server with each generated draft. Scores of that draft are part of its credit.
+  const draftTokenRef = useRef<string | null>(null)
   const onDraftContentChange = useCallback((value: string) => {
+    if (!value.trim()) { draftFromAiRef.current = false; draftTokenRef.current = null }
     setDraftContent(value)
     setScores(null)
   }, [])
@@ -241,6 +251,8 @@ export function useWriterLogic({
           const post = JSON.parse(raw) as { id?: string; title?: string; content?: string; type?: string }
           if (post.title) setTopic(post.title)
           if (post.id) setEditingId(post.id)
+          draftFromAiRef.current = false
+          draftTokenRef.current = null
           if (post.content) {
             const isCarousel = post.type?.toLowerCase().includes("carousel") || /^\s*\[/.test(post.content)
             if (isCarousel) {
@@ -302,6 +314,10 @@ export function useWriterLogic({
   const generationGoal = [contentIntent, goal.trim() ? `Specific outcome: ${goal.trim()}` : ""]
     .filter(Boolean)
     .join(". ")
+  // Only what the author typed. The content intent preset is not a source of facts.
+  const scoreBrief = [topic.trim() ? `Topic: ${topic.trim()}` : "", goal.trim() ? `Goal: ${goal.trim()}` : ""]
+    .filter(Boolean)
+    .join("\n")
 
   // ── Status helper ─────────────────────────────────────────────────────────
 
@@ -344,23 +360,25 @@ export function useWriterLogic({
   // ── Auto-score ────────────────────────────────────────────────────────────
 
   const autoScore = useCallback(async (content: string) => {
-    if (!content.trim() || isScoring) return
-    // Cancel any in-flight score request before starting a new one
+    if (!content.trim()) return
+    // A newer draft always wins: cancel the in-flight request instead of skipping this one,
+    // otherwise a freshly generated draft is never scored and publishing stays locked.
     scoreAbortRef.current?.abort()
     const controller = new AbortController()
     scoreAbortRef.current = controller
     setIsScoring(true)
     try {
-      const data = await apiScorePost({ content, role, attempt: genAttemptRef.current, workspaceKey: workspaceId }, controller.signal)
+      const brief = draftFromAiRef.current ? scoreBrief || undefined : undefined
+      const data = await apiScorePost({ content, role, attempt: genAttemptRef.current, brief, draftToken: draftTokenRef.current ?? undefined, workspaceKey: workspaceId }, controller.signal)
       setScores(data)
       showStatus("Draft scored.", "success")
     } catch (e) {
       if ((e as Error).name === "AbortError") return
-      // Silently ignore scoring errors (quota exceeded, network, etc) so existing scores are preserved
+      showStatus(`Could not score this draft. ${(e as Error).message || "Try again in a moment."}`, "error")
     } finally {
-      setIsScoring(false)
+      if (scoreAbortRef.current === controller) setIsScoring(false)
     }
-  }, [isScoring, role, showStatus, workspaceId])
+  }, [role, scoreBrief, showStatus, workspaceId])
 
   // Debounced re-score on manual edits (3 second delay)
   // Skipped when content was just set programmatically by onGeneratePost / onPushTo90
@@ -432,6 +450,8 @@ export function useWriterLogic({
       })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
+      draftFromAiRef.current = true
+      draftTokenRef.current = data.draftToken ?? null
       skipDebounceScore.current = true
       setDraftContent(content)
       setVersions((p) => [...p.slice(-19), { content, timestamp: new Date().toISOString() }])
@@ -462,12 +482,14 @@ export function useWriterLogic({
     setIsImproving(true)
     showStatus("Improving draft toward 90+...", "info", false)
     try {
-      const data = await apiImprovePost({ content: draftContent, role, scores: scores || {}, workspaceKey: workspaceId })
+      const brief = draftFromAiRef.current ? scoreBrief || undefined : undefined
+      const data = await apiImprovePost({ content: draftContent, role, scores: scores || {}, brief, workspaceKey: workspaceId })
       const improved = sanitizeGeneratedText(data.content)
       if (!improved) throw new Error("Returned empty content")
       skipDebounceScore.current = true
       setDraftContent(improved)
       setVersions((p) => [...p.slice(-19), { content: improved, timestamp: new Date().toISOString() }])
+      if (data.draftToken) draftTokenRef.current = data.draftToken
       if (data.scores) setScores(data.scores)
       consumeDraftCredit(1)
       showStatus("Draft improved. Check new scores.", "success")
@@ -527,6 +549,7 @@ export function useWriterLogic({
       showStatus(`Wait for a content score of ${MIN_READY_CONTENT_SCORE}+ before scheduling.`, "error")
       return
     }
+    if (scores?.unsupported?.length) { showStatus(UNSUPPORTED_BLOCK_MESSAGE, "error"); return }
     const err = scheduleValidationError(scheduleDate, scheduleTime)
     if (err) { showStatus(err, "error"); return }
     try {
@@ -547,6 +570,7 @@ export function useWriterLogic({
       showStatus(`Wait for a content score of ${MIN_READY_CONTENT_SCORE}+ before publishing.`, "error")
       return
     }
+    if (scores?.unsupported?.length) { showStatus(UNSUPPORTED_BLOCK_MESSAGE, "error"); return }
     setIsPublishing(true)
 
     let postUrn: string | null = null
@@ -825,7 +849,7 @@ export function useWriterLogic({
     wordCount, currentVersionIdx, draftHookLine, draftLimitHit, resolveTitle,
 
     // Handlers
-    onGenerateHooks, onGeneratePost, onRegenerate,
+    onGenerateHooks, onGeneratePost, onRegenerate, onScoreNow: () => void autoScore(draftContent),
     onPushTo90, onImproveHook, applyHookAlt,
     onSaveDraft, onSchedule, onPublish,
     onGenerateReplies,

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!workspaceId) {
     return NextResponse.json({ error: "workspace_access_revoked" }, { status: 403 })
   }
-  const voice = await getWorkspaceVoiceProfile(workspaceId, postText.slice(0, 500)).catch(() => undefined)
+  const voice = await getWorkspaceVoiceProfile(workspaceId, postText.slice(0, 500), status.plan).catch(() => undefined)
 
   const reservation = limit === "unlimited" ? null : await reserveCommentUsage(identity.userId, limit)
   if (reservation && !reservation.allowed) {

@@ -70,13 +70,13 @@ export type GeneratePostInput = {
   goal?: string
   workspaceKey?: string
 }
-export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number }
+export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number; draftToken?: string }
 
-export type ScorePostInput = { content: string; role?: WriterRole | string; attempt?: number; workspaceKey?: string }
+export type ScorePostInput = { content: string; role?: WriterRole | string; attempt?: number; brief?: string; draftToken?: string; workspaceKey?: string }
 export type ScorePostOutput = ScoreData
 
-export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown>; workspaceKey?: string }
-export type ImprovePostOutput = { content: string; scores?: ScoreData; remaining?: number }
+export type ImprovePostInput = { content: string; role?: WriterRole | string; scores?: Partial<ScoreData> | Record<string, unknown>; brief?: string; workspaceKey?: string }
+export type ImprovePostOutput = { content: string; scores?: ScoreData; remaining?: number; draftToken?: string }
 
 export type SaveDraftInput = {
   title?: string

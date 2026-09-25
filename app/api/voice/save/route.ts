@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { requirePlan } from "@/lib/server/require-plan"
 import { getWorkspaceSessionContext, resolveWorkspaceId } from "@/lib/server/workspace"
 import { requireRole } from "@/lib/server/roles"
@@ -94,9 +94,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save voice profile" }, { status: 500 })
   }
 
-  if (hasVoiceTraining && profile.example_posts) {
-    storeVoiceExamples(workspaceId, session.supabaseUserId, profile.example_posts)
-      .catch((err) => console.error("voice_examples_store_failed", err))
+  // Embedding up to 20 samples takes a few seconds, so it runs after the response. It has to
+  // be registered with after(): a bare promise left running is dropped when a serverless
+  // function is frozen, and the samples would never reach generation.
+  const examplePosts = hasVoiceTraining ? profile.example_posts : null
+  if (examplePosts) {
+    after(() =>
+      storeVoiceExamples(workspaceId, session.supabaseUserId, examplePosts)
+        .catch((err) => console.error("voice_examples_store_failed", err))
+    )
   }
 
   return NextResponse.json({ success: true })

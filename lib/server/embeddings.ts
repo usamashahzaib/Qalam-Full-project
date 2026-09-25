@@ -1,16 +1,9 @@
 import "server-only"
 
 import { createServiceClient } from "@/lib/server/supabase-rest"
+import { chunkExamplePosts } from "@/lib/voice-measure"
 
-// Splits raw example posts text into individual post chunks.
-// Posts are separated by blank lines, "---", or "***".
-function chunkExamplePosts(raw: string): string[] {
-  return raw
-    .split(/\n(?:---|\*\*\*|———)\n|\n{2,}/)
-    .map((s) => s.trim())
-    .filter((s) => s.length >= 30)
-    .slice(0, 20)
-}
+export { chunkExamplePosts } from "@/lib/voice-measure"
 
 // Generate a text embedding via Gemini embedding.
 // Returns null if GEMINI_API_KEY is not set or the call fails (graceful degradation).

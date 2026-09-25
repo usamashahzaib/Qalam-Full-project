@@ -50,7 +50,8 @@ const GOOD_DRAFT = [
 ].join("\n")
 
 const input = {
-  topic: "moving batch jobs off the primary database",
+  // The facts in GOOD_DRAFT have to come from the author, or the grounding check rightly flags them.
+  topic: "We moved our nightly reconciliation job off the primary database this week: forty minutes down to nine on a replica",
   role: "Engineer",
   format: "medium" as const,
   userId: "user-1",

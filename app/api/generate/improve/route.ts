@@ -9,6 +9,7 @@ import { requirePlan } from "@/lib/server/require-plan"
 import { improvePost } from "@/lib/use-cases/improve-post"
 import { errorToStatus } from "@/lib/errors"
 import { authorizeRole } from "@/lib/server/roles"
+import { signDraftToken } from "@/lib/server/draft-token"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -26,6 +27,7 @@ export async function POST(request: NextRequest) {
       content: String(body.content || "").trim(),
       role: String(body.role || ""),
       scores: (body.scores || {}) as Record<string, number>,
+      brief: typeof body.brief === "string" ? body.brief.trim().slice(0, 2000) || undefined : undefined,
       userId: planCheck.billingUserId,
       internalUserId: user.id,
       workspaceId: planCheck.workspaceId,
@@ -38,6 +40,6 @@ export async function POST(request: NextRequest) {
     }
 
     log.info("generate.improve.done", { userId: user.id })
-    return NextResponse.json(result.data)
+    return NextResponse.json({ ...result.data, draftToken: signDraftToken(planCheck.billingUserId, planCheck.workspaceId) })
   })(request)
 }

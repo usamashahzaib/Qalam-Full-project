@@ -25,6 +25,17 @@ import {
   sourceMaterial,
 } from "./writing-policy";
 import { repairBrief, type Defect } from "./output-checks";
+import { wordTargetFor } from "@/lib/voice-measure";
+import { MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate";
+
+// An author who writes 60-word posts should not get 300 words because the format
+// defaulted to Medium. With measured samples, their length wins, scaled by format.
+function lengthLine(format: PostFormat, fallback: string, voiceProfile?: VoiceProfile): string {
+  const target = wordTargetFor(format, voiceProfile?.measured);
+  return target
+    ? `${target.min}-${target.max} words. That is how long this author's own posts run, adjusted for a ${format} post. Their length beats any general idea of what a LinkedIn post should be.`
+    : fallback;
+}
 
 // ---------------------------------------------------------------------------
 // ROLE ADAPTATION HELPERS
@@ -137,7 +148,7 @@ export function buildGeneratePrompt(
     LANGUAGE_RULE,
     LINKEDIN_POSITIONING_RULES,
     POST_TASK_RULES,
-    `LENGTH:\n${format}, up to ${formatRule.charLimit} characters. ${formatRule.lineGuidance}`,
+    `LENGTH:\n${lengthLine(format, `${format}, up to ${formatRule.charLimit} characters. ${formatRule.lineGuidance}`, voiceProfile)}`,
     goal ? `GOAL FOR THIS POST: ${goal}` : "",
     "Write one post. Nothing before it, nothing after it.",
   ].filter(Boolean).join("\n\n");
@@ -176,7 +187,7 @@ export function buildRevisePrompt(
     `FIX EXACTLY THESE PROBLEMS AND NOTHING ELSE:\n${repairBrief(defects)}`,
     [
       "KEEP:",
-      "- Every fact, number, name and specific detail exactly as written.",
+      "- Every fact, number, name and specific detail exactly as written, except the ones the problems above tell you to remove.",
       "- The structure, the order of ideas, and the line breaks.",
       "- Any sentence that is already working. Untouched is the correct outcome for most of the post.",
       "- The author's voice. If a phrase sounds like them, it stays, even if you would have written it differently.",
@@ -233,7 +244,7 @@ Respond with valid JSON only, no markdown:
 }
 
 total_score = mean of the five scores, rounded.
-is_good_enough = total_score >= 82.
+is_good_enough = total_score >= ${MIN_READY_CONTENT_SCORE}.
 `.trim();
 
   const user = sourceMaterial(`The post to score, written for a ${label}`, post);
@@ -373,7 +384,7 @@ export function buildPostFromHookPrompt(
     POST_TASK_RULES,
     [
       "THIS POST:",
-      `- Target length ${wordTargets[format]}. ${formatRule.lineGuidance}`,
+      `- Target length ${lengthLine(format, `${wordTargets[format]}. ${formatRule.lineGuidance}`, voiceProfile)}`,
       "- The first line must be exactly the opening provided, word for word.",
       "- Continue where that opening actually leads. If the opening promises something specific, deliver it.",
     ].join("\n"),
@@ -425,10 +436,23 @@ export function buildPostWithReplacedHookPrompt(
 export function build7MetricScorePrompt(
   post: string,
   role: string,
-  voiceProfile?: VoiceProfile
+  voiceProfile?: VoiceProfile,
+  brief?: string
 ): { system: string; user: string } {
   const { label } = resolveRoleProfile(role);
   const voiceEvidence = voiceGuidance(voiceProfile, { sampleCount: 2, sampleChars: 400 });
+
+  // Without the brief the scorer cannot tell a supplied fact from an invented
+  // one, and it rewarded fabricated detail ("a 30-second delay per scan") with
+  // 85-90 on specificity. With it, anything personal or numeric that is not in
+  // the brief is treated as invented.
+  const briefBlock = brief?.trim()
+    ? [
+        "THIS DRAFT WAS WRITTEN BY AI FROM THE AUTHOR'S BRIEF BELOW. The brief is the only source of the author's facts.",
+        sourceMaterial("The author's brief", brief.trim().slice(0, 2000)),
+        "Before scoring, check every sentence against the brief. A first-person story or decision, a client, employer, team event, number, percentage, amount, duration, or result (\"complaints fell\", \"turnover dipped\", \"we had to let someone go\") that is not in the brief and is not common knowledge was invented by the AI. Quote each such sentence exactly in \"unsupported\". Restating or explaining what the brief says is supported. General reasoning about the topic is supported.",
+      ].join("\n")
+    : "No brief was supplied, so this is the author's own text. Treat its first-person facts as theirs.";
 
   const voiceFitDimension = voiceEvidence
     ? `7. VOICE_FIT: does it match the author's own voice below.\n${voiceEvidence}\n   90+: reads as this person. 70-89: mostly, with off-notes. Below 50: a different person entirely, or a personality invented to fill the gap.`
@@ -438,6 +462,7 @@ export function build7MetricScorePrompt(
     `You score a LinkedIn post written for a ${label} on 7 dimensions, 0-100 each. Be strict. An ordinary competent post is 55-70. 90 is rare.`,
     "You are judging whether a specific person said something worth reading, not whether the post matches a template. Calm, plain and useful can score high. Dramatic, punchy and empty cannot.",
     authorContext(voiceProfile),
+    briefBlock,
     LINKEDIN_POSITIONING_RULES,
     [
       "DIMENSIONS:",
@@ -450,13 +475,19 @@ export function build7MetricScorePrompt(
       "",
       "4. SPECIFICITY: concrete detail the reader can picture. Detail must be supplied or general knowledge. Invented numbers, clients or results score 0 on this dimension and drag HUMAN_LIKENESS down with them.",
       "",
-      "5. CTA: the close. Earned and specific, or an honest stop, both score well. Engagement bait, keyword requests, or a generic question tacked on score low. A post with no closing line is not penalised when it ends on a complete thought.",
+      "5. CTA: the close. Earned and specific, or an honest stop, both score well. Engagement bait, keyword requests, or a generic question tacked on score low. A post with no closing line is not penalised when it ends on a complete thought. A closing question that asks readers to share their own story, experience or approach is a generic question: CTA at most 60 unless it names something only this post could ask.",
       "",
       "6. HUMAN_LIKENESS: does it read as a person writing, not content being produced. Penalise stock openers, sentences that only announce the next sentence, tidy closing summaries, forced profundity, repeated rhetorical patterns, and unsupported personal claims. Do not penalise ordinary professional vocabulary used correctly, longer sentences, or bullets where the content is genuinely a list. Deduct 15 for each long dash character (em dash or en dash).",
       "",
       voiceFitDimension,
     ].join("\n"),
-    `Respond with valid JSON only, no markdown:\n{\n  "hook": number,\n  "readability": number,\n  "authority": number,\n  "specificity": number,\n  "cta": number,\n  "human": number,\n  "voiceFit": number,\n  "overall": number,\n  "tips": {\n    "hook": "one specific action",\n    "readability": "one specific action",\n    "authority": "one specific action",\n    "specificity": "one specific action",\n    "cta": "one specific action",\n    "human": "one specific action",\n    "voiceFit": "one specific action"\n  },\n  "hashtags": ["#tag1", "#tag2", "#tag3"]\n}\noverall = arithmetic mean of all 7, rounded.`,
+    [
+      "TIPS. Each tip is acted on by a rewrite model that has only the post and the brief, so a tip must be doable with those alone:",
+      "- Never tell the author to add a metric, statistic, example, story, client, study or framework. Nobody can supply it, so the rewrite would invent it. Say what to cut, sharpen, reorder or state more plainly instead.",
+      "- Never suggest ending with a question, inviting readers to share, or asking for comments.",
+      "- If a dimension has no clear fix, the tip is \"Leave as is.\"",
+    ].join("\n"),
+    `Respond with valid JSON only, no markdown:\n{\n${brief?.trim() ? `  "unsupported": ["exact sentence from the post that the brief does not support"],\n` : ""}  "hook": number,\n  "readability": number,\n  "authority": number,\n  "specificity": number,\n  "cta": number,\n  "human": number,\n  "voiceFit": number,\n  "overall": number,\n  "tips": {\n    "hook": "one specific action",\n    "readability": "one specific action",\n    "authority": "one specific action",\n    "specificity": "one specific action",\n    "cta": "one specific action",\n    "human": "one specific action",\n    "voiceFit": "one specific action"\n  },\n  "hashtags": ["#tag1", "#tag2", "#tag3"]\n}\noverall = arithmetic mean of all 7, rounded.${brief?.trim() ? `\nFill "unsupported" first, before any score. It is [] only when every claim is supported.` : ""}`,
   ].filter(Boolean).join("\n\n");
 
   const user = sourceMaterial(`The post to score, written for a ${label}`, post);
@@ -477,7 +508,8 @@ export function buildImprovePrompt(
   scores: Record<string, unknown>,
   role: string,
   voiceProfile?: VoiceProfile,
-  defects: Defect[] = []
+  defects: Defect[] = [],
+  brief?: string
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
 
@@ -489,6 +521,10 @@ export function buildImprovePrompt(
     ? scores.tips as Record<string, string>
     : {};
 
+  const unsupported = Array.isArray(scores.unsupported)
+    ? scores.unsupported.filter((claim): claim is string => typeof claim === "string").slice(0, 5)
+    : [];
+
   const focus = weakest.length
     ? weakest.map(([key, value]) => `- ${key} (${value}/100)${tips[key] ? `: ${tips[key]}` : ""}`).join("\n")
     : "- No scores available. Improve only what is clearly weak, and leave the rest.";
@@ -497,7 +533,11 @@ export function buildImprovePrompt(
     `You are improving a LinkedIn post for a ${label}. Improve the weak parts. Leave the rest exactly as it is.`,
     `${roleVoiceBlock(label, profile, isCanonical)}\n\n${ROLE_IS_NOT_EXPERIENCE}`,
     authorContext(voiceProfile),
+    brief?.trim() ? sourceMaterial("The author's brief, the only source of their facts", brief.trim().slice(0, 2000)) : "",
     `WHERE THIS DRAFT IS WEAKEST. Work on these and nothing else:\n${focus}`,
+    unsupported.length
+      ? `THESE SENTENCES CLAIM THINGS THE AUTHOR NEVER SAID. Fixing them comes first. Delete each one, or rewrite it as general reasoning with the invented story, number or result taken out:\n${unsupported.map((claim) => `- "${claim}"`).join("\n")}`
+      : "",
     defects.length ? `Objective problems to fix as well:\n${repairBrief(defects)}` : "",
     [
       "HOW TO IMPROVE IT:",
@@ -505,6 +545,8 @@ export function buildImprovePrompt(
       "- Keep every fact, number, name and specific detail. Never add a personal claim, metric, client, employer, event or outcome that is not already there.",
       "- If a dimension scores low because the draft lacks a fact you do not have, improve what you can and leave that gap alone. Do not fill it with an invented example.",
       "- Keep the author's voice, including phrasing that is theirs rather than yours.",
+      "- Keep the line breaks and paragraph spacing. Never merge short paragraphs into a block.",
+      "- Do not add a closing question or an invitation to comment.",
       "- A post that ends up better on two dimensions and unchanged on five is a success.",
     ].join("\n"),
     `Words this person would not use: ${roleBannedWords(profile, isCanonical).join(", ")}`,

@@ -21,8 +21,13 @@
 export const sanitizeGeneratedText = (value: string) =>
   value
     .replace(/[\u2013\u2014]/g, "-")
+    // gpt-oss writes non-breaking hyphens ("mis\u2011picks") and narrow spaces ("4.1\u202f%").
+    .replace(/[\u2010\u2011]/g, "-")
+    .replace(/[\u00a0\u202f]/g, " ")
     .replace(/\*\*/g, "")
-    .replace(/^#+\s*/gm, "")
+    // Markdown headings only. A hashtag line ("#Leadership #Ops") has no space after the #.
+    .replace(/^#{1,6}[ \t]+/gm, "")
+    .replace(/[ \t]+$/gm, "")
     .replace(/^\s*(title|introduction|problem|solution|call to action|hashtags):\s*/gim, "")
     .replace(/\bAI-powered\b/g, "AI")
     .replace(/\n{3,}/g, "\n\n")

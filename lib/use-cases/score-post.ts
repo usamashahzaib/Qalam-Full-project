@@ -3,7 +3,7 @@ import "server-only"
 import { callAi, safeParseJson } from "@/lib/server/ai-router-v2"
 import { build7MetricScorePrompt } from "@/lib/prompts/role-aware-system"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
-import { gateScores, freeTierAttemptCap } from "@/lib/content-score-gate"
+import { gateScores, freeTierAttemptCap, verifiedUnsupportedClaims, capUnsupported } from "@/lib/content-score-gate"
 import { ok, err } from "@/lib/errors"
 import type { Result } from "@/lib/errors"
 
@@ -22,6 +22,8 @@ export interface ScorePostOutput {
   overall: number
   tips: Record<string, string>
   hashtags: string[]
+  /** Sentences the scorer found no support for in the brief. Empty without a brief. */
+  unsupported: string[]
 }
 
 export interface ScorePostInput {
@@ -32,10 +34,12 @@ export interface ScorePostInput {
   workspaceId?: string | null
   plan: string
   attempt?: number
+  /** The topic and goal the draft was generated from. Absent for text the author wrote. */
+  brief?: string
 }
 
 export async function scorePost(input: ScorePostInput): Promise<Result<ScorePostOutput>> {
-  const { content, role: rawRole = "", userId, workspaceId, plan, attempt = 1 } = input
+  const { content, role: rawRole = "", userId, workspaceId, plan, attempt = 1, brief } = input
   const freeCap = plan.toLowerCase() === "free" ? freeTierAttemptCap(attempt) : undefined
 
   const trimmed = content.trim()
@@ -45,16 +49,15 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
 
   const role = rawRole
 
-  const isProOrAbove = plan.toLowerCase() === "pro" || plan.toLowerCase().startsWith("agency")
-  const voiceProfile = isProOrAbove ? await getWorkspaceVoiceProfile(workspaceId, trimmed).catch(() => undefined) : undefined
+  const voiceProfile = await getWorkspaceVoiceProfile(workspaceId, trimmed, plan).catch(() => undefined)
 
-  const { system, user } = build7MetricScorePrompt(trimmed, role, voiceProfile)
+  const { system, user } = build7MetricScorePrompt(trimmed, role, voiceProfile, brief)
 
   let raw = ""
   try {
     raw = await callAi("post-scoring", system, user, {
       json: true, temperature: 0.2, maxTokens: 600,
-      userId, plan, cache: false,
+      userId, plan, cache: false, humanWriting: false,
     })
   } catch {
     return err({ code: "AI_UNAVAILABLE", message: "Scoring unavailable", userMessage: "Could not evaluate this post. Please try again." })
@@ -63,14 +66,15 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
   const parsed = safeParseJson<{
     hook: number; readability: number; authority: number; specificity: number
     cta: number; human: number; voiceFit: number; overall: number
-    tips: Record<string, string>; hashtags: string[]
+    tips: Record<string, string>; hashtags: string[]; unsupported?: unknown
   }>(raw)
 
   if (!parsed) {
     return err({ code: "AI_UNAVAILABLE", message: "Scoring returned invalid JSON" })
   }
 
-  const rawScores = {
+  const unsupported = brief?.trim() ? verifiedUnsupportedClaims(trimmed, parsed.unsupported) : []
+  const rawScores = capUnsupported({
     hook: parsed.hook,
     readability: parsed.readability,
     authority: parsed.authority,
@@ -78,7 +82,7 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     cta: parsed.cta,
     human: parsed.human,
     voiceFit: parsed.voiceFit,
-  }
+  }, unsupported)
   if (!Object.values(rawScores).every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100)) {
     return err({ code: "AI_UNAVAILABLE", message: "Scoring returned invalid dimensions" })
   }
@@ -112,5 +116,6 @@ export async function scorePost(input: ScorePostInput): Promise<Result<ScorePost
     overall: gated.overall,
     tips: gated.tips ?? {},
     hashtags: gated.hashtags ?? [],
+    unsupported,
   })
 }

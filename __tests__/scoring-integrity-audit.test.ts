@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({ call: vi.fn() }))
 vi.mock("@/lib/server/ai-router-v2", () => ({ callAi: mocks.call, safeParseJson: (raw: string) => { try { return JSON.parse(raw) } catch { return null } } }))
-vi.mock("@/lib/server/voice-profile", () => ({ getWorkspaceVoiceProfile: vi.fn() }))
+vi.mock("@/lib/server/voice-profile", () => ({ getWorkspaceVoiceProfile: vi.fn(async () => undefined) }))
 import { scorePost } from "@/lib/use-cases/score-post"
 
 const input = { content: "A specific thought with enough context to be evaluated.\n\nA second thought.", userId: "user", plan: "Free" }

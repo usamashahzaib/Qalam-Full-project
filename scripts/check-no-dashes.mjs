@@ -12,12 +12,11 @@ const DASH_RE = /[–—]/
 // to avoid) rather than as prose punctuation. Keep in sync with any file
 // moves.
 const ALLOWED = new Set([
-  "lib/server/embeddings.ts:9",
   "lib/prompts/builders/carousel.ts:13",
   "scripts/check-no-dashes.mjs:2",
   "scripts/check-no-dashes.mjs:3",
   "scripts/check-no-dashes.mjs:8",
-  "scripts/check-no-dashes.mjs:56",
+  "scripts/check-no-dashes.mjs:55",
   "app/api/career/resumes/fix-suggestions/route.ts:24",
   "__tests__/resume-fix-suggestions.test.ts:34",
 ])

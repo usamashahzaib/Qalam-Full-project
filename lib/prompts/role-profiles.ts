@@ -15,6 +15,26 @@ export interface VoiceProfile {
   examples?: string[];
   professionalContext?: import("@/lib/professional-context").ProfessionalContext;
   passport?: VoicePassportPrompt;
+  /** From the basic profile every plan can save. */
+  identity?: { title?: string; industry?: string; goals?: string };
+  /** "simple | moderate | advanced" from the voice analysis. */
+  vocabularyLevel?: string;
+  /** "question | direct | soft" from the voice analysis. */
+  closingStyle?: string;
+  /** Counted from the author's example posts, not inferred. See lib/voice-measure.ts. */
+  measured?: VoiceMeasurements;
+}
+
+export interface VoiceMeasurements {
+  postCount: number;
+  wordsPerPost: number;
+  signOff?: string;
+  spelling?: "British" | "American";
+  hashtags: "never" | "sometimes" | "usually";
+  emoji: "never" | "sometimes" | "usually";
+  closesWithQuestion: "never" | "sometimes" | "usually";
+  /** Every paragraph separated by a blank line, as most of their posts do. */
+  blankLineParagraphs: boolean;
 }
 
 /** Rules the team deliberately saved for this author. Hard constraints, not style hints. */

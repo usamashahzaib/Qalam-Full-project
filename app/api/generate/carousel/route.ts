@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, undefined, planCheck.plan).catch(() => undefined)
     const professionalContext = professionalContextPrompt(voiceProfile?.professionalContext)
     const system = `${CAROUSEL_SYSTEM_PROMPT}
 

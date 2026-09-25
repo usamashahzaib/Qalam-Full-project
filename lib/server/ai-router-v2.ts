@@ -55,12 +55,32 @@ export function sanitizeOutput(text: string): string {
 // Transient = server-side capacity issue; do NOT count toward circuit breaker.
 // Rate-limit = quota exhausted; counts toward circuit but not as hard failure.
 // Config error = key / model wrong; skip silently without any failure mark.
-function classifyAiError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "hard" {
+// Bad output = the provider is healthy but this answer was unusable (Groq's json_validate_failed,
+// an empty message after the reasoning budget ran out). That says nothing about the provider,
+// so it gets one retry and never counts toward the circuit breaker.
+export function classifyAiError(msg: string): "transient" | "rate-limit" | "config" | "filtered" | "bad-output" | "hard" {
   if (/not configured|api.?key|401|403|404|not.?found|no longer available|expired|api_key_invalid|invalid.?model|model.*(?:retired|deprecated|unsupported)/i.test(msg)) return "config"
+  if (/json_validate_failed|failed_generation|returned empty response|max_tokens|finish_reason/i.test(msg)) return "bad-output"
   if (/503|overloaded|capacity|unavailable|service.?unavailable/i.test(msg)) return "transient"
   if (/429|rate.?limit|too many requests|quota/i.test(msg)) return "rate-limit"
   if (/content filtered|SAFETY|RECITATION|PROHIBITED/i.test(msg)) return "filtered"
   return "hard"
+}
+
+// Groq's per-minute token limit answers 429 with "Please try again in 12.3s". That is a
+// momentary throttle, not an exhausted quota. Counting it as a provider failure opened the
+// circuit breaker for every user within a few requests.
+// A post or score prompt is about 3.5k tokens against an 8k per-minute limit, so Groq often
+// asks for 10-15s. One wait of that size still fits a 60s route. Anything under a minute is a
+// throttle, not an outage, and never counts toward the circuit breaker.
+const MAX_THROTTLE_WAIT_MS = 15_000
+const MOMENTARY_THROTTLE_MS = 60_000
+export function retryAfterMs(msg: string): number | null {
+  const match = /try again in (?:(\d+)m)?\s*(\d+(?:\.\d+)?)(ms|s)\b/i.exec(msg)
+  if (!match) return null
+  const minutes = Number(match[1] ?? 0)
+  const value = Number(match[2])
+  return Math.round(minutes * 60_000 + (match[3].toLowerCase() === "ms" ? value : value * 1000))
 }
 
 // ── Safe JSON extractor (public - used by use-cases) ─────────────────────────
@@ -289,8 +309,19 @@ async function callProvider(
       }
 
       if (kind === "rate-limit") {
-        await recordFailure(provider)
-        log.warn("ai.provider_rate_limited", { provider })
+        const wait = retryAfterMs(msg)
+        if (wait !== null && wait <= MAX_THROTTLE_WAIT_MS && attempt === 0) {
+          await new Promise((r) => setTimeout(r, wait + 250))
+          continue
+        }
+        if (wait === null || wait > MOMENTARY_THROTTLE_MS) await recordFailure(provider)
+        log.warn("ai.provider_rate_limited", { provider, retryAfterMs: wait })
+        return null
+      }
+
+      if (kind === "bad-output") {
+        if (attempt < 1) continue
+        log.warn("ai.provider_bad_output", { provider, task, error: msg.slice(0, 120) })
         return null
       }
 
@@ -384,6 +415,11 @@ export async function callAi(
   for (const candidate of order) {
     const content = await callProvider(candidate, task, systemPrompt, userMessage, callOptions, timeout, userId, plan)
     if (content === null) continue
+    // An empty answer is a failed answer. Returning it surfaced as "Invalid post artifact".
+    if (!content.trim()) {
+      log.warn("ai.provider_empty_content", { provider: candidate, task })
+      continue
+    }
 
     // A provider can return content without throwing (e.g. truncated by its own
     // token budget) yet still be unusable. In JSON mode, verify it actually

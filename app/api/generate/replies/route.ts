@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: mode === "reply" ? "Reply is required" : "Comment is required" }, { status: 400 })
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, comment).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, comment, planCheck.plan).catch(() => undefined)
 
     const { system, user: userMsg } = buildReplyPrompt({
       target: comment,

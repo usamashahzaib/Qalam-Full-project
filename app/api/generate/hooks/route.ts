@@ -43,13 +43,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
 
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, parsed.data.topic).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, parsed.data.topic, planCheck.plan).catch(() => undefined)
     const cacheKey = generateCacheKey({
       task: "hooks",
       topic: parsed.data.topic,
       role: parsed.data.role,
       goal: parsed.data.goal,
       userId: planCheck.billingUserId,
+      // Hooks are written in this workspace's voice. Without the workspace in the key, an agency
+      // could be served one client's voiced hooks while working in another client's workspace.
+      workspaceId: planCheck.workspaceId,
+      plan: planCheck.plan,
       professionalContext: JSON.stringify(voiceProfile?.professionalContext || null),
     })
     const cached = await getCachedResult<{ hooks: Hook[] }>(cacheKey)
@@ -67,7 +71,8 @@ export async function POST(request: NextRequest) {
       topic: parsed.data.topic,
       role: parsed.data.role,
       goal: parsed.data.goal,
-      userId: user.id,
+      // Usage belongs to the billing account, as on every other generation route.
+      userId: planCheck.billingUserId,
       plan: planCheck.plan,
       voiceProfile,
     })

@@ -30,6 +30,7 @@ import { QueueOverlay } from "@/components/QueueOverlay"
 
 import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
 import { downloadBytes, sanitizeFilename } from "@/lib/download"
+import { isReadyContentScore, MIN_READY_CONTENT_SCORE, STRONG_CONTENT_SCORE, TARGET_CONTENT_SCORE } from "@/lib/content-score-gate"
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ export default function WriterPage() {
     researchNotes, setResearchNotes, researchNotesOpen, setResearchNotesOpen,
     status, showStatus, draftLimitHit,
     wordCount, currentVersionIdx, draftHookLine, resolveTitle,
-    onGenerateHooks, onGeneratePost, onRegenerate,
+    onGenerateHooks, onGeneratePost, onRegenerate, onScoreNow,
     onPushTo90, onImproveHook, applyHookAlt,
     onSaveDraft, onSchedule, onPublish,
     onGenerateReplies,
@@ -926,18 +927,43 @@ export default function WriterPage() {
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className={`text-4xl font-bold tabular-nums ${scoreTextColor(scores.overall)}`}>{scores.overall}</span>
                   <span className="text-sm text-zinc-400">/100</span>
-                  {scores.overall >= 85 && <span className="ml-1 t-eyebrow text-emerald-600">Copy-ready</span>}
+                  {scores.overall >= STRONG_CONTENT_SCORE ? (
+                    <span className="ml-1 t-eyebrow text-emerald-600">Strong</span>
+                  ) : isReadyContentScore(scores.overall) ? (
+                    <span className="ml-1 t-eyebrow text-zinc-500">Ready to publish</span>
+                  ) : (
+                    <span className="ml-1 t-eyebrow text-amber-700">Publishing needs {MIN_READY_CONTENT_SCORE}+</span>
+                  )}
                 </div>
+              ) : isScoring || !draftContent.trim() ? (
+                <p className="mt-1 text-xs text-zinc-400">{isScoring ? "Scoring..." : "Generate a draft to see scores"}</p>
               ) : (
-                <p className="mt-1 text-xs text-zinc-400">{step3Visible ? "Scoring..." : "Generate a draft to see scores"}</p>
+                <button type="button" onClick={onScoreNow} className="mt-2 cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-50">
+                  Score this draft
+                </button>
               )}
             </div>
+
+            {scores?.unsupported?.length ? (
+              <div className="border-b border-amber-100 bg-amber-50/60 px-4 py-3">
+                <p className="t-eyebrow font-semibold text-amber-800">Not in your brief</p>
+                <p className="mt-0.5 text-xs text-amber-800/80">The draft says these, but you never told Qalam them. Cut them, or add the real detail to your topic and regenerate.</p>
+                <ul className="mt-2 space-y-1">
+                  {scores.unsupported.map((claim) => (
+                    <li key={claim} className="text-xs leading-snug text-zinc-700">&ldquo;{claim}&rdquo;</li>
+                  ))}
+                </ul>
+                <button type="button" onClick={onScoreNow} disabled={isScoring} className="mt-2 cursor-pointer text-xs font-semibold text-amber-800 underline underline-offset-2 disabled:opacity-50">
+                  Rescore after editing
+                </button>
+              </div>
+            ) : null}
 
             {scores ? (
               <div className="divide-y divide-zinc-100">
                 {SCORE_LABELS.map(({ key, label }) => {
                   const v = scores[key] as number
-                  const tip = scores.tips[key] || ""
+                  const tip = scores.tips[key] === "Leave as is." ? "" : scores.tips[key] || ""
                   return (
                     <div key={key} className="px-4 py-3">
                       <div className="mb-1 flex items-center justify-between gap-2">
@@ -966,7 +992,7 @@ export default function WriterPage() {
 
             {scores && (
               <div className="border-t border-zinc-100 p-4 space-y-2">
-                {scores.overall >= 90 ? (
+                {scores.overall >= TARGET_CONTENT_SCORE ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center">
                     <p className="text-sm font-bold text-emerald-700">90+ Score Achieved</p>
                     <p className="mt-0.5 text-xs text-emerald-600">Strong across Qalam&apos;s seven transparent quality checks. You still make the final call.</p>

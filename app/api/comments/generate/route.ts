@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     // Pull the user's trained voice + resume-derived professional context so comments
     // sound like this specific person, not a generic "LinkedIn expert". Never fatal - a
     // user with no voice profile still gets comments, just without personalization.
-    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, postText.slice(0, 500)).catch(() => undefined)
+    const voiceProfile = await getWorkspaceVoiceProfile(planCheck.workspaceId, postText.slice(0, 500), planCheck.plan).catch(() => undefined)
 
     const reservation = limits.commentGenerationsPerMonth === "unlimited"
       ? null

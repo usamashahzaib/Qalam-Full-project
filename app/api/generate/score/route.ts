@@ -13,6 +13,7 @@ import { generateCacheKey, getCachedResult, setCachedResult } from "@/lib/server
 import type { PlanTier } from "@/types/domain"
 import type { ScorePostOutput } from "@/lib/use-cases/score-post"
 import { authorizeRole } from "@/lib/server/roles"
+import { claimIncludedScore, releaseIncludedScore, SCORES_PER_DRAFT, verifyDraftToken } from "@/lib/server/draft-token"
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
@@ -30,6 +31,7 @@ export async function POST(request: NextRequest) {
     if (content.trim().length < 4 || content.length > 3000) {
       return NextResponse.json({ error: "Post must be between 4 and 3000 characters to score." }, { status: 400 })
     }
+    const brief = typeof body.brief === "string" ? body.brief.trim().slice(0, 2000) : ""
     const attempt = Number.isFinite(Number(body.attempt)) ? Number(body.attempt) : 1
 
     // Workspace scope prevents one client's voice evaluation from reaching another.
@@ -40,32 +42,45 @@ export async function POST(request: NextRequest) {
       workspaceId: planCheck.workspaceId,
       role: String(body.role || ""),
       attempt,
-      scorePolicy: "measured-score-v3",
+      brief,
+      scorePolicy: "measured-score-v4",
     })
     const cached = await getCachedResult<ScorePostOutput>(cacheKey)
     if (cached) {
-      const { scores, overall, tips, hashtags } = cached
-      return NextResponse.json({ ...scores, overall, tips, hashtags })
+      const { scores, overall, tips, hashtags, unsupported = [] } = cached
+      return NextResponse.json({ ...scores, overall, tips, hashtags, unsupported })
     }
 
-    // Atomic check+increment using internal UUID - prevents TOCTOU bypass and wrong-ID ghost rows.
-    const usage = await incrementUsage(planCheck.billingUserId, "analyses")
-    if (!usage.allowed) {
-      return NextResponse.json(
-        { error: "You have reached your scoring limit for this billing period." },
-        { status: 429 }
-      )
+    // A draft the writer generated carries its own scores (see lib/server/draft-token.ts).
+    // Only text without one, or a draft past its allowance, spends an analysis.
+    const draftId = verifyDraftToken(body.draftToken, planCheck.billingUserId, planCheck.workspaceId)
+    const included = draftId ? await claimIncludedScore(draftId) : false
+    if (!included) {
+      // Atomic check+increment using internal UUID - prevents TOCTOU bypass and wrong-ID ghost rows.
+      const usage = await incrementUsage(planCheck.billingUserId, "analyses")
+      if (!usage.allowed) {
+        return NextResponse.json(
+          { error: draftId
+            ? `This draft has used its ${SCORES_PER_DRAFT} included scores and your monthly scores are used up.`
+            : "You have reached your scoring limit for this billing period." },
+          { status: 429 }
+        )
+      }
+    }
+    const refundScore = async () => {
+      if (included && draftId) await releaseIncludedScore(draftId)
+      else await decrementUsage(planCheck.billingUserId, "analyses")
     }
 
     let queueResult: Awaited<ReturnType<typeof enqueueRequest>>
     try {
       queueResult = await enqueueRequest(user.id, planCheck.plan as PlanTier, "score", {})
     } catch (error) {
-      await decrementUsage(planCheck.billingUserId, "analyses")
+      await refundScore()
       throw error
     }
     if (queueResult.rateLimited) {
-      await decrementUsage(planCheck.billingUserId, "analyses")
+      await refundScore()
       return NextResponse.json(
         { error: "Rate limit exceeded", message: "You've used all your generations this hour. Upgrade for more." },
         { status: 429 }
@@ -82,14 +97,15 @@ export async function POST(request: NextRequest) {
         workspaceId: planCheck.workspaceId,
         plan: planCheck.plan,
         attempt,
+        brief: brief || undefined,
       })
     } catch (error) {
-      await decrementUsage(planCheck.billingUserId, "analyses")
+      await refundScore()
       throw error
     }
 
     if (!result.ok) {
-      await decrementUsage(planCheck.billingUserId, "analyses")
+      await refundScore()
       return NextResponse.json(
         { error: result.error.userMessage ?? result.error.message },
         { status: errorToStatus(result.error.code) }
@@ -97,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     await setCachedResult(cacheKey, result.data, 7200).catch(() => undefined)
-    const { scores, overall, tips, hashtags } = result.data
-    return NextResponse.json({ ...scores, overall, tips, hashtags })
+    const { scores, overall, tips, hashtags, unsupported } = result.data
+    return NextResponse.json({ ...scores, overall, tips, hashtags, unsupported })
   })(request)
 }

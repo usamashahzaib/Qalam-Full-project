@@ -22,5 +22,10 @@ export async function callGroq(
     temperature,
     maxTokens,
     timeout,
+    // gpt-oss reasons at "medium" by default and spends the whole max_tokens
+    // budget thinking: a 1000-token post call came back with 998 reasoning
+    // tokens and an empty message, and scoring hit the cap before closing its
+    // JSON. "low" leaves the budget for the actual output.
+    body: { reasoning_effort: "low" },
   })
 }

@@ -29,13 +29,16 @@ const looksLikeScorePayload = (value: string) => {
   }
 }
 
-export const toPostArtifact = (raw: string): PostArtifact | null => {
+// 80 words and 4 lines catches a truncated or half-empty generation. An author whose own
+// posts run 45 words gets a floor scaled to them instead, or every draft in their voice fails.
+export const toPostArtifact = (raw: string, options: { minWords?: number } = {}): PostArtifact | null => {
+  const minWords = Math.max(20, Math.min(80, options.minWords ?? 80))
   const content = sanitizeGeneratedText(raw)
   if (!content || looksLikeJson(content) || looksLikeScorePayload(content)) return null
 
   const words = content.split(/\s+/).filter(Boolean)
   const lines = content.split(/\n+/).map((l) => l.trim()).filter(Boolean)
-  if (words.length < 80 || lines.length < 4) return null
+  if (words.length < minWords || lines.length < (minWords < 80 ? 2 : 4)) return null
 
   return { content, wordCount: words.length }
 }
