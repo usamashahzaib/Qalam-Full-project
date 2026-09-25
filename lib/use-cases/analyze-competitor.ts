@@ -71,7 +71,7 @@ Return JSON with exactly this structure:
   }
   const raw = await callAi("competitor-analysis", system, userMsg, {
     json: true, temperature: 0.3, maxTokens: 900,
-    userId, plan, cache: false,
+    userId, plan, cache: false, humanWriting: false,
   }).catch(() => JSON.stringify(fallback))
 
   const analysis = safeParseJson<AnalyzeCompetitorOutput>(raw)

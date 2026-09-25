@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       "voice-profile",
       "Return strict JSON only. Preserve candidate truth and evaluate only job-relevant evidence.",
       buildResumeReviewPrompt(parsed.data.resumeText, parsed.data.jobDescription),
-      { json: true, temperature: 0.2, timeout: 30000, userId: `free_ats_${ip}`, plan: "free", cache: true, cacheTtl: 3600 }
+      { json: true, temperature: 0.2, timeout: 30000, userId: `free_ats_${ip}`, plan: "free", cache: true, cacheTtl: 3600, humanWriting: false }
     )
     const result = normalizeResumeReview(safeParseJson(raw), audit, confidence)
     return result

@@ -56,7 +56,7 @@ Return JSON:
     try {
       raw = await callAi("voice-profile", system, userMsg, {
         json: true, temperature: 0.3, maxTokens: 600,
-        userId: user.id, plan: planCheck.plan, cache: false,
+        userId: user.id, plan: planCheck.plan, cache: false, humanWriting: false,
       })
     } catch {
       return NextResponse.json({ error: "Voice analysis failed. Please try again." }, { status: 503 })

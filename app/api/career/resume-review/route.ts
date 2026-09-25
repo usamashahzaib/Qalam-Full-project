@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         "voice-profile",
         "Return strict JSON only. Preserve candidate truth and evaluate only job-relevant evidence.",
         buildResumeReviewPrompt(input.resumeText, input.jobDescription),
-        { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: planCheck.plan }
+        { json: true, temperature: 0.25, timeout: 30000, userId: user.id, plan: planCheck.plan, humanWriting: false }
       )
     } catch (error) {
       await refundCareerUsage(user.id, "resume_review")

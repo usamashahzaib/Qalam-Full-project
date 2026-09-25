@@ -60,6 +60,19 @@
 - Motion should be restrained and purposeful, not decorative noise
 - Preserve editorial/premium feel; no generic purple AI-startup aesthetic
 
+## Writing Style (Human-Only, No AI Slop)
+This applies to all copy: UI text, marketing pages, docs, blog, error/empty states, LinkedIn post drafts, commit messages, code comments, everything written for a human to read.
+- Never write like an AI wrote it. No "unlock", "elevate", "supercharge", "seamless", "in today's world", "game-changer", "empower", "robust solution", "at the end of the day"
+- No rule-of-three listing cadence ("fast, flexible, and powerful") unless the three things are actually distinct and earned
+- No em dashes or en dashes (already enforced by the pre-commit hook), and also avoid the AI habit of over-using colons and semicolons to fake structure
+- Vary sentence length on purpose. Short sentence. Then a longer one that carries a real idea. Avoid uniform medium-length sentences in a row, that's the biggest tell
+- Say the specific thing, not the category of thing. "Cuts your draft time from an hour to ten minutes" beats "saves time and boosts productivity"
+- No hedging filler ("it's worth noting", "generally speaking", "in many cases") unless the hedge is load-bearing
+- No emoji in copy unless explicitly requested
+- Asymmetric structure over parallel structure. Not every section needs the same shape, same sentence count, same rhythm
+- Cut the throat-clearing opener and closer. Start with the point. End when the point is made, no summary restating what was just said
+- When rewriting existing copy, read it aloud in your head first. If it sounds like a press release or a pitch deck, it's still slop
+
 ## Coding Conventions
 - Read relevant Next.js docs in `node_modules/next/dist/docs/` before touching framework-specific behavior
 - Use `apply_patch` for manual edits

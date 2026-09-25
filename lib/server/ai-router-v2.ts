@@ -9,6 +9,8 @@ import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
 import { env } from "./env"
 import type { OpenAiCompatibleResult } from "./openai-compatible-client"
+import { enforceHumanWriting } from "@/lib/prompts/enforce-human-writing"
+import { AI_PATTERN_RULES } from "@/lib/prompts/writing-policy"
 
 export type AiProvider = "groq" | "gemini" | "mistral"
 export type AiTask =
@@ -325,8 +327,15 @@ export async function callAi(
     plan?: string
     cache?: boolean
     cacheTtl?: number
+    /**
+     * On by default: output is checked for machine-writing patterns and the
+     * flagged parts are repaired before anyone sees them. Pass false only when
+     * the output quotes or extracts someone else's words (voice analysis,
+     * competitor analysis, resume evidence), where editing would falsify them.
+     */
+    humanWriting?: boolean | { allowPlaceholders?: boolean }
   } = {}
-) {
+): Promise<string> {
   const {
     json = false,
     temperature = 0.7,
@@ -336,7 +345,27 @@ export async function callAi(
     plan = "free",
     cache = true,
     cacheTtl = 86400,
+    humanWriting = true,
   } = options
+
+  const enforce = humanWriting !== false
+  if (enforce && !systemPrompt.includes("NEVER WRITE LIKE A MACHINE:")) {
+    systemPrompt = `${systemPrompt}\n\n${AI_PATTERN_RULES}`
+  }
+
+  const finish = async (content: string, fromCache: boolean) => {
+    if (!enforce) return content
+    const result = await enforceHumanWriting(content, {
+      json,
+      allowPlaceholders: typeof humanWriting === "object" && humanWriting.allowPlaceholders,
+      parseJson: safeParseJson,
+      repair: (system, user, repairJson) =>
+        callAi(task, system, user, { json: repairJson, temperature: 0.3, timeout, maxTokens, userId, plan, cache: false, humanWriting: false }),
+    })
+    if (result.remaining.length) log.warn("ai.machine_patterns_remaining", { task, codes: [...new Set(result.remaining)] })
+    if (result.repaired && fromCache) await cacheAiResponse(promptHash, result.content, cacheTtl)
+    return result.content
+  }
 
   // Scope cache key by userId so users never receive another user's personalized output.
   const baseHash = hashPrompt(systemPrompt, userMessage, { json, temperature, maxTokens })
@@ -344,7 +373,7 @@ export async function callAi(
 
   if (cache) {
     const cached = await getCachedAiResponse(promptHash)
-    if (cached) return cached
+    if (cached) return finish(cached, true)
   }
 
   await enforceDailySpendCap()
@@ -365,8 +394,9 @@ export async function callAi(
       continue
     }
 
-    if (cache) await cacheAiResponse(promptHash, content, cacheTtl)
-    return content
+    const finished = await finish(content, false)
+    if (cache) await cacheAiResponse(promptHash, finished, cacheTtl)
+    return finished
   }
 
   log.warn("ai.all_providers_unavailable", { task })

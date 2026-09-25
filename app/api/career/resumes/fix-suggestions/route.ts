@@ -79,7 +79,7 @@ Return JSON only: {"suggestions":[{"id":"<line id>","options":["","",""]}]}`
         "post-improvement",
         "You are a senior resume writer. Return strict JSON only. Preserve the candidate's facts and use square-bracket prompts for any figure you do not have.",
         prompt,
-        { json: true, temperature: input.regenerate ? 0.8 : 0.4, timeout: 30000, maxTokens: 3000, userId: user.id, plan: planCheck.plan, cache: !input.regenerate },
+        { json: true, temperature: input.regenerate ? 0.8 : 0.4, timeout: 30000, maxTokens: 3000, userId: user.id, plan: planCheck.plan, cache: !input.regenerate, humanWriting: { allowPlaceholders: true } },
       )
     } catch {
       return NextResponse.json({ error: "Suggestions are unavailable right now. Try again in a moment." }, { status: 503 })

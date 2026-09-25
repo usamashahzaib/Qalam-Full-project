@@ -56,13 +56,35 @@ HOW TO WRITE IT:
 - Use the plain, conversational language someone would use to explain their work to another person. Follow the author's voice where supplied. Do not turn an ordinary observation into a pitch.
 - Lead with the actual point, explain why it matters in concrete terms, and stop when it is clear. Keep warmth in the wording without adding praise, hype, or filler.
 - Prefer specific actions to vague promises. Do not add claims such as "game-changing", "seamless", or "revolutionary" just to make something sound impressive.
-- Nothing in this list is required. Use an opening that fits the thought, not a formula. A dramatic or contrarian opening, a three-part structure, one-sentence paragraphs, a closing lesson, a question, a call to action, a personal anecdote, a quotable line: each is allowed when the material genuinely supports it, and none should appear because the format seems to expect it.
-- Ordinary professional vocabulary is fine. A word is only wrong when it is doing no work. "We leverage the existing index" is a normal sentence. "Leverage synergies to unlock potential" is not.
+- Nothing in this list is required. Use an opening that fits the thought, not a formula. A contrarian opening, one-sentence paragraphs, a closing lesson, a question, a call to action, a personal anecdote, a quotable line: each is allowed when the material genuinely supports it, and none should appear because the format seems to expect it.
+- Ordinary professional vocabulary is fine when it is the exact right word. A word is only wrong when it is doing no work, or when it is one of the machine tells listed below.
 - Bullets are fine when the content is genuinely a list. Longer sentences are fine when the idea needs them. Vary sentence length because the thought varies, not to perform variety.
 - Do not manufacture roughness. No fake typos, no invented slang, no performed vulnerability, no confession the author never made. Natural is not the same as messy.
 - Say the thing directly instead of announcing it ("the real issue is", "here is the thing", "let me be clear"). Cut any sentence whose only job is to say that the next sentence matters.
 - Do not restate what you just said as a closing summary. Stop when the thought is finished.
 - Skip filler agreement and hollow emphasis. If a sentence would survive being deleted without loss, delete it.
+`.trim();
+
+// ---------------------------------------------------------------------------
+// MACHINE TELLS - patterns that mark text as AI-written. Also checked
+// deterministically in lib/prompts/ai-patterns.ts and repaired in callAi(), so
+// this block is the first line of defence, not the only one.
+// ---------------------------------------------------------------------------
+export const AI_PATTERN_RULES = `
+NEVER WRITE LIKE A MACHINE:
+- Never use: delve, tapestry, testament to, multifaceted, realm, pivotal, meticulous, intricate, underscore, paramount, seamless, moreover, furthermore, myriad, plethora, commendable, game-changer, cutting-edge, supercharge, unleash, unlock potential, elevate, "navigate the complexities".
+- Never open with trend scaffolding: "In today's fast-paced world", "in the digital age", "has emerged as", "gone are the days", "more and more people", "it's no secret", "let's face it", "here's the thing", "picture this", "we've all been there".
+- Never use these sentence machines: "It's not just X, it's Y", "X isn't just about Y", "Not only X but also Y", "Whether you're a X or a Y", "From X to Y,", "That's where X comes in", "At its core", "The result?", "The best part?", "It's worth noting", "One thing is clear", "X and Y alike", "Let that sink in".
+- Do not end a sentence with a trailing purpose clause: ", ensuring...", ", allowing...", ", paving the way for...", ", positioning X as...", ", which means that...". Stop at the comma or make it its own sentence.
+- Do not reach for three. Two reasons, four reasons, or one strong one. Never stack "fast, flexible, and powerful" lists.
+- Do not open consecutive sentences with "This approach", "This means", "These challenges". Name the thing.
+- Commit to a view. No "While X offers benefits, it's equally important to consider Y" hedging, no "ultimately, it's about what works for you".
+- No closing summary, no "In conclusion", no "Ultimately," paragraph, no "the future looks bright". End on the last real point.
+- No idiom stacks (pave the way, bridge the gap, double-edged sword, at the end of the day, tip of the iceberg) and no quantifier soup (a plethora of, a wealth of, a myriad of).
+- Plain verbs over nouns: "use" not "utilization", "start" not "commence", "help" not "facilitate".
+- Keep calling a thing by the same word. Do not rotate synonyms (staff, team members, employees) to sound varied.
+- Let sentence length swing with the thought: a four-word sentence next to a thirty-word one. Never a run of same-length sentences.
+- No semicolons in social writing, no trailing "...", no one-word drama lines ("Exactly." "Period."), no Unicode bold letters.
 `.trim();
 
 // Conversation-specific guidance. Used for comments and replies, where the job
@@ -77,10 +99,10 @@ REPLYING TO SOMEONE ELSE:
 `.trim();
 
 /** Everything a long-form writing task needs, in one block. */
-export const WRITING_POLICY = [MECHANICAL_RULES, GROUNDING_RULES, NATURAL_WRITING_RULES].join("\n\n");
+export const WRITING_POLICY = [MECHANICAL_RULES, GROUNDING_RULES, NATURAL_WRITING_RULES, AI_PATTERN_RULES].join("\n\n");
 
 /** Everything a reply task needs, in one block. */
-export const REPLY_POLICY = [MECHANICAL_RULES, GROUNDING_RULES, NATURAL_WRITING_RULES, REPLY_RULES].join("\n\n");
+export const REPLY_POLICY = [MECHANICAL_RULES, GROUNDING_RULES, NATURAL_WRITING_RULES, AI_PATTERN_RULES, REPLY_RULES].join("\n\n");
 
 /** Language instruction. Keeps Roman Urdu and mixed-language input intact. */
 export const LANGUAGE_RULE = `

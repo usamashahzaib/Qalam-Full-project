@@ -104,7 +104,7 @@ Return JSON:
 }`
     const raw = await callAi("voice-profile", system, userMsg, {
       json: true, temperature: 0.3, maxTokens: 600,
-      userId, plan, cache: false,
+      userId, plan, cache: false, humanWriting: false,
     })
     const analysis = safeParseJson<VoiceAnalysis>(raw)
     if (!analysis) throw new Error("AI_UNAVAILABLE")

@@ -101,6 +101,7 @@ Return JSON:
         userId: user.id,
         plan: planCheck.plan,
         cache: false,
+        humanWriting: false,
       })
     } catch {
       return responseError("professional_profile_analysis_failed", 503)
