@@ -41,7 +41,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           <section>
-            <p className="mb-2 t-eyebrowr text-zinc-400">Quick links</p>
+            <p className="mb-2 t-eyebrow text-zinc-400">Quick links</p>
             <div className="space-y-2">
               {QUICK_LINKS.map((link) => (
                 <Link
@@ -58,7 +58,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
           </section>
 
           <section>
-            <p className="mb-2 t-eyebrowr text-zinc-400">Keyboard shortcuts</p>
+            <p className="mb-2 t-eyebrow text-zinc-400">Keyboard shortcuts</p>
             <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200">
               {SHORTCUTS.map((shortcut) => (
                 <div key={shortcut.keys} className="flex items-center justify-between px-4 py-2.5">
@@ -72,7 +72,7 @@ export function HelpPanel({ open, onClose }: { open: boolean; onClose: () => voi
           </section>
 
           <section>
-            <p className="mb-2 t-eyebrowr text-zinc-400">Contact support</p>
+            <p className="mb-2 t-eyebrow text-zinc-400">Contact support</p>
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
               className="block rounded-xl border border-zinc-200 px-4 py-3 transition-colors hover:border-teal/40 hover:bg-teal/5"

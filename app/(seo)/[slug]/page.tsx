@@ -98,7 +98,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
           <section className="border-b border-teal/15 bg-teal-50/40 px-6 py-12">
             <div className="mx-auto grid max-w-[960px] gap-6 md:grid-cols-[1.35fr_.65fr] md:items-end">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Working Qalam tool</p>
+                <p className="t-eyebrow text-teal">Working Qalam tool</p>
                 <h2 className="mt-3 text-3xl font-bold text-zinc-900">{page.tool.label}</h2>
                 <p className="mt-3 max-w-2xl leading-7 text-zinc-600">{page.tool.description}</p>
                 <p className="mt-3 text-sm font-medium text-zinc-500">{page.tool.detail}</p>
@@ -124,7 +124,7 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
               {page.example ? (
                 <FadeUp delay={page.sections.length * 0.06}>
                   <article className="rounded-2xl border border-gold/25 bg-gold-50/45 p-7">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Example</p>
+                    <p className="t-eyebrow text-gold-700">Example</p>
                     <h2 className="mt-3 text-2xl font-bold text-zinc-900">{page.example.heading}</h2>
                     <p className="mt-3 leading-relaxed text-zinc-700">{page.example.body}</p>
                   </article>

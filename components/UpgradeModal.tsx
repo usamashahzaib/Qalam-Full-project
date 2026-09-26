@@ -57,7 +57,7 @@ export function UpgradeModal({ currentPlan, requiredPlan, reason, usageLabel, on
         <p className="mt-2 text-sm font-semibold text-zinc-700">Upgrade to {requiredPlan} for {formatPrice(prices.monthly)}/month</p>
         <p className="mt-1 text-xs text-emerald-700">{formatPrice(prices.quarterly)} billed quarterly. 1 month free.</p>
         <div className="mt-4 rounded-2xl border border-zinc-100 bg-zinc-50 p-4 text-left">
-          <p className="t-eyebrowr text-zinc-400">Included</p>
+          <p className="t-eyebrow text-zinc-400">Included</p>
           <ul className="mt-2 space-y-1.5">
             {unlocksFor(requiredPlan).map((item) => (
               <li key={item} className="flex items-center gap-2 text-sm text-zinc-700">

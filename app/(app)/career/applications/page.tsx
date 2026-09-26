@@ -110,7 +110,7 @@ export default function ApplicationsPage() {
         <header className="border-b border-zinc-200 pb-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Career outcome ledger</p>
+              <p className="t-eyebrow text-teal">Career outcome ledger</p>
               <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950">Know which applications actually work.</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">Link every job, resume version, stage change, and result. Your history becomes evidence, not guesswork.</p>
             </div>
@@ -142,10 +142,10 @@ export default function ApplicationsPage() {
         {(message || error) && <p role="status" className={`mt-5 rounded-xl border px-4 py-3 text-sm ${error ? "border-red-200 bg-red-50 text-red-700" : "border-teal/20 bg-teal/5 text-teal-800"}`}>{error || message}</p>}
 
         <section className="py-6">
-          {advancedInsights?.resumePerformance.length ? <div className="mb-6 border-y border-zinc-200 py-5"><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">Pro outcome intelligence</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{advancedInsights.resumePerformance.slice(0, 3).map((resume) => <div key={resume.resumeId}><p className="truncate text-sm font-bold text-zinc-900">{resume.title}</p><p className="mt-1 text-xs text-zinc-500">{resume.responses}/{resume.applications} responses, {resume.interviews} interviews</p></div>)}</div><p className="mt-3 text-xs text-zinc-400">Observed history only. Small samples are directional, not predictive.</p></div> : null}
+          {advancedInsights?.resumePerformance.length ? <div className="mb-6 border-y border-zinc-200 py-5"><p className="t-eyebrow text-gold-700">Pro outcome intelligence</p><div className="mt-3 grid gap-3 sm:grid-cols-3">{advancedInsights.resumePerformance.slice(0, 3).map((resume) => <div key={resume.resumeId}><p className="truncate text-sm font-bold text-zinc-900">{resume.title}</p><p className="mt-1 text-xs text-zinc-500">{resume.responses}/{resume.applications} responses, {resume.interviews} interviews</p></div>)}</div><p className="mt-3 text-xs text-zinc-400">Observed history only. Small samples are directional, not predictive.</p></div> : null}
           {loading ? <div className="space-y-3" aria-label="Loading applications">{[1, 2, 3].map((item) => <div key={item} className="h-24 animate-pulse rounded-xl bg-zinc-200/70" />)}</div> : applications.length ? (
             <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-[oklch(0.995_0.004_165)]">
-              <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-zinc-500 md:grid"><span>Opportunity</span><span>Resume evidence</span><span>Stage</span><span>Next action</span></div>
+              <div className="hidden grid-cols-[1.4fr_1fr_0.8fr_1fr] gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-3 t-eyebrow text-zinc-500 md:grid"><span>Opportunity</span><span>Resume evidence</span><span>Stage</span><span>Next action</span></div>
               {applications.map((application) => (
                 <motion.article key={application.id} layout={!reduceMotion} className="grid gap-4 border-b border-zinc-100 px-5 py-4 last:border-b-0 md:grid-cols-[1.4fr_1fr_0.8fr_1fr] md:items-center">
                   <div><div className="flex items-center gap-2"><h2 className="font-bold text-zinc-950">{application.job.title}</h2>{application.job.source_url && <a href={application.job.source_url} target="_blank" rel="noreferrer" className="text-xs font-bold text-teal">View job</a>}</div><p className="mt-1 text-sm text-zinc-600">{application.job.company}{application.job.location ? `, ${application.job.location}` : ""}</p></div>

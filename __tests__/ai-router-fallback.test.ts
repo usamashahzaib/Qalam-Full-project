@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { callGemini } from "@/lib/server/gemini-client"
 import { callGroq } from "@/lib/server/groq-client"
-import { callMistral } from "@/lib/server/mistral-client"
+import { callOpenRouter } from "@/lib/server/openrouter-client"
 
 vi.mock("@/lib/server/gemini-client", () => ({ callGemini: vi.fn() }))
 vi.mock("@/lib/server/groq-client", () => ({ callGroq: vi.fn() }))
-vi.mock("@/lib/server/mistral-client", () => ({ callMistral: vi.fn() }))
+vi.mock("@/lib/server/openrouter-client", () => ({ callOpenRouter: vi.fn() }))
 vi.mock("@/lib/server/queue", () => ({
   checkAiRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
   cacheAiResponse: vi.fn(),
@@ -28,7 +28,7 @@ vi.mock("@/lib/server/env", () => ({ env: { aiDailySpendCapUsd: 0 } }))
 
 const mockGemini = vi.mocked(callGemini)
 const mockGroq = vi.mocked(callGroq)
-const mockMistral = vi.mocked(callMistral)
+const mockOpenRouter = vi.mocked(callOpenRouter)
 const { callAi } = await import("@/lib/server/ai-router-v2")
 
 const groqResult = {
@@ -38,39 +38,58 @@ const groqResult = {
   model: "openai/gpt-oss-20b",
 }
 
+const openRouterResult = {
+  content: "free response",
+  tokensIn: 4,
+  tokensOut: 3,
+  model: "openrouter/free",
+}
+
 describe("AI provider fallback", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockOpenRouter.mockResolvedValue(openRouterResult)
     mockGroq.mockResolvedValue(groqResult)
     mockGemini.mockResolvedValue("gemini response")
   })
 
-  it("falls from Gemini to Groq for hook and CTA tasks", async () => {
-    mockGemini.mockRejectedValue(new Error("Gemini API key not configured"))
-
-    await expect(callAi("hook-generation", "system", "user", { cache: false })).resolves.toBe("groq response")
-    await expect(callAi("cta-rewrite", "system", "user", { cache: false })).resolves.toBe("groq response")
-    expect(mockGroq).toHaveBeenCalledTimes(2)
-    expect(mockMistral).not.toHaveBeenCalled()
-  })
-
-  it("falls from Groq to Gemini for post, score, improve, and carousel tasks", async () => {
-    mockGroq.mockRejectedValue(new Error("Groq API key not configured"))
-
-    for (const task of ["post-generation", "post-scoring", "post-improvement", "carousel-outline"] as const) {
-      await expect(callAi(task, "system", "user", { cache: false })).resolves.toBe("gemini response")
+  it("leads with OpenRouter for every task", async () => {
+    for (const task of ["hook-generation", "cta-rewrite", "post-generation", "post-scoring", "post-improvement", "carousel-outline"] as const) {
+      await expect(callAi(task, "system", "user", { cache: false })).resolves.toBe("free response")
     }
 
-    expect(mockGemini).toHaveBeenCalledTimes(4)
-    expect(mockMistral).not.toHaveBeenCalled()
+    expect(mockOpenRouter).toHaveBeenCalledTimes(6)
+    expect(mockGemini).not.toHaveBeenCalled()
+    expect(mockGroq).not.toHaveBeenCalled()
+  })
+
+  it("falls from OpenRouter to Gemini when OpenRouter is unavailable", async () => {
+    mockOpenRouter.mockRejectedValue(new Error("OpenRouter API key not configured"))
+
+    await expect(callAi("hook-generation", "system", "user", { cache: false })).resolves.toBe("gemini response")
+    await expect(callAi("cta-rewrite", "system", "user", { cache: false })).resolves.toBe("gemini response")
+    expect(mockGemini).toHaveBeenCalledTimes(2)
+    expect(mockGroq).not.toHaveBeenCalled()
+  })
+
+  it("falls from OpenRouter and Gemini to Groq for post, score, improve, and carousel tasks", async () => {
+    mockOpenRouter.mockRejectedValue(new Error("OpenRouter API key not configured"))
+    mockGemini.mockRejectedValue(new Error("Gemini API key not configured"))
+
+    for (const task of ["post-generation", "post-scoring", "post-improvement", "carousel-outline"] as const) {
+      await expect(callAi(task, "system", "user", { cache: false })).resolves.toBe("groq response")
+    }
+
+    expect(mockGroq).toHaveBeenCalledTimes(4)
   })
 
   it("does not retry a retired model response before falling back", async () => {
-    mockGroq.mockRejectedValue(new Error("Groq API error: 404 model no longer available"))
+    mockOpenRouter.mockRejectedValue(new Error("OpenRouter API key not configured"))
+    mockGemini.mockRejectedValue(new Error("Gemini API error: 404 model no longer available"))
 
-    await expect(callAi("post-generation", "system", "user", { cache: false })).resolves.toBe("gemini response")
+    await expect(callAi("post-generation", "system", "user", { cache: false })).resolves.toBe("groq response")
 
-    expect(mockGroq).toHaveBeenCalledTimes(1)
     expect(mockGemini).toHaveBeenCalledTimes(1)
+    expect(mockGroq).toHaveBeenCalledTimes(1)
   })
 })

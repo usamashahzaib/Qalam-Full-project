@@ -83,7 +83,7 @@ export function ControlRoom({ data, loading, onOpenTab }: { data: ControlRoomDat
                   <div className="flex min-w-0 items-start gap-3">
                     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${meta.dot}`} aria-hidden="true" />
                     <div className="min-w-0">
-                      <p className="text-sm text-zinc-800"><span className="font-bold text-zinc-900">{item.clientName}</span> <span className={`ml-1 text-[11px] font-semibold uppercase tracking-wide ${meta.text}`}>{meta.label}</span></p>
+                      <p className="text-sm text-zinc-800"><span className="font-bold text-zinc-900">{item.clientName}</span> <span className={`ml-1 t-eyebrow ${meta.text}`}>{meta.label}</span></p>
                       <p className="text-sm text-zinc-600">{item.message}</p>
                     </div>
                   </div>

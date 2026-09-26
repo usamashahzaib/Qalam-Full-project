@@ -110,13 +110,13 @@ function PlanCard({ stats }: { stats: DashboardStats }) {
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-bold uppercase tracking-wider text-zinc-400">
+          <p className="t-eyebrow text-zinc-400">
             Current plan
           </p>
           <p className="mt-2 text-2xl font-bold text-zinc-950">{planLabel}</p>
         </div>
         <span
-          className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+          className={`rounded-full px-2.5 py-1 t-eyebrow ${
             isFree ? "bg-zinc-100 text-zinc-500" : "bg-teal/10 text-teal"
           }`}
         >
@@ -254,7 +254,7 @@ const QUICK_ACTIONS = [
 function QuickActionsCard({ activeClientId }: { activeClientId: string | null }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-3 text-sm font-bold uppercase tracking-wider text-zinc-400">
+      <h2 className="mb-3 t-eyebrow text-zinc-400">
         Quick actions
       </h2>
       <div className="space-y-2">

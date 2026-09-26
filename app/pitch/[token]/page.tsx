@@ -35,7 +35,7 @@ export default function PitchPreviewPage() {
       {pitch ? (
         <div className="space-y-6">
           <header>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">Prepared by {pitch.agencyName}</p>
+            <p className="t-eyebrow text-teal-700">Prepared by {pitch.agencyName}</p>
             <h1 className="mt-2 text-2xl font-bold leading-tight text-zinc-900 sm:text-3xl">{firstName}, this is what your LinkedIn could sound like</h1>
             <p className="mt-3 text-sm leading-6 text-zinc-600">Three sample posts written in your voice, based on how you already write. They are drafts to react to, not finished posts. Nothing here has been published.</p>
           </header>
@@ -47,7 +47,7 @@ export default function PitchPreviewPage() {
                 <article key={index} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                   <button onClick={() => setOpen(expanded ? -1 : index)} aria-expanded={expanded} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
                     <span>
-                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-zinc-400">Sample {index + 1}</span>
+                      <span className="block t-eyebrow text-zinc-400">Sample {index + 1}</span>
                       <span className="mt-0.5 block text-base font-bold text-zinc-900">{sample.angle}</span>
                     </span>
                     <svg className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${expanded ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>

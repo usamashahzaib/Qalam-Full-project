@@ -154,7 +154,7 @@ const QUICK_ACTIONS = [
 function QuickActionsCard({ activeClientId }: { activeClientId: string | null }) {
   return (
     <div className="h-full rounded-3xl border border-teal/10 bg-teal-800 p-6 text-white shadow-card-raised">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">Keep moving</p>
+      <p className="t-eyebrow text-gold-200">Keep moving</p>
       <h2 className="mt-2 text-xl font-bold">Choose your next useful step</h2>
       <p className="mt-2 text-sm leading-6 text-white/55">Each action improves something you can actually use.</p>
       <div className="space-y-2">

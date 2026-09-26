@@ -30,7 +30,7 @@ export default function CareerVisibilityPage() {
     <main className="bg-white pt-24">
       <section className="border-b border-zinc-100 bg-[#073f3b] px-6 py-24 text-white">
         <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Qalam career visibility</p>
+          <p className="t-eyebrow text-gold-200">Qalam career visibility</p>
           <h1 className="mt-5 max-w-4xl text-5xl font-extrabold leading-tight sm:text-6xl">Get found. Build trust. Get shortlisted.</h1>
           <p className="mt-6 max-w-2xl text-xl leading-8 text-white/70">Your LinkedIn profile, content, resume, applications, and interview story should use the same credible evidence. Qalam connects the complete outcome workflow.</p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -43,7 +43,7 @@ export default function CareerVisibilityPage() {
       <section className="px-6 py-20">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">One system, not disconnected tools</p>
+            <p className="t-eyebrow text-teal">One system, not disconnected tools</p>
             <h2 className="mt-3 text-4xl font-bold text-zinc-900">Every career signal works from the same truth.</h2>
             <p className="mt-4 text-base leading-7 text-zinc-600">Use the core workflow on your plan, then add a specific career output when you need more capacity or depth.</p>
           </div>
@@ -65,7 +65,7 @@ export default function CareerVisibilityPage() {
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">One-time career add-ons</p>
+              <p className="t-eyebrow text-gold-700">One-time career add-ons</p>
               <h2 className="mt-3 text-4xl font-bold text-zinc-900">Pay for the output, not another subscription.</h2>
               <p className="mt-4 text-base leading-7 text-zinc-600">Each credit generates and saves the result inside your Qalam workspace. Card checkout appears only for configured products.</p>
             </div>
@@ -73,7 +73,7 @@ export default function CareerVisibilityPage() {
           </div>
 
           <div className="mt-10 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
+            <div><p className="t-eyebrow text-gold-200">Most useful for one application</p><h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Review, resume, cover letter, and interview practice in one connected workflow.</p></div>
             <div className="sm:text-right"><p className="text-xs text-white/60 line-through">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.originalPrice)}</p><strong className="mt-1 block text-2xl text-gold">{formatPrice(CAREER_PACKS.find(({ key }) => key === "job_win_pack")!.price)}</strong></div>
           </div>
 

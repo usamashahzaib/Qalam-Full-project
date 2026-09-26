@@ -63,7 +63,7 @@ export default function IndustriesPage() {
 
       <section className="border-b border-zinc-200 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
         <div className="mx-auto max-w-[1200px]">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Built around the decision being made</p>
+          <p className="t-eyebrow text-gold-700">Built around the decision being made</p>
           <div className="mt-5 grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <h1 className="text-4xl font-extrabold leading-none tracking-tight text-zinc-900 sm:text-6xl">Different careers need different proof. Qalam keeps the evidence connected.</h1>
             <p className="max-w-[60ch] border-l-2 border-teal pl-5 text-base leading-8 text-zinc-600 sm:pl-7">Choose your context to see the exact problem, outcome, and workflows Qalam supports. No generic promise that one feature solves every audience.</p>
@@ -86,7 +86,7 @@ export default function IndustriesPage() {
 
       <section className="border-y border-zinc-200 bg-white px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto grid max-w-[1100px] gap-8 lg:grid-cols-[0.78fr_1.22fr]">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Shared foundation</p><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-zinc-900">One professional truth, adapted to the audience.</h2></div>
+          <div><p className="t-eyebrow text-teal">Shared foundation</p><h2 className="mt-4 text-4xl font-extrabold tracking-tight text-zinc-900">One professional truth, adapted to the audience.</h2></div>
           <div className="grid gap-4 sm:grid-cols-2">
             {[
               ["Individuals", "Own your evidence, resume versions, target roles, profile position, applications, and content."],

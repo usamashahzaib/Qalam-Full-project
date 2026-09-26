@@ -329,10 +329,10 @@ export default function CalendarPage() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="border-b border-zinc-100 bg-zinc-50">
-                    <th className="px-5 py-3 text-left t-eyebrowr text-zinc-400">Title</th>
-                    <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Type</th>
-                    <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Scheduled</th>
-                    <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Status</th>
+                    <th className="px-5 py-3 text-left t-eyebrow text-zinc-400">Title</th>
+                    <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Type</th>
+                    <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Scheduled</th>
+                    <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Status</th>
                     <th className="px-4 py-3" />
                   </tr>
                 </thead>

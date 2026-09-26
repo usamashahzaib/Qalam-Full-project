@@ -273,7 +273,7 @@ export default function ChatWorkspace() {
       {/* Dark sidebar matches app shell */}
       <div className="flex w-72 flex-col rounded-l-2xl bg-zinc-900">
         <div className="border-b border-zinc-800 px-4 py-4">
-          <p className="mb-3 px-1 t-eyebrowst text-zinc-500">AI Strategist</p>
+          <p className="mb-3 px-1 t-eyebrow text-zinc-500">AI Strategist</p>
           <button
             onClick={createConversation}
             disabled={isCreating}
@@ -367,7 +367,7 @@ export default function ChatWorkspace() {
                       {msg.role === 'assistant' ? renderMarkdown(msg.content) : <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>}
                       {msg.role === 'assistant' && (
                         <div className="mt-3 flex items-center justify-end border-t border-zinc-100 pt-2">
-                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer t-eyebrowr text-teal transition-colors hover:text-teal-700">
+                          <button onClick={() => convertToDraft(msg.content)} className="cursor-pointer t-eyebrow text-teal transition-colors hover:text-teal-700">
                             Save to drafts
                           </button>
                         </div>

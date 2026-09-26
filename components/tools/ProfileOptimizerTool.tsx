@@ -73,15 +73,15 @@ export function ProfileOptimizerTool() {
           </div>
           {result ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Profile score</p>
+              <p className="t-eyebrow text-zinc-400">Profile score</p>
               <p className="mt-1 text-5xl font-extrabold text-zinc-900">{toHundredPointScore(result.profile_score)}/100</p>
               <p className="mt-4 text-sm leading-6 text-zinc-700">{result.positioning_diagnosis}</p>
               <div className="mt-5 rounded-xl bg-teal/5 p-4">
-                <p className="text-xs font-bold uppercase text-teal">Headline suggestion</p>
+                <p className="t-eyebrow text-teal">Headline suggestion</p>
                 <p className="mt-2 text-sm font-semibold text-zinc-900">{result.headline_suggestion}</p>
               </div>
               <div className="mt-5 rounded-xl border border-zinc-100 p-4">
-                <p className="text-xs font-bold uppercase text-zinc-400">Optimized About</p>
+                <p className="t-eyebrow text-zinc-400">Optimized About</p>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-800">{result.optimized_about}</p>
               </div>
               <ul className="mt-5 space-y-2">{(result.top_fixes || []).map((item) => <li key={item} className="text-sm text-zinc-700">- {item}</li>)}</ul>

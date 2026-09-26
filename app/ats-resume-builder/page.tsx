@@ -62,7 +62,7 @@ export default function AtsResumeBuilderPage() {
       <section className="border-b border-zinc-100 px-6 py-24">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-2">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">One free generation every month</p>
+            <p className="t-eyebrow text-teal">One free generation every month</p>
             <h1 className="mt-4 text-5xl font-extrabold leading-tight text-zinc-900">Build a full ATS-safe resume for the exact job.</h1>
             <p className="mt-5 text-xl leading-8 text-zinc-600">Sign in, paste your current resume and target JD, then edit and export a complete role-specific resume. Qalam improves relevance, keywords, proof, and clarity without inventing experience.</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -96,7 +96,7 @@ export default function AtsResumeBuilderPage() {
       <section className="px-6 py-20">
         <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">Methodology</p>
+            <p className="t-eyebrow text-teal">Methodology</p>
             <h2 className="mt-3 text-4xl font-bold text-zinc-900">Build for the role. Keep the evidence true.</h2>
             <ol className="mt-6 space-y-5 text-zinc-600">
               <li><strong className="text-zinc-900">1. Diagnose the starting point.</strong> Run the ATS Resume Checker to identify parsing, relevance, proof, and clarity gaps.</li>
@@ -118,7 +118,7 @@ export default function AtsResumeBuilderPage() {
       </section>
       <section className="bg-zinc-50 px-6 py-20">
         <div className="mx-auto max-w-4xl">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">Questions</p>
+          <p className="t-eyebrow text-teal">Questions</p>
           <h2 className="mt-3 text-4xl font-bold text-zinc-900">ATS Resume Builder FAQs</h2>
           <div className="mt-8 space-y-4">
             {faqs.map((faq) => (

@@ -10,7 +10,7 @@ Project rules for AI coding tools live in `CLAUDE.md` and `AGENTS.md`. Read them
 - Auth: NextAuth v5 (credentials and LinkedIn sign-in)
 - Data: Supabase Postgres with RLS, migrations in `supabase/migrations`
 - Jobs and limits: Upstash Redis, QStash, Vercel Cron (`vercel.json`)
-- AI: Groq, Gemini, Mistral, Cerebras, OpenRouter behind a daily spend cap
+- AI: Groq, Gemini, Cerebras, OpenRouter behind a daily spend cap
 - Payments: Lemon Squeezy (USD store)
 - Email: Resend
 - Monitoring: Sentry

@@ -123,7 +123,7 @@ export function DailyMomentumCard() {
           <div aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="relative">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Today&apos;s 30-second win</p>
+              <p className="t-eyebrow text-gold-700">Today&apos;s 30-second win</p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl">Save one thing you accomplished today.</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-500">Qalam keeps it in Recent Wins so you can reuse it in your next post, resume, interview, or performance review.</p>
             </div>
@@ -179,7 +179,7 @@ export function DailyMomentumCard() {
           <div className="mt-7 border-t border-zinc-100 pt-5">
             <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">Your week</p>
+                <p className="t-eyebrow text-zinc-400">Your week</p>
                 <p className="mt-1 text-sm font-semibold text-zinc-700">Meaningful progress on {momentum.activeDaysLast7} of 7 days</p>
                 <p className="mt-1 text-xs text-zinc-500">Miss a day? Continue when you are ready. Your saved work stays.</p>
               </div>
@@ -204,11 +204,11 @@ export function DailyMomentumCard() {
             >
               <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full bg-teal-900">
                 <span className="text-2xl font-bold tabular-nums text-white">{momentum.score}</span>
-                <span className="t-eyebrowr text-white/55">Progress</span>
+                <span className="t-eyebrow text-white/55">Progress</span>
               </div>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Next useful move</p>
+              <p className="t-eyebrow text-gold-200">Next useful move</p>
               <h3 className="mt-1 text-lg font-bold text-white">{momentum.nextAction.label}</h3>
               <p className="mt-1 text-xs leading-5 text-white/60">{momentum.nextAction.reason}</p>
             </div>
@@ -217,7 +217,7 @@ export function DailyMomentumCard() {
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-200">Qalam path</p>
+                <p className="t-eyebrow text-gold-200">Qalam path</p>
                 <p className="mt-1 text-sm font-semibold text-white">{pathStage} of 13 progress signals active</p>
               </div>
               <span className="text-xs text-white/50">Built from real work</span>

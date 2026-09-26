@@ -50,7 +50,7 @@ export function ClientDiscretion({ variant = "full" }: { variant?: "full" | "com
       <div className="mx-auto max-w-[1200px]">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Why you will not see client names</p>
+            <p className="t-eyebrow text-gold-700">Why you will not see client names</p>
             <h2 className="t-h2 mt-4 max-w-md text-teal">Your name and your work stay out of our marketing.</h2>
             <p className="t-lead mt-5 max-w-lg text-zinc-600">{CLIENT_DISCRETION_NOTE}</p>
             {hasWords ? (

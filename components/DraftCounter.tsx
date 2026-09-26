@@ -92,7 +92,7 @@ export function DraftCounter({ className = "", compact = false }: { className?: 
     <>
       <div className={`rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm ${className}`}>
         <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Draft usage</p>
+          <p className="t-eyebrow text-zinc-500">Draft usage</p>
           <p className="text-xs font-semibold text-zinc-700">{current} / {limit} drafts used</p>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-zinc-100">

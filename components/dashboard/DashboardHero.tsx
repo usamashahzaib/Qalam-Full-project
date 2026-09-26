@@ -16,7 +16,7 @@ export function DashboardHero({
   return (
     <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">
+        <p className="t-eyebrow text-gold-700">
           Your Qalam
         </p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-zinc-950">

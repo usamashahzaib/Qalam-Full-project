@@ -138,7 +138,7 @@ export function AtsResumeCheckerTool() {
           <Link href="/free-tools" className="mb-8 inline-flex min-h-11 items-center text-sm font-medium text-zinc-500 hover:text-teal">{"<- All free tools"}</Link>
           <div className="grid items-end gap-8 lg:grid-cols-[1fr_360px]">
             <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.18em] text-teal">Free. No account required.</p>
+              <p className="mb-4 t-eyebrow text-teal">Free. No account required.</p>
               <h1 className="max-w-3xl text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-6xl">See what ATS software and recruiters will question.</h1>
               <p className="mt-5 max-w-2xl text-lg leading-8 text-zinc-600">Get a responsible first-screen review across parsing, job fit, proof, progression, skills, clarity, and rejection risk. Add a job description for a role-specific check.</p>
             </div>
@@ -204,7 +204,7 @@ export function AtsResumeCheckerTool() {
           </div>
 
           <aside className="h-fit rounded-2xl bg-[#073f3b] p-6 text-white lg:sticky lg:top-28">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">After your check</p>
+            <p className="t-eyebrow text-gold-100">After your check</p>
             <h2 className="mt-3 text-2xl font-bold">Build one ATS resume free every month.</h2>
             <p className="mt-3 text-sm leading-6 text-white/70">Sign in to target an exact job, edit every line, choose from 12 ATS-safe templates, and export to PDF.</p>
             <Link href={resumeBuilderHref("post_result_sidebar")} onClick={() => trackSignupStart("post_result_sidebar")} className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-gold px-4 text-sm font-bold text-teal-900 transition hover:bg-gold-600">Build my monthly free resume</Link>
@@ -216,7 +216,7 @@ export function AtsResumeCheckerTool() {
           <div className="mx-auto mt-10 max-w-[1100px] space-y-6">
             <section className="grid gap-6 rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8 lg:grid-cols-[220px_1fr]">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Qalam readiness score</p>
+                <p className="t-eyebrow text-zinc-500">Qalam readiness score</p>
                 <p className={`mt-2 text-6xl font-extrabold ${scoreTone(result.overall_score)}`}>{result.overall_score}<span className="text-2xl text-zinc-400">/100</span></p>
                 <p className="mt-3 text-sm font-bold text-teal">{result.screening_decision}</p>
               </div>
@@ -270,7 +270,7 @@ export function AtsResumeCheckerTool() {
 
             <section className="grid gap-px overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 sm:grid-cols-2 lg:grid-cols-4">
               {Object.entries(result.recruiter_read).map(([key, value]) => (
-                <div key={key} className="bg-white p-5"><p className="text-xs font-bold uppercase tracking-wide text-zinc-500">{key.replaceAll("_", " ")}</p><p className="mt-2 text-sm leading-6 text-zinc-700">{value}</p></div>
+                <div key={key} className="bg-white p-5"><p className="t-eyebrow text-zinc-500">{key.replaceAll("_", " ")}</p><p className="mt-2 text-sm leading-6 text-zinc-700">{value}</p></div>
               ))}
             </section>
 
@@ -292,7 +292,7 @@ export function AtsResumeCheckerTool() {
             </section>
 
             <section className="rounded-2xl bg-[#073f3b] p-6 text-white sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-100">Truth-preserving rewrite</p>
+              <p className="t-eyebrow text-gold-100">Truth-preserving rewrite</p>
               <h2 className="mt-2 text-2xl font-bold">Professional summary</h2>
               <p className="mt-4 max-w-4xl leading-7 text-white/80">{result.rewritten_summary}</p>
               <Link href={resumeBuilderHref("post_result_summary")} onClick={() => trackSignupStart("post_result_summary")} className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-gold px-5 text-sm font-bold text-teal-900">Build the full resume free</Link>
@@ -305,7 +305,7 @@ export function AtsResumeCheckerTool() {
         <div className="mx-auto max-w-[1100px]">
           <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">How the score works</p>
+              <p className="t-eyebrow text-teal">How the score works</p>
               <h2 className="mt-3 text-3xl font-bold text-zinc-900">Eight factors. Evidence over keyword stuffing.</h2>
               <p className="mt-4 max-w-3xl leading-7 text-zinc-600">{ATS_DIRECT_ANSWER}</p>
               <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

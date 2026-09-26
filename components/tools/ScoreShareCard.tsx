@@ -166,7 +166,7 @@ export function ScoreShareCard({ result }: { result: ResumeReviewResult }) {
     <section className="rounded-2xl border border-zinc-200 bg-white p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">
+          <p className="t-eyebrow text-gold-700">
             {shareable ? "Share your result" : "Pass it on"}
           </p>
           <h2 className="mt-2 text-2xl font-bold text-zinc-900">

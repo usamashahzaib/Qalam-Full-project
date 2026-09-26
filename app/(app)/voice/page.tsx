@@ -177,7 +177,7 @@ export default function VoicePage() {
                 </div>
                 <div className="grid gap-4 p-5 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">Name</label>
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">Name</label>
                     <input aria-label="Name"
                       value={profile.name}
                       onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
@@ -186,7 +186,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">Job Title</label>
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">Job Title</label>
                     <input aria-label="Job title"
                       value={profile.title}
                       onChange={(e) => setProfile((p) => ({ ...p, title: e.target.value }))}
@@ -195,7 +195,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">Industry</label>
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">Industry</label>
                     <input aria-label="Industry"
                       value={profile.industry}
                       onChange={(e) => setProfile((p) => ({ ...p, industry: e.target.value }))}
@@ -204,7 +204,7 @@ export default function VoicePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">LinkedIn URL</label>
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">LinkedIn URL</label>
                     <input aria-label="LinkedIn URL"
                       value={profile.linkedinUrl}
                       onChange={(e) => setProfile((p) => ({ ...p, linkedinUrl: e.target.value }))}
@@ -214,7 +214,7 @@ export default function VoicePage() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">Brand Tone</label>
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">Brand Tone</label>
                     <div className="flex flex-wrap gap-2">
                       {BRAND_TONES.map((tone) => (
                         <button
@@ -234,7 +234,7 @@ export default function VoicePage() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">
                       Goals <span className="font-normal normal-case text-zinc-400">(optional)</span>
                     </label>
                     <textarea aria-label="Goals"
@@ -318,7 +318,7 @@ export default function VoicePage() {
               <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                 <div className="border-b border-zinc-100 bg-zinc-50/60 px-4 py-3.5">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Voice Characteristics</h2>
+                    <h2 className="t-eyebrow text-zinc-500">Voice Characteristics</h2>
                     {isAnalyzing && <span className="animate-pulse t-eyebrow font-semibold text-teal">Analyzing...</span>}
                   </div>
                 </div>

@@ -100,7 +100,7 @@ export default function VoicePassportPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-10">
       <header className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Voice Passport</p>
+        <p className="t-eyebrow text-teal">Voice Passport</p>
         <h1 className="mt-1 text-3xl font-bold text-zinc-900">{data ? data.workspace.type === "personal" ? "Your writing rules" : `How ${data.workspace.name} writes` : "Voice Passport"}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
           Rules your team saves on purpose. Every draft, rewrite, hook, and carousel generated in this workspace follows them, so a new writer sounds right on day one.

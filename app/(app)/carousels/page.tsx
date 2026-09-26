@@ -187,7 +187,7 @@ export default function CarouselsPage() {
 
             {selectedPost ? (
               <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">Selected post</p>
+                <p className="t-eyebrow text-zinc-500">Selected post</p>
                 <p className="mt-1 text-sm font-semibold text-zinc-900">{selectedPost.title}</p>
                 <p className="mt-1 line-clamp-3 text-xs leading-relaxed text-zinc-600">{getPostPreviewText(selectedPost)}</p>
               </div>
@@ -282,7 +282,7 @@ export default function CarouselsPage() {
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
-                      <p className="mb-1 text-xs font-bold uppercase tracking-wider text-zinc-500">Deck</p>
+                      <p className="mb-1 t-eyebrow text-zinc-500">Deck</p>
                       <p className="truncate text-sm font-semibold text-zinc-900 transition-colors group-hover:text-teal">{carousel.topic || `Created ${formatDate(carousel.created_at)}`}</p>
                       <p className="mt-1 t-eyebrow text-zinc-400">Created {formatDate(carousel.created_at)}</p>
                     </div>

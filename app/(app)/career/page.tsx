@@ -56,7 +56,7 @@ const tabs: { id: Tab; label: string }[] = [
 ]
 
 const inputClass = "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-teal focus:ring-2 focus:ring-teal/10"
-const labelClass = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500"
+const labelClass = "mb-1.5 block t-eyebrow text-zinc-500"
 
 function ScorePanel({ title, result }: { title: string; result: AuditResult | ResumeResult }) {
   const score = toHundredPointScore(result.overall_score)
@@ -64,7 +64,7 @@ function ScorePanel({ title, result }: { title: string; result: AuditResult | Re
     <div className="rounded-2xl border border-teal/20 bg-teal/[0.035] p-5">
       <div className="mb-5 flex items-end justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal">Result</p>
+          <p className="t-eyebrow text-teal">Result</p>
           <h3 className="mt-1 text-xl font-bold text-zinc-900">{title}</h3>
         </div>
         <div className="text-right">
@@ -75,7 +75,7 @@ function ScorePanel({ title, result }: { title: string; result: AuditResult | Re
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {Object.entries(result.scores || {}).map(([key, value]) => (
           <div key={key} className="rounded-xl border border-zinc-200 bg-white p-3">
-            <p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-500">{formatScoreLabel(key)}</p>
+            <p className="min-h-6 t-eyebrow text-zinc-500">{formatScoreLabel(key)}</p>
             <p className="mt-1 text-xl font-bold text-zinc-900">{toHundredPointScore(value)}</p>
           </div>
         ))}
@@ -216,7 +216,7 @@ export default function CareerPage() {
         <section className="overflow-hidden rounded-3xl bg-[#073f3b] text-white shadow-sm">
           <div className="grid gap-8 px-6 py-8 md:grid-cols-[1.4fr_0.6fr] md:px-10 md:py-10">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#efb543]">Qalam Career Visibility</p>
+              <p className="t-eyebrow text-[#efb543]">Qalam Career Visibility</p>
               <h1 className="mt-3 max-w-3xl text-3xl font-bold leading-tight sm:text-4xl">Build a career profile recruiters can find, trust, and shortlist.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">One career story across LinkedIn, content, and every ATS resume. No generic advice. No invented achievements.</p>
             </div>
@@ -280,7 +280,7 @@ export default function CareerPage() {
                   <>
                     <div className="flex items-center justify-between">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-teal/10 text-xs font-bold text-teal">0{index + 1}</span>
-                      <span className="rounded-full bg-gold/10 px-2 py-0.5 t-eyebrowr text-gold-700">{tile.badge}</span>
+                      <span className="rounded-full bg-gold/10 px-2 py-0.5 t-eyebrow text-gold-700">{tile.badge}</span>
                     </div>
                     <h2 className="mt-5 text-lg font-bold text-zinc-900">{tile.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">{tile.copy}</p>

@@ -81,13 +81,13 @@ export default async function ContactPage({
                     href={item.href}
                     className="block rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm transition-colors hover:border-teal/30"
                   >
-                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-teal">{item.title}</p>
+                    <p className="mb-1.5 t-eyebrow text-teal">{item.title}</p>
                     <p className="text-base font-bold text-zinc-900">{item.value}</p>
                     <p className="mt-1 text-sm leading-relaxed text-zinc-500">{item.desc}</p>
                   </a>
                 ))}
                 <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-gold-700">Before you write</p>
+                  <p className="mb-2 t-eyebrow text-gold-700">Before you write</p>
                   <ul className="space-y-1.5 text-sm leading-relaxed text-zinc-600">
                     <li>- Your workspace email</li>
                     <li>- The plan you want</li>
@@ -108,7 +108,7 @@ export default async function ContactPage({
         <div className="mx-auto max-w-[1000px]">
           <FadeUp>
             <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal">Assisted payments</p>
+              <p className="mb-3 t-eyebrow text-teal">Assisted payments</p>
               <h2 className="mb-3 text-2xl font-bold text-zinc-900">Pay without a card</h2>
               <ol className="space-y-2 text-sm leading-relaxed text-zinc-600">
                 <li>1. Pick the plan that matches your workload. Card checkout is available from Pricing.</li>

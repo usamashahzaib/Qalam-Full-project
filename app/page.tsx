@@ -138,7 +138,7 @@ export default function HomePage() {
         <QalamEvidenceField variant="hero" />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(430px,0.82fr)] lg:gap-16">
           <div>
-            <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
+            <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 t-eyebrow text-teal shadow-sm backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
               LinkedIn publishing system with voice memory
             </p>
@@ -168,7 +168,7 @@ export default function HomePage() {
             </ul>
 
             <div className="mt-9 border-t border-teal/12 pt-7">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal/70">Check the product before you trust the page</p>
+              <p className="t-eyebrow text-teal/70">Check the product before you trust the page</p>
               <ul className="mt-4 flex flex-wrap gap-x-7 gap-y-3 text-sm font-bold text-teal">
                 <li>
                   <Link href="/demo" className="inline-flex min-h-11 items-center underline decoration-gold decoration-2 underline-offset-4">
@@ -206,7 +206,7 @@ export default function HomePage() {
             ["Separate the clients", "Agencies and content teams give each client an isolated workspace with its own voice profile, archive, and approval queue."],
           ].map(([title, copy]) => (
             <div key={title} className="md:px-8 first:md:pl-0 last:md:pr-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">{title}</p>
+              <p className="t-eyebrow text-gold-200">{title}</p>
               <p className="mt-2 text-sm leading-6 text-white/78">{copy}</p>
             </div>
           ))}
@@ -217,7 +217,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr] lg:gap-20">
             <div className="lg:sticky lg:top-28 lg:self-start">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">How Qalam works</p>
+              <p className="t-eyebrow text-gold-700">How Qalam works</p>
               <h2 className="t-h2 mt-4 max-w-md text-teal">Three steps, and the second one is the whole point.</h2>
               <p className="t-lead mt-5 max-w-lg text-zinc-600">
                 The difference is what persists. Your role, audience, saved writing examples, hooks, draft versions, schedule, archive, and post analytics stay in one LinkedIn workspace, so each draft is one step in a body of work rather than a standalone output.
@@ -243,7 +243,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Inside Qalam</p>
+              <p className="t-eyebrow text-gold-700">Inside Qalam</p>
               <h2 className="t-h2 mt-4 text-teal">See the working product before you sign up.</h2>
             </div>
             <div>
@@ -281,7 +281,7 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">The refusal</p>
+              <p className="t-eyebrow text-gold-200">The refusal</p>
               <h2 className="t-h2 mt-4 max-w-lg text-white">
                 A tool that writes in anybody&rsquo;s voice is writing in nobody&rsquo;s.
               </h2>
@@ -292,7 +292,7 @@ export default function HomePage() {
             <div className="divide-y divide-white/12 border-y border-white/12">
               {proofRules.map((rule) => (
                 <div key={rule.label} className="grid gap-3 py-7 sm:grid-cols-[120px_1fr] sm:gap-8">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">{rule.label}</p>
+                  <p className="t-eyebrow text-gold-200">{rule.label}</p>
                   <div>
                     <h3 className="text-xl font-bold text-white">{rule.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-white/65">{rule.copy}</p>
@@ -307,7 +307,7 @@ export default function HomePage() {
       <section className="bg-[#f7f3ea] px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">The archive</p>
+            <p className="t-eyebrow text-gold-700">The archive</p>
             <h2 className="t-h2 mt-4 text-teal">One idea, kept. Every format after that is a shorter job.</h2>
             <p className="t-lead mt-5 text-zinc-600">
               A point you have already made well is the most underused asset in publishing. Qalam keeps the evidence, the draft, the version history, and the hooks that worked in one searchable place, so the next format starts from something rather than nothing.
@@ -315,7 +315,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 grid gap-5 md:grid-cols-12">
             <div className="panel-raised p-7 md:col-span-5 sm:p-8">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Evidence record</p>
+              <p className="t-eyebrow text-teal">Evidence record</p>
               <blockquote className="mt-5 font-cormorant text-3xl font-semibold leading-tight text-zinc-900">
                 &ldquo;Reduced project review time by 61% while keeping clear owners for every action.&rdquo;
               </blockquote>
@@ -328,7 +328,7 @@ export default function HomePage() {
                 ["Targeted resume", "Aim the identical evidence at a job description when you need it. Supporting capability, not the main event."],
               ].map(([title, copy], index) => (
                 <div key={title} className={`panel-raised p-7 ${index === 2 ? "sm:col-span-2" : ""}`}>
-                  <p className="text-xs font-bold uppercase tracking-[0.15em] text-gold-700">0{index + 1}</p>
+                  <p className="t-eyebrow text-gold-700">0{index + 1}</p>
                   <h3 className="mt-3 text-lg font-bold text-zinc-900">{title}</h3>
                   <p className="mt-3 text-sm leading-6 text-zinc-600">{copy}</p>
                 </div>
@@ -354,7 +354,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end lg:gap-16">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">For agencies and ghostwriters</p>
+              <p className="t-eyebrow text-gold-700">For agencies and ghostwriters</p>
               <h2 className="t-h2 mt-4 max-w-xl text-teal">Every client in their own voice, without the chasing.</h2>
             </div>
             <p className="t-lead max-w-2xl text-zinc-600">
@@ -365,7 +365,7 @@ export default function HomePage() {
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-200 md:grid-cols-2">
             {agencyTools.map((tool) => (
               <div key={tool.label} className="bg-white p-7 sm:p-8">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">{tool.label}</p>
+                <p className="t-eyebrow text-gold-700">{tool.label}</p>
                 <h3 className="mt-3 text-xl font-bold tracking-tight text-zinc-900">{tool.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-zinc-600">{tool.copy}</p>
               </div>
@@ -394,7 +394,7 @@ export default function HomePage() {
       <section id="pricing" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Plans</p>
+            <p className="t-eyebrow text-gold-700">Plans</p>
             <h2 className="t-h2 mt-4 text-teal">Start free. Pay when the workflow earns its place.</h2>
             <p className="t-lead mt-5 text-zinc-600">Three clear levels for exploring, publishing consistently, or building a deeper career operating system.</p>
           </div>
@@ -406,7 +406,7 @@ export default function HomePage() {
               return (
                 <article key={plan.plan} className={`relative flex flex-col rounded-2xl border p-7 sm:p-8 ${highlighted ? "border-teal bg-teal text-white shadow-[0_20px_50px_rgba(13,74,69,0.2)]" : "border-zinc-200 bg-white text-zinc-900"}`}>
                   {highlighted && <span className="absolute right-5 top-5 rounded-full bg-gold px-3 py-1 t-eyebrow text-teal-900">Most popular</span>}
-                  <p className={`text-xs font-bold uppercase tracking-[0.17em] ${highlighted ? "text-gold-200" : "text-teal"}`}>{plan.plan}</p>
+                  <p className={`t-eyebrow ${highlighted ? "text-gold-200" : "text-teal"}`}>{plan.plan}</p>
                   <div className="mt-5 flex items-center gap-2.5">
                     <p className="text-4xl font-extrabold tracking-tight">{price}</p>
                     {plan.plan !== "Free" && (
@@ -444,7 +444,7 @@ export default function HomePage() {
       <section id="faq" className="bg-[#f7f3ea] px-6 py-24 sm:py-28">
         <div className="mx-auto grid max-w-[1100px] gap-10 lg:grid-cols-[0.62fr_1.38fr] lg:gap-16">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Questions</p>
+            <p className="t-eyebrow text-gold-700">Questions</p>
             <h2 className="t-h2 mt-4 text-teal">What a careful buyer should ask.</h2>
             <p className="t-body mt-5 text-zinc-600">
               Need a direct answer? <a href={`mailto:${SUPPORT_EMAIL}`} className="inline-flex min-h-11 items-center font-bold text-teal underline underline-offset-4">Email us</a>.
@@ -457,7 +457,7 @@ export default function HomePage() {
       <section className="qlx relative overflow-hidden bg-[#102f2d] px-6 py-20 text-white" data-nav-ground="dark">
         <div className="qlx-grain" aria-hidden />
         <div className="relative mx-auto flex max-w-[1000px] flex-col items-center text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">You already know what you think</p>
+          <p className="t-eyebrow text-gold-200">You already know what you think</p>
           <h2 className="mt-5 max-w-4xl text-[clamp(2.4rem,5vw,4.7rem)] font-extrabold leading-[1] tracking-[-0.045em] text-white">Now publish it without losing the way you say it.</h2>
           <TrackedHomepageLink
             href={resolvePublicHref("/signup")}

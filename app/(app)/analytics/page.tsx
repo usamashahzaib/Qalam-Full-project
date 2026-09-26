@@ -351,7 +351,7 @@ export default function AnalyticsPage() {
                   <thead className="bg-zinc-50">
                     <tr>
                       {["Date", "Impressions", "Reactions", "Comments", "Reposts", "Followers", "Notes"].map((h) => (
-                        <th key={h} className="px-3 py-2 font-bold uppercase tracking-wide text-zinc-500">{h}</th>
+                        <th key={h} className="px-3 py-2 t-eyebrow text-zinc-500">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -381,7 +381,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="grid grid-cols-[80px_repeat(4,minmax(0,1fr))] gap-1.5">
                 <div />
-                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center t-eyebrowr text-zinc-400">{label}</div>)}
+                {TIME_LABELS.map((label) => <div key={label} className="py-1 text-center t-eyebrow text-zinc-400">{label}</div>)}
                 {DAYS.map((day, row) => (
                   <div key={day} className="contents">
                     <div className="flex items-center text-xs font-semibold text-zinc-500">{day}</div>
@@ -435,7 +435,7 @@ function Stat({ label, value, note, accent }: { label: string; value: number; no
     <div className="rounded-xl border border-zinc-200 bg-white p-4">
       <p className="t-eyebrow text-zinc-400">{label}</p>
       <p className={`mt-1.5 text-3xl font-bold ${valueColor}`}>{value}</p>
-      <p className="mt-0.5 t-eyebrowr text-zinc-400">{note}</p>
+      <p className="mt-0.5 t-eyebrow text-zinc-400">{note}</p>
     </div>
   )
 }

@@ -58,7 +58,7 @@ export function ExtensionConnectCard() {
           </button>
         ) : (
           <>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">Connection code</p>
+            <p className="mb-2 t-eyebrow text-zinc-500">Connection code</p>
             <textarea readOnly value={code} aria-label="Qalam extension connection code" className="min-h-24 w-full rounded-xl border border-zinc-200 bg-white p-3 font-mono text-xs text-zinc-700 outline-none" />
             <button onClick={copyCode} className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-teal px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-600">Copy connection code</button>
           </>

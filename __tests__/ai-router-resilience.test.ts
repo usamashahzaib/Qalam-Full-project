@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { callGemini } from "@/lib/server/gemini-client"
 import { callGroq } from "@/lib/server/groq-client"
+import { callOpenRouter } from "@/lib/server/openrouter-client"
 import { recordFailure } from "@/lib/server/circuit-breaker"
 
 vi.mock("@/lib/server/gemini-client", () => ({ callGemini: vi.fn() }))
 vi.mock("@/lib/server/groq-client", () => ({ callGroq: vi.fn() }))
-vi.mock("@/lib/server/mistral-client", () => ({ callMistral: vi.fn().mockRejectedValue(new Error("Mistral API key not configured")) }))
+vi.mock("@/lib/server/openrouter-client", () => ({ callOpenRouter: vi.fn().mockRejectedValue(new Error("OpenRouter API key not configured")) }))
 vi.mock("@/lib/server/queue", () => ({
   checkAiRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
   cacheAiResponse: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/lib/server/env", () => ({ env: { aiDailySpendCapUsd: 0 } }))
 
 const mockGemini = vi.mocked(callGemini)
 const mockGroq = vi.mocked(callGroq)
+const mockOpenRouter = vi.mocked(callOpenRouter)
 const { callAi, classifyAiError, retryAfterMs } = await import("@/lib/server/ai-router-v2")
 const ok = (content: string) => ({ content, tokensIn: 1, tokensOut: 1, model: "openai/gpt-oss-20b" })
 const TPM = "groq API error: 429 - Rate limit reached for model openai/gpt-oss-20b on tokens per minute (TPM): Limit 8000, Used 7200, Requested 3700. Please try again in 1.2s."
@@ -46,6 +48,7 @@ describe("error classification", () => {
 describe("provider resilience", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockOpenRouter.mockRejectedValue(new Error("OpenRouter API key not configured"))
     mockGemini.mockRejectedValue(new Error("gemini API error: 429 - quota exceeded"))
   })
 

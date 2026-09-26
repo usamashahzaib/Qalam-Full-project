@@ -76,7 +76,7 @@ function ResumePreview() {
     <WindowShell title="Targeted resume builder">
       <div className="grid min-h-[330px] sm:grid-cols-[0.38fr_0.62fr]">
         <div className="border-b border-zinc-100 bg-zinc-50 p-4 sm:border-b-0 sm:border-r">
-          <p className="t-eyebrowr text-zinc-400">Verified evidence</p>
+          <p className="t-eyebrow text-zinc-400">Verified evidence</p>
           {[
             ["Role", "Product Marketing Lead"],
             ["Scope", "4 markets"],
@@ -86,7 +86,7 @@ function ResumePreview() {
         </div>
         <div className="p-5 sm:p-7">
           <div className="border-b-2 border-teal pb-3"><p className="text-lg font-extrabold text-zinc-900">Areeba Farooq</p><p className="mt-1 t-eyebrow font-semibold text-teal">PRODUCT MARKETING LEAD</p></div>
-          <p className="mt-5 t-eyebrowr text-zinc-400">Experience</p>
+          <p className="mt-5 t-eyebrow text-zinc-400">Experience</p>
           <p className="mt-2 text-xs font-bold text-zinc-800">Growth Marketing Manager</p>
           <p className="mt-2 t-eyebrow leading-5 text-zinc-600">Led positioning and launch programs across four markets, contributing to a 31% increase in qualified pipeline.</p>
           <div className="mt-5 flex flex-wrap gap-2">{["Go-to-market", "Positioning", "Analytics", "Research"].map((skill) => <span key={skill} className="rounded-md bg-teal-50 px-2 py-1 t-eyebrow font-semibold text-teal">{skill}</span>)}</div>
@@ -119,7 +119,7 @@ function LinkedInPreview() {
       <div className="p-4 sm:p-6">
         <div className="flex items-center gap-4 border-b border-zinc-100 pb-5"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal text-sm font-extrabold text-white">HA</div><div><p className="font-bold text-zinc-900">Hassan Ahmed</p><p className="mt-1 text-xs text-zinc-500">Operations leader | Multi-site growth | Process improvement</p></div></div>
         <div className="mt-5 grid gap-3 sm:grid-cols-3">{[["Search relevance", "78"], ["Credibility", "83"], ["Conversion clarity", "64"]].map(([label, score]) => <div key={label} className="border-t-2 border-teal bg-zinc-50 p-3"><p className="text-2xl font-extrabold text-zinc-900">{score}</p><p className="mt-1 t-eyebrow font-semibold text-zinc-500">{label}</p></div>)}</div>
-        <div className="mt-4 rounded-xl border border-zinc-200 p-4"><p className="t-eyebrowr text-gold">Recommended headline direction</p><p className="mt-2 text-xs leading-5 text-zinc-700">Operations leader scaling multi-site teams through measurable process improvement and service reliability.</p></div>
+        <div className="mt-4 rounded-xl border border-zinc-200 p-4"><p className="t-eyebrow text-gold">Recommended headline direction</p><p className="mt-2 text-xs leading-5 text-zinc-700">Operations leader scaling multi-site teams through measurable process improvement and service reliability.</p></div>
       </div>
     </WindowShell>
   )
@@ -130,7 +130,7 @@ function ContentPreview() {
     <WindowShell title="Voice-aware content studio">
       <div className="grid min-h-[330px] sm:grid-cols-[0.34fr_0.66fr]">
         <div className="border-b border-zinc-100 bg-[#073f3b] p-4 text-white sm:border-b-0 sm:border-r">
-          <p className="t-eyebrowr text-gold">Content system</p>
+          <p className="t-eyebrow text-gold">Content system</p>
           {[[ComposeIcon, "Draft"], [BrainIcon, "Improve"], [CalendarIcon, "Schedule"], [AnalyticsIcon, "Analyze"]].map(([Icon, label], index) => {
             const ItemIcon = Icon as typeof ComposeIcon
             return <div key={label as string} className={`mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${index === 0 ? "bg-white text-teal" : "text-white/65"}`}><ItemIcon className="h-4 w-4" />{label as string}</div>

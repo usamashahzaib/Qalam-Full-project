@@ -320,10 +320,10 @@ export default function LibraryPage() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 bg-zinc-50">
-                  <th className="w-[40%] px-5 py-3 text-left t-eyebrowr text-zinc-400">Title / Hook</th>
-                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Type</th>
-                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Date</th>
-                  <th className="px-4 py-3 text-left t-eyebrowr text-zinc-400">Status</th>
+                  <th className="w-[40%] px-5 py-3 text-left t-eyebrow text-zinc-400">Title / Hook</th>
+                  <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Type</th>
+                  <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Date</th>
+                  <th className="px-4 py-3 text-left t-eyebrow text-zinc-400">Status</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>

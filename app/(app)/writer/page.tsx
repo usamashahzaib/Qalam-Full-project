@@ -279,7 +279,7 @@ export default function WriterPage() {
               {/* Role + Format row */}
               <div className="mb-4 grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block t-eyebrowst text-zinc-400">Role</label>
+                  <label className="mb-1.5 block t-eyebrow text-zinc-400">Role</label>
                   <input aria-label="Role"
                     type="text"
                     list="role-suggestions"
@@ -294,7 +294,7 @@ export default function WriterPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block t-eyebrowst text-zinc-400">Format</label>
+                  <label className="mb-1.5 block t-eyebrow text-zinc-400">Format</label>
                   <div className="flex gap-1.5">
                     {FORMATS.map(({ key, words }) => (
                       <button
@@ -340,7 +340,7 @@ export default function WriterPage() {
 
               {/* Content intent */}
               <div className="mb-5">
-                <label className="mb-2 block t-eyebrowst text-zinc-400">Content intent</label>
+                <label className="mb-2 block t-eyebrow text-zinc-400">Content intent</label>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {CONTENT_INTENTS.map((intent) => {
                     const selected = contentIntent === intent.value
@@ -585,7 +585,7 @@ export default function WriterPage() {
                 <div className={`overflow-hidden transition-all duration-200 ${hookAltOpen ? "mt-3 max-h-[400px] opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60">
                     <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-2">
-                      <span className="t-eyebrowr text-zinc-400">3 stronger hooks</span>
+                      <span className="t-eyebrow text-zinc-400">3 stronger hooks</span>
                       <button
                         onClick={() => setHookAltOpen(false)}
                         className="cursor-pointer t-eyebrow text-zinc-400 transition-colors hover:text-zinc-600"
@@ -797,7 +797,7 @@ export default function WriterPage() {
                         >
                           {/* Badge + delete */}
                           <div className="flex items-center justify-between px-4 pb-2 pt-4">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 t-eyebrowr ${
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 t-eyebrow ${
                               isFirst || isLast ? "bg-white/20 text-white" : "bg-zinc-900 text-white"
                             }`}>
                               {isFirst ? "Cover" : isLast ? "CTA" : slide.number}
@@ -920,7 +920,7 @@ export default function WriterPage() {
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 bg-zinc-50/60 px-4 py-3.5">
               <div className="flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Content Score</h2>
+                <h2 className="t-eyebrow text-zinc-500">Content Score</h2>
                 {isScoring && <span className="animate-pulse t-eyebrow font-semibold text-teal">Scoring...</span>}
               </div>
               {scores ? (
@@ -1008,7 +1008,7 @@ export default function WriterPage() {
                 ) : (
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="t-eyebrowr text-zinc-500">Push to 90+ · Pro only</span>
+                      <span className="t-eyebrow text-zinc-500">Push to 90+ · Pro only</span>
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-700">locked</span>
                     </div>
                     <p className="text-xs text-zinc-500 mb-2">Qalam rewrites your draft to fix the lowest-scoring dimension and targets a 90+ overall score - hook sharpness, authority, specificity, and CTA all lifted in one pass.</p>
@@ -1045,7 +1045,7 @@ export default function WriterPage() {
                 <div className={`overflow-hidden transition-all duration-200 ${ctaAltOpen ? "max-h-[320px] opacity-100" : "max-h-0 opacity-0"}`}>
                   <div className="rounded-xl border border-zinc-200 bg-zinc-50/60">
                     <div className="flex items-center justify-between border-b border-zinc-100 px-3 py-2">
-                      <span className="t-eyebrowr text-zinc-400">3 CTA options</span>
+                      <span className="t-eyebrow text-zinc-400">3 CTA options</span>
                       <button
                         onClick={() => setCtaAltOpen(false)}
                         className="cursor-pointer t-eyebrow text-zinc-400 transition-colors hover:text-zinc-600"
@@ -1080,7 +1080,7 @@ export default function WriterPage() {
           {scores?.hashtags?.length ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Hashtags</h2>
+                <h2 className="t-eyebrow text-zinc-500">Hashtags</h2>
                 <button
                   onClick={async () => { await copyText(scores.hashtags.join(" ")); showStatus("Hashtags copied", "success") }}
                   className="cursor-pointer text-xs font-semibold text-teal transition-colors hover:text-teal-700"
@@ -1102,7 +1102,7 @@ export default function WriterPage() {
             </div>
           ) : step3Visible ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">Hashtags</h2>
+              <h2 className="t-eyebrow text-zinc-400">Hashtags</h2>
               <p className="mt-2 text-xs text-zinc-400">Hashtags appear after scoring.</p>
             </div>
           ) : null}
@@ -1114,7 +1114,7 @@ export default function WriterPage() {
                 onClick={() => setRepliesOpen((v) => !v)}
                 className="flex w-full cursor-pointer items-center justify-between px-4 py-3.5 text-left"
               >
-                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Comment Replies</h2>
+                <h2 className="t-eyebrow text-zinc-500">Comment Replies</h2>
                 <span className="text-xs text-zinc-400">{repliesOpen ? "Hide" : "Show"}</span>
               </button>
               {repliesOpen && (
@@ -1122,7 +1122,7 @@ export default function WriterPage() {
                   <div className="mb-3 flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50/50 p-1">
                     <button
                       onClick={() => setReplyMode("comment")}
-                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrowr transition-colors ${
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrow transition-colors ${
                         replyMode === "comment" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                       }`}
                     >
@@ -1130,7 +1130,7 @@ export default function WriterPage() {
                     </button>
                     <button
                       onClick={() => setReplyMode("reply")}
-                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrowr transition-colors ${
+                      className={`flex-1 cursor-pointer rounded-lg px-3 py-1.5 t-eyebrow transition-colors ${
                         replyMode === "reply" ? "bg-white text-teal shadow-sm" : "text-zinc-400 hover:text-zinc-600"
                       }`}
                     >
@@ -1139,7 +1139,7 @@ export default function WriterPage() {
                   </div>
                   {replyMode === "reply" && (
                     <div className="mb-3">
-                      <label className="mb-1.5 block t-eyebrowst text-zinc-400">Original comment (optional, for context)</label>
+                      <label className="mb-1.5 block t-eyebrow text-zinc-400">Original comment (optional, for context)</label>
                       <textarea aria-label="Original comment"
                         value={parentCommentInput}
                         onChange={(e) => setParentCommentInput(e.target.value)}
@@ -1150,7 +1150,7 @@ export default function WriterPage() {
                     </div>
                   )}
                   <div className="mb-3">
-                    <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+                    <label className="mb-1.5 block t-eyebrow text-zinc-400">
                       {replyMode === "reply" ? "Paste the reply you received" : "Paste a comment to reply to"}
                     </label>
                     <textarea aria-label={replyMode === "reply" ? "Reply you received" : "Comment to reply to"}
@@ -1176,7 +1176,7 @@ export default function WriterPage() {
                       {replies.map((r, i) => (
                         <div key={i} className="overflow-hidden rounded-xl border border-zinc-100 bg-zinc-50 p-3">
                           <div className="mb-2 flex items-center justify-between gap-2">
-                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 t-eyebrowr text-zinc-500">{r.style}</span>
+                            <span className="shrink-0 rounded-full border border-zinc-200 bg-white px-2 py-0.5 t-eyebrow text-zinc-500">{r.style}</span>
                             <button onClick={() => copyText(r.text)} className="cursor-pointer shrink-0 t-eyebrow text-teal hover:text-teal-700">Copy</button>
                           </div>
                           <p className="w-full break-words text-xs leading-relaxed text-zinc-700">{r.text}</p>

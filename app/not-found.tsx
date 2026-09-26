@@ -7,7 +7,7 @@ export default function NotFound() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 px-6 text-center">
       <QalamLogo href="/" size={36} containerClassName="mb-10 flex items-center gap-2" />
 
-      <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-zinc-400">
+      <p className="mb-3 t-eyebrow text-zinc-400">
         404
       </p>
       <h1 className="mb-4 text-4xl font-extrabold text-zinc-900 sm:text-5xl">

@@ -66,10 +66,10 @@ export function HeadlineAnalyzerTool() {
           </div>
           {result ? (
             <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-widest text-zinc-400">Headline score</p>
+              <p className="t-eyebrow text-zinc-400">Headline score</p>
               <p className="mt-1 text-5xl font-extrabold text-zinc-900">{toHundredPointScore(result.headline_score)}/100</p>
               <p className="mt-2 text-sm font-semibold text-teal">{result.verdict}</p>
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{Object.entries(result.breakdown || {}).map(([k, v]) => <div key={k} className="rounded-xl bg-zinc-50 p-3"><p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-400">{formatScoreLabel(k)}</p><p className="mt-1 text-lg font-bold">{toHundredPointScore(v)}</p></div>)}</div>
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{Object.entries(result.breakdown || {}).map(([k, v]) => <div key={k} className="rounded-xl bg-zinc-50 p-3"><p className="min-h-6 t-eyebrow text-zinc-400">{formatScoreLabel(k)}</p><p className="mt-1 text-lg font-bold">{toHundredPointScore(v)}</p></div>)}</div>
               <ul className="mt-5 space-y-2">{(result.specific_feedback || []).map((item) => <li key={item} className="text-sm text-zinc-700">- {item}</li>)}</ul>
               <div className="mt-5 space-y-2">{(result.rewritten_headlines || []).map((item) => <p key={item} className="rounded-xl bg-teal/5 p-3 text-sm text-zinc-800">{item}</p>)}</div>
             </div>

@@ -469,7 +469,7 @@ export default function CarouselEditorPage() {
 
       {/* ── Branding + Design ── */}
       <div className="mb-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <p className="mb-4 text-xs font-bold uppercase tracking-wider text-zinc-400">Branding & Design</p>
+        <p className="mb-4 t-eyebrow text-zinc-400">Branding & Design</p>
 
         {/* Row 1: Author fields */}
         <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -620,7 +620,7 @@ export default function CarouselEditorPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
           {/* Slide list sidebar */}
           <div className="space-y-2">
-            <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-400">Slides</p>
+            <p className="mb-3 t-eyebrow text-zinc-400">Slides</p>
             {slides.map((slide, index) => (
               <button key={slide.id} onClick={() => setActiveSlide(index)} className={`w-full rounded-xl border px-3 py-3 text-left transition-all ${activeSlide === index ? "border-teal bg-teal/5 shadow-sm" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}>
                 <div className="flex items-start gap-2">

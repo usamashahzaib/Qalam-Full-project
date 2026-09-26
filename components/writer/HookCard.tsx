@@ -48,7 +48,7 @@ export function HookCard({
       `}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 t-eyebrowr ${colors.badge}`}>
+        <span className={`inline-flex items-center rounded-md border px-2 py-0.5 t-eyebrow ${colors.badge}`}>
           {hookStyle}
         </span>
         {selected && (

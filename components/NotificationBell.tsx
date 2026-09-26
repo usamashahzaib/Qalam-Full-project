@@ -103,7 +103,7 @@ export function NotificationBell() {
       {open ? (
         <div className="qalam-scrollbar absolute right-0 top-10 z-40 max-h-96 w-80 overflow-y-auto rounded-xl border border-zinc-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">Notifications</p>
+            <p className="t-eyebrow text-zinc-500">Notifications</p>
             {unreadCount > 0 ? (
               <button onClick={markAllRead} className="text-xs font-semibold text-teal hover:text-teal-700">
                 Mark all read

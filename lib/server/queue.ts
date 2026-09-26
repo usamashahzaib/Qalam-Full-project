@@ -59,7 +59,7 @@ export async function checkGenerationRateLimit(
 
 let groqLimiter: Ratelimit | null = null
 let geminiLimiter: Ratelimit | null = null
-let mistralLimiter: Ratelimit | null = null
+let openrouterLimiter: Ratelimit | null = null
 
 const getGroqLimiter = () => {
   if (!getRedis()) return null
@@ -81,14 +81,14 @@ const getGeminiLimiter = () => {
   return geminiLimiter
 }
 
-const getMistralLimiter = () => {
+const getOpenRouterLimiter = () => {
   if (!getRedis()) return null
-  mistralLimiter ??= new Ratelimit({
+  openrouterLimiter ??= new Ratelimit({
     redis: getRedis()!,
-    limiter: Ratelimit.slidingWindow(30, "1 m"),
+    limiter: Ratelimit.slidingWindow(20, "1 m"),
     analytics: true,
   })
-  return mistralLimiter
+  return openrouterLimiter
 }
 
 // In-process fallback rate limiter when Redis is unavailable (imperfect across instances but functional)
@@ -108,12 +108,12 @@ function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
 export async function checkAiRateLimit(
   userId: string,
   _plan: string,
-  provider: "groq" | "gemini" | "mistral"
+  provider: "groq" | "gemini" | "openrouter"
 ) {
   const r = getRedis()
   if (!r) {
     // No Redis - use in-process fallback (per instance, not global - better than blocking)
-    const limit = provider === "groq" ? 50 : 30
+    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 
@@ -122,9 +122,9 @@ export async function checkAiRateLimit(
       ? getGroqLimiter()
       : provider === "gemini"
         ? getGeminiLimiter()
-        : getMistralLimiter()
+        : getOpenRouterLimiter()
   if (!limiter) {
-    const limit = provider === "groq" ? 50 : 30
+    const limit = provider === "groq" ? 50 : provider === "openrouter" ? 20 : 30
     return inMemoryRateLimit(`ai_${provider}_${userId}`, limit, 60_000)
   }
 

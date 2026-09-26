@@ -172,7 +172,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
     <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
       <aside className="rounded-2xl border border-zinc-200 bg-white p-5">
         <div className="mb-4 rounded-xl border border-teal/20 bg-teal/5 p-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-teal">Voice Profile</p>
+          <p className="t-eyebrow text-teal">Voice Profile</p>
           <p className="mt-2 text-sm leading-relaxed text-teal-800">
             Demo voice memory is active. In the real workspace, drafts use the voice profile and writing samples you deliberately save.
           </p>
@@ -192,7 +192,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
 
       <div className="space-y-5">
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <label htmlFor="demo-topic" className="mb-2 block text-xs font-semibold uppercase tracking-widest text-zinc-400">Topic</label>
+          <label htmlFor="demo-topic" className="mb-2 block t-eyebrow text-zinc-400">Topic</label>
           <input
             id="demo-topic"
             value={topic}
@@ -202,7 +202,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">Choose a hook</p>
+          <p className="mb-3 t-eyebrow text-zinc-400">Choose a hook</p>
           <div className="space-y-2">
             {DEMO_HOOKS.map((hook, index) => (
               <button
@@ -220,7 +220,7 @@ function WriterTab({ onStart }: { onStart: () => void }) {
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <label htmlFor="demo-draft" className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Draft</label>
+            <label htmlFor="demo-draft" className="t-eyebrow text-zinc-400">Draft</label>
             <div className="flex items-center gap-3">
               <span className="text-xs text-zinc-400">{draft.length} / 3000</span>
               <button onClick={regenerate} disabled={generating} className="inline-flex min-h-11 items-center rounded-lg bg-teal px-4 py-2 text-xs font-semibold text-white hover:bg-teal-600 disabled:opacity-60">

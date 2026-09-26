@@ -3,7 +3,7 @@ import "server-only"
 import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } from "./queue"
 import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
-import { callMistral } from "./mistral-client"
+import { callOpenRouter } from "./openrouter-client"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
@@ -12,7 +12,7 @@ import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 import { enforceHumanWriting } from "@/lib/prompts/enforce-human-writing"
 import { AI_PATTERN_RULES } from "@/lib/prompts/writing-policy"
 
-export type AiProvider = "groq" | "gemini" | "mistral"
+export type AiProvider = "groq" | "gemini" | "openrouter"
 export type AiTask =
   | "post-generation"
   | "post-scoring"
@@ -130,8 +130,6 @@ const COST_PER_M: Record<string, { input: number; output: number }> = {
   "openai/gpt-oss-120b":     { input: 0.15,  output: 0.60 },
   "gemini-2.5-flash":        { input: 0.15,  output: 0.60 },
   "gemini-2.5-pro":          { input: 1.25,  output: 10.00 },
-  "mistral-small-latest":    { input: 0.10,  output: 0.30 },
-  "mistral-medium-2505":     { input: 0.40,  output: 2.00 },
 }
 
 function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
@@ -168,7 +166,7 @@ async function logAiUsage(
       model,
       tokens_in: tokensIn,
       tokens_out: tokensOut,
-      estimated_cost_usd: estimateCost(model, tokensIn, tokensOut),
+      estimated_cost_usd: provider === "openrouter" ? 0 : estimateCost(model, tokensIn, tokensOut),
     })
     if (insertErr && insertErr.code !== "42P01") log.warn("ai_usage.insert_failed", { error: insertErr.message })
   } catch { void 0 }
@@ -217,32 +215,31 @@ async function enforceDailySpendCap(): Promise<void> {
 
 // ── 1.2: Model mapping per task per provider ──────────────────────────────────
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
-  "post-generation":       { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "post-scoring":          { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "competitor-analysis":   { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b", mistral: "mistral-small-latest" },
-  "hook-generation":       { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", mistral: "mistral-small-latest" },
-  "cta-rewrite":           { gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b", mistral: "mistral-small-latest" },
-  "carousel-outline":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "voice-profile":         { mistral: "mistral-medium-2505", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "chat-strategist":       { gemini: "gemini-2.5-flash", mistral: "mistral-small-latest", groq: "openai/gpt-oss-20b" },
-  "post-improvement":      { mistral: "mistral-small-latest", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "engagement-prediction": { groq: "openai/gpt-oss-20b", gemini: "gemini-2.5-flash", mistral: "mistral-small-latest" },
+  "post-generation":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-scoring":          { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "competitor-analysis":   { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "hook-generation":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "cta-rewrite":           { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "carousel-outline":      { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "voice-profile":         { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "chat-strategist":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-improvement":      { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "engagement-prediction": { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
-// Routing is task-specific. Hooks and CTA lead with Gemini.
-// Posts, scoring, improvements, and carousels lead with Groq.
+// OpenRouter's zero-cost router leads every task, then Gemini, then Groq.
 export const providerOrder: Record<AiTask, AiProvider[]> = {
-  "post-generation":       ["groq",    "gemini", "mistral"],
-  "post-scoring":          ["groq",    "gemini", "mistral"],
-  "competitor-analysis":   ["gemini",  "mistral", "groq"],
-  "hook-generation":       ["gemini",  "groq",    "mistral"],
-  "cta-rewrite":           ["gemini",  "groq",    "mistral"],
-  "carousel-outline":      ["groq",    "gemini",  "mistral"],
-  "voice-profile":         ["mistral", "gemini", "groq"],
-  "chat-strategist":       ["gemini",  "mistral", "groq"],
-  "post-improvement":      ["groq",    "gemini",  "mistral"],
-  "engagement-prediction": ["groq",    "mistral", "gemini"],
+  "post-generation":       ["openrouter", "gemini", "groq"],
+  "post-scoring":          ["openrouter", "gemini", "groq"],
+  "competitor-analysis":   ["openrouter", "gemini", "groq"],
+  "hook-generation":       ["openrouter", "gemini", "groq"],
+  "cta-rewrite":           ["openrouter", "gemini", "groq"],
+  "carousel-outline":      ["openrouter", "gemini", "groq"],
+  "voice-profile":         ["openrouter", "gemini", "groq"],
+  "chat-strategist":       ["openrouter", "gemini", "groq"],
+  "post-improvement":      ["openrouter", "gemini", "groq"],
+  "engagement-prediction": ["openrouter", "gemini", "groq"],
 }
 
 // ── 1.6: Retry delays (transient errors only) ─────────────────────────────────
@@ -282,7 +279,7 @@ async function callProvider(
         const tokensOut = Math.max(Math.ceil(raw.length / 4), Math.ceil(bytesOut / 3))
         result = { content: raw, tokensIn, tokensOut, model }
       } else {
-        result = await callMistral(systemPrompt, userMessage, { ...options, model }, timeout)
+        result = await callOpenRouter(systemPrompt, userMessage, { ...options, model }, timeout)
       }
 
       await recordSuccess(provider)

@@ -38,7 +38,7 @@ export default function ProofReportPage() {
       {snapshot ? (
         <article className="space-y-6">
           <header className="rounded-2xl border border-zinc-200 bg-white p-6" style={{ borderTop: `4px solid ${accent}` }}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>LinkedIn results</p>
+            <p className="t-eyebrow" style={{ color: accent }}>LinkedIn results</p>
             <h1 className="mt-2 text-3xl font-bold text-zinc-900">{snapshot.workspaceName}</h1>
             <p className="mt-1 text-sm text-zinc-600">{fmtDate(snapshot.periodStart)} to {fmtDate(snapshot.periodEnd)}</p>
           </header>
@@ -73,7 +73,7 @@ export default function ProofReportPage() {
 
           {snapshot.topPost ? (
             <section className="rounded-2xl border bg-white p-5" style={{ borderColor: accent }}>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }}>Strongest post</p>
+              <p className="t-eyebrow" style={{ color: accent }}>Strongest post</p>
               <p className="mt-2 text-lg font-bold text-zinc-900">{snapshot.topPost.title}</p>
               <p className="mt-1 text-sm leading-6 text-zinc-600">{snapshot.topPost.excerpt}</p>
               {snapshot.topPost.metrics ? (

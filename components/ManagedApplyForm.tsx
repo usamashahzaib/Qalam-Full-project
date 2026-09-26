@@ -55,7 +55,7 @@ export function ManagedApplyForm({ defaultPackage, defaultAccountType }: { defau
 
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-gold-700">{isAgencyApplication ? "Apply for Agency" : "Apply for Managed Services"}</p>
+      <p className="mb-2 t-eyebrow text-gold-700">{isAgencyApplication ? "Apply for Agency" : "Apply for Managed Services"}</p>
       <h2 className="mb-1 text-2xl font-bold text-zinc-900">Tell us about your account</h2>
       <p className="mb-6 text-sm leading-relaxed text-zinc-500">
         {isAgencyApplication

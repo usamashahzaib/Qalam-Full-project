@@ -63,7 +63,7 @@ export default function ContentIntelligencePage() {
   return (
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Post Intelligence</p><h1 className="mt-2 text-3xl font-bold">Know what your content is worth.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Import your own post and real metrics. Qalam finds the positioning, performance patterns, weaknesses, and next angles.</p></header>
+        <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white"><p className="t-eyebrow text-gold-700">Post Intelligence</p><h1 className="mt-2 text-3xl font-bold">Know what your content is worth.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Import your own post and real metrics. Qalam finds the positioning, performance patterns, weaknesses, and next angles.</p></header>
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-zinc-200 bg-white p-6">
             <textarea aria-label="LinkedIn post" className={`${field} min-h-64 resize-y`} placeholder="Paste your LinkedIn post" value={content} onChange={(event) => setContent(event.target.value)} />
@@ -85,10 +85,10 @@ export default function ContentIntelligencePage() {
 }
 
 function Result({ analysis }: { analysis: Analysis }) {
-  return <div><div className="flex items-end justify-between"><div><p className="text-xs font-bold uppercase text-teal">Content worth</p><p className="mt-1 text-sm text-zinc-600">{analysis.positioning}</p></div><p className="text-4xl font-bold text-gold">{toHundredPointScore(analysis.content_worth_score)}/100</p></div><p className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">{analysis.audience_signal}</p><div className="mt-4 grid grid-cols-2 gap-2">{Object.entries(analysis.scores || {}).map(([key, value]) => <div key={key} className="rounded-lg border border-zinc-200 p-3"><p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-400">{formatScoreLabel(key)}</p><p className="mt-1 font-bold text-zinc-900">{toHundredPointScore(value)}</p></div>)}</div><List title="What worked" items={analysis.what_worked} /><List title="Fix next" items={analysis.weaknesses} /><List title="Next post angles" items={analysis.next_post_angles} /></div>
+  return <div><div className="flex items-end justify-between"><div><p className="t-eyebrow text-teal">Content worth</p><p className="mt-1 text-sm text-zinc-600">{analysis.positioning}</p></div><p className="text-4xl font-bold text-gold">{toHundredPointScore(analysis.content_worth_score)}/100</p></div><p className="mt-4 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">{analysis.audience_signal}</p><div className="mt-4 grid grid-cols-2 gap-2">{Object.entries(analysis.scores || {}).map(([key, value]) => <div key={key} className="rounded-lg border border-zinc-200 p-3"><p className="min-h-6 t-eyebrow text-zinc-400">{formatScoreLabel(key)}</p><p className="mt-1 font-bold text-zinc-900">{toHundredPointScore(value)}</p></div>)}</div><List title="What worked" items={analysis.what_worked} /><List title="Fix next" items={analysis.weaknesses} /><List title="Next post angles" items={analysis.next_post_angles} /></div>
 }
 
 function List({ title, items }: { title: string; items?: string[] }) {
   if (!items?.length) return null
-  return <div className="mt-4"><h3 className="text-xs font-bold uppercase text-zinc-500">{title}</h3><ul className="mt-2 space-y-1 text-xs leading-5 text-zinc-600">{items.map((item) => <li key={item}>- {item}</li>)}</ul></div>
+  return <div className="mt-4"><h3 className="t-eyebrow text-zinc-500">{title}</h3><ul className="mt-2 space-y-1 text-xs leading-5 text-zinc-600">{items.map((item) => <li key={item}>- {item}</li>)}</ul></div>
 }

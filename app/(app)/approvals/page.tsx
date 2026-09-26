@@ -88,7 +88,7 @@ export default function ApprovalsPage() {
             {/* Pending */}
             {pending.length > 0 && (
               <section>
-                <h2 className="mb-3 flex items-center gap-2 t-eyebrowst text-zinc-400">
+                <h2 className="mb-3 flex items-center gap-2 t-eyebrow text-zinc-400">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 t-eyebrow text-amber-700">{pending.length}</span>
                   Awaiting review
                 </h2>
@@ -108,7 +108,7 @@ export default function ApprovalsPage() {
             {/* Resolved */}
             {resolved.length > 0 && (
               <section>
-                <h2 className="mb-3 t-eyebrowst text-zinc-400">
+                <h2 className="mb-3 t-eyebrow text-zinc-400">
                   Resolved ({resolved.length})
                 </h2>
                 <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white divide-y divide-zinc-100">
@@ -283,7 +283,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
 
         <div className="mt-5 space-y-4">
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Reviewer email <span className="text-red-500">*</span>
             </label>
             <input aria-label="Reviewer email"
@@ -296,7 +296,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Post title <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
             <input aria-label="Post title"
@@ -308,7 +308,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Post content <span className="text-red-500">*</span>
             </label>
             <textarea aria-label="Post content"
@@ -321,7 +321,7 @@ function SendApprovalModal({ onClose, onSent, onError }: {
           </div>
 
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Message to reviewer <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
             <textarea aria-label="Message to reviewer"

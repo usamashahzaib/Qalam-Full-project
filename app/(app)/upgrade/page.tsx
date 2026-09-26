@@ -111,7 +111,7 @@ export default function UpgradePage() {
 
       {AGENCY_PLAN_LIVE ? (
         <section className="mt-6 rounded-2xl border border-teal/20 bg-teal/5 p-5">
-          <span className="rounded-full bg-teal px-2.5 py-1 t-eyebrowr text-white">For teams</span>
+          <span className="rounded-full bg-teal px-2.5 py-1 t-eyebrow text-white">For teams</span>
           <h2 className="mt-3 text-lg font-bold text-zinc-900">Agency - $19/month</h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-600">
             $38 billed quarterly. Includes 5 client workspaces, 5 seats, configurable voice profiles, an optional approval step, publishing, and per-workspace performance analytics.

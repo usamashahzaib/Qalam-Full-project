@@ -42,7 +42,7 @@ export function WorkspaceBranding({
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Branding color</p>
+      <p className="mb-3 t-eyebrow text-zinc-500">Branding color</p>
       <p className="mb-3 text-xs text-zinc-500">
         Sets the accent color used on primary buttons, active nav items, and usage bars while this workspace is active.
       </p>

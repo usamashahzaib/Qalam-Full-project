@@ -14,7 +14,6 @@ export const env = {
   linkedInVersion: read("LINKEDIN_VERSION") || "202602",
   geminiApiKey: read("GEMINI_API_KEY"),
   groqApiKey: read("GROQ_API_KEY"),
-  mistralApiKey: read("MISTRAL_API_KEY"),
   cerebrasApiKey: read("CEREBRAS_API_KEY"),
   openrouterApiKey: read("OPENROUTER_API_KEY"),
   authSecret: read("AUTH_SECRET"),

@@ -192,7 +192,7 @@ export function HookGeneratorTool() {
 
           <FadeUp className="mt-6">
             <div className="rounded-2xl bg-teal p-8 text-center">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal-200">Want hooks in your voice?</p>
+              <p className="mb-3 t-eyebrow text-teal-200">Want hooks in your voice?</p>
               <h2 className="mb-2 text-2xl font-bold text-white">Use the full workflow instead of isolated templates.</h2>
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
                 Voice settings, archive continuity, and guided production onboarding.

@@ -89,10 +89,10 @@ function ManagedCard({ plan, index }: { plan: ManagedPlan; index: number }) {
         </div>
 
         <div className="mb-6 pt-2">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-gold-600">{plan.name}</p>
+          <p className="mb-3 t-eyebrow text-gold-600">{plan.name}</p>
           <div className="mb-1 flex items-center gap-2 text-sm">
             <span className="text-zinc-400 line-through">{formatPrice(plan.originalMonthlyPrice)}</span>
-            <span className="rounded-full bg-emerald-100 px-2 py-0.5 t-eyebrowr text-emerald-700">Save {formatPrice(monthlySaving)}</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 t-eyebrow text-emerald-700">Save {formatPrice(monthlySaving)}</span>
           </div>
           <div className="mb-2 flex items-end gap-1.5">
             <span className={`text-5xl font-extrabold ${isPremium ? "text-amber-900" : "text-zinc-900"}`}>
@@ -406,7 +406,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <div className="mb-5 grid gap-5 rounded-3xl bg-zinc-900 p-7 text-white sm:grid-cols-[1fr_auto] sm:items-end">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Recommended one-time offer</p>
+              <p className="t-eyebrow text-gold">Recommended one-time offer</p>
               <h3 className="mt-2 text-2xl font-bold">Job-Win Pack</h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Deep recruiter review, JD-matched resume, targeted cover letter, and interview practice for one serious application.</p>
             </div>
@@ -440,7 +440,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
           <FadeUp className="mt-8 flex flex-col gap-5 rounded-2xl bg-teal-800 p-7 text-white sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">Refer and Earn</p>
+              <p className="t-eyebrow text-gold">Refer and Earn</p>
               <h3 className="mt-2 text-2xl font-bold">Give 10% off. Earn 10% commission.</h3>
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
             </div>
@@ -571,7 +571,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
           <FadeUp>
             <div className="flex flex-col items-center justify-between gap-8 rounded-2xl bg-teal-800 p-10 md:flex-row">
               <div>
-                <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal-200">Need something custom?</p>
+                <p className="mb-2 t-eyebrow text-teal-200">Need something custom?</p>
                 <h3 className="mb-3 text-3xl font-bold text-white">Managing content for multiple clients?</h3>
                 <p className="max-w-md leading-relaxed text-white/60">
                   {AGENCY_PLAN_LIVE

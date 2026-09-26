@@ -177,7 +177,7 @@ export function TeamManagement({
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50/50 p-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Team - {workspaceName}</p>
+      <p className="mb-3 t-eyebrow text-zinc-500">Team - {workspaceName}</p>
 
       {isLoading ? (
         <div className="py-4 text-center text-xs text-zinc-400">Loading team...</div>

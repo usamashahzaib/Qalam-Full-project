@@ -34,7 +34,7 @@ const REPEATS = Number(process.env.QALAM_EVAL_REPEATS || 3);
 
 const LIVE =
   process.env.QALAM_EVAL_LIVE === "1" &&
-  Boolean(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY || process.env.MISTRAL_API_KEY);
+  Boolean(process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY);
 
 // A single direct provider call. The production router is deliberately not used
 // here: it carries caching, circuit breakers, billing and rate limits that

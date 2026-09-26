@@ -400,7 +400,7 @@ export default function SettingsPage() {
               <Link href="/managed/apply?plan=Agency&type=company" className="rounded-xl border border-teal/20 bg-teal/5 px-3 py-2.5 text-left hover:border-teal/50">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-teal">Agency</p>
-                  <span className="rounded-full bg-teal px-2 py-0.5 t-eyebrowr text-white">Apply</span>
+                  <span className="rounded-full bg-teal px-2 py-0.5 t-eyebrow text-white">Apply</span>
                 </div>
                 <p className="mt-0.5 t-eyebrow text-zinc-500">{PLAN_DESC.Agency}</p>
               </Link>

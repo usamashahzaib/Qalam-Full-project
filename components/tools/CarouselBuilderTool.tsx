@@ -487,7 +487,7 @@ export function CarouselBuilderTool() {
 
                   <div className="flex-1 space-y-4">
                     <div className="rounded-2xl border border-zinc-200 bg-white p-5">
-                      <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                      <p className="mb-3 t-eyebrow text-zinc-400">
                         Slide {activeSlide + 1} of {slides.length} &mdash; {slides[activeSlide].type.toUpperCase()}
                       </p>
                       <p className="text-sm font-semibold text-zinc-900">{slides[activeSlide].title}</p>
@@ -523,7 +523,7 @@ export function CarouselBuilderTool() {
           {/* CTA block */}
           <FadeUp>
             <div className="rounded-2xl bg-teal p-8 text-center">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-teal-200">Want AI-written carousel content?</p>
+              <p className="mb-3 t-eyebrow text-teal-200">Want AI-written carousel content?</p>
               <h2 className="mb-2 text-2xl font-bold text-white">Generate full carousel decks from a single post.</h2>
               <p className="mx-auto mb-6 max-w-md text-sm text-white/60">
                 Qalam AI builds the slides from your inputs. You refine, review, and export.

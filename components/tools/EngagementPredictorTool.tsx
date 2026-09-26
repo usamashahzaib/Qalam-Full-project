@@ -20,7 +20,7 @@ type Result = {
 function Section({ title, items = [] }: { title: string; items?: string[] }) {
   return items.length ? (
     <div className="mt-5">
-      <p className="mb-2 text-xs font-bold uppercase text-zinc-400">{title}</p>
+      <p className="mb-2 t-eyebrow text-zinc-400">{title}</p>
       <ul className="space-y-1">
         {items.map((item) => (
           <li key={item} className="text-sm text-zinc-700">- {item}</li>
@@ -106,13 +106,13 @@ export function EngagementPredictorTool() {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
               >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-zinc-400">Content readiness score</p>
+                <p className="mb-2 t-eyebrow text-zinc-400">Content readiness score</p>
                 <p className="text-5xl font-extrabold text-zinc-900">{toHundredPointScore(result.content_readiness_score)}/100</p>
                 <p className="mt-1 text-sm font-semibold capitalize text-teal">{result.assessment}</p>
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                   {Object.entries(result.score_breakdown || {}).map(([k, v]) => (
                     <div key={k} className="rounded-xl bg-zinc-50 p-3">
-                      <p className="min-h-6 text-[10px] font-bold uppercase leading-3 tracking-[0.08em] text-zinc-400">{formatScoreLabel(k)}</p>
+                      <p className="min-h-6 t-eyebrow text-zinc-400">{formatScoreLabel(k)}</p>
                       <p className="mt-1 text-lg font-bold">{toHundredPointScore(v)}</p>
                     </div>
                   ))}

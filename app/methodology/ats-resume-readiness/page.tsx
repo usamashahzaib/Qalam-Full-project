@@ -47,7 +47,7 @@ export default function AtsResumeReadinessMethodologyPage() {
       <article>
         <header className="border-b border-zinc-200 bg-[#f8f7f3] px-6 py-20">
           <div className="mx-auto max-w-4xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">Public methodology. Version {ATS_METHODOLOGY_VERSION}</p>
+            <p className="t-eyebrow text-teal">Public methodology. Version {ATS_METHODOLOGY_VERSION}</p>
             <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-6xl">The evidence-first standard behind Qalam ATS scores.</h1>
             <p className="mt-6 max-w-3xl text-xl leading-8 text-zinc-600">{ATS_DIRECT_ANSWER}</p>
             <div className="mt-8 flex flex-wrap gap-3">

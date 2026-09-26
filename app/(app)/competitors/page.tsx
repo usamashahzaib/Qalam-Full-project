@@ -155,7 +155,7 @@ export default function CompetitorsPage() {
             </div>
             <div className="p-5 space-y-4">
               <div>
-                <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+                <label className="mb-1.5 block t-eyebrow text-zinc-400">
                   Post text <span className="font-normal normal-case text-zinc-400">(required)</span>
                 </label>
                 <textarea aria-label="Post text"
@@ -204,7 +204,7 @@ export default function CompetitorsPage() {
         <aside className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div className="border-b border-zinc-100 bg-zinc-50/60 px-4 py-3.5">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Recent Analyses</h2>
+              <h2 className="t-eyebrow text-zinc-500">Recent Analyses</h2>
               {canUse && (
                 <p className="mt-0.5 t-eyebrow text-zinc-400">Last 5 analyses</p>
               )}
@@ -302,7 +302,7 @@ function AnalysisPanel({ analysis, onApply }: { analysis: Analysis | null; onApp
 
         {/* Hook structure */}
         <div className="px-5 py-4">
-          <p className="mb-2 t-eyebrowst text-zinc-400">Hook structure</p>
+          <p className="mb-2 t-eyebrow text-zinc-400">Hook structure</p>
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-700">
               Pattern: {analysis.hookStructure.pattern}
@@ -318,7 +318,7 @@ function AnalysisPanel({ analysis, onApply }: { analysis: Analysis | null; onApp
 
         {/* Engagement factors */}
         <div className="px-5 py-4">
-          <p className="mb-2 t-eyebrowst text-zinc-400">Engagement factors</p>
+          <p className="mb-2 t-eyebrow text-zinc-400">Engagement factors</p>
           <ul className="space-y-2">
             {analysis.engagementFactors.map((factor, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-zinc-700">
@@ -331,7 +331,7 @@ function AnalysisPanel({ analysis, onApply }: { analysis: Analysis | null; onApp
 
         {/* Content pattern */}
         <div className="px-5 py-4">
-          <p className="mb-2 t-eyebrowst text-zinc-400">Content pattern</p>
+          <p className="mb-2 t-eyebrow text-zinc-400">Content pattern</p>
           <dl className="space-y-2">
             <div>
               <dt className="text-xs font-semibold text-zinc-500">Framework</dt>
@@ -350,7 +350,7 @@ function AnalysisPanel({ analysis, onApply }: { analysis: Analysis | null; onApp
 
         {/* Improvements */}
         <div className="px-5 py-4">
-          <p className="mb-2 t-eyebrowst text-zinc-400">Improvement suggestions</p>
+          <p className="mb-2 t-eyebrow text-zinc-400">Improvement suggestions</p>
           <ol className="space-y-2">
             {analysis.improvements.map((tip, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-zinc-700">

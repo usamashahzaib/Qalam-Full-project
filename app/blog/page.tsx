@@ -70,7 +70,7 @@ export default function BlogPage() {
         <section className="px-6 py-16">
           <div className="mx-auto max-w-[1100px]">
             <FadeUp className="mb-8">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">Published</h2>
+              <h2 className="t-eyebrow text-zinc-500">Published</h2>
             </FadeUp>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               {PUBLISHED_BLOG_POSTS.map((post, i) => (
@@ -96,7 +96,7 @@ export default function BlogPage() {
             </div>
 
             <FadeUp className="mb-8 mt-14">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-zinc-500">Planned next</h2>
+              <h2 className="t-eyebrow text-zinc-500">Planned next</h2>
             </FadeUp>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {UPCOMING_BLOG_POSTS.map((post, i) => (

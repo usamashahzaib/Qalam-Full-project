@@ -141,7 +141,7 @@ export default function PartnersPage() {
       <section className="relative overflow-hidden bg-[#f7f3ea] px-6 pb-20 pt-20 sm:pt-28">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-[radial-gradient(circle_at_18%_8%,rgba(183,232,221,0.6),transparent_38%),radial-gradient(circle_at_82%_14%,rgba(255,220,170,0.4),transparent_34%)]" aria-hidden />
         <div className="relative mx-auto max-w-[1200px]">
-          <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 text-xs font-bold uppercase tracking-[0.14em] text-teal shadow-sm backdrop-blur">
+          <p className="inline-flex min-h-9 items-center gap-2 rounded-full border border-teal/15 bg-white/65 px-4 t-eyebrow text-teal shadow-sm backdrop-blur">
             <span className="h-2 w-2 rounded-full bg-gold" aria-hidden />
             Partnerships
           </p>
@@ -174,7 +174,7 @@ export default function PartnersPage() {
             ["Explicit publishing", "Posts go out when someone sends or schedules them. No autonomous activity under a client name."],
           ].map(([title, copy]) => (
             <div key={title} className="md:px-8 first:md:pl-0 last:md:pr-0">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-200">{title}</p>
+              <p className="t-eyebrow text-gold-200">{title}</p>
               <p className="mt-2 text-sm leading-6 text-white/78">{copy}</p>
             </div>
           ))}
@@ -184,7 +184,7 @@ export default function PartnersPage() {
       <section className="bg-[#fbfdfc] px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Two paths</p>
+            <p className="t-eyebrow text-gold-700">Two paths</p>
             <h2 className="t-h2 mt-4 text-teal">One is a plan. One is a conversation.</h2>
             <p className="t-lead mt-5 text-zinc-600">
               Each path lists what runs today and what does not. The second list is the useful one.
@@ -194,12 +194,12 @@ export default function PartnersPage() {
           <div className="mt-12 grid gap-6 lg:grid-cols-2">
             {paths.map((path) => (
               <article key={path.title} className="flex flex-col rounded-2xl border border-zinc-200 bg-white p-7 shadow-[0_18px_50px_rgba(13,74,69,0.06)] sm:p-9">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">{path.label}</p>
+                <p className="t-eyebrow text-gold-700">{path.label}</p>
                 <h3 className="mt-3 text-3xl font-bold tracking-tight text-zinc-900">{path.title}</h3>
                 <p className="mt-3 text-sm font-semibold text-teal">{path.who}</p>
                 <p className="mt-5 text-base leading-7 text-zinc-600">{path.problem}</p>
 
-                <p className="mt-8 text-xs font-bold uppercase tracking-[0.16em] text-teal">What this covers</p>
+                <p className="mt-8 t-eyebrow text-teal">What this covers</p>
                 <ul className="mt-3 space-y-2.5">
                   {path.live.map((item) => (
                     <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-700">
@@ -224,7 +224,7 @@ export default function PartnersPage() {
       <section id="current-scope" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1100px]">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Current scope</p>
+            <p className="t-eyebrow text-gold-700">Current scope</p>
             <h2 className="t-h2 mt-4 text-teal">Everything that runs, and the four things that do not.</h2>
             <p className="t-lead mt-5 text-zinc-600">
               One list, stated once, so you can rule Qalam in or out in under a minute.
@@ -232,7 +232,7 @@ export default function PartnersPage() {
           </div>
           <div className="mt-11 grid gap-10 lg:grid-cols-[1.35fr_0.85fr] lg:gap-14">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Running today</p>
+              <p className="t-eyebrow text-teal">Running today</p>
               <ul className="mt-4 space-y-3">
                 {scopeLive.map((item) => (
                   <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-700">
@@ -243,7 +243,7 @@ export default function PartnersPage() {
               </ul>
             </div>
             <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 sm:p-7">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-zinc-500">Not built</p>
+              <p className="t-eyebrow text-zinc-500">Not built</p>
               <ul className="mt-4 space-y-3">
                 {scopeNotBuilt.map((item) => (
                   <li key={item} className="flex gap-3 text-sm leading-6 text-zinc-500">
@@ -265,7 +265,7 @@ export default function PartnersPage() {
         <div className="relative mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Boundaries</p>
+              <p className="t-eyebrow text-gold-200">Boundaries</p>
               <h2 className="t-h2 mt-4 max-w-lg text-white">What Qalam will never do with your audience or your content.</h2>
               <p className="t-lead mt-5 max-w-lg text-white/65">
                 These are the terms up front, so the first conversation can be about the operational fit instead of the fine print.
@@ -286,7 +286,7 @@ export default function PartnersPage() {
       <section className="bg-[#f7f3ea] px-6 py-24 sm:py-28">
         <div className="mx-auto grid max-w-[1100px] gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Verify before you talk to us</p>
+            <p className="t-eyebrow text-gold-700">Verify before you talk to us</p>
             <h2 className="t-h2 mt-4 text-teal">The product is inspectable.</h2>
           </div>
           <div className="space-y-5 text-base leading-7 text-zinc-600">
@@ -311,7 +311,7 @@ export default function PartnersPage() {
 
       <section className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[900px]">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-700">Partnership questions</p>
+          <p className="t-eyebrow text-gold-700">Partnership questions</p>
           <h2 className="t-h2 mt-4 text-teal">Answered plainly, including the negatives.</h2>
           <div className="mt-10 divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white">
             {faqs.map((faq) => (
@@ -330,7 +330,7 @@ export default function PartnersPage() {
       <section className="qlx relative overflow-hidden bg-[#102f2d] px-6 py-20 text-white" data-nav-ground="dark">
         <div className="qlx-grain" aria-hidden />
         <div className="relative mx-auto flex max-w-[1000px] flex-col items-center text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">Next step</p>
+          <p className="t-eyebrow text-gold-200">Next step</p>
           <h2 className="mt-5 max-w-3xl text-[clamp(2.2rem,4.6vw,4.2rem)] font-extrabold leading-[1.02] tracking-[-0.045em] text-white">
             Tell us how your operation runs. We will tell you what fits and what does not.
           </h2>

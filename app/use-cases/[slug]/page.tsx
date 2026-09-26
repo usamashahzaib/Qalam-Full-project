@@ -104,11 +104,11 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
             <div className="mx-auto max-w-[900px] overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-950 text-white shadow-sm">
               <div className="grid gap-8 p-8 md:grid-cols-[0.9fr_1.1fr] md:p-10">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-gold-200">From problem to proof</p>
+                  <p className="t-eyebrow text-gold-200">From problem to proof</p>
                   <h2 className="mt-3 text-3xl font-bold">A connected Qalam workflow</h2>
                   <p className="mt-4 text-sm leading-7 text-white/65">{industry.problem}</p>
                   <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-                    <p className="text-xs font-bold uppercase tracking-wider text-white/60">Target outcome</p>
+                    <p className="t-eyebrow text-white/60">Target outcome</p>
                     <p className="mt-2 text-sm leading-6 text-white/85">{industry.outcome}</p>
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
         {otherCases.length > 0 && (
           <section className="px-6 pb-12">
             <div className="mx-auto max-w-[900px]">
-              <h2 className="mb-5 text-sm font-semibold uppercase tracking-widest text-zinc-500">Other use cases</h2>
+              <h2 className="mb-5 t-eyebrow text-zinc-500">Other use cases</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {otherCases.map(([key, useCase]) => (
                   <Link

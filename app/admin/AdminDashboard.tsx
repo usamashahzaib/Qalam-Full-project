@@ -177,13 +177,13 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                 {circuits && (
                   <div className="mb-4 flex gap-3">
                     <div className="flex-1 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-                      <p className="t-eyebrowr text-zinc-400">Groq</p>
+                      <p className="t-eyebrow text-zinc-400">Groq</p>
                       <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 t-eyebrow ${circuitColor(circuits.groq)}`}>
                         {String(circuits.groq)}
                       </span>
                     </div>
                     <div className="flex-1 rounded-xl border border-zinc-100 bg-zinc-50 px-4 py-3">
-                      <p className="t-eyebrowr text-zinc-400">Gemini</p>
+                      <p className="t-eyebrow text-zinc-400">Gemini</p>
                       <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 t-eyebrow ${circuitColor(circuits.gemini)}`}>
                         {String(circuits.gemini)}
                       </span>
@@ -297,7 +297,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
-                    <thead className="bg-zinc-50 t-eyebrowr text-zinc-500">
+                    <thead className="bg-zinc-50 t-eyebrow text-zinc-500">
                       <tr>
                         <th className="px-4 py-3">User</th>
                         <th className="px-4 py-3">Plan</th>
@@ -370,7 +370,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Plan override */}
                       <div>
-                        <label className="mb-1.5 block t-eyebrowst text-zinc-400">Plan override</label>
+                        <label className="mb-1.5 block t-eyebrow text-zinc-400">Plan override</label>
                         <select aria-label="Plan override"
                           value={form.planOverride}
                           onChange={(e) => setForm((p) => ({ ...p, planOverride: e.target.value }))}
@@ -384,7 +384,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       {/* Limit overrides */}
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="mb-1 block t-eyebrowst text-zinc-400">Draft limit</label>
+                          <label className="mb-1 block t-eyebrow text-zinc-400">Draft limit</label>
                           <input aria-label="Draft limit"
                             type="number"
                             min="0"
@@ -395,7 +395,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           />
                         </div>
                         <div>
-                          <label className="mb-1 block t-eyebrowst text-zinc-400">WS limit</label>
+                          <label className="mb-1 block t-eyebrow text-zinc-400">WS limit</label>
                           <input aria-label="Workspace limit"
                             type="number"
                             min="0"
@@ -410,7 +410,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                       {/* Expiry */}
                       <div className="grid grid-cols-2 gap-3">
                         <label>
-                          <span className="mb-1 block t-eyebrowst text-zinc-400">Plan duration</span>
+                          <span className="mb-1 block t-eyebrow text-zinc-400">Plan duration</span>
                           <select
                             value={form.billingCycle}
                             onChange={(e) => setForm((p) => ({ ...p, billingCycle: e.target.value as typeof p.billingCycle }))}
@@ -422,7 +422,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
                           </select>
                         </label>
                         <label>
-                          <span className="mb-1 block t-eyebrowst text-zinc-400">Override expires</span>
+                          <span className="mb-1 block t-eyebrow text-zinc-400">Override expires</span>
                         <input
                           type="date"
                           value={form.expiresAt}
@@ -435,7 +435,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Feature flags */}
                       <div>
-                        <label className="mb-2 block t-eyebrowst text-zinc-400">Feature flags</label>
+                        <label className="mb-2 block t-eyebrow text-zinc-400">Feature flags</label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {FEATURES.map(([key, label]) => (
                             <label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-100 px-3 py-2 t-eyebrow font-semibold text-zinc-700 hover:bg-zinc-50">
@@ -453,7 +453,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Notes */}
                       <div>
-                        <label className="mb-1 block t-eyebrowst text-zinc-400">Internal notes</label>
+                        <label className="mb-1 block t-eyebrow text-zinc-400">Internal notes</label>
                         <textarea aria-label="Internal notes"
                           value={form.notes}
                           onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
@@ -465,7 +465,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Usage counters + reset */}
                       <div>
-                        <label className="mb-2 block t-eyebrowst text-zinc-400">Usage this cycle</label>
+                        <label className="mb-2 block t-eyebrow text-zinc-400">Usage this cycle</label>
                         <div className="space-y-1.5">
                           {USAGE_FIELDS.map(([field, label]) => (
                             <div key={field} className="flex items-center justify-between rounded-lg border border-zinc-100 px-3 py-2 text-xs">
@@ -520,7 +520,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 
                       {/* Danger zone */}
                       <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3">
-                        <p className="t-eyebrowst text-red-700">Danger zone</p>
+                        <p className="t-eyebrow text-red-700">Danger zone</p>
                         <p className="mt-1 text-xs text-red-700/80">
                           Permanently deletes this user and all their data (posts, carousels, voice profiles, credentials). This cannot be undone.
                         </p>
@@ -575,7 +575,7 @@ export function AdminDashboard({ adminEmail }: { adminEmail: string }) {
 function StatCard({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
     <div className="rounded-2xl border border-zinc-200 bg-white px-5 py-4 shadow-sm">
-      <p className="t-eyebrowst text-zinc-400">{label}</p>
+      <p className="t-eyebrow text-zinc-400">{label}</p>
       <p className="mt-1.5 text-2xl font-bold text-zinc-900">{value}</p>
       <p className="mt-0.5 text-xs text-zinc-400">{sub}</p>
     </div>

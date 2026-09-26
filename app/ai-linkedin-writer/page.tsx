@@ -426,7 +426,7 @@ export default function AiLinkedInWriterPage() {
         {/* Internal Links */}
         <section className="border-t border-zinc-100 bg-white px-6 py-16">
           <div className="mx-auto max-w-[1200px]">
-            <h3 className="mb-6 text-sm font-semibold uppercase tracking-widest text-zinc-500">
+            <h3 className="mb-6 t-eyebrow text-zinc-500">
               Related resources
             </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

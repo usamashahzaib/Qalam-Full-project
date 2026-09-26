@@ -75,7 +75,7 @@ export function CareerAnswerPage({ page }: { page: CareerAnswerPageData }) {
         </header>
 
         <section className="grid gap-8 border-b border-zinc-300 py-16 lg:grid-cols-[.5fr_1.5fr]">
-          <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-zinc-500">Direct answer</h2>
+          <h2 className="t-eyebrow text-zinc-500">Direct answer</h2>
           <p className="max-w-[70ch] text-2xl font-semibold leading-10 tracking-[-0.02em]">{page.directAnswer}</p>
         </section>
 

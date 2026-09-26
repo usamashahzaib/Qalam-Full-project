@@ -74,7 +74,7 @@ export function ContactForm({ topic }: { topic?: string }) {
 
   return (
     <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-sm">
-      <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-teal">Send a message</p>
+      <p className="mb-2 t-eyebrow text-teal">Send a message</p>
       <h2 className="mb-1 text-2xl font-bold text-zinc-900">Get in touch</h2>
       <p className="mb-7 text-sm leading-relaxed text-zinc-500">
         We read every message. Expect a reply within 4 hours on business days.

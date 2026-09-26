@@ -52,7 +52,7 @@ export function AuthShell({
         <div className="relative z-10 flex items-center justify-center px-10 py-12">
           <div className="w-full max-w-md text-center">
           <div className="mb-7 flex justify-center"><AuthGuardian watching={watching} /></div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-gold-200">{eyebrow}</p>
+          <p className="mb-2 t-eyebrow text-gold-200">{eyebrow}</p>
           <h2 className="mx-auto max-w-md text-3xl font-extrabold leading-tight">{headline}</h2>
           <ul className="mx-auto mt-6 max-w-md space-y-3 text-left">
             {points.map((point) => (

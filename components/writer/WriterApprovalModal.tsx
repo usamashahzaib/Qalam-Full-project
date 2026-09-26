@@ -58,7 +58,7 @@ export function WriterApprovalModal({
         <p className="mt-1 text-sm text-zinc-500">Share this draft with a colleague, manager, or client before it goes live. They receive a private review link and do not need a Qalam account.</p>
         <div className="mt-4 space-y-3">
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Reviewer email <span className="text-red-500">*</span>
             </label>
             <input aria-label="Reviewer email"
@@ -70,7 +70,7 @@ export function WriterApprovalModal({
             />
           </div>
           <div>
-            <label className="mb-1.5 block t-eyebrowst text-zinc-400">
+            <label className="mb-1.5 block t-eyebrow text-zinc-400">
               Message <span className="font-normal normal-case text-zinc-400">(optional)</span>
             </label>
             <textarea aria-label="Message to reviewer"

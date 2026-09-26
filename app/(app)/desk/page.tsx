@@ -139,7 +139,7 @@ export default function DeskPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-10">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">My Desk</p>
+          <p className="t-eyebrow text-teal">My Desk</p>
           <h1 className="mt-1 text-3xl font-bold text-zinc-900">{greeting()}{data?.firstName ? `, ${data.firstName}` : ""}</h1>
           <p className="mt-1 text-sm text-zinc-600">Everything that needs you across every client, in the order it matters.</p>
         </div>

@@ -212,7 +212,7 @@ export default function CareerMatchPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
         <header className="rounded-3xl bg-[#073f3b] px-7 py-8 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Signal match</p>
+          <p className="t-eyebrow text-gold-700">Signal match</p>
           <h1 className="mt-2 text-3xl font-bold">Three professionals a week, chosen from your actual signal.</h1>
           <p className="mt-2 max-w-2xl text-sm text-white/70">
             Matched on what you publish about and who you publish for, not on a headline. Nobody sees your contact details until you both say yes.

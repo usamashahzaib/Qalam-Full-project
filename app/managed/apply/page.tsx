@@ -51,7 +51,7 @@ export default async function ManagedApplyPage({
             <div className="space-y-4">
               {(isAgency ? [] : MANAGED_PLANS).map((plan) => (
                 <div key={plan.name} className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gold-700">{plan.name}</p>
+                  <p className="t-eyebrow text-gold-700">{plan.name}</p>
                   <p className="mt-2 text-sm text-zinc-400"><span className="line-through">{formatPrice(plan.originalMonthlyPrice)}</span> <span className="ml-1 font-semibold text-emerald-700">Discounted</span></p>
                   <p className="mt-1 text-2xl font-bold text-zinc-900">{formatPrice(plan.monthlyPrice)}<span className="text-sm font-medium text-zinc-500">/mo</span></p>
                   <p className="mt-2 text-sm text-zinc-600">{plan.description}</p>
@@ -62,7 +62,7 @@ export default async function ManagedApplyPage({
               ))}
               {isAgency && (
                 <div className="rounded-2xl border border-teal/30 bg-teal/5 p-6 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gold-700">Agency</p>
+                  <p className="t-eyebrow text-gold-700">Agency</p>
                   <p className="mt-1 text-2xl font-bold text-zinc-900">$19<span className="text-sm font-medium text-zinc-500">/month</span></p>
                   <p className="mt-1 text-xs font-semibold text-emerald-700">$38 quarterly - 1 month free</p>
                   <ul className="mt-4 space-y-1.5 text-xs text-zinc-600">

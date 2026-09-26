@@ -141,7 +141,7 @@ export default function VoiceDropPage() {
       {stage === "answer" && drop ? (
         <div className="space-y-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">{drop.workspaceName}</p>
+            <p className="t-eyebrow text-teal-700">{drop.workspaceName}</p>
             <p className="mt-2 text-sm text-zinc-600">{drop.askerName || "Your team"} has one question for your next post:</p>
             <h1 className="mt-3 text-2xl font-bold leading-snug text-zinc-900">{drop.question}</h1>
           </div>

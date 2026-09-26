@@ -125,12 +125,12 @@ export default function CareerAddOnsPage() {
         <header className="overflow-hidden rounded-[2rem] bg-[#073f3b] text-white">
           <div className="grid md:grid-cols-[1.35fr_0.65fr]">
             <div className="px-7 py-9 md:px-10 md:py-12">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">Career commerce</p>
+              <p className="t-eyebrow text-gold-700">Career commerce</p>
               <h1 className="mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-5xl">Buy the outcome your next move needs.</h1>
               <p className="mt-4 max-w-2xl text-sm leading-6 text-white/70">Every purchase becomes verified in-app credits. Generate, edit, and save the work inside Qalam.</p>
             </div>
             <div className="border-t border-white/10 bg-white/[0.045] px-7 py-8 md:border-l md:border-t-0 md:px-8 md:py-12">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/65">{plan} plan</p>
+              <p className="t-eyebrow text-white/65">{plan} plan</p>
               <p className="mt-2 text-4xl font-bold text-gold">{loading ? "..." : planCredits}</p>
               <p className="mt-1 text-sm text-white/70">career credits available</p>
               <p className="mt-5 text-xs leading-5 text-white/65">Billing cycle: {billingCycle}. Purchased credits do not expire. Plan credits expire with the paid period.</p>
@@ -144,7 +144,7 @@ export default function CareerAddOnsPage() {
         <section className="mt-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold-700">Outcome packs</p>
+              <p className="t-eyebrow text-gold-700">Outcome packs</p>
               <h2 className="mt-2 text-3xl font-bold text-zinc-900">One checkout. A complete workflow.</h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-zinc-500">Job-Win is the recommended path for one high-priority application. Each included tool becomes available separately.</p>
@@ -176,7 +176,7 @@ export default function CareerAddOnsPage() {
 
         <section className="mt-14 border-t border-zinc-300 pt-10">
           <div className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Individual tools</p>
+            <p className="t-eyebrow text-teal">Individual tools</p>
             <h2 className="mt-2 text-3xl font-bold text-zinc-900">Add only what you need.</h2>
             <p className="mt-3 text-sm leading-6 text-zinc-500">Plan credits are used first when eligible. Purchased tool credits remain available until used.</p>
           </div>
@@ -213,7 +213,7 @@ export default function CareerAddOnsPage() {
 
         <section className="mt-10 rounded-2xl bg-white px-6 py-7 shadow-[0_1px_0_rgba(9,43,40,0.08)]">
           <div className="flex items-center justify-between gap-4">
-            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-zinc-400">Order history</p><h2 className="mt-1 font-bold text-zinc-900">Payments and plan grants</h2></div>
+            <div><p className="t-eyebrow text-zinc-400">Order history</p><h2 className="mt-1 font-bold text-zinc-900">Payments and plan grants</h2></div>
             <span className="text-xs text-zinc-400">{orders.length} records</span>
           </div>
           {loading ? <div className="mt-5 h-12 animate-pulse rounded-xl bg-zinc-100" /> : orders.length ? <div className="mt-5 divide-y divide-zinc-100 border-y border-zinc-100">{orders.map((order) => { const product = getCareerProduct(order.product_key || order.addon_key); return <div key={order.id} className="flex flex-col gap-2 py-4 text-sm sm:flex-row sm:items-center sm:justify-between"><div><p className="font-semibold text-zinc-800">{product?.name || (order.source_type === "plan_credit" ? `${plan} plan credits` : order.addon_key.replaceAll("_", " "))}{order.quantity > 1 ? ` x${order.quantity}` : ""}</p><p className="mt-1 text-xs text-zinc-400">{order.amount_pkr > 0 ? money(order.amount_pkr) : "Included with plan"} · {Number(order.credits_consumed || 0)} used</p></div><span className="w-fit rounded-full bg-zinc-100 px-2.5 py-1 t-eyebrow text-zinc-600">{order.status.replaceAll("_", " ")}</span></div>})}</div> : <p className="mt-5 text-sm text-zinc-500">No purchases or plan credits yet.</p>}

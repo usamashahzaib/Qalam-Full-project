@@ -76,7 +76,7 @@ export function PricingCard({
       )}
 
       <div className="mb-6">
-        <p className={`mb-2 text-sm font-semibold uppercase tracking-widest ${
+        <p className={`mb-2 t-eyebrow ${
           isComingSoon ? "text-zinc-400" : highlighted ? "text-teal-100" : "text-teal"
         }`}>{plan}</p>
         <div className="mb-1 flex flex-wrap items-baseline gap-x-1 gap-y-0">

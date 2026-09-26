@@ -57,7 +57,7 @@ export default function ConnectLinkedInPage() {
       {handoff?.status === "ready" ? (
         <div className="space-y-6">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">{handoff.workspaceName}</p>
+            <p className="t-eyebrow text-teal-700">{handoff.workspaceName}</p>
             <h1 className="mt-2 text-2xl font-bold leading-tight text-zinc-900 sm:text-3xl">
               {handoff.reason === "guardian" ? "Reconnect your LinkedIn" : "Connect your LinkedIn"}
             </h1>

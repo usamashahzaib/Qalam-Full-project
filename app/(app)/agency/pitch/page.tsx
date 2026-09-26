@@ -93,7 +93,7 @@ export default function PitchModePage() {
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-10">
       <Link href="/agency" className="text-xs font-semibold text-zinc-500 hover:text-zinc-800">Back to Agency Hub</Link>
       <header className="mb-6 mt-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Pitch Mode</p>
+        <p className="t-eyebrow text-teal">Pitch Mode</p>
         <h1 className="mt-1 text-3xl font-bold text-zinc-900">Show a prospect their own voice, done well</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">Paste a few of the prospect&apos;s public LinkedIn posts. Qalam drafts three sample posts in their voice and gives you a private preview link to send. Their posts are used once and not stored.</p>
       </header>
@@ -130,7 +130,7 @@ export default function PitchModePage() {
               <OneTimeLink url={result.url} note={`Send this to ${result.pitch.prospect_name}. It is shown only once and stays live for 30 days.`} />
               {result.pitch.samples.map((sample, index) => (
                 <article key={index} className="rounded-2xl border border-zinc-200 bg-white p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Sample {index + 1}: {sample.angle}</p>
+                  <p className="t-eyebrow text-teal-700">Sample {index + 1}: {sample.angle}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-zinc-800">{sample.content}</p>
                 </article>
               ))}

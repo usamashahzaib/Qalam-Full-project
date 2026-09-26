@@ -257,7 +257,7 @@ export default function AgencyDashboard() {
       <div className="mb-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal">Agency operations</p>
+            <p className="t-eyebrow text-teal">Agency operations</p>
             <h1 className="mt-1 text-3xl font-bold text-zinc-900">Agency Hub</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">See which clients need you, hand LinkedIn access over without passwords, and prove results with a link your client can open.</p>
           </div>
@@ -343,7 +343,7 @@ export default function AgencyDashboard() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate font-bold text-zinc-900">{client.client_name}</h3>
-                        {active ? <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Open</span> : null}
+                        {active ? <span className="rounded-full bg-teal px-2 py-0.5 t-eyebrow text-white">Open</span> : null}
                       </div>
                       <p className="mt-0.5 text-xs text-zinc-500">{ROLE_LABELS[client.role] || client.role} · {client.teamCount ?? 1} member{(client.teamCount ?? 1) === 1 ? "" : "s"}</p>
                     </div>

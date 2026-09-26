@@ -214,7 +214,7 @@ export default function FreeToolsPage() {
             <div className="relative overflow-hidden rounded-2xl bg-teal px-10 py-16 text-center">
               <QalamEvidenceField variant="cta" />
               <div className="relative z-10">
-                <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-teal-200">
+                <p className="mb-4 t-eyebrow text-teal-200">
                   Want the full system?
                 </p>
                 <h2 className="mb-4 text-4xl font-extrabold text-white">

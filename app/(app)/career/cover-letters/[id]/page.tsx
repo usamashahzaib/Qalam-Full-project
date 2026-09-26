@@ -80,7 +80,7 @@ export default function CoverLetterEditorPage() {
       <div className="mx-auto max-w-3xl">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-white px-5 py-4 print:hidden">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-teal">Cover letter</p>
+            <p className="t-eyebrow text-teal">Cover letter</p>
             <input aria-label="Cover letter title" className="mt-1 min-w-72 border-0 p-0 text-xl font-bold text-zinc-900 outline-none" value={document.title} onChange={(event) => setDocument({ ...document, title: event.target.value })} />
             <p className="mt-1 text-sm text-zinc-500">{document.targetRole}{document.targetCompany ? ` at ${document.targetCompany}` : ""}</p>
           </div>

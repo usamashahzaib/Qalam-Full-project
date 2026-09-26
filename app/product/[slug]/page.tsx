@@ -137,7 +137,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<Pa
         {allProducts.length > 0 && (
           <section className="px-6 pb-12">
             <div className="mx-auto max-w-[900px]">
-              <h2 className="mb-5 text-sm font-semibold uppercase tracking-widest text-zinc-500">Also in Qalam</h2>
+              <h2 className="mb-5 t-eyebrow text-zinc-500">Also in Qalam</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {allProducts.map(([key, product]) => (
                   <Link

@@ -70,7 +70,7 @@ export default function FeaturesPage() {
       <section className="border-b border-zinc-200 px-4 pb-16 pt-14 sm:px-6 sm:pb-20 sm:pt-20">
         <div className="mx-auto grid max-w-[1200px] gap-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Inside Qalam</p>
+            <p className="t-eyebrow text-teal">Inside Qalam</p>
             <h1 className="mt-5 text-4xl font-extrabold leading-none tracking-tight text-zinc-900 sm:text-6xl">See every product surface before you sign in.</h1>
           </div>
           <div className="border-l-2 border-gold pl-5 sm:pl-7">
@@ -91,7 +91,7 @@ export default function FeaturesPage() {
         <div className="mx-auto max-w-[1100px]">
           <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">One evidence chain</p>
+              <p className="t-eyebrow text-gold-700">One evidence chain</p>
               <h2 className="mt-4 text-4xl font-extrabold leading-tight tracking-tight text-zinc-900">The output changes. The truth does not.</h2>
               <p className="mt-4 text-sm leading-7 text-zinc-600">Your target role and verified evidence stay attached as Qalam adapts the format for an ATS, recruiter, LinkedIn search, professional audience, or interview.</p>
             </div>
@@ -115,7 +115,7 @@ export default function FeaturesPage() {
 
       <section className="px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-[900px]">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal">Questions</p>
+          <p className="t-eyebrow text-teal">Questions</p>
           <h2 className="mt-4 text-4xl font-extrabold tracking-tight text-zinc-900">What the product does and does not claim</h2>
           <div className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200">
             {faqs.map((faq) => <article key={faq.q} className="py-6"><h3 className="font-bold text-zinc-900">{faq.q}</h3><p className="mt-2 text-sm leading-7 text-zinc-600">{faq.a}</p></article>)}

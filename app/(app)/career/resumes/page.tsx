@@ -163,7 +163,7 @@ export default function ResumesPage() {
     <main className="min-h-full bg-zinc-50/70 px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-col gap-4 rounded-3xl bg-[#073f3b] px-7 py-8 text-white sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-bold uppercase tracking-[0.16em] text-gold-700">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, target a job description or just the role, edit every line, and export an ATS-safe PDF.</p></div>
+          <div><p className="t-eyebrow text-gold-700">ATS Resume Studio</p><h1 className="mt-2 text-3xl font-bold">One career. Every resume targeted.</h1><p className="mt-2 max-w-2xl text-sm text-white/70">Build from verified experience, target a job description or just the role, edit every line, and export an ATS-safe PDF.</p></div>
           <button onClick={() => setShowCreate((value) => !value)} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-teal-900">{showCreate ? "Close" : "Create targeted resume"}</button>
         </header>
 

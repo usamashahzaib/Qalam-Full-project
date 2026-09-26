@@ -42,7 +42,7 @@ export async function callOpenAiCompatible({
 }: OpenAiCompatibleOptions): Promise<OpenAiCompatibleResult> {
   if (!apiKey) throw new Error(`${provider} API key not configured`)
   const origin = new URL(endpoint).origin
-  if (!["https://api.groq.com", "https://api.mistral.ai"].includes(origin)) {
+  if (!["https://api.groq.com", "https://openrouter.ai"].includes(origin)) {
     throw new Error(`${provider} endpoint is not allowed`)
   }
 
@@ -82,6 +82,6 @@ export async function callOpenAiCompatible({
     content,
     tokensIn: data.usage?.prompt_tokens ?? 0,
     tokensOut: data.usage?.completion_tokens ?? 0,
-    model,
+    model: data.model || model,
   }
 }
