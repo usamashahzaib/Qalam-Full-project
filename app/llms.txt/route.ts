@@ -1,10 +1,13 @@
 import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
+import { AGENCY_PLAN_LIVE, plans } from "@/lib/pricing"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
 
 export const dynamic = "force-static"
 
 export function GET() {
+  const agency = AGENCY_PLAN_LIVE ? plans.find((plan) => plan.name === "Agency") : undefined
+
   const body = [
     "# Qalam",
     "",
@@ -55,6 +58,9 @@ export function GET() {
     "- Free: $0. Includes the public ATS Resume Checker, 5 posts per month, and one ATS-safe resume generation per month after sign-in.",
     "- Solo: $10 per quarter.",
     "- Pro: $18 per quarter.",
+    ...(agency?.quarterlyPrice
+      ? [`- Agency: $${agency.quarterlyPrice} per quarter. ${agency.workspaces} client workspaces. Apply through the Agency application. Workspaces activate after review.`]
+      : []),
     "- Purchasing-power-adjusted pricing is available for South Asia, Africa, Southeast Asia, and Latin America.",
     "- Managed services are separate from self-serve software plans.",
     "- Add-ons show their unit price and quantity before purchase.",

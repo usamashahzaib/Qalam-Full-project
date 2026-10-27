@@ -10,6 +10,9 @@ type Params = { slug: keyof typeof SEO_LANDING_PAGES }
 
 export const dynamicParams = false
 
+const formatVerifiedDate = (iso: string) =>
+  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" })
+
 export function generateStaticParams() {
   return Object.keys(SEO_LANDING_PAGES)
     .filter((slug) => !REDIRECTED_SEO_SLUGS.has(slug))
@@ -93,6 +96,47 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
             </FadeUp>
           </div>
         </section>
+
+        {page.comparison ? (
+          <section className="border-b border-zinc-100 bg-white px-6 py-12">
+            <div className="mx-auto max-w-[960px]">
+              <h2 className="text-2xl font-bold text-zinc-900">Side by side</h2>
+              <p className="mt-2 text-sm text-zinc-500">
+                Last verified <time dateTime={page.comparison.verifiedOn}>{formatVerifiedDate(page.comparison.verifiedOn)}</time> from the pages linked below the table.
+              </p>
+              <div className="mt-6 overflow-x-auto rounded-2xl border border-zinc-200">
+                <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                  <caption className="sr-only">Qalam compared with {page.comparison.competitor}</caption>
+                  <thead className="bg-zinc-50 text-zinc-900">
+                    <tr>
+                      <th scope="col" className="px-4 py-3 font-semibold">Feature</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">Qalam</th>
+                      <th scope="col" className="px-4 py-3 font-semibold">{page.comparison.competitor}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {page.comparison.rows.map((row) => (
+                      <tr key={row.label} className="border-t border-zinc-100 align-top">
+                        <th scope="row" className="px-4 py-3 font-medium text-zinc-900">{row.label}</th>
+                        <td className="px-4 py-3 text-zinc-700">{row.qalam}</td>
+                        <td className="px-4 py-3 text-zinc-700">{row.competitor}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-sm text-zinc-500">
+                Sources:{" "}
+                {page.comparison.sources.map((source, index) => (
+                  <span key={source.href}>
+                    {index > 0 ? ", " : ""}
+                    <a href={source.href} rel="noopener" className="font-medium text-teal underline-offset-2 hover:underline">{source.label}</a>
+                  </span>
+                ))}
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         {page.tool ? (
           <section className="border-b border-teal/15 bg-teal-50/40 px-6 py-12">

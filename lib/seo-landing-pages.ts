@@ -15,8 +15,18 @@ export type SeoLandingPage = {
   example?: { heading: string; body: string }
   tool?: { label: string; description: string; href: string; detail: string }
   methodology?: { label: string; href: string }
+  comparison?: SeoComparison
   faqs: MarketingFaq[]
   related: { label: string; href: string }[]
+}
+
+// Competitor facts must come from the competitor's own public pages. Every
+// comparison carries the date it was checked and the pages it was checked on.
+export type SeoComparison = {
+  competitor: string
+  verifiedOn: string
+  rows: { label: string; qalam: string; competitor: string }[]
+  sources: { label: string; href: string }[]
 }
 
 const updatedAt = "2026-09-01"
@@ -534,9 +544,9 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "Qalam vs Taplio",
     h1: "Qalam vs Taplio: which LinkedIn tool fits your workflow",
     description:
-      "A direct comparison of Qalam and Taplio for LinkedIn content creation. Both are LinkedIn-focused tools, but they are built around different workflow assumptions and audience types.",
+      "Qalam vs Taplio compared on price, AI drafting, voice, trial terms and agency use. Taplio's plans were checked on its own pricing page on 27 October 2026.",
     summary:
-      "Qalam connects saved voice examples, persistent drafts, hooks, review, scheduling, and post records. Compare Taplio's current official features and plans directly, because competitor capabilities change over time.",
+      "Taplio starts at $39 a month and its Pro plan adds lead outreach. Qalam starts free, then $10 a quarter, and drafts from voice examples you save. Pick Taplio if you need outreach automation. Pick Qalam if you want voice-matched drafts at a lower price. Prices checked 27 October 2026.",
     intent: "Qalam vs Taplio, Taplio alternative, LinkedIn writing tool comparison",
     primaryKeyword: "Qalam vs Taplio",
     keywords: [
@@ -547,33 +557,195 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       "LinkedIn AI tool comparison",
       "Taplio vs Qalam",
     ],
-    updatedAt,
+    updatedAt: "2026-10-27",
+    comparison: {
+      competitor: "Taplio",
+      verifiedOn: "2026-10-27",
+      rows: [
+        { label: "Entry price", qalam: "Free plan, then Solo at $10 per quarter", competitor: "Starter at $39 per month. Its comparison table on the same page shows $32." },
+        { label: "AI post writing", qalam: "Free: 5 posts a month. Solo: 30. Pro: 60.", competitor: "Listed from Growth at $69 per month. Pro at $199 lists unlimited AI posts and comments." },
+        { label: "Billing", qalam: "Quarterly", competitor: "Monthly, cancel anytime" },
+        { label: "Trial", qalam: "Free plan with no card and no time limit", competitor: "7 days of Pro access on any plan, 30-day refund window" },
+        { label: "Voice input", qalam: "Posts you choose to save, retrieved when drafting", competitor: "Not verified" },
+        { label: "Lead outreach", qalam: "Not in any plan", competitor: "Listed on Pro" },
+        { label: "Agency use", qalam: "Agency at $38 per quarter, 5 client workspaces", competitor: "Multi-account management listed, no price shown" },
+      ],
+      sources: [
+        { label: "Taplio pricing", href: "https://taplio.com/pricing" },
+        { label: "Qalam pricing", href: "https://www.byqalam.com/pricing" },
+      ],
+    },
     sections: [
       {
-        heading: "Start with the workflow you need",
-        body: "Qalam is built around saved voice examples and persistent drafts, with hooks, review, scheduling, archive, and post records connected in the same system. Check Taplio's current official product and plan pages for its latest workflow before comparing.",
+        heading: "When Taplio is the better pick",
+        body: "Taplio's Pro plan lists automated lead outreach, unlimited AI posts and comments, and priority support, at $199 a month. Qalam's plans do not list lead outreach. If finding and messaging prospects on LinkedIn is the main job, Taplio covers something Qalam does not.",
       },
       {
-        heading: "Voice fidelity: the core difference",
-        body: "Qalam builds a reusable profile from your actual LinkedIn posts and keeps examples you explicitly save available across sessions. Verify any equivalent competitor capability in the current product rather than relying on a static comparison claim.",
+        heading: "Where Qalam costs less",
+        body: "Qalam Solo is $10 per quarter. Taplio Starter is $39 per month, which is $117 over the same three months, and it lists scheduling and analytics but no AI writing. Taplio's AI post writer appears on Growth at $69 a month, or $207 per quarter. Qalam bills quarterly, so you commit three months at a time.",
       },
       {
-        heading: "Which workflow each tool fits",
-        body: "Choose Qalam if its LinkedIn-specific combination of saved voice context, drafts, hooks, review, scheduling, and post records matches your operation. Choose another tool if its current verified workflow better fits your channels, team, or reporting needs.",
+        heading: "How Qalam handles voice",
+        body: "Qalam stores the posts you choose to save, analyses their tone and structure, and pulls the closest examples when it drafts. It does not learn by itself from your edits or from post performance. You decide what counts as your voice. We have not tested how Taplio handles voice, so this page makes no claim about it.",
+      },
+      {
+        heading: "Trial and refund terms",
+        body: "Taplio gives 7 days of Pro access on any plan. Cancelling during the trial costs nothing, and a 30-day money-back window applies after payment. Qalam's Free plan has no time limit, needs no card, and includes 5 AI posts a month.",
+      },
+      {
+        heading: "Agencies and teams",
+        body: "Qalam Agency is $38 per quarter for 5 client workspaces and 5 seats, with line-by-line client approvals. Taplio lists team collaboration, multi-account management and a multi-seat discount, but its pricing page shows no agency price. Ask Taplio for a quote before you compare.",
       },
     ],
     faqs: [
       {
         q: "Is Qalam a Taplio alternative?",
-        a: "Qalam is an alternative worth evaluating if you need saved voice examples and a connected LinkedIn publishing workspace. Compare both products' current plans and test the workflows that matter to you before deciding.",
+        a: "For drafting from saved voice examples at a lower price, yes. For lead outreach, no. Qalam does not list outreach in any plan.",
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
-        a: "Qalam uses quarterly pricing with purchasing-power-adjusted rates for Pakistan and South Asia. Solo is $10 per quarter, and a Free plan is available without a payment card.",
+        a: "Qalam. Solo is $10 per quarter and Pro is $18 per quarter. Taplio's plan cards show $39, $69 and $199 per month as of 27 October 2026. Taplio's own comparison table shows $32, $49 and $149, and its page does not explain the gap.",
+      },
+      {
+        q: "Does Taplio have a free plan?",
+        a: "Not on the pricing page we checked. It offers a 7-day trial with Pro access and a 30-day refund window. Qalam has a Free plan with no time limit.",
       },
     ],
     related: [
-      { label: "AI LinkedIn Writer", href: "/ai-linkedin-writer" },
+      { label: "Qalam vs AuthoredUp", href: "/qalam-vs-authoredup" },
+      { label: "Qalam vs Supergrow", href: "/qalam-vs-supergrow" },
+      { label: "Voice Profile", href: "/product/voice-profile" },
+      { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  "qalam-vs-authoredup": {
+    slug: "qalam-vs-authoredup",
+    title: "Qalam vs AuthoredUp",
+    h1: "Qalam vs AuthoredUp: a drafting tool or a post editor",
+    description:
+      "Qalam vs AuthoredUp compared on price, editing, AI drafting and team plans. AuthoredUp's plans were checked on its own pricing page on 27 October 2026.",
+    summary:
+      "AuthoredUp is a post editor and analytics tool at $19.95 a month for one profile. Qalam drafts posts from voice examples you save, starting free and then $10 a quarter. Use AuthoredUp to format and reuse posts you write yourself. Use Qalam to produce the first draft. Prices checked 27 October 2026.",
+    intent: "Qalam vs AuthoredUp, AuthoredUp alternative, LinkedIn post editor comparison",
+    primaryKeyword: "Qalam vs AuthoredUp",
+    keywords: ["Qalam vs AuthoredUp", "AuthoredUp alternative", "AuthoredUp pricing", "LinkedIn post editor", "LinkedIn writing tool comparison"],
+    updatedAt: "2026-10-27",
+    comparison: {
+      competitor: "AuthoredUp",
+      verifiedOn: "2026-10-27",
+      rows: [
+        { label: "Main job", qalam: "Drafts posts, hooks, carousels and comments from saved voice examples", competitor: "Editor with styling and preview, post reuse, analytics" },
+        { label: "AI drafting from your samples", qalam: "Yes", competitor: "Not listed on its pricing page" },
+        { label: "Entry price", qalam: "Free plan, then Solo at $10 per quarter", competitor: "Individual at $19.95 per month for 1 profile" },
+        { label: "Yearly price", qalam: "Billed quarterly, no yearly plan", competitor: "Individual at $199.50 per year" },
+        { label: "Team price", qalam: "Agency at $38 per quarter, 5 client workspaces", competitor: "Business at $14.95 per profile per month, minimum 3 profiles" },
+        { label: "Hook library", qalam: "Hook generator, 5 sets a month on Free", competitor: "300+ hooks and post endings" },
+        { label: "Trial", qalam: "Free plan with no card and no time limit", competitor: "Free trial with no card, length not stated" },
+      ],
+      sources: [
+        { label: "AuthoredUp pricing", href: "https://authoredup.com/pricing" },
+        { label: "Qalam pricing", href: "https://www.byqalam.com/pricing" },
+      ],
+    },
+    sections: [
+      {
+        heading: "What AuthoredUp lists",
+        body: "AuthoredUp's pricing page lists an editor with text styling, bullets and preview, unlimited drafts, snippets, 300+ hooks and post endings, 1-click post reuse, and content analytics. It does not list AI drafting from your own writing samples.",
+      },
+      {
+        heading: "Price per profile",
+        body: "Individual is $19.95 per month, or $16.63 per month billed yearly at $199.50. Business is $14.95 per profile per month with a minimum of 3 profiles. Qalam Solo is $10 per quarter for one workspace, so one person pays less per quarter on Qalam. The two tools do different work, though, so price alone should not decide it.",
+      },
+      {
+        heading: "When AuthoredUp is the better pick",
+        body: "If you already write your own posts and want styling, a hook library and quick reuse, AuthoredUp is built for that. Qalam's value is the first draft from your saved examples and the review and scheduling flow around it.",
+      },
+      {
+        heading: "Trial terms",
+        body: "AuthoredUp offers a free trial with no card. Its pricing page does not state how long it lasts. Qalam's Free plan has no time limit and includes 5 AI posts a month.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Is Qalam an AuthoredUp alternative?",
+        a: "Only in part. AuthoredUp is an editor with analytics. Qalam drafts from saved voice examples and adds review and scheduling. Choose by the job you need done.",
+      },
+      {
+        q: "How much does AuthoredUp cost?",
+        a: "As of 27 October 2026, Individual is $19.95 per month or $199.50 per year. Business is $14.95 per profile per month for at least 3 profiles.",
+      },
+    ],
+    related: [
+      { label: "Qalam vs Taplio", href: "/qalam-vs-taplio" },
+      { label: "Qalam vs Supergrow", href: "/qalam-vs-supergrow" },
+      { label: "Voice Profile", href: "/product/voice-profile" },
+      { label: "Pricing", href: "/pricing" },
+    ],
+  },
+  "qalam-vs-supergrow": {
+    slug: "qalam-vs-supergrow",
+    title: "Qalam vs Supergrow",
+    h1: "Qalam vs Supergrow: price, voice and team plans",
+    description:
+      "Qalam vs Supergrow compared on price, voice, repurposing, trials and team plans. Supergrow's plans were checked on its own pricing page on 27 October 2026.",
+    summary:
+      "Supergrow Pro costs $39 a month for one account and lists AI interviews, repurposing and a carousel maker. Qalam starts free, then $10 a quarter, and drafts from saved voice examples. Supergrow Teams is $199 a month for 5 accounts. Qalam Agency is $38 a quarter for 5 client workspaces. Prices checked 27 October 2026.",
+    intent: "Qalam vs Supergrow, Supergrow alternative, LinkedIn AI tool comparison",
+    primaryKeyword: "Qalam vs Supergrow",
+    keywords: ["Qalam vs Supergrow", "Supergrow alternative", "Supergrow pricing", "LinkedIn AI tool comparison", "LinkedIn writing tool comparison"],
+    updatedAt: "2026-10-27",
+    comparison: {
+      competitor: "Supergrow",
+      verifiedOn: "2026-10-27",
+      rows: [
+        { label: "Entry price", qalam: "Free plan, then Solo at $10 per quarter", competitor: "Pro at $39 per month, or $31 per month billed annually" },
+        { label: "Free option", qalam: "Free plan with no card and no time limit", competitor: "7-day trial on every plan" },
+        { label: "Team tier", qalam: "Agency at $38 per quarter, 5 client workspaces", competitor: "Teams at $199 per month, 5 accounts" },
+        { label: "Voice", qalam: "Posts you save, retrieved when drafting", competitor: "Content DNA, mechanism not verified" },
+        { label: "Repurposing from YouTube, articles, PDFs", qalam: "Not in any plan", competitor: "Listed on Pro" },
+        { label: "Carousel maker", qalam: "In every plan: 1, 3 and 10 carousels a month on Free, Solo and Pro", competitor: "Listed on Pro" },
+        { label: "Approvals", qalam: "Optional approval on Pro. Line-by-line client approvals on Agency.", competitor: "Feedback and approval workflows on Teams" },
+      ],
+      sources: [
+        { label: "Supergrow pricing", href: "https://www.supergrow.ai/pricing" },
+        { label: "Qalam pricing", href: "https://www.byqalam.com/pricing" },
+      ],
+    },
+    sections: [
+      {
+        heading: "What Supergrow Pro includes",
+        body: "Supergrow Pro lists Content DNA, unlimited Postcast AI interviews, repurposing from YouTube, articles and PDFs, scheduling with calendar and Kanban views, auto first-comment, a carousel maker and profile analytics. Repurposing from other formats does not appear in Qalam's plans.",
+      },
+      {
+        heading: "Price",
+        body: "Pro is $39 per month, or $31 per month billed annually. Teams is $199 per month, or $189 billed annually, for 5 accounts. Enterprise is custom. Qalam Solo is $10 per quarter, Pro is $18 per quarter, and Agency is $38 per quarter.",
+      },
+      {
+        heading: "Trial terms",
+        body: "Every Supergrow plan has a 7-day free trial. Per its pricing page, an account pauses without data loss if you do not pick a plan when the trial ends. Qalam's Free plan has no time limit.",
+      },
+      {
+        heading: "Voice",
+        body: "Supergrow lists Content DNA, set per team member on Teams. Qalam builds a voice profile from posts you save and retrieves close examples when it drafts. It does not learn from edits. Run both on the same three topics before you pay. We have not run that test.",
+      },
+      {
+        heading: "Teams and agencies",
+        body: "Supergrow Teams adds approval workflows, an organisation dashboard, publishing on behalf of members and Slack notifications. Qalam Agency adds 5 client workspaces with separate voice profiles, client connect links, line-by-line client approvals and proof reports.",
+      },
+    ],
+    faqs: [
+      {
+        q: "Is Qalam a Supergrow alternative?",
+        a: "If you want drafts from saved voice examples at a lower price, yes. If you want to turn YouTube videos, articles or PDFs into posts, Supergrow lists that and Qalam does not.",
+      },
+      {
+        q: "How much does Supergrow cost?",
+        a: "As of 27 October 2026, Pro is $39 per month or $31 per month billed annually. Teams is $199 per month or $189 billed annually. Enterprise is custom.",
+      },
+    ],
+    related: [
+      { label: "Qalam vs Taplio", href: "/qalam-vs-taplio" },
+      { label: "Qalam vs AuthoredUp", href: "/qalam-vs-authoredup" },
       { label: "Voice Profile", href: "/product/voice-profile" },
       { label: "Pricing", href: "/pricing" },
     ],
