@@ -1,11 +1,10 @@
 ﻿import type { Metadata, Viewport } from "next"
 import { Plus_Jakarta_Sans, Cormorant_Garamond } from "next/font/google"
 import "./globals.css"
-import { buildOgImageUrl } from "@/lib/seo"
+import { buildOgImageUrl, buildOrganizationSchema, buildPlanOffer, buildWebSiteSchema, SITE_NAME, SITE_URL, stripContext } from "@/lib/seo"
 import { NavWrapper } from "@/components/NavWrapper"
 import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
-import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
 import { SessionProvider } from "next-auth/react"
 
@@ -23,14 +22,12 @@ const cormorant = Cormorant_Garamond({
   display: "optional",
 })
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"
-
 const rootOgTitle = "Qalam | LinkedIn Publishing System With Voice Memory"
 const rootOgDescription =
   "Draft, review, approve, and schedule LinkedIn posts, carousels, and comments from saved writing examples and professional context, so the output still reads as you."
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: rootOgTitle,
     template: `%s | ${SITE_NAME}`,
@@ -51,12 +48,14 @@ export const metadata: Metadata = {
     "LinkedIn comment assistant",
     "LinkedIn content operations",
   ],
-  authors: [{ name: SITE_NAME, url: siteUrl }],
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
   creator: SITE_NAME,
   publisher: SITE_NAME,
   applicationName: SITE_NAME,
+  // No site-wide canonical here. Next merges layout metadata into every page that does
+  // not set its own alternates, so a canonical in this file would point those pages at
+  // the homepage. Each page sets its own (the homepage does so in app/page.tsx).
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_SITE_URL || "https://www.byqalam.com",
     types: {
       "application/rss+xml": [{ url: "/feed.xml", title: "Qalam Blog RSS" }],
     },
@@ -69,7 +68,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: siteUrl,
+    url: SITE_URL,
     siteName: SITE_NAME,
     title: rootOgTitle,
     description: rootOgDescription,
@@ -123,46 +122,31 @@ export const viewport: Viewport = {
 const appSchema = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "Organization",
-      "@id": `${siteUrl}/#organization`,
-      name: SITE_NAME,
-      url: siteUrl,
-      logo: `${siteUrl}/icon.png`,
-      sameAs: [
-        "https://www.linkedin.com/company/withqalam",
-        "https://www.instagram.com/withqalam",
-      ],
-    },
-    {
-      "@type": "WebSite",
-      "@id": `${siteUrl}/#website`,
-      url: siteUrl,
-      name: SITE_NAME,
-      publisher: { "@id": `${siteUrl}/#organization` },
-      inLanguage: "en",
-    },
+    stripContext(buildOrganizationSchema()),
+    stripContext(buildWebSiteSchema()),
     {
       "@type": "SoftwareApplication",
-      "@id": `${siteUrl}/#app`,
+      "@id": `${SITE_URL}/#app`,
       name: SITE_NAME,
-      url: siteUrl,
+      url: SITE_URL,
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
         "A LinkedIn publishing system with voice memory. Drafting, hooks, carousels, comments, approvals, scheduling, analytics, and isolated client workspaces, with supporting career and ATS resume tools.",
-      publisher: { "@id": `${siteUrl}/#organization` },
-      offers: PLANS.filter((plan) => plan.quarterlyUsd != null).map((plan) => ({
-        "@type": "Offer",
-        name: plan.plan,
-        price: String(plan.quarterlyUsd),
-        priceCurrency: "USD",
-        description: plan.description,
-        availability:
-          plan.featureStatus === "coming_soon"
-            ? "https://schema.org/PreOrder"
-            : "https://schema.org/InStock",
-      })),
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      // Paid plans bill per quarter, so each offer carries a 3-month billing period.
+      offers: PLANS.filter((plan) => plan.quarterlyUsd != null).map((plan) =>
+        buildPlanOffer({
+          name: plan.plan,
+          priceUsd: plan.quarterlyUsd ?? 0,
+          description: plan.description,
+          billingMonths: 3,
+          availability:
+            plan.featureStatus === "coming_soon"
+              ? "https://schema.org/PreOrder"
+              : "https://schema.org/InStock",
+        })
+      ),
     },
   ],
 }

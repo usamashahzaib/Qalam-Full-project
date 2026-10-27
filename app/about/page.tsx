@@ -3,7 +3,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { buildPageMetadata, buildOrganizationSchema, SITE_URL } from "@/lib/seo"
 
 export const metadata = buildPageMetadata({
-  title: "About Qalam - Operating Principles of a LinkedIn Publishing System",
+  title: "Operating Principles of a LinkedIn Publishing System",
   description: "What Qalam is, how voice memory works, what the product refuses to automate, and how to verify every claim before signing up.",
   path: "/about",
   keywords: ["about Qalam", "LinkedIn publishing system", "voice memory", "Qalam product principles", "LinkedIn content workflow"],

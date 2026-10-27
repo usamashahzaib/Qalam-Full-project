@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import { MARKETING_LAST_MODIFIED } from "@/lib/marketing-content"
 import { SEO_LANDING_PAGES, SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 import { PROTECTED_ROUTES } from "@/lib/protected-routes"
@@ -60,6 +59,53 @@ export const buildWebSiteSchema = () => ({
   name: SITE_NAME,
   publisher: { "@id": `${SITE_URL}/#organization` },
   inLanguage: "en",
+})
+
+/** Drops the top-level @context so a schema object can sit inside an @graph. */
+export const stripContext = <T extends { "@context"?: string }>(schema: T): Omit<T, "@context"> => {
+  const copy: Partial<T> = { ...schema }
+  delete copy["@context"]
+  return copy as Omit<T, "@context">
+}
+
+/**
+ * A plan offer that says what the price covers. Paid plans bill per quarter, so
+ * a bare `price` would read as a monthly or one-off figure to a crawler or an
+ * answer engine. A free plan carries no billing period.
+ */
+export const buildPlanOffer = ({
+  name,
+  priceUsd,
+  description,
+  url,
+  availability = "https://schema.org/InStock",
+  billingMonths,
+}: {
+  name: string
+  priceUsd: number
+  description: string
+  url?: string
+  availability?: string
+  billingMonths?: number
+}) => ({
+  "@type": "Offer",
+  name,
+  price: String(priceUsd),
+  priceCurrency: "USD",
+  description,
+  availability,
+  ...(url ? { url } : {}),
+  ...(priceUsd > 0 && billingMonths
+    ? {
+        priceSpecification: {
+          "@type": "UnitPriceSpecification",
+          price: String(priceUsd),
+          priceCurrency: "USD",
+          billingDuration: billingMonths,
+          unitCode: "MON",
+        },
+      }
+    : {}),
 })
 
 export const buildFaqSchema = (faqs: { q: string; a: string }[]) => ({
@@ -141,46 +187,93 @@ export const buildPageMetadata = ({
   }
 }
 
+// Last-change dates per route, taken from `git log -1 --format=%cs -- <route source files>`
+// on 2026-10-27. These feed sitemap <lastmod>, so they must move only when the page
+// actually changes. Bump the one entry you touched in the same commit as the change.
+// SEO landing pages, product pages, use-case pages and blog posts carry their own
+// dates in their content objects and are not listed here.
+const ROUTE_LASTMOD: Record<string, string> = {
+  "/": "2026-09-26",
+  "/features": "2026-09-26",
+  "/industries": "2026-09-26",
+  "/ai-linkedin-writer": "2026-09-26",
+  "/linkedin-extension": "2026-09-26",
+  "/pricing": "2026-09-26",
+  "/career-visibility": "2026-09-26",
+  "/linkedin-optimization": "2026-09-25",
+  "/ats-resume-builder": "2026-09-26",
+  "/job-description-match": "2026-07-29",
+  "/methodology/linkedin-authority-score": "2026-07-29",
+  "/methodology/ats-resume-readiness": "2026-09-26",
+  "/free-tools": "2026-09-26",
+  "/free-tools/ats-resume-checker": "2026-08-31",
+  "/free-tools/hook-generator": "2026-09-11",
+  "/free-tools/comment-generator": "2026-09-11",
+  "/free-tools/headline-analyzer": "2026-09-11",
+  "/free-tools/profile-optimizer": "2026-09-11",
+  "/free-tools/carousel-builder": "2026-08-17",
+  "/free-tools/viral-checker": "2026-08-24",
+  "/free-tools/engagement-predictor": "2026-08-24",
+  "/about": "2026-09-01",
+  "/partners": "2026-09-26",
+  "/blog": "2026-09-26",
+  "/contact": "2026-09-26",
+  "/managed/apply": "2026-09-26",
+  "/demo": "2026-09-26",
+  "/docs": "2026-09-07",
+  "/changelog": "2026-09-15",
+  "/status": "2026-08-27",
+  "/legal/privacy": "2026-09-26",
+  "/legal/terms": "2026-08-31",
+  "/careers": "2026-09-01",
+}
+
+const route = (
+  path: string,
+  priority: number,
+  changeFrequency: PublicRoute["changeFrequency"],
+): PublicRoute => ({ path, priority, changeFrequency, lastModified: ROUTE_LASTMOD[path] })
+
 export const PUBLIC_ROUTES: PublicRoute[] = [
-  { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/features", priority: 0.95, changeFrequency: "weekly", lastModified: "2026-08-18" },
-  { path: "/industries", priority: 0.9, changeFrequency: "weekly", lastModified: "2026-08-18" },
+  route("/", 1, "weekly"),
+  route("/features", 0.95, "weekly"),
+  route("/industries", 0.9, "weekly"),
   ...SEO_LANDING_ROUTES.map((path) => ({
     path,
     priority: 0.91,
     changeFrequency: "weekly" as const,
     lastModified: SEO_LANDING_PAGES[path.slice(1)].updatedAt,
   })),
-  { path: "/ai-linkedin-writer", priority: 0.96, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/linkedin-extension", priority: 0.9, changeFrequency: "weekly", lastModified: "2026-08-18" },
-  { path: "/pricing", priority: 0.95, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/career-visibility", priority: 0.94, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/linkedin-optimization", priority: 0.93, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/ats-resume-builder", priority: 0.92, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/job-description-match", priority: 0.9, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/methodology/linkedin-authority-score", priority: 0.82, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/methodology/ats-resume-readiness", priority: 0.9, changeFrequency: "monthly", lastModified: "2026-08-17" },
-  { path: "/free-tools", priority: 0.9, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/ats-resume-checker", priority: 0.97, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/hook-generator", priority: 0.88, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/comment-generator", priority: 0.85, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/headline-analyzer", priority: 0.82, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/profile-optimizer", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/carousel-builder", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/viral-checker", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/free-tools/engagement-predictor", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/partners", priority: 0.84, changeFrequency: "monthly", lastModified: "2026-09-01" },
-  { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/managed/apply", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/demo", priority: 0.85, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/docs", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/changelog", priority: 0.6, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/status", priority: 0.55, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/legal/privacy", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/legal/terms", priority: 0.45, changeFrequency: "yearly", lastModified: MARKETING_LAST_MODIFIED },
-  { path: "/careers", priority: 0.5, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
+  route("/ai-linkedin-writer", 0.96, "weekly"),
+  route("/linkedin-extension", 0.9, "weekly"),
+  route("/pricing", 0.95, "weekly"),
+  route("/career-visibility", 0.94, "weekly"),
+  route("/linkedin-optimization", 0.93, "weekly"),
+  route("/ats-resume-builder", 0.92, "weekly"),
+  route("/job-description-match", 0.9, "weekly"),
+  route("/methodology/linkedin-authority-score", 0.82, "monthly"),
+  route("/methodology/ats-resume-readiness", 0.9, "monthly"),
+  route("/free-tools", 0.9, "weekly"),
+  route("/free-tools/ats-resume-checker", 0.97, "weekly"),
+  route("/free-tools/hook-generator", 0.88, "weekly"),
+  route("/free-tools/comment-generator", 0.85, "weekly"),
+  route("/free-tools/headline-analyzer", 0.82, "weekly"),
+  route("/free-tools/profile-optimizer", 0.8, "weekly"),
+  route("/free-tools/carousel-builder", 0.8, "weekly"),
+  route("/free-tools/viral-checker", 0.8, "weekly"),
+  route("/free-tools/engagement-predictor", 0.8, "weekly"),
+  route("/about", 0.7, "monthly"),
+  route("/partners", 0.84, "monthly"),
+  route("/blog", 0.8, "weekly"),
+  route("/contact", 0.7, "monthly"),
+  route("/managed/apply", 0.7, "monthly"),
+  route("/demo", 0.85, "weekly"),
+  route("/docs", 0.55, "monthly"),
+  route("/changelog", 0.6, "monthly"),
+  route("/status", 0.55, "monthly"),
+  route("/legal/privacy", 0.45, "yearly"),
+  route("/legal/terms", 0.45, "yearly"),
+  route("/careers", 0.5, "monthly"),
 ]
 
 export const LLM_ROUTES = [
