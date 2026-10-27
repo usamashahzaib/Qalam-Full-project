@@ -10,7 +10,7 @@ const faqs = [
 ]
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "Qalam LinkedIn Extension - Thoughtful Comment Assistant",
+  title: "LinkedIn Comment Extension - Three On-Voice Options",
   description: "Generate three on-voice LinkedIn comment options from the post you choose. Use your Qalam plan allowance without automatic posting.",
   path: "/linkedin-extension",
   tag: "LinkedIn Extension",

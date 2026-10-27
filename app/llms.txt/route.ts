@@ -1,6 +1,7 @@
 import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
+import { PLANS, formatPrice } from "@/lib/pricing"
 
 export const dynamic = "force-static"
 
@@ -53,8 +54,9 @@ export function GET() {
     "## Quarterly plans",
     "",
     "- Free: $0. Includes the public ATS Resume Checker, 5 posts per month, and one ATS-safe resume generation per month after sign-in.",
-    "- Solo: $10 per quarter.",
-    "- Pro: $18 per quarter.",
+    ...PLANS.filter((plan) => (plan.quarterlyUsd ?? 0) > 0).map(
+      (plan) => `- ${plan.plan}: ${formatPrice(plan.quarterlyUsd)} per quarter, with one month free in each quarter.`
+    ),
     "- Purchasing-power-adjusted pricing is available for South Asia, Africa, Southeast Asia, and Latin America.",
     "- Managed services are separate from self-serve software plans.",
     "- Add-ons show their unit price and quantity before purchase.",
