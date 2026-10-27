@@ -8,13 +8,14 @@ import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { CheckIcon } from "@/components/ui/qalam-icons"
 import { PLANS, formatPrice, getQuarterlyMonthlyEquivalent, quarterlyFraming } from "@/lib/pricing"
 import { LANDING_FAQ } from "@/lib/marketing-content"
-import { resolvePublicHref } from "@/lib/seo"
+import { SITE_URL, resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 
 export const metadata: Metadata = {
   title: "Qalam | LinkedIn Publishing System With Voice Memory",
   description: "Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies and content teams.",
+  alternates: { canonical: SITE_URL },
 }
 
 const workflow = [

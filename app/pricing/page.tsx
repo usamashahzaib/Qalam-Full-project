@@ -1,44 +1,31 @@
-import { buildOgImageUrl } from "@/lib/seo"
-﻿import type { Metadata } from "next"
+import type { Metadata } from "next"
 import { PricingPageContent } from "@/components/PricingPageContent"
-import { SITE_URL, APP_URL } from "@/lib/seo"
+import { SITE_URL, APP_URL, buildPageMetadata, buildPlanOffer } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPrice } from "@/lib/pricing"
 import { CAREER_PRODUCTS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
 
-const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
 const proPlan = PLANS.find((plan) => plan.plan === "Pro")
-const freeDrafts = freePlan?.features.find((f) => /posts?\/month/i.test(f)) || "5 posts/month"
 const agencyPlan = ALL_PLANS.find((plan) => plan.name === "Agency")
+const freeDrafts = `${ALL_PLANS.find((plan) => plan.name === "Free")?.postsPerMonth ?? 5} posts/month`
 const soloPrice = soloPlan ? formatPrice(soloPlan.quarterlyUsd) : "$10"
 const proPrice = proPlan ? formatPrice(proPlan.quarterlyUsd) : "$18"
 const agencyPrice = agencyPlan ? formatPrice(agencyPlan.quarterlyPrice) : "$38"
 const liveCareerAddons = CAREER_PRODUCTS.filter((addon) => isAddonSelfServe(addon.key))
 
-export const metadata: Metadata = {
-  title: AGENCY_PLAN_LIVE ? `Quarterly Pricing | Free to Agency` : `Quarterly Pricing | Free to ${soloPrice}`,
-  description:
-    AGENCY_PLAN_LIVE
-      ? `Quarterly pricing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} for LinkedIn optimization, content, ATS resumes, and career visibility.`
-      : `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
-  alternates: { canonical: `${SITE_URL}/pricing` },
-  openGraph: {
-    images: [{ url: buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing"), width: 1200, height: 630, alt: "Qalam Pricing - Career Visibility Plans" }],
-    title: "Qalam Pricing - Career Visibility Plans",
-    description:
-      AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
-    url: `${SITE_URL}/pricing`,
-    type: "website",
-  },
-  twitter: {
-    images: [buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing")],
-    card: "summary_large_image",
-    title: "Qalam Pricing - Career Visibility Plans",
-    description:
-      AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
-  },
-}
+// Prices are per quarter, so the title and description say so. A bare "$10" in a
+// search result reads as a monthly price.
+export const metadata: Metadata = buildPageMetadata({
+  title: AGENCY_PLAN_LIVE
+    ? `Pricing: Solo ${soloPrice}, Pro ${proPrice}, Agency ${agencyPrice} a Quarter`
+    : `Pricing: Solo ${soloPrice}, Pro ${proPrice} a Quarter`,
+  description: AGENCY_PLAN_LIVE
+    ? `Start free, no card needed. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} per quarter. Each paid quarter includes one month free.`
+    : `Start free, no card needed. Solo is ${soloPrice} and Pro is ${proPrice} per quarter. Each paid quarter includes one month free.`,
+  path: "/pricing",
+  tag: "Pricing",
+})
 
 const pricingFaqSchema = {
   "@context": "https://schema.org",
@@ -132,52 +119,45 @@ const productSchema = {
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },
   offers: [
-    {
-      "@type": "Offer",
+    buildPlanOffer({
       name: "Free Plan",
-      price: "0",
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+      priceUsd: 0,
       description: "5 AI posts per month, hook generator. No card required.",
       url: `${APP_URL}/login`,
-    },
-    {
-      "@type": "Offer",
+    }),
+    buildPlanOffer({
       name: "Solo Plan",
-      price: String(soloPlan?.quarterlyUsd ?? 10),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+      priceUsd: soloPlan?.quarterlyUsd ?? 10,
+      billingMonths: 3,
       description: "30 AI drafts, 3 carousels, content calendar, post library.",
       url: `${SITE_URL}/pricing`,
-    },
-    ...liveCareerAddons.map((addon) => ({
-      "@type": "Offer",
-      name: addon.name,
-      price: String(addon.price),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
-      description: `One ${addon.unit}, generated and saved inside Qalam.`,
-      url: `${APP_URL}/login?callbackUrl=/career/add-ons`,
-    })),
-    {
-      "@type": "Offer",
+    }),
+    // One-time add-ons: no billing period.
+    ...liveCareerAddons.map((addon) =>
+      buildPlanOffer({
+        name: addon.name,
+        priceUsd: addon.price,
+        description: `One ${addon.unit}, generated and saved inside Qalam.`,
+        url: `${APP_URL}/login?callbackUrl=/career/add-ons`,
+      })
+    ),
+    buildPlanOffer({
       name: "Pro Plan",
-      price: String(proPlan?.quarterlyUsd ?? 18),
-      priceCurrency: "USD",
-      availability: "https://schema.org/InStock",
+      priceUsd: proPlan?.quarterlyUsd ?? 18,
+      billingMonths: 3,
       description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
       url: `${SITE_URL}/pricing`,
-    },
+    }),
     ...(AGENCY_PLAN_LIVE
-      ? [{
-          "@type": "Offer",
-          name: "Agency Plan",
-          price: String(agencyPlan?.quarterlyPrice ?? 38),
-          priceCurrency: "USD",
-          availability: "https://schema.org/InStock",
-          description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
-          url: `${SITE_URL}/pricing`,
-        }]
+      ? [
+          buildPlanOffer({
+            name: "Agency Plan",
+            priceUsd: agencyPlan?.quarterlyPrice ?? 38,
+            billingMonths: 3,
+            description: "5 client workspaces, 5 voice profiles, team approvals, publishing controls, and analytics.",
+            url: `${SITE_URL}/pricing`,
+          }),
+        ]
       : []),
   ],
 }

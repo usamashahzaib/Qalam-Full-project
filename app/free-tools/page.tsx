@@ -15,6 +15,7 @@ import {
 import { APP_URL } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
+import { PLANS, formatPrice } from "@/lib/pricing"
 
 export const metadata: Metadata = {
   title: "Free ATS Resume Checker and Career Tools",
@@ -222,7 +223,7 @@ export default function FreeToolsPage() {
                 </h2>
                 <p className="mx-auto mb-8 max-w-lg font-cormorant text-xl italic text-white/70">
                   60 posts a month, configurable Voice Profile, scheduler, and performance
-                  review. Pro starts at $9/month, billed quarterly.
+                  review. Pro is {formatPrice(PLANS.find((plan) => plan.plan === "Pro")?.quarterlyUsd)} per quarter.
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
                   <Link

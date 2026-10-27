@@ -16,6 +16,11 @@ import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 
+const quarterlyPriceOf = (name: string) => formatPrice(PLANS.find((plan) => plan.plan === name)?.quarterlyUsd)
+const SOLO_QUARTERLY = quarterlyPriceOf("Solo")
+const PRO_QUARTERLY = quarterlyPriceOf("Pro")
+const AGENCY_QUARTERLY = quarterlyPriceOf("Agency")
+
 const PRICING_FAQ = [
   {
     q: "Why are there no client names or reviews with photos?",
@@ -27,7 +32,7 @@ const PRICING_FAQ = [
   },
   {
     q: "How much does Qalam cost?",
-    a: "Solo is $10 per quarter, Pro is $18 per quarter, and Agency is $38 per quarter. Every paid plan is billed quarterly and includes the equivalent of one free month. Purchasing-power-adjusted pricing is available in select regions.",
+    a: `Solo is ${SOLO_QUARTERLY} per quarter, Pro is ${PRO_QUARTERLY} per quarter, and Agency is ${AGENCY_QUARTERLY} per quarter. Every paid plan is billed quarterly and includes the equivalent of one free month. Purchasing-power-adjusted pricing is available in select regions.`,
   },
   {
     q: "Why does Qalam use quarterly billing?",
@@ -508,7 +513,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Solo starts at</p>
-              <p className="mt-1 text-2xl font-extrabold text-teal">$10 per quarter</p>
+              <p className="mt-1 text-2xl font-extrabold text-teal">{SOLO_QUARTERLY} per quarter</p>
               <p className="mt-1 text-xs text-zinc-400">One professional story across profile, content, and career assets.</p>
             </div>
           </FadeUp>

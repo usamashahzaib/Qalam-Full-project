@@ -806,7 +806,8 @@ export const BLOG_POSTS: MarketingArticle[] = [
 export const PUBLISHED_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "published")
 export const UPCOMING_BLOG_POSTS = BLOG_POSTS.filter((post) => post.status === "scheduled")
 
-export const MARKETING_LAST_MODIFIED = "2026-09-01"
+// Newest git commit date across marketing pages (checked 2026-10-27). Feeds llms.txt and feed "last updated".
+export const MARKETING_LAST_MODIFIED = "2026-09-26"
 export type LiveSurfaceSection = { title: string; items: string[] }
 
 export const LIVE_SURFACE: LiveSurfaceSection[] = [
