@@ -48,6 +48,8 @@ export type CreatePostParams = {
   publishedAt?: string | null
   externalPostUrn?: string | null
   engagementScore?: number | null
+  /** The AI version the author started from. See lib/server/draft-edits.ts. */
+  aiDraft?: string
 }
 
 export type PostPatch = {

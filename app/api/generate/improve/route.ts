@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       content: String(body.content || "").trim(),
       role: String(body.role || ""),
       scores: (body.scores || {}) as Record<string, number>,
-      brief: typeof body.brief === "string" ? body.brief.trim().slice(0, 2000) || undefined : undefined,
+      brief: typeof body.brief === "string" ? body.brief.trim().slice(0, 4000) || undefined : undefined,
       userId: planCheck.billingUserId,
       internalUserId: user.id,
       workspaceId: planCheck.workspaceId,

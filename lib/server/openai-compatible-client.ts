@@ -42,7 +42,7 @@ export async function callOpenAiCompatible({
 }: OpenAiCompatibleOptions): Promise<OpenAiCompatibleResult> {
   if (!apiKey) throw new Error(`${provider} API key not configured`)
   const origin = new URL(endpoint).origin
-  if (!["https://api.groq.com", "https://openrouter.ai"].includes(origin)) {
+  if (!["https://api.groq.com", "https://openrouter.ai", "https://integrate.api.nvidia.com"].includes(origin)) {
     throw new Error(`${provider} endpoint is not allowed`)
   }
 

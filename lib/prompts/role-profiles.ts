@@ -23,6 +23,8 @@ export interface VoiceProfile {
   closingStyle?: string;
   /** Counted from the author's example posts, not inferred. See lib/voice-measure.ts. */
   measured?: VoiceMeasurements;
+  /** AI drafts next to the version the author kept. See lib/server/draft-edits.ts. */
+  edits?: { before: string; after: string }[];
 }
 
 export interface VoiceMeasurements {

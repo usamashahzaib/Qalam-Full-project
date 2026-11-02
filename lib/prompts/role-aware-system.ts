@@ -23,6 +23,7 @@ import {
   authorContext,
   voiceGuidance,
   sourceMaterial,
+  authorStory,
 } from "./writing-policy";
 import { repairBrief, type Defect } from "./output-checks";
 import { wordTargetFor } from "@/lib/voice-measure";
@@ -317,13 +318,51 @@ export function buildHookVariantsPrompt(
 }
 
 // ---------------------------------------------------------------------------
+// INTERVIEW - for /api/generate/interview
+// A post built on a topic line alone can only be generic. Before writing, the
+// writer asks for the material only the author has.
+// ---------------------------------------------------------------------------
+export function buildInterviewPrompt(
+  topic: string,
+  role: string,
+  goal?: string
+): { system: string; user: string } {
+  const { label } = resolveRoleProfile(role);
+
+  const system = [
+    `You are an editor about to help a ${label} write a LinkedIn post. Before anything is written, you ask them for the material only they have.`,
+    [
+      "Ask 3 short questions about this topic:",
+      "- one that gets a specific moment they lived through (when, where, who, what happened)",
+      "- one that gets a real number, result or before-and-after, if the topic can have one",
+      "- one that gets what they think most people in their field get wrong about it",
+    ].join("\n"),
+    [
+      "RULES:",
+      "- Under 20 words each. Plain words. One thing per question.",
+      "- Ask about their experience, not about the post, the audience or the format.",
+      "- Never suggest an answer inside the question.",
+      "- Write the questions in the language the topic is written in.",
+    ].join("\n"),
+    `Return JSON only: {"questions": ["...", "...", "..."]}`,
+  ].join("\n\n");
+
+  const user = [
+    sourceMaterial("Topic", topic),
+    goal?.trim() ? `What the post is for: ${goal.trim()}` : "",
+  ].filter(Boolean).join("\n");
+  return { system, user };
+}
+
+// ---------------------------------------------------------------------------
 // 5-STYLE HOOK GENERATION - for /api/generate/hooks
 // ---------------------------------------------------------------------------
 export function buildHook5StylesPrompt(
   topic: string,
   role: string,
   goal?: string,
-  voiceProfile?: VoiceProfile
+  voiceProfile?: VoiceProfile,
+  story?: string
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
 
@@ -331,6 +370,7 @@ export function buildHook5StylesPrompt(
     `You write opening lines for LinkedIn posts by a ${label}.`,
     ROLE_IS_NOT_EXPERIENCE,
     authorContext(voiceProfile),
+    authorStory(story),
     [
       "Write exactly 5 openings for the same topic, one per style. The style sets the angle, not a sentence pattern:",
       "1. SHARP: the uncomfortable or under-said part of the subject.",
@@ -362,7 +402,8 @@ export function buildPostFromHookPrompt(
   role: string,
   format: PostFormat,
   goal?: string,
-  voiceProfile?: VoiceProfile
+  voiceProfile?: VoiceProfile,
+  story?: string
 ): { system: string; user: string } {
   const { profile, label, isCanonical } = resolveRoleProfile(role);
   const formatRule = FORMAT_RULES[format];
@@ -376,6 +417,7 @@ export function buildPostFromHookPrompt(
     `You are writing a LinkedIn post for a ${label}, starting from an opening line they chose.`,
     `${roleVoiceBlock(label, profile, isCanonical)}\n\n${ROLE_IS_NOT_EXPERIENCE}`,
     authorContext(voiceProfile),
+    authorStory(story),
     `Vocabulary that fits this work: ${isCanonical ? profile.vocabulary.slice(0, 10).join(", ") : roleVocabularyLine(label, profile, isCanonical)}`,
     `Words this person would not use: ${roleBannedWords(profile, isCanonical).join(", ")}`,
     WRITING_POLICY,

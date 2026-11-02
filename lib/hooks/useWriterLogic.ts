@@ -10,11 +10,13 @@ import {
   generateReplies as apiGenerateReplies,
   generateCtaAlternatives as apiGenerateCtaAlts,
   generateCarousel as apiGenerateCarousel,
+  generateInterview as apiGenerateInterview,
   shareToLinkedIn,
   API_PATHS,
   ApiClientError,
 } from "@/lib/api/client"
 import { sanitizeGeneratedText } from "@/lib/content-guard"
+import { formatInterview, type InterviewAnswer } from "@/lib/interview"
 import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
 
 // A draft that states things the author never said does not go out under their name.
@@ -93,9 +95,9 @@ export interface WriterLogicDeps {
   billing: { plan: string; limits?: Record<string, unknown>; featureFlags?: Record<string, boolean> }
   draftLimit: number | "unlimited"
   carouselLimit: number | "unlimited"
-  saveDraft: (input: { id: string | null; title: string; content: string; type: string; engagementScore?: number | null }) => Promise<string>
-  schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string; engagementScore?: number | null }) => Promise<string>
-  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null }) => Promise<string>
+  saveDraft: (input: { id: string | null; title: string; content: string; type: string; engagementScore?: number | null; aiDraft?: string | null }) => Promise<string>
+  schedulePost: (input: { id: string | null; title: string; content: string; type: string; date: string; time: string; engagementScore?: number | null; aiDraft?: string | null }) => Promise<string>
+  publishPost: (input: { id: string | null; title: string; content: string; type: string; publishedAt: string; externalPostUrn?: string | null; engagementScore?: number | null; aiDraft?: string | null }) => Promise<string>
   initialTopic?: string
   initialFormat?: FormatKey
   initialRole?: string
@@ -122,6 +124,12 @@ export function useWriterLogic({
   const [contentIntent, setContentIntent] = useState("Build authority with one useful, evidence-led idea")
   const [goal, setGoal] = useState("")
 
+  // ── Interview ────────────────────────────────────────────────────────────
+  // Questions asked before hooks are written. The answers belong to the topic they were
+  // asked about, so editing the topic sets them aside.
+  const [interview, setInterview] = useState<{ topic: string; items: InterviewAnswer[] } | null>(null)
+  const [isLoadingInterview, setIsLoadingInterview] = useState(false)
+
   // ── Hook generation ──────────────────────────────────────────────────────
   const [hooks, setHooks] = useState<HookItem[]>([])
   const [selectedHook, setSelectedHook] = useState<string | null>(null)
@@ -146,8 +154,11 @@ export function useWriterLogic({
   const draftFromAiRef = useRef(false)
   // Signed by the server with each generated draft. Scores of that draft are part of its credit.
   const draftTokenRef = useRef<string | null>(null)
+  // The last version the AI handed over. Saved next to what the author keeps, so their
+  // edits can teach the next draft. See getWorkspaceVoiceProfile.
+  const aiDraftRef = useRef<string | null>(null)
   const onDraftContentChange = useCallback((value: string) => {
-    if (!value.trim()) { draftFromAiRef.current = false; draftTokenRef.current = null }
+    if (!value.trim()) { draftFromAiRef.current = false; draftTokenRef.current = null; aiDraftRef.current = null }
     setDraftContent(value)
     setScores(null)
   }, [])
@@ -253,6 +264,7 @@ export function useWriterLogic({
           if (post.id) setEditingId(post.id)
           draftFromAiRef.current = false
           draftTokenRef.current = null
+          aiDraftRef.current = null
           if (post.content) {
             const isCarousel = post.type?.toLowerCase().includes("carousel") || /^\s*\[/.test(post.content)
             if (isCarousel) {
@@ -314,8 +326,14 @@ export function useWriterLogic({
   const generationGoal = [contentIntent, goal.trim() ? `Specific outcome: ${goal.trim()}` : ""]
     .filter(Boolean)
     .join(". ")
+  const interviewOpen = Boolean(interview && interview.topic === topic.trim())
+  const story = interviewOpen && interview ? formatInterview(interview.items) : ""
   // Only what the author typed. The content intent preset is not a source of facts.
-  const scoreBrief = [topic.trim() ? `Topic: ${topic.trim()}` : "", goal.trim() ? `Goal: ${goal.trim()}` : ""]
+  const scoreBrief = [
+    topic.trim() ? `Topic: ${topic.trim()}` : "",
+    goal.trim() ? `Goal: ${goal.trim()}` : "",
+    story ? `What the author said:\n${story}` : "",
+  ]
     .filter(Boolean)
     .join("\n")
 
@@ -409,7 +427,7 @@ export function useWriterLogic({
     void fetchDemand()
 
     try {
-      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: generationGoal, workspaceKey: workspaceId })
+      const data = await apiGenerateHooks({ topic: topic.trim(), role, goal: generationGoal, story: story || undefined, workspaceKey: workspaceId })
       const items = data.hooks.slice(0, 5)
       if (!items.length) throw new Error("No hooks returned")
       setHooks(items)
@@ -420,6 +438,30 @@ export function useWriterLogic({
       setIsGeneratingHooks(false)
     }
   }
+
+  // ── Step 1a: Ask before writing ───────────────────────────────────────────
+
+  const onStartInterview = async () => {
+    if (isLoadingInterview || isGeneratingHooks) return
+    if (!topic.trim()) { showStatus("Enter a topic first", "error"); return }
+    if (!checkDraftCredit()) return
+
+    setIsLoadingInterview(true)
+    let questions: string[] = []
+    try {
+      questions = (await apiGenerateInterview({ topic: topic.trim(), role, goal: generationGoal, workspaceKey: workspaceId })).questions
+    } catch { /* handled below */ }
+    setIsLoadingInterview(false)
+    if (questions.length) {
+      setInterview({ topic: topic.trim(), items: questions.map((question) => ({ question, answer: "" })) })
+      return
+    }
+    // The questions help. They are never a gate.
+    await onGenerateHooks()
+  }
+
+  const setInterviewAnswer = (index: number, answer: string) =>
+    setInterview((prev) => prev && { ...prev, items: prev.items.map((item, i) => i === index ? { ...item, answer } : item) })
 
   // ── Step 2: Generate full post from hook ──────────────────────────────────
 
@@ -446,11 +488,13 @@ export function useWriterLogic({
         role,
         format,
         goal: generationGoal,
+        story: story || undefined,
         workspaceKey: workspaceId,
       })
       const content = sanitizeGeneratedText(data.content)
       if (!content) throw new Error("AI returned an empty draft")
       draftFromAiRef.current = true
+      aiDraftRef.current = content
       draftTokenRef.current = data.draftToken ?? null
       skipDebounceScore.current = true
       setDraftContent(content)
@@ -487,6 +531,7 @@ export function useWriterLogic({
       const improved = sanitizeGeneratedText(data.content)
       if (!improved) throw new Error("Returned empty content")
       skipDebounceScore.current = true
+      aiDraftRef.current = improved
       setDraftContent(improved)
       setVersions((p) => [...p.slice(-19), { content: improved, timestamp: new Date().toISOString() }])
       if (data.draftToken) draftTokenRef.current = data.draftToken
@@ -531,7 +576,7 @@ export function useWriterLogic({
     if (!draftContent.trim()) { showStatus("Write content first", "error"); return }
     setIsSaving(true)
     try {
-      const id = await saveDraft({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", engagementScore: scores?.overall ?? null })
+      const id = await saveDraft({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", engagementScore: scores?.overall ?? null, aiDraft: aiDraftRef.current })
       setEditingId(id)
       showStatus("Draft saved", "success")
     } catch (e) {
@@ -553,7 +598,7 @@ export function useWriterLogic({
     const err = scheduleValidationError(scheduleDate, scheduleTime)
     if (err) { showStatus(err, "error"); return }
     try {
-      const id = await schedulePost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", date: scheduleDate, time: scheduleTime, engagementScore: scores?.overall ?? null })
+      const id = await schedulePost({ id: editingId, title: resolveTitle(), content: draftContent, type: "LinkedIn - Text post", date: scheduleDate, time: scheduleTime, engagementScore: scores?.overall ?? null, aiDraft: aiDraftRef.current })
       setEditingId(id)
       showStatus(`Scheduled for ${scheduleDate} at ${scheduleTime}`, "success")
       setScheduleModalOpen(false)
@@ -582,6 +627,7 @@ export function useWriterLogic({
         content: draftContent,
         type: "LinkedIn - Text post",
         engagementScore: scores?.overall ?? null,
+        aiDraft: aiDraftRef.current,
       })
       setEditingId(postId)
       const shared = await shareToLinkedIn({ content: draftContent, postId, workspaceKey: workspaceId })
@@ -612,6 +658,7 @@ export function useWriterLogic({
           publishedAt: new Date().toISOString(),
           externalPostUrn: postUrn,
           engagementScore: scores?.overall ?? null,
+          aiDraft: aiDraftRef.current,
         })
         setEditingId(id)
         showStatus("Published to LinkedIn.", "success")
@@ -781,6 +828,9 @@ export function useWriterLogic({
     format, setFormat,
     contentIntent, setContentIntent,
     goal, setGoal,
+
+    // Interview
+    interview, interviewOpen, isLoadingInterview, onStartInterview, setInterviewAnswer,
 
     // Hook generation
     hooks, selectedHook, setSelectedHook,

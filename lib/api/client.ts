@@ -57,7 +57,7 @@ export const API_PATHS = {
   carouselGenerate: "/api/generate/carousel",
 }
 
-export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string; workspaceKey?: string }
+export type GenerateHooksInput = { topic: string; role?: WriterRole | string; goal?: string; story?: string; workspaceKey?: string }
 export type GenerateHooksOutput = { hooks: HookItem[] }
 
 export type GeneratePostInput = {
@@ -68,6 +68,7 @@ export type GeneratePostInput = {
   role?: WriterRole | string
   format?: PostFormat | string
   goal?: string
+  story?: string
   workspaceKey?: string
 }
 export type GeneratePostOutput = { content: string; wordCount?: number; remaining?: number; draftToken?: string }
@@ -109,6 +110,12 @@ export type WorkspaceSnapshotOutput = { state: Record<string, unknown>; workspac
 
 export const generateHooks = (data: GenerateHooksInput) =>
   postJson<GenerateHooksOutput, GenerateHooksInput>("/api/generate/hooks", data)
+
+export type InterviewInput = { topic: string; role?: WriterRole | string; goal?: string; workspaceKey?: string }
+export type InterviewOutput = { questions: string[] }
+
+export const generateInterview = (data: InterviewInput) =>
+  postJson<InterviewOutput, InterviewInput>("/api/generate/interview", data)
 
 export const generatePost = (data: GeneratePostInput) =>
   postJson<GeneratePostOutput, GeneratePostInput>("/api/generate/post", data)

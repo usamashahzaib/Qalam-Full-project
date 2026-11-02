@@ -14,11 +14,13 @@ import type { PlanTier } from "@/types/domain"
 import type { Hook } from "@/lib/use-cases/generate-hooks"
 import { getWorkspaceVoiceProfile } from "@/lib/server/voice-profile"
 import { authorizeRole } from "@/lib/server/roles"
+import { MAX_STORY_CHARS } from "@/lib/interview"
 
 const BodySchema = z.object({
   topic: z.string().min(3, "Topic must be at least 3 characters"),
   role: z.string().optional().default(""),
   goal: z.string().optional().default(""),
+  story: z.string().max(MAX_STORY_CHARS).optional().default(""),
 })
 
 export async function POST(request: NextRequest) {
@@ -38,6 +40,7 @@ export async function POST(request: NextRequest) {
       topic: raw.topic ?? raw.content,
       role: raw.role ?? raw.style,
       goal: raw.goal,
+      story: raw.story,
     })
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
@@ -49,6 +52,7 @@ export async function POST(request: NextRequest) {
       topic: parsed.data.topic,
       role: parsed.data.role,
       goal: parsed.data.goal,
+      story: parsed.data.story,
       userId: planCheck.billingUserId,
       // Hooks are written in this workspace's voice. Without the workspace in the key, an agency
       // could be served one client's voiced hooks while working in another client's workspace.
@@ -71,6 +75,7 @@ export async function POST(request: NextRequest) {
       topic: parsed.data.topic,
       role: parsed.data.role,
       goal: parsed.data.goal,
+      story: parsed.data.story.trim() || undefined,
       // Usage belongs to the billing account, as on every other generation route.
       userId: planCheck.billingUserId,
       plan: planCheck.plan,

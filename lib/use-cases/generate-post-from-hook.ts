@@ -28,6 +28,8 @@ export interface GeneratePostFromHookInput {
   role: string
   format: string
   goal?: string
+  /** The author's interview answers. See lib/interview.ts. */
+  story?: string
   userId: string
   internalUserId: string
   workspaceId: string | null
@@ -43,7 +45,7 @@ export interface GeneratePostFromHookOutput {
 export async function generatePostFromHook(
   input: GeneratePostFromHookInput
 ): Promise<Result<GeneratePostFromHookOutput>> {
-  const { topic, hook, originalContent, role: rawRole, format: rawFormat, goal, userId, workspaceId, plan } = input
+  const { topic, hook, originalContent, role: rawRole, format: rawFormat, goal, story, userId, workspaceId, plan } = input
 
   const isAgency = plan.toLowerCase() === "agency"
   let usage: Awaited<ReturnType<typeof incrementUsage>>
@@ -77,7 +79,7 @@ export async function generatePostFromHook(
   const hasDraft = Boolean(originalContent && originalContent.length >= 20)
   const { system: baseSystem, user: genUser } = hasDraft
     ? buildPostWithReplacedHookPrompt(hook, originalContent!, role, goal || undefined, voiceProfile)
-    : buildPostFromHookPrompt(hook, topic, role, format, goal || undefined, voiceProfile)
+    : buildPostFromHookPrompt(hook, topic, role, format, goal || undefined, voiceProfile, story)
   const references = hasDraft ? "" : await retrieveWritingReferences(`${role}\n${topic}\n${hook}\n${goal ?? ""}`)
   const genSystem = [baseSystem, references].filter(Boolean).join("\n\n")
 
@@ -100,7 +102,7 @@ export async function generatePostFromHook(
   const checkOptions = { minChars: 80, maxChars: 3000 }
   // Everything the author actually supplied. A figure or a first-person event that is not
   // in here was made up by the model, and the revise pass is told to take it out.
-  const brief = [topic, goal].filter(Boolean).join("\n")
+  const brief = [topic, goal, story].filter(Boolean).join("\n")
   const sources = [brief, hook, originalContent, authorFacts(voiceProfile)]
     .filter(Boolean)
     .join("\n")
@@ -108,7 +110,8 @@ export async function generatePostFromHook(
   const findDefects = (text: string) => [
     ...checkText(text, checkOptions),
     ...checkGrounding(text.replace(hook, ""), sources, { brief }),
-    ...checkSampleEcho(text.replace(hook, ""), voiceProfile?.examples, [voiceProfile?.measured?.signOff ?? "", ...(voiceProfile?.vocabulary ?? []), sources]),
+    // Kept edits are old posts too. Copying one into a new post is the same failure.
+    ...checkSampleEcho(text.replace(hook, ""), [...(voiceProfile?.examples ?? []), ...(voiceProfile?.edits ?? []).map((e) => e.after)], [voiceProfile?.measured?.signOff ?? "", ...(voiceProfile?.vocabulary ?? []), sources]),
   ]
   // A single pass often fixes three invented sentences out of four, so a second pass runs
   // while the first is still making progress. Never more: each round costs a full call.

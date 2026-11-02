@@ -10,7 +10,7 @@ Project rules for AI coding tools live in `CLAUDE.md` and `AGENTS.md`. Read them
 - Auth: NextAuth v5 (credentials and LinkedIn sign-in)
 - Data: Supabase Postgres with RLS, migrations in `supabase/migrations`
 - Jobs and limits: Upstash Redis, QStash, Vercel Cron (`vercel.json`)
-- AI: Claude (Sonnet writes, Haiku scores) for signed-in users, with Gemini and Groq as fallbacks. Anonymous free tools use Gemini, Groq and OpenRouter's free models. All behind a daily spend cap
+- AI: Claude (Sonnet writes, Haiku scores) for signed-in users, with NVIDIA's free catalog (Kimi), Gemini and Groq as fallbacks. Anonymous free tools use Gemini, Groq and OpenRouter's free models. All behind a daily spend cap
 - Payments: Lemon Squeezy (USD store)
 - Email: Resend
 - Monitoring: Sentry

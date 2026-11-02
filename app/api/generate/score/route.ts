@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (content.trim().length < 4 || content.length > 3000) {
       return NextResponse.json({ error: "Post must be between 4 and 3000 characters to score." }, { status: 400 })
     }
-    const brief = typeof body.brief === "string" ? body.brief.trim().slice(0, 2000) : ""
+    const brief = typeof body.brief === "string" ? body.brief.trim().slice(0, 4000) : ""
     const attempt = Number.isFinite(Number(body.attempt)) ? Number(body.attempt) : 1
 
     // Workspace scope prevents one client's voice evaluation from reaching another.

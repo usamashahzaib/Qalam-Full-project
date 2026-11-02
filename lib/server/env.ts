@@ -15,6 +15,7 @@ export const env = {
   geminiApiKey: read("GEMINI_API_KEY"),
   groqApiKey: read("GROQ_API_KEY"),
   anthropicApiKey: read("ANTHROPIC_API_KEY"),
+  nvidiaApiKey: read("NVIDIA_API_KEY"),
   openrouterApiKey: read("OPENROUTER_API_KEY"),
   authSecret: read("AUTH_SECRET"),
   upstashRedisUrl: read("UPSTASH_REDIS_REST_URL"),

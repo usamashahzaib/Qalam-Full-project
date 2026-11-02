@@ -6,6 +6,7 @@ import type { VoiceProfile } from "@/lib/prompts/role-aware-system"
 import { parseProfessionalContext } from "@/lib/professional-context"
 import { getPromptPassport } from "@/lib/server/agency/voice-passport"
 import { measureVoice } from "@/lib/voice-measure"
+import { getRecentDraftEdits } from "@/lib/server/draft-edits"
 
 type VoiceRow = {
   tone?: string | null
@@ -99,7 +100,7 @@ export const toPromptVoiceProfile = (row?: VoiceRow | null, options: { training?
 export const getWorkspaceVoiceProfile = async (workspaceId?: string | null, query?: string, plan?: string): Promise<VoiceProfile | undefined> => {
   if (!workspaceId) return undefined
   const training = voiceTrainingAllowed(plan)
-  const [profileResult, examples, passport] = await Promise.all([
+  const [profileResult, examples, passport, edits] = await Promise.all([
     createServiceClient()
       .from("voice_profiles")
       .select("tone, brand_tone, characteristics, voice_fingerprint, sample_posts, example_posts, title, industry, goals")
@@ -108,12 +109,15 @@ export const getWorkspaceVoiceProfile = async (workspaceId?: string | null, quer
       .maybeSingle(),
     training ? retrieveVoiceExamples(workspaceId, query, 3).catch(() => [] as string[]) : Promise.resolve([] as string[]),
     training ? getPromptPassport(workspaceId) : Promise.resolve(undefined),
+    // Every plan: these are the author's own edits to drafts Qalam wrote for them.
+    getRecentDraftEdits(workspaceId).catch(() => []),
   ])
   const base = toPromptVoiceProfile(profileResult.data as VoiceRow | null, { training })
-  if (!base && !examples.length && !passport) return undefined
+  if (!base && !examples.length && !passport && !edits.length) return undefined
   return {
     ...(base ?? { tone: "", sentenceLength: "", vocabulary: [], patterns: [], formatting: "" }),
     examples: examples.length ? examples : undefined,
     passport,
+    edits: edits.length ? edits : undefined,
   }
 }

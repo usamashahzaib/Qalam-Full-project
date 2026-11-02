@@ -52,7 +52,7 @@ export class SupabasePostRepository implements IPostRepository {
     const {
       userId, workspaceId, authorId,
       title, content, type, status,
-      scheduledTime, publishedAt, externalPostUrn, engagementScore,
+      scheduledTime, publishedAt, externalPostUrn, engagementScore, aiDraft,
     } = params
     const now = new Date().toISOString()
     const savedStatus = DB_STATUSES.has(status) ? status : "draft"
@@ -68,7 +68,7 @@ export class SupabasePostRepository implements IPostRepository {
         published_at: publishedAt ?? null,
         linkedin_post_id: externalPostUrn ?? null,
         engagement_score: engagementScore ?? null,
-        metadata: { type, authorId },
+        metadata: aiDraft ? { type, authorId, aiDraft } : { type, authorId },
         created_at: now,
         updated_at: now,
       })
@@ -101,6 +101,26 @@ export class SupabasePostRepository implements IPostRepository {
     if (error) throw new Error(error.message)
     const row = (Array.isArray(data) ? data[0] : data) as DbPost | undefined
     return row ? toClientPost(row) : null
+  }
+
+  /** Keeps the rest of metadata. Only the newest AI version is worth keeping. */
+  async recordAiDraft(id: string, workspaceId: string, aiDraft: string): Promise<void> {
+    const supabase = createServiceClient()
+    const { data, error } = await supabase
+      .from("posts")
+      .select("metadata")
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle()
+    if (error || !data) throw new Error(error?.message || "not_found")
+    const metadata = (data.metadata && typeof data.metadata === "object" ? data.metadata : {}) as Record<string, unknown>
+    if (metadata.aiDraft === aiDraft) return
+    const { error: updateError } = await supabase
+      .from("posts")
+      .update({ metadata: { ...metadata, aiDraft } })
+      .eq("id", id)
+      .eq("workspace_id", workspaceId)
+    if (updateError) throw new Error(updateError.message)
   }
 
   async delete(id: string, workspaceId: string): Promise<void> {

@@ -69,6 +69,7 @@ export default function WriterPage() {
 
   const {
     topic, setTopic, role, setRole, format, setFormat, contentIntent, setContentIntent, goal, setGoal,
+    interview, interviewOpen, isLoadingInterview, onStartInterview, setInterviewAnswer,
     hooks, selectedHook, setSelectedHook, isGeneratingHooks,
     draftContent, onDraftContentChange, isGeneratingPost,
     versions, editingId, scheduleDate, setScheduleDate, scheduleTime, setScheduleTime, isSaving,
@@ -272,7 +273,7 @@ export default function WriterPage() {
                   rows={3}
                   placeholder="What do you want to write about?"
                   className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 py-3 text-sm leading-relaxed text-zinc-900 outline-none transition-all focus:border-teal focus:bg-white focus:ring-4 focus:ring-teal/10"
-                  onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void onGenerateHooks() }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && e.metaKey) void (interviewOpen ? onGenerateHooks() : onStartInterview()) }}
                 />
               </div>
 
@@ -391,13 +392,41 @@ export default function WriterPage() {
                 </>
               ) : (
                 <>
+                  {interviewOpen && interview && (
+                    <div className="mb-3 rounded-xl border border-teal/20 bg-teal/5 p-4">
+                      <p className="text-sm font-bold text-zinc-900">Before I write, tell me what only you know</p>
+                      <p className="mt-1 text-xs leading-5 text-zinc-500">A line or two each is plenty. Skip any that don&apos;t fit. The draft is built on your answers and adds nothing you didn&apos;t say.</p>
+                      {interview.items.map((item, i) => (
+                        <div key={item.question} className="mt-3">
+                          <label htmlFor={`interview-answer-${i}`} className="mb-1 block text-xs font-semibold leading-5 text-zinc-700">{item.question}</label>
+                          <textarea
+                            id={`interview-answer-${i}`}
+                            value={item.answer}
+                            onChange={(e) => setInterviewAnswer(i, e.target.value)}
+                            rows={2}
+                            className="w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm leading-relaxed text-zinc-900 outline-none transition-all focus:border-teal focus:ring-4 focus:ring-teal/10"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <button
-                    onClick={() => void onGenerateHooks()}
-                    disabled={isGeneratingHooks || !topic.trim() || draftLimitHit}
+                    onClick={() => void (interviewOpen ? onGenerateHooks() : onStartInterview())}
+                    disabled={isGeneratingHooks || isLoadingInterview || !topic.trim() || draftLimitHit}
                     className="w-full cursor-pointer rounded-xl bg-teal py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isGeneratingHooks ? "Generating hooks..." : draftLimitHit ? `Draft limit reached - Upgrade to ${billing.plan === "Free" ? "Solo" : billing.plan === "Solo" ? "Pro" : "a higher plan"}` : "Generate Hooks"}
+                    {isGeneratingHooks ? "Generating hooks..." : isLoadingInterview ? "Preparing questions..." : draftLimitHit ? `Draft limit reached - Upgrade to ${billing.plan === "Free" ? "Solo" : billing.plan === "Solo" ? "Pro" : "a higher plan"}` : interviewOpen ? "Generate Hooks" : "Next: a few questions"}
                   </button>
+                  {!interviewOpen && !draftLimitHit && (
+                    <button
+                      type="button"
+                      onClick={() => void onGenerateHooks()}
+                      disabled={isGeneratingHooks || isLoadingInterview || !topic.trim()}
+                      className="mt-2 w-full cursor-pointer text-xs font-semibold text-zinc-500 transition-colors hover:text-teal disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Skip the questions and write hooks now
+                    </button>
+                  )}
                   <DraftCounter compact className="mt-2" />
                 </>
               )}

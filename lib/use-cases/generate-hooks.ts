@@ -15,6 +15,8 @@ export interface GenerateHooksInput {
   role: string
   format?: string
   goal?: string
+  /** The author's interview answers. See lib/interview.ts. */
+  story?: string
   userId: string
   plan: string
   voiceProfile?: VoiceProfile
@@ -39,8 +41,8 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
     return err({ code: "PLAN_LIMIT_EXCEEDED", message: "Hook limit reached", userMessage: "Hook limit reached. Upgrade your plan." })
   }
 
-  const { goal } = input
-  const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal, input.voiceProfile)
+  const { goal, story } = input
+  const { system, user: userMsg } = buildHook5StylesPrompt(topic, role, goal, input.voiceProfile, story)
   let raw: string
   try {
     raw = await callAi("hook-generation", system, userMsg, {
@@ -69,7 +71,7 @@ export async function generateHooks(input: GenerateHooksInput): Promise<Result<{
   // The AUTHORITY and STORY styles kept producing "Data shows that 70%..." and "When I walked
   // the floor..." for topics that supplied neither. The chosen hook becomes the post's first line
   // verbatim, so an invented hook is an invented post. Drop those, unless that leaves too few.
-  const brief = [topic, goal].filter(Boolean).join("\n")
+  const brief = [topic, goal, story].filter(Boolean).join("\n")
   const sources = [brief, authorFacts(input.voiceProfile)]
     .filter(Boolean)
     .join("\n")

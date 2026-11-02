@@ -5,6 +5,7 @@ import { requireRole, errorToStatus } from "@/lib/server/roles"
 import { SupabasePostRepository } from "@/lib/repositories/supabase/SupabasePostRepository"
 import { attachQstashSchedule, detachQstashSchedule } from "@/lib/server/qstash"
 import { isReadyContentScore, MIN_READY_CONTENT_SCORE } from "@/lib/content-score-gate"
+import { cleanAiDraft } from "@/lib/server/draft-edits"
 
 const postRepo = new SupabasePostRepository()
 
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { title, content, type = "linkedin", status, scheduledTime, publishedAt, externalPostUrn, engagementScore } = body
+    const aiDraft = cleanAiDraft(body.aiDraft)
     if (!title) {
       return NextResponse.json({ error: "title is required" }, { status: 400 })
     }
@@ -79,6 +81,7 @@ export async function POST(request: NextRequest) {
       publishedAt,
       externalPostUrn,
       engagementScore: typeof engagementScore === "number" ? engagementScore : null,
+      aiDraft,
     })
     if (safeStatus === "scheduled" && scheduledTime) {
       await attachQstashSchedule(post.id, new Date(scheduledTime)).catch((err) =>
@@ -152,6 +155,13 @@ export async function PATCH(request: NextRequest) {
     else if (contentChanged) patch.engagementScore = null
 
     const post = await postRepo.update(id, workspaceId, patch)
+    const aiDraft = cleanAiDraft(body.aiDraft)
+    if (aiDraft) {
+      // A lost before/after pair costs one voice example. It never fails the save.
+      await postRepo.recordAiDraft(id, workspaceId, aiDraft).catch((err) =>
+        log.warn("posts.patch.ai_draft_failed", { reqId, id, error: (err as Error).message })
+      )
+    }
 
     if (nextStatus === "scheduled" && nextScheduledTime) {
       await attachQstashSchedule(id, new Date(nextScheduledTime)).catch((err) =>

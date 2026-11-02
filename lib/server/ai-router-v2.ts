@@ -5,6 +5,7 @@ import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callOpenRouter } from "./openrouter-client"
 import { callAnthropic } from "./anthropic-client"
+import { callNvidia } from "./nvidia-client"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
@@ -13,7 +14,7 @@ import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 import { enforceHumanWriting } from "@/lib/prompts/enforce-human-writing"
 import { AI_PATTERN_RULES } from "@/lib/prompts/writing-policy"
 
-export type AiProvider = "anthropic" | "groq" | "gemini" | "openrouter"
+export type AiProvider = "anthropic" | "nvidia" | "groq" | "gemini" | "openrouter"
 export type AiTask =
   | "post-generation"
   | "post-scoring"
@@ -25,6 +26,7 @@ export type AiTask =
   | "chat-strategist"
   | "post-improvement"
   | "engagement-prediction"
+  | "interview"
 type CallOptions = { json: boolean; temperature: number; maxTokens: number }
 type AiResponse = OpenAiCompatibleResult
 
@@ -170,7 +172,7 @@ async function logAiUsage(
       model,
       tokens_in: tokensIn,
       tokens_out: tokensOut,
-      estimated_cost_usd: provider === "openrouter" ? 0 : estimateCost(model, tokensIn, tokensOut),
+      estimated_cost_usd: provider === "openrouter" || provider === "nvidia" ? 0 : estimateCost(model, tokensIn, tokensOut),
     })
     if (insertErr && insertErr.code !== "42P01") log.warn("ai_usage.insert_failed", { error: insertErr.message })
   } catch { void 0 }
@@ -221,25 +223,30 @@ async function enforceDailySpendCap(): Promise<void> {
 // Writing runs on Sonnet. Scoring and analysis read text rather than write it, so Haiku is enough.
 const WRITING_MODEL = process.env.ANTHROPIC_WRITING_MODEL || "claude-sonnet-5-5"
 const READING_MODEL = process.env.ANTHROPIC_READING_MODEL || "claude-haiku-5-5"
+// The free fallback when there is no Claude key. Kimi writes, a fast flash model scores.
+const NVIDIA_WRITING = process.env.NVIDIA_WRITING_MODEL || "moonshotai/kimi-k2.6"
+const NVIDIA_READING = process.env.NVIDIA_READING_MODEL || "deepseek-ai/deepseek-v4.1-flash"
 
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
-  "post-generation":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "post-scoring":          { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "competitor-analysis":   { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "hook-generation":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "cta-rewrite":           { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "carousel-outline":      { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "voice-profile":         { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "chat-strategist":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "post-improvement":      { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "engagement-prediction": { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-generation":       { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-scoring":          { anthropic: READING_MODEL, nvidia: NVIDIA_READING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "competitor-analysis":   { anthropic: READING_MODEL, nvidia: NVIDIA_READING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "hook-generation":       { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "cta-rewrite":           { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "carousel-outline":      { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "voice-profile":         { anthropic: READING_MODEL, nvidia: NVIDIA_READING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "chat-strategist":       { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-improvement":      { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "interview":             { anthropic: READING_MODEL, nvidia: NVIDIA_READING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "engagement-prediction": { anthropic: READING_MODEL, nvidia: NVIDIA_READING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
-// Claude leads every task, then Gemini, then Groq, then OpenRouter's zero-cost router.
-// providersFor() narrows this per caller: anonymous free-tool traffic never reaches Claude,
-// and signed-in users' drafts never go to the free router, whose models change without notice.
-const DEFAULT_ORDER: AiProvider[] = ["anthropic", "gemini", "groq", "openrouter"]
+// Claude leads every task, then NVIDIA's free catalog, Gemini, Groq, and OpenRouter's zero-cost router.
+// providersFor() narrows this per caller: anonymous free-tool traffic never reaches Claude or
+// NVIDIA (its free credits are kept for signed-in drafts), and signed-in users' drafts never go
+// to the free router, whose models change without notice.
+const DEFAULT_ORDER: AiProvider[] = ["anthropic", "nvidia", "gemini", "groq", "openrouter"]
 export const providerOrder: Record<AiTask, AiProvider[]> = {
   "post-generation":       DEFAULT_ORDER,
   "post-scoring":          DEFAULT_ORDER,
@@ -251,13 +258,15 @@ export const providerOrder: Record<AiTask, AiProvider[]> = {
   "chat-strategist":       DEFAULT_ORDER,
   "post-improvement":      DEFAULT_ORDER,
   "engagement-prediction": DEFAULT_ORDER,
+  "interview":             DEFAULT_ORDER,
 }
 
 export const isAnonymousCaller = (userId: string) => userId === "anonymous" || userId.startsWith("free_")
 
 export function providersFor(task: AiTask, userId: string): AiProvider[] {
   const anonymous = isAnonymousCaller(userId)
-  return providerOrder[task].filter((provider) => anonymous ? provider !== "anthropic" : provider !== "openrouter")
+  return providerOrder[task].filter((provider) =>
+    anonymous ? provider !== "anthropic" && provider !== "nvidia" : provider !== "openrouter")
 }
 
 // ── 1.6: Retry delays (transient errors only) ─────────────────────────────────
@@ -287,6 +296,8 @@ async function callProvider(
 
       if (provider === "anthropic") {
         result = await callAnthropic(systemPrompt, userMessage, { json: options.json, maxTokens: options.maxTokens, model }, Math.max(timeout, 40000))
+      } else if (provider === "nvidia") {
+        result = await callNvidia(systemPrompt, userMessage, { ...options, model }, Math.max(timeout, 30000))
       } else if (provider === "groq") {
         result = await callGroq(systemPrompt, userMessage, { ...options, model: model as GroqModel }, timeout)
       } else if (provider === "gemini") {

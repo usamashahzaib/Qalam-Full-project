@@ -15,6 +15,7 @@ import type { GeneratePostFromHookOutput } from "@/lib/use-cases/generate-post-f
 import { authorizeRole } from "@/lib/server/roles"
 import { recordProductEventSafely } from "@/lib/server/product-events"
 import { signDraftToken } from "@/lib/server/draft-token"
+import { cleanStory } from "@/lib/interview"
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     const hook = String(body.hook || "").trim()
     const originalContent = String(body.originalContent || "").trim()
     const idempotencyKey = String(body.idempotencyKey || "").trim()
+    const story = cleanStory(body.story)
     const hasOriginalDraft = originalContent.length >= 20
 
     if (!UUID_PATTERN.test(idempotencyKey)) return NextResponse.json({ error: "A valid idempotency key is required" }, { status: 400 })
@@ -47,7 +49,7 @@ export async function POST(request: NextRequest) {
     // Library permissions can change between requests. Do not reuse a draft
     // generated against a reference that has since been removed or expired.
     const cacheKey = !hasOriginalDraft && process.env.WRITING_REFERENCE_LIBRARY_ENABLED !== "true"
-      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), userId: user.id, workspaceId: planCheck.workspaceId, plan: planCheck.plan })
+      ? generateCacheKey({ task: "post", topic, hook, role: String(body.role || ""), format: String(body.format || ""), goal: String(body.goal || ""), story, userId: user.id, workspaceId: planCheck.workspaceId, plan: planCheck.plan })
       : null
     if (cacheKey) {
       const cached = await getCachedResult<GeneratePostFromHookOutput>(cacheKey)
@@ -78,6 +80,7 @@ export async function POST(request: NextRequest) {
       role: String(body.role || ""),
       format: String(body.format || ""),
       goal: String(body.goal || "").trim() || undefined,
+      story: story || undefined,
       userId: planCheck.billingUserId,
       internalUserId: user.id,
       workspaceId: planCheck.workspaceId,
