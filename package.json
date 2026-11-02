@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "check:dashes": "node scripts/check-no-dashes.mjs",
+    "check:nvidia": "node --env-file-if-exists=.env.local scripts/check-nvidia.mjs",
     "check:rls": "node scripts/check-rls.mjs",
     "check:career-addons": "node scripts/check-career-addon-readiness.mjs",
     "check:analytics": "node scripts/check-analytics-readiness.mjs",

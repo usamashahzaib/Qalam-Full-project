@@ -9,7 +9,11 @@ vi.mock("@/lib/server/gemini-client", () => ({ callGemini: vi.fn() }))
 vi.mock("@/lib/server/groq-client", () => ({ callGroq: vi.fn() }))
 vi.mock("@/lib/server/openrouter-client", () => ({ callOpenRouter: vi.fn() }))
 vi.mock("@/lib/server/anthropic-client", () => ({ callAnthropic: vi.fn() }))
-vi.mock("@/lib/server/nvidia-client", () => ({ callNvidia: vi.fn() }))
+vi.mock("@/lib/server/nvidia-client", () => ({
+  callNvidia: vi.fn(),
+  NVIDIA_WRITING_MODELS: "moonshotai/kimi-k2.6,nvidia/nemotron-3-ultra-550b-a55b",
+  NVIDIA_READING_MODELS: "deepseek-ai/deepseek-v4.1-flash",
+}))
 vi.mock("@/lib/server/queue", () => ({
   checkAiRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
   cacheAiResponse: vi.fn(),
@@ -78,7 +82,7 @@ describe("AI provider fallback", () => {
     mockAnthropic.mockRejectedValue(new Error("ANTHROPIC_API_KEY not configured"))
     mockNvidia.mockResolvedValue({ content: "kimi response", tokensIn: 4, tokensOut: 3, model: "moonshotai/kimi-k2.6" })
     await expect(callAi("post-generation", "system", "user", { cache: false, userId: "user-1" })).resolves.toBe("kimi response")
-    expect(mockNvidia).toHaveBeenCalledWith(expect.stringContaining("system"), "user", expect.objectContaining({ model: "moonshotai/kimi-k2.6" }), expect.any(Number))
+    expect(mockNvidia).toHaveBeenCalledWith(expect.stringContaining("system"), "user", expect.objectContaining({ model: expect.stringMatching(/^moonshotai\/kimi-k2\.6,/) }), expect.any(Number))
     expect(mockGemini).not.toHaveBeenCalled()
   })
 

@@ -5,7 +5,7 @@ import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callOpenRouter } from "./openrouter-client"
 import { callAnthropic } from "./anthropic-client"
-import { callNvidia } from "./nvidia-client"
+import { callNvidia, NVIDIA_READING_MODELS, NVIDIA_WRITING_MODELS } from "./nvidia-client"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
@@ -223,9 +223,9 @@ async function enforceDailySpendCap(): Promise<void> {
 // Writing runs on Sonnet. Scoring and analysis read text rather than write it, so Haiku is enough.
 const WRITING_MODEL = process.env.ANTHROPIC_WRITING_MODEL || "claude-sonnet-5-5"
 const READING_MODEL = process.env.ANTHROPIC_READING_MODEL || "claude-haiku-5-5"
-// The free fallback when there is no Claude key. Kimi writes, a fast flash model scores.
-const NVIDIA_WRITING = process.env.NVIDIA_WRITING_MODEL || "moonshotai/kimi-k2.6"
-const NVIDIA_READING = process.env.NVIDIA_READING_MODEL || "deepseek-ai/deepseek-v4.1-flash"
+// The free fallback when there is no Claude key. Each is a chain of models, tried in order.
+const NVIDIA_WRITING = process.env.NVIDIA_WRITING_MODEL || NVIDIA_WRITING_MODELS
+const NVIDIA_READING = process.env.NVIDIA_READING_MODEL || NVIDIA_READING_MODELS
 
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
   "post-generation":       { anthropic: WRITING_MODEL, nvidia: NVIDIA_WRITING, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
