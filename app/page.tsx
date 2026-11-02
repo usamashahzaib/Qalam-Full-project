@@ -11,6 +11,10 @@ import { LANDING_FAQ } from "@/lib/marketing-content"
 import { resolvePublicHref } from "@/lib/seo"
 import { SUPPORT_EMAIL } from "@/lib/contact"
 import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
+import { isSurfaceFrozen } from "@/lib/frozen-surfaces"
+
+const CAREER_LIVE = !isSurfaceFrozen("career")
+const AGENCY_LIVE = !isSurfaceFrozen("agency")
 
 export const metadata: Metadata = {
   title: "Qalam | LinkedIn Publishing System With Voice Memory",
@@ -325,7 +329,7 @@ export default function HomePage() {
               {[
                 ["LinkedIn post", "Turn the same lesson into a point of view, drafted through your voice profile."],
                 ["Carousel", "Break the same argument into slides, drawing on the draft and evidence already in the archive."],
-                ["Targeted resume", "Aim the identical evidence at a job description when you need it. Supporting capability, not the main event."],
+                ...(CAREER_LIVE ? [["Targeted resume", "Aim the identical evidence at a job description when you need it. Supporting capability, not the main event."]] : []),
               ].map(([title, copy], index) => (
                 <div key={title} className={`panel-raised p-7 ${index === 2 ? "sm:col-span-2" : ""}`}>
                   <p className="t-eyebrow text-gold-700">0{index + 1}</p>
@@ -335,7 +339,7 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-          <p className="mt-7 text-sm leading-6 text-zinc-600">
+          {CAREER_LIVE ? <p className="mt-7 text-sm leading-6 text-zinc-600">
             Applying for roles as well?{" "}
             <TrackedHomepageLink
               href="/free-tools/ats-resume-checker"
@@ -346,11 +350,11 @@ export default function HomePage() {
               The free ATS resume check
             </TrackedHomepageLink>{" "}
             reads a resume the way an applicant tracking system does, no account required.
-          </p>
+          </p> : null}
         </div>
       </section>
 
-      <section id="agencies" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
+      {AGENCY_LIVE ? <section id="agencies" className="border-y border-zinc-200 bg-white px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-[1200px]">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end lg:gap-16">
             <div>
@@ -387,7 +391,7 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <ClientDiscretion />
 

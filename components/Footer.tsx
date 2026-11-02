@@ -3,6 +3,7 @@ import { SUPPORT_EMAIL } from "@/lib/contact"
 import { InstagramIcon, LinkedInIcon } from "@/components/ui/qalam-icons"
 import { QalamLogo } from "@/components/QalamLogo"
 import { alphabetical } from "@/lib/sort"
+import { withoutFrozen } from "@/lib/frozen-surfaces"
 
 const byLabel = (link: { label: string }) => link.label
 
@@ -104,7 +105,7 @@ export function Footer() {
             </div>
           </div>
 
-          {Object.entries(FOOTER_LINKS).map(([section, links]) => (
+          {Object.entries(FOOTER_LINKS).map(([section, links]) => [section, withoutFrozen(links, (link) => link.href)] as const).filter(([, links]) => links.length > 0).map(([section, links]) => (
             <div key={section}>
               <div className="hidden sm:block">
                 {/* h2, not h4. These are the top-level headings inside the

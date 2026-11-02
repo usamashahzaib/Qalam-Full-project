@@ -108,7 +108,7 @@ function inMemoryRateLimit(key: string, limit: number, windowMs: number) {
 export async function checkAiRateLimit(
   userId: string,
   _plan: string,
-  provider: "groq" | "gemini" | "openrouter"
+  provider: "anthropic" | "groq" | "gemini" | "openrouter"
 ) {
   const r = getRedis()
   if (!r) {
@@ -120,7 +120,8 @@ export async function checkAiRateLimit(
   const limiter =
     provider === "groq"
       ? getGroqLimiter()
-      : provider === "gemini"
+      // Anthropic shares Gemini's 30/min window. Keys carry the provider name, so the buckets stay separate.
+      : provider === "gemini" || provider === "anthropic"
         ? getGeminiLimiter()
         : getOpenRouterLimiter()
   if (!limiter) {

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { useBilling } from "@/lib/hooks/useBilling"
 import { LockedFeature } from "@/components/LockedFeature"
 import { useApprovalQueue } from "@/lib/hooks/useApprovalQueue"
@@ -212,7 +213,7 @@ function ApprovalCard({ row, expanded, onToggle }: {
                   </li>
                 ))}
               </ul>
-              <Link href="/desk" className="mt-2 inline-block text-xs font-semibold text-teal-700 hover:underline">Save these to the Voice Passport from My Desk</Link>
+              {isFrozenPath("/desk") ? null : <Link href="/desk" className="mt-2 inline-block text-xs font-semibold text-teal-700 hover:underline">Save these to the Voice Passport from My Desk</Link>}
             </div>
           ) : null}
           {row.reviewToken ? (

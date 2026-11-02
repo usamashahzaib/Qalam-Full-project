@@ -4,6 +4,7 @@ import { checkAiRateLimit, cacheAiResponse, getCachedAiResponse, hashPrompt } fr
 import { callGemini } from "./gemini-client"
 import { callGroq, type GroqModel } from "./groq-client"
 import { callOpenRouter } from "./openrouter-client"
+import { callAnthropic } from "./anthropic-client"
 import { createServiceClient, sanitizeOrFilterValue } from "./supabase-rest"
 import { checkCircuit, recordFailure, recordSuccess } from "./circuit-breaker"
 import { log } from "./logging"
@@ -12,7 +13,7 @@ import type { OpenAiCompatibleResult } from "./openai-compatible-client"
 import { enforceHumanWriting } from "@/lib/prompts/enforce-human-writing"
 import { AI_PATTERN_RULES } from "@/lib/prompts/writing-policy"
 
-export type AiProvider = "groq" | "gemini" | "openrouter"
+export type AiProvider = "anthropic" | "groq" | "gemini" | "openrouter"
 export type AiTask =
   | "post-generation"
   | "post-scoring"
@@ -130,6 +131,9 @@ const COST_PER_M: Record<string, { input: number; output: number }> = {
   "openai/gpt-oss-120b":     { input: 0.15,  output: 0.60 },
   "gemini-2.5-flash":        { input: 0.15,  output: 0.60 },
   "gemini-2.5-pro":          { input: 1.25,  output: 10.00 },
+  // Check these against the Anthropic pricing page. The daily spend cap is only as good as this table.
+  "claude-sonnet-5-5":       { input: 2.00,  output: 10.00 },
+  "claude-haiku-5-5":        { input: 1.00,  output: 5.00 },
 }
 
 function estimateCost(model: string, tokensIn: number, tokensOut: number): number {
@@ -214,32 +218,46 @@ async function enforceDailySpendCap(): Promise<void> {
 }
 
 // ── 1.2: Model mapping per task per provider ──────────────────────────────────
+// Writing runs on Sonnet. Scoring and analysis read text rather than write it, so Haiku is enough.
+const WRITING_MODEL = process.env.ANTHROPIC_WRITING_MODEL || "claude-sonnet-5-5"
+const READING_MODEL = process.env.ANTHROPIC_READING_MODEL || "claude-haiku-5-5"
+
 const taskModelMap: Record<AiTask, Record<AiProvider, string>> = {
-  "post-generation":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "post-scoring":          { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "competitor-analysis":   { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "hook-generation":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "cta-rewrite":           { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "carousel-outline":      { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "voice-profile":         { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "chat-strategist":       { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
-  "post-improvement":      { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
-  "engagement-prediction": { openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-generation":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-scoring":          { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "competitor-analysis":   { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "hook-generation":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "cta-rewrite":           { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "carousel-outline":      { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "voice-profile":         { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "chat-strategist":       { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
+  "post-improvement":      { anthropic: WRITING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-120b" },
+  "engagement-prediction": { anthropic: READING_MODEL, openrouter: "openrouter/free", gemini: "gemini-2.5-flash", groq: "openai/gpt-oss-20b" },
 }
 
 // ── 1.1/1.3: Provider order ───────────────────────────────────────────────────
-// OpenRouter's zero-cost router leads every task, then Gemini, then Groq.
+// Claude leads every task, then Gemini, then Groq, then OpenRouter's zero-cost router.
+// providersFor() narrows this per caller: anonymous free-tool traffic never reaches Claude,
+// and signed-in users' drafts never go to the free router, whose models change without notice.
+const DEFAULT_ORDER: AiProvider[] = ["anthropic", "gemini", "groq", "openrouter"]
 export const providerOrder: Record<AiTask, AiProvider[]> = {
-  "post-generation":       ["openrouter", "gemini", "groq"],
-  "post-scoring":          ["openrouter", "gemini", "groq"],
-  "competitor-analysis":   ["openrouter", "gemini", "groq"],
-  "hook-generation":       ["openrouter", "gemini", "groq"],
-  "cta-rewrite":           ["openrouter", "gemini", "groq"],
-  "carousel-outline":      ["openrouter", "gemini", "groq"],
-  "voice-profile":         ["openrouter", "gemini", "groq"],
-  "chat-strategist":       ["openrouter", "gemini", "groq"],
-  "post-improvement":      ["openrouter", "gemini", "groq"],
-  "engagement-prediction": ["openrouter", "gemini", "groq"],
+  "post-generation":       DEFAULT_ORDER,
+  "post-scoring":          DEFAULT_ORDER,
+  "competitor-analysis":   DEFAULT_ORDER,
+  "hook-generation":       DEFAULT_ORDER,
+  "cta-rewrite":           DEFAULT_ORDER,
+  "carousel-outline":      DEFAULT_ORDER,
+  "voice-profile":         DEFAULT_ORDER,
+  "chat-strategist":       DEFAULT_ORDER,
+  "post-improvement":      DEFAULT_ORDER,
+  "engagement-prediction": DEFAULT_ORDER,
+}
+
+export const isAnonymousCaller = (userId: string) => userId === "anonymous" || userId.startsWith("free_")
+
+export function providersFor(task: AiTask, userId: string): AiProvider[] {
+  const anonymous = isAnonymousCaller(userId)
+  return providerOrder[task].filter((provider) => anonymous ? provider !== "anthropic" : provider !== "openrouter")
 }
 
 // ── 1.6: Retry delays (transient errors only) ─────────────────────────────────
@@ -267,7 +285,9 @@ async function callProvider(
     try {
       let result: AiResponse | null = null
 
-      if (provider === "groq") {
+      if (provider === "anthropic") {
+        result = await callAnthropic(systemPrompt, userMessage, { json: options.json, maxTokens: options.maxTokens, model }, Math.max(timeout, 40000))
+      } else if (provider === "groq") {
         result = await callGroq(systemPrompt, userMessage, { ...options, model: model as GroqModel }, timeout)
       } else if (provider === "gemini") {
         const raw = await callGemini(systemPrompt, userMessage, { ...options, model }, timeout)
@@ -406,7 +426,7 @@ export async function callAi(
 
   await enforceDailySpendCap()
 
-  const order = providerOrder[task]
+  const order = providersFor(task, userId)
   const callOptions: CallOptions = { json, temperature, maxTokens }
 
   for (const candidate of order) {

@@ -26,7 +26,8 @@ export function WelcomeModal() {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    if (status !== "authenticated" || pending) return
+    // With one mode there is nothing to pick.
+    if (status !== "authenticated" || pending || APP_MODES.length < 2) return
     const timer = window.setTimeout(() => {
       try {
         if (localStorage.getItem(STORAGE_KEY) === "true" && !needsOnboarding) return

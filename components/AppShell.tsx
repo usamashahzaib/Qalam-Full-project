@@ -36,6 +36,7 @@ import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { NotificationBell } from "@/components/NotificationBell"
 import { useAppMode } from "@/lib/hooks/useAppMode"
 import { isVisibleInMode, APP_MODES } from "@/lib/app-mode"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 
 // Update launchDate when a feature actually ships - the badge auto-hides 14 days after.
 const NEW_FEATURES: Record<string, { launchDate: string; tooltip: string }> = {}
@@ -199,7 +200,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   )
   const hasAgencyAccess = canCreateClientWorkspaces || hasManagedWorkspace
   const canAddWorkspace = canCreateClientWorkspaces
-  const showManageClientList = hasAgencyAccess
+  const showManageClientList = hasAgencyAccess && !isFrozenPath("/agency")
   const showSwitcherList = clientWorkspaces.length > 0
   const isAgencyLinkVisible = (link: { href: string; agencyOnly?: boolean }) => {
     if (!link.agencyOnly) return true
@@ -337,7 +338,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Mode switcher */}
-          <div className="shrink-0 px-4 pb-3">
+          {APP_MODES.length > 1 ? <div className="shrink-0 px-4 pb-3">
             <div className="flex gap-1 rounded-xl border border-zinc-800 bg-zinc-800/40 p-1">
               {APP_MODES.map((m) => (
                 <button
@@ -350,7 +351,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </button>
               ))}
             </div>
-          </div>
+          </div> : null}
 
           <nav className="qalam-scrollbar-dark min-h-0 flex-1 space-y-4 overflow-y-auto px-3 pb-4">
             {NAV_GROUPS.map((group) => ({ ...group, links: group.links.filter((link) => isVisibleInMode(link.href, mode) && isAgencyLinkVisible(link)) })).filter((group) => group.links.length > 0).map((group) => (

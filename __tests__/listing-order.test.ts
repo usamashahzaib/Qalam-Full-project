@@ -26,9 +26,9 @@ describe("service listings are A-Z", () => {
   // each one is still wrapped in the sort helper. Catches someone re-adding a
   // hand-ordered literal later.
   it.each([
-    ["app/free-tools/page.tsx", "const TOOLS = alphabetical("],
-    ["components/Navbar.tsx", "const PRODUCT_LINKS = alphabetical("],
-    ["components/Navbar.tsx", "const USE_CASE_LINKS = alphabetical("],
+    ["app/free-tools/page.tsx", "const ALL_TOOLS = alphabetical("],
+    ["components/Navbar.tsx", "const ALL_PRODUCT_LINKS = alphabetical("],
+    ["components/Navbar.tsx", "const ALL_USE_CASE_LINKS = alphabetical("],
     ["components/Footer.tsx", '"Career and ATS": alphabetical('],
     ["components/Footer.tsx", '"Use Cases": alphabetical('],
   ])("%s applies alphabetical to %s", (file, marker) => {

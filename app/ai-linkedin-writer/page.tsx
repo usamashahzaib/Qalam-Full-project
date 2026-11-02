@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { FadeUp } from "@/components/FadeUp"
 import { CheckIcon } from "@/components/ui/qalam-icons"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
@@ -357,7 +358,7 @@ export default function AiLinkedInWriterPage() {
                   { name: "Post Quality Checker", desc: "Review clarity and specificity", href: "/free-tools/viral-checker" },
                   { name: "Carousel Builder", desc: "Turn posts into carousels", href: "/free-tools/carousel-builder" },
                   { name: "Post Readiness Review", desc: "Review before you post", href: "/free-tools/engagement-predictor" },
-                ].map((tool) => (
+                ].filter((tool) => !isFrozenPath(tool.href)).map((tool) => (
                   <Link
                     key={tool.name}
                     href={tool.href}

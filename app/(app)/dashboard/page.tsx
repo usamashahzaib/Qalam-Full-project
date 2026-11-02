@@ -5,6 +5,7 @@ import { DailyMomentumCard } from "@/components/dashboard/DailyMomentumCard"
 import { DashboardHero } from "@/components/dashboard/DashboardHero"
 import { DashboardContent } from "@/components/dashboard/DashboardContent"
 import { withClientParam } from "@/lib/workspace-navigation"
+import { isSurfaceFrozen } from "@/lib/frozen-surfaces"
 
 // ─── Writing Prompts ──────────────────────────────────────────────────────────
 
@@ -96,7 +97,64 @@ function WritingPromptsCard({ activeClientId }: { activeClientId: string | null 
 
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 
-const QUICK_ACTIONS = [
+type QuickAction = { label: string; href: string; desc: string; icon: React.ReactNode }
+
+const LINKEDIN_QUICK_ACTIONS: QuickAction[] = [
+  {
+    label: "Write a post",
+    href: "/writer?compose=new",
+    desc: "Start from something that happened this week",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
+    ),
+  },
+  {
+    label: "Teach Qalam your voice",
+    href: "/voice",
+    desc: "Paste three posts you wrote yourself",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+      />
+    ),
+  },
+  {
+    label: "Plan the week",
+    href: "/calendar",
+    desc: "Put two posts on the calendar",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    ),
+  },
+  {
+    label: "Make a carousel",
+    href: "/carousels",
+    desc: "Turn one idea into slides",
+    icon: (
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+      />
+    ),
+  },
+]
+
+const QUICK_ACTIONS: QuickAction[] = [
   {
     label: "Check ATS score",
     href: "/career?tab=resume",
@@ -151,14 +209,14 @@ const QUICK_ACTIONS = [
   },
 ]
 
-function QuickActionsCard({ activeClientId }: { activeClientId: string | null }) {
+function QuickActionsCard({ activeClientId, actions = QUICK_ACTIONS }: { activeClientId: string | null; actions?: QuickAction[] }) {
   return (
     <div className="h-full rounded-3xl border border-teal/10 bg-teal-800 p-6 text-white shadow-card-raised">
       <p className="t-eyebrow text-gold-200">Keep moving</p>
       <h2 className="mt-2 text-xl font-bold">Choose your next useful step</h2>
       <p className="mt-2 text-sm leading-6 text-white/55">Each action improves something you can actually use.</p>
       <div className="space-y-2">
-        {QUICK_ACTIONS.map(({ label, href, desc, icon }) => (
+        {actions.map(({ label, href, desc, icon }) => (
           <Link
             key={href}
             href={withClientParam(href, activeClientId)}
@@ -220,13 +278,14 @@ export default async function DashboardPage({
     <>
       <DashboardHero greeting={greeting} activeClientId={activeClientId} />
 
-      <DailyMomentumCard />
+      {/* The momentum card is built on Career data. */}
+      {isSurfaceFrozen("career") ? null : <DailyMomentumCard />}
 
       <DashboardContent
         linkedinContent={
           <div className="grid items-stretch gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
             <WritingPromptsCard activeClientId={activeClientId} />
-            <QuickActionsCard activeClientId={activeClientId} />
+            <QuickActionsCard activeClientId={activeClientId} actions={LINKEDIN_QUICK_ACTIONS} />
           </div>
         }
         careerContent={

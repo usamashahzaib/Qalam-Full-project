@@ -3,9 +3,11 @@
  * surfaces. No billing or feature changes - just focus.
  */
 
+import { isFrozenPath, isSurfaceFrozen } from "@/lib/frozen-surfaces"
+
 export type AppMode = "career" | "linkedin"
 
-export const APP_MODES: { key: AppMode; label: string; description: string }[] = [
+const ALL_APP_MODES: { key: AppMode; label: string; description: string }[] = [
   {
     key: "career",
     label: "Career",
@@ -17,6 +19,9 @@ export const APP_MODES: { key: AppMode; label: string; description: string }[] =
     description: "Write, schedule, publish, analyze posts",
   },
 ]
+
+/** While Career is frozen there is one mode, so switchers and the mode picker hide themselves. */
+export const APP_MODES = isSurfaceFrozen("career") ? ALL_APP_MODES.filter((m) => m.key !== "career") : ALL_APP_MODES
 
 const CAREER_HREFS = new Set([
   "/dashboard",
@@ -57,7 +62,7 @@ const LINKEDIN_HREFS = new Set([
  */
 export function isVisibleInMode(href: string, mode: AppMode): boolean {
   const set = mode === "career" ? CAREER_HREFS : LINKEDIN_HREFS
-  return set.has(href)
+  return set.has(href) && !isFrozenPath(href)
 }
 
 export const MODE_STORAGE_KEY = "qalam_app_mode"
@@ -77,6 +82,7 @@ export function resolveStoredMode(stored: string | null): {
   mode: AppMode
   needsOnboarding: boolean
 } {
+  if (APP_MODES.length === 1) return { mode: APP_MODES[0].key, needsOnboarding: false }
   if (stored && isAppMode(stored)) return { mode: stored, needsOnboarding: false }
   return { mode: DEFAULT_MODE, needsOnboarding: true }
 }

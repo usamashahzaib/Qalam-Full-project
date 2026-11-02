@@ -3,6 +3,7 @@ import { MARKETING_LAST_MODIFIED } from "@/lib/marketing-content"
 import { SEO_LANDING_PAGES, SEO_LANDING_ROUTES } from "@/lib/seo-landing-pages"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 import { PROTECTED_ROUTES } from "@/lib/protected-routes"
+import { withoutFrozen } from "@/lib/frozen-surfaces"
 
 export type PublicRoute = {
   path: string
@@ -141,7 +142,7 @@ export const buildPageMetadata = ({
   }
 }
 
-export const PUBLIC_ROUTES: PublicRoute[] = [
+const ALL_PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/", priority: 1, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/features", priority: 0.95, changeFrequency: "weekly", lastModified: "2026-08-18" },
   { path: "/industries", priority: 0.9, changeFrequency: "weekly", lastModified: "2026-08-18" },
@@ -183,7 +184,9 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/careers", priority: 0.5, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
 ]
 
-export const LLM_ROUTES = [
+export const PUBLIC_ROUTES = withoutFrozen(ALL_PUBLIC_ROUTES, (route) => route.path)
+
+const ALL_LLM_ROUTES = [
   "/",
   "/features",
   "/industries",
@@ -225,3 +228,5 @@ export const LLM_ROUTES = [
   "/use-cases/consultants",
   "/use-cases/agencies",
 ]
+
+export const LLM_ROUTES = withoutFrozen(ALL_LLM_ROUTES, (path) => path)

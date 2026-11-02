@@ -113,7 +113,7 @@ export function AppMobileNav() {
 
       {moreOpen && (
         <div className="qalam-mobile-more-panel fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] z-40 mx-4 mb-2 max-h-[62dvh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-3 shadow-xl">
-          <div className="mb-2 flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
+          {APP_MODES.length > 1 ? <div className="mb-2 flex gap-1 rounded-xl border border-zinc-200 bg-zinc-50 p-1">
             {APP_MODES.map((m) => (
               <button
                 key={m.key}
@@ -123,7 +123,7 @@ export function AppMobileNav() {
                 {m.label}
               </button>
             ))}
-          </div>
+          </div> : null}
           <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
             {visibleMoreLinks.map((link) => {
               const { href, label, icon: Icon } = link

@@ -1,5 +1,9 @@
 import type { PlanTier } from "@/types/domain"
 import { CAREER_PLAN_CONFIG, formatCareerLimit } from "@/lib/career-entitlements"
+import { isSurfaceFrozen, type FrozenSurface } from "@/lib/frozen-surfaces"
+
+// A plan must not list a feature the product currently turns away.
+const whileLive = (surface: FrozenSurface, bullets: string[]) => (isSurfaceFrozen(surface) ? [] : bullets)
 
 export type PlanName = "Free" | "Solo" | "Pro" | "Agency"
 
@@ -36,7 +40,7 @@ export const quarterlyFraming = "1 month free"
 
 // Agency uses reviewed onboarding rather than card checkout. An approved
 // application is followed by workspace activation and team setup.
-export const AGENCY_PLAN_LIVE = true
+export const AGENCY_PLAN_LIVE = !isSurfaceFrozen("agency")
 
 // Single source of truth for the Agency tier's shared client capacity - the
 // number sold as "300 posts / 50 carousels across 5 client workspaces". This
@@ -94,11 +98,13 @@ export const plans: Plan[] = [
       "1 carousel + 5 content scores/month",
       "Qalam LinkedIn extension + 10 smart comments/month",
       "Basic Voice Profile",
-      "Career Vault",
-      "1 LinkedIn positioning audit/month",
-      "Free ATS checker + 1 targeted resume/month",
-      "Track 10 active applications + outcomes",
-      "15-item verified Evidence Vault",
+      ...whileLive("career", [
+        "Career Vault",
+        "1 LinkedIn positioning audit/month",
+        "Free ATS checker + 1 targeted resume/month",
+        "Track 10 active applications + outcomes",
+        "15-item verified Evidence Vault",
+      ]),
     ],
     cta: "Start Free",
     badge: "No card required",
@@ -122,10 +128,12 @@ export const plans: Plan[] = [
       "Plan, publish, and schedule on LinkedIn",
       "Post Library + version history",
       "Post performance analytics",
-      "5 LinkedIn audits + 5 ATS reviews/month",
-      "3 targeted resumes/month",
-      "1 flexible career credit/quarter",
-      "Unlimited application tracking + 100 evidence items",
+      ...whileLive("career", [
+        "5 LinkedIn audits + 5 ATS reviews/month",
+        "3 targeted resumes/month",
+        "1 flexible career credit/quarter",
+        "Unlimited application tracking + 100 evidence items",
+      ]),
     ],
     cta: "Start Solo",
     badge: "Most popular",
@@ -145,15 +153,18 @@ export const plans: Plan[] = [
     features: [
       "60 AI posts + 10 carousels/month",
       "Saved voice profile + guided draft revisions",
-      "AI Strategist + 5 competitor research runs/month",
+      ...whileLive("chat", ["AI Strategist"]),
+      ...whileLive("competitors", ["5 competitor research runs/month"]),
       "Analytics + priority generation",
       "Optional approval step + PDF export",
       "Qalam LinkedIn extension + 150 smart comments/month",
-      "20 LinkedIn positioning audits/month",
-      "20 ATS reviews + 10 targeted resumes/month",
-      "3 flexible career credits/quarter",
-      "Outcome intelligence + featured recruiter visibility",
-      "Recruiter search + career cohorts",
+      ...whileLive("career", [
+        "20 LinkedIn positioning audits/month",
+        "20 ATS reviews + 10 targeted resumes/month",
+        "3 flexible career credits/quarter",
+        "Outcome intelligence + featured recruiter visibility",
+        "Recruiter search + career cohorts",
+      ]),
     ],
     cta: "Start Pro",
     badge: "Most powerful",

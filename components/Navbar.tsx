@@ -9,8 +9,9 @@ import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { resolvePublicHref } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
+import { withoutFrozen } from "@/lib/frozen-surfaces"
 
-const PRODUCT_LINKS = alphabetical([
+const ALL_PRODUCT_LINKS = alphabetical([
   { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
   { label: "Career Visibility", href: "/career-visibility", desc: "Connect LinkedIn, content, resumes, and target roles" },
   { label: "LinkedIn Optimizer", href: "/linkedin-optimization", desc: "Improve positioning, search relevance, and proof" },
@@ -24,7 +25,7 @@ const PRODUCT_LINKS = alphabetical([
 // Trimmed to the audiences Qalam is actually positioned for. Universities,
 // recruiters, and job seekers still have live pages for search, but promoting
 // them here read as a job-hunting utility and blunted the publishing story.
-const USE_CASE_LINKS = alphabetical([
+const ALL_USE_CASE_LINKS = alphabetical([
   { label: "All Industries", href: "/industries", desc: "Find the Qalam workflow for your work" },
   { label: "Agencies", href: "/use-cases/agencies", desc: "Multi-client content operations at scale" },
   { label: "Career Coaches", href: "/use-cases/career-coaches", desc: "Repeatable client diagnostics and career assets" },
@@ -515,3 +516,6 @@ export function Navbar() {
     </div>
   )
 }
+
+const PRODUCT_LINKS = withoutFrozen(ALL_PRODUCT_LINKS, (link) => link.href)
+const USE_CASE_LINKS = withoutFrozen(ALL_USE_CASE_LINKS, (link) => link.href)

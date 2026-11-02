@@ -15,15 +15,20 @@ import { UPGRADES_EMAIL, MANUAL_UPGRADE_METHODS } from "@/lib/contact"
 import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
+import { isSurfaceFrozen, type FrozenSurface } from "@/lib/frozen-surfaces"
 
-const PRICING_FAQ = [
+const CAREER_LIVE = !isSurfaceFrozen("career")
+
+const ALL_PRICING_FAQ: { q: string; a: string; surface?: FrozenSurface }[] = [
   {
     q: "Why are there no client names or reviews with photos?",
     a: "Most clients publish under their own name, and some write for people who want that help kept private. We keep their names, faces, logos, and work out of our website, sales calls, and case studies. That applies to every plan. The feedback shared here came from conversations, so we describe it as a summary. Try the demo to see the product for yourself.",
   },
   {
     q: "Is there a free plan?",
-    a: "Yes. Free includes unlimited public ATS checks with abuse protection, 1 targeted resume per month, 10 active applications, a 15-item Evidence Vault, 5 AI posts, and core writing tools. No payment card is required.",
+    a: CAREER_LIVE
+      ? "Yes. Free includes unlimited public ATS checks with abuse protection, 1 targeted resume per month, 10 active applications, a 15-item Evidence Vault, 5 AI posts, and core writing tools. No payment card is required."
+      : "Yes. Free gives you 5 AI posts, 5 hook sets, 1 carousel and 5 content scores a month, plus the LinkedIn extension. No payment card is required.",
   },
   {
     q: "How much does Qalam cost?",
@@ -31,11 +36,15 @@ const PRICING_FAQ = [
   },
   {
     q: "Why does Qalam use quarterly billing?",
-    a: "Career visibility needs consistent work over several weeks. Quarterly billing keeps the entry price practical while giving enough time to improve LinkedIn, content, and resumes.",
+    a: CAREER_LIVE
+      ? "Career visibility needs consistent work over several weeks. Quarterly billing keeps the entry price practical while giving enough time to improve LinkedIn, content, and resumes."
+      : "A LinkedIn presence takes weeks of steady posting before it shows. A quarter is long enough to see whether it is working.",
   },
   {
     q: "What does Pro include that Solo doesn't?",
-    a: "Solo adds 3 targeted resumes per month, 5 ATS reviews, 1 flexible career credit per quarter, publishing, and basic analytics. Pro adds 10 resumes, 3 career credits per quarter, advanced outcome intelligence, featured recruiter visibility, cohorts, a configurable voice profile, research, and post performance analytics. Performance figures sync from LinkedIn for posts published through a connected Qalam account, and can be entered manually for anything published elsewhere.",
+    a: CAREER_LIVE
+      ? "Solo adds 3 targeted resumes per month, 5 ATS reviews, 1 flexible career credit per quarter, publishing, and basic analytics. Pro adds 10 resumes, 3 career credits per quarter, advanced outcome intelligence, featured recruiter visibility, cohorts, a configurable voice profile, research, and post performance analytics. Performance figures sync from LinkedIn for posts published through a connected Qalam account, and can be entered manually for anything published elsewhere."
+      : "Pro doubles your monthly posts to 60, raises carousels from 3 to 10, and saves a voice profile trained on your own posts. It also adds the optional approval step and PDF export. Performance figures sync from LinkedIn for posts published through a connected Qalam account, and can be entered manually for anything published elsewhere.",
   },
   {
     q: "Can I cancel anytime?",
@@ -43,7 +52,9 @@ const PRICING_FAQ = [
   },
   {
     q: "Which plan should I choose?",
-    a: "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows. Choose Agency if you manage multiple LinkedIn clients and need isolated workspaces, team seats, and an optional approval step.",
+    a: CAREER_LIVE
+      ? "Choose Solo for a serious personal job search and consistent publishing. Choose Pro for advanced career outcome intelligence, more resume versions, featured recruiter visibility, cohorts, and professional research workflows. Choose Agency if you manage multiple LinkedIn clients and need isolated workspaces, team seats, and an optional approval step."
+      : "Solo fits one post a day on weekdays. Pick Pro if you post more than that, or if you want drafts that sound like you from the first try.",
   },
   {
     q: "Is the Qalam LinkedIn extension included?",
@@ -51,10 +62,12 @@ const PRICING_FAQ = [
   },
   {
     q: "Can I buy a career tool without changing my plan?",
+    surface: "career",
     a: "Yes. Career add-ons are one-time software credits for a targeted resume, cover letter, interview pack, deep resume review, LinkedIn rewrite, or career strategy blueprint. Checkout is shown only when that product is configured for card payment.",
   },
   {
     q: "What is the Agency plan?",
+    surface: "agency",
     a: "Agency is for teams managing multiple LinkedIn clients. It includes 5 isolated workspaces, 5 configurable voice profiles, 300 posts per month, 50 carousels, an optional approval step, per-workspace performance analytics, and dedicated support. Apply through the Agency application form and we activate your workspaces after review.",
   },
   {
@@ -62,6 +75,8 @@ const PRICING_FAQ = [
     a: "Create a referral code inside Qalam. A referred customer gets 10% off their first paid purchase, and you earn 10% commission after their payment is confirmed.",
   },
 ]
+
+const PRICING_FAQ = ALL_PRICING_FAQ.filter((item) => !item.surface || !isSurfaceFrozen(item.surface))
 
 type PricingPageContentProps = {
   pricingCurrency?: { currencyCode?: string; label?: string }
@@ -237,7 +252,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <h1 className="mb-5 text-4xl font-extrabold text-zinc-900 sm:text-6xl">
               One system for
               {" "}
-              <span className="text-gold gold-underline">profile, content, and career growth.</span>
+              <span className="text-gold gold-underline">{CAREER_LIVE ? "profile, content, and career growth." : "writing and publishing on LinkedIn."}</span>
             </h1>
             <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
               Start with the complete loop. Upgrade for a repeatable publishing workflow, then advanced voice and intelligence.
@@ -282,11 +297,11 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 label: "Full workflow on Solo",
                 sub: "Draft, plan, publish, schedule, and keep every version connected",
               },
-              {
+              ...(CAREER_LIVE ? [{
                 icon: ShieldIcon,
                 label: "Career tools on every tier",
                 sub: "LinkedIn audits, ATS reviews, and one connected Career Vault",
-              },
+              }] : []),
             ].map((item) => {
               const Icon = item.icon
               return (
@@ -398,6 +413,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
 
       <section className="border-y border-zinc-100 bg-white px-6 py-20">
         <div className="mx-auto max-w-[1100px]">
+          {CAREER_LIVE ? <>
           <FadeUp className="mb-10 max-w-3xl">
             <span className="chip mb-4 border-gold/30 bg-gold-50 text-gold-700">Career add-ons</span>
             <h2 className="mt-3 text-3xl font-bold text-zinc-900 sm:text-4xl">Buy the exact career output you need.</h2>
@@ -437,6 +453,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               )
             })}
           </div>
+          </> : null}
 
           <FadeUp className="mt-8 flex flex-col gap-5 rounded-2xl bg-teal-800 p-7 text-white sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -445,7 +462,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
               <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Generate a personal code, track confirmed referrals, and request payouts from your Qalam settings.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-3">
-              <Link href={`${APP_URL}/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link>
+              {CAREER_LIVE ? <Link href={`${APP_URL}/career/add-ons`} className="rounded-xl bg-gold px-5 py-3 text-sm font-bold text-white">Open career add-ons</Link> : null}
               <Link href={`${APP_URL}/settings/referrals`} className="rounded-xl border border-white/25 px-5 py-3 text-sm font-bold text-white">Get referral code</Link>
             </div>
           </FadeUp>
@@ -491,8 +508,10 @@ export function PricingPageContent({}: PricingPageContentProps) {
               {[
                 { label: "LinkedIn positioning", cost: "Profile", note: "Audit clarity, search relevance, credibility, and alignment" },
                 { label: "Content workflow", cost: "Content", note: "Draft, score, revise, plan, and publish from one workspace" },
-                { label: "ATS career engine", cost: "Resume", note: "Review and tailor verified experience to a target job" },
-                { label: "Career intelligence", cost: "Growth", note: "Track evidence, recruiter visibility, and professional progress" },
+                ...(CAREER_LIVE ? [
+                  { label: "ATS career engine", cost: "Resume", note: "Review and tailor verified experience to a target job" },
+                  { label: "Career intelligence", cost: "Growth", note: "Track evidence, recruiter visibility, and professional progress" },
+                ] : []),
               ].map((item) => (
                 <div key={item.label} className="rounded-xl border border-zinc-100 bg-zinc-50 p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -509,7 +528,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <div className="mt-4 rounded-xl border-2 border-teal/20 bg-teal-50 p-5 text-center">
               <p className="text-sm text-zinc-600">Solo starts at</p>
               <p className="mt-1 text-2xl font-extrabold text-teal">$10 per quarter</p>
-              <p className="mt-1 text-xs text-zinc-400">One professional story across profile, content, and career assets.</p>
+              <p className="mt-1 text-xs text-zinc-400">{CAREER_LIVE ? "One professional story across profile, content, and career assets." : "Thirty drafts a month, written from what you actually did."}</p>
             </div>
           </FadeUp>
         </div>

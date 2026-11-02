@@ -15,6 +15,7 @@ import {
 import { APP_URL } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
+import { withoutFrozen } from "@/lib/frozen-surfaces"
 
 export const metadata: Metadata = {
   title: "Free ATS Resume Checker and Career Tools",
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   },
 }
 
-const TOOLS = alphabetical([
+const ALL_TOOLS = alphabetical([
   {
     icon: MicroscopeIcon,
     title: "ATS Resume Checker",
@@ -105,6 +106,7 @@ const TOOLS = alphabetical([
   },
 ], (tool) => tool.title)
 
+const TOOLS = withoutFrozen(ALL_TOOLS, (tool) => tool.href)
 const DISPLAY_TOOLS = [...TOOLS].sort((a, b) =>
   Number(b.href === "/free-tools/ats-resume-checker") - Number(a.href === "/free-tools/ats-resume-checker")
 )

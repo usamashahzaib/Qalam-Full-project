@@ -4,6 +4,7 @@ import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import { gaScriptHash } from "@/lib/csp-inline-scripts"
 import { PROTECTED_ROUTES } from "@/lib/protected-routes"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { safeRedirectPath } from "@/lib/validation"
 
 // ─── Redis rate limiters ─────────────────────────────────────────────────────
@@ -403,6 +404,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   }
 
   const { pathname } = request.nextUrl
+
+  // Paused surfaces (lib/frozen-surfaces.ts). Temporary redirects, so search engines keep
+  // the URLs if a surface comes back.
+  if (isFrozenPath(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return await addSecurityHeaders(NextResponse.json({ error: "Not found" }, { status: 404 }), false)
+    }
+    const destination = isAppHostPath(pathname) ? "/dashboard" : "/"
+    return await addSecurityHeaders(NextResponse.redirect(new URL(destination, request.url)))
+  }
 
   // Page-level domain split - only applies to page navigations, never to
   // /api/* (the same serverless functions answer both hosts, and pages only
