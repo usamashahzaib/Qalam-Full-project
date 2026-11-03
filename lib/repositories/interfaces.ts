@@ -82,6 +82,7 @@ export type VoiceProfileData = {
   goals: string[]
   samplePosts: string[]
   linkedinUrl: string
+  voiceTrained: boolean
 }
 
 export type VoiceProfileInput = {

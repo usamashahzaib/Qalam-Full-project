@@ -40,6 +40,11 @@ const toClientProfile = (row?: DbVoiceProfile | null): VoiceProfileData => ({
   goals: textArray(row?.goals),
   samplePosts: textArray(row?.sample_posts).length ? textArray(row?.sample_posts) : textArray(row?.example_posts),
   linkedinUrl: row?.linkedin_url ?? "",
+  voiceTrained: Boolean(
+    textArray(row?.sample_posts).length ||
+    textArray(row?.example_posts).length ||
+    (row?.characteristics && typeof row.characteristics === "object" && "tone" in row.characteristics)
+  ),
 })
 
 export class SupabaseVoiceProfileRepository implements IVoiceProfileRepository {

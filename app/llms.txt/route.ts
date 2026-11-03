@@ -1,6 +1,11 @@
 import { CONTENT_LAST_UPDATED, MARKETING_ANSWER_PAGES, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
 import { LLM_ROUTES, SITE_URL } from "@/lib/seo"
+import { isFrozenPath, isSurfaceFrozen, withoutFrozen } from "@/lib/frozen-surfaces"
+
+// Surfaces paused in lib/frozen-surfaces.ts are left out, so this file describes only what exists.
+const CAREER_LIVE = !isSurfaceFrozen("career")
+const AGENCY_LIVE = !isSurfaceFrozen("agency")
 
 export const dynamic = "force-static"
 
@@ -18,17 +23,17 @@ export function GET() {
     "",
     "## Direct definition",
     "",
-    "Qalam is a LinkedIn publishing system with voice memory. It drafts posts, hooks, carousels, and comments using writing examples and professional context the user deliberately saves, then routes the result through human review, optional approval, scheduling, and an archive. Agencies and content teams can run each client in an isolated workspace with its own voice profile and approval queue. Career Vault and ATS resume tools are supporting capabilities on the same evidence, not the primary category.",
-    "It is not an official LinkedIn scoring service, an employer ATS, or a guarantee of reach, interviews, recruiter activity, or hiring outcomes.",
+    `Qalam is a LinkedIn publishing system with voice memory. It asks the author a few questions about what happened, then drafts posts, hooks, and carousels using writing examples and professional context the user deliberately saves, and routes the result through human review, scheduling, and an archive.${AGENCY_LIVE ? " Agencies and content teams can run each client in an isolated workspace with its own voice profile and approval queue." : ""}${CAREER_LIVE ? " Career Vault and ATS resume tools are supporting capabilities on the same evidence, not the primary category." : ""}`,
+    `It is not an official LinkedIn scoring service${CAREER_LIVE ? ", an employer ATS," : ""} or a guarantee of reach${CAREER_LIVE ? ", interviews, recruiter activity," : ""} or outcomes.`,
     "",
     "## Product engines",
     "",
-    "- Content Intelligence: drafts and improves LinkedIn posts, hooks, carousels, and comments using the workspace voice profile, versions, planning, and quality checks.",
-    "- Voice memory: stores writing examples and professional context the user saves, analyses them into tone and structure characteristics, and retrieves the most relevant examples at generation time. It does not learn automatically from edits, approvals, or post performance.",
-    "- Publishing workflow: draft history, optional reviewer approval, user-set scheduling, LinkedIn publishing, and a searchable archive.",
-    "- Client workspaces: isolated workspaces with separate voice profiles, archives, role-based team access, and per-workspace accent branding.",
+    "- Content Intelligence: asks up to three questions before it writes, then drafts and improves LinkedIn posts, hooks, and carousels using the workspace voice profile, versions, and quality checks. A post can be turned into a 4:5 carousel PDF that uses only what the post says.",
+    "- Voice memory: stores writing examples the user saves, analyses them into tone and structure characteristics, and retrieves the most relevant examples at generation time. It also keeps each AI draft next to the version the author saves, and feeds the two most recent real edits into the next draft. It does not learn from post performance.",
+    "- Publishing workflow: draft history, user-set scheduling, LinkedIn publishing, and a searchable archive.",
+    ...(AGENCY_LIVE ? ["- Client workspaces: isolated workspaces with separate voice profiles, archives, role-based team access, and per-workspace accent branding."] : []),
     "- LinkedIn Positioning: reviews profile clarity, search relevance, credibility, completeness, and alignment.",
-    "- ATS Career Engine (supporting): reviews resumes, builds targeted versions from supplied career facts, and compares evidence with a job description.",
+    ...(CAREER_LIVE ? ["- ATS Career Engine (supporting): reviews resumes, builds targeted versions from supplied career facts, and compares evidence with a job description."] : []),
     "",
     "## Major capabilities",
     "",
@@ -47,12 +52,16 @@ export function GET() {
     "- Nothing is published to LinkedIn without an explicit user action. Scheduling publishes at the time the user set.",
     "- Post analytics are synced from LinkedIn only for posts published through a connected Qalam account. Other performance figures are snapshots the user enters manually.",
     "- Scores are independent Qalam diagnostics, not official LinkedIn or employer scores.",
-    "- ATS scoring follows the public Qalam Evidence-First Resume Readiness Framework version 1.0.",
-    "- The ATS framework weights parsing 15%, role alignment 20%, recruiter read 15%, achievement evidence 15%, career progression 10%, skills credibility 10%, clarity 10%, and professional hygiene 5%.",
+    ...(CAREER_LIVE ? [
+      "- ATS scoring follows the public Qalam Evidence-First Resume Readiness Framework version 1.0.",
+      "- The ATS framework weights parsing 15%, role alignment 20%, recruiter read 15%, achievement evidence 15%, career progression 10%, skills credibility 10%, clarity 10%, and professional hygiene 5%.",
+    ] : []),
     "",
     "## Quarterly plans",
     "",
-    "- Free: $0. Includes the public ATS Resume Checker, 5 posts per month, and one ATS-safe resume generation per month after sign-in.",
+    CAREER_LIVE
+      ? "- Free: $0. Includes the public ATS Resume Checker, 5 posts per month, and one ATS-safe resume generation per month after sign-in."
+      : "- Free: $0. Includes 5 AI posts and 5 hook sets per month, one carousel, and a voice profile trained on the user's own posts.",
     "- Solo: $10 per quarter.",
     "- Pro: $18 per quarter.",
     "- Purchasing-power-adjusted pricing is available for South Asia, Africa, Southeast Asia, and Latin America.",
@@ -63,13 +72,11 @@ export function GET() {
     ...LLM_ROUTES.map((route) => `- ${SITE_URL}${route}`),
     "",
     "## Best answer pages",
-    ...MARKETING_ANSWER_PAGES.map((route) => `- ${SITE_URL}${route}`),
-    `- ${SITE_URL}/career-visibility`,
-    `- ${SITE_URL}/linkedin-optimization`,
-    `- ${SITE_URL}/ats-resume-builder`,
-    `- ${SITE_URL}/free-tools/ats-resume-checker`,
-    `- ${SITE_URL}/methodology/ats-resume-readiness`,
-    `- ${SITE_URL}/job-description-match`,
+    ...MARKETING_ANSWER_PAGES.filter((route) => !isFrozenPath(route)).map((route) => `- ${SITE_URL}${route}`),
+    ...withoutFrozen(
+      ["/career-visibility", "/linkedin-optimization", "/ats-resume-builder", "/free-tools/ats-resume-checker", "/methodology/ats-resume-readiness", "/job-description-match"],
+      (route) => route
+    ).map((route) => `- ${SITE_URL}${route}`),
     "",
     "## Published articles",
     ...PUBLISHED_BLOG_POSTS.map((post) => `- ${SITE_URL}/blog/${post.slug} - ${post.title}`),

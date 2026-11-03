@@ -28,10 +28,10 @@ export async function PUT(request: NextRequest) {
     const normalizedLinkedinUrl = normalizeLinkedInUrl(trimmedLinkedinUrl)
 
     // Basic identity (name, title, industry, tone, goals, linkedinUrl) is free for all
-    // authenticated users. Only actual voice training (sample posts) requires Pro.
+    // authenticated users, and so is training from sample posts.
     const hasVoiceTraining = Array.isArray(samplePosts) && samplePosts.length > 0
     if (hasVoiceTraining) {
-      const planCheck = await requirePlan(request, "Pro")
+      const planCheck = await requirePlan(request, "Free")
       if (!planCheck.ok) return planCheck.response
     } else {
       await requireAuth()

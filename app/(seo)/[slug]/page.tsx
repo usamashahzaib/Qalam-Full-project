@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
 import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata, resolvePublicHref, APP_URL } from "@/lib/seo"
 
 type Params = { slug: keyof typeof SEO_LANDING_PAGES }
@@ -41,6 +42,13 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
     { name: page.title, path: `/${slug}` },
   ])
   const faqSchema = buildFaqSchema(page.faqs)
+  // The second button points at Career when that is live, and at the writer while it is paused.
+  const methodologyHref = page.methodology?.href
+  const secondaryAction = methodologyHref && !isFrozenPath(methodologyHref)
+    ? { href: methodologyHref, label: page.methodology?.label || "Learn more" }
+    : isFrozenPath("/career-visibility")
+      ? { href: "/ai-linkedin-writer", label: "See how Qalam writes" }
+      : { href: "/career-visibility", label: "Explore Career Visibility" }
   const toolHref = page.tool?.href ? resolvePublicHref(page.tool.href) : undefined
   const toolUrl = toolHref?.startsWith("http") ? toolHref : absoluteUrl(toolHref)
   const webPageSchema = {
@@ -86,8 +94,8 @@ export default async function SeoLandingPage({ params }: { params: Promise<Param
                 <Link href={toolHref || `${APP_URL}/login`} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-teal px-7 py-3.5 font-bold text-white transition-colors hover:bg-teal-600">
                   {page.tool?.label || "Start free"}
                 </Link>
-                <Link href={page.methodology?.href || "/career-visibility"} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
-                  {page.methodology?.label || "Explore Career Visibility"}
+                <Link href={secondaryAction.href} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-zinc-200 px-7 py-3.5 font-semibold text-zinc-700 transition-colors hover:border-teal/40 hover:bg-teal/5">
+                  {secondaryAction.label}
                 </Link>
               </div>
             </FadeUp>

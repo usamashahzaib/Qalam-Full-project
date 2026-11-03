@@ -97,7 +97,7 @@ export const plans: Plan[] = [
       "5 AI posts + 5 hook sets/month",
       "1 carousel + 5 content scores/month",
       "Qalam LinkedIn extension + 10 smart comments/month",
-      "Basic Voice Profile",
+      "Voice profile trained on your own posts",
       ...whileLive("career", [
         "Career Vault",
         "1 LinkedIn positioning audit/month",
@@ -284,11 +284,11 @@ export const PLANS: PricingPlan[] = publicPlans.map((plan) => ({
   period: plan.monthlyPrice === 0 ? "forever" : plan.monthlyPrice == null ? "" : "month",
   description:
     plan.name === "Free"
-      ? "Test the full career visibility loop before paying."
+      ? (isSurfaceFrozen("career") ? "Write real posts in your own voice before you pay for anything." : "Test the full career visibility loop before paying.")
       : plan.name === "Solo"
         ? "Create, plan, and publish a consistent professional presence."
         : plan.name === "Pro"
-          ? "Turn saved voice context, data, and career signals into an operating advantage."
+          ? (isSurfaceFrozen("career") ? "More drafts, full analytics, and an approval step for the posts that matter." : "Turn saved voice context, data, and career signals into an operating advantage.")
           : "For teams managing multiple workspaces and approvals.",
   audience: plan.audience,
   featureLead: plan.featureLead,
@@ -317,7 +317,7 @@ export const PLAN_FEATURES: Record<string, string[]> = Object.fromEntries(
   plans.map((plan) => [plan.name, plan.features])
 )
 
-export const COMPARISON_ROWS = [
+const ALL_COMPARISON_ROWS = [
   {
     group: "Creation",
     label: "Posts per month",
@@ -369,8 +369,8 @@ export const COMPARISON_ROWS = [
   {
     group: "Creation",
     label: "Voice profiles",
-    free: "Basic profile",
-    solo: "Basic profile",
+    free: "1 trained profile",
+    solo: "1 trained profile",
     pro: "1 trained profile",
     agency: "5 trained profiles",
   },
@@ -544,6 +544,14 @@ export const COMPARISON_ROWS = [
   },
 ]
 
+// Rows for paused surfaces (lib/frozen-surfaces.ts) stay out of the comparison until they return.
+const ROW_SURFACE: Record<string, FrozenSurface> = { Career: "career" }
+const ROW_LABEL_SURFACE: Record<string, FrozenSurface> = { "AI Strategist": "chat", "Competitor research": "competitors", "Client workspaces": "agency" }
+export const COMPARISON_ROWS = ALL_COMPARISON_ROWS.filter((row) => {
+  const surface = ROW_LABEL_SURFACE[row.label] ?? ROW_SURFACE[row.group]
+  return !surface || !isSurfaceFrozen(surface)
+})
+
 export const formatPrice = (amount: number | null | undefined): string => {
   if (amount == null) return "Contact Us"
   if (amount === 0) return "Free"
@@ -635,11 +643,11 @@ export type PlanEnforcement = {
 export const PLAN_CONFIG: Record<PlanTier, PlanEnforcement> = {
   Free: {
     limits: { drafts: 5, carousels: 1, hooks: 5, analyses: 5 },
-    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "none", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
+    flags: { linkedinPublish: false, scheduling: false, approvals: false, canExport: false, analyticsDepth: "none", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 5 },
   },
   Solo: {
     limits: { drafts: 30, carousels: 3, hooks: 30, analyses: 10 },
-    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: false, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
+    flags: { linkedinPublish: true, scheduling: true, approvals: false, canExport: false, analyticsDepth: "basic", voiceTraining: true, competitorResearch: false, clientWorkspaces: 0, seats: 1, researchRuns: 0, carouselSlides: 7 },
   },
   Pro: {
     limits: { drafts: 60, carousels: 10, hooks: 60, analyses: 20 },

@@ -6,10 +6,8 @@ import { getPlanLimits } from "@/lib/entitlements"
 const source = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8")
 
 describe("voice entitlement wiring", () => {
-  it("keeps trained voice Pro-only", () => {
-    expect(getPlanLimits("Free").voiceTraining).toBe(false)
-    expect(getPlanLimits("Solo").voiceTraining).toBe(false)
-    expect(getPlanLimits("Pro").voiceTraining).toBe(true)
+  it("trains voice on every plan", () => {
+    for (const plan of ["Free", "Solo", "Pro", "Agency"] as const) expect(getPlanLimits(plan).voiceTraining).toBe(true)
   })
 
   it("keeps the basic Voice Profile page open in desktop navigation", () => {
@@ -18,8 +16,11 @@ describe("voice entitlement wiring", () => {
     expect(appShell).not.toContain('{ href: "/voice", label: "Voice Profile", icon: VoiceIcon, requiredPlan:')
   })
 
-  it("locks only voice training controls to Pro", () => {
-    const page = source("app/(app)/voice/page.tsx")
-    expect(page).toContain('<LockedFeature requiredPlan="Pro" feature="Voice Training">')
+  it("does not lock the voice page or its routes behind Pro", () => {
+    expect(source("app/(app)/voice/page.tsx")).not.toContain("LockedFeature")
+    for (const route of ["app/api/voice/save/route.ts", "app/api/voice/analyze/route.ts", "app/api/voice-profile/route.ts"]) {
+      expect(source(route)).not.toContain('requirePlan(request, "Pro")')
+      expect(source(route)).not.toContain('requirePlan(req, "Pro")')
+    }
   })
 })

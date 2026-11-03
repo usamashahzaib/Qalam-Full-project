@@ -5,6 +5,11 @@ import { SITE_URL, APP_URL } from "@/lib/seo"
 import { AGENCY_PLAN_LIVE, PLANS, plans as ALL_PLANS, formatPrice } from "@/lib/pricing"
 import { CAREER_PRODUCTS } from "@/lib/career-pricing"
 import { isAddonSelfServe } from "@/lib/career-checkout"
+import { isSurfaceFrozen } from "@/lib/frozen-surfaces"
+
+// Career is paused (lib/frozen-surfaces.ts), so its copy stays out of the page metadata until it returns.
+const CAREER_LIVE = !isSurfaceFrozen("career")
+const WHAT_PLANS_COVER = CAREER_LIVE ? "LinkedIn optimization, content, ATS resumes, and career visibility" : "LinkedIn writing, voice, carousels, and scheduling"
 
 const freePlan = PLANS.find((plan) => plan.plan === "Free")
 const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
@@ -16,25 +21,27 @@ const proPrice = proPlan ? formatPrice(proPlan.quarterlyUsd) : "$18"
 const agencyPrice = agencyPlan ? formatPrice(agencyPlan.quarterlyPrice) : "$38"
 const liveCareerAddons = CAREER_PRODUCTS.filter((addon) => isAddonSelfServe(addon.key))
 
+const OG_TITLE = CAREER_LIVE ? "Qalam Pricing - Career Visibility Plans" : "Qalam Pricing - LinkedIn Writing Plans"
+
 export const metadata: Metadata = {
   title: AGENCY_PLAN_LIVE ? `Quarterly Pricing | Free to Agency` : `Quarterly Pricing | Free to ${soloPrice}`,
   description:
     AGENCY_PLAN_LIVE
-      ? `Quarterly pricing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} for LinkedIn optimization, content, ATS resumes, and career visibility.`
-      : `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for LinkedIn optimization, content, ATS resumes, and career visibility. Purchasing-power-adjusted pricing available.`,
+      ? `Quarterly pricing. Solo is ${soloPrice}, Pro is ${proPrice}, and Agency is ${agencyPrice} for ${WHAT_PLANS_COVER}.`
+      : `Quarterly pricing. Solo is ${soloPrice} and Pro is ${proPrice} per quarter for ${WHAT_PLANS_COVER}. Purchasing-power-adjusted pricing available.`,
   alternates: { canonical: `${SITE_URL}/pricing` },
   openGraph: {
-    images: [{ url: buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing"), width: 1200, height: 630, alt: "Qalam Pricing - Career Visibility Plans" }],
-    title: "Qalam Pricing - Career Visibility Plans",
+    images: [{ url: buildOgImageUrl(OG_TITLE, "Qalam", "pricing"), width: 1200, height: 630, alt: OG_TITLE }],
+    title: OG_TITLE,
     description:
       AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
     url: `${SITE_URL}/pricing`,
     type: "website",
   },
   twitter: {
-    images: [buildOgImageUrl("Qalam Pricing - Career Visibility Plans", "Qalam", "pricing")],
+    images: [buildOgImageUrl(OG_TITLE, "Qalam", "pricing")],
     card: "summary_large_image",
-    title: "Qalam Pricing - Career Visibility Plans",
+    title: OG_TITLE,
     description:
       AGENCY_PLAN_LIVE ? `Free includes ${freeDrafts}. Agency is ${agencyPrice} per quarter after reviewed onboarding.` : `Free includes ${freeDrafts}. Solo is ${soloPrice} per quarter.`,
   },
@@ -91,17 +98,19 @@ const pricingFaqSchema = {
       name: "What is included in the Pro plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: `Pro at ${proPrice} per quarter includes LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, three flexible career credits per quarter, content intelligence, post performance analytics, and an optional approval step.`,
+        text: `Pro at ${proPrice} per quarter includes ${CAREER_LIVE ? "LinkedIn optimization, 60 AI drafts, 10 carousels, voice memory, ATS resume targeting, three flexible career credits per quarter," : "60 AI drafts, 10 carousels, voice memory,"} content intelligence, post performance analytics, and an optional approval step.`,
       },
     },
-    {
-      "@type": "Question",
-      name: "Can I buy one career tool without upgrading?",
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "Yes. Qalam offers individual software credits and discounted Application, Job-Win, Career Reset, and Executive Career Reset packs. Each output is generated and saved inside Qalam.",
-      },
-    },
+    ...(CAREER_LIVE
+      ? [{
+          "@type": "Question",
+          name: "Can I buy one career tool without upgrading?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes. Qalam offers individual software credits and discounted Application, Job-Win, Career Reset, and Executive Career Reset packs. Each output is generated and saved inside Qalam.",
+          },
+        }]
+      : []),
     {
       "@type": "Question",
       name: "Does Qalam have a referral program?",
@@ -127,7 +136,9 @@ const productSchema = {
   "@context": "https://schema.org",
   "@type": "Product",
   name: "Qalam",
-  description: "Exact monthly limits for every Qalam plan. LinkedIn drafting, voice profiles, carousels, comments, approvals, scheduling, and client workspaces.",
+  description: AGENCY_PLAN_LIVE
+    ? "Exact monthly limits for every Qalam plan. LinkedIn drafting, voice profiles, carousels, comments, approvals, scheduling, and client workspaces."
+    : "Exact monthly limits for every Qalam plan. LinkedIn drafting, voice profiles, carousels, comments, approvals, and scheduling.",
   image: `${SITE_URL}/icon.png`,
   url: `${SITE_URL}/pricing`,
   brand: { "@type": "Brand", name: "Qalam" },
@@ -165,7 +176,7 @@ const productSchema = {
       price: String(proPlan?.quarterlyUsd ?? 18),
       priceCurrency: "USD",
       availability: "https://schema.org/InStock",
-      description: "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
+      description: isSurfaceFrozen("chat") ? "60 drafts, voice memory, analytics, approvals." : "60 drafts, voice memory, AI Strategist, competitor research, analytics, approvals.",
       url: `${SITE_URL}/pricing`,
     },
     ...(AGENCY_PLAN_LIVE

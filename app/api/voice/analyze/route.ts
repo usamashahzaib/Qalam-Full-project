@@ -21,7 +21,7 @@ type Characteristics = {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (req, user) => {
-    const planCheck = await requirePlan(req, "Pro")
+    const planCheck = await requirePlan(req, "Free")
     if (!planCheck.ok) return planCheck.response
     const roleError = await authorizeRole(req, planCheck.workspaceId, "editor")
     if (roleError) return roleError

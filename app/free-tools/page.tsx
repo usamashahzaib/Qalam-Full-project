@@ -15,27 +15,36 @@ import {
 import { APP_URL } from "@/lib/seo"
 import { SITE_URL } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
-import { withoutFrozen } from "@/lib/frozen-surfaces"
+import { isSurfaceFrozen, withoutFrozen } from "@/lib/frozen-surfaces"
+
+// The ATS Resume Checker is paused with the rest of Career (lib/frozen-surfaces.ts), so this page
+// stops selling it until it comes back.
+const CAREER_LIVE = !isSurfaceFrozen("career")
+const PAGE_TITLE = CAREER_LIVE ? "Free ATS Resume Checker and Career Tools" : "Free LinkedIn Writing Tools"
+const PAGE_DESCRIPTION = CAREER_LIVE
+  ? "Start with Qalam's free ATS Resume Checker, then improve your LinkedIn profile, writing, carousels, and engagement. Most tools need no account."
+  : "Free LinkedIn hook generator, comment helper, and profile analysis. Most tools need no account."
 
 export const metadata: Metadata = {
-  title: "Free ATS Resume Checker and Career Tools",
-  description:
-    "Start with Qalam's free ATS Resume Checker, then improve your LinkedIn profile, writing, carousels, and engagement. Most tools need no account.",
+  title: PAGE_TITLE,
+  description: PAGE_DESCRIPTION,
   alternates: { canonical: `${SITE_URL}/free-tools` },
   openGraph: {
-    images: [{ url: buildOgImageUrl("Free ATS Resume Checker and Career Tools | Qalam", "Qalam", "free-tools"), width: 1200, height: 630, alt: "Free ATS Resume Checker and Career Tools | Qalam" }],
-    title: "Free ATS Resume Checker and Career Tools | Qalam",
-    description:
-      "Start with a recruiter-grade ATS resume check, then use seven focused LinkedIn tools. Most work with no sign-in.",
+    images: [{ url: buildOgImageUrl(`${PAGE_TITLE} | Qalam`, "Qalam", "free-tools"), width: 1200, height: 630, alt: `${PAGE_TITLE} | Qalam` }],
+    title: `${PAGE_TITLE} | Qalam`,
+    description: CAREER_LIVE
+      ? "Start with a recruiter-grade ATS resume check, then use seven focused LinkedIn tools. Most work with no sign-in."
+      : "Free tools for LinkedIn hooks, comments, and profile clarity. Most work with no sign-in.",
     url: `${SITE_URL}/free-tools`,
     type: "website",
   },
   twitter: {
-    images: [buildOgImageUrl("Free ATS Resume Checker and Career Tools | Qalam", "Qalam", "free-tools")],
+    images: [buildOgImageUrl(`${PAGE_TITLE} | Qalam`, "Qalam", "free-tools")],
     card: "summary_large_image",
-    title: "Free ATS Resume Checker and Career Tools | Qalam",
-    description:
-      "Free ATS resume check, profile analysis, writing tools, and engagement checks. Most need no account.",
+    title: `${PAGE_TITLE} | Qalam`,
+    description: CAREER_LIVE
+      ? "Free ATS resume check, profile analysis, writing tools, and engagement checks. Most need no account."
+      : "Free hook, comment, and profile tools for LinkedIn. Most need no account.",
   },
 }
 
@@ -114,9 +123,10 @@ const DISPLAY_TOOLS = [...TOOLS].sort((a, b) =>
 const freeToolsSchema = {
   "@context": "https://schema.org",
   "@type": "CollectionPage",
-  name: "Free ATS Resume and LinkedIn Tools by Qalam",
-  description:
-    "Eight free career tools led by an ATS Resume Checker, plus LinkedIn writing, profile, carousel, and engagement tools.",
+  name: CAREER_LIVE ? "Free ATS Resume and LinkedIn Tools by Qalam" : "Free LinkedIn Tools by Qalam",
+  description: CAREER_LIVE
+    ? "Eight free career tools led by an ATS Resume Checker, plus LinkedIn writing, profile, carousel, and engagement tools."
+    : `${TOOLS.length} free tools for LinkedIn writing, profile, carousel, and comment work.`,
   url: "https://www.byqalam.com/free-tools",
   mainEntity: {
     "@type": "ItemList",
@@ -147,12 +157,14 @@ export default function FreeToolsPage() {
               Free tools · most need no account
             </span>
             <h1 className="mb-5 text-5xl font-extrabold leading-tight text-zinc-900 sm:text-6xl">
-              Check your resume first.
+              {CAREER_LIVE ? "Check your resume first." : "Start with a better opening line."}
               <br />
-              <span className="text-gold gold-underline">Then strengthen your visibility.</span>
+              <span className="text-gold gold-underline">{CAREER_LIVE ? "Then strengthen your visibility." : "Then write the whole post."}</span>
             </h1>
             <p className="mb-8 max-w-2xl font-cormorant text-2xl italic leading-relaxed text-zinc-500">
-              Start with the free ATS Resume Checker. Then use focused tools to improve your LinkedIn profile, writing, and visibility.
+              {CAREER_LIVE
+                ? "Start with the free ATS Resume Checker. Then use focused tools to improve your LinkedIn profile, writing, and visibility."
+                : "Try the free hook generator, then use the other tools to sharpen your LinkedIn profile, comments, and carousels."}
             </p>
             <div className="flex flex-wrap gap-3">
               {["Most need no sign-up", "Instant results", "Real routes", "Zero cost"].map(

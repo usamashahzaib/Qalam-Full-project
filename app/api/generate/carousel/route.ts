@@ -14,6 +14,10 @@ import { LINKEDIN_POSITIONING_RULES } from "@/lib/prompts/role-aware-system"
 import { CAROUSEL_SYSTEM_PROMPT } from "@/lib/prompts/builders/carousel"
 import { authorizeRole } from "@/lib/server/roles"
 import { incrementWorkspaceUsage, decrementWorkspaceUsage } from "@/lib/server/workspace-usage"
+import { authorFacts, authorStory, sourceMaterial } from "@/lib/prompts/writing-policy"
+import { checkGrounding, repairBrief, type Defect } from "@/lib/prompts/output-checks"
+import { cleanStory } from "@/lib/interview"
+import { checkSlides, MAX_COVER_WORDS, MAX_SLIDE_WORDS } from "@/lib/carousel-deck"
 
 type Slide = {
   number: number
@@ -40,6 +44,9 @@ export async function POST(request: NextRequest) {
     const topic = String(body.topic || "").trim()
     const role = String(body.role || "").trim() || "professional"
     const goal = String(body.goal || "").trim().slice(0, 500)
+    const story = cleanStory(body.story)
+    // A finished post to turn into slides. Its facts are the only ones the slides may use.
+    const sourcePost = typeof body.sourcePost === "string" ? body.sourcePost.trim().slice(0, 3000) : ""
 
     if (!topic || topic.length < 3) {
       return NextResponse.json({ error: "Topic must be at least 3 characters" }, { status: 400 })
@@ -67,10 +74,13 @@ export async function POST(request: NextRequest) {
 
 ${professionalContext}
 
-${LINKEDIN_POSITIONING_RULES}`
+${LINKEDIN_POSITIONING_RULES}
+
+${authorStory(story)}`
 
     const userMsg = `Create a 5-7 slide LinkedIn carousel on "${topic}" for a ${role}.
 ${goal ? `Content intent and outcome: ${goal}` : ""}
+${sourcePost ? `\nTurn this post into the carousel. Keep its argument and its order. Use only the facts and numbers it contains, and keep the author's own wording where it is strong. Do not add a statistic, example or story it does not have.\n${sourceMaterial("The post", sourcePost)}\n` : ""}
 
 Rules:
 - Slide 1: Hook only - title max 5 words, body max 15 words, visual_suggestion: "Scroll-stopper image"
@@ -107,13 +117,53 @@ Return JSON:
       return NextResponse.json({ error: "Carousel generation returned no slides" }, { status: 502 })
     }
 
-    const slides = parsed.slides.slice(0, 7).map((s, i) => ({
-      number: s.number || i + 1,
+    const normalize = (items: Slide[]) => items.slice(0, 7).map((s, i) => ({
+      number: i + 1,
       title: String(s.title || "").trim(),
       body: String(s.body || "").trim(),
       visual_suggestion: String(s.visual_suggestion || "").trim(),
     }))
+    let slides = normalize(parsed.slides)
 
-    return NextResponse.json({ slides, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
+    // Layout rules plus the same grounding check posts get: a figure or a cited study the author
+    // never gave is removed. One repair pass, kept only if it leaves fewer problems.
+    const sources = [topic, goal, story, sourcePost, authorFacts(voiceProfile)].filter(Boolean).join("\n")
+    const brief = [topic, goal, story, sourcePost].filter(Boolean).join("\n")
+    const findProblems = (items: typeof slides) => {
+      const text = items.map((s) => [s.title, s.body].filter(Boolean).join(". ")).join("\n")
+      const grounding: Defect[] = checkGrounding(text, sources, { brief })
+      return { layout: checkSlides(items), grounding }
+    }
+    let problems = findProblems(slides)
+    if (problems.layout.length || problems.grounding.length) {
+      try {
+        const fixes = [
+          ...problems.layout.map((issue) => `- ${issue.message}`),
+          ...(problems.grounding.length ? [repairBrief(problems.grounding)] : []),
+        ].join("\n")
+        const repairMsg = `Fix only these problems in the carousel below and return the full corrected carousel in the same JSON shape. Cover title ${MAX_COVER_WORDS} words or fewer. Every other slide ${MAX_SLIDE_WORDS} words or fewer in total. Keep slide order, facts and wording that already work.\n\nPROBLEMS:\n${fixes}\n\nCAROUSEL:\n${JSON.stringify({ slides })}`
+        const repairedRaw = await callAi("post-improvement", system, repairMsg, {
+          json: true, temperature: 0.3, maxTokens: 1400,
+          userId: user.id, plan: planCheck.plan, cache: false,
+        })
+        const repaired = safeParseJson<{ slides: Slide[] }>(repairedRaw)
+        if (repaired?.slides?.length) {
+          const candidate = normalize(repaired.slides)
+          const candidateProblems = findProblems(candidate)
+          if (candidateProblems.layout.length + candidateProblems.grounding.length < problems.layout.length + problems.grounding.length) {
+            slides = candidate
+            problems = candidateProblems
+          }
+        }
+      } catch {
+        // Keep the first version. The editor shows what is left.
+      }
+    }
+    const issues = [
+      ...problems.layout,
+      ...problems.grounding.map((defect) => ({ slide: 0, code: defect.code, message: defect.detail })),
+    ]
+
+    return NextResponse.json({ slides, issues, remaining: usage.remaining, totalSlides: slides.length, availableSlides: planCheck.limits.carouselSlides })
   })(request)
 }

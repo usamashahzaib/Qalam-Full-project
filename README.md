@@ -55,7 +55,7 @@ Fill `.env.local` from `.env.example`. Without Supabase, AI, and LinkedIn creden
 | `lib/server/` | Server-only helpers: auth, workspace, LinkedIn, payments, Supabase, agency |
 | `proxy.ts` | Host routing, route protection, security headers |
 | `supabase/migrations/` | Database schema history |
-| `docs/` | Product, positioning, design, and audit documents |
+| `docs/` | Product, positioning, design, and audit documents. Start with `docs/FOCUS.md`; older plans are in `docs/archive/` |
 | `scripts/` | Readiness checks, git hooks, evals |
 
 ## Sources of truth

@@ -1,3 +1,5 @@
+import { withoutFrozen } from "@/lib/frozen-surfaces"
+
 export type CapabilityKey =
   | "ats-checker"
   | "resume-builder"
@@ -140,11 +142,14 @@ const CAPABILITY_ORDER: CapabilityKey[] = [
   "jd-match",
 ]
 
-export const CAPABILITIES: Capability[] = CAPABILITY_ORDER.map(
-  (key) => CAPABILITY_DEFINITIONS.find((capability) => capability.key === key)!
+// Paused surfaces (lib/frozen-surfaces.ts) drop out of every public directory built from these
+// lists, so a crawler or a visitor is never sent to a page that now redirects.
+export const CAPABILITIES: Capability[] = withoutFrozen(
+  CAPABILITY_ORDER.map((key) => CAPABILITY_DEFINITIONS.find((capability) => capability.key === key)!),
+  (capability) => capability.href
 )
 
-export const INDUSTRIES: Industry[] = [
+const ALL_INDUSTRIES: Industry[] = [
   {
     slug: "job-seekers",
     name: "Job Seekers",
@@ -218,5 +223,7 @@ export const INDUSTRIES: Industry[] = [
     workflows: ["Shared content system", "Executive voice", "Version review", "Scheduling"],
   },
 ]
+
+export const INDUSTRIES: Industry[] = withoutFrozen(ALL_INDUSTRIES, (industry) => `/use-cases/${industry.slug}`)
 
 export const DISCOVERY_UPDATED_AT = "2026-08-18"

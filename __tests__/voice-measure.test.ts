@@ -4,7 +4,7 @@ vi.mock("@/lib/server/supabase-rest", () => ({ createServiceClient: vi.fn() }))
 vi.mock("@/lib/server/agency/voice-passport", () => ({ getPromptPassport: vi.fn() }))
 
 import { applyVoiceMechanics, measureVoice, wordTargetFor } from "@/lib/voice-measure"
-import { toPromptVoiceProfile, voiceTrainingAllowed } from "@/lib/server/voice-profile"
+import { toPromptVoiceProfile, voicePassportAllowed } from "@/lib/server/voice-profile"
 import { checkSampleEcho } from "@/lib/prompts/output-checks"
 import { buildPostFromHookPrompt } from "@/lib/prompts/role-aware-system"
 import { authorContext } from "@/lib/prompts/writing-policy"
@@ -125,12 +125,12 @@ describe("voice profile by plan", () => {
     expect(context).toContain("never use hashtags")
   })
 
-  it("gates training on plan", () => {
-    expect(voiceTrainingAllowed("Free")).toBe(false)
-    expect(voiceTrainingAllowed("solo")).toBe(false)
-    expect(voiceTrainingAllowed("Pro")).toBe(true)
-    expect(voiceTrainingAllowed("agency")).toBe(true)
-    expect(voiceTrainingAllowed(undefined)).toBe(true)
+  it("keeps the client voice passport for Pro and Agency", () => {
+    expect(voicePassportAllowed("Free")).toBe(false)
+    expect(voicePassportAllowed("solo")).toBe(false)
+    expect(voicePassportAllowed("Pro")).toBe(true)
+    expect(voicePassportAllowed("agency")).toBe(true)
+    expect(voicePassportAllowed(undefined)).toBe(true)
   })
 
   it("sets the post length from the author, not the format default", () => {

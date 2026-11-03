@@ -44,12 +44,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const text = (value: unknown, max = 300) => typeof value === "string" ? value.trim().slice(0, max) : ""
 
 /**
- * Voice training (samples, analysis, passport) is a Pro feature at save time, so it is a Pro
- * feature at generation time too. The basic profile every plan can save (title, industry,
- * goals, tone) is used for everyone: that is the "Basic Voice Profile" the Free plan lists.
- * Without a plan the caller gets everything, which is what internal callers expect.
+ * Voice training (samples, analysis) is open on every plan: a draft that sounds like the author
+ * is the product, and a Free user judges the product on that draft. The voice passport stays
+ * an Agency and Pro tool, because it exists to hold several clients' voices.
  */
-export const voiceTrainingAllowed = (plan?: string) => {
+export const voicePassportAllowed = (plan?: string) => {
   if (plan === undefined) return true
   const tier = plan.toLowerCase()
   return tier === "pro" || tier.startsWith("agency")
@@ -99,7 +98,6 @@ export const toPromptVoiceProfile = (row?: VoiceRow | null, options: { training?
 
 export const getWorkspaceVoiceProfile = async (workspaceId?: string | null, query?: string, plan?: string): Promise<VoiceProfile | undefined> => {
   if (!workspaceId) return undefined
-  const training = voiceTrainingAllowed(plan)
   const [profileResult, examples, passport, edits] = await Promise.all([
     createServiceClient()
       .from("voice_profiles")
@@ -107,12 +105,12 @@ export const getWorkspaceVoiceProfile = async (workspaceId?: string | null, quer
       .eq("workspace_id", workspaceId)
       .limit(1)
       .maybeSingle(),
-    training ? retrieveVoiceExamples(workspaceId, query, 3).catch(() => [] as string[]) : Promise.resolve([] as string[]),
-    training ? getPromptPassport(workspaceId) : Promise.resolve(undefined),
+    retrieveVoiceExamples(workspaceId, query, 3).catch(() => [] as string[]),
+    voicePassportAllowed(plan) ? getPromptPassport(workspaceId) : Promise.resolve(undefined),
     // Every plan: these are the author's own edits to drafts Qalam wrote for them.
     getRecentDraftEdits(workspaceId).catch(() => []),
   ])
-  const base = toPromptVoiceProfile(profileResult.data as VoiceRow | null, { training })
+  const base = toPromptVoiceProfile(profileResult.data as VoiceRow | null)
   if (!base && !examples.length && !passport && !edits.length) return undefined
   return {
     ...(base ?? { tone: "", sentenceLength: "", vocabulary: [], patterns: [], formatting: "" }),

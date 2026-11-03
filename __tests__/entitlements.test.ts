@@ -77,7 +77,7 @@ describe("getPlanLimits", () => {
     expect(limits.approvals).toBe(false)
     expect(limits.canExport).toBe(false)
     expect(limits.analyticsDepth).toBe("basic")
-    expect(limits.voiceTraining).toBe(false)
+    expect(limits.voiceTraining).toBe(true)
     expect(limits.carouselGenerationsPerMonth).toBe(3)
   })
 

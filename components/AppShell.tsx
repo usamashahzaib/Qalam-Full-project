@@ -199,9 +199,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     [clientWorkspaces]
   )
   const hasAgencyAccess = canCreateClientWorkspaces || hasManagedWorkspace
-  const canAddWorkspace = canCreateClientWorkspaces
+  // Adding a workspace opens the Agency page, which is paused with the rest of Agency.
+  const canAddWorkspace = canCreateClientWorkspaces && !isFrozenPath("/agency")
   const showManageClientList = hasAgencyAccess && !isFrozenPath("/agency")
   const showSwitcherList = clientWorkspaces.length > 0
+  // A solo user has one workspace. A switcher with a single entry is noise, so it only appears for
+  // someone who has client workspaces to move between, or who can add one.
+  const hasWorkspaceSwitcher = showSwitcherList || canAddWorkspace
   const isAgencyLinkVisible = (link: { href: string; agencyOnly?: boolean }) => {
     if (!link.agencyOnly) return true
     return clientWorkspaces.length > 0 || canCreateClientWorkspaces
@@ -308,7 +312,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <QalamLogo href={withClientParam("/dashboard", activeClientId)} size={28} textClassName="text-lg font-extrabold text-white" containerClassName="flex items-center gap-2" />
           </div>
 
-          <div className="relative px-4 py-4" ref={switcherRef}>
+          <div className={hasWorkspaceSwitcher ? "relative px-4 py-4" : "hidden"} ref={switcherRef}>
             <button onClick={() => setSwitcherOpen(!switcherOpen)} aria-expanded={switcherOpen} className={`w-full cursor-pointer flex items-center justify-between gap-3 px-3 py-2.5 rounded-2xl border transition-all text-left group ${switcherOpen ? "bg-zinc-800 border-zinc-600 shadow-lg shadow-black/20" : "bg-zinc-900/60 hover:bg-zinc-800 border-zinc-700/70"}`}>
               <div className="min-w-0 flex-1">
                 <p className="t-eyebrow text-teal-100/70">Active Workspace</p>
@@ -546,7 +550,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="hidden rounded-full border border-teal/10 bg-teal/5 px-2.5 py-0.5 text-xs font-bold text-teal min-[400px]:inline-flex">{mode === "career" ? "Career" : "LinkedIn"}</span>
             <button onClick={() => setSearchFocused((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle mobile search"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
             <button onClick={() => setHelpOpen(true)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Open help"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3m.08 4h.01M12 21a9 9 0 100-18 9 9 0 000 18z" /></svg></button>
-            <button onClick={() => setSwitcherOpen((value) => !value)} className="cursor-pointer flex h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors" aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+            <button onClick={() => setSwitcherOpen((value) => !value)} className={`cursor-pointer h-11 w-11 items-center justify-center rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition-colors ${hasWorkspaceSwitcher ? "flex" : "hidden"}`} aria-label="Toggle workspace switcher"><svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg></button>
           </div>
         </div>
 
@@ -560,7 +564,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {switcherOpen && (
+        {switcherOpen && hasWorkspaceSwitcher && (
           <div className="absolute right-4 w-56 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 overflow-hidden divide-y divide-zinc-100 animate-scale-in" style={{ top: "calc(4rem + env(safe-area-inset-top, 0px))" }} ref={mobileSwitcherRef}>
             <div className="px-4 py-2 bg-zinc-50/50 t-eyebrow text-zinc-400">Active Workspace</div>
             <button onClick={() => handleSwitchWorkspace(null)} className={`block w-full cursor-pointer px-4 py-2.5 text-left text-xs font-bold transition-colors ${!activeClientId ? "bg-teal/5 text-teal" : "text-zinc-700 hover:bg-zinc-50"}`}>Personal Workspace</button>

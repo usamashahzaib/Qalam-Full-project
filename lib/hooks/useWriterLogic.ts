@@ -201,6 +201,8 @@ export function useWriterLogic({
   const [slides, setSlides] = useState<SlideItem[]>([])
   const [isGeneratingSlides, setIsGeneratingSlides] = useState(false)
   const [localCarouselUsage, setLocalCarouselUsage] = useState(0)
+  // What the server removed or could not fix, such as a figure the author never gave. Cleared on any edit.
+  const [carouselNotes, setCarouselNotes] = useState<string[]>([])
 
   // ── Approval ─────────────────────────────────────────────────────────────
   const [approvalModalOpen, setApprovalModalOpen] = useState(false)
@@ -778,8 +780,11 @@ export function useWriterLogic({
 
   // ── Carousel generation ───────────────────────────────────────────────────
 
-  const onGenerateCarousel = async () => {
-    if (!topic.trim()) { showStatus("Enter a topic first", "error"); return }
+  // fromPost builds the slides out of the draft on screen, so the carousel says what the post says.
+  const onGenerateCarousel = async (options: { fromPost?: boolean } = {}) => {
+    const slideTopic = topic.trim() || (options.fromPost ? resolveTitle() : "")
+    if (!slideTopic) { showStatus("Enter a topic first", "error"); return }
+    if (options.fromPost && !draftContent.trim()) { showStatus("Write or generate a post first", "error"); return }
     if (typeof carouselLimit === "number" && localCarouselUsage >= carouselLimit) {
       showStatus("Carousel limit reached. Upgrade your plan.", "error")
       return
@@ -787,13 +792,22 @@ export function useWriterLogic({
 
     setIsGeneratingSlides(true)
     setSlides([])
-    showStatus("Generating carousel slides...", "info", false)
+    setCarouselNotes([])
+    showStatus(options.fromPost ? "Turning your post into slides..." : "Generating carousel slides...", "info", false)
 
     try {
-      const data = await apiGenerateCarousel({ topic: topic.trim(), role, goal: generationGoal, workspaceKey: workspaceId })
+      const data = await apiGenerateCarousel({
+        topic: slideTopic,
+        role,
+        goal: generationGoal,
+        story: story || undefined,
+        sourcePost: options.fromPost ? draftContent : undefined,
+        workspaceKey: workspaceId,
+      })
       const items = data.slides || []
       if (!items.length) throw new Error("No slides returned")
       setSlides(items)
+      setCarouselNotes((data.issues ?? []).filter((issue) => issue.code.startsWith("unsupported_")).map((issue) => issue.message))
       setLocalCarouselUsage((n) => n + 1)
       showStatus("Carousel ready.", "success")
     } catch (e) {
@@ -873,6 +887,7 @@ export function useWriterLogic({
 
     // Carousel
     slides, setSlides,
+    carouselNotes, setCarouselNotes,
     isGeneratingSlides,
     localCarouselUsage,
 

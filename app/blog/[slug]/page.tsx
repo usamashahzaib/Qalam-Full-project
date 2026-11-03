@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { FadeUp } from "@/components/FadeUp"
 import { BLOG_POSTS, PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { SITE_NAME, SITE_URL, absoluteUrl, buildOgImageUrl } from "@/lib/seo"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 
 type Params = { slug: string }
 
@@ -187,7 +188,7 @@ export default async function BlogArticlePage({ params }: { params: Promise<Para
                 { label: "Comment Generator", desc: "On-voice replies, free sign-in required", href: "/free-tools/comment-generator" },
                 { label: "Headline Analyzer", desc: "Score your LinkedIn headline", href: "/free-tools/headline-analyzer" },
                 { label: "Post Readiness Review", desc: "Pre-publish quality review", href: "/free-tools/engagement-predictor" },
-              ].map((tool) => (
+              ].filter((tool) => !isFrozenPath(tool.href)).map((tool) => (
                 <Link key={tool.href} href={tool.href} className="rounded-xl border border-teal/15 bg-white px-4 py-3 transition-colors hover:border-teal/40 hover:bg-teal/5">
                   <p className="text-sm font-semibold text-teal">{tool.label}</p>
                   <p className="mt-0.5 text-xs text-zinc-500">{tool.desc}</p>

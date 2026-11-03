@@ -289,8 +289,8 @@ export function PricingPageContent({}: PricingPageContentProps) {
             {[
               {
                 icon: VoiceIcon,
-                label: "Configurable voice profile on Pro",
-                sub: "Your examples, tone, and editing patterns become reusable writing context",
+                label: "A voice profile on every plan",
+                sub: "Your own posts and your edits become the writing context for the next draft",
               },
               {
                 icon: ArchiveIcon,

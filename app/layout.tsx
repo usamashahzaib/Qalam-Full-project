@@ -7,6 +7,7 @@ import { PwaRegistration } from "@/components/PwaRegistration"
 import { GoogleAnalytics } from "@/components/GoogleAnalytics"
 import { SITE_NAME } from "@/lib/seo"
 import { PLANS } from "@/lib/pricing"
+import { isSurfaceFrozen } from "@/lib/frozen-surfaces"
 import { SessionProvider } from "next-auth/react"
 
 const jakarta = Plus_Jakarta_Sans({
@@ -35,8 +36,9 @@ export const metadata: Metadata = {
     default: rootOgTitle,
     template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Qalam is a LinkedIn publishing system with voice memory. Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies.",
+  description: isSurfaceFrozen("agency")
+    ? "Qalam is a LinkedIn writer with voice memory. It asks what happened before it drafts, learns from your edits, and turns posts into carousels you can schedule."
+    : "Qalam is a LinkedIn publishing system with voice memory. Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies.",
   keywords: [
     "Qalam",
     "LinkedIn publishing system",
@@ -45,7 +47,7 @@ export const metadata: Metadata = {
     "LinkedIn content workflow",
     "LinkedIn post approval workflow",
     "LinkedIn scheduling",
-    "LinkedIn agency client workspaces",
+    ...(isSurfaceFrozen("agency") ? [] : ["LinkedIn agency client workspaces"]),
     "LinkedIn ghostwriting software",
     "LinkedIn carousel creator",
     "LinkedIn comment assistant",
@@ -150,7 +152,9 @@ const appSchema = {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "A LinkedIn publishing system with voice memory. Drafting, hooks, carousels, comments, approvals, scheduling, analytics, and isolated client workspaces, with supporting career and ATS resume tools.",
+        isSurfaceFrozen("career") || isSurfaceFrozen("agency")
+          ? "A LinkedIn writer with voice memory. It asks what happened before it drafts, learns from your edits, and handles hooks, carousels, scheduling, and analytics."
+          : "A LinkedIn publishing system with voice memory. Drafting, hooks, carousels, comments, approvals, scheduling, analytics, and isolated client workspaces, with supporting career and ATS resume tools.",
       publisher: { "@id": `${siteUrl}/#organization` },
       offers: PLANS.filter((plan) => plan.quarterlyUsd != null).map((plan) => ({
         "@type": "Offer",

@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 import { PUBLISHED_BLOG_POSTS } from "@/lib/marketing-content"
 import { PUBLIC_ROUTES, SITE_URL } from "@/lib/seo"
 import { PRODUCT_PAGES, USE_CASE_PAGES } from "@/lib/site-content"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
 
 const HIDDEN_PRODUCT_SLUGS = new Set<string>(AGENCY_PLAN_LIVE ? [] : ["agency-workspaces"])
@@ -15,7 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }))
 
   const productRoutes = Object.entries(PRODUCT_PAGES)
-    .filter(([slug]) => !HIDDEN_PRODUCT_SLUGS.has(slug))
+    .filter(([slug]) => !HIDDEN_PRODUCT_SLUGS.has(slug) && !isFrozenPath(`/product/${slug}`))
     .map(([slug, page]) => ({
       url: `${SITE_URL}/product/${slug}`,
       lastModified: new Date(page.updatedAt),
@@ -23,7 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.72,
     }))
 
-  const useCaseRoutes = Object.entries(USE_CASE_PAGES).map(([slug, page]) => ({
+  const useCaseRoutes = Object.entries(USE_CASE_PAGES).filter(([slug]) => !isFrozenPath(`/use-cases/${slug}`)).map(([slug, page]) => ({
     url: `${SITE_URL}/use-cases/${slug}`,
     lastModified: new Date(page.updatedAt),
     changeFrequency: "monthly" as const,

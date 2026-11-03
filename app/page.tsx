@@ -18,7 +18,9 @@ const AGENCY_LIVE = !isSurfaceFrozen("agency")
 
 export const metadata: Metadata = {
   title: "Qalam | LinkedIn Publishing System With Voice Memory",
-  description: "Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies and content teams.",
+  description: AGENCY_LIVE
+    ? "Draft posts, hooks, carousels, and comments from writing examples you save, then review, approve, and schedule them. Isolated client workspaces for agencies and content teams."
+    : "A LinkedIn writer that asks what happened before it drafts, learns from your edits, and turns a post into a carousel. Voice memory on every plan.",
 }
 
 const workflow = [

@@ -27,6 +27,7 @@ import { WriterDeleteConfirm } from "@/components/writer/WriterDeleteConfirm"
 import { WriterApprovalModal } from "@/components/writer/WriterApprovalModal"
 import { CONTENT_INTENTS, ROLE_SUGGESTIONS, SCORE_LABELS, WRITER_FORMATS as FORMATS } from "@/components/writer/writer-config"
 import { QueueOverlay } from "@/components/QueueOverlay"
+import { BRAND_PRESETS, DEFAULT_BRAND_KIT, UnsupportedScriptError, brandKitFrom, buildDeckPdf, checkSlides, type BrandKit } from "@/lib/carousel-deck"
 
 import type { Role, FormatKey } from "@/lib/hooks/useWriterLogic"
 import { downloadBytes, sanitizeFilename } from "@/lib/download"
@@ -43,7 +44,6 @@ export default function WriterPage() {
   const { profile } = useProfile()
   const canPublish = canAccessPlan(billing.plan, "Solo") || Boolean(billing.featureFlags?.scheduling)
   const canUseProTools = canAccessPlan(billing.plan, "Pro")
-  const canUseSolo = canAccessPlan(billing.plan, "Solo")
   const effectiveLimits = getEffectivePlanLimits(billing.plan, billing.limits)
   const canUseCarousel = effectiveLimits.carouselGenerationsPerMonth === "unlimited" || effectiveLimits.carouselGenerationsPerMonth > 0
   const canExportPdf = effectiveLimits.canExport
@@ -80,7 +80,7 @@ export default function WriterPage() {
     scheduleModalOpen, setScheduleModalOpen, isPublishing, upgradeModal, setUpgradeModal, upgradeProModal, setUpgradeProModal,
     ctaAltOpen, setCtaAltOpen, ctaAlts, isGeneratingCtaAlts,
     versionsOpen, setVersionsOpen, deleteConfirmIdx, setDeleteConfirmIdx, versionsRef,
-    slides, setSlides, isGeneratingSlides, localCarouselUsage,
+    slides, setSlides, carouselNotes, setCarouselNotes, isGeneratingSlides, localCarouselUsage,
     approvalModalOpen, setApprovalModalOpen,
     researchNotes, setResearchNotes, researchNotesOpen, setResearchNotesOpen,
     status, showStatus, draftLimitHit,
@@ -103,98 +103,58 @@ export default function WriterPage() {
   const [mobileTab, setMobileTab] = useState<"writer" | "score" | "slides">("writer")
   const [isPdfDownloading, setIsPdfDownloading] = useState(false)
 
-  const onGenerateCarousel = async () => {
+  // Accent colour and footer for the carousel. A per-browser convenience, so it lives in localStorage.
+  const [brandKit, setBrandKit] = useState<BrandKit>(DEFAULT_BRAND_KIT)
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try { setBrandKit(brandKitFrom(JSON.parse(localStorage.getItem("qalam.carouselBrand") || "null"))) } catch { /* default kit */ }
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
+  const changeBrandKit = (next: BrandKit) => {
+    setBrandKit(next)
+    try { localStorage.setItem("qalam.carouselBrand", JSON.stringify(next)) } catch { /* not saved */ }
+  }
+  const slideIssues = checkSlides(slides)
+
+  const onGenerateCarousel = async (options: { fromPost?: boolean } = {}) => {
     setMobileTab("slides")
-    await generateCarousel()
+    await generateCarousel(options)
   }
 
-  const updateSlide = (idx: number, field: "title" | "body", value: string) =>
+  // Turns the draft on screen into slides, in carousel mode.
+  const onCarouselFromPost = () => {
+    setFormat("Carousel")
+    void onGenerateCarousel({ fromPost: true })
+  }
+
+  const updateSlide = (idx: number, field: "title" | "body", value: string) => {
+    setCarouselNotes([])
     setSlides((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
+  }
 
-  const deleteSlide = (idx: number) =>
+  const deleteSlide = (idx: number) => {
+    setCarouselNotes([])
     setSlides((prev) => prev.filter((_, i) => i !== idx).map((s, i) => ({ ...s, number: i + 1 })))
+  }
 
-  const addSlide = () =>
+  const addSlide = () => {
+    setCarouselNotes([])
     setSlides((prev) => [...prev, { number: prev.length + 1, title: "New slide", body: "", visual_suggestion: "" }])
+  }
 
   const onDownloadCarouselPdf = async () => {
     if (!slides.length) return
     setIsPdfDownloading(true)
     try {
-      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib")
-      const pdfDoc = await PDFDocument.create()
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
-      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica)
-
-      const wrapText = (text: string, font: typeof boldFont, fontSize: number, maxWidth: number): string[] => {
-        const words = text.split(/\s+/)
-        const lines: string[] = []
-        let current = ""
-        for (const word of words) {
-          const test = current ? `${current} ${word}` : word
-          if (font.widthOfTextAtSize(test, fontSize) > maxWidth && current) {
-            lines.push(current)
-            current = word
-          } else {
-            current = test
-          }
-        }
-        if (current) lines.push(current)
-        return lines
-      }
-
-      const PAGE = 540, PAD = 48, CW = PAGE - PAD * 2
-
-      for (let i = 0; i < slides.length; i++) {
-        const slide = slides[i]
-        const isFirst = i === 0, isLast = i === slides.length - 1
-        const page = pdfDoc.addPage([PAGE, PAGE])
-
-        page.drawRectangle({
-          x: 0, y: 0, width: PAGE, height: PAGE,
-          color: isFirst ? rgb(0.051, 0.58, 0.533) : isLast ? rgb(0.851, 0.467, 0.024) : rgb(1, 1, 1),
-        })
-
-        const titleColor = isFirst || isLast ? rgb(1, 1, 1) : rgb(0.094, 0.094, 0.118)
-        const bodyColor = isFirst || isLast ? rgb(0.85, 0.98, 0.96) : rgb(0.322, 0.322, 0.357)
-        const muteColor = isFirst || isLast ? rgb(0.85, 0.98, 0.96) : rgb(0.4, 0.4, 0.45)
-
-        const badge = isFirst ? "COVER" : isLast ? "CTA" : `SLIDE ${slide.number}`
-        page.drawText(badge, { x: PAD, y: PAGE - 64, size: 9, font: boldFont, color: muteColor })
-
-        const titleLines = wrapText(slide.title || "", boldFont, 26, CW)
-        let yPos = PAGE - 96
-        for (const line of titleLines.slice(0, 4)) {
-          page.drawText(line, { x: PAD, y: yPos, size: 26, font: boldFont, color: titleColor })
-          yPos -= 36
-        }
-
-        if (slide.body?.trim()) {
-          yPos -= 14
-          const bodyLines = wrapText(slide.body, regularFont, 13, CW)
-          for (const line of bodyLines.slice(0, 10)) {
-            page.drawText(line, { x: PAD, y: yPos, size: 13, font: regularFont, color: bodyColor })
-            yPos -= 21
-          }
-        }
-      }
-
-      const pdfBytes = await pdfDoc.save()
+      const pdfBytes = await buildDeckPdf(slides, { ...brandKit, footer: brandKit.footer || profile.name })
       downloadBytes(pdfBytes, `${sanitizeFilename(slides[0]?.title ?? "", "carousel")}.pdf`, "application/pdf")
-      showStatus("PDF downloaded", "success")
-    } catch {
-      showStatus("PDF generation failed. Try again.", "error")
+      showStatus("PDF downloaded. Upload it to LinkedIn as a document.", "success")
+    } catch (e) {
+      showStatus(e instanceof UnsupportedScriptError ? e.message : "PDF generation failed. Try again.", "error")
     } finally {
       setIsPdfDownloading(false)
     }
-  }
-
-  const onCreateCarousel = () => {
-    if (!draftContent.trim()) return
-    try {
-      sessionStorage.setItem("carouselSeed", JSON.stringify({ content: draftContent, title: resolveTitle() }))
-    } catch { /* ignore */ }
-    router.push(withClientParam("/carousels", activeClientId))
   }
 
   useEffect(() => {
@@ -258,8 +218,8 @@ export default function WriterPage() {
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal t-eyebrow text-white">1</span>
                   <h2 className="text-sm font-bold text-zinc-900">Your post details</h2>
                 </div>
-                <span className={`rounded-full border px-2.5 py-1 t-eyebrow ${canUseProTools ? "border-gold/30 bg-gold/10 text-gold" : canUseSolo ? "border-teal/20 bg-teal/10 text-teal" : "border-zinc-200 bg-zinc-100 text-zinc-500"}`}>
-                  {canUseProTools ? "Voice-Trained AI" : canUseSolo ? "Role-Aware AI" : "Basic AI Writer"}
+                <span className={`rounded-full border px-2.5 py-1 t-eyebrow ${profile.voiceTrained ? "border-gold/30 bg-gold/10 text-gold" : "border-zinc-200 bg-zinc-100 text-zinc-500"}`}>
+                  {profile.voiceTrained ? "Writing in your voice" : "Generic voice"}
                 </span>
               </div>
             </div>
@@ -319,12 +279,12 @@ export default function WriterPage() {
               {/* Active profile pill */}
               {(profile.name || profile.title) ? (
                 <div className="mb-4 flex items-center gap-2">
-                  <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${canUseProTools ? "border-teal/25 bg-teal/5" : "border-zinc-200 bg-zinc-50"}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${canUseProTools ? "bg-teal" : "bg-zinc-400"}`} />
+                  <div className={`flex items-center gap-2 rounded-full border px-3 py-1.5 ${profile.voiceTrained ? "border-teal/25 bg-teal/5" : "border-zinc-200 bg-zinc-50"}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${profile.voiceTrained ? "bg-teal" : "bg-zinc-400"}`} />
                     <span className="t-eyebrow font-semibold text-zinc-700">
                       Writing as {[profile.name, profile.title].filter(Boolean).join(", ")}
                     </span>
-                    {canUseProTools && (
+                    {profile.voiceTrained && (
                       <span className="rounded-full bg-teal/10 px-1.5 py-0.5 t-eyebrow text-teal">Voice active</span>
                     )}
                   </div>
@@ -336,6 +296,13 @@ export default function WriterPage() {
                     <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
                     Set up your profile - posts will match your voice
                   </Link>
+                </div>
+              )}
+
+              {!profile.voiceTrained && (profile.name || profile.title) && (
+                <div className="mb-4 rounded-xl border border-dashed border-teal/30 bg-teal/5 px-4 py-3">
+                  <p className="text-xs font-semibold text-zinc-800">Drafts sound generic until Qalam has seen how you write.</p>
+                  <p className="mt-0.5 text-xs leading-5 text-zinc-500">Paste 3 posts you wrote yourself. It takes two minutes and applies to every plan. <Link href="/voice" className="font-semibold text-teal hover:underline">Train your voice</Link></p>
                 </div>
               )}
 
@@ -711,10 +678,11 @@ export default function WriterPage() {
                     Copy text
                   </button>
                   <button
-                    onClick={onCreateCarousel}
-                    className="cursor-pointer rounded-xl border border-teal/25 bg-teal/5 px-4 py-2 text-xs font-semibold text-teal transition-colors hover:bg-teal/10"
+                    onClick={onCarouselFromPost}
+                    disabled={isGeneratingSlides || !canUseCarousel}
+                    className="cursor-pointer rounded-xl border border-teal/25 bg-teal/5 px-4 py-2 text-xs font-semibold text-teal transition-colors hover:bg-teal/10 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Make Carousel →
+                    {canUseCarousel ? "Turn into carousel" : "Carousel (Solo+)"}
                   </button>
                   {canExportPdf ? (
                     <button
@@ -804,8 +772,49 @@ export default function WriterPage() {
                       </button>
                     </div>
                   </div>
-                  <p className="mt-0.5 pl-7 text-xs text-zinc-500">Click any title or body to edit · hover a card to delete</p>
+                  <p className="mt-0.5 pl-7 text-xs text-zinc-500">Click any title or body to edit · hover a card to delete · slides export at 4:5, the size LinkedIn shows best</p>
                 </div>
+
+                {/* Brand kit */}
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-zinc-100 px-5 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="t-eyebrow text-zinc-400">Accent</span>
+                    {BRAND_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => changeBrandKit({ ...brandKit, accent: preset.hex })}
+                        aria-label={`${preset.label} accent`}
+                        aria-pressed={brandKit.accent === preset.hex}
+                        style={{ backgroundColor: preset.hex }}
+                        className={`h-5 w-5 cursor-pointer rounded-full border-2 transition-transform ${brandKit.accent === preset.hex ? "scale-110 border-zinc-900" : "border-white shadow-sm"}`}
+                      />
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-2">
+                    <span className="t-eyebrow text-zinc-400">Footer</span>
+                    <input
+                      value={brandKit.footer}
+                      onChange={(e) => changeBrandKit({ ...brandKit, footer: e.target.value.slice(0, 60) })}
+                      placeholder={profile.name || "Your name or handle"}
+                      className="w-44 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-800 outline-none focus:border-teal focus:ring-2 focus:ring-teal/10"
+                    />
+                  </label>
+                </div>
+
+                {/* Checks */}
+                {(slideIssues.length > 0 || carouselNotes.length > 0) ? (
+                  <div className="border-b border-amber-100 bg-amber-50/60 px-5 py-3">
+                    <p className="t-eyebrow text-amber-700">Fix before you post</p>
+                    <ul className="mt-1.5 space-y-1 text-xs leading-5 text-amber-900">
+                      {[...slideIssues.map((issue) => issue.message), ...carouselNotes].map((message) => <li key={message}>{message}</li>)}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="border-b border-emerald-100 bg-emerald-50/60 px-5 py-2.5">
+                    <p className="text-xs font-semibold text-emerald-700">Checks passed: cover reads at a glance, slides are short, nothing begs for engagement.</p>
+                  </div>
+                )}
 
                 {/* Slide cards */}
                 <div className="p-5">
@@ -816,20 +825,16 @@ export default function WriterPage() {
                       return (
                         <div
                           key={slide.number}
-                          className={`group relative flex min-h-[220px] flex-col overflow-hidden rounded-2xl border-2 ${
-                            isFirst
-                              ? "border-teal bg-gradient-to-br from-teal to-teal-700"
-                              : isLast
-                                ? "border-amber-400 bg-gradient-to-br from-amber-500 to-amber-700"
-                                : "border-zinc-200 bg-white"
-                          }`}
+                          style={isFirst ? { backgroundColor: brandKit.accent, borderColor: brandKit.accent } : isLast ? { backgroundColor: "#18181B", borderColor: "#18181B" } : undefined}
+                          className={`group relative flex aspect-[4/5] flex-col overflow-hidden rounded-2xl border-2 ${isFirst || isLast ? "" : "border-zinc-200 bg-white"}`}
                         >
                           {/* Badge + delete */}
                           <div className="flex items-center justify-between px-4 pb-2 pt-4">
-                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 t-eyebrow ${
-                              isFirst || isLast ? "bg-white/20 text-white" : "bg-zinc-900 text-white"
-                            }`}>
-                              {isFirst ? "Cover" : isLast ? "CTA" : slide.number}
+                            <span
+                              style={isFirst || isLast ? undefined : { backgroundColor: brandKit.accent }}
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 t-eyebrow ${isFirst || isLast ? "bg-white/20 text-white" : "text-white"}`}
+                            >
+                              {isFirst ? "Cover" : isLast ? "Close" : slide.number}
                             </span>
                             <button
                               onClick={() => deleteSlide(idx)}
@@ -852,8 +857,8 @@ export default function WriterPage() {
                               value={slide.title}
                               onChange={(e) => updateSlide(idx, "title", e.target.value)}
                               placeholder="Slide title..."
-                              rows={2}
-                              className={`w-full resize-none bg-transparent text-[15px] font-bold leading-snug outline-none ${
+                              rows={isFirst ? 4 : 3}
+                              className={`w-full resize-none bg-transparent ${isFirst ? "text-xl" : "text-[15px]"} font-bold leading-snug outline-none ${
                                 isFirst || isLast ? "text-white placeholder:text-white/60" : "text-zinc-900 placeholder:text-zinc-300"
                               }`}
                             />
@@ -861,7 +866,7 @@ export default function WriterPage() {
                               value={slide.body ?? ""}
                               onChange={(e) => updateSlide(idx, "body", e.target.value)}
                               placeholder="Supporting copy..."
-                              rows={3}
+                              rows={4}
                               className={`mt-2 w-full resize-none bg-transparent text-xs leading-relaxed outline-none ${
                                 isFirst || isLast ? "text-white/80 placeholder:text-white/30" : "text-zinc-600 placeholder:text-zinc-300"
                               }`}
@@ -902,7 +907,7 @@ export default function WriterPage() {
                         disabled={isPdfDownloading}
                         className="cursor-pointer rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-50 disabled:opacity-50"
                       >
-                        {isPdfDownloading ? "Generating PDF..." : "Download PDF"}
+                        {isPdfDownloading ? "Generating PDF..." : "Download PDF (4:5)"}
                       </button>
                     </LockedFeature>
                     <button

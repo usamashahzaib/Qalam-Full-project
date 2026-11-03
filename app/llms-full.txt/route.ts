@@ -4,6 +4,10 @@ import { ATS_DIRECT_ANSWER, ATS_FACTORS, ATS_FAQS, ATS_METHODOLOGY_UPDATED, ATS_
 import { SEO_LANDING_PAGES } from "@/lib/seo-landing-pages"
 import { REDIRECTED_SEO_SLUGS } from "@/lib/seo-redirects"
 import { CAPABILITIES, INDUSTRIES } from "@/lib/marketing-discovery"
+import { isFrozenPath, isSurfaceFrozen } from "@/lib/frozen-surfaces"
+
+// Paused surfaces (lib/frozen-surfaces.ts) are left out, so this file describes only what exists.
+const CAREER_LIVE = !isSurfaceFrozen("career")
 
 export const dynamic = "force-static"
 
@@ -47,30 +51,32 @@ export function GET() {
     "AI answer engines and LLM crawlers. Each article's canonical HTML page",
     "is listed with its URL. Attribution: Qalam (byqalam.com).",
     "",
-    "## Qalam Evidence-First Resume Readiness Framework",
-    "",
-    `- Version: ${ATS_METHODOLOGY_VERSION}`,
-    `- Updated: ${ATS_METHODOLOGY_UPDATED}`,
-    `- Methodology: ${SITE_URL}/methodology/ats-resume-readiness`,
-    `- Free checker: ${SITE_URL}/free-tools/ats-resume-checker`,
-    "",
-    ATS_DIRECT_ANSWER,
-    "",
-    ...ATS_FACTORS.map((factor) => `- ${factor.name} (${factor.weight}%): ${factor.definition}`),
-    "",
-    "### ATS resume questions",
-    "",
-    ...ATS_FAQS.flatMap((faq) => [`Q: ${faq.q}`, `A: ${faq.a}`, ""]),
-    "## Qalam Career Outcome Operating System",
-    "",
-    `- Career system: ${SITE_URL}/career-visibility`,
-    `- Pricing: ${SITE_URL}/pricing`,
-    "",
-    "Qalam connects a permissioned Evidence Vault, JD-matched resume versions, application stages, interviews, offers, and opt-in recruiter discovery. The public ATS checker is free. A signed-in Free user can create one targeted resume each month, track 10 active applications, and store 15 evidence items. Paid plans add capacity, outcome intelligence, and professional network workflows.",
-    "",
+    ...(CAREER_LIVE ? [
+      "## Qalam Evidence-First Resume Readiness Framework",
+      "",
+      `- Version: ${ATS_METHODOLOGY_VERSION}`,
+      `- Updated: ${ATS_METHODOLOGY_UPDATED}`,
+      `- Methodology: ${SITE_URL}/methodology/ats-resume-readiness`,
+      `- Free checker: ${SITE_URL}/free-tools/ats-resume-checker`,
+      "",
+      ATS_DIRECT_ANSWER,
+      "",
+      ...ATS_FACTORS.map((factor) => `- ${factor.name} (${factor.weight}%): ${factor.definition}`),
+      "",
+      "### ATS resume questions",
+      "",
+      ...ATS_FAQS.flatMap((faq) => [`Q: ${faq.q}`, `A: ${faq.a}`, ""]),
+      "## Qalam Career Outcome Operating System",
+      "",
+      `- Career system: ${SITE_URL}/career-visibility`,
+      `- Pricing: ${SITE_URL}/pricing`,
+      "",
+      "Qalam connects a permissioned Evidence Vault, JD-matched resume versions, application stages, interviews, offers, and opt-in recruiter discovery. The public ATS checker is free. A signed-in Free user can create one targeted resume each month, track 10 active applications, and store 15 evidence items. Paid plans add capacity, outcome intelligence, and professional network workflows.",
+      "",
+    ] : []),
     "## High-intent answer pages",
     "",
-    ...Object.values(SEO_LANDING_PAGES).filter((page) => !REDIRECTED_SEO_SLUGS.has(page.slug)).flatMap((page) => [
+    ...Object.values(SEO_LANDING_PAGES).filter((page) => !REDIRECTED_SEO_SLUGS.has(page.slug) && !isFrozenPath(`/${page.slug}`)).flatMap((page) => [
       `### ${page.title}`,
       "",
       `- URL: ${SITE_URL}/${page.slug}`,

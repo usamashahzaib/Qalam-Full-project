@@ -137,8 +137,8 @@ export type GenerateRepliesOutput = { replies: Array<{ style: string; reply: str
 export type CtaAlternativesInput = { content: string; role?: string; workspaceKey?: string }
 export type CtaAlternativesOutput = { alternatives: string[] }
 
-export type CarouselInput = { topic: string; role?: string; goal?: string; workspaceKey?: string }
-export type CarouselOutput = { slides: SlideItem[] }
+export type CarouselInput = { topic: string; role?: string; goal?: string; story?: string; sourcePost?: string; workspaceKey?: string }
+export type CarouselOutput = { slides: SlideItem[]; issues?: { slide: number; code: string; message: string }[] }
 
 export const generateHookAlternatives = (data: HookAlternativesInput) =>
   postJson<HookAlternativesOutput, Record<string, unknown>>(API_PATHS.hookAlternatives, data)

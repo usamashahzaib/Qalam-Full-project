@@ -13,7 +13,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 export async function POST(request: NextRequest) {
   // Basic identity (name, title, industry, goals) is free for all authenticated users.
-  // Voice training (example_posts, characteristics) requires Pro.
+  // Voice training (example_posts, characteristics) is open to every plan.
   const userId = await requireAuth().catch(() => null)
   if (!userId) return NextResponse.json({ error: "auth_required" }, { status: 401 })
 
@@ -49,9 +49,9 @@ export async function POST(request: NextRequest) {
       }
     : null
 
-  // Only gate voice training on Pro - basic identity is always allowed
+  // Saving training data still goes through the plan check, so a lapsed or blocked account is refused.
   if (hasVoiceTraining) {
-    const planCheck = await requirePlan(request, "Pro")
+    const planCheck = await requirePlan(request, "Free")
     if (!planCheck.ok) return planCheck.response
   }
 

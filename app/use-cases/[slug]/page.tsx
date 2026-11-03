@@ -5,6 +5,7 @@ import { FadeUp } from "@/components/FadeUp"
 import { QalamEvidenceField } from "@/components/ui/QalamEvidenceField"
 import { INDUSTRIES } from "@/lib/marketing-discovery"
 import { USE_CASE_PAGES } from "@/lib/site-content"
+import { isFrozenPath } from "@/lib/frozen-surfaces"
 import { SITE_NAME, absoluteUrl, buildPageMetadata } from "@/lib/seo"
 
 type Params = { slug: keyof typeof USE_CASE_PAGES }
@@ -80,7 +81,7 @@ export default async function UseCaseDetailPage({ params }: { params: Promise<Pa
     })),
   }
 
-  const otherCases = Object.entries(USE_CASE_PAGES).filter(([key]) => key !== slug)
+  const otherCases = Object.entries(USE_CASE_PAGES).filter(([key]) => key !== slug && !isFrozenPath(`/use-cases/${key}`))
 
   return (
     <>

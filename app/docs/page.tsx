@@ -17,7 +17,7 @@ const SECTIONS = [
   },
   {
     title: "Voice profile setup",
-    body: "Open Voice and add your professional details. On a plan with voice training, paste writing samples you wrote, choose Analyze Voice, review the result, and choose Save Voice Profile. Update those samples when your writing changes. Editing a draft does not automatically retrain your voice.",
+    body: "Open Voice and add your professional details. Paste three to five writing samples you wrote, choose Analyze Voice, review the result, and choose Save Voice Profile. This works on every plan. Update those samples when your writing changes. When you save a post, Qalam also keeps the draft it wrote next to your edited version and uses your two most recent real edits in the next draft.",
     href: "/voice", link: "Open Voice",
   },
   {

@@ -7,6 +7,8 @@ export type WorkspaceProfile = {
   industry: string
   goals: string[]
   tone: string
+  /** True once the author has saved writing samples or an analysis for Qalam to match. */
+  voiceTrained?: boolean
 }
 
 export type PostStatus = "draft" | "scheduled" | "published" | "archived"

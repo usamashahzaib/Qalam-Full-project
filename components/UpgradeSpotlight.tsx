@@ -10,7 +10,6 @@ import {
   CheckIcon,
   LibraryIcon,
   MicroscopeIcon,
-  VoiceIcon,
 } from "@/components/ui/qalam-icons"
 
 type LockedFeature = {
@@ -25,7 +24,6 @@ const LOCKED_FEATURES: LockedFeature[] = [
   { label: "Planner", icon: CalendarIcon, plan: "Solo" },
   { label: "Analytics", icon: AnalyticsIcon, plan: "Solo" },
   { label: "Library", icon: LibraryIcon, plan: "Solo" },
-  { label: "Voice Training", icon: VoiceIcon, plan: "Pro" },
   { label: "AI Strategist", icon: BrainIcon, plan: "Pro" },
   { label: "Research", icon: MicroscopeIcon, plan: "Pro" },
 ]
@@ -36,7 +34,7 @@ const HEADLINES: Record<"Solo" | "Pro", { title: string; sub: string }> = {
     sub: "30 posts, 3 carousels, scheduling, planner, and library.",
   },
   Pro: {
-    title: "Choose Pro and configure your voice profile",
+    title: "Choose Pro for 60 drafts a month",
     sub: "60 posts, 10 carousels, saved voice context, AI Strategist, competitor research.",
   },
 }

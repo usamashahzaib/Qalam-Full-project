@@ -1,9 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { useBilling } from "@/lib/hooks/useBilling"
-import { canAccessPlan } from "@/lib/entitlements"
-import { LockedFeature } from "@/components/LockedFeature"
 import { ProfessionalProfileImport } from "@/components/voice/ProfessionalProfileImport"
 import { parseProfessionalContext, type ProfessionalContext } from "@/lib/professional-context"
 
@@ -32,9 +29,6 @@ type VoiceProfile = {
 type StatusMsg = { text: string; type: "info" | "error" | "success" }
 
 export default function VoicePage() {
-  const { billing } = useBilling()
-  const canUseVoice = canAccessPlan(billing.plan, "Pro")
-
   const [profile, setProfile] = useState<VoiceProfile>({
     name: "", title: "", industry: "", linkedinUrl: "", brandTone: "Professional", goals: "",
   })
@@ -77,7 +71,7 @@ export default function VoicePage() {
       })
       .catch(() => null)
       .finally(() => setIsLoading(false))
-  }, [canUseVoice])
+  }, [])
 
   const onAnalyze = async () => {
     if (examplePosts.trim().length < 100) {
@@ -115,8 +109,7 @@ export default function VoicePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...profile,
-          // Only include voice training data when it exists and user is Pro
-          ...(canUseVoice && characteristics ? { examplePosts, characteristics } : {}),
+          ...(characteristics ? { examplePosts, characteristics } : {}),
         }),
       })
       const data = await res.json() as { error?: string }
@@ -154,7 +147,7 @@ export default function VoicePage() {
           <p className="t-eyebrow text-zinc-400">Voice &amp; Identity</p>
           <h1 className="mt-1 text-2xl font-bold text-zinc-900">Your Profile</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Set your identity so every post is written as you. Pro users can also train your writing voice.
+            Tell Qalam who you are, then show it how you write. Every draft starts from this.
             {profileExists && <span className="ml-2 text-emerald-600 font-semibold">Profile active</span>}
           </p>
         </div>
@@ -264,9 +257,16 @@ export default function VoicePage() {
                 )}
               </div>
 
-              {/* Voice training section - Pro only */}
-              <LockedFeature requiredPlan="Pro" feature="Voice Training">
-                <div className="space-y-5">
+              {/* Voice training section - every plan */}
+              <div className="space-y-5">
+                <div className="rounded-2xl border border-teal/20 bg-teal/5 px-5 py-4">
+                  <p className="text-sm font-bold text-zinc-900">Three steps, about five minutes</p>
+                  <ol className="mt-2 space-y-1.5 text-xs leading-5 text-zinc-600">
+                    <li><span className="font-semibold text-zinc-800">1. Fill in your identity</span> above and save it.</li>
+                    <li><span className="font-semibold text-zinc-800">2. Paste 3 to 5 posts you wrote yourself.</span> Posts that did well for you are best. Skip anything a tool or an assistant wrote.</li>
+                    <li><span className="font-semibold text-zinc-800">3. Analyze, check the result on the right, and save.</span> Your next draft is written to match.</li>
+                  </ol>
+                </div>
                   <ProfessionalProfileImport
                     context={characteristics?.professionalContext || null}
                     onImported={onProfessionalContextImported}
@@ -276,7 +276,7 @@ export default function VoicePage() {
                   />
                   <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                   <div className="border-b border-zinc-100 bg-zinc-50/60 px-5 py-3.5">
-                    <h2 className="text-sm font-bold text-zinc-900">Voice training <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 t-eyebrow text-amber-700">Pro</span></h2>
+                    <h2 className="text-sm font-bold text-zinc-900">Voice training</h2>
                     <p className="mt-0.5 text-xs text-zinc-500">Paste 3-5 of your best LinkedIn posts. Qalam extracts your tone, patterns, and phrases.</p>
                   </div>
                   <div className="p-5">
@@ -309,8 +309,7 @@ export default function VoicePage() {
                     </div>
                   </div>
                   </section>
-                </div>
-              </LockedFeature>
+              </div>
             </div>
 
             {/* Right: Characteristics panel */}
