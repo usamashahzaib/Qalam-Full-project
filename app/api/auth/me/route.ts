@@ -3,6 +3,7 @@ import { requireAuthApi } from "@/lib/server/auth"
 import { createServiceClient } from "@/lib/server/supabase-rest"
 import { log } from "@/lib/server/logging"
 import { resolvePlanExpiry } from "@/lib/plan-expiry"
+import { withFreePro } from "@/lib/free-pro"
 
 export async function GET(req: NextRequest) {
   const { userId, externalUserId, error } = await requireAuthApi(req)
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
       authProvider: user.auth_provider,
       emailVerified: user.email_verified,
       avatarUrl: user.image_url,
-      plan: planUsage?.plan ?? "free",
+      plan: withFreePro(planUsage?.plan ?? "free"),
       planCycleEnd: planUsage?.cycle_end ?? null,
       planExpiresAt,
     },

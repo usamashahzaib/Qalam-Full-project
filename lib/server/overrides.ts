@@ -1,4 +1,5 @@
 import { getPlanLimits, type PlanLimits, type PlanTier } from "@/lib/entitlements"
+import { withFreePro } from "@/lib/free-pro"
 import { supabaseSelect } from "@/lib/server/supabase-rest"
 import type { WorkspacePlanInfo } from "@/lib/server/workspace"
 
@@ -71,7 +72,7 @@ const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | nul
   const featureFlags = override?.feature_flags || {}
   const rawPlan = override?.plan_override || basePlan || "Free"
   // Normalize to titlecase ("pro" → "Pro") so PLAN_ORDER lookup always works
-  const effectivePlan = toTitleCase(rawPlan)
+  const effectivePlan = withFreePro(toTitleCase(rawPlan))
   const limits = { ...getPlanLimits(effectivePlan) }
   if (override?.draft_limit_override !== null && override?.draft_limit_override !== undefined) {
     limits.aiDraftsPerMonth = override.draft_limit_override
@@ -92,7 +93,10 @@ const applyOverrideToLimits = (basePlan: string, override: UserOverrideRow | nul
 }
 
 export const applyUserOverrides = async (planInfo: WorkspacePlanInfo, email?: string | null) => {
-  if (!email) return { ...planInfo, ...applyOverrideToLimits(planInfo.plan, null) }
+  if (!email) {
+    const effective = applyOverrideToLimits(planInfo.plan, null)
+    return { ...planInfo, plan: effective.effectivePlan, ...effective }
+  }
   const override = await getUserOverrideByEmail(email)
   const effective = applyOverrideToLimits(planInfo.plan, override)
   return { ...planInfo, plan: effective.effectivePlan, ...effective }

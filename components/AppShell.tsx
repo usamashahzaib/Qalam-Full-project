@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { useBilling } from "@/lib/hooks/useBilling"
+import { freeProEndLabel } from "@/lib/free-pro"
 import { usePosts } from "@/lib/hooks/usePosts"
 import { useMyWorkspaces } from "@/lib/hooks/useMyWorkspaces"
 import type { WorkspacePost } from "@/types/domain"
@@ -116,6 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activeNavHref = getActiveNavigationHref(pathname, NAV_HREFS)
   const { data: session } = useSession()
   const { billing } = useBilling()
+  const freeProEnd = freeProEndLabel()
   const { posts } = usePosts()
   const activeClientId = searchParams.get("client")
   const { mode, setMode } = useAppMode()
@@ -589,6 +591,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {billing.planExpired ? (
           <div className="relative z-10 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm font-semibold text-amber-900">
             Your plan expired. You are back on Free. <Link href={"/upgrade"} className="underline underline-offset-2">Renew your plan</Link>
+          </div>
+        ) : null}
+        {freeProEnd ? (
+          <div className="relative z-10 border-b border-teal/20 bg-teal/5 px-6 py-3 text-sm font-semibold text-teal-900">
+            Pro is free for everyone until {freeProEnd}. After that your account goes back to its own plan.
           </div>
         ) : null}
         {billing.complimentaryTrialBanner ? (

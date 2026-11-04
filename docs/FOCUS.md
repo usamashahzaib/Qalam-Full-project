@@ -19,6 +19,10 @@ Bring a surface back by setting `NEXT_PUBLIC_UNFROZEN_SURFACES` to a comma list 
 
 Do not add features to paused surfaces and do not link to them from marketing pages.
 
+## Free Pro offer
+
+Set `NEXT_PUBLIC_FREE_PRO_UNTIL` to a date such as `2027-02-04` and redeploy. Every Free and Solo account then gets Pro limits until that day starts (UTC), and the app and pricing page say so. Nothing is written to the database, so accounts return to their real plan when the date passes. Remove the variable to end it early. The code is `lib/free-pro.ts`. Checkout stays open, so someone could still pay during the offer.
+
 ## AI providers
 
 Signed-in writing tries providers in this order and moves on when one is missing, busy or out of quota:

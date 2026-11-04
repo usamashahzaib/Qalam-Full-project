@@ -13,6 +13,7 @@ import { log } from "./logging"
 import type { Feature } from "@/lib/pricing"
 import type { PlanTier } from "@/types/domain"
 import { getCareerEntitlements } from "@/lib/career-entitlements"
+import { isFreeProActive, withFreePro } from "@/lib/free-pro"
 
 export type { Feature }
 
@@ -160,6 +161,8 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
     plan = normalizePlan(override!.plan_override!)
   }
 
+  plan = withFreePro(plan)
+
   const config = { ...PLAN_CONFIG[plan].limits }
 
   // Apply custom draft limit override
@@ -193,7 +196,7 @@ export const getPlanStatus = cache(async function getPlanStatusImpl(userId: stri
     },
     cycleEnd: getQuotaResetDate(usersResult.data?.plan_started_at ?? null, usersResult.data?.billing_cycle ?? null)?.toISOString() || usage?.cycle_end,
     planExpiresAt: expiryStatus.expiresAt || planExpiresAt,
-    isActive: expiryStatus.isActive,
+    isActive: expiryStatus.isActive || isFreeProActive(),
     expiresAt: expiryStatus.expiresAt,
     renewalDue: expiryStatus.renewalDue,
     daysUntilExpiry: expiryStatus.daysUntilExpiry,

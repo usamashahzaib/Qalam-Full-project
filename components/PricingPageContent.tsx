@@ -16,6 +16,7 @@ import { APP_URL, resolvePublicHref } from "@/lib/seo"
 import type { ManagedPlan } from "@/lib/pricing"
 import { ClientDiscretion } from "@/components/marketing/ClientDiscretion"
 import { isSurfaceFrozen, type FrozenSurface } from "@/lib/frozen-surfaces"
+import { freeProEndLabel } from "@/lib/free-pro"
 
 const CAREER_LIVE = !isSurfaceFrozen("career")
 
@@ -239,6 +240,7 @@ export function PricingPageContent({}: PricingPageContentProps) {
   })
 
   const soloPlan = PLANS.find((plan) => plan.plan === "Solo")
+  const freeProEnd = freeProEndLabel()
 
   return (
     <div className="min-h-screen bg-zinc-50 pt-24">
@@ -257,6 +259,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
             <p className="mx-auto mb-6 max-w-2xl font-cormorant text-2xl italic text-zinc-500">
               Start with the complete loop. Upgrade for a repeatable publishing workflow, then advanced voice and intelligence.
             </p>
+
+            {freeProEnd ? (
+              <p className="mx-auto mb-6 max-w-2xl rounded-xl border border-teal/30 bg-teal-50 px-5 py-3 text-base font-semibold text-teal-900">
+                Pro is free for everyone until {freeProEnd}. Sign up and it is on, no card needed.
+              </p>
+            ) : null}
 
             {/* Social proof strip */}
             <div className="mx-auto mb-8 flex flex-wrap items-center justify-center gap-6 text-sm text-zinc-500">
