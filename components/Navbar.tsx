@@ -9,7 +9,7 @@ import { QalamLogo, QalamMark } from "@/components/QalamLogo"
 import { resolvePublicHref } from "@/lib/seo"
 import { alphabetical } from "@/lib/sort"
 import { AGENCY_PLAN_LIVE } from "@/lib/pricing"
-import { withoutFrozen } from "@/lib/frozen-surfaces"
+import { isSurfaceFrozen, withoutFrozen } from "@/lib/frozen-surfaces"
 
 const ALL_PRODUCT_LINKS = alphabetical([
   { label: "All Features", href: "/features", desc: "See product views, methods, and connected workflows" },
@@ -322,13 +322,13 @@ export function Navbar() {
                 <QalamMark size={20} className="rounded-full border-0 shadow-none" />
               </span>
               <span className="truncate">
-                <strong>Free:</strong> <span className="hidden sm:inline">Hooks, carousels, comments, and a resume check. No account needed</span><span className="sm:hidden">LinkedIn tools</span>
+                <strong>Free:</strong> <span className="hidden sm:inline">{isSurfaceFrozen("career") ? "Hooks, carousels and comments" : "Hooks, carousels, comments, and a resume check"}. No account needed</span><span className="sm:hidden">LinkedIn tools</span>
               </span>
               <Link
                 href="/free-tools"
                 className="inline-flex min-h-11 shrink-0 items-center gap-1 text-gold-100 underline underline-offset-2 transition-colors hover:text-white"
               >
-                Check now <ChevronRightIcon className="h-3.5 w-3.5" />
+                Try them <ChevronRightIcon className="h-3.5 w-3.5" />
               </Link>
               <button
                 onClick={() => {

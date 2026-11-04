@@ -171,6 +171,7 @@ const ALL_PUBLIC_ROUTES: PublicRoute[] = [
   { path: "/free-tools/viral-checker", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/free-tools/engagement-predictor", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/about", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },
+  { path: "/coming-soon", priority: 0.4, changeFrequency: "monthly", lastModified: "2026-11-04" },
   { path: "/partners", priority: 0.84, changeFrequency: "monthly", lastModified: "2026-09-01" },
   { path: "/blog", priority: 0.8, changeFrequency: "weekly", lastModified: MARKETING_LAST_MODIFIED },
   { path: "/contact", priority: 0.7, changeFrequency: "monthly", lastModified: MARKETING_LAST_MODIFIED },

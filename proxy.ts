@@ -4,7 +4,7 @@ import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import { gaScriptHash } from "@/lib/csp-inline-scripts"
 import { PROTECTED_ROUTES } from "@/lib/protected-routes"
-import { isFrozenPath } from "@/lib/frozen-surfaces"
+import { comingSoonHref, isFrozenPath } from "@/lib/frozen-surfaces"
 import { safeRedirectPath } from "@/lib/validation"
 
 // ─── Redis rate limiters ─────────────────────────────────────────────────────
@@ -411,7 +411,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     if (pathname.startsWith("/api/")) {
       return await addSecurityHeaders(NextResponse.json({ error: "Not found" }, { status: 404 }), false)
     }
-    const destination = isAppHostPath(pathname) ? "/dashboard" : "/"
+    // People already inside the app go back to it. Everyone else gets told what happened to the page.
+    const destination = request.nextUrl.hostname === APP_HOST ? "/dashboard" : comingSoonHref(pathname) ?? "/"
     return await addSecurityHeaders(NextResponse.redirect(new URL(destination, request.url)))
   }
 

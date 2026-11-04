@@ -54,6 +54,42 @@ const SURFACE_PATHS: Record<FrozenSurface, string[]> = {
   ],
 }
 
+/**
+ * What /coming-soon says about each paused surface. "prediction-tools" is left out on purpose:
+ * those tools stay off because the numbers they print cannot be known, so they are not coming back as they are.
+ */
+const COMING_SOON: { surface: FrozenSurface; name: string; copy: string; ask?: string }[] = [
+  {
+    surface: "agency",
+    name: "Agency workspaces",
+    copy: "A separate workspace for each client, each with its own voice, plus team seats and client approval before anything goes out. A client workspace is only as good as the writer inside it, so the writer comes first.",
+    ask: "Run an agency? Tell us how many clients you write for and what you would need. It decides what we build first.",
+  },
+  {
+    surface: "career",
+    name: "Career tools",
+    copy: "Resume checks against applicant tracking systems, a resume builder, and matching your resume to a job description.",
+  },
+  {
+    surface: "chat",
+    name: "AI Strategist",
+    copy: "A chat for working out what to post next, based on your own posts.",
+  },
+  {
+    surface: "competitors",
+    name: "Competitor research",
+    copy: "A look at what other people in your field are posting, so you can see where you differ.",
+  },
+]
+
+export const comingSoon = () => COMING_SOON.filter((item) => isSurfaceFrozen(item.surface))
+
+/** Where a visitor to a paused page should land: the note about that surface, if it has one. */
+export function comingSoonHref(pathname: string): string | null {
+  const surface = frozenSurfaceFor(pathname)
+  return surface && COMING_SOON.some((item) => item.surface === surface) ? `/coming-soon#${surface}` : null
+}
+
 const unfrozen = (): Set<string> =>
   new Set((process.env.NEXT_PUBLIC_UNFROZEN_SURFACES ?? "").split(",").map((key) => key.trim()).filter(Boolean))
 

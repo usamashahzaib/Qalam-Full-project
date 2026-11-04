@@ -603,12 +603,12 @@ export function PricingPageContent({}: PricingPageContentProps) {
                 <p className="max-w-md leading-relaxed text-white/60">
                   {AGENCY_PLAN_LIVE
                     ? "Agency includes five isolated client workspaces, team seats, approvals, and reviewed onboarding."
-                    : "We work with agencies and marketing teams directly. Reach out and we will find the right setup for your workflow."}
+                    : "Client workspaces and team seats are coming soon. Tell us what you would need and it shapes what we build first."}
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-3">
-                <Link href={AGENCY_PLAN_LIVE ? "/agency-setup" : "/contact"} className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
-                  {AGENCY_PLAN_LIVE ? "Apply for Agency" : "Get in Touch"}
+                <Link href={AGENCY_PLAN_LIVE ? "/agency-setup" : "/coming-soon#agency"} className="whitespace-nowrap rounded-xl bg-gold px-8 py-4 text-center font-bold text-white transition-colors hover:bg-gold-600">
+                  {AGENCY_PLAN_LIVE ? "Apply for Agency" : "See what is coming"}
                 </Link>
               </div>
             </div>

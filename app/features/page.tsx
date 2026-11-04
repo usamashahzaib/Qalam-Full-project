@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { DISCOVERY_UPDATED_AT } from "@/lib/marketing-discovery"
+import { comingSoon } from "@/lib/frozen-surfaces"
 import { APP_URL, SITE_NAME, absoluteUrl, buildBreadcrumbSchema, buildFaqSchema, buildPageMetadata } from "@/lib/seo"
 
 const title = "Qalam Features: Write LinkedIn Posts in Your Own Voice"
@@ -123,6 +124,7 @@ const pageSchema = {
 }
 
 export default function FeaturesPage() {
+  const upcoming = comingSoon()
   return (
     <main className="overflow-x-clip bg-[#fafaf8] pt-24">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageSchema).replace(/</g, "\\u003c") }} />
@@ -187,6 +189,11 @@ export default function FeaturesPage() {
           <ul className="mt-5 space-y-4">
             {notDone.map((line) => <li key={line} className="border-l-2 border-gold pl-5 text-base leading-7 text-zinc-700">{line}</li>)}
           </ul>
+          {upcoming.length ? (
+            <p className="mt-10 text-sm leading-7 text-zinc-600">
+              Coming soon: {upcoming.map((item) => item.name).join(", ")}. <Link href="/coming-soon" className="font-semibold text-teal underline underline-offset-2">What each one will do</Link>
+            </p>
+          ) : null}
         </div>
       </section>
 

@@ -51,6 +51,7 @@ const FOOTER_LINKS = {
     { label: "LinkedIn Headline Examples", href: "/linkedin-headline-examples" },
     { label: "Blog", href: "/blog" },
     { label: "Changelog", href: "/changelog" },
+    { label: "Coming Soon", href: "/coming-soon" },
     { label: "System Status", href: "/status" },
   ],
   Company: [

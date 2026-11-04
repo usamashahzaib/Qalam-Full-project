@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { frozenSurfaceFor, isFrozenPath, withoutFrozen } from "@/lib/frozen-surfaces"
+import { comingSoon, comingSoonHref, frozenSurfaceFor, isFrozenPath, withoutFrozen } from "@/lib/frozen-surfaces"
 
 describe("frozen surfaces", () => {
   // vitest.config.ts unfreezes everything for the rest of the suite.
@@ -28,5 +28,28 @@ describe("frozen surfaces", () => {
   it("filters link lists by relative or absolute href", () => {
     const links = [{ href: "/writer" }, { href: "https://www.byqalam.com/ats-resume-builder" }, { href: "/use-cases/founders" }]
     expect(withoutFrozen(links, (link) => link.href)).toEqual([{ href: "/writer" }, { href: "/use-cases/founders" }])
+  })
+})
+
+describe("coming soon", () => {
+  beforeEach(() => vi.stubEnv("NEXT_PUBLIC_UNFROZEN_SURFACES", ""))
+
+  it("lists paused surfaces but not the prediction tools", () => {
+    const names = comingSoon().map((item) => item.surface)
+    expect(names).toEqual(["agency", "career", "chat", "competitors"])
+  })
+
+  it("drops a surface once it is unfrozen", () => {
+    vi.stubEnv("NEXT_PUBLIC_UNFROZEN_SURFACES", "agency")
+    expect(comingSoon().map((item) => item.surface)).not.toContain("agency")
+    vi.stubEnv("NEXT_PUBLIC_UNFROZEN_SURFACES", "all")
+    expect(comingSoon()).toEqual([])
+  })
+
+  it("sends a paused page to its note, and has no note for the prediction tools", () => {
+    expect(comingSoonHref("/agency/clients")).toBe("/coming-soon#agency")
+    expect(comingSoonHref("/ats-resume-builder")).toBe("/coming-soon#career")
+    expect(comingSoonHref("/free-tools/viral-checker")).toBeNull()
+    expect(comingSoonHref("/writer")).toBeNull()
   })
 })
