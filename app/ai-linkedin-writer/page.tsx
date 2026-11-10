@@ -5,9 +5,9 @@ import { CheckIcon } from "@/components/ui/qalam-icons"
 import { buildBreadcrumbSchema, buildFaqSchema, buildHowToSchema, buildPageMetadata, APP_URL } from "@/lib/seo"
 
 export const metadata: Metadata = buildPageMetadata({
-  title: "AI LinkedIn Writer - Create Posts in Your Voice",
+  title: "AI LinkedIn Post Writer That Drafts From Your Posts",
   description:
-    "An AI LinkedIn writer built around your saved voice profile. Generate posts, hooks, and carousels with your professional context. Start free.",
+    "byQalam is an AI LinkedIn post writer. Save 5-10 of your own posts, get drafts in that voice, review each one, then schedule. Free plan: 5 posts a month.",
   path: "/ai-linkedin-writer",
   keywords: [
     "AI LinkedIn writer",
@@ -56,8 +56,8 @@ const howToSchema = buildHowToSchema({
 
 const FAQS = [
   {
-    q: "What is the best AI writer for LinkedIn?",
-    a: "The right tool depends on your workflow. Qalam is designed for LinkedIn-specific drafting, saved voice profiles, post history, scheduling, and approvals in one workspace.",
+    q: "How do I choose an AI writer for LinkedIn?",
+    a: "Check four things: whether it drafts from your own posts, whether you can review before anything publishes, whether it schedules, and what it costs per month. byQalam covers all four, and its comparison pages show how Taplio, AuthoredUp and Supergrow differ.",
   },
   {
     q: "How does an AI LinkedIn writer work?",
@@ -168,8 +168,9 @@ export default function AiLinkedInWriterPage() {
                   <span className="text-gold gold-underline">your LinkedIn voice</span>
                 </h1>
                 <p className="mx-auto mb-10 max-w-2xl text-xl leading-relaxed text-zinc-600">
-                  Most AI writers generate generic posts. <strong className="text-zinc-900">Qalam</strong> builds a saved
-                  profile from your tone, vocabulary, and hook patterns so each draft starts with relevant context.
+                  <strong className="text-zinc-900">byQalam</strong> is an AI LinkedIn post writer. You save 5 to 10 of
+                  your own posts as a voice profile. Each draft starts from those examples, you review and edit it, and
+                  nothing goes to LinkedIn until you approve it. The free plan covers 5 posts a month.
                 </p>
                 <div className="flex flex-col justify-center gap-4 sm:flex-row">
                   <Link
@@ -210,8 +211,9 @@ export default function AiLinkedInWriterPage() {
                   uses the writing examples you explicitly save as a reusable voice profile.
                 </p>
                 <p>
-                  So the drafts come out sounding like <em>you</em>, down to the words you favour and how long you let a
-                  sentence run. Minutes, not hours.
+                  Drafts lean toward the words you favour and the sentence length you use. The profile only changes when
+                  you save new examples. It does not learn from your edits on its own, so you control what it treats as
+                  your voice.
                 </p>
               </div>
             </FadeUp>
@@ -223,10 +225,10 @@ export default function AiLinkedInWriterPage() {
           <div className="mx-auto max-w-[1200px]">
             <FadeUp className="mb-14 text-center">
               <h2 className="mb-4 text-4xl font-bold text-zinc-900">
-                Why Qalam is the best AI writer for LinkedIn
+                What the LinkedIn post writer includes
               </h2>
               <p className="mx-auto max-w-2xl text-lg text-zinc-600">
-                Not just another AI content tool. A system that compounds value the longer you use it.
+                Drafting is one part. The archive, scheduling and approval steps keep each post tied to its source.
               </p>
             </FadeUp>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -294,7 +296,7 @@ export default function AiLinkedInWriterPage() {
             <FadeUp className="mb-14 text-center">
               <h2 className="mb-4 text-4xl font-bold text-zinc-900">Qalam vs other AI writers</h2>
               <p className="text-lg text-zinc-600">
-                See why Qalam wins for LinkedIn-specific publishing workflows.
+                Feature support in a LinkedIn publishing workflow. For dated, sourced head-to-heads with real prices, see the Taplio, AuthoredUp and Supergrow comparison pages.
               </p>
             </FadeUp>
             <div className="overflow-x-auto rounded-2xl border border-zinc-200 shadow-sm">
