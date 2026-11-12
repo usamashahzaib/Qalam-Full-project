@@ -544,9 +544,9 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "Qalam vs Taplio",
     h1: "Qalam vs Taplio: which LinkedIn tool fits your workflow",
     description:
-      "Qalam vs Taplio compared on price, AI drafting, voice, trial terms and agency use. Taplio's plans were checked on its own pricing page on 27 October 2026.",
+      "Qalam vs Taplio compared on price, AI drafting, voice, trial terms and agency use. Taplio's plans were checked on its own pricing page on 12 November 2026.",
     summary:
-      "Taplio starts at $39 a month and its Pro plan adds lead outreach. Qalam starts free, then $10 a quarter, and drafts from voice examples you save. Pick Taplio if you need outreach automation. Pick Qalam if you want voice-matched drafts at a lower price. Prices checked 27 October 2026.",
+      "Taplio starts at $39 a month and its Pro plan adds lead outreach. Qalam starts free, then $10 a quarter, and drafts from voice examples you save. Pick Taplio if you need outreach automation. Pick Qalam if you want voice-matched drafts at a lower price. Prices checked 12 November 2026.",
     intent: "Qalam vs Taplio, Taplio alternative, LinkedIn writing tool comparison",
     primaryKeyword: "Qalam vs Taplio",
     keywords: [
@@ -557,10 +557,10 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       "LinkedIn AI tool comparison",
       "Taplio vs Qalam",
     ],
-    updatedAt: "2026-10-27",
+    updatedAt: "2026-11-12",
     comparison: {
       competitor: "Taplio",
-      verifiedOn: "2026-10-27",
+      verifiedOn: "2026-11-12",
       rows: [
         { label: "Entry price", qalam: "Free plan, then Solo at $10 per quarter", competitor: "Starter at $39 per month. Its comparison table on the same page shows $32." },
         { label: "AI post writing", qalam: "Free: 5 posts a month. Solo: 30. Pro: 60.", competitor: "Listed from Growth at $69 per month. Pro at $199 lists unlimited AI posts and comments." },
@@ -604,7 +604,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "Which is cheaper, Qalam or Taplio?",
-        a: "Qalam. Solo is $10 per quarter and Pro is $18 per quarter. Taplio's plan cards show $39, $69 and $199 per month as of 27 October 2026. Taplio's own comparison table shows $32, $49 and $149, and its page does not explain the gap.",
+        a: "Qalam. Solo is $10 per quarter and Pro is $18 per quarter. Taplio's plan cards show $39, $69 and $199 per month as of 12 November 2026. Taplio's own comparison table shows $32, $49 and $149, and its page does not explain the gap.",
       },
       {
         q: "Does Taplio have a free plan?",
@@ -623,16 +623,16 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "Qalam vs AuthoredUp",
     h1: "Qalam vs AuthoredUp: a drafting tool or a post editor",
     description:
-      "Qalam vs AuthoredUp compared on price, editing, AI drafting and team plans. AuthoredUp's plans were checked on its own pricing page on 27 October 2026.",
+      "Qalam vs AuthoredUp compared on price, editing, AI drafting and team plans. AuthoredUp's plans were checked on its own pricing page on 12 November 2026.",
     summary:
-      "AuthoredUp is a post editor and analytics tool at $19.95 a month for one profile. Qalam drafts posts from voice examples you save, starting free and then $10 a quarter. Use AuthoredUp to format and reuse posts you write yourself. Use Qalam to produce the first draft. Prices checked 27 October 2026.",
+      "AuthoredUp is a post editor and analytics tool at $19.95 a month for one profile. Qalam drafts posts from voice examples you save, starting free and then $10 a quarter. Use AuthoredUp to format and reuse posts you write yourself. Use Qalam to produce the first draft. Prices checked 12 November 2026.",
     intent: "Qalam vs AuthoredUp, AuthoredUp alternative, LinkedIn post editor comparison",
     primaryKeyword: "Qalam vs AuthoredUp",
     keywords: ["Qalam vs AuthoredUp", "AuthoredUp alternative", "AuthoredUp pricing", "LinkedIn post editor", "LinkedIn writing tool comparison"],
-    updatedAt: "2026-10-27",
+    updatedAt: "2026-11-12",
     comparison: {
       competitor: "AuthoredUp",
-      verifiedOn: "2026-10-27",
+      verifiedOn: "2026-11-12",
       rows: [
         { label: "Main job", qalam: "Drafts posts, hooks, carousels and comments from saved voice examples", competitor: "Editor with styling and preview, post reuse, analytics" },
         { label: "AI drafting from your samples", qalam: "Yes", competitor: "Not listed on its pricing page" },
@@ -672,7 +672,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does AuthoredUp cost?",
-        a: "As of 27 October 2026, Individual is $19.95 per month or $199.50 per year. Business is $14.95 per profile per month for at least 3 profiles.",
+        a: "As of 12 November 2026, Individual is $19.95 per month or $199.50 per year. Business is $14.95 per profile per month for at least 3 profiles.",
       },
     ],
     related: [
@@ -687,16 +687,16 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
     title: "Qalam vs Supergrow",
     h1: "Qalam vs Supergrow: price, voice and team plans",
     description:
-      "Qalam vs Supergrow compared on price, voice, repurposing, trials and team plans. Supergrow's plans were checked on its own pricing page on 27 October 2026.",
+      "Qalam vs Supergrow compared on price, voice, repurposing, trials and team plans. Supergrow's plans were checked on its own pricing page on 12 November 2026.",
     summary:
-      "Supergrow Pro costs $39 a month for one account and lists AI interviews, repurposing and a carousel maker. Qalam starts free, then $10 a quarter, and drafts from saved voice examples. Supergrow Teams is $199 a month for 5 accounts. Qalam Agency is $38 a quarter for 5 client workspaces. Prices checked 27 October 2026.",
+      "Supergrow Pro costs $39 a month for one account and lists AI interviews, repurposing and a carousel maker. Qalam starts free, then $10 a quarter, and drafts from saved voice examples. Supergrow Teams is $199 a month for 5 accounts. Qalam Agency is $38 a quarter for 5 client workspaces. Prices checked 12 November 2026.",
     intent: "Qalam vs Supergrow, Supergrow alternative, LinkedIn AI tool comparison",
     primaryKeyword: "Qalam vs Supergrow",
     keywords: ["Qalam vs Supergrow", "Supergrow alternative", "Supergrow pricing", "LinkedIn AI tool comparison", "LinkedIn writing tool comparison"],
-    updatedAt: "2026-10-27",
+    updatedAt: "2026-11-12",
     comparison: {
       competitor: "Supergrow",
-      verifiedOn: "2026-10-27",
+      verifiedOn: "2026-11-12",
       rows: [
         { label: "Entry price", qalam: "Free plan, then Solo at $10 per quarter", competitor: "Pro at $39 per month, or $31 per month billed annually" },
         { label: "Free option", qalam: "Free plan with no card and no time limit", competitor: "7-day trial on every plan" },
@@ -740,7 +740,7 @@ export const SEO_LANDING_PAGES: Record<string, SeoLandingPage> = {
       },
       {
         q: "How much does Supergrow cost?",
-        a: "As of 27 October 2026, Pro is $39 per month or $31 per month billed annually. Teams is $199 per month or $189 billed annually. Enterprise is custom.",
+        a: "As of 12 November 2026, Pro is $39 per month or $31 per month billed annually. Teams is $199 per month or $189 billed annually. Enterprise is custom.",
       },
     ],
     related: [
