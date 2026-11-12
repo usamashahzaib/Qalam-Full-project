@@ -55,7 +55,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
   "voice-profile": {
     eyebrow: "Product",
     title: "Voice Profile",
-    summary: "Save writing examples and professional context once, then have every draft, hook, carousel, and comment pull from them.",
+    summary: "A voice profile is a saved set of your own writing examples. byQalam analyses them for tone and structure and pulls the closest ones into each draft.",
     description:
       "Voice Profile is the memory layer behind the product. You paste writing you are happy to be judged by, plus your role, industry, and audience. Qalam analyses those samples into tone, sentence length, vocabulary, and structure characteristics, then retrieves the most relevant examples each time it drafts. Updating the profile is a deliberate action, not something that happens silently in the background.",
     bullets: [
@@ -63,7 +63,7 @@ export const PRODUCT_PAGES: Record<string, ProductPageContent> = {
       "Analysed into tone, sentence length, vocabulary, and structure",
       "Relevant examples retrieved into every draft, not just the first one",
     ],
-    updatedAt: "2026-06-26",
+    updatedAt: "2026-11-12",
     faqs: [
       {
         q: "How does Qalam learn my voice?",
